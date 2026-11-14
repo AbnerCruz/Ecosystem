@@ -669,6 +669,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Game.IsHeadless",
+          "name": "IsHeadless",
+          "kind": "property",
+          "signature": "public bool IsHeadless { get; }",
+          "summary": "True when the game runs without a screen \u2014 on a dedicated multiplayer server (\u0060Lunet.Server\u0060) or in automated tests. Use it to host instead of joining, or to skip effects nobody will see.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Game.Localization",
           "name": "Localization",
           "kind": "property",
@@ -3835,6 +3848,150 @@
       ]
     },
     {
+      "id": "T:Lunet.SplitScreen",
+      "name": "SplitScreen",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public static class SplitScreen",
+      "summary": "Multijogador local no mesmo aparelho: divide a tela em regi\u00F5es por jogador e atribui cada toque ao jogador da regi\u00E3o onde ele come\u00E7ou. Desenhe cada jogador com \u0060batch.Begin(camera, regiao)\u0060.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar regioes = SplitScreen.Layout(2, GraphicsDevice.VirtualWidth, GraphicsDevice.VirtualHeight);\nvar batch = new Lunet.Graphics.SpriteBatch(GraphicsDevice);\nvar camera = new Lunet.Graphics.Camera2D();\nfor (int jogador = 0; jogador \u003C regioes.Length; jogador\u002B\u002B)\n{\n    batch.Begin(camera, regioes[jogador]);\n    batch.End();\n    foreach (var toque in SplitScreen.TouchesOf(jogador, Input.Touches, regioes)) Log.Info(\u0022jogador \u0022 \u002B jogador \u002B \u0022: \u0022 \u002B toque.Position);\n}\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.SplitScreen.MaxPlayers",
+          "name": "MaxPlayers",
+          "kind": "field",
+          "signature": "public const int MaxPlayers = 4",
+          "summary": "M\u00E1ximo de jogadores numa tela.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)",
+          "name": "Layout",
+          "kind": "method",
+          "signature": "public static RectangleF[] Layout(int players, float width, float height, float gap = 2f)",
+          "summary": "Regi\u00F5es para \u0060players\u0060 jogadores (1 a 4): duas lado a lado na horizontal e empilhadas na vertical, tr\u00EAs com o primeiro maior, quatro em grade. Ficam separadas por \u0060gap\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "players",
+              "type": "int",
+              "description": "Quantidade de jogadores, de 1 a 4."
+            },
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura da tela virtual."
+            },
+            {
+              "name": "height",
+              "type": "float",
+              "description": "Altura da tela virtual."
+            },
+            {
+              "name": "gap",
+              "type": "float",
+              "description": "Espa\u00E7o entre as regi\u00F5es."
+            }
+          ],
+          "returns": "Uma regi\u00E3o por jogador, na ordem dos jogadores.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.PlayerAt(System.Numerics.Vector2,System.ReadOnlySpan{Lunet.RectangleF})",
+          "name": "PlayerAt",
+          "kind": "method",
+          "signature": "public static int PlayerAt(Vector2 point, ReadOnlySpan\u003CRectangleF\u003E regions)",
+          "summary": "O jogador dono do ponto (\u00EDndice da regi\u00E3o que o cont\u00E9m), ou -1 no espa\u00E7o entre regi\u00F5es.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto em coordenadas virtuais."
+            },
+            {
+              "name": "regions",
+              "type": "ReadOnlySpan\u003CRectangleF\u003E",
+              "description": "Regi\u00F5es de \u0060SplitScreen.Layout\u0060."
+            }
+          ],
+          "returns": "\u00CDndice do jogador ou -1.",
+          "examples": [],
+          "related": [
+            "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.ToRegion(System.Numerics.Vector2,Lunet.RectangleF)",
+          "name": "ToRegion",
+          "kind": "method",
+          "signature": "public static Vector2 ToRegion(Vector2 point, RectangleF region)",
+          "summary": "Converte um ponto da tela para coordenadas locais da regi\u00E3o (0,0 no canto da regi\u00E3o).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto em coordenadas virtuais da tela."
+            },
+            {
+              "name": "region",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o do jogador."
+            }
+          ],
+          "returns": "O ponto relativo \u00E0 regi\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.TouchesOf(System.Int32,System.ReadOnlySpan{Lunet.Input.TouchPoint},System.ReadOnlySpan{Lunet.RectangleF})",
+          "name": "TouchesOf",
+          "kind": "method",
+          "signature": "public static List\u003CTouchPoint\u003E TouchesOf(int player, ReadOnlySpan\u003CTouchPoint\u003E touches, ReadOnlySpan\u003CRectangleF\u003E regions)",
+          "summary": "Os toques que est\u00E3o na regi\u00E3o do jogador.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "player",
+              "type": "int",
+              "description": "\u00CDndice do jogador."
+            },
+            {
+              "name": "touches",
+              "type": "ReadOnlySpan\u003CTouchPoint\u003E",
+              "description": "Toques do quadro (\u0060Input.Touches\u0060)."
+            },
+            {
+              "name": "regions",
+              "type": "ReadOnlySpan\u003CRectangleF\u003E",
+              "description": "Regi\u00F5es de \u0060SplitScreen.Layout\u0060."
+            }
+          ],
+          "returns": "Os toques do jogador, em ordem.",
+          "examples": [],
+          "related": [
+            "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)"
+          ],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.TimerHandle",
       "name": "TimerHandle",
       "namespace": "Lunet",
@@ -4183,6 +4340,210 @@
             }
           ],
           "returns": "Falso se a transforma\u00E7\u00E3o n\u00E3o pode ser invertida (escala zero).",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.TurnOrder",
+      "name": "TurnOrder",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class TurnOrder",
+      "summary": "Ordem de turnos para multijogador por vez: hot-seat (passar o aparelho) e partidas ass\u00EDncronas em que o estado vai e volta (arquivo, save, mensagem). Cada jogada aumenta \u0060TurnOrder.Version\u0060; uma jogada feita sobre uma vers\u00E3o antiga \u00E9 recusada, ent\u00E3o duas pessoas jogando ao mesmo tempo no mesmo turno nunca corrompem a partida.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar turnos = new TurnOrder(new[] { \u0022Ana\u0022, \u0022Bia\u0022, \u0022Caio\u0022 });\nLog.Info(\u0022vez de \u0022 \u002B turnos.Current);\nturnos.EndTurn(turnos.Version);\nturnos.Eliminate(\u0022Bia\u0022);\nSave.Save(\u0022turnos\u0022, turnos.ToJson());\nvar depois = TurnOrder.FromJson(Save.Load(\u0022turnos\u0022, \u0022\u0022));\n\u0060\u0060\u0060"
+      ],
+      "related": [
+        "P:Lunet.TurnOrder.Version"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.TurnOrder.#ctor(System.Collections.Generic.IEnumerable{System.String})",
+          "name": "TurnOrder",
+          "kind": "constructor",
+          "signature": "public TurnOrder(IEnumerable\u003Cstring\u003E players)",
+          "summary": "Cria a ordem com os jogadores na ordem em que jogam.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "players",
+              "type": "IEnumerable\u003Cstring\u003E",
+              "description": "Nomes \u00FAnicos, de 1 a 64 jogadores."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Active",
+          "name": "Active",
+          "kind": "property",
+          "signature": "public IEnumerable\u003Cstring\u003E Active { get; }",
+          "summary": "Jogadores ainda na partida.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Current",
+          "name": "Current",
+          "kind": "property",
+          "signature": "public string Current { get; }",
+          "summary": "Jogador da vez.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.CurrentIndex",
+          "name": "CurrentIndex",
+          "kind": "property",
+          "signature": "public int CurrentIndex { get; }",
+          "summary": "\u00CDndice do jogador da vez em \u0060TurnOrder.Players\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.TurnOrder.Players"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.IsOver",
+          "name": "IsOver",
+          "kind": "property",
+          "signature": "public bool IsOver { get; }",
+          "summary": "Verdadeiro quando sobra um jogador ou nenhum.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Players",
+          "name": "Players",
+          "kind": "property",
+          "signature": "public IReadOnlyList\u003Cstring\u003E Players { get; }",
+          "summary": "Todos os jogadores, na ordem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Round",
+          "name": "Round",
+          "kind": "property",
+          "signature": "public int Round { get; }",
+          "summary": "Rodada atual (come\u00E7a em 1 e sobe quando a vez volta ao primeiro jogador ativo).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Version",
+          "name": "Version",
+          "kind": "property",
+          "signature": "public int Version { get; }",
+          "summary": "Muda a cada jogada; use para detectar estados antigos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.Eliminate(System.String)",
+          "name": "Eliminate",
+          "kind": "method",
+          "signature": "public void Eliminate(string player)",
+          "summary": "Tira um jogador da partida; se era a vez dele, passa ao pr\u00F3ximo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "player",
+              "type": "string",
+              "description": "Nome do jogador."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.EndTurn(System.Int32)",
+          "name": "EndTurn",
+          "kind": "method",
+          "signature": "public bool EndTurn(int expectedVersion)",
+          "summary": "Passa a vez ao pr\u00F3ximo jogador ativo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "expectedVersion",
+              "type": "int",
+              "description": "A \u0060TurnOrder.Version\u0060 que quem jogou viu; se mudou, a jogada \u00E9 recusada."
+            }
+          ],
+          "returns": "Verdadeiro se a vez passou; falso se o estado j\u00E1 tinha mudado (jogada sobre vers\u00E3o antiga).",
+          "examples": [],
+          "related": [
+            "P:Lunet.TurnOrder.Version"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.FromJson(System.String)",
+          "name": "FromJson",
+          "kind": "method",
+          "signature": "public static TurnOrder FromJson(string json)",
+          "summary": "Recria a ordem a partir de \u0060TurnOrder.ToJson\u0060, validando o conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string",
+              "description": "Texto de \u0060TurnOrder.ToJson\u0060."
+            }
+          ],
+          "returns": "A ordem de turnos.",
+          "examples": [],
+          "related": [
+            "M:Lunet.TurnOrder.ToJson"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.ToJson",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson()",
+          "summary": "Estado em JSON para salvar ou enviar.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Texto JSON.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5810,6 +6171,54 @@
             }
           ],
           "returns": "A m\u00FAsica carregada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Content.ContentManager.LoadParticleEmitter(System.String,Lunet.Graphics.Texture2D,System.UInt64)",
+          "name": "LoadParticleEmitter",
+          "kind": "method",
+          "signature": "public ParticleEmitter LoadParticleEmitter(string path, Texture2D texture, ulong seed = 1)",
+          "summary": "Cria um emissor pronto do efeito salvo pelo Particle Studio, com a taxa de emiss\u00E3o e o limite do arquivo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Effects/fogo.particles.json\u0060."
+            },
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura de cada part\u00EDcula (por exemplo, \u0060Texture2D.CreateCircle\u0060)."
+            },
+            {
+              "name": "seed",
+              "type": "ulong",
+              "description": "Semente do sorteio, para repetir o mesmo efeito."
+            }
+          ],
+          "returns": "Emissor; chame \u0060Start()\u0060 para a emiss\u00E3o cont\u00EDnua ou \u0060Burst\u0060.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Content.ContentManager.LoadParticles(System.String)",
+          "name": "LoadParticles",
+          "kind": "method",
+          "signature": "public ParticleSettings LoadParticles(string path)",
+          "summary": "Carrega um efeito de part\u00EDculas salvo pelo Particle Studio (\u0060.particles.json\u0060).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Effects/fogo.particles.json\u0060."
+            }
+          ],
+          "returns": "A configura\u00E7\u00E3o do efeito.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -8122,6 +8531,342 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.HeadlessGraphicsBackend",
+      "name": "HeadlessGraphicsBackend",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class HeadlessGraphicsBackend : IGraphicsBackend",
+      "summary": "Backend gr\u00E1fico sem tela nem GPU: texturas, alvos e shaders recebem identificadores v\u00E1lidos e o desenho \u00E9 s\u00F3 contado. Serve ao servidor dedicado (\u0060lunet-server\u0060) e a testes autom\u00E1ticos; o jogo roda o mesmo c\u00F3digo e pode consultar \u0060Game.IsHeadless\u0060 para pular o que s\u00F3 importa na tela.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\n// No jogo: o mesmo c\u00F3digo roda no aparelho e no servidor sem tela.\nif (IsHeadless) Log.Info(\u0022rodando como servidor\u0022);\n// Num teste ou ferramenta: new GameHost(jogo, new HeadlessGraphicsBackend()) roda sem GPU.\nvar semTela = new HeadlessGraphicsBackend();\nLog.Info(\u0022quads desenhados: \u0022 \u002B semTela.QuadsDrawn);\n\u0060\u0060\u0060"
+      ],
+      "related": [
+        "P:Lunet.Game.IsHeadless"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Graphics.HeadlessGraphicsBackend.DrawCalls",
+          "name": "DrawCalls",
+          "kind": "property",
+          "signature": "public long DrawCalls { get; }",
+          "summary": "Quantas chamadas de desenho o jogo fez desde o in\u00EDcio.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.HeadlessGraphicsBackend.LiveTextures",
+          "name": "LiveTextures",
+          "kind": "property",
+          "signature": "public int LiveTextures { get; }",
+          "summary": "Texturas criadas e ainda n\u00E3o liberadas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.HeadlessGraphicsBackend.QuadsDrawn",
+          "name": "QuadsDrawn",
+          "kind": "property",
+          "signature": "public long QuadsDrawn { get; }",
+          "summary": "Quantos quads o jogo pediu para desenhar desde o in\u00EDcio (sinal de vida barato nos logs do servidor).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.Clear(Lunet.Graphics.Color)",
+          "name": "Clear",
+          "kind": "method",
+          "signature": "public void Clear(Color color)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor de fundo (ignorada)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.CreateRenderTarget(System.Int32,System.Int32,Lunet.Graphics.TextureFilter,System.Int32@)",
+          "name": "CreateRenderTarget",
+          "kind": "method",
+          "signature": "public int CreateRenderTarget(int width, int height, TextureFilter filter, out int textureHandle)",
+          "summary": "Registra um alvo de desenho e sua textura.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura, em pixels."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura, em pixels."
+            },
+            {
+              "name": "filter",
+              "type": "TextureFilter",
+              "description": "Filtro (ignorado)."
+            },
+            {
+              "name": "textureHandle",
+              "type": "int",
+              "description": "Recebe o identificador da textura do alvo."
+            }
+          ],
+          "returns": "Identificador do alvo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.CreateShader(System.String)",
+          "name": "CreateShader",
+          "kind": "method",
+          "signature": "public int CreateShader(string fragmentSource)",
+          "summary": "Registra um shader sem compil\u00E1-lo (n\u00E3o h\u00E1 GPU para validar o c\u00F3digo).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "fragmentSource",
+              "type": "string",
+              "description": "C\u00F3digo GLSL do fragment shader (ignorado)."
+            }
+          ],
+          "returns": "Identificador do shader.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.CreateTexture(System.Int32,System.Int32,System.ReadOnlySpan{System.Byte},Lunet.Graphics.TextureFilter)",
+          "name": "CreateTexture",
+          "kind": "method",
+          "signature": "public int CreateTexture(int width, int height, ReadOnlySpan\u003Cbyte\u003E rgba, TextureFilter filter)",
+          "summary": "Registra uma textura sem enviar pixels a uma GPU.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura."
+            },
+            {
+              "name": "rgba",
+              "type": "ReadOnlySpan\u003Cbyte\u003E",
+              "description": "Pixels RGBA (ignorados)."
+            },
+            {
+              "name": "filter",
+              "type": "TextureFilter",
+              "description": "Filtro (ignorado)."
+            }
+          ],
+          "returns": "Identificador da textura.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DeleteRenderTarget(System.Int32)",
+          "name": "DeleteRenderTarget",
+          "kind": "method",
+          "signature": "public void DeleteRenderTarget(int handle)",
+          "summary": "Libera um alvo de desenho.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador do alvo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DeleteShader(System.Int32)",
+          "name": "DeleteShader",
+          "kind": "method",
+          "signature": "public void DeleteShader(int handle)",
+          "summary": "Libera um shader.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador do shader."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DeleteTexture(System.Int32)",
+          "name": "DeleteTexture",
+          "kind": "method",
+          "signature": "public void DeleteTexture(int handle)",
+          "summary": "Libera uma textura.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador da textura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DrawQuads(System.Int32,System.ReadOnlySpan{Lunet.Graphics.SpriteVertex},System.Int32,System.Numerics.Matrix4x4@)",
+          "name": "DrawQuads",
+          "kind": "method",
+          "signature": "public void DrawQuads(int textureHandle, ReadOnlySpan\u003CSpriteVertex\u003E vertices, int quadCount, in Matrix4x4 projection)",
+          "summary": "Conta o desenho sem rasterizar nada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "textureHandle",
+              "type": "int",
+              "description": "Textura usada."
+            },
+            {
+              "name": "vertices",
+              "type": "ReadOnlySpan\u003CSpriteVertex\u003E",
+              "description": "V\u00E9rtices (ignorados)."
+            },
+            {
+              "name": "quadCount",
+              "type": "int",
+              "description": "Quantos quads."
+            },
+            {
+              "name": "projection",
+              "type": "Matrix4x4",
+              "description": "Proje\u00E7\u00E3o (ignorada)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.SetDrawState(Lunet.Graphics.DrawState)",
+          "name": "SetDrawState",
+          "kind": "method",
+          "signature": "public void SetDrawState(DrawState state)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "DrawState",
+              "description": "Estado de desenho (ignorado)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.SetRenderTarget(System.Int32,System.Int32,System.Int32)",
+          "name": "SetRenderTarget",
+          "kind": "method",
+          "signature": "public void SetRenderTarget(int handle, int width, int height)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador do alvo (0 \u00E9 a tela)."
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura, em pixels."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura, em pixels."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.SetViewport(System.Int32,System.Int32,System.Int32,System.Int32)",
+          "name": "SetViewport",
+          "kind": "method",
+          "signature": "public void SetViewport(int x, int y, int width, int height)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int",
+              "description": "Esquerda."
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "description": "Base."
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.IGraphicsBackend",
       "name": "IGraphicsBackend",
       "namespace": "Lunet.Graphics",
@@ -8616,6 +9361,74 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.ParticleColorStop",
+      "name": "ParticleColorStop",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct ParticleColorStop",
+      "summary": "Uma cor do gradiente de vida das part\u00EDculas.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar fogo = new ParticleSettings(lifetimeSeconds: 0.8, minSpeed: 30, maxSpeed: 60)\n{\n    ColorStops = [new(0, Color.Yellow), new(0.5, Color.FromHex(0xFF6A00)), new(1, Color.Red.WithAlpha(0))],\n};\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleColorStop.#ctor(System.Double,Lunet.Graphics.Color)",
+          "name": "ParticleColorStop",
+          "kind": "constructor",
+          "signature": "public ParticleColorStop(double Position, Color Color)",
+          "summary": "Uma cor do gradiente de vida das part\u00EDculas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Position",
+              "type": "double",
+              "description": "Fra\u00E7\u00E3o da vida, de 0 a 1."
+            },
+            {
+              "name": "Color",
+              "type": "Color",
+              "description": "Cor nesse ponto."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar fogo = new ParticleSettings(lifetimeSeconds: 0.8, minSpeed: 30, maxSpeed: 60)\n{\n    ColorStops = [new(0, Color.Yellow), new(0.5, Color.FromHex(0xFF6A00)), new(1, Color.Red.WithAlpha(0))],\n};\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleColorStop.Color",
+          "name": "Color",
+          "kind": "property",
+          "signature": "public Color Color { get; init; }",
+          "summary": "Cor nesse ponto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleColorStop.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public double Position { get; init; }",
+          "summary": "Fra\u00E7\u00E3o da vida, de 0 a 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.ParticleEmitter",
       "name": "ParticleEmitter",
       "namespace": "Lunet.Graphics",
@@ -8811,6 +9624,27 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Snapshot(System.Span{Lunet.Graphics.ParticleSnapshot})",
+          "name": "Snapshot",
+          "kind": "method",
+          "signature": "public int Snapshot(Span\u003CParticleSnapshot\u003E destination)",
+          "summary": "Copia o estado das part\u00EDculas vivas para \u0060destination\u0060 (posi\u00E7\u00E3o, tamanho, rota\u00E7\u00E3o, cor, vida), para desenhar com outra t\u00E9cnica (pr\u00E9vias de editor, efeitos customizados). N\u00E3o aloca.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "destination",
+              "type": "Span\u003CParticleSnapshot\u003E",
+              "description": "Destino com espa\u00E7o para at\u00E9 \u0060ParticleEmitter.Count\u0060 itens."
+            }
+          ],
+          "returns": "Quantas foram copiadas.",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleEmitter.Count"
+          ],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.ParticleEmitter.Start",
           "name": "Start",
           "kind": "method",
@@ -8926,6 +9760,63 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Graphics.ParticleSettings.Additive",
+          "name": "Additive",
+          "kind": "property",
+          "signature": "public bool Additive { get; init; }",
+          "summary": "Sugest\u00E3o de mistura aditiva (brilho de fogo, magia, fa\u00EDscas): desenhe com \u0060BlendState.Additive\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.ColorStops",
+          "name": "ColorStops",
+          "kind": "property",
+          "signature": "public IReadOnlyList\u003CParticleColorStop\u003E ColorStops { get; init; }",
+          "summary": "Gradiente de cor ao longo da vida (posi\u00E7\u00F5es de 0 a 1, em ordem). Vazio usa \u0060ParticleSettings.StartColor\u0060 \u2192 \u0060ParticleSettings.EndColor\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.StartColor",
+            "P:Lunet.Graphics.ParticleSettings.EndColor"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Direction",
+          "name": "Direction",
+          "kind": "property",
+          "signature": "public float Direction { get; init; }",
+          "summary": "Dire\u00E7\u00E3o central da emiss\u00E3o, em graus (0 = direita, 90 = para baixo). S\u00F3 vale com \u0060ParticleSettings.Spread\u0060 menor que 360.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.Spread"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Drag",
+          "name": "Drag",
+          "kind": "property",
+          "signature": "public float Drag { get; init; }",
+          "summary": "Resist\u00EAncia do ar: quanto a velocidade cai por segundo (0 = nenhuma).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Graphics.ParticleSettings.EndColor",
           "name": "EndColor",
           "kind": "property",
@@ -8978,6 +9869,32 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Graphics.ParticleSettings.LifetimeVariance",
+          "name": "LifetimeVariance",
+          "kind": "property",
+          "signature": "public float LifetimeVariance { get; init; }",
+          "summary": "Varia\u00E7\u00E3o aleat\u00F3ria da vida, de 0 (todas iguais) a 1 (cada part\u00EDcula vive entre quase zero e o dobro da vida base).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.MaxAngularVelocity",
+          "name": "MaxAngularVelocity",
+          "kind": "property",
+          "signature": "public float MaxAngularVelocity { get; init; }",
+          "summary": "Giro m\u00E1ximo em graus por segundo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Graphics.ParticleSettings.MaxSpeed",
           "name": "MaxSpeed",
           "kind": "property",
@@ -8991,11 +9908,89 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Graphics.ParticleSettings.MinAngularVelocity",
+          "name": "MinAngularVelocity",
+          "kind": "property",
+          "signature": "public float MinAngularVelocity { get; init; }",
+          "summary": "Giro em graus por segundo: m\u00EDnimo e m\u00E1ximo sorteados por part\u00EDcula.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Graphics.ParticleSettings.MinSpeed",
           "name": "MinSpeed",
           "kind": "property",
           "signature": "public float MinSpeed { get; }",
           "summary": "Velocidade radial m\u00EDnima.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.RotationVariance",
+          "name": "RotationVariance",
+          "kind": "property",
+          "signature": "public float RotationVariance { get; init; }",
+          "summary": "Rota\u00E7\u00E3o inicial m\u00E1xima aleat\u00F3ria, em graus.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Shape",
+          "name": "Shape",
+          "kind": "property",
+          "signature": "public ParticleShape Shape { get; init; }",
+          "summary": "Onde as part\u00EDculas nascem em volta da origem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.ShapeSize",
+          "name": "ShapeSize",
+          "kind": "property",
+          "signature": "public Vector2 ShapeSize { get; init; }",
+          "summary": "Tamanho da forma de emiss\u00E3o: raio do c\u00EDrculo (X), largura e altura do ret\u00E2ngulo, comprimento da linha (X).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.SizeVariance",
+          "name": "SizeVariance",
+          "kind": "property",
+          "signature": "public float SizeVariance { get; init; }",
+          "summary": "Varia\u00E7\u00E3o aleat\u00F3ria do tamanho, de 0 a 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Spread",
+          "name": "Spread",
+          "kind": "property",
+          "signature": "public float Spread { get; init; }",
+          "summary": "Abertura do cone de emiss\u00E3o, em graus (360 = todas as dire\u00E7\u00F5es, o padr\u00E3o; 0 = um raio s\u00F3).",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -9022,6 +10017,290 @@
           "kind": "property",
           "signature": "public float StartSize { get; }",
           "summary": "Tamanho inicial do quad.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.ColorAt(System.Double)",
+          "name": "ColorAt",
+          "kind": "method",
+          "signature": "public Color ColorAt(double amount)",
+          "summary": "Cor na fra\u00E7\u00E3o \u0060amount\u0060 da vida (0 a 1).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "amount",
+              "type": "double",
+              "description": "Fra\u00E7\u00E3o da vida."
+            }
+          ],
+          "returns": "A cor interpolada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.FromJson(System.String)",
+          "name": "FromJson",
+          "kind": "method",
+          "signature": "public static ParticleSettings FromJson(string json)",
+          "summary": "L\u00EA um efeito salvo por \u0060ParticleSettings.ToJson\u0060 ou pelo Particle Studio, validando os valores.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string",
+              "description": "Texto JSON."
+            }
+          ],
+          "returns": "O efeito.",
+          "examples": [],
+          "related": [
+            "M:Lunet.Graphics.ParticleSettings.ToJson"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.ToJson",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson()",
+          "summary": "Salva o efeito em JSON (o formato dos arquivos \u0060.particles.json\u0060 do Particle Studio).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Texto JSON.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.ToJson(System.Single,System.Int32)",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson(float emissionRate, int maxParticles)",
+          "summary": "Salva o efeito em JSON com a taxa de emiss\u00E3o e o limite de part\u00EDculas que o emissor deve usar.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "emissionRate",
+              "type": "float",
+              "description": "Part\u00EDculas por segundo da emiss\u00E3o cont\u00EDnua (0 = s\u00F3 bursts)."
+            },
+            {
+              "name": "maxParticles",
+              "type": "int",
+              "description": "Capacidade do emissor."
+            }
+          ],
+          "returns": "Texto JSON.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.Validate",
+          "name": "Validate",
+          "kind": "method",
+          "signature": "public void Validate()",
+          "summary": "Recusa valores que o emissor n\u00E3o sabe simular (NaN, negativos, gradiente fora de ordem).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ParticleShape",
+      "name": "ParticleShape",
+      "namespace": "Lunet.Graphics",
+      "kind": "enum",
+      "signature": "public enum ParticleShape",
+      "summary": "Onde as part\u00EDculas nascem em volta da origem do emissor.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Circle",
+          "name": "Circle",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Circle = 1",
+          "summary": "Dentro de um c\u00EDrculo de raio \u0060ParticleSettings.ShapeSize\u0060.X.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.ShapeSize"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Line",
+          "name": "Line",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Line = 3",
+          "summary": "Numa linha horizontal centrada de comprimento \u0060ParticleSettings.ShapeSize\u0060.X (chuva, neve).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.ShapeSize"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Point",
+          "name": "Point",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Point = 0",
+          "summary": "Todas no mesmo ponto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Rectangle",
+          "name": "Rectangle",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Rectangle = 2",
+          "summary": "Dentro de um ret\u00E2ngulo centrado de tamanho \u0060ParticleSettings.ShapeSize\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.ShapeSize"
+          ],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ParticleSnapshot",
+      "name": "ParticleSnapshot",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct ParticleSnapshot",
+      "summary": "Estado de uma part\u00EDcula viva num instante, para desenhar com qualquer t\u00E9cnica.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar particulas = new ParticleEmitter(Texture2D.CreateCircle(GraphicsDevice, 8, Color.White), new ParticleSettings());\nparticulas.Burst(20, new System.Numerics.Vector2(100, 100));\nSpan\u003CParticleSnapshot\u003E vivas = stackalloc ParticleSnapshot[particulas.Count];\nint n = particulas.Snapshot(vivas);\nfor (int i = 0; i \u003C n; i\u002B\u002B) Log.Info(vivas[i].Position \u002B \u0022 \u0022 \u002B vivas[i].Size);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleSnapshot.#ctor(System.Numerics.Vector2,System.Single,System.Single,Lunet.Graphics.Color,System.Single)",
+          "name": "ParticleSnapshot",
+          "kind": "constructor",
+          "signature": "public ParticleSnapshot(Vector2 Position, float Size, float Rotation, Color Color, float Life)",
+          "summary": "Estado de uma part\u00EDcula viva num instante, para desenhar com qualquer t\u00E9cnica.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Position",
+              "type": "Vector2",
+              "description": "Centro."
+            },
+            {
+              "name": "Size",
+              "type": "float",
+              "description": "Lado do quad."
+            },
+            {
+              "name": "Rotation",
+              "type": "float",
+              "description": "Rota\u00E7\u00E3o em radianos."
+            },
+            {
+              "name": "Color",
+              "type": "Color",
+              "description": "Cor atual."
+            },
+            {
+              "name": "Life",
+              "type": "float",
+              "description": "Fra\u00E7\u00E3o da vida j\u00E1 vivida (0 a 1)."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar particulas = new ParticleEmitter(Texture2D.CreateCircle(GraphicsDevice, 8, Color.White), new ParticleSettings());\nparticulas.Burst(20, new System.Numerics.Vector2(100, 100));\nSpan\u003CParticleSnapshot\u003E vivas = stackalloc ParticleSnapshot[particulas.Count];\nint n = particulas.Snapshot(vivas);\nfor (int i = 0; i \u003C n; i\u002B\u002B) Log.Info(vivas[i].Position \u002B \u0022 \u0022 \u002B vivas[i].Size);\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Color",
+          "name": "Color",
+          "kind": "property",
+          "signature": "public Color Color { get; init; }",
+          "summary": "Cor atual.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Life",
+          "name": "Life",
+          "kind": "property",
+          "signature": "public float Life { get; init; }",
+          "summary": "Fra\u00E7\u00E3o da vida j\u00E1 vivida (0 a 1).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public Vector2 Position { get; init; }",
+          "summary": "Centro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Rotation",
+          "name": "Rotation",
+          "kind": "property",
+          "signature": "public float Rotation { get; init; }",
+          "summary": "Rota\u00E7\u00E3o em radianos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Size",
+          "name": "Size",
+          "kind": "property",
+          "signature": "public float Size { get; init; }",
+          "summary": "Lado do quad.",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -10324,6 +11603,48 @@
           "returns": "",
           "examples": [],
           "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Begin(Lunet.Graphics.Camera2D,Lunet.RectangleF,Lunet.Graphics.BlendState,Lunet.Graphics.SamplerState,Lunet.Graphics.Shader)",
+          "name": "Begin",
+          "kind": "method",
+          "signature": "public void Begin(Camera2D camera, RectangleF region, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null)",
+          "summary": "Come\u00E7a um lote que desenha a vista da c\u00E2mera dentro de uma regi\u00E3o da tela (tela dividida): a c\u00E2mera centraliza o mundo no meio de \u0060region\u0060 e nada sai dela. Use uma c\u00E2mera por jogador com \u0060SplitScreen\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "camera",
+              "type": "Camera2D",
+              "description": "C\u00E2mera do jogador."
+            },
+            {
+              "name": "region",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o da vista em coordenadas virtuais (por exemplo, de \u0060SplitScreen.Layout\u0060)."
+            },
+            {
+              "name": "blend",
+              "type": "BlendState",
+              "description": "Mistura; nulo usa Alpha."
+            },
+            {
+              "name": "sampler",
+              "type": "SamplerState",
+              "description": "Filtro e repeti\u00E7\u00E3o; nulo usa o estado da textura."
+            },
+            {
+              "name": "shader",
+              "type": "Shader",
+              "description": "Shader de fragmento; nulo usa o padr\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "T:Lunet.SplitScreen",
+            "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)"
+          ],
           "since": "0.0.1"
         },
         {

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Lunet.Server</RootNamespace>
+    <AssemblyName>lunet-server</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Lunet.Core/Lunet.Core.csproj" />
+    <ProjectReference Include="../Lunet.Compiler/Lunet.Compiler.csproj" />
+    <ProjectReference Include="../Lunet.Runtime/Lunet.Runtime.csproj" />
+    <ProjectReference Include="../Lunet.Networking/Lunet.Networking.csproj" />
+  </ItemGroup>
+</Project>

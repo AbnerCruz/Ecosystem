@@ -48,12 +48,27 @@ public sealed class TileStudioSession
     {
         if (_strokeBefore is null) throw new InvalidOperationException("Inicie o gesto antes de pintar.");
         if ((uint)x >= (uint)Map.Width || (uint)y >= (uint)Map.Height) return false;
+        TileMap next;
+        if (Terrain is { } terrain)
+        {
+            if (terrain.BaseTile < 1 || terrain.BaseTile + terrain.Count - 1 > MaxTileId)
+                throw new InvalidOperationException($"O tileset não tem os {terrain.Count} tiles do terreno a partir do {terrain.BaseTile}.");
+            next = terrain.Paint(Map, Layer, x, y, EraseTerrain);
+            if (ReferenceEquals(next, Map)) return false;
+            Map = next;
+            return true;
+        }
         if (Tile < 0 || Tile > MaxTileId) throw new ArgumentOutOfRangeException(nameof(Tile));
-        var next = Map.WithTile(Layer, new GridPoint(x, y), Tile);
+        next = Map.WithTile(Layer, new GridPoint(x, y), Tile);
         if (ReferenceEquals(next, Map)) return false;
         Map = next;
         return true;
     }
+
+    /// <summary>Autotile brush (LUNET-506): when set, <see cref="Paint"/> paints this terrain and fixes the neighbours.</summary>
+    public AutotileSet? Terrain { get; set; }
+    /// <summary>With <see cref="Terrain"/>: erase the terrain instead of painting it.</summary>
+    public bool EraseTerrain { get; set; }
 
     public bool EndStroke()
     {

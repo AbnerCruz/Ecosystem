@@ -64,6 +64,7 @@ internal sealed class TileStudioView : LinearLayout
         layerRow.AddView(_layerChip, LunetUi.Weight());
         layerRow.AddView(LunetUi.Chip(context, "＋ Camada", AddLayer));
         layerRow.AddView(LunetUi.Chip(context, "Ajustar", () => _canvas.Gestures.Reset()));
+        layerRow.AddView(LunetUi.Chip(context, "Terreno", ShowTerrainMenu));
         AddView(layerRow);
 
         var tileRow = LunetUi.Row(context, 4);
@@ -164,10 +165,41 @@ internal sealed class TileStudioView : LinearLayout
             .SetPositiveButton("Excluir", (_, _) => Edit(_edit.RemoveLayer))!.Show();
     }
 
+    /// <summary>Autotile brush (LUNET-506): the selected tile is the first of the terrain's 16 or 47 tiles.</summary>
+    private void ShowTerrainMenu()
+    {
+        var items = new (string Label, Action Run)[]
+        {
+            ($"Terreno simples (16 tiles a partir do tile {_edit.Tile})", () => SetTerrain(Lunet.Studio.AutotileLayout.Sides16)),
+            ($"Terreno suave com cantos (47 tiles a partir do tile {_edit.Tile})", () => SetTerrain(Lunet.Studio.AutotileLayout.Blob47)),
+            (_edit.EraseTerrain ? "Pintar terreno" : "Apagar terreno", () => { _edit.EraseTerrain = !_edit.EraseTerrain; Refresh(); }),
+            ("Pincel normal (um tile)", () => { _edit.Terrain = null; Refresh(); }),
+        };
+        new global::Android.App.AlertDialog.Builder(Context, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
+            .SetTitle("Autotile")!
+            .SetItems(items.Select(i => i.Label).ToArray(), (_, e) => items[e.Which].Run())!
+            .Show();
+    }
+
+    private void SetTerrain(Lunet.Studio.AutotileLayout layout)
+    {
+        var set = new Lunet.Studio.AutotileSet("terreno", Math.Max(1, _edit.Tile), layout);
+        if (set.BaseTile + set.Count - 1 > _edit.MaxTileId)
+        {
+            Toast.MakeText(Context, $"O tileset precisa de {set.Count} tiles a partir do tile {set.BaseTile}.", ToastLength.Long)?.Show();
+            return;
+        }
+        _edit.Terrain = set;
+        _edit.EraseTerrain = false;
+        Refresh();
+    }
+
     private void Refresh()
     {
         var map = _edit.Map;
-        _title.Text = $"Mapa {map.Width}×{map.Height} · " + (_edit.Tile == 0 ? "borracha" : "tile " + _edit.Tile);
+        _title.Text = $"Mapa {map.Width}×{map.Height} · " + (_edit.Terrain is { } t
+            ? (_edit.EraseTerrain ? "apagando terreno" : $"terreno {t.Count} tiles desde {t.BaseTile}")
+            : _edit.Tile == 0 ? "borracha" : "tile " + _edit.Tile);
         _layerChip.Text = "Camada: " + map.GetLayerName(_edit.Layer) + (map.IsCollisionLayer(_edit.Layer) ? " · colisão" : "") + "  ▾";
         for (int i = 0; i < _tiles.ChildCount; i++) _tiles.GetChildAt(i)?.Invalidate();
         _canvas.Invalidate();

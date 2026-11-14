@@ -96,6 +96,11 @@ public static class LunetAiQuickReference
           Draw(textura, destino, origem?, cor, rotação, centro)
           End()
 
+        Partículas (Particle Studio salva Content/Effects/x.particles.json)
+          var fx = Content.LoadParticleEmitter("Effects/fogo.particles.json", Texture2D.CreateCircle(GraphicsDevice, 16, Color.White));
+          fx.Start(); fx.Burst(30, pos); fx.Position = pos; fx.Update(dt); batch.Begin(BlendState.Additive); fx.Draw(batch); batch.End();
+          new ParticleSettings(vida, vMin, vMax, gravidade) { Direction = -90, Spread = 30, Drag = 1, ColorStops = [...] }
+
         Multiplayer (using Lunet.Networking;)
           var s = NetworkSession.Host(new UdpTransport("meu-jogo"), 7777, new NetworkSessionOptions { GameId = "meu-jogo" });
           var s = NetworkSession.Join(new UdpTransport("meu-jogo"), "192.168.0.10", 7777, opções);   s.Update() no Update
@@ -104,6 +109,8 @@ public static class LunetAiQuickReference
           s.Replication.Register("jogador", () => new Jogador()); s.Replication.Spawn<Jogador>("jogador", peer.Id)
           remoto.Pos.Interpolated · new ClientPrediction<TInput,TState>(inicial, simular).Apply / Reconcile
           new LoopbackNetwork() (mesmo aparelho/testes) · new NetworkSimulator(t, NetworkConditions.Presets[2].Conditions)
+          Tela dividida: var r = SplitScreen.Layout(2, w, h); batch.Begin(camera[j], r[j]); SplitScreen.TouchesOf(j, Input.Touches, r)
+          Por vez: var t = new TurnOrder(new[]{"Ana","Bia"}); t.Current; t.EndTurn(t.Version); t.ToJson()
 
         Cores: Color.White, Black, Red, Green, Blue, Yellow, CornflowerBlue, new Color(r,g,b,a)
         Matemática: System.Numerics (Vector2, Matrix3x2...) e RectangleF

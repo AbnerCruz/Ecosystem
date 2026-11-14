@@ -70,6 +70,25 @@ public sealed class SpriteBatch
         _hasView = view != Matrix3x2.Identity;
     }
 
+    /// <summary>
+    /// Começa um lote que desenha a vista da câmera dentro de uma região da tela (tela dividida): a câmera centraliza o
+    /// mundo no meio de <paramref name="region"/> e nada sai dela. Use uma câmera por jogador com <see cref="SplitScreen"/>.
+    /// </summary>
+    /// <param name="camera">Câmera do jogador.</param>
+    /// <param name="region">Região da vista em coordenadas virtuais (por exemplo, de <see cref="SplitScreen.Layout"/>).</param>
+    /// <param name="blend">Mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Filtro e repetição; nulo usa o estado da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    public void Begin(Camera2D camera, RectangleF region, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        if (!(region.Width > 0 && region.Height > 0)) throw new ArgumentOutOfRangeException(nameof(region), "A região precisa ter largura e altura positivas.");
+        var view = camera.GetViewMatrix(new Vector2(region.Width, region.Height)) * Matrix3x2.CreateTranslation(region.X, region.Y);
+        Begin(blend, sampler, shader, region);
+        _view = view;
+        _hasView = view != Matrix3x2.Identity;
+    }
+
     /// <summary>Começa um lote usando o estado do material.</summary>
     /// <param name="material">Shader, mistura e amostragem.</param>
     public void Begin(Material material)

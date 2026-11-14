@@ -19,6 +19,10 @@ public sealed class ParticleEmitter
         public Vector2 Origin;
         public Vector2 Velocity;
         public double Age;
+        public double Lifetime;
+        public float SizeScale;
+        public float Rotation;
+        public float AngularVelocity;
     }
     private readonly Particle[] _particles;
     private readonly RandomSource _random;
@@ -36,6 +40,7 @@ public sealed class ParticleEmitter
         ArgumentNullException.ThrowIfNull(texture);
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(capacity, 0);
+        settings.Validate();
         Texture = texture; Settings = settings;
         _particles = new Particle[capacity];
         _random = new RandomSource(seed);
@@ -97,7 +102,7 @@ public sealed class ParticleEmitter
         for (int i = 0; i < Count;)
         {
             ref var p = ref _particles[i];
-            if (deltaSeconds >= lifetime - p.Age || p.Age + deltaSeconds >= lifetime)
+            if (deltaSeconds >= p.Lifetime - p.Age || p.Age + deltaSeconds >= p.Lifetime)
                 _particles[i] = _particles[--Count];
             else { p.Age += deltaSeconds; i++; }
         }
@@ -123,8 +128,63 @@ public sealed class ParticleEmitter
     }
     private void Spawn(Vector2 position, double age)
     {
-        var velocity = _random.NextDirection() * _random.NextFloat(Settings.MinSpeed, Settings.MaxSpeed);
-        _particles[Count++] = new Particle { Origin = position, Velocity = velocity, Age = age };
+        var s = Settings;
+        // Defaults draw exactly the same random numbers as before (direction, then speed), so old effects are unchanged.
+        Vector2 direction;
+        if (s.Spread >= 360) direction = _random.NextDirection();
+        else
+        {
+            var angle = (s.Direction + _random.NextFloat(-s.Spread / 2, s.Spread / 2)) * MathF.PI / 180;
+            direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        }
+        var velocity = direction * _random.NextFloat(s.MinSpeed, s.MaxSpeed);
+        var origin = position + s.Shape switch
+        {
+            ParticleShape.Circle => _random.NextDirection() * (MathF.Sqrt(_random.NextFloat()) * s.ShapeSize.X),
+            ParticleShape.Rectangle => new Vector2(_random.NextFloat(-0.5f, 0.5f) * s.ShapeSize.X, _random.NextFloat(-0.5f, 0.5f) * s.ShapeSize.Y),
+            ParticleShape.Line => new Vector2(_random.NextFloat(-0.5f, 0.5f) * s.ShapeSize.X, 0),
+            _ => Vector2.Zero,
+        };
+        double lifetime = s.LifetimeVariance > 0
+            ? s.LifetimeSeconds * Math.Max(0.05, 1 + _random.NextFloat(-s.LifetimeVariance, s.LifetimeVariance)) : s.LifetimeSeconds;
+        float sizeScale = s.SizeVariance > 0 ? Math.Max(0.05f, 1 + _random.NextFloat(-s.SizeVariance, s.SizeVariance)) : 1;
+        float rotation = s.RotationVariance > 0 ? _random.NextFloat(-s.RotationVariance, s.RotationVariance) * MathF.PI / 180 : 0;
+        float spin = s.MaxAngularVelocity != 0 || s.MinAngularVelocity != 0
+            ? _random.NextFloat(s.MinAngularVelocity, s.MaxAngularVelocity) * MathF.PI / 180 : 0;
+        if (age >= lifetime) return;
+        _particles[Count++] = new Particle { Origin = origin, Velocity = velocity, Age = age, Lifetime = lifetime, SizeScale = sizeScale, Rotation = rotation, AngularVelocity = spin };
+    }
+
+    /// <summary>
+    /// Copia o estado das partículas vivas para <paramref name="destination"/> (posição, tamanho, rotação, cor, vida),
+    /// para desenhar com outra técnica (prévias de editor, efeitos customizados). Não aloca.
+    /// </summary>
+    /// <param name="destination">Destino com espaço para até <see cref="Count"/> itens.</param>
+    /// <returns>Quantas foram copiadas.</returns>
+    public int Snapshot(Span<ParticleSnapshot> destination)
+    {
+        int written = 0;
+        var s = Settings;
+        for (int i = 0; i < Count && written < destination.Length; i++)
+        {
+            ref readonly var p = ref _particles[i];
+            var t = p.Age;
+            var amount = t / p.Lifetime;
+            var size = (float)((1 - amount) * s.StartSize + amount * s.EndSize) * p.SizeScale;
+            Vector2 offset;
+            if (s.Drag > 0)
+            {
+                // v' = g - k v  →  x(t) = (v0 - g/k)(1 - e^{-kt})/k + g t / k
+                double k = s.Drag, e = 1 - Math.Exp(-k * t);
+                offset = new Vector2((float)((p.Velocity.X - s.Gravity.X / k) * e / k + s.Gravity.X * t / k),
+                    (float)((p.Velocity.Y - s.Gravity.Y / k) * e / k + s.Gravity.Y * t / k));
+            }
+            else offset = new Vector2((float)(p.Velocity.X * t + 0.5 * s.Gravity.X * t * t), (float)(p.Velocity.Y * t + 0.5 * s.Gravity.Y * t * t));
+            var center = p.Origin + offset;
+            if (!float.IsFinite(center.X) || !float.IsFinite(center.Y) || !float.IsFinite(size) || size == 0) continue;
+            destination[written++] = new ParticleSnapshot(center, size, p.Rotation + (float)(p.AngularVelocity * t), s.ColorAt(amount), (float)amount);
+        }
+        return written;
     }
     private static void ValidatePosition(Vector2 value)
     {
@@ -136,22 +196,19 @@ public sealed class ParticleEmitter
     public void Draw(SpriteBatch batch)
     {
         ArgumentNullException.ThrowIfNull(batch);
-        var s = Settings;
-        for (int i = 0; i < Count; i++)
+        _snapshot ??= new ParticleSnapshot[Capacity];
+        int count = Snapshot(_snapshot);
+        var half = new Vector2(Texture.Width / 2f, Texture.Height / 2f);
+        for (int i = 0; i < count; i++)
         {
-            ref readonly var p = ref _particles[i];
-            var t = p.Age;
-            var amount = t / s.LifetimeSeconds;
-            var size = (float)((1 - amount) * s.StartSize + amount * s.EndSize);
-            var x = (float)(p.Origin.X + p.Velocity.X * t + 0.5 * s.Gravity.X * t * t);
-            var y = (float)(p.Origin.Y + p.Velocity.Y * t + 0.5 * s.Gravity.Y * t * t);
-            var left = x - size / 2;
-            var top = y - size / 2;
-            if (!float.IsFinite(left) || !float.IsFinite(top) || !float.IsFinite(left + size) || !float.IsFinite(top + size) || size == 0) continue;
-            var color = new Color(Channel(s.StartColor.R, s.EndColor.R, amount), Channel(s.StartColor.G, s.EndColor.G, amount),
-                Channel(s.StartColor.B, s.EndColor.B, amount), Channel(s.StartColor.A, s.EndColor.A, amount));
-            batch.Draw(Texture, new RectangleF(left, top, size, size), null, color, 0, Vector2.Zero);
+            ref readonly var p = ref _snapshot[i];
+            var left = p.Position.X - p.Size / 2;
+            var top = p.Position.Y - p.Size / 2;
+            if (!float.IsFinite(left + p.Size) || !float.IsFinite(top + p.Size)) continue;
+            if (p.Rotation == 0) batch.Draw(Texture, new RectangleF(left, top, p.Size, p.Size), null, p.Color, 0, Vector2.Zero);
+            else batch.Draw(Texture, new RectangleF(p.Position.X, p.Position.Y, p.Size, p.Size), null, p.Color, p.Rotation, half);
         }
     }
-    private static byte Channel(byte from, byte to, double amount) => (byte)Math.Round((1 - amount) * from + amount * to);
+
+    private ParticleSnapshot[]? _snapshot;
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+- LUNET-506: autotile no Tile Studio — Terreno → escolha 16 ou 47 tiles a partir do tile selecionado; pintar e apagar ajustam bordas e cantos sozinhos.
+
+- LUNET-505: Data Studio — dados do jogo (inimigos, itens, fases, diálogos) como tabelas: colunas com tipo e regras, opções, referências entre tabelas, validação com destaque, ordenar, CSV e classe C# gerada para o jogo ler os dados tipados.
+
+- LUNET-482 (DEC-0062, alternativa A): primeira versão do Lunet para desktop (Windows, Linux, macOS) em Avalonia — abre projetos, edita, compila e roda o jogo com prévia, mouse e teclado. Rasterizador em CPU com o mesmo resultado do Android (2000 sprites em 4 ms). Ainda é um spike: falta medir num computador com tela real. O Android não mudou.
+- Correção: o guia do modelo de partículas (`docs/guides/particulas.md`) havia sido substituído pelo do Particle Studio; foi restaurado e o novo guia está em `docs/guides/particle-studio.md`.
+
+- LUNET-504: Particle Studio — efeitos de fogo, fumaça, faíscas, explosão, chuva, neve, magia, poeira, bolhas e confete com prévia ao vivo; o Framework ganha direção e abertura, formas de nascimento, resistência do ar, variações, giro, gradiente de cor e brilho aditivo, e o jogo carrega o efeito salvo com `Content.LoadParticleEmitter`. Efeitos antigos continuam idênticos.
+
+- LUNET-503: multijogador no mesmo aparelho — tela dividida para até 4 jogadores com toques por região e uma câmera por jogador (`SpriteBatch.Begin(camera, região)`), e `TurnOrder` para jogos por vez (hot-seat) e partidas assíncronas com proteção contra jogadas sobre um estado antigo.
+
+- LUNET-502: servidor dedicado headless — `lunet-server` compila a pasta de um projeto e roda o jogo sem tela no Windows, Linux ou macOS; `Game.IsHeadless` diz ao jogo que ele é o servidor; `HeadlessGraphicsBackend` e `HeadlessGameRunner` também servem para testes automatizados.
+
 - LUNET-501: multiplayer realtime no Lunet.Networking — transporte UDP (LiteNetLib interno), transporte em memória para jogar no mesmo aparelho e simulador de rede ruim; sessões com host, servidor dedicado e clientes (versão e jogo conferidos, lista de jogadores, mensagens tipadas, proteção contra flood), relógio sincronizado, objetos e variáveis de rede com interpolação, predição com reconciliação e descoberta de partidas na rede local. O cenário do gate da Fase 7 (dois clientes em tempo real com latência, jitter e perda simulados) passa nos testes; falta validar com dois aparelhos.
 
 - LUNET-500: o Audio Studio compõe músicas (faixas, padrões, arranjo, instrumentos sintetizados com filtro e envelope, bateria, eco e reverb, escalas, swing) com geradores de melodia, acordes, arpejo, baixo e batida, e desenha efeitos sonoros complexos (moeda, laser, explosão, power-up, pulo, magia…) com variações. Exporta WAV para `Content/Audio/` mantendo a fonte editável (`.song.json`/`.sfx.json`).

@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-headless-server",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T14:30:11Z",
+  "agent": {
+    "id": "claude-lunet-headless-server",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-502",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "ef9f4ba",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/Lunet.slnx",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/multiplayer.md",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Framework/Game.cs",
+    "apps/lunet2d/src/Lunet.Framework/GameHost.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/HeadlessGraphicsBackend.cs",
+    "apps/lunet2d/src/Lunet.Runtime/HeadlessGameRunner.cs",
+    "apps/lunet2d/src/Lunet.Server/",
+    "apps/lunet2d/tests/Lunet.Tests/HeadlessServerTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "docs/governance/handoffs/HO-20261114-lunet-headless-server.json"
+  ],
+  "work_completed": [
+    "Backend gráfico sem tela e Game.IsHeadless (API aditiva e documentada).",
+    "HeadlessGameRunner portátil e executável lunet-server para Windows/Linux/macOS.",
+    "Guia de multiplayer com servidor dedicado; IA conhece IsHeadless."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "999 testes; HeadlessServerTests (3) incluindo servidor dedicado de pasta de projeto replicando para cliente UDP real"
+    },
+    {
+      "check": "Rodar lunet-server num PC com um projeto exportado e conectar um celular",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/multiplayer.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Binário do servidor não é publicado na release (exige alterar workflow, zona crítica); roda com dotnet run a partir do código-fonte.",
+    "Sem template Shared/Client/Server."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI; publicar binário do servidor em mudança própria de workflow."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-011",
+      "evidence": "Sem host de UI novo; DEC-0062 respeitada como pendente."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita: Framework recebe só um backend e uma propriedade aditiva."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-headless-server",
+      "status": "product-specific",
+      "rationale": "Executa jogos Lunet; sem consumidor externo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

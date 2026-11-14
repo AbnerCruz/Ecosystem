@@ -123,12 +123,14 @@ public sealed partial class MainActivity
     private void ShowArtTools()
     {
         new AlertDialog.Builder(this)!.SetTitle("Ferramentas visuais")!
-            .SetItems(new[] { "Sprites e animação", "Tilemaps", "Áudio", "Paleta de cores" }, (_, e) =>
+            .SetItems(new[] { "Sprites e animação", "Tilemaps", "Áudio", "Paleta de cores", "Partículas", "Dados" }, (_, e) =>
             {
                 if (e.Which == 0) ShowSpriteAssets();
                 else if (e.Which == 1) ShowTileMaps();
                 else if (e.Which == 2) ShowAudioStudio();
-                else ShowPaletteStudio();
+                else if (e.Which == 3) ShowPaletteStudio();
+                else if (e.Which == 4) ShowParticleStudio();
+                else ShowDataStudio();
             })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
     }
 

@@ -701,3 +701,25 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - `Lunet.Networking`: `INetworkTransport` (`UdpTransport` com LiteNetLib 2.1.5 interno, `LoopbackTransport`, `NetworkSimulator`), `NetWriter`/`NetReader`, `NetworkSession` (+ `NetworkClock`), replicação (`NetworkObject`, `NetworkVariable<T>`, snapshots, interpolação), `ClientPrediction`, `LanDiscovery`/`ILobbyDirectory`/`IMatchmaker`. `TcpGameHost/Client` mantidos.
 - Gate da Fase 7 automatizado (servidor + 2 clientes, latência 80±30 ms, 8% perda): converge. UDP real e descoberta LAN testados em loopback (5 rodadas sem falha). LiteNetLib presente no APK do Lunet e no template standalone (build local). Exemplo do guia compila (teste).
 - Verificação local: 996 testes. DEVICE pendente (dois aparelhos; `docs/guides/multiplayer.md`). Handoff `HO-20261114-lunet-multiplayer-realtime.json`.
+
+### 20261114-claude-lunet-headless-server — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-502 (Fase 7, "servidor .NET headless"; parte da multiplataforma que não depende de DEC-0062): `HeadlessGraphicsBackend` e `Game.IsHeadless` (Framework, aditivo, documentado; API JSON regenerada), `HeadlessGameRunner` (Runtime), executável `src/Lunet.Server` (`lunet-server <projeto> [--check] [--seconds N] [--saves pasta]`).
+- Teste ponta a ponta: pasta de projeto → compilação → servidor dedicado headless → cliente UDP real recebe a replicação. 999 testes locais.
+- DEC-0062 (tecnologia da casca desktop/navegador/iOS) segue pendente no portal; nenhum host de UI novo criado. Handoff `HO-20261114-lunet-headless-server.json`.
+
+### 20261114-claude-lunet-local-multiplayer — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-503 (Fase 7, multiplayer local): `SplitScreen`, `SpriteBatch.Begin(Camera2D, RectangleF)`, `TurnOrder` (Framework, aditivo, documentado com exemplo compilado; API JSON regenerada). 1010 testes locais. Limite: um gamepad por vez (backend Android). Handoff `HO-20261114-lunet-local-multiplayer.json`.
+
+### 20261114-claude-lunet-particles — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-504 (Fase 5, Particle Studio): Framework estendido sem quebrar efeitos existentes (padrões consomem o mesmo sorteio; testes antigos de partículas intactos), JSON de efeitos, `Content.LoadParticleEmitter`, `ParticleEmitter.Snapshot`; `ParticlePresets`/`ParticleDraft` (Lunet.Studio); `ParticleStudioView` com prévia do próprio emissor. 1019 testes; build Android sem erros. DEVICE pendente (`docs/guides/particle-studio.md`). Handoff `HO-20261114-lunet-particle-studio.json`.
+
+### 20261114-claude-lunet-desktop-spike — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- O proprietário escolheu DEC-0062 alternativa A no portal (Issue #942) e aprovou validações de 480, 481, 483, 488, 491, 497, 498, 499 e 500. Consequências do DEC-0062 aplicadas (SPEC §2/§3, ADR 0012 Aceito, `consequencesApplied`). A marcação `[x]` dos itens validados no ROADMAP não foi feita nesta sessão (bloqueada pela política de permissões do ambiente do agente); fica para o proprietário ou para o fluxo de validação.
+- Corrigido erro meu: `docs/guides/particulas.md` (guia do modelo de partículas, compilado por testes) tinha sido sobrescrito no commit do Particle Studio; restaurado, e o guia novo está em `particle-studio.md`.
+- LUNET-482: `SoftwareGraphicsBackend`, `Lunet.Host`, `Lunet.Desktop` com `--measure`; relatório `docs/architecture/spike-avalonia-desktop-2026-11-14.md`. 1025 testes. Handoff `HO-20261114-lunet-desktop-spike.json`.
+
+### 20261114-claude-lunet-data-studio — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-505 (Fase 5, Data Studio): `Lunet.Studio.Data.DataTable` (inferência, tipos, validação, referências, CSV, classe C# que compila e desserializa — teste), `DataStudioView` e entrada no Studio. 7 testes novos; build Android sem erros. DEVICE pendente (`docs/guides/data-studio.md`). Handoff `HO-20261114-lunet-data-studio.json`.
+
+### 20261114-claude-lunet-autotile — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-506 (Fase 5, Tile Studio): `AutotileSet` (16 lados / 47 blob) e pincel de terreno no `TileStudioSession` e na tela. 5 testes; build Android sem erros. Handoff no `HO-20261114-lunet-data-studio.json` (mesma rodada).

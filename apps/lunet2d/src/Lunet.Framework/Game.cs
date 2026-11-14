@@ -92,8 +92,15 @@ public abstract class Game
     /// <summary>Chamado quando o app volta ao primeiro plano.</summary>
     protected virtual void OnResume() { }
 
-    internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content, SaveData save, IHaptics haptics)
+    /// <summary>
+    /// True when the game runs without a screen — on a dedicated multiplayer server (<c>Lunet.Server</c>) or in automated
+    /// tests. Use it to host instead of joining, or to skip effects nobody will see.
+    /// </summary>
+    public bool IsHeadless { get; private set; }
+
+    internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content, SaveData save, IHaptics haptics, bool headless = false)
     {
+        IsHeadless = headless;
         _haptics = haptics;
         Services.Add(haptics);
         _save = save;

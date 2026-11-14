@@ -148,6 +148,22 @@ public sealed class ContentManager : IDisposable
         return atlas;
     }
 
+    /// <summary>Carrega um efeito de partículas salvo pelo Particle Studio (<c>.particles.json</c>).</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Effects/fogo.particles.json`.</param>
+    /// <returns>A configuração do efeito.</returns>
+    public ParticleSettings LoadParticles(string path) => ParticleJson.Read(ReadText(path));
+
+    /// <summary>Cria um emissor pronto do efeito salvo pelo Particle Studio, com a taxa de emissão e o limite do arquivo.</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Effects/fogo.particles.json`.</param>
+    /// <param name="texture">Textura de cada partícula (por exemplo, <c>Texture2D.CreateCircle</c>).</param>
+    /// <param name="seed">Semente do sorteio, para repetir o mesmo efeito.</param>
+    /// <returns>Emissor; chame <c>Start()</c> para a emissão contínua ou <c>Burst</c>.</returns>
+    public ParticleEmitter LoadParticleEmitter(string path, Texture2D texture, ulong seed = 1)
+    {
+        var (settings, rate, max) = ParticleJson.ReadWithEmission(ReadText(path));
+        return new ParticleEmitter(texture, settings, max, seed) { EmissionRate = rate };
+    }
+
     /// <summary>Libera uma textura carregada; a próxima <see cref="LoadTexture"/> a lê de novo (útil após editar o arquivo).</summary>
     /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
     public void UnloadTexture(string path)

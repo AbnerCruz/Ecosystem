@@ -9,6 +9,9 @@
     <Project Path="src/Lunet.Framework/Lunet.Framework.csproj" />
     <Project Path="src/Lunet.Networking/Lunet.Networking.csproj" />
     <Project Path="src/Lunet.Runtime/Lunet.Runtime.csproj" />
+    <Project Path="src/Lunet.Server/Lunet.Server.csproj" />
+    <Project Path="src/Lunet.Host/Lunet.Host.csproj" />
+    <Project Path="src/Lunet.Desktop/Lunet.Desktop.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Lunet.Tests/Lunet.Tests.csproj" />

@@ -76,7 +76,10 @@ substituem obrigatoriamente o código.
 
 Considere estas regras constitucionais do projeto:
 
--   Android only.
+-   Android primeiro: o Android é a plataforma de referência e nunca regride.
+    Desktop (Windows/Linux/macOS) é previsto por uma casca compartilhada
+    Avalonia, começando por um spike mensurável (DEC-0062, alternativa A;
+    ADR 0012). Navegador e iOS dependem de decisão própria depois do spike.
 -   Mobile first.
 -   2D only.
 -   C# como linguagem principal dos jogos.
@@ -119,8 +122,10 @@ Use como linha principal:
 
 Não use MAUI como fundação da aplicação.
 
-Lunet é Android-only e deve trabalhar diretamente com a plataforma
-Android através de .NET for Android.
+No Android, o Lunet trabalha diretamente com a plataforma através de
+.NET for Android. Outros hosts (desktop primeiro) reutilizam as bibliotecas
+portáteis `net10.0` sem reescrevê-las e só entram depois do spike do
+ADR 0012 (DEC-0062).
 
 ------------------------------------------------------------------------
 

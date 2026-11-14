@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-particle-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T14:41:29Z",
+  "agent": {
+    "id": "claude-lunet-particle-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-504",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "ef9f4ba",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/particle-studio.md",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiQuickReference.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Particles.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/ParticleStudioView.cs",
+    "apps/lunet2d/src/Lunet.Framework/Content/ContentManager.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ParticleEmitter.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ParticleSettings.cs",
+    "apps/lunet2d/src/Lunet.Studio/Icons/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Studio/ParticlePresets.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ParticleStudioTests.cs",
+    "docs/governance/handoffs/HO-20261114-lunet-particle-studio.json"
+  ],
+  "work_completed": [
+    "Partículas com cone, formas, resistência, variações, giro, gradiente e aditivo, compatível com efeitos antigos.",
+    "Formato JSON de efeito e carregamento pelo ContentManager.",
+    "Particle Studio Android com 10 predefinições e prévia ao vivo do mesmo emissor."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1019 testes; ParticleStudioTests + ParticleDraftTests; testes antigos de partículas inalterados"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Prévia fluida, ajustes ao vivo, salvar/reabrir e uso no jogo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/particle-studio.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem curvas editáveis de tamanho/velocidade; prévia desenha círculos (o jogo usa a textura escolhida)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI; DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "Extensão compatível do emissor existente; nenhum segundo sistema de partículas."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Prévia e jogo usam o mesmo ParticleEmitter.Snapshot."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-particle-studio",
+      "status": "product-specific",
+      "rationale": "Studio do framework de jogos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
