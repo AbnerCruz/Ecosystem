@@ -824,22 +824,11 @@ public sealed partial class MainActivity
             new("5", LunetAiStepKind.Edit, "Editando Game.cs", "Game.cs", LunetAiStepStatus.Done),
             new("6", LunetAiStepKind.Compile, "Compilando o projeto", null, LunetAiStepStatus.Done),
         };
-        AddAssistantMessage("""
-            Pronto! O herói agora **pula ao tocar** na tela, e criei o sprite `Assets/heroi-pulo` no estilo do projeto (paleta e 16×16).
-
-            ## O que mudou
-            1. Gravidade constante e impulso para cima no toque
-            2. Só pula quando está no chão
-            3. Animação de salto com 3 frames
-
-            ```csharp
-            if (Input.Touch.Pressed && _onGround)
-                _velocity.Y = -JumpSpeed;
-            _velocity.Y += Gravity * dt;
-            ```
-
-            > Compilei o projeto: nenhum erro. Toque em ▶ Rodar para testar.
-            """, "Faça o herói pular", steps);
+        AddAssistantMessage(
+            "Pronto! O herói agora **pula ao tocar** na tela, e criei o sprite `Assets/heroi-pulo` no estilo do projeto (paleta e 16×16).\n\n" +
+            "## O que mudou\n1. Gravidade constante e impulso para cima no toque\n2. Só pula quando está no chão\n3. Animação de salto com 3 frames\n\n" +
+            "```csharp\nif (Input.Touch.Pressed && _onGround)\n    _velocity.Y = -JumpSpeed;\n_velocity.Y += Gravity * dt;\n```\n\n" +
+            "> Compilei o projeto: nenhum erro. Toque em ▶ Rodar para testar.", "Faça o herói pular", steps);
     }
 #endif
 }
