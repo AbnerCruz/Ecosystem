@@ -191,16 +191,49 @@ public static class ProjectTemplates
         }
         """;
 
-    /// <summary>Projeto realmente vazio: ponto de partida sem entidades, assets ou desenho.</summary>
-    public static string BlankGameSource(string className) => """
+    /// <summary>Esqueleto de jogo pronto para programar, sem entidades, sprites ou lógica de demonstração.</summary>
+    public static string BlankGameSource(string className, int virtualWidth = 360, int virtualHeight = 640,
+        int updatesPerSecond = 60, string viewportScaling = "Fit") => $$"""
         using Lunet;
+        using Lunet.Graphics;
 
-        // Projeto vazio. Implemente Initialize, LoadContent, Update e Draw conforme necessário.
-        public sealed class __CLASS_NAME__ : Game
+        public sealed class {{className}} : Game
         {
+            private SpriteBatch batch = null!;
+
+            protected override void Initialize()
+            {
+                Configuration.VirtualWidth = {{virtualWidth}};
+                Configuration.VirtualHeight = {{virtualHeight}};
+                Configuration.UpdatesPerSecond = {{updatesPerSecond}};
+                Configuration.ViewportScaling = ViewportScalingMode.{{viewportScaling}};
+            }
+
+            protected override void LoadContent()
+            {
+                batch = new SpriteBatch(GraphicsDevice);
+                // Carregue texturas, fontes e áudio quando precisar.
+            }
+
+            protected override void Update(GameTime time)
+            {
+                // Atualize a lógica do jogo aqui.
+            }
+
+            protected override void Draw(GameTime time)
+            {
+                GraphicsDevice.Clear(Color.CornflowerBlue);
+                batch.Begin();
+                // Desenhe o conteúdo do jogo aqui.
+                batch.End();
+            }
+
+            protected override void UnloadContent()
+            {
+                // Libere recursos criados pelo jogo, quando houver.
+            }
         }
-        """.Replace("__CLASS_NAME__", className, StringComparison.Ordinal)
-           .Replace("\r\n", "\n") + "\n";
+        """.Replace("\r\n", "\n") + "\n";
 
     public static string CoinCatcherSource(string className) => $$"""
         using System.Collections.Generic;
