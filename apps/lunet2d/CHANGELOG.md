@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed / projeto "Em branco": agora cria só o esqueleto do jogo (LoadContent, Update, Draw e fundo), sem a bola que seguia o toque. Testes de ponta a ponta atualizados para exigir que nada além do fundo seja desenhado.
+
 - LUNET-491 (feito, sem validação em aparelho): Sprite Studio ganha seleção por retângulo, laço e varinha, com mover, redimensionar, girar, espelhar, duplicar e apagar sobre camada flutuante (grava só ao aplicar; cancelar e desfazer). Áudio: prévia com cursor, toque na onda, repetir e ajuste ao vivo, inclusive ao criar efeitos. Assets: prévia real de sprite animado, imagem, som, fonte e dados, também a partir do Explorer. Ícones: catálogo vetorial de contorno substitui caracteres Unicode em toda a interface. Roteiro: `docs/guides/validacao-studios-icones.md`.
 - LUNET-492 (Fase A, estudo): viabilidade de desktop/navegador/iOS conferida contra o código; `PlatformPortabilityTests` fiscaliza que as bibliotecas portáteis não usam APIs de plataforma. ADR 0012 Proposto e DEC-0062 pendente; nenhum host novo.
 

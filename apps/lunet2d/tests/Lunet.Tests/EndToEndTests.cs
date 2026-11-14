@@ -48,7 +48,7 @@ public class EndToEndTests : IDisposable
     }
 
     [Fact]
-    public void Template_CompilesLoadsRunsAndFollowsTouch()
+    public void BlankTemplate_CompilesRunsAndDrawsNothingButTheBackground()
     {
         var store = new ProjectStore(_root);
         var project = store.Create("My-Game");
@@ -67,18 +67,15 @@ public class EndToEndTests : IDisposable
         Assert.True(host.Start(360, 640));
         host.Tick(0.016);
         Assert.Contains(backend.Clears, c => c == Color.CornflowerBlue);
-        Assert.Equal(new Vector2(180, 320), backend.LastQuadCenter());
-
-        for (var i = 0; i < 120; i++)
+        Assert.Empty(backend.Batches); // em branco: nenhum sprite, nenhuma bola
+        for (var i = 0; i < 30; i++)
         {
             host.SetSurfaceTouches([new TouchPoint(0, TouchPhase.Moved, new Vector2(60, 100))]);
             host.Tick(1.0 / 60);
         }
-        var center = backend.LastQuadCenter();
-        Assert.Equal(60, center.X, 1);
-        Assert.Equal(100, center.Y, 1);
+        Assert.Empty(backend.Batches); // em branco: nenhum sprite, nenhuma bola
         Assert.False(host.IsFaulted);
-        Assert.Contains(logs, l => l.Contains("Jogo iniciado"));
+        Assert.Empty(logs);
     }
 
     [Fact]

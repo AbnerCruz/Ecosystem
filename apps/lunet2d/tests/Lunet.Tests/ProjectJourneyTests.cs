@@ -69,16 +69,15 @@ public sealed class ProjectJourneyTests
             // Modify the *created* Game.cs: the preview must use the edited
             // code and the imported asset, never a hard-coded sample assembly.
             string original = project.ReadText("Game.cs");
-            const string fromBall = "ball = Texture2D.CreateCircle(GraphicsDevice, 48, Color.Yellow);";
-            const string fromLog = "Log.Info(\"Jogo iniciado. Toque na tela.\");";
-            Assert.Contains(fromBall, original);
-            Assert.Contains(fromLog, original);
+            const string fromLoad = "protected override void LoadContent()\n    {\n    }";
+            Assert.Contains(fromLoad, original);
             Assert.Contains("GraphicsDevice.Clear(Color.CornflowerBlue);", original);
             string edited = original
-                .Replace(fromBall, "ball = Content.LoadTexture(\"Textures/hero.png\", TextureFilter.Point);")
-                .Replace(fromLog,
-                    "if (Content.LoadTileMap(\"Data/level.tilemap.json\").Width != 2) throw new System.Exception(\"Mapa não carregado\"); " +
-                    "Log.Info(\"Jornada editada iniciou\");")
+                .Replace(fromLoad,
+                    "protected override void LoadContent()\n    {\n" +
+                    "        var hero = Content.LoadTexture(\"Textures/hero.png\", TextureFilter.Point);\n" +
+                    "        if (Content.LoadTileMap(\"Data/level.tilemap.json\").Width != 2) throw new System.Exception(\"Mapa não carregado\");\n" +
+                    "        Log.Info(\"Jornada editada iniciou\");\n    }")
                 .Replace("GraphicsDevice.Clear(Color.CornflowerBlue);", "GraphicsDevice.Clear(Color.Green);");
             project.WriteText("Game.cs", edited);
             Assert.Equal(edited, project.ReadText("Game.cs"));

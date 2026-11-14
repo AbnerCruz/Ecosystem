@@ -277,7 +277,7 @@ public sealed partial class MainActivity : Activity
         var group = new RadioGroup(this);
         var options = new (string Text, ProjectTemplate Template)[]
         {
-            ("Em branco (bola que segue o toque)", ProjectTemplate.Blank),
+            ("Em branco (só o esqueleto do jogo)", ProjectTemplate.Blank),
             ("Demo: Coletor de moedas (texto, gestos, som, salvamento)", ProjectTemplate.CoinCatcher),
             ("Laboratório: testa música, sensores, controle, vibração, gestos e gráficos", ProjectTemplate.Lab),
             ("Demo: Animação e tween (quadros, movimento, pausa)", ProjectTemplate.Animation),
