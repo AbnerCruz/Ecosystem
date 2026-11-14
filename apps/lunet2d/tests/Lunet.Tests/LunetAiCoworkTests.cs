@@ -50,15 +50,15 @@ public sealed class LunetAiCoworkTests
             Assert.False(store.Load().IsConfigured);
 
             store.Save(new LunetAiSettings("anthropic", LunetAiProviders.Find("anthropic").Endpoint, "claude-sonnet-5", 64, true),
-                "sk-ant-segredo-muito-longo-123456");
+                "chave-de-teste-anthropic-123456");
             var reopened = new LunetAiSettingsStore(Path.Combine(root, "ai-settings.json"), vault).Load();
             Assert.True(reopened.IsConfigured);
             Assert.Equal("anthropic", reopened.Settings.ProviderId);
             Assert.Equal("claude-sonnet-5", reopened.Settings.Model);
             Assert.Equal(64, reopened.Settings.MaxSteps);
             Assert.True(reopened.Settings.AllowWrites);
-            Assert.Equal("sk-ant-segredo-muito-longo-123456", reopened.ApiKey);
-            Assert.DoesNotContain("segredo", File.ReadAllText(Path.Combine(root, "ai-settings.json")));
+            Assert.Equal("chave-de-teste-anthropic-123456", reopened.ApiKey);
+            Assert.DoesNotContain("chave-de-teste", File.ReadAllText(Path.Combine(root, "ai-settings.json")));
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }

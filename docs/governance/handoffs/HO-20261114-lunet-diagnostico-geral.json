@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261114-lunet-diagnostico-geral",
   "category": "RESULT",
-  "timestamp": "2026-11-14T12:00:00Z",
+  "timestamp": "2026-11-14T07:30:00Z",
   "agent": {
     "id": "claude-lunet-diagnostico-geral",
     "kind": "ai-agent"
@@ -16,7 +16,7 @@
   "commit": null,
   "pr": null,
   "files_changed": [
-    "apps/lunet2d/docs/research/diagnostico-geral-2026-11-14.md",
+    "docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md",
     "apps/lunet2d/AgentsChat.md",
     "docs/governance/handoffs/HO-20261114-lunet-diagnostico-geral.json"
   ],
@@ -38,7 +38,7 @@
       "check": "Alinhamento do proprietário com o diagnóstico e as decisões de §8",
       "kind": "human",
       "result": "pending",
-      "object": "apps/lunet2d/docs/research/diagnostico-geral-2026-11-14.md",
+      "object": "docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md",
       "critical": false
     }
   ],

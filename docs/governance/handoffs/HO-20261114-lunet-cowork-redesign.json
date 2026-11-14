@@ -1,0 +1,121 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-cowork-redesign",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T08:10:00Z",
+  "agent": {
+    "id": "claude-lunet-cowork-redesign",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-481",
+  "component": "lunet2d",
+  "state": "working",
+  "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
+  "base_commit": "86db344",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSettings.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectNotes.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidKeystoreVault.cs",
+    "apps/lunet2d/src/Lunet.Android/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Notes.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiCoworkTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectNotesTests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    ".github/workflows/lunet2d-ui-screens.yml",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261114-lunet-cowork-redesign.json"
+  ],
+  "work_completed": [
+    "TDD: LunetAiCoworkTests e ProjectNotesTests escritos antes da implementação",
+    "IA: presets de provedores, preferências persistidas, chave no Android Keystore, contexto do editor, compilação como verificação com ciclo de reparo, checkpoint/diff/reverter",
+    "Android: painel de IA não modal com Pedir à IA na seleção, cartão de mudanças e diff",
+    "Workbench: tokens LunetUi, barra única, teclas de código, navegação inferior oculta ao digitar, palette com arquivos, hub de Studio",
+    "Notas Markdown e esboços PNG em Notes/ do projeto",
+    "Harness de capturas de tela por emulador (lunet2d-ui-screens), compilado apenas com LunetUiDemo"
+  ],
+  "verification": [
+    {
+      "check": "dotnet test tests/Lunet.Tests (793 testes)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local nesta sessão: 793/793."
+    },
+    {
+      "check": "Build APK Android local (net10.0-android, arm64)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build local com Android SDK 36: 0 erros."
+    },
+    {
+      "check": "Capturas de tela em emulador (lunet2d-ui-screens)",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Validação no aparelho: IA (configurar uma vez, pedir, compilar, desfazer), barra de teclas com IME, notas e esboços",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/ROADMAP.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Provider real não exercitado nesta sessão (sem chave); o fluxo é coberto por provedor roteirizado nos testes"
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Sprite Studio LUNET-486",
+    "Revisar capturas do emulador e corrigir o visual",
+    "PR pronto, CI verde, integração e release"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma referência a outro Product; o AgentRuntime projetado continua sendo a única infraestrutura de IA."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Escrita da IA continua opt-in por preferência; checkpoint permite reverter; chave só no Keystore."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Itens marcados como feito sem validação em aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes e build locais registrados; DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ai-cowork",
+      "status": "product-specific",
+      "rationale": "Ferramenta de compilação e checkpoint dependem do projeto Lunet; sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

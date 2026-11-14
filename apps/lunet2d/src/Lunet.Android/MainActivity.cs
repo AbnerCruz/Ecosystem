@@ -78,6 +78,9 @@ public sealed partial class MainActivity : Activity
         _pendingGameApkName = savedInstanceState?.GetString("pendingGameApkName");
         LoadSettings();
         ShowProjects();
+#if LUNET_UI_DEMO
+        RunDemo(Intent);
+#endif
     }
 
     // ---------- UI helpers ----------
