@@ -139,28 +139,32 @@ public sealed record LunetAiChange(string Path, string? Before, string After)
     public IReadOnlyList<DiffLine> Diff() => LunetAiDiff.Lines(Before, After);
 }
 
-/// <summary>Captures each file before the agent's first write so the whole run can be reverted.</summary>
+/// <summary>Captures each file (text or binary) before the agent's first write so the whole run can be reverted.</summary>
 public sealed class LunetAiCheckpoint
 {
+    private static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
+    { ".cs", ".json", ".md", ".txt", ".xml", ".yml", ".yaml", ".csv", ".glsl", ".shader" };
+
     private readonly LunetProject _project;
-    private readonly Dictionary<string, string?> _originals = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, byte[]?> _originals = new(StringComparer.Ordinal);
     private readonly List<string> _order = [];
     private readonly object _gate = new();
 
     public LunetAiCheckpoint(LunetProject project) => _project = project;
-
-    public static LunetAiCheckpoint None(LunetProject project) => new(project);
 
     public bool IsEmpty { get { lock (_gate) return _order.Count == 0; } }
 
     internal void Capture(string relativePath)
     {
         var path = Normalize(relativePath);
+        var root = System.IO.Path.GetFullPath(_project.Directory).TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+        var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, path));
+        // Never track (and therefore never restore) anything outside the project folder.
+        if (!full.StartsWith(root, StringComparison.Ordinal)) return;
         lock (_gate)
         {
             if (_originals.ContainsKey(path)) return;
-            var full = System.IO.Path.Combine(_project.Directory, path);
-            _originals[path] = File.Exists(full) ? File.ReadAllText(full) : null;
+            _originals[path] = File.Exists(full) ? File.ReadAllBytes(full) : null;
             _order.Add(path);
         }
     }
@@ -173,9 +177,14 @@ public sealed class LunetAiCheckpoint
             foreach (var path in _order)
             {
                 var full = System.IO.Path.Combine(_project.Directory, path);
-                var after = File.Exists(full) ? File.ReadAllText(full) : "";
+                var after = File.Exists(full) ? File.ReadAllBytes(full) : null;
                 var before = _originals[path];
-                if (before != after) result.Add(new LunetAiChange(path, before, after));
+                if (before is null && after is null) continue;
+                if (before is not null && after is not null && before.AsSpan().SequenceEqual(after)) continue;
+                bool text = TextExtensions.Contains(System.IO.Path.GetExtension(path));
+                string? Show(byte[]? bytes) => bytes is null ? null
+                    : text ? System.Text.Encoding.UTF8.GetString(bytes) : $"[arquivo binário · {bytes.Length} bytes]";
+                result.Add(new LunetAiChange(path, Show(before), Show(after) ?? ""));
             }
             return result;
         }
@@ -190,8 +199,16 @@ public sealed class LunetAiCheckpoint
             {
                 if (onlyPath is not null && Normalize(onlyPath) != path) continue;
                 var before = _originals[path];
-                if (before is null) _project.DeleteFile(path);
-                else _project.WriteText(path, before);
+                var full = System.IO.Path.Combine(_project.Directory, path);
+                if (before is null) { if (File.Exists(full)) _project.DeleteFile(path); }
+                else
+                {
+                    // Byte-exact atomic restore (text or binary, root or subfolder).
+                    Directory.CreateDirectory(System.IO.Path.GetDirectoryName(full)!);
+                    var temporary = full + ".lunet-revert";
+                    File.WriteAllBytes(temporary, before);
+                    File.Move(temporary, full, overwrite: true);
+                }
                 _originals.Remove(path);
                 _order.Remove(path);
             }

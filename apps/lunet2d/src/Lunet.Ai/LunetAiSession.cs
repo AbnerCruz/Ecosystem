@@ -94,7 +94,7 @@ public sealed class LunetAiSession
                 LunetAiProjectTool.SearchName, LunetAiProjectTool.ExcerptName };
             if (request.Build is not null) readNames.Add(LunetAiBuildTool.Name);
             var names = enableProjectWrites
-                ? readNames.Concat(new[] { LunetAiProjectTool.WriteName, LunetAiProjectTool.ReplaceName }).ToArray()
+                ? readNames.Concat(new[] { LunetAiProjectTool.WriteName, LunetAiProjectTool.ReplaceName, LunetAiSpriteTool.Name }).ToArray()
                 : readNames.ToArray();
             var permissions = enableProjectWrites
                 ? new[] { Permissions.AgentAct, Permissions.FsRead, Permissions.FsWrite }
@@ -107,6 +107,7 @@ public sealed class LunetAiSession
                 .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.SearchName))
                 .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ExcerptName))
                 .Register(new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.ReplaceName), checkpoint));
+            host.Register(new LunetAiSpriteTool(_project, checkpoint));
             if (request.Build is not null) host.Register(new LunetAiBuildTool(_project, request.Build));
 
             using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
@@ -128,6 +129,7 @@ public sealed class LunetAiSession
                 "Prefira lunet.files.replace para alterar um único trecho sem substituir o arquivo todo. " +
                 "Depois de alterar código, rode lunet.build.compile e corrija todos os erros antes de concluir; " +
                 "a tarefa só é aceita quando o projeto compila. " +
+                "Para arte, use lunet.assets.sprite (pixel art por linhas de caracteres + paleta), que cria a fonte editável no Sprite Studio e a spritesheet PNG; depois use o código de uso retornado. " +
                 "API principal do Framework: classe Game com LoadContent/Update(GameTime)/Draw(GameTime), SpriteBatch, Content.LoadTexture, Input. " +
                 "Leia os arquivos reais e nunca invente APIs do Framework. " +
                 "O código do jogo é a fonte da verdade. " +
