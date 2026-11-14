@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-501: multiplayer realtime no Lunet.Networking — transporte UDP (LiteNetLib interno), transporte em memória para jogar no mesmo aparelho e simulador de rede ruim; sessões com host, servidor dedicado e clientes (versão e jogo conferidos, lista de jogadores, mensagens tipadas, proteção contra flood), relógio sincronizado, objetos e variáveis de rede com interpolação, predição com reconciliação e descoberta de partidas na rede local. O cenário do gate da Fase 7 (dois clientes em tempo real com latência, jitter e perda simulados) passa nos testes; falta validar com dois aparelhos.
+
 - LUNET-500: o Audio Studio compõe músicas (faixas, padrões, arranjo, instrumentos sintetizados com filtro e envelope, bateria, eco e reverb, escalas, swing) com geradores de melodia, acordes, arpejo, baixo e batida, e desenha efeitos sonoros complexos (moeda, laser, explosão, power-up, pulo, magia…) com variações. Exporta WAV para `Content/Audio/` mantendo a fonte editável (`.song.json`/`.sfx.json`).
 
 - LUNET-499: Palette Studio — a paleta oficial do jogo (`Assets/palette.json`): começar de uma paleta inicial, das artes do projeto ou vazia; rampas de tons (sombras mais frias, luzes mais quentes), harmonias, contraste para texto/HUD, importar/exportar `.gpl` e hex, e exportar `Data/GamePalette.cs` para o código usar as mesmas cores. O Sprite Studio mostra as cores do projeto primeiro e ajusta um sprite à paleta; a IA usa a paleta oficial.

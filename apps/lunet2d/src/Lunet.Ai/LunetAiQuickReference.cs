@@ -96,6 +96,15 @@ public static class LunetAiQuickReference
           Draw(textura, destino, origem?, cor, rotação, centro)
           End()
 
+        Multiplayer (using Lunet.Networking;)
+          var s = NetworkSession.Host(new UdpTransport("meu-jogo"), 7777, new NetworkSessionOptions { GameId = "meu-jogo" });
+          var s = NetworkSession.Join(new UdpTransport("meu-jogo"), "192.168.0.10", 7777, opções);   s.Update() no Update
+          s.Register<Msg>(1); s.On<Msg>((peer, m) => …); s.SendToServer(m); s.Broadcast(m, DeliveryMode.Sequenced)
+          class Jogador : NetworkObject { NetworkVariable<Vector2> Pos = new(); Variables => [Pos]; }
+          s.Replication.Register("jogador", () => new Jogador()); s.Replication.Spawn<Jogador>("jogador", peer.Id)
+          remoto.Pos.Interpolated · new ClientPrediction<TInput,TState>(inicial, simular).Apply / Reconcile
+          new LoopbackNetwork() (mesmo aparelho/testes) · new NetworkSimulator(t, NetworkConditions.Presets[2].Conditions)
+
         Cores: Color.White, Black, Red, Green, Blue, Yellow, CornflowerBlue, new Color(r,g,b,a)
         Matemática: System.Numerics (Vector2, Matrix3x2...) e RectangleF
         """;

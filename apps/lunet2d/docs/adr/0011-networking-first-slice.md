@@ -1,7 +1,7 @@
 # ADR 0011 — Primeiro corte de networking do Lunet
 
 **Data:** 2026-10-29  
-**Estado:** Experimental, condicionado a CI, auditoria e validação Android  
+**Estado:** Experimental, condicionado a CI, auditoria e validação Android (segundo corte em 2026-11-14, ver Atualização)  
 **Escopo:** Fase 7 / §8 do SPEC; não encerra o gate de multiplayer.
 
 ## Contexto
@@ -36,3 +36,7 @@ Se CI demonstrar quebra de compilação dinâmica, build offline, empacotamento 
 - https://github.com/RevenantX/LiteNetLib
 - https://gafferongames.com/post/udp_vs_tcp/
 - https://developer.android.com/develop/connectivity/network-ops/connecting
+
+## Atualização 2026-11-14 — segundo corte (LUNET-501)
+
+O passo 5 foi executado: `INetworkTransport` estável, `UdpTransport` com LiteNetLib 2.1.5 sem tipos expostos (internos ao adapter), `LoopbackTransport` e `NetworkSimulator` como transports substituíveis, e por cima deles `NetworkSession`, `NetworkClock`, replicação (`NetworkObject`/`NetworkVariable<T>`), interpolação, `ClientPrediction` e `LanDiscovery`. `TcpGameHost`/`TcpGameClient` permanecem para compatibilidade. O cenário do gate (dois clientes, demonstração realtime com latência simulada) é um teste automatizado; o gate continua aberto até a validação com dois aparelhos (NN-017). LiteNetLib é empacotado no APK do Lunet e no template standalone (conferido localmente).

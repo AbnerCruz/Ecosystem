@@ -1,6 +1,6 @@
 # Networking do Lunet — primeira fatia (F7, candidato)
 
-> **Estado:** primeiro incremento experimental, não é multiplayer completo. Nenhum componente passa a ser `[x]` até testes, CI e validação em dispositivos. Jogos sem multiplayer continuam offline.
+> **Estado:** documento histórico do primeiro incremento (TCP). O multiplayer realtime atual está em [`multiplayer.md`](multiplayer.md). Nenhum componente passa a ser `[x]` até testes, CI e validação em dispositivos. Jogos sem multiplayer continuam offline.
 
 ## Pesquisa e referências verificadas (29/10/2026)
 
