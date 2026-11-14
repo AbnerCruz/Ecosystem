@@ -297,6 +297,89 @@ public sealed partial class MainActivity
         Toast.MakeText(this, "Inserido no editor (desfazer com ↶)", ToastLength.Short)?.Show();
     }
 
+    // ---------- Durable AI recovery (also available after cancellation or process restart) ----------
+
+    private void ShowAiRecoveryPoints()
+    {
+        if (_project is null) return;
+        var points = LunetAiCheckpoint.Available(_project);
+        if (points.Count == 0)
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Versões da IA")!
+                .SetMessage("Ainda não há checkpoints persistentes neste projeto. Alterações feitas por versões antigas do Lunet não aparecem aqui. Confira também Git → Histórico.")!
+                .SetPositiveButton("OK", (_, _) => { })!.Show();
+            return;
+        }
+        var labels = points.Take(40).Select(point =>
+            point.CreatedUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm") + " · " +
+            point.Paths.Count + " arquivo(s)").ToArray();
+        new AlertDialog.Builder(this)!.SetTitle("Versões da IA")!
+            .SetItems(labels, (_, args) => ShowAiRecoveryVersion(points[args.Which]))!
+            .SetNegativeButton("Fechar", (_, _) => { })!.Show();
+    }
+
+    private void ShowAiRecoveryVersion(LunetAiRecoveryPoint point)
+    {
+        if (_project is null) return;
+        var options = new[] { "Restaurar arquivos desta execução", "Salvar arquivo anterior como cópia (.txt)", "Mostrar arquivos envolvidos" };
+        new AlertDialog.Builder(this)!.SetTitle("Checkpoint " + point.CreatedUtc.ToLocalTime().ToString("dd/MM HH:mm"))!
+            .SetItems(options, (_, args) =>
+            {
+                if (_project is null) return;
+                if (args.Which == 2)
+                {
+                    new AlertDialog.Builder(this)!.SetTitle("Arquivos da execução")!
+                        .SetItems(point.Paths.ToArray(), (_, _) => { })!
+                        .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+                    return;
+                }
+                if (args.Which == 1)
+                {
+                    new AlertDialog.Builder(this)!.SetTitle("Recuperar versão anterior")!
+                        .SetItems(point.Paths.ToArray(), (_, selected) =>
+                        {
+                            try
+                            {
+                                var checkpoint = LunetAiCheckpoint.Reopen(_project, point.Id);
+                                var saved = checkpoint.SaveOriginalAsCopy(point.Paths[selected.Which]);
+                                RefreshExplorer();
+                                Toast.MakeText(this, "Cópia recuperada em " + saved, ToastLength.Long)?.Show();
+                            }
+                            catch (Exception ex)
+                            {
+                                new AlertDialog.Builder(this)!.SetTitle("Não foi possível recuperar")!
+                                    .SetMessage(ex.Message)!.SetPositiveButton("OK", (_, _) => { })!.Show();
+                            }
+                        })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
+                    return;
+                }
+                new AlertDialog.Builder(this)!.SetTitle("Restaurar versão anterior?")!
+                    .SetMessage("Apenas arquivos que ainda correspondem à última alteração desta IA serão restaurados. Se você editou algum depois, a operação será bloqueada para não apagar seu trabalho. A versão anterior permanece guardada.")!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!
+                    .SetPositiveButton("Restaurar", (_, _) =>
+                    {
+                        try
+                        {
+                            // Save editor work first; this can intentionally cause a conflict instead of losing unsaved changes.
+                            SaveCurrent();
+                            var checkpoint = LunetAiCheckpoint.Reopen(_project, point.Id);
+                            checkpoint.Revert();
+                            ReloadOpenFileIfChanged(point.Paths);
+                            RefreshExplorer();
+                            Toast.MakeText(this, "Versão restaurada. O checkpoint foi preservado.", ToastLength.Long)?.Show();
+                            if (AiPanelOpen) RenderConversation();
+                        }
+                        catch (Exception ex)
+                        {
+                            new AlertDialog.Builder(this)!.SetTitle("Restauração protegida")!
+                                .SetMessage(ex.Message + "\n\nUse 'Salvar arquivo anterior como cópia' para recuperar o conteúdo sem sobrescrever edições novas.")!
+                                .SetPositiveButton("OK", (_, _) => { })!.Show();
+                        }
+                    })!.Show();
+            })!
+            .SetNegativeButton("Fechar", (_, _) => { })!.Show();
+    }
+
     // ---------- Review ----------
 
     private View BuildChangesCard(LunetAiReply reply)
