@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-504: Particle Studio — efeitos de fogo, fumaça, faíscas, explosão, chuva, neve, magia, poeira, bolhas e confete com prévia ao vivo; o Framework ganha direção e abertura, formas de nascimento, resistência do ar, variações, giro, gradiente de cor e brilho aditivo, e o jogo carrega o efeito salvo com `Content.LoadParticleEmitter`. Efeitos antigos continuam idênticos.
+
 - LUNET-503: multijogador no mesmo aparelho — tela dividida para até 4 jogadores com toques por região e uma câmera por jogador (`SpriteBatch.Begin(camera, região)`), e `TurnOrder` para jogos por vez (hot-seat) e partidas assíncronas com proteção contra jogadas sobre um estado antigo.
 
 - LUNET-502: servidor dedicado headless — `lunet-server` compila a pasta de um projeto e roda o jogo sem tela no Windows, Linux ou macOS; `Game.IsHeadless` diz ao jogo que ele é o servidor; `HeadlessGraphicsBackend` e `HeadlessGameRunner` também servem para testes automatizados.

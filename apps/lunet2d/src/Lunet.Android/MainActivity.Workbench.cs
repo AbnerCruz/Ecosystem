@@ -205,6 +205,7 @@ public sealed partial class MainActivity
         Card("waveform", "Áudio", "WAV: forma de onda, corte, loop, efeitos", ShowAudioStudio);
         Card("palette", "Paleta de cores", File.Exists(System.IO.Path.Combine(_project.Directory, Lunet.Studio.ProjectPalette.DefaultPath))
             ? "Cores oficiais do jogo · sprites, tiles, UI e código" : "Defina as cores do jogo para manter tudo coerente", ShowPaletteStudio);
+        Card("sparkle", "Partículas", $"{count.Count(f => f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase))} efeito(s) · fogo, fumaça, chuva, magia…", ShowParticleStudio);
         Card("folder", "Assets do projeto", "Imagens, sons e dados com prévia e uso no código", ShowAssets);
         Card("note", "Notas e esboços", "Ideias, roteiros e esquemas dentro do projeto", ShowNotes);
         var scroll = new ScrollView(this);

@@ -6176,6 +6176,54 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Content.ContentManager.LoadParticleEmitter(System.String,Lunet.Graphics.Texture2D,System.UInt64)",
+          "name": "LoadParticleEmitter",
+          "kind": "method",
+          "signature": "public ParticleEmitter LoadParticleEmitter(string path, Texture2D texture, ulong seed = 1)",
+          "summary": "Cria um emissor pronto do efeito salvo pelo Particle Studio, com a taxa de emiss\u00E3o e o limite do arquivo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Effects/fogo.particles.json\u0060."
+            },
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura de cada part\u00EDcula (por exemplo, \u0060Texture2D.CreateCircle\u0060)."
+            },
+            {
+              "name": "seed",
+              "type": "ulong",
+              "description": "Semente do sorteio, para repetir o mesmo efeito."
+            }
+          ],
+          "returns": "Emissor; chame \u0060Start()\u0060 para a emiss\u00E3o cont\u00EDnua ou \u0060Burst\u0060.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Content.ContentManager.LoadParticles(System.String)",
+          "name": "LoadParticles",
+          "kind": "method",
+          "signature": "public ParticleSettings LoadParticles(string path)",
+          "summary": "Carrega um efeito de part\u00EDculas salvo pelo Particle Studio (\u0060.particles.json\u0060).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Effects/fogo.particles.json\u0060."
+            }
+          ],
+          "returns": "A configura\u00E7\u00E3o do efeito.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Content.ContentManager.LoadSound(System.String)",
           "name": "LoadSound",
           "kind": "method",
@@ -9313,6 +9361,74 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.ParticleColorStop",
+      "name": "ParticleColorStop",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct ParticleColorStop",
+      "summary": "Uma cor do gradiente de vida das part\u00EDculas.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar fogo = new ParticleSettings(lifetimeSeconds: 0.8, minSpeed: 30, maxSpeed: 60)\n{\n    ColorStops = [new(0, Color.Yellow), new(0.5, Color.FromHex(0xFF6A00)), new(1, Color.Red.WithAlpha(0))],\n};\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleColorStop.#ctor(System.Double,Lunet.Graphics.Color)",
+          "name": "ParticleColorStop",
+          "kind": "constructor",
+          "signature": "public ParticleColorStop(double Position, Color Color)",
+          "summary": "Uma cor do gradiente de vida das part\u00EDculas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Position",
+              "type": "double",
+              "description": "Fra\u00E7\u00E3o da vida, de 0 a 1."
+            },
+            {
+              "name": "Color",
+              "type": "Color",
+              "description": "Cor nesse ponto."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar fogo = new ParticleSettings(lifetimeSeconds: 0.8, minSpeed: 30, maxSpeed: 60)\n{\n    ColorStops = [new(0, Color.Yellow), new(0.5, Color.FromHex(0xFF6A00)), new(1, Color.Red.WithAlpha(0))],\n};\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleColorStop.Color",
+          "name": "Color",
+          "kind": "property",
+          "signature": "public Color Color { get; init; }",
+          "summary": "Cor nesse ponto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleColorStop.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public double Position { get; init; }",
+          "summary": "Fra\u00E7\u00E3o da vida, de 0 a 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.ParticleEmitter",
       "name": "ParticleEmitter",
       "namespace": "Lunet.Graphics",
@@ -9508,6 +9624,27 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Snapshot(System.Span{Lunet.Graphics.ParticleSnapshot})",
+          "name": "Snapshot",
+          "kind": "method",
+          "signature": "public int Snapshot(Span\u003CParticleSnapshot\u003E destination)",
+          "summary": "Copia o estado das part\u00EDculas vivas para \u0060destination\u0060 (posi\u00E7\u00E3o, tamanho, rota\u00E7\u00E3o, cor, vida), para desenhar com outra t\u00E9cnica (pr\u00E9vias de editor, efeitos customizados). N\u00E3o aloca.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "destination",
+              "type": "Span\u003CParticleSnapshot\u003E",
+              "description": "Destino com espa\u00E7o para at\u00E9 \u0060ParticleEmitter.Count\u0060 itens."
+            }
+          ],
+          "returns": "Quantas foram copiadas.",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleEmitter.Count"
+          ],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.ParticleEmitter.Start",
           "name": "Start",
           "kind": "method",
@@ -9623,6 +9760,63 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Graphics.ParticleSettings.Additive",
+          "name": "Additive",
+          "kind": "property",
+          "signature": "public bool Additive { get; init; }",
+          "summary": "Sugest\u00E3o de mistura aditiva (brilho de fogo, magia, fa\u00EDscas): desenhe com \u0060BlendState.Additive\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.ColorStops",
+          "name": "ColorStops",
+          "kind": "property",
+          "signature": "public IReadOnlyList\u003CParticleColorStop\u003E ColorStops { get; init; }",
+          "summary": "Gradiente de cor ao longo da vida (posi\u00E7\u00F5es de 0 a 1, em ordem). Vazio usa \u0060ParticleSettings.StartColor\u0060 \u2192 \u0060ParticleSettings.EndColor\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.StartColor",
+            "P:Lunet.Graphics.ParticleSettings.EndColor"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Direction",
+          "name": "Direction",
+          "kind": "property",
+          "signature": "public float Direction { get; init; }",
+          "summary": "Dire\u00E7\u00E3o central da emiss\u00E3o, em graus (0 = direita, 90 = para baixo). S\u00F3 vale com \u0060ParticleSettings.Spread\u0060 menor que 360.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.Spread"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Drag",
+          "name": "Drag",
+          "kind": "property",
+          "signature": "public float Drag { get; init; }",
+          "summary": "Resist\u00EAncia do ar: quanto a velocidade cai por segundo (0 = nenhuma).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Graphics.ParticleSettings.EndColor",
           "name": "EndColor",
           "kind": "property",
@@ -9675,6 +9869,32 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Graphics.ParticleSettings.LifetimeVariance",
+          "name": "LifetimeVariance",
+          "kind": "property",
+          "signature": "public float LifetimeVariance { get; init; }",
+          "summary": "Varia\u00E7\u00E3o aleat\u00F3ria da vida, de 0 (todas iguais) a 1 (cada part\u00EDcula vive entre quase zero e o dobro da vida base).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.MaxAngularVelocity",
+          "name": "MaxAngularVelocity",
+          "kind": "property",
+          "signature": "public float MaxAngularVelocity { get; init; }",
+          "summary": "Giro m\u00E1ximo em graus por segundo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Graphics.ParticleSettings.MaxSpeed",
           "name": "MaxSpeed",
           "kind": "property",
@@ -9688,11 +9908,89 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Graphics.ParticleSettings.MinAngularVelocity",
+          "name": "MinAngularVelocity",
+          "kind": "property",
+          "signature": "public float MinAngularVelocity { get; init; }",
+          "summary": "Giro em graus por segundo: m\u00EDnimo e m\u00E1ximo sorteados por part\u00EDcula.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Graphics.ParticleSettings.MinSpeed",
           "name": "MinSpeed",
           "kind": "property",
           "signature": "public float MinSpeed { get; }",
           "summary": "Velocidade radial m\u00EDnima.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.RotationVariance",
+          "name": "RotationVariance",
+          "kind": "property",
+          "signature": "public float RotationVariance { get; init; }",
+          "summary": "Rota\u00E7\u00E3o inicial m\u00E1xima aleat\u00F3ria, em graus.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Shape",
+          "name": "Shape",
+          "kind": "property",
+          "signature": "public ParticleShape Shape { get; init; }",
+          "summary": "Onde as part\u00EDculas nascem em volta da origem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.ShapeSize",
+          "name": "ShapeSize",
+          "kind": "property",
+          "signature": "public Vector2 ShapeSize { get; init; }",
+          "summary": "Tamanho da forma de emiss\u00E3o: raio do c\u00EDrculo (X), largura e altura do ret\u00E2ngulo, comprimento da linha (X).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.SizeVariance",
+          "name": "SizeVariance",
+          "kind": "property",
+          "signature": "public float SizeVariance { get; init; }",
+          "summary": "Varia\u00E7\u00E3o aleat\u00F3ria do tamanho, de 0 a 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Spread",
+          "name": "Spread",
+          "kind": "property",
+          "signature": "public float Spread { get; init; }",
+          "summary": "Abertura do cone de emiss\u00E3o, em graus (360 = todas as dire\u00E7\u00F5es, o padr\u00E3o; 0 = um raio s\u00F3).",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -9719,6 +10017,290 @@
           "kind": "property",
           "signature": "public float StartSize { get; }",
           "summary": "Tamanho inicial do quad.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.ColorAt(System.Double)",
+          "name": "ColorAt",
+          "kind": "method",
+          "signature": "public Color ColorAt(double amount)",
+          "summary": "Cor na fra\u00E7\u00E3o \u0060amount\u0060 da vida (0 a 1).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "amount",
+              "type": "double",
+              "description": "Fra\u00E7\u00E3o da vida."
+            }
+          ],
+          "returns": "A cor interpolada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.FromJson(System.String)",
+          "name": "FromJson",
+          "kind": "method",
+          "signature": "public static ParticleSettings FromJson(string json)",
+          "summary": "L\u00EA um efeito salvo por \u0060ParticleSettings.ToJson\u0060 ou pelo Particle Studio, validando os valores.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string",
+              "description": "Texto JSON."
+            }
+          ],
+          "returns": "O efeito.",
+          "examples": [],
+          "related": [
+            "M:Lunet.Graphics.ParticleSettings.ToJson"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.ToJson",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson()",
+          "summary": "Salva o efeito em JSON (o formato dos arquivos \u0060.particles.json\u0060 do Particle Studio).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Texto JSON.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.ToJson(System.Single,System.Int32)",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson(float emissionRate, int maxParticles)",
+          "summary": "Salva o efeito em JSON com a taxa de emiss\u00E3o e o limite de part\u00EDculas que o emissor deve usar.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "emissionRate",
+              "type": "float",
+              "description": "Part\u00EDculas por segundo da emiss\u00E3o cont\u00EDnua (0 = s\u00F3 bursts)."
+            },
+            {
+              "name": "maxParticles",
+              "type": "int",
+              "description": "Capacidade do emissor."
+            }
+          ],
+          "returns": "Texto JSON.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.Validate",
+          "name": "Validate",
+          "kind": "method",
+          "signature": "public void Validate()",
+          "summary": "Recusa valores que o emissor n\u00E3o sabe simular (NaN, negativos, gradiente fora de ordem).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ParticleShape",
+      "name": "ParticleShape",
+      "namespace": "Lunet.Graphics",
+      "kind": "enum",
+      "signature": "public enum ParticleShape",
+      "summary": "Onde as part\u00EDculas nascem em volta da origem do emissor.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Circle",
+          "name": "Circle",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Circle = 1",
+          "summary": "Dentro de um c\u00EDrculo de raio \u0060ParticleSettings.ShapeSize\u0060.X.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.ShapeSize"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Line",
+          "name": "Line",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Line = 3",
+          "summary": "Numa linha horizontal centrada de comprimento \u0060ParticleSettings.ShapeSize\u0060.X (chuva, neve).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.ShapeSize"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Point",
+          "name": "Point",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Point = 0",
+          "summary": "Todas no mesmo ponto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ParticleShape.Rectangle",
+          "name": "Rectangle",
+          "kind": "enum value",
+          "signature": "public const ParticleShape Rectangle = 2",
+          "summary": "Dentro de um ret\u00E2ngulo centrado de tamanho \u0060ParticleSettings.ShapeSize\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Graphics.ParticleSettings.ShapeSize"
+          ],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ParticleSnapshot",
+      "name": "ParticleSnapshot",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct ParticleSnapshot",
+      "summary": "Estado de uma part\u00EDcula viva num instante, para desenhar com qualquer t\u00E9cnica.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar particulas = new ParticleEmitter(Texture2D.CreateCircle(GraphicsDevice, 8, Color.White), new ParticleSettings());\nparticulas.Burst(20, new System.Numerics.Vector2(100, 100));\nSpan\u003CParticleSnapshot\u003E vivas = stackalloc ParticleSnapshot[particulas.Count];\nint n = particulas.Snapshot(vivas);\nfor (int i = 0; i \u003C n; i\u002B\u002B) Log.Info(vivas[i].Position \u002B \u0022 \u0022 \u002B vivas[i].Size);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleSnapshot.#ctor(System.Numerics.Vector2,System.Single,System.Single,Lunet.Graphics.Color,System.Single)",
+          "name": "ParticleSnapshot",
+          "kind": "constructor",
+          "signature": "public ParticleSnapshot(Vector2 Position, float Size, float Rotation, Color Color, float Life)",
+          "summary": "Estado de uma part\u00EDcula viva num instante, para desenhar com qualquer t\u00E9cnica.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Position",
+              "type": "Vector2",
+              "description": "Centro."
+            },
+            {
+              "name": "Size",
+              "type": "float",
+              "description": "Lado do quad."
+            },
+            {
+              "name": "Rotation",
+              "type": "float",
+              "description": "Rota\u00E7\u00E3o em radianos."
+            },
+            {
+              "name": "Color",
+              "type": "Color",
+              "description": "Cor atual."
+            },
+            {
+              "name": "Life",
+              "type": "float",
+              "description": "Fra\u00E7\u00E3o da vida j\u00E1 vivida (0 a 1)."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar particulas = new ParticleEmitter(Texture2D.CreateCircle(GraphicsDevice, 8, Color.White), new ParticleSettings());\nparticulas.Burst(20, new System.Numerics.Vector2(100, 100));\nSpan\u003CParticleSnapshot\u003E vivas = stackalloc ParticleSnapshot[particulas.Count];\nint n = particulas.Snapshot(vivas);\nfor (int i = 0; i \u003C n; i\u002B\u002B) Log.Info(vivas[i].Position \u002B \u0022 \u0022 \u002B vivas[i].Size);\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Color",
+          "name": "Color",
+          "kind": "property",
+          "signature": "public Color Color { get; init; }",
+          "summary": "Cor atual.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Life",
+          "name": "Life",
+          "kind": "property",
+          "signature": "public float Life { get; init; }",
+          "summary": "Fra\u00E7\u00E3o da vida j\u00E1 vivida (0 a 1).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public Vector2 Position { get; init; }",
+          "summary": "Centro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Rotation",
+          "name": "Rotation",
+          "kind": "property",
+          "signature": "public float Rotation { get; init; }",
+          "summary": "Rota\u00E7\u00E3o em radianos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSnapshot.Size",
+          "name": "Size",
+          "kind": "property",
+          "signature": "public float Size { get; init; }",
+          "summary": "Lado do quad.",
           "remarks": "",
           "parameters": [],
           "returns": "",

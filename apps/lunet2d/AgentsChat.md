@@ -709,3 +709,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261114-claude-lunet-local-multiplayer — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
 - LUNET-503 (Fase 7, multiplayer local): `SplitScreen`, `SpriteBatch.Begin(Camera2D, RectangleF)`, `TurnOrder` (Framework, aditivo, documentado com exemplo compilado; API JSON regenerada). 1010 testes locais. Limite: um gamepad por vez (backend Android). Handoff `HO-20261114-lunet-local-multiplayer.json`.
+
+### 20261114-claude-lunet-particles — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-504 (Fase 5, Particle Studio): Framework estendido sem quebrar efeitos existentes (padrões consomem o mesmo sorteio; testes antigos de partículas intactos), JSON de efeitos, `Content.LoadParticleEmitter`, `ParticleEmitter.Snapshot`; `ParticlePresets`/`ParticleDraft` (Lunet.Studio); `ParticleStudioView` com prévia do próprio emissor. 1019 testes; build Android sem erros. DEVICE pendente (`docs/guides/particulas.md`). Handoff `HO-20261114-lunet-particle-studio.json`.

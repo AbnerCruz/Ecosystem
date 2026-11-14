@@ -96,6 +96,11 @@ public static class LunetAiQuickReference
           Draw(textura, destino, origem?, cor, rotação, centro)
           End()
 
+        Partículas (Particle Studio salva Content/Effects/x.particles.json)
+          var fx = Content.LoadParticleEmitter("Effects/fogo.particles.json", Texture2D.CreateCircle(GraphicsDevice, 16, Color.White));
+          fx.Start(); fx.Burst(30, pos); fx.Position = pos; fx.Update(dt); batch.Begin(BlendState.Additive); fx.Draw(batch); batch.End();
+          new ParticleSettings(vida, vMin, vMax, gravidade) { Direction = -90, Spread = 30, Drag = 1, ColorStops = [...] }
+
         Multiplayer (using Lunet.Networking;)
           var s = NetworkSession.Host(new UdpTransport("meu-jogo"), 7777, new NetworkSessionOptions { GameId = "meu-jogo" });
           var s = NetworkSession.Join(new UdpTransport("meu-jogo"), "192.168.0.10", 7777, opções);   s.Update() no Update
