@@ -41,7 +41,7 @@ public sealed class LunetAiCapabilitiesTests
             Assert.Equal(3, excerpt.EndLine);
             Assert.Equal(files.Read("Content/Data/story.txt").Sha256, excerpt.Sha256);
             Assert.Throws<ArgumentOutOfRangeException>(() => files.ReadExcerpt("Content/Data/story.txt", 0, 3));
-            Assert.Throws<ArgumentOutOfRangeException>(() => files.ReadExcerpt("Content/Data/story.txt", 1, 101));
+            Assert.Throws<ArgumentOutOfRangeException>(() => files.ReadExcerpt("Content/Data/story.txt", 1, LunetAiProjectFiles.MaxExcerptLines + 1));
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
     }

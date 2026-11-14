@@ -62,7 +62,7 @@ internal sealed class LunetAiWork
         }
         catch (OperationCanceledException)
         {
-            lock (_gate) _error = "Execução cancelada. Alterações já gravadas continuam no projeto.";
+            lock (_gate) _error = "Execução cancelada. As alterações feitas até aqui podem ser desfeitas na conversa (“Desfazer tudo”).";
         }
         catch (Exception ex)
         {

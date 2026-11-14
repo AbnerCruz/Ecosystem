@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-507: a IA edita só os trechos necessários e não consegue mais apagar um arquivo inteiro (regravações que removem a maior parte do código ou usam "..." são recusadas); toda resposta mostra o que mudou com *Desfazer tudo*, também depois de cancelar, de uma falha ou de reabrir o app; a IA recebe o código real do arquivo aberto e precisa lê-lo antes de falar dele; o editor acompanha as mudanças da IA e nunca grava por cima delas sem perguntar.
+
 - LUNET-506: autotile no Tile Studio — Terreno → escolha 16 ou 47 tiles a partir do tile selecionado; pintar e apagar ajustam bordas e cantos sozinhos.
 
 - LUNET-505: Data Studio — dados do jogo (inimigos, itens, fases, diálogos) como tabelas: colunas com tipo e regras, opções, referências entre tabelas, validação com destaque, ordenar, CSV e classe C# gerada para o jogo ler os dados tipados.

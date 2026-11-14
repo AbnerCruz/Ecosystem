@@ -19,6 +19,10 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         ".cs", ".json", ".md", ".txt", ".xml", ".yml", ".yaml", ".glsl", ".hlsl", ".shader", ".csv", ".csproj", ".slnx", ".props", ".targets"
     };
 
+    public const int MaxExcerptLines = 400;
+    /// <summary>Largest file <c>lunet.files.read</c> returns whole; longer files are read by excerpt.</summary>
+    public const int MaxFullReadChars = 48_000;
+
     public IReadOnlyList<string> List()
     {
         var result = new List<string>();
@@ -67,6 +71,7 @@ public sealed class LunetAiProjectFiles(LunetProject project)
             var current = Read(relativePath);
             if (!string.Equals(current.Sha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Arquivo mudou desde a leitura. Leia novamente antes de escrever.");
+            LunetAiWriteGuard.EnsureSafeOverwrite(relativePath, current.Content, content);
         }
         else if (!string.IsNullOrEmpty(expectedSha256))
             throw new InvalidOperationException("Arquivo novo exige expected_sha256 vazio.");
@@ -115,18 +120,22 @@ public sealed class LunetAiProjectFiles(LunetProject project)
     public LunetAiExcerpt ReadExcerpt(string relativePath, int startLine, int lineCount)
     {
         if (startLine < 1) throw new ArgumentOutOfRangeException(nameof(startLine));
-        if (lineCount is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(lineCount));
+        if (lineCount is < 1 or > MaxExcerptLines) throw new ArgumentOutOfRangeException(nameof(lineCount));
         var file = Read(relativePath);
         var lines = file.Content.Split('\n');
         if (startLine > lines.Length) throw new ArgumentOutOfRangeException(nameof(startLine));
         int count = Math.Min(lineCount, lines.Length - startLine + 1);
         var content = string.Join("\n", lines.Skip(startLine - 1).Take(count));
-        var truncated = content.Length > 20_000;
-        if (truncated) content = content[..20_000];
+        var truncated = content.Length > 40_000;
+        if (truncated) content = content[..40_000];
         return new LunetAiExcerpt(relativePath, content, file.Sha256, startLine, startLine + count - 1, lines.Length, truncated);
     }
 
-    /// <summary>Replace exactly one matching span; fail on ambiguity and concurrent changes.</summary>
+    /// <summary>
+    /// Replace exactly one matching span; fail on ambiguity and concurrent changes. When the exact text is not found
+    /// (models often get indentation or line endings slightly wrong), falls back to a unique line-by-line match that
+    /// ignores leading/trailing whitespace, so a surgical edit never degrades into rewriting the whole file.
+    /// </summary>
     public LunetAiFileChange Replace(string relativePath, string oldText, string newText, string expectedSha256)
     {
         Validate(relativePath, writing: true);
@@ -136,11 +145,21 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         var current = Read(relativePath);
         if (!string.Equals(current.Sha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Arquivo mudou desde a leitura. Leia novamente.");
-        int first = current.Content.IndexOf(oldText, StringComparison.Ordinal);
-        if (first < 0 || current.Content.IndexOf(oldText, first + oldText.Length, StringComparison.Ordinal) >= 0)
-            throw new InvalidOperationException("Trecho não encontrado ou ambíguo; especifique um trecho único.");
-        var updated = string.Concat(current.Content.AsSpan(0, first), newText, current.Content.AsSpan(first + oldText.Length));
-        return Write(relativePath, updated, expectedSha256);
+        var (start, length) = LunetAiTextMatch.FindUnique(current.Content, oldText);
+        var updated = string.Concat(current.Content.AsSpan(0, start), newText, current.Content.AsSpan(start + length));
+        // Replace is the explicit way to delete code, so it bypasses the overwrite guard on purpose.
+        return WriteUnguarded(relativePath, updated);
+    }
+
+    private LunetAiFileChange WriteUnguarded(string relativePath, string content)
+    {
+        if (Encoding.UTF8.GetByteCount(content) > 120_000)
+            throw new InvalidOperationException("Arquivo excede 120 KB; divida a alteração.");
+        project.WriteText(relativePath, content);
+        var saved = Read(relativePath);
+        if (!string.Equals(saved.Content, content, StringComparison.Ordinal))
+            throw new IOException("O arquivo persistido difere do solicitado.");
+        return new(relativePath, saved.Sha256);
     }
 
     private void EnsureNoLinks(string path)
@@ -208,19 +227,19 @@ public sealed class LunetAiProjectTool : ITool
             ListName => """{"type":"object","properties":{},"additionalProperties":false}""",
             ReadName => """{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}""",
             SearchName => """{"type":"object","properties":{"query":{"type":"string"},"max_results":{"type":"integer","minimum":1,"maximum":100}},"required":["query"],"additionalProperties":false}""",
-            ExcerptName => """{"type":"object","properties":{"path":{"type":"string"},"start_line":{"type":"integer","minimum":1},"line_count":{"type":"integer","minimum":1,"maximum":100}},"required":["path","start_line","line_count"],"additionalProperties":false}""",
-            ReplaceName => """{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string"},"new_text":{"type":"string"},"expected_sha256":{"type":"string"}},"required":["path","old_text","new_text","expected_sha256"],"additionalProperties":false}""",
-            _ => """{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"},"expected_sha256":{"type":"string","description":"SHA256 returned by lunet.files.read; empty string to create a new file"}},"required":["path","content","expected_sha256"],"additionalProperties":false}"""
+            ExcerptName => """{"type":"object","properties":{"path":{"type":"string"},"start_line":{"type":"integer","minimum":1},"line_count":{"type":"integer","minimum":1,"maximum":400}},"required":["path","start_line","line_count"],"additionalProperties":false}""",
+            ReplaceName => """{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string","description":"Exact existing lines copied from the file (unique; include 1-2 surrounding lines if needed)"},"new_text":{"type":"string","description":"Replacement for exactly that span; empty string deletes it"},"expected_sha256":{"type":"string","description":"SHA256 from the last read/excerpt/replace of this file"}},"required":["path","old_text","new_text","expected_sha256"],"additionalProperties":false}""",
+            _ => """{"type":"object","properties":{"path":{"type":"string"},"expected_sha256":{"type":"string","description":"SHA256 returned by lunet.files.read; empty string to create a new file"},"content":{"type":"string","description":"The COMPLETE file content. Never use placeholders like '...' or 'rest of the code'."}},"required":["path","content","expected_sha256"],"additionalProperties":false}"""
         };
         Descriptor = new ToolDescriptor(name, "1.0.0",
             name switch
             {
                 ListName => "List all text source files inside the open Lunet game project.",
-                ReadName => "Read a short project text file and its SHA256. For long files use lunet.files.excerpt.",
+                ReadName => "Read a whole project text file (up to 48,000 characters) with numbered lines and its SHA256. For longer files use lunet.files.excerpt.",
                 SearchName => "Search text within allowed project source files, returning grounded line numbers.",
-                ExcerptName => "Read an exact bounded line range, returning whole-file SHA256 and truncation metadata.",
-                ReplaceName => "Replace a unique exact text span in an existing file, guarded by full-file SHA256.",
-                _ => "Create or atomically replace one project text file using the SHA256 from read. Never overwrite stale content."
+                ExcerptName => "Read an exact line range (up to 400 lines) with numbered lines, returning whole-file SHA256 and truncation metadata.",
+                ReplaceName => "PREFERRED way to edit existing files: replace one unique span (copied from what you read) with new text; empty new_text deletes it. Guarded by full-file SHA256; returns the new SHA256 for the next edit.",
+                _ => "Create a NEW project text file (expected_sha256 empty). Rewriting an existing file is only for full rewrites that keep its content: the tool refuses writes that drop most of the file or contain placeholders like '...'; use lunet.files.replace instead."
             }, schema,
             new HashSet<string> { Permissions.AgentAct, write ? Permissions.FsWrite : Permissions.FsRead },
             write ? RiskClass.Write : RiskClass.Read,
@@ -248,17 +267,25 @@ public sealed class LunetAiProjectTool : ITool
                 return ValueTask.FromResult(ToolOutcome.Ok(JsonSerializer.Serialize(
                     _files.Search(Arg("query"), ArgInt("max_results", 40)))));
             if (_name == ExcerptName)
-                return ValueTask.FromResult(ToolOutcome.Ok(JsonSerializer.Serialize(
-                    _files.ReadExcerpt(Arg("path"), ArgInt("start_line", 0), ArgInt("line_count", 0)))));
+            {
+                var excerpt = _files.ReadExcerpt(Arg("path"), ArgInt("start_line", 0), ArgInt("line_count", 0));
+                return ValueTask.FromResult(ToolOutcome.Ok(JsonSerializer.Serialize(excerpt with
+                {
+                    Content = LunetAiTextMatch.Numbered(excerpt.Content, excerpt.StartLine)
+                })));
+            }
             if (_name == ReadName)
             {
                 var file = _files.Read(Arg("path"));
-                if (file.Content.Length > 24_000)
-                    return ValueTask.FromResult(ToolOutcome.Error("Arquivo maior que 24.000 caracteres; use lunet.files.excerpt para leitura por linhas e lunet.files.replace para edição cirúrgica."));
+                if (file.Content.Length > LunetAiProjectFiles.MaxFullReadChars)
+                    return ValueTask.FromResult(ToolOutcome.Error(
+                        $"Arquivo com {file.Content.Length} caracteres e {file.Content.Split('\n').Length} linhas: leia por partes com lunet.files.excerpt " +
+                        "e edite com lunet.files.replace. Nunca regrave este arquivo inteiro com lunet.files.write."));
                 return ValueTask.FromResult(ToolOutcome.Ok(JsonSerializer.Serialize(new
                 {
-                    path = file.Path, sha256 = file.Sha256,
-                    content = file.Content
+                    path = file.Path, sha256 = file.Sha256, totalLines = file.Content.Split('\n').Length,
+                    content = LunetAiTextMatch.Numbered(file.Content, 1),
+                    note = "content has 'N| ' line-number prefixes for reference only; never copy them into old_text/new_text"
                 })));
             }
             var change = _name == ReplaceName

@@ -299,15 +299,26 @@ public sealed partial class MainActivity
 
     // ---------- Review ----------
 
-    private View BuildChangesCard(LunetAiReply reply)
+    /// <summary>
+    /// What one AI run changed, with "Desfazer tudo". Built from the persisted checkpoint, so it is there for every
+    /// answer, also after a cancel, a failure, a screen change or an app restart (LUNET-507).
+    /// </summary>
+    private View BuildChangesCard(LunetAiCheckpoint checkpoint, bool? verifiedRun)
     {
         var card = LunetUi.Column(this, 6);
         card.SetPadding(Dp(12), Dp(10), Dp(12), Dp(10));
         card.Background = LunetUi.Shape(this, LunetUi.Background, 14, LunetUi.Border);
-        var verified = reply.Status == AgentRuntime.RunStatus.Succeeded;
+        if (checkpoint.IsReverted)
+        {
+            card.AddView(LunetUi.Label(this, "↶ Desfeito · " + checkpoint.RevertedPaths.Count +
+                " arquivo(s) voltaram ao estado de antes deste pedido", LunetUi.TextLabel, LunetUi.TextMuted, bold: true));
+            return card;
+        }
+        var changes = checkpoint.Changes();
+        var verified = verifiedRun == true;
         card.AddView(LunetUi.Label(this, (verified ? "✓ Compilado · " : "⚠ Não verificado · ") +
-            reply.Changes.Count + " arquivo(s) alterado(s)", LunetUi.TextLabel, verified ? LunetUi.Success : LunetUi.Warning, bold: true));
-        foreach (var change in reply.Changes)
+            changes.Count + " arquivo(s) alterado(s)", LunetUi.TextLabel, verified ? LunetUi.Success : LunetUi.Warning, bold: true));
+        foreach (var change in changes)
         {
             var (added, removed) = LunetAiDiff.Count(change.Diff());
             var row = LunetUi.Row(this, 6);
@@ -329,14 +340,29 @@ public sealed partial class MainActivity
         };
         revert.Click += (_, _) =>
         {
-            try
+            if (LunetAiRuns.Current is { IsRunning: true } running && running.ProjectId == _project?.Manifest.GameId)
             {
-                reply.Checkpoint.Revert();
-                ReloadOpenFileIfChanged(reply.Changes.Select(c => c.Path));
-                RefreshExplorer();
-                revert.Text = "Desfeito ✓"; revert.Enabled = false; keep.Visibility = ViewStates.Gone;
+                Toast.MakeText(this, "Cancele a tarefa da IA em andamento antes de desfazer.", ToastLength.Long)?.Show();
+                return;
             }
-            catch (Exception ex) { Toast.MakeText(this, "Não foi possível desfazer: " + ex.Message, ToastLength.Long)?.Show(); }
+            new AlertDialog.Builder(this)!
+                .SetTitle("Desfazer as alterações da IA?")!
+                .SetMessage($"{changes.Count} arquivo(s) voltam exatamente ao que eram antes deste pedido " +
+                            "(arquivos criados pela IA são apagados). Edições feitas depois nesses arquivos também são desfeitas.")!
+                .SetPositiveButton("Desfazer tudo", (_, _) =>
+                {
+                    try
+                    {
+                        SaveCurrent();
+                        var paths = changes.Select(c => c.Path).ToArray();
+                        checkpoint.Revert();
+                        ReloadOpenFileIfChanged(paths);
+                        RefreshExplorer();
+                        revert.Text = "Desfeito ✓"; revert.Enabled = false; keep.Visibility = ViewStates.Gone;
+                    }
+                    catch (Exception ex) { Toast.MakeText(this, "Não foi possível desfazer: " + ex.Message, ToastLength.Long)?.Show(); }
+                })!
+                .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
         };
         actions.AddView(keep);
         actions.AddView(revert);

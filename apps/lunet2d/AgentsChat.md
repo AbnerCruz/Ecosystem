@@ -723,3 +723,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261114-claude-lunet-autotile — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
 - LUNET-506 (Fase 5, Tile Studio): `AutotileSet` (16 lados / 47 blob) e pincel de terreno no `TileStudioSession` e na tela. 5 testes; build Android sem erros. Handoff no `HO-20261114-lunet-data-studio.json` (mesma rodada).
+
+### 20261114-claude-lunet-ai-safe-edits — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- Ordem do proprietário: assumir a correção da IA (cancelar não desfazia; "apagou o documento inteiro"; "não lê o código"). Nenhum PR aberto de outro agente sobre o tema na hora de assumir. LUNET-507, branch `ccr-f93d5ab0-3eri49`, base `2439fdd`.
+- Causas e correções: ROADMAP LUNET-507. Checkpoint persistido e cartão *Desfazer tudo* em toda resposta; `LunetAiWriteGuard`; `replace` tolerante; conteúdo do arquivo aberto no pedido; `EditorSession` com detecção de conflito.
+- Verificação local: 1050 testes; build Android Debug sem erros. DEVICE pendente (`docs/guides/ia-lunet.md` §Edições seguras). Handoff `HO-20261114-lunet-ai-safe-edits.json`.

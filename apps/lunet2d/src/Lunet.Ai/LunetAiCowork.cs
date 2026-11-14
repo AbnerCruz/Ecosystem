@@ -149,20 +149,66 @@ public sealed record LunetAiChange(string Path, string? Before, string After)
     public IReadOnlyList<DiffLine> Diff() => LunetAiDiff.Lines(Before, After);
 }
 
-/// <summary>Captures each file (text or binary) before the agent's first write so the whole run can be reverted.</summary>
+/// <summary>
+/// Captures each file (text or binary) before the agent's first write so the whole run can be reverted. With a
+/// store directory the originals are persisted as they are captured (LUNET-507): a cancelled, failed or interrupted
+/// run, a screen change or an app restart never loses the way back.
+/// </summary>
 public sealed class LunetAiCheckpoint
 {
     private static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
     { ".cs", ".json", ".md", ".txt", ".xml", ".yml", ".yaml", ".csv", ".glsl", ".shader" };
 
     private readonly LunetProject _project;
+    private readonly string? _store;
     private readonly Dictionary<string, byte[]?> _originals = new(StringComparer.Ordinal);
     private readonly List<string> _order = [];
+    private readonly List<string> _reverted = [];
     private readonly object _gate = new();
 
-    public LunetAiCheckpoint(LunetProject project) => _project = project;
+    public LunetAiCheckpoint(LunetProject project, string? storeDirectory = null)
+    {
+        _project = project;
+        _store = storeDirectory;
+    }
 
     public bool IsEmpty { get { lock (_gate) return _order.Count == 0; } }
+
+    /// <summary>True after <see cref="Revert"/> restored every captured file.</summary>
+    public bool IsReverted { get { lock (_gate) return _order.Count == 0 && _reverted.Count > 0; } }
+
+    /// <summary>Paths restored by the last revert (shown as "desfeito" after a restart).</summary>
+    public IReadOnlyList<string> RevertedPaths { get { lock (_gate) return _reverted.ToArray(); } }
+
+    /// <summary>Reopens a persisted checkpoint; null when the directory holds none.</summary>
+    public static LunetAiCheckpoint? Open(LunetProject project, string storeDirectory)
+    {
+        var manifest = System.IO.Path.Combine(storeDirectory, "checkpoint.json");
+        if (!File.Exists(manifest)) return null;
+        try
+        {
+            var data = JsonSerializer.Deserialize<StoredCheckpoint>(File.ReadAllText(manifest));
+            if (data is null) return null;
+            var checkpoint = new LunetAiCheckpoint(project, storeDirectory);
+            foreach (var entry in data.Entries)
+            {
+                var path = Normalize(entry.Path);
+                if (checkpoint._originals.ContainsKey(path)) continue;
+                byte[]? bytes = null;
+                if (entry.Blob is not null)
+                {
+                    var blob = System.IO.Path.Combine(storeDirectory, System.IO.Path.GetFileName(entry.Blob));
+                    if (!File.Exists(blob)) continue; // never "restore" a file whose original was lost
+                    bytes = File.ReadAllBytes(blob);
+                }
+                checkpoint._originals[path] = bytes;
+                checkpoint._order.Add(path);
+            }
+            checkpoint._reverted.AddRange(data.Reverted ?? []);
+            return checkpoint;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return null; }
+    }
 
     internal void Capture(string relativePath)
     {
@@ -174,8 +220,12 @@ public sealed class LunetAiCheckpoint
         lock (_gate)
         {
             if (_originals.ContainsKey(path)) return;
-            _originals[path] = File.Exists(full) ? File.ReadAllBytes(full) : null;
+            var original = File.Exists(full) ? File.ReadAllBytes(full) : null;
+            _originals[path] = original;
             _order.Add(path);
+            _reverted.Clear();
+            // Persist BEFORE the tool writes: if this throws, the write does not happen (see CheckpointedTool).
+            Persist();
         }
     }
 
@@ -205,6 +255,7 @@ public sealed class LunetAiCheckpoint
     {
         lock (_gate)
         {
+            var restored = new List<string>();
             foreach (var path in _order.ToArray())
             {
                 if (onlyPath is not null && Normalize(onlyPath) != path) continue;
@@ -221,9 +272,42 @@ public sealed class LunetAiCheckpoint
                 }
                 _originals.Remove(path);
                 _order.Remove(path);
+                restored.Add(path);
             }
+            _reverted.AddRange(restored);
+            Persist();
         }
     }
+
+    private void Persist()
+    {
+        if (_store is null) return;
+        Directory.CreateDirectory(_store);
+        var entries = new List<StoredEntry>();
+        for (int i = 0; i < _order.Count; i++)
+        {
+            var path = _order[i];
+            var bytes = _originals[path];
+            string? blob = null;
+            if (bytes is not null)
+            {
+                blob = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(path)))[..24] + ".orig";
+                var target = System.IO.Path.Combine(_store, blob);
+                if (!File.Exists(target))
+                {
+                    File.WriteAllBytes(target + ".tmp", bytes);
+                    File.Move(target + ".tmp", target, overwrite: true);
+                }
+            }
+            entries.Add(new StoredEntry(path, blob));
+        }
+        var manifest = System.IO.Path.Combine(_store, "checkpoint.json");
+        File.WriteAllText(manifest + ".tmp", JsonSerializer.Serialize(new StoredCheckpoint(entries, _reverted.ToList())));
+        File.Move(manifest + ".tmp", manifest, overwrite: true);
+    }
+
+    private sealed record StoredEntry(string Path, string? Blob);
+    private sealed record StoredCheckpoint(List<StoredEntry> Entries, List<string>? Reverted);
 
     private static string Normalize(string path) => path.Replace('\\', '/').TrimStart('/');
 }
@@ -240,7 +324,12 @@ internal sealed class CheckpointedTool(ITool inner, LunetAiCheckpoint checkpoint
             path.GetString() is { Length: > 0 } relative)
         {
             try { checkpoint.Capture(relative); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
+            catch (ArgumentException) { /* invalid path: the tool itself rejects it */ }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Without a saved original there is no way back: refuse the write instead of risking the file.
+                return ValueTask.FromResult(ToolOutcome.Error("Não foi possível guardar a versão anterior para desfazer; nada foi alterado."));
+            }
         }
         return inner.InvokeAsync(invocation, context, cancellationToken);
     }
