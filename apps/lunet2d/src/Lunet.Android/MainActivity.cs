@@ -196,7 +196,7 @@ public sealed partial class MainActivity : Activity
             empty.SetPadding(Dp(18), Dp(22), Dp(18), Dp(22));
             empty.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
             empty.AddView(LunetUi.Label(this, "Comece seu primeiro jogo", LunetUi.TextBody, LunetUi.Text, bold: true));
-            empty.AddView(LunetUi.Label(this, "Toque em “Novo jogo” para criar a partir de um modelo pronto para rodar. A IA pode ajudar a construir as mecânicas.", LunetUi.TextLabel, LunetUi.TextMuted));
+            empty.AddView(LunetUi.Label(this, "Toque em “Novo jogo” e configure seu projeto. O Game.cs começa estruturado e sem objetos de demonstração.", LunetUi.TextLabel, LunetUi.TextMuted));
             list.AddView(empty, LunetUi.FillWidth());
         }
         var scroll = new ScrollView(this);
@@ -265,66 +265,117 @@ public sealed partial class MainActivity : Activity
             })!.Show();
     }
 
+    /// <summary>Somente projetos novos; demos e protótipos não fazem parte do launcher.</summary>
     private void AskForProjectName()
     {
-        var input = new EditText(this) { Hint = "Nome do projeto" };
-        input.SetSingleLine(true);
-        var template = new[] { ProjectTemplate.Blank };
         var form = Vertical();
-        form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
-        form.AddView(input);
-        // RadioButtons criados por código precisam de id para o RadioGroup desmarcar o anterior.
-        var group = new RadioGroup(this);
-        var options = new (string Text, ProjectTemplate Template)[]
+        form.SetPadding(Dp(16), Dp(8), Dp(16), Dp(12));
+
+        EditText AddField(string label, string value, string hint, bool numeric = false)
         {
-            ("Em branco (bola que segue o toque)", ProjectTemplate.Blank),
-            ("Demo: Coletor de moedas (texto, gestos, som, salvamento)", ProjectTemplate.CoinCatcher),
-            ("Laboratório: testa música, sensores, controle, vibração, gestos e gráficos", ProjectTemplate.Lab),
-            ("Demo: Animação e tween (quadros, movimento, pausa)", ProjectTemplate.Animation),
-            ("Demo: Partículas (explosões, fluxo, capacidade fixa)", ProjectTemplate.Particles),
-        };
-        var byId = new Dictionary<int, ProjectTemplate>();
-        foreach (var (text, choice) in options)
-        {
-            var button = new RadioButton(this) { Id = View.GenerateViewId(), Text = text };
-            byId[button.Id] = choice;
-            group.AddView(button);
-            if (choice == ProjectTemplate.Blank) group.Check(button.Id);
+            var caption = LunetUi.Label(this, label, LunetUi.TextLabel, LunetUi.TextMuted);
+            caption.SetPadding(0, Dp(10), 0, 0);
+            form.AddView(caption);
+            var field = new EditText(this) { Text = value, Hint = hint };
+            field.SetSingleLine(true);
+            if (numeric) field.InputType = InputTypes.ClassNumber;
+            form.AddView(field, LunetUi.FillWidth(Dp(48)));
+            return field;
         }
-        group.CheckedChange += (_, e) =>
-        {
-            if (byId.TryGetValue(e.CheckedId, out var chosen)) template[0] = chosen;
-        };
-        form.AddView(group);
-        form.AddView(new TextView(this) { Text = "Orientação do jogo", TextSize = 15 });
-        string orientation = "portrait";
+
+        var nameInput = AddField("Nome do projeto", "", "Ex.: MeuJogo");
+        form.AddView(LunetUi.Label(this,
+            "Cria um Game.cs com ciclo de vida e SpriteBatch, sem personagens nem demonstrações.",
+            LunetUi.TextCaption, LunetUi.TextMuted));
+
+        form.AddView(LunetUi.Label(this, "Orientação", LunetUi.TextLabel, LunetUi.TextMuted, bold: true));
         var orientationGroup = new RadioGroup(this);
-        var vertical = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Vertical (9:16)" };
-        var horizontal = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Horizontal (16:9)" };
-        orientationGroup.AddView(vertical);
-        orientationGroup.AddView(horizontal);
-        orientationGroup.Check(vertical.Id);
-        orientationGroup.CheckedChange += (_, _) =>
-            orientation = orientationGroup.CheckedRadioButtonId == horizontal.Id ? "landscape" : "portrait";
+        var portrait = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Vertical (retrato)" };
+        var landscape = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Horizontal (paisagem)" };
+        orientationGroup.AddView(portrait);
+        orientationGroup.AddView(landscape);
+        orientationGroup.Check(portrait.Id);
         form.AddView(orientationGroup);
+
+        var widthInput = AddField("Resolução virtual · largura (px)", "360", "Ex.: 360", numeric: true);
+        var heightInput = AddField("Resolução virtual · altura (px)", "640", "Ex.: 640", numeric: true);
+        orientationGroup.CheckedChange += (_, _) =>
+        {
+            // Só troca o preset; dimensões personalizadas jamais são sobrescritas.
+            string width = widthInput.Text?.Trim() ?? "";
+            string height = heightInput.Text?.Trim() ?? "";
+            if (orientationGroup.CheckedRadioButtonId == landscape.Id && width == "360" && height == "640")
+            {
+                widthInput.Text = "640";
+                heightInput.Text = "360";
+            }
+            else if (orientationGroup.CheckedRadioButtonId == portrait.Id && width == "640" && height == "360")
+            {
+                widthInput.Text = "360";
+                heightInput.Text = "640";
+            }
+        };
+
+        var updatesInput = AddField("Atualizações por segundo", "60", "Ex.: 60", numeric: true);
+        form.AddView(LunetUi.Label(this, "Ajuste de tela", LunetUi.TextLabel, LunetUi.TextMuted, bold: true));
+        var viewportGroup = new RadioGroup(this);
+        var fit = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Fit — exibe tudo, com barras se necessário" };
+        var fill = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Fill — preenche a tela, pode recortar" };
+        viewportGroup.AddView(fit);
+        viewportGroup.AddView(fill);
+        viewportGroup.Check(fit.Id);
+        form.AddView(viewportGroup);
+
+        var versionInput = AddField("Versão inicial do jogo", "0.1.0", "Ex.: 1.0.0");
+        var packageInput = AddField("Identificador Android (opcional)", "",
+            "Automático e único — ou com.exemplo.jogo");
+        form.AddView(LunetUi.Label(this,
+            "O identificador e o GameId são estáveis para futuras atualizações do APK. O formato do projeto, o Framework e o arquivo Game.cs são gerenciados pelo Lunet.",
+            LunetUi.TextCaption, LunetUi.TextMuted));
+
+        AlertDialog? dialog = null;
+        var actions = LunetUi.Row(this, 8);
+        actions.SetPadding(0, Dp(16), 0, 0);
+        actions.AddView(LunetUi.Button(this, "Cancelar", () => dialog?.Dismiss(), ButtonStyle.Quiet),
+            new LinearLayout.LayoutParams(0, Dp(48), 1f));
+        actions.AddView(LunetUi.Button(this, "Criar projeto", () =>
+        {
+            if (!int.TryParse(widthInput.Text?.Trim(), out int width) ||
+                !int.TryParse(heightInput.Text?.Trim(), out int height) ||
+                !int.TryParse(updatesInput.Text?.Trim(), out int updates))
+            {
+                Toast.MakeText(this, "Preencha largura, altura e atualizações com números inteiros.", ToastLength.Long)?.Show();
+                return;
+            }
+            try
+            {
+                var settings = new ProjectCreationSettings(
+                    nameInput.Text ?? "",
+                    orientationGroup.CheckedRadioButtonId == landscape.Id ? "landscape" : "portrait",
+                    width,
+                    height,
+                    updates,
+                    viewportGroup.CheckedRadioButtonId == fill.Id ? "Fill" : "Fit",
+                    versionInput.Text?.Trim() ?? "",
+                    packageInput.Text?.Trim());
+                var project = _store.Create(settings);
+                dialog?.Dismiss();
+                OpenProject(project.Name);
+            }
+            catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+            {
+                Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+            }
+        }, ButtonStyle.Primary), new LinearLayout.LayoutParams(0, Dp(48), 1.3f));
+        form.AddView(actions);
+
         var scroll = new ScrollView(this);
         scroll.AddView(form);
-        new AlertDialog.Builder(this)!
-            .SetTitle("Novo projeto")!
+        dialog = new AlertDialog.Builder(this)!
+            .SetTitle("Novo projeto · configuração")!
             .SetView(scroll)!
-            .SetNegativeButton("Cancelar", (_, _) => { })!
-            .SetPositiveButton("Criar", (_, _) =>
-            {
-                try
-                {
-                    var project = _store.Create(input.Text ?? "", template[0], orientation);
-                    OpenProject(project.Name);
-                }
-                catch (Exception ex) when (ex is ProjectException or IOException)
-                {
-                    Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
-                }
-            })!.Show();
+            .Create();
+        dialog.Show();
     }
 
     // ---------- Workspace ----------
