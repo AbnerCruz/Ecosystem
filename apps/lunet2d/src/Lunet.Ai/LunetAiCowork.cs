@@ -149,100 +149,52 @@ public sealed record LunetAiChange(string Path, string? Before, string After)
     public IReadOnlyList<DiffLine> Diff() => LunetAiDiff.Lines(Before, After);
 }
 
-/// <summary>Captures each file (text or binary) before the agent's first write so the whole run can be reverted.</summary>
+/// <summary>Persistent, conflict-safe checkpoint for a complete agent run.</summary>
 public sealed class LunetAiCheckpoint
 {
-    private static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
-    { ".cs", ".json", ".md", ".txt", ".xml", ".yml", ".yaml", ".csv", ".glsl", ".shader" };
+    private readonly LunetAiCheckpointStore _store;
 
-    private readonly LunetProject _project;
-    private readonly Dictionary<string, byte[]?> _originals = new(StringComparer.Ordinal);
-    private readonly List<string> _order = [];
-    private readonly object _gate = new();
+    public LunetAiCheckpoint(LunetProject project, string? runId = null)
+        => _store = new LunetAiCheckpointStore(project, runId);
 
-    public LunetAiCheckpoint(LunetProject project) => _project = project;
+    private LunetAiCheckpoint(LunetAiCheckpointStore store) => _store = store;
 
-    public bool IsEmpty { get { lock (_gate) return _order.Count == 0; } }
+    public bool IsEmpty => _store.IsEmpty;
+    public IReadOnlyList<string> Paths => _store.Paths;
 
-    internal void Capture(string relativePath)
-    {
-        var path = Normalize(relativePath);
-        var root = System.IO.Path.GetFullPath(_project.Directory).TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
-        var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, path));
-        // Never track (and therefore never restore) anything outside the project folder.
-        if (!full.StartsWith(root, StringComparison.Ordinal)) return;
-        lock (_gate)
-        {
-            if (_originals.ContainsKey(path)) return;
-            _originals[path] = File.Exists(full) ? File.ReadAllBytes(full) : null;
-            _order.Add(path);
-        }
-    }
+    public static IReadOnlyList<LunetAiRecoveryPoint> Available(LunetProject project)
+        => LunetAiCheckpointStore.List(project);
 
-    public IReadOnlyList<LunetAiChange> Changes()
-    {
-        lock (_gate)
-        {
-            var result = new List<LunetAiChange>();
-            foreach (var path in _order)
-            {
-                var full = System.IO.Path.Combine(_project.Directory, path);
-                var after = File.Exists(full) ? File.ReadAllBytes(full) : null;
-                var before = _originals[path];
-                if (before is null && after is null) continue;
-                if (before is not null && after is not null && before.AsSpan().SequenceEqual(after)) continue;
-                bool text = TextExtensions.Contains(System.IO.Path.GetExtension(path));
-                string? Show(byte[]? bytes) => bytes is null ? null
-                    : text ? System.Text.Encoding.UTF8.GetString(bytes) : $"[arquivo binário · {bytes.Length} bytes]";
-                result.Add(new LunetAiChange(path, Show(before), Show(after) ?? ""));
-            }
-            return result;
-        }
-    }
+    public static LunetAiCheckpoint Reopen(LunetProject project, string runId)
+        => new(new LunetAiCheckpointStore(project, runId, existing: true));
 
-    /// <summary>Restores every file to its content before the run; files the agent created are deleted.</summary>
-    public void Revert(string? onlyPath = null)
-    {
-        lock (_gate)
-        {
-            foreach (var path in _order.ToArray())
-            {
-                if (onlyPath is not null && Normalize(onlyPath) != path) continue;
-                var before = _originals[path];
-                var full = System.IO.Path.Combine(_project.Directory, path);
-                if (before is null) { if (File.Exists(full)) _project.DeleteFile(path); }
-                else
-                {
-                    // Byte-exact atomic restore (text or binary, root or subfolder).
-                    Directory.CreateDirectory(System.IO.Path.GetDirectoryName(full)!);
-                    var temporary = full + ".lunet-revert";
-                    File.WriteAllBytes(temporary, before);
-                    File.Move(temporary, full, overwrite: true);
-                }
-                _originals.Remove(path);
-                _order.Remove(path);
-            }
-        }
-    }
-
-    private static string Normalize(string path) => path.Replace('\\', '/').TrimStart('/');
+    internal void Capture(string relativePath) => _store.Capture(relativePath);
+    internal void RecordAfter(string relativePath) => _store.RecordAfter(relativePath);
+    public IReadOnlyList<LunetAiChange> Changes() => _store.Changes();
+    public void Revert(string? onlyPath = null) => _store.Revert(onlyPath);
+    public string SaveOriginalAsCopy(string relativePath) => _store.SaveOriginalAsCopy(relativePath);
 }
 
-/// <summary>Wraps a write tool so the checkpoint captures the file before it changes.</summary>
+/// <summary>Never invokes a write when the original bytes could not be saved durably.</summary>
 internal sealed class CheckpointedTool(ITool inner, LunetAiCheckpoint checkpoint) : ITool
 {
     public ToolDescriptor Descriptor => inner.Descriptor;
 
-    public ValueTask<ToolOutcome> InvokeAsync(ToolInvocation invocation, ToolContext context, CancellationToken cancellationToken)
+    public async ValueTask<ToolOutcome> InvokeAsync(ToolInvocation invocation, ToolContext context, CancellationToken cancellationToken)
     {
-        if (invocation.Arguments.ValueKind == JsonValueKind.Object &&
-            invocation.Arguments.TryGetProperty("path", out var path) && path.ValueKind == JsonValueKind.String &&
-            path.GetString() is { Length: > 0 } relative)
+        if (invocation.Arguments.ValueKind != JsonValueKind.Object ||
+            !invocation.Arguments.TryGetProperty("path", out var path) || path.ValueKind != JsonValueKind.String ||
+            path.GetString() is not { Length: > 0 } relative)
+            return ToolOutcome.Error("Caminho ausente: gravação não autorizada.");
+
+        try { checkpoint.Capture(relative); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or ProjectException)
         {
-            try { checkpoint.Capture(relative); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
+            return ToolOutcome.Error("Edição bloqueada porque não foi possível salvar a versão anterior: " + ex.Message);
         }
-        return inner.InvokeAsync(invocation, context, cancellationToken);
+
+        try { return await inner.InvokeAsync(invocation, context, cancellationToken); }
+        finally { checkpoint.RecordAfter(relative); }
     }
 }
 
