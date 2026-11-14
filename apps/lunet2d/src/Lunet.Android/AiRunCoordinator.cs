@@ -34,6 +34,7 @@ internal sealed class LunetAiWork
     public LunetAiReply? Reply { get { lock (_gate) return _reply; } }
     public string? Error { get { lock (_gate) return _error; } }
     public IReadOnlyList<LunetAiStep> Steps { get { lock (_gate) return _steps.Values.ToArray(); } }
+    public IReadOnlyList<string> RolledBackFiles => Session.LastRolledBackFiles;
 
     public void Cancel() => _cancel.Cancel();
 
@@ -62,13 +63,13 @@ internal sealed class LunetAiWork
         }
         catch (OperationCanceledException)
         {
-            lock (_gate) _error = "Execução cancelada. Alterações já gravadas continuam no projeto.";
+            lock (_gate) _error = "Execução cancelada. " + Session.LastRollbackMessage;
         }
         catch (Exception ex)
         {
             lock (_gate) _error = ex is HttpRequestException or TaskCanceledException
                 ? "Não foi possível concluir a execução por falha de rede ou tempo limite."
-                : "A IA falhou: " + ex.Message;
+                : "A IA falhou: " + ex.Message + ". " + Session.LastRollbackMessage;
         }
         finally
         {
