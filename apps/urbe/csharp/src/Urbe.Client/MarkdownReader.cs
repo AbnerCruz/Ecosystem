@@ -690,15 +690,18 @@ public sealed partial class MarkdownReader
                 // scale and height while letting a narrow touch viewport reach both ends.
                 if (display)
                 {
+                    // CST-142: a display formula wider than the column is drawn smaller to fit it whole (down to
+                    // FormulaFit.MinScale, still legible); only one wider than that scrolls sideways
+                    var scaled = new LayoutTransformControl { Child = view };
                     var scroll = new ScrollViewer
                     {
-                        Content = view,
+                        Content = scaled,
                         HorizontalContentAlignment = HorizontalAlignment.Center,
                         HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
                         VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
                     };
                     Avalonia.Automation.AutomationProperties.SetName(scroll, "Fórmula matemática: " + tex);
-                    return scroll;
+                    return new FormulaFit(scaled, result.Width) { Child = scroll };
                 }
                 // CST-142: inline, the formula sits on the text's baseline (its denominator or descender below it), not
                 // with its whole height standing on the line
@@ -729,6 +732,45 @@ public sealed partial class MarkdownReader
 }
 
 /// <summary>The SVG subset SvgMathCanvas writes (path, line) drawn as native shapes in the text colour.</summary>
+/// <summary>
+/// CST-142: fits a display formula to the width it is given: wider than that, it is scaled down (never below
+/// <see cref="MinScale"/>, so it stays legible); what is still wider scrolls sideways in the scroll viewer inside.
+/// </summary>
+public sealed class FormulaFit : Decorator
+{
+    public const double MinScale = .6;
+    private readonly LayoutTransformControl _scaled;
+    private readonly double _natural;
+
+    public FormulaFit(LayoutTransformControl scaled, double naturalWidth)
+    {
+        _scaled = scaled;
+        _natural = naturalWidth;
+    }
+
+    /// <summary>The scale the formula is drawn at now (tests).</summary>
+    public double Scale { get; private set; } = 1;
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var width = availableSize.Width;
+        // the formula's own drawn width (its padding included), measured unscaled
+        var natural = _natural;
+        if (_scaled.Child is { } view)
+        {
+            view.Measure(Size.Infinity);
+            natural = Math.Max(natural, view.DesiredSize.Width);
+        }
+        var scale = double.IsFinite(width) && width > 0 && natural > width ? Math.Max(MinScale, (width - 2) / natural) : 1;
+        if (Math.Abs(scale - Scale) > .001)
+        {
+            Scale = scale;
+            _scaled.LayoutTransform = scale == 1 ? null : new ScaleTransform(scale, scale);
+        }
+        return base.MeasureOverride(availableSize);
+    }
+}
+
 internal static class MathSvg
 {
     public static Control? TryBuild(string svg, string color) => TryBuild(svg, color, out _);

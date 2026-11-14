@@ -582,4 +582,45 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task FormulasOnANarrowScreenAreDrawnWhole() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var note = "# Fórmulas\n\nA energia $E = mc^2$ e a soma $\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$ aparecem no meio do texto, com $\\int_0^\\infty e^{-x^2}\\,dx = \\frac{\\sqrt{\\pi}}{2}$ numa linha que quebra.\n\n" +
+                "$$\n\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\left( \\frac{\\partial^2 u}{\\partial x^2} + \\frac{\\partial^2 u}{\\partial y^2} + \\frac{\\partial^2 u}{\\partial z^2} \\right) + f(x, y, z, t) \\cdot \\sum_{k=0}^{\\infty} a_k\n$$\n\n" +
+                "Texto depois da fórmula, que não pode ficar por baixo dela.\n\n$$\n\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}^{-1} = \\frac{1}{ad-bc}\\begin{pmatrix} d & -b \\\\ -c & a \\end{pmatrix}\n$$\n\nFim.\n";
+            var (editor, window) = Open(note, width: 360, height: 800);
+            window.UpdateLayout();
+            Shot(window, "editor-formulas-narrow.png");
+            // the wide display formulas are drawn smaller to fit the column, never cut while it is enough
+            var fits = editor.Surface.GetVisualDescendants().OfType<FormulaFit>().ToList();
+            Assert.Equal(2, fits.Count);
+            Assert.All(fits, f => Assert.True(f.Scale < 1));
+            foreach (var f in fits.Where(f => f.Scale > FormulaFit.MinScale))
+            {
+                var sv = f.GetVisualDescendants().OfType<ScrollViewer>().First();
+                Assert.True(sv.Extent.Width <= sv.Viewport.Width + 1, $"scrolls: {sv.Extent.Width:0} > {sv.Viewport.Width:0}");
+            }
+            // no drawn block overlaps the next one
+            var starts = editor.Surface.BlockStarts;
+            for (int i = 0; i + 1 < starts.Count; i++)
+            {
+                var a = editor.Surface.BlockView(starts[i])!;
+                var b = editor.Surface.BlockView(starts[i + 1])!;
+                var ya = a.TranslatePoint(new Point(0, a.Bounds.Height), editor.Surface)!.Value.Y;
+                var yb = b.TranslatePoint(new Point(0, 0), editor.Surface)!.Value.Y;
+                Assert.True(ya <= yb + .5, $"block {i} ends at {ya:0} under block {i + 1} at {yb:0}");
+                // and nothing inside a block is drawn past its bottom
+                foreach (var c in a.GetVisualDescendants().OfType<Control>().Where(c => c.IsVisible && c.Bounds.Height > 0))
+                {
+                    var bottom = c.TranslatePoint(new Point(0, c.Bounds.Height), a)!.Value.Y;
+                    if (c.FindAncestorOfType<ScrollViewer>() is { } sv && a.IsVisualAncestorOf(sv)) continue;
+                    Assert.True(bottom <= a.Bounds.Height + 1, $"block {i}: {c.GetType().Name} ends at {bottom:0} past {a.Bounds.Height:0}");
+                }
+            }
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
 }
