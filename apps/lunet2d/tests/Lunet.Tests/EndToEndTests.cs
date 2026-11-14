@@ -54,8 +54,9 @@ public class EndToEndTests : IDisposable
         var project = store.Create("My-Game");
         var source = project.ReadText("Game.cs");
         Assert.DoesNotContain("Texture2D", source);
-        Assert.DoesNotContain("SpriteBatch", source);
-        Assert.DoesNotContain("Draw(", source);
+        Assert.Contains("SpriteBatch batch", source);
+        Assert.Contains("protected override void Update(GameTime time)", source);
+        Assert.Contains("protected override void Draw(GameTime time)", source);
         Assert.DoesNotContain("CreateCircle", source);
 
         var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
@@ -75,7 +76,7 @@ public class EndToEndTests : IDisposable
             host.Tick(1.0 / 60);
         }
 
-        Assert.Empty(backend.Clears);
+        Assert.Contains(Color.CornflowerBlue, backend.Clears);
         Assert.Empty(backend.Batches);
         Assert.False(host.IsFaulted);
     }
