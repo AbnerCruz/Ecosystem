@@ -25,7 +25,7 @@ public sealed partial class MainActivity
 {
     private LunetAiSettingsStore? _aiStore;
     private LunetAiLoadedSettings? _ai;
-    private CancellationTokenSource? _aiRunCancellation;
+
 
     private LunetAiSettingsStore AiStore => _aiStore ??= new LunetAiSettingsStore(
         System.IO.Path.Combine(FilesDir!.AbsolutePath, "ai", "settings.json"),
@@ -322,8 +322,9 @@ public sealed partial class MainActivity
             var result = SharedCompiler.Value.Compile("LunetAiCheck" + Guid.NewGuid().ToString("N")[..6], sources);
             var errors = result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
                 .Select(d => $"{d.FilePath ?? "?"}({d.Line},{d.Column}): error {d.Id}: {d.Message}").ToArray();
-            LastErrors = errors;
-            return new LunetAiBuildReport(result.Success, errors);
+            var contentErrors = LunetAiAssetValidation.Validate(project);
+            LastErrors = errors.Concat(contentErrors).ToArray();
+            return new LunetAiBuildReport(result.Success && LastErrors.Count == 0, LastErrors);
         }, cancellationToken);
     }
 

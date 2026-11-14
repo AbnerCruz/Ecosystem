@@ -138,6 +138,22 @@ public class ContentTests : IDisposable
     }
 
     [Fact]
+    public void ContentManager_AcceptsLegacyAiPathWithoutDuplicatingContentDirectory()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "Content", "Textures"));
+        File.WriteAllBytes(Path.Combine(_root, "Content", "Textures", "Cells.png"),
+            EncodePng(1, 1, 6, [0, 255, 0, 0, 255]));
+        var device = new GraphicsDevice(new RecordingBackend(), 10, 10);
+        using var manager = new ContentManager(new ProjectContentSource(_root), device);
+        Assert.True(manager.Exists("Textures/Cells.png"));
+        Assert.True(manager.Exists("Content/Textures/Cells.png"));
+        Assert.Equal(1, manager.LoadTexture("Content/Textures/Cells.png").Width);
+        Assert.Equal(1, manager.LoadTexture("Textures/Cells.png").Height);
+        Assert.False(manager.Exists("Content/../../secret.png"));
+        Assert.Throws<FileNotFoundException>(() => manager.LoadTexture("Content/../../secret.png"));
+    }
+
+    [Fact]
     public void ProjectContentSource_PrefersCanonicalContentWhenBothLocationsContainAsset()
     {
         Directory.CreateDirectory(Path.Combine(_root, "Content", "Assets"));

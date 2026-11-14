@@ -96,6 +96,46 @@ public sealed class LunetAiChatTests
         Assert.Equal("Explorou 2 itens · editou 1 arquivo · compilou 1×", LunetAiStep.Summarize(steps));
     }
 
+    [Fact]
+    public async Task History_IsPersistedWhileModelRunsAndAfterItFinishes()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-ai-history-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var project = new ProjectStore(root).Create("History");
+            var historyPath = Path.Combine(root, "history.json");
+            var session = new LunetAiSession(project, historyPath);
+            var model = new WaitingProvider();
+            var run = session.AskAsync("Faça um teste", new LunetAiRequest(
+                LunetAiSettings.Default with { Model = "m" }, "chave-de-teste-123456789",
+                LunetAiEditorContext.Empty, Provider: model), TestContext.Current.CancellationToken);
+            await model.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+            var during = new LunetAiSession(project, historyPath);
+            Assert.Equal(2, during.History.Count);
+            Assert.Contains("trabalhando", during.History[^1].Text);
+            model.Release.TrySetResult(true);
+            await run;
+            var restored = new LunetAiSession(project, historyPath);
+            Assert.Equal("Faça um teste", restored.History[0].Text);
+            Assert.Equal("Concluído", restored.History[1].Text);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    private sealed class WaitingProvider : IModelProvider
+    {
+        public string ProviderId => "chat-completions";
+        public TaskCompletionSource<bool> Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<bool> Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public async ValueTask<ModelResponse> CompleteAsync(ModelRequest request, CancellationToken cancellationToken)
+        {
+            Entered.TrySetResult(true);
+            await Release.Task.WaitAsync(cancellationToken);
+            return new ModelResponse([new TextBlock("Concluído")], StopReason.EndTurn,
+                new Usage(1, 1, Money.Zero("USD")));
+        }
+    }
+
     private sealed class SyncProgress<T>(Action<T> report) : IProgress<T>
     {
         public void Report(T value) => report(value);

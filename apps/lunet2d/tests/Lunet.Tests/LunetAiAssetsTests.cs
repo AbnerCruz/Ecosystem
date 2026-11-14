@@ -45,6 +45,7 @@ public sealed class LunetAiAssetsTests
                 new ToolContext("run", new AgentIdentity("a", "a", "a"), ContextPath.Create(new ContextStep(ContextLevel.Project, "p"))),
                 TestContext.Current.CancellationToken);
             Assert.False(outcome.IsError, outcome.Content);
+            Assert.Contains("Assets/heroi.png", outcome.Content);
 
             var sprite = SpriteDocument.Parse(project.ReadText("Assets/heroi.sprite.json"));
             Assert.Equal(5, sprite.Width);
