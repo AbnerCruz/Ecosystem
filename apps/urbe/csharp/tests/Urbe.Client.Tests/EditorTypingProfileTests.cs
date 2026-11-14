@@ -40,6 +40,23 @@ public sealed class EditorTypingProfileTests
                 Dispatcher.UIThread.RunJobs();
             }
             var sw = System.Diagnostics.Stopwatch.StartNew();
+            if (mode == "switch")
+            {
+                var surface = view.Editor.Surface;
+                for (int i = 0; i < 60; i++)
+                {
+                    var starts = surface.BlockStarts;
+                    var s = starts[(i * 7) % 40 + 2];
+                    var h = surface.BlockView(s)!;
+                    surface.TapBlock(s, h, h, new Avalonia.Point(30, 8), false);
+                    window.KeyTextInput("x");
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Console.WriteLine($"PROFILE switch {sw.Elapsed.TotalMilliseconds / 60:0.00} ms/switch");
+                window.Close();
+                return true;
+            }
             for (int i = 0; i < 400; i++)
             {
                 window.KeyTextInput(i % 7 == 6 ? " " : "a");

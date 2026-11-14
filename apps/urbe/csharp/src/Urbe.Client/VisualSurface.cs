@@ -322,20 +322,20 @@ public sealed class VisualSurface : StackPanel
                 if (!reusable.TryGetValue((d.Source, d.Kind), out var q)) reusable[(d.Source, d.Kind)] = q = new();
                 q.Enqueue((d.Drawn, d.Ref));
             }
-        Children.Clear();
+        var list = new List<Control>();
         _holders.Clear();
         var drawn = new List<(string Source, string Kind, Control Drawn, BlockRef Ref)>();
         LastBuildDrawn = 0;
         if (!unchanged) _blocks = AiAuthorship.WithSealLines(WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text)), _text);
         if (_blocks.Count == 0 && _box is null)
         {
-            var empty = new Border
+            var empty = _empty ??= new Border
             {
                 Background = Brushes.Transparent, MinHeight = 44,
                 Child = new TextBlock { Text = "Comece a escrever…", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = TextSize, FontFamily = UrbeTheme.EditorFont }
             };
-            empty.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(empty)) AppendBlock(fromTouch: true); };
-            Children.Add(empty);
+            if (_emptyWired is false) { _emptyWired = true; empty.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(empty)) AppendBlock(fromTouch: true); }; }
+            list.Add(empty);
         }
         var editorAdded = false;
         var suggested = _suggestion is null;
@@ -352,13 +352,13 @@ public sealed class VisualSurface : StackPanel
             if (_box is not null && !editorAdded && block.Start >= _editStart)
             {
                 editorAdded = true;
-                Children.Add(EditorFor());
+                list.Add(EditorFor());
                 if (block.Start == _editStart) continue;   // the block being edited
             }
             // UC-80: the agent's suggestion takes the place of the lines it changes (or comes before the next block)
             if (_suggestion is { } sg && (block.End > sg.Change.Start && block.Start < sg.Change.End || block.Start >= sg.Change.End))
             {
-                if (!suggested) { suggested = true; Children.Add(SuggestionCard(sg)); }
+                if (!suggested) { suggested = true; list.Add(SuggestionCard(sg)); }
                 if (block.Start < sg.Change.End) continue;
             }
             Control made;
@@ -382,16 +382,47 @@ public sealed class VisualSurface : StackPanel
             eager += EstimatedHeight(block);
             _holders[block.Start] = made;
             drawn.Add((source, block.Kind, made, r));
-            Children.Add(made);
+            list.Add(made);
         }
-        if (!suggested) Children.Add(SuggestionCard(_suggestion!));
-        if (_box is not null && !editorAdded) Children.Add(EditorFor());
-        var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
-        tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(fromTouch: true); };
-        Children.Add(tail);
+        if (!suggested) list.Add(SuggestionCard(_suggestion!));
+        if (_box is not null && !editorAdded) list.Add(EditorFor());
+        list.Add(_tail ??= Tail());
+        Reconcile(list);
         _drawn = drawn;
         _drawingsValid = true;
         _lastRebuiltText = _text;
+    }
+
+    private Border? _tail, _empty;
+    private bool _emptyWired;
+
+    private Border Tail()
+    {
+        var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
+        tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(fromTouch: true); };
+        return tail;
+    }
+
+    /// <summary>
+    /// The panel's children become <paramref name="next"/> by removing and inserting only what changed: a drawing that
+    /// stays never leaves the visual tree, so its text is not laid out again (taking every child out and putting it back
+    /// measured the whole note at each block switch). Kept drawings are in the same order in both lists (blocks keep
+    /// the order of the text), so inserting in place is enough.
+    /// </summary>
+    private void Reconcile(List<Control> next)
+    {
+        var keep = new HashSet<Control>(next);
+        for (int i = Children.Count - 1; i >= 0; i--)
+            if (!keep.Contains(Children[i])) Children.RemoveAt(i);
+        for (int i = 0; i < next.Count; i++)
+        {
+            if (i < Children.Count && ReferenceEquals(Children[i], next[i])) continue;
+            // a kept drawing that is not here yet sits further down: what is before it is new
+            if (next[i].Parent is Panel other && !ReferenceEquals(other, this)) other.Children.Remove(next[i]);
+            if (ReferenceEquals(next[i].Parent, this)) { Children.Remove(next[i]); }
+            Children.Insert(i, next[i]);
+        }
+        while (Children.Count > next.Count) Children.RemoveAt(Children.Count - 1);
     }
 
     /// <summary>UC-80: an agent's suggestion in the note — the lines it changes, what takes their place, and the answers.</summary>
