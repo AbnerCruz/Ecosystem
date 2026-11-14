@@ -408,4 +408,24 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task TickingATaskWhileWritingKeepsWriting() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Texto.\n\n- [ ] primeira\n");
+            var box = Edit(editor, 0);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            window.KeyTextInput(" A");
+            Dispatcher.UIThread.RunJobs();
+            var task = editor.Surface.BlockView(editor.Surface.BlockStarts[1])!.GetVisualDescendants().OfType<Border>().First(b => b.Width == 18 && b.Height == 18);
+            Click(window, task.TranslatePoint(new Point(9, 9), window)!.Value);
+            Assert.Same(box, editor.Surface.EditBox);
+            Assert.True(box.IsFocused);
+            window.KeyTextInput("B");
+            Assert.Equal("Texto. AB\n\n- [x] primeira\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }

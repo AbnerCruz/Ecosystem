@@ -951,14 +951,31 @@ public sealed class VisualSurface : StackPanel
         return Math.Clamp(at, 0, box.Text?.Length ?? 0);
     }
 
+    // the box's place in the panel is the same control from one build to the next: a box that stays never leaves the
+    // visual tree (leaving it took the keyboard focus and the platform's text input away from it, so ticking a task
+    // or any redraw while writing closed the block and the keyboard)
+    private readonly Grid _editorCell = new();
+    private StackPanel? _editorHost;
+
     private Control EditorFor()
     {
-        // the backdrop, the box, the bubble and the menus are reused: take them out of the panel of the previous build first
-        Control[] parts = [_backdrop, _box!, _bubbleLayer, _slash, _wiki];
-        foreach (var c in parts) if (c.Parent is Panel old) old.Children.Remove(c);
+        _editorHost ??= new StackPanel { ZIndex = 1 };
         // the bubble floats over the text (a canvas of no height): showing it never pushes the block down (UC-57)
-        var cell = new Grid { Children = { _backdrop, _box!, _bubbleLayer } };
-        return new StackPanel { Children = { cell, _slash, _wiki }, ZIndex = 1 };
+        Control[] cell = [_backdrop, _box!, _bubbleLayer];
+        if (!_editorCell.Children.SequenceEqual(cell))
+        {
+            foreach (var c in cell) if (c.Parent is Panel old && !ReferenceEquals(old, _editorCell)) old.Children.Remove(c);
+            _editorCell.Children.Clear();
+            _editorCell.Children.AddRange(cell);
+        }
+        Control[] host = [_editorCell, _slash, _wiki];
+        if (!_editorHost.Children.SequenceEqual(host))
+        {
+            foreach (var c in host) if (c.Parent is Panel old && !ReferenceEquals(old, _editorHost)) old.Children.Remove(c);
+            _editorHost.Children.Clear();
+            _editorHost.Children.AddRange(host);
+        }
+        return _editorHost;
     }
 
     // ------------------------------------------------------------------ editing
