@@ -2187,7 +2187,7 @@
     },
     {
       "id": "DEC-0061",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Urbe: ligar o Assistente a servidores MCP (CST-215)",
@@ -2214,7 +2214,11 @@
         "docs/adr/0048-urbe-cliente-mcp.md"
       ],
       "raisedBy": "claude-code-urbe-recovery",
-      "raisedAt": "2026-11-05"
+      "raisedAt": "2026-11-05",
+      "decision": "Alternativa C — C — Remotos no celular e no computador, e locais no computador (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/920).",
+      "decidedAt": "2026-11-14",
+      "record": "docs/governance/responses/DEC-0061.md",
+      "consequencesApplied": false
     }
   ]
 }
