@@ -16,16 +16,17 @@ namespace Lunet.Android.Editor;
 /// </summary>
 internal sealed partial class CodeEditText : EditText
 {
+    // "Lunet Night" syntax palette, tuned against LunetUi tokens (contrast ≥ 4.5:1 on the editor background).
     private static readonly Dictionary<TokenKind, AndroidColor> Palette = new()
     {
-        [TokenKind.Keyword] = AndroidColor.Rgb(0x56, 0x9C, 0xD6),
-        [TokenKind.ControlKeyword] = AndroidColor.Rgb(0xC5, 0x86, 0xC0),
-        [TokenKind.Type] = AndroidColor.Rgb(0x4E, 0xC9, 0xB0),
-        [TokenKind.String] = AndroidColor.Rgb(0xCE, 0x91, 0x78),
-        [TokenKind.Number] = AndroidColor.Rgb(0xB5, 0xCE, 0xA8),
-        [TokenKind.Comment] = AndroidColor.Rgb(0x6A, 0x99, 0x55),
-        [TokenKind.Preprocessor] = AndroidColor.Rgb(0x9B, 0x9B, 0x9B),
-        [TokenKind.Method] = AndroidColor.Rgb(0xDC, 0xDC, 0xAA),
+        [TokenKind.Keyword] = AndroidColor.Rgb(0xB4, 0xA8, 0xFF),
+        [TokenKind.ControlKeyword] = AndroidColor.Rgb(0xF0, 0xA6, 0xD6),
+        [TokenKind.Type] = AndroidColor.Rgb(0x7D, 0xD8, 0xC9),
+        [TokenKind.String] = AndroidColor.Rgb(0xF2, 0xC2, 0x7B),
+        [TokenKind.Number] = AndroidColor.Rgb(0xA6, 0xDA, 0x95),
+        [TokenKind.Comment] = AndroidColor.Rgb(0x7A, 0x86, 0x9A),
+        [TokenKind.Preprocessor] = AndroidColor.Rgb(0x9A, 0xA4, 0xB5),
+        [TokenKind.Method] = AndroidColor.Rgb(0x8C, 0xC8, 0xFF),
     };
 
     private const int SettleDelayMilliseconds = 250;
@@ -37,7 +38,7 @@ internal sealed partial class CodeEditText : EditText
     private int _dirtyStart = int.MaxValue, _dirtyFromEnd = int.MaxValue;
     private readonly Handler _handler = new(Looper.MainLooper!);
     private readonly Paint _gutterPaint = new(PaintFlags.AntiAlias);
-    private readonly Paint _gutterBackground = new() { Color = AndroidColor.Rgb(18, 20, 24) };
+    private readonly Paint _gutterBackground = new() { Color = AndroidColor.Rgb(16, 19, 27) };
     private readonly Action _settle;
     private readonly float _density;
     private string _removed = "";
@@ -56,9 +57,11 @@ internal sealed partial class CodeEditText : EditText
         SetTypeface(Typeface.Monospace, TypefaceStyle.Normal);
         SetHorizontallyScrolling(true);
         InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagNoSuggestions | InputTypes.TextVariationVisiblePassword;
-        SetBackgroundColor(AndroidColor.Rgb(24, 26, 31));
-        SetTextColor(AndroidColor.Rgb(230, 230, 230));
-        _gutterPaint.Color = AndroidColor.Rgb(120, 126, 138);
+        SetBackgroundColor(AndroidColor.Rgb(16, 19, 27));
+        SetTextColor(AndroidColor.Rgb(226, 232, 242));
+        SetLineSpacing(0, 1.12f);
+        SetHighlightColor(AndroidColor.Argb(90, 124, 108, 255));
+        _gutterPaint.Color = AndroidColor.Rgb(88, 98, 116);
         _gutterPaint.TextAlign = global::Android.Graphics.Paint.Align.Right;
         _gutterPaint.SetTypeface(Typeface.Monospace);
         _settle = OnSettled;

@@ -439,6 +439,7 @@ public sealed partial class MainActivity : Activity
 
         _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
+        _chipScroll.SetBackgroundColor(LunetUi.Surface);
         _chipScroll.AddView(_chips);
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
@@ -874,12 +875,15 @@ public sealed partial class MainActivity : Activity
         foreach (var item in items.Take(30))
         {
             var captured = item;
-            var chip = new Button(this) { Text = $"{Symbol(item.Kind)} {item.Label}" };
-            chip.SetAllCaps(false);
-            chip.TextSize = 12;
-            chip.SetMinimumHeight(0);
-            chip.SetMinHeight(0);
-            chip.SetPadding(Dp(10), Dp(4), Dp(10), Dp(4));
+            var chip = LunetUi.Button(this, $"{Symbol(item.Kind)} {item.Label}", () => { }, ButtonStyle.Secondary, keepsKeyboard: true);
+            chip.TextSize = 13;
+            chip.SetTypeface(LunetUi.Mono, TypefaceStyle.Normal);
+            chip.SetMinimumHeight(Dp(36));
+            chip.SetMinHeight(Dp(36));
+            chip.SetPadding(Dp(10), 0, Dp(10), 0);
+            var chipMargins = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(38));
+            chipMargins.SetMargins(Dp(3), Dp(3), Dp(3), Dp(3));
+            chip.LayoutParameters = chipMargins;
             chip.Click += (_, _) =>
             {
                 _editor?.Replace(captured.ReplaceStart, captured.ReplaceLength, captured.InsertText);
