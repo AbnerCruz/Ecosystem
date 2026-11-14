@@ -60,9 +60,10 @@
     {
       "check": "Validação no aparelho: modos Ensinar/Fazer, configurações, arquivos separados, rapidez, pesquisa",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/ia-lunet.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/940); registro em docs/governance/responses/VAL-HO-20261114-lunet-ai-teach-do-ed89ecc17315.md."
     }
   ],
   "known_issues": [
