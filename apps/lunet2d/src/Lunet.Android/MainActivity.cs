@@ -125,6 +125,7 @@ public sealed partial class MainActivity : Activity
         _minimap = null;
         _drawer = null;
         _drawerScrim = null;
+        if (_overlay is not null) CloseOverlay();
         _workspaceFrame = null;
         _aiPanel = null;
         _workbenchNavButtons.Clear();
@@ -373,52 +374,32 @@ public sealed partial class MainActivity : Activity
         var root = Vertical();
         root.SetBackgroundColor(WorkbenchBackground);
 
-        var bar = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        bar.SetGravity(GravityFlags.CenterVertical);
-        bar.SetPadding(Dp(6), Dp(4), Dp(6), Dp(4));
-        void AddTopButton(string label, Action action, int width, bool primary = false)
-        {
-            var p = new LinearLayout.LayoutParams(Dp(width), Dp(50));
-            p.SetMargins(Dp(2), 0, Dp(2), 0);
-            bar.AddView(WorkbenchButton(label, action, primary), p);
-        }
-        AddTopButton("‹", ShowProjects, 48);
-        AddTopButton("☰", ToggleExplorer, 48);
-        var projectTitle = WorkbenchLabel(project.Name, 17, true);
+        // One top bar (LUNET-483): back · project/file (tap = files) · IA · Run · actions.
+        var bar = LunetUi.Row(this, 4);
+        bar.SetPadding(Dp(4), Dp(6), Dp(6), Dp(6));
+        bar.SetBackgroundColor(LunetUi.Background);
+        bar.AddView(LunetUi.Icon(this, "‹", "Voltar para os projetos", ShowProjects), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
+        var titleBlock = new LinearLayout(this) { Orientation = Orientation.Vertical, Clickable = true };
+        titleBlock.Background = LunetUi.Pressable(this, LunetUi.Background, LunetUi.RadiusSmall);
+        titleBlock.SetPadding(Dp(6), Dp(2), Dp(6), Dp(2));
+        titleBlock.ContentDescription = "Arquivos do projeto";
+        titleBlock.Click += (_, _) => ToggleExplorer();
+        var projectTitle = LunetUi.Label(this, project.Name, 15, LunetUi.Text, bold: true);
         projectTitle.SetSingleLine(true);
         projectTitle.Ellipsize = TextUtils.TruncateAt.End;
-        projectTitle.SetPadding(Dp(8), 0, Dp(4), 0);
-        bar.AddView(projectTitle, new LinearLayout.LayoutParams(0, Dp(50), 1f));
-        AddTopButton("✦ IA", ToggleAiPanel, 64);
-        AddTopButton("▶ Run", Run, 82, primary: true);
-        AddTopButton("⋯", ShowCommandPalette, 48);
-        root.AddView(bar);
-
-        var document = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        document.SetGravity(GravityFlags.CenterVertical);
-        document.SetPadding(Dp(10), 0, Dp(8), Dp(4));
-        _status = WorkbenchLabel(project.Name, 13);
+        titleBlock.AddView(projectTitle);
+        _status = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
         _status.SetSingleLine(true);
         _status.Ellipsize = TextUtils.TruncateAt.Middle;
-        document.AddView(_status, new LinearLayout.LayoutParams(0, Dp(48), 1f));
-        void AddEditAction(string text, string description, Action action)
-        {
-            var button = WorkbenchButton(text, action);
-            button.ContentDescription = description;
-            if (description is "Desfazer" or "Refazer")
-            {
-                // Preserve IME enquanto permite foco e teclado externo nas demais ações.
-                button.Focusable = false;
-                button.FocusableInTouchMode = false;
-            }
-            var p = new LinearLayout.LayoutParams(Dp(48), Dp(48));
-            p.SetMargins(Dp(2), 0, Dp(2), 0);
-            document.AddView(button, p);
-        }
-        AddEditAction("⌕", "Localizar no arquivo", ShowFind);
-        AddEditAction("↶", "Desfazer", () => _editor?.Undo());
-        AddEditAction("↷", "Refazer", () => _editor?.Redo());
-        root.AddView(document);
+        titleBlock.AddView(_status);
+        bar.AddView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
+        var aiButton = LunetUi.Button(this, "✦ IA", ToggleAiPanel, ButtonStyle.Selected, description: "Abrir a IA");
+        bar.AddView(aiButton, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
+        var runButton = LunetUi.Button(this, "▶ Rodar", Run, ButtonStyle.Primary, description: "Compilar e rodar o jogo");
+        bar.AddView(runButton, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
+        bar.AddView(LunetUi.Icon(this, "⋯", "Todas as ações", ShowCommandPalette), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
+        root.AddView(bar);
+        root.AddView(LunetUi.Divider(this));
 
         _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
@@ -452,6 +433,7 @@ public sealed partial class MainActivity : Activity
 
         _showConsole = _layoutStore.Current.PanelTab == "console";
         root.AddView(BuildBody(BuildEditorHost(), _chipScroll, tabs, panelScroll), Fill(1));
+        root.AddView(BuildExtraKeys());
         root.AddView(BuildWorkbenchNavigation());
 
         var frame = new FrameLayout(this);
@@ -463,7 +445,8 @@ public sealed partial class MainActivity : Activity
         if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
         else SetPanel(_showConsole);
         RefreshWorkbenchNavigation();
-        _status.Text = project.Name;
+        WatchKeyboard(root);
+        _status.Text = _openFile ?? "";
     }
 
     // ---------- Explorer ----------
@@ -1322,6 +1305,7 @@ public sealed partial class MainActivity : Activity
     {
         if (_preview is not null) StopPreview();
         else if (AiPanelOpen) CloseAiPanel();
+        else if (OverlayOpen) CloseOverlay();
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ShowProjects();

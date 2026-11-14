@@ -1,84 +1,74 @@
 using Android.App;
 using Android.Graphics.Drawables;
+using Android.Text;
 using Android.Views;
 using Android.Widget;
+using Lunet.Compiler;
 using Lunet.Core;
 using AndroidColor = Android.Graphics.Color;
 
 namespace Lunet.Android;
 
-/// <summary>Camada de navegação mobile-first. Não modifica o editor, compilador ou Studio.</summary>
+/// <summary>
+/// Mobile-first workbench navigation (LUNET-470, redesigned in LUNET-483): one top bar, a code-keys bar above the
+/// keyboard, a compact bottom navigation hidden while typing, and a palette that finds commands and files.
+/// </summary>
 public sealed partial class MainActivity
 {
     private readonly List<(string Key, Button Button)> _workbenchNavButtons = [];
     private View? _drawerScrim;
+    private View? _extraKeys;
+    private View? _workbenchNav;
+    private bool _keyboardVisible;
 
-    private static readonly AndroidColor WorkbenchBackground = AndroidColor.Rgb(14, 18, 27);
-    private static readonly AndroidColor WorkbenchSurface = AndroidColor.Rgb(27, 34, 47);
-    private static readonly AndroidColor WorkbenchBorder = AndroidColor.Rgb(55, 65, 81);
-    private static readonly AndroidColor WorkbenchAccent = AndroidColor.Rgb(73, 111, 236);
-    private static readonly AndroidColor WorkbenchText = AndroidColor.Rgb(235, 240, 250);
-    private static readonly AndroidColor WorkbenchMuted = AndroidColor.Rgb(155, 169, 188);
+    // Kept as aliases so older surfaces pick up the same tokens.
+    private static readonly AndroidColor WorkbenchBackground = LunetUi.Background;
+    private static readonly AndroidColor WorkbenchSurface = LunetUi.Surface;
+    private static readonly AndroidColor WorkbenchBorder = LunetUi.Border;
+    private static readonly AndroidColor WorkbenchAccent = LunetUi.Accent;
+    private static readonly AndroidColor WorkbenchText = LunetUi.Text;
+    private static readonly AndroidColor WorkbenchMuted = LunetUi.TextMuted;
 
     private Button WorkbenchButton(string title, Action action, bool emphasized = false)
     {
-        var button = MakeButton(title, action);
-        button.SetMinWidth(0);
-        button.SetMinimumWidth(0);
+        var button = LunetUi.Button(this, title, action, emphasized ? ButtonStyle.Primary : ButtonStyle.Secondary);
         button.SetMinHeight(Dp(48));
         button.SetMinimumHeight(Dp(48));
-        button.SetPadding(Dp(8), 0, Dp(8), 0);
-        button.TextSize = 13;
-        button.ContentDescription = title;
-        StyleWorkbenchButton(button, emphasized);
         return button;
     }
 
-    private void StyleWorkbenchButton(Button button, bool emphasized)
-    {
-        var background = new GradientDrawable();
-        background.SetColor(emphasized ? WorkbenchAccent : WorkbenchSurface);
-        background.SetCornerRadius(Dp(12));
-        background.SetStroke(Dp(1), emphasized ? WorkbenchAccent : WorkbenchBorder);
-        button.Background = background;
-        button.SetTextColor(WorkbenchText);
-        button.Elevation = 0;
-    }
+    private void StyleWorkbenchButton(Button button, bool emphasized) =>
+        LunetUi.Style(this, button, emphasized ? ButtonStyle.Selected : ButtonStyle.Quiet);
 
-    private TextView WorkbenchLabel(string content, float size = 14, bool strong = false)
-    {
-        var label = new TextView(this)
-        {
-            Text = content,
-            TextSize = size,
-            Gravity = GravityFlags.CenterVertical,
-        };
-        label.SetTextColor(strong ? WorkbenchText : WorkbenchMuted);
-        return label;
-    }
+    private TextView WorkbenchLabel(string content, float size = 14, bool strong = false) =>
+        LunetUi.Label(this, content, size, strong ? LunetUi.Text : LunetUi.TextMuted, bold: strong);
 
     private LinearLayout BuildWorkbenchNavigation()
     {
         _workbenchNavButtons.Clear();
         var nav = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         nav.SetGravity(GravityFlags.CenterVertical);
-        nav.SetPadding(Dp(5), Dp(4), Dp(5), Dp(4));
-        nav.SetBackgroundColor(WorkbenchBackground);
+        nav.SetPadding(Dp(6), Dp(4), Dp(6), Dp(6));
+        nav.SetBackgroundColor(LunetUi.Background);
 
-        void Add(string key, string label, Action action)
+        void Add(string key, string label, string description, Action action)
         {
-            var button = WorkbenchButton(label, action);
-            var p = new LinearLayout.LayoutParams(0, Dp(50), 1f);
+            var button = LunetUi.Button(this, label, action, ButtonStyle.Quiet, description: description);
+            button.TextSize = 12;
+            button.SetLines(2);
+            button.SetPadding(Dp(2), Dp(2), Dp(2), Dp(2));
+            var p = new LinearLayout.LayoutParams(0, Dp(52), 1f);
             p.SetMargins(Dp(2), 0, Dp(2), 0);
             nav.AddView(button, p);
             _workbenchNavButtons.Add((key, button));
         }
 
-        Add("code", "Código", FocusWorkbenchCode);
-        Add("files", "Arquivos", ToggleExplorer);
-        Add("problems", "Erros", () => OpenWorkbenchPanel(false));
-        Add("console", "Console", () => OpenWorkbenchPanel(true));
-        Add("tools", "Ações", ShowCommandPalette);
+        Add("code", "⌨\nCódigo", "Código", FocusWorkbenchCode);
+        Add("files", "▤\nArquivos", "Arquivos do projeto", ToggleExplorer);
+        Add("studio", "◧\nStudio", "Studios de sprite, tile e áudio", ShowStudioHub);
+        Add("problems", "⚠\nErros", "Erros de compilação", () => OpenWorkbenchPanel(false));
+        Add("console", "❯\nConsole", "Console do jogo", () => OpenWorkbenchPanel(true));
+        _workbenchNav = nav;
         return nav;
     }
 
@@ -89,8 +79,81 @@ public sealed partial class MainActivity
             : _layoutStore.Current.ShowPanel && _layoutStore.Current.PanelTab == "console" ? "console"
             : _layoutStore.Current.ShowPanel && _layoutStore.Current.PanelTab == "problems" ? "problems"
             : "code";
+        var errors = _problems.Count(p => p.Severity == DiagnosticSeverity.Error);
         foreach (var (key, button) in _workbenchNavButtons)
+        {
             StyleWorkbenchButton(button, key == active);
+            if (key == "problems") button.Text = errors > 0 ? $"⚠ {errors}\nErros" : "⚠\nErros";
+        }
+    }
+
+    // ---------- Code keys above the keyboard ----------
+
+    /// <summary>
+    /// Symbols that are slow to reach on phone keyboards, plus undo/redo/find. Buttons never take focus,
+    /// so the keyboard stays open (Acode #2374, Godot proposals #7639).
+    /// </summary>
+    private View BuildExtraKeys()
+    {
+        var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        row.SetPadding(Dp(4), Dp(3), Dp(4), Dp(3));
+        void Key(string label, string description, Action action)
+        {
+            var key = LunetUi.Button(this, label, action, ButtonStyle.Secondary, keepsKeyboard: true, description: description);
+            key.TextSize = 15;
+            key.SetTypeface(LunetUi.Mono, global::Android.Graphics.TypefaceStyle.Normal);
+            key.SetPadding(Dp(10), 0, Dp(10), 0);
+            var p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40));
+            p.SetMargins(Dp(2), 0, Dp(2), 0);
+            row.AddView(key, p);
+        }
+        Key("⇥", "Tab", () => InsertCode("    "));
+        Key("↶", "Desfazer", () => _editor?.Undo());
+        Key("↷", "Refazer", () => _editor?.Redo());
+        foreach (var symbol in new[] { "{", "}", "(", ")", ";", "=", "\"", ".", ",", "<", ">", "[", "]", "+", "-", "*", "/", "!", "&", "|", "_" })
+            Key(symbol, symbol, () => InsertCode(symbol));
+        Key("←", "Cursor para a esquerda", () => MoveCaret(-1));
+        Key("→", "Cursor para a direita", () => MoveCaret(1));
+        Key("⌕", "Localizar no arquivo", ShowFind);
+        var scroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false, Visibility = ViewStates.Gone };
+        scroll.SetBackgroundColor(LunetUi.Surface);
+        scroll.AddView(row);
+        _extraKeys = scroll;
+        return scroll;
+    }
+
+    private void InsertCode(string text)
+    {
+        if (_editor is null) return;
+        int start = Math.Min(_editor.SelectionStart, _editor.SelectionEnd);
+        int end = Math.Max(_editor.SelectionStart, _editor.SelectionEnd);
+        if (start < 0) return;
+        _editor.Replace(start, end - start, text);
+    }
+
+    private void MoveCaret(int delta)
+    {
+        if (_editor is null) return;
+        var length = _editor.Text?.Length ?? 0;
+        var target = Math.Clamp(_editor.SelectionEnd + delta, 0, length);
+        _editor.SetSelection(target);
+    }
+
+    /// <summary>While typing: show the code keys and hide the bottom navigation, giving the code the space.</summary>
+    private void WatchKeyboard(View root)
+    {
+        root.ViewTreeObserver!.GlobalLayout += (_, _) =>
+        {
+            var visible = new global::Android.Graphics.Rect();
+            root.GetWindowVisibleDisplayFrame(visible);
+            var screen = root.RootView!.Height;
+            bool keyboard = screen - visible.Bottom > screen * 0.18;
+            if (keyboard == _keyboardVisible) return;
+            _keyboardVisible = keyboard;
+            bool editing = keyboard && _editor?.HasFocus == true;
+            if (_extraKeys is not null) _extraKeys.Visibility = editing ? ViewStates.Visible : ViewStates.Gone;
+            if (_workbenchNav is not null) _workbenchNav.Visibility = keyboard ? ViewStates.Gone : ViewStates.Visible;
+        };
     }
 
     private void FocusWorkbenchCode()
@@ -101,6 +164,7 @@ public sealed partial class MainActivity
         ApplyWorkspaceLayout();
         SaveLayouts();
         RefreshWorkbenchNavigation();
+        _editor?.RequestFocus();
     }
 
     private void OpenWorkbenchPanel(bool console)
@@ -114,15 +178,52 @@ public sealed partial class MainActivity
         RefreshWorkbenchNavigation();
     }
 
-    /// <summary>Comandos pesquisáveis com rótulos completos, sem esconder ações atrás de ícones ambíguos.</summary>
+    /// <summary>Studios are part of the project (TIC-80 model): one sheet lists them with what they edit.</summary>
+    private void ShowStudioHub()
+    {
+        if (_project is null) return;
+        var sheet = LunetUi.Column(this, 10);
+        sheet.SetPadding(Dp(16), Dp(8), Dp(16), Dp(8));
+        AlertDialog? dialog = null;
+        void Card(string glyph, string title, string subtitle, Action open)
+        {
+            var card = LunetUi.Row(this, 12);
+            card.SetPadding(Dp(14), Dp(12), Dp(14), Dp(12));
+            card.Background = LunetUi.Pressable(this, LunetUi.SurfaceRaised, LunetUi.Radius, LunetUi.Border);
+            card.Clickable = true;
+            card.Click += (_, _) => { dialog?.Dismiss(); open(); };
+            card.AddView(LunetUi.Label(this, glyph, 24, LunetUi.AccentText));
+            var text = LunetUi.Column(this, 2);
+            text.AddView(LunetUi.Label(this, title, LunetUi.TextBody, LunetUi.Text, bold: true));
+            text.AddView(LunetUi.Label(this, subtitle, LunetUi.TextCaption, LunetUi.TextMuted));
+            card.AddView(text, LunetUi.Weight());
+            sheet.AddView(card, LunetUi.FillWidth());
+        }
+        var count = _project.ListFiles();
+        Card("▦", "Sprites e animação", $"{count.Count(f => f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))} sprite(s) · pixel art, frames, onion skin", ShowSpriteAssets);
+        Card("▩", "Tilemaps", $"{count.Count(f => f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase))} mapa(s) · camadas, colisão, pincel", ShowArtTools);
+        Card("∿", "Áudio", "WAV: forma de onda, corte, loop, efeitos", ShowAudioStudio);
+        Card("▣", "Assets do projeto", "Imagens, sons e dados com prévia e uso no código", ShowAssets);
+        Card("✎", "Notas e esboços", "Ideias, roteiros e esquemas dentro do projeto", ShowNotes);
+        var scroll = new ScrollView(this);
+        scroll.AddView(sheet);
+        dialog = new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
+            .SetTitle("Studio")!
+            .SetView(scroll)!
+            .SetNegativeButton("Fechar", (_, _) => { })!
+            .Create();
+        dialog.Show();
+    }
+
+    /// <summary>One search box for commands and project files.</summary>
     private void ShowCommandPalette()
     {
         var commands = new (string Label, Action Execute)[]
         {
-            ("IA · conversar sobre o código", () => OpenAiPanel(null)),
-            ("IA · configurar provedor, modelo e chave", () => ShowAiSettings()),
-            ("Abrir arquivos", ToggleExplorer),
-            ("Buscar no projeto", ShowProjectSearch),
+            ("✦ IA · conversar sobre o código", () => OpenAiPanel(null)),
+            ("✦ IA · configurar provedor, modelo e chave", () => ShowAiSettings()),
+            ("▶ Rodar o jogo", Run),
+            ("Buscar texto no projeto", ShowProjectSearch),
             ("Localizar e substituir", ShowFind),
             ("Ir para definição", GoToDefinition),
             ("Estrutura do arquivo", ShowOutline),
@@ -130,52 +231,72 @@ public sealed partial class MainActivity
             ("Formatar documento", () => FormatDocument(silent: false)),
             ("Desfazer", () => _editor?.Undo()),
             ("Refazer", () => _editor?.Redo()),
-            ("Executar jogo", Run),
-            ("Problemas de compilação", () => OpenWorkbenchPanel(false)),
+            ("Erros de compilação", () => OpenWorkbenchPanel(false)),
             ("Console do jogo", () => OpenWorkbenchPanel(true)),
+            ("Studio · sprites, tilemaps, áudio", ShowStudioHub),
+            ("Notas e esboços do projeto", ShowNotes),
             ("Assets do projeto", ShowAssets),
-            ("Sprite e Tile Studio", ShowArtTools),
-            ("Audio Studio", ShowAudioStudio),
-            ("Assistente e ferramentas", ShowToolsMenu),
             ("Git", ShowGit),
             ("Gerar APK do jogo", AskBuildGameApk),
-            ("Documentação", ShowReference),
+            ("Documentação do Lunet", ShowReference),
             ("Layout do workspace", ShowLayoutDialog),
-            ("Configurações", ShowSettings),
-            ("Menu completo", ShowMenu),
+            ("Configurações do editor", ShowSettings),
+            ("Atalhos de teclado", ShowShortcutHelp),
+            ("Menu completo (avançado)", ShowMenu),
         };
-        var names = commands.Select(x => x.Label).ToArray();
-        var search = new EditText(this) { Hint = "Pesquisar ação…" };
-        search.SetSingleLine(true);
-        search.ContentDescription = "Pesquisar comandos do Lunet";
+        var files = (_project?.ListFiles() ?? []).Where(f => !f.StartsWith(".lunet", StringComparison.Ordinal)).ToArray();
+        var entries = commands.Select(c => (Label: c.Label, Run: c.Execute))
+            .Concat(files.Select(f => (Label: "▤ " + f, Run: (Action)(() => OpenProjectEntry(f)))))
+            .ToArray();
+        var names = entries.Select(e => e.Label).ToArray();
 
-        var list = new ListView(this);
-        var adapter = new ArrayAdapter<string>(this, global::Android.Resource.Layout.SimpleListItem1, names);
-        list.Adapter = adapter;
-        var content = Vertical();
-        content.SetPadding(Dp(12), Dp(4), Dp(12), Dp(8));
+        var content = LunetUi.Column(this, 8);
+        content.SetPadding(Dp(14), Dp(6), Dp(14), Dp(6));
+        var search = LunetUi.Input(this, "Buscar ação ou arquivo…");
+        search.ContentDescription = "Buscar ações e arquivos do Lunet";
         content.AddView(search);
-        content.AddView(list, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(340)));
-        var dialog = new AlertDialog.Builder(this)!
-            .SetTitle("Ações rápidas")!
+        var list = new ListView(this) { Divider = null };
+        var adapter = new ArrayAdapter<string>(this, global::Android.Resource.Layout.SimpleListItem1, names.Take(60).ToList());
+        list.Adapter = adapter;
+        content.AddView(list, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(Resources!.DisplayMetrics!.HeightPixels * 0.5f)));
+        var dialog = new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
             .SetView(content)!
-            .SetNegativeButton("Fechar", (_, _) => { })!
             .Create();
-
         search.TextChanged += (_, _) =>
         {
             var filtered = WorkbenchCommands.Filter(names, search.Text);
             adapter.Clear();
-            foreach (var name in filtered) adapter.Add(name);
+            adapter.AddAll(filtered.Take(60).ToList());
             adapter.NotifyDataSetChanged();
+        };
+        search.EditorAction += (_, e) =>
+        {
+            if (adapter.Count == 0) return;
+            var first = adapter.GetItem(0);
+            dialog.Dismiss();
+            entries.FirstOrDefault(x => x.Label == first).Run?.Invoke();
+            e.Handled = true;
         };
         list.ItemClick += (_, args) =>
         {
             var selected = adapter.GetItem(args.Position);
-            var command = commands.FirstOrDefault(x => x.Label == selected);
             dialog.Dismiss();
-            command.Execute?.Invoke();
+            entries.FirstOrDefault(x => x.Label == selected).Run?.Invoke();
         };
         dialog.Show();
+        search.RequestFocus();
+        dialog.Window?.SetSoftInputMode(SoftInput.StateVisible);
+    }
+
+    private void OpenProjectEntry(string path)
+    {
+        if (path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+        {
+            if (path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && path.StartsWith(NotesFolder + "/", StringComparison.Ordinal))
+                OpenNote(path);
+            else OpenFile(path);
+        }
+        else OnExplorerTap(new ExplorerEntry(path, System.IO.Path.GetFileName(path), 0, false));
     }
 }

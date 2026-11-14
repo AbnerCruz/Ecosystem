@@ -362,7 +362,8 @@ public sealed partial class MainActivity
             .Where(p => p.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
             .Select(p => $"{p.FilePath ?? "?"}({p.Line},{p.Column}): {(p.Severity == DiagnosticSeverity.Error ? "error" : "warning")} {p.Id}: {p.Message}")
             .ToArray();
-        return new LunetAiEditorContext(_openFile, SelectedEditorText() ?? _aiPendingSelection, caretLine, diagnostics,
+        return new LunetAiEditorContext(_openNote ?? _openFile, _openNote is null ? SelectedEditorText() ?? _aiPendingSelection : null,
+            _openNote is null ? caretLine : 0, diagnostics,
             _console.TakeLast(30).ToArray());
     }
 
