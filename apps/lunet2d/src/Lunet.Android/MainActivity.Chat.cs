@@ -264,6 +264,7 @@ public sealed partial class MainActivity
             RenderConversation();
         }),
         ("Configurar provedor, modelo e chave", () => ShowAiSettings()),
+        ("Versões da IA / recuperar código", ShowAiRecoveryPoints),
         ("Copiar a conversa inteira", () => CopyToClipboard(string.Join("\n\n", (_aiSession?.History ?? []).Select(t => t.Role + ":\n" + t.Text)))),
         ("O que a IA sabe e consegue fazer", () => OpenAiPanel("O que você consegue fazer neste projeto e o que o Lunet ainda não tem?", autoSend: true)),
     ]);
@@ -367,7 +368,9 @@ public sealed partial class MainActivity
             var turn = history[i];
             if (turn.Role == "Você") AddUserMessage(turn.Text);
             else AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você"
-                ? StripAttachments(history[i - 1].Text) : null, taught: turn.Mode == LunetAiMode.Teach);
+                ? StripAttachments(history[i - 1].Text) : null,
+                reply: belongs && work is { IsRunning: false, Reply: not null } && i == history.Count - 1 ? work.Reply : null,
+                taught: turn.Mode == LunetAiMode.Teach);
         }
         if (belongs && work!.IsRunning)
         {
@@ -836,6 +839,8 @@ public sealed partial class MainActivity
                 }
             }
 
+            if (!work.IsRunning && work.RolledBackFiles.Count > 0)
+                RefreshExplorer();
             if (AiPanelOpen) RenderConversation();
             RefreshSendButton();
         });
