@@ -68,9 +68,18 @@ public sealed class LunetAiSpriteTool : ITool
 
             _checkpoint.Capture(path + ".sprite.json");
             _checkpoint.Capture(path + ".png");
-            _project.WriteText(path + ".sprite.json", json);
-            using (var stream = new MemoryStream(png))
+            try
+            {
+                _project.WriteText(path + ".sprite.json", json);
+                using var stream = new MemoryStream(png);
                 _project.Import(System.IO.Path.GetDirectoryName(path)!.Replace('\\', '/'), System.IO.Path.GetFileName(path) + ".png", stream);
+            }
+            finally
+            {
+                // Even a partially failed two-file asset operation remains recoverable.
+                _checkpoint.RecordAfter(path + ".sprite.json");
+                _checkpoint.RecordAfter(path + ".png");
+            }
 
             // Content.LoadTexture paths are relative to Content/, not to the project root.
             var loadPath = path.StartsWith("Content/", StringComparison.Ordinal)
