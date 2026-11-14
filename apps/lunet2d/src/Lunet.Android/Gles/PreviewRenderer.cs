@@ -22,6 +22,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private IAudioBackend? _audio;
     private readonly ISaveStore _save;
     private readonly IHaptics _haptics;
+    private readonly IGameImagePicker? _imagePicker;
     private GamepadState _gamepad;
     private System.Numerics.Vector3 _gyroscope;
     private volatile bool _appPaused;
@@ -60,10 +61,11 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         _performance.Reset();
     }
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log, IGameImagePicker? imagePicker = null)
     {
         _save = save;
         _haptics = haptics;
+        _imagePicker = imagePicker;
         _audioFactory = audioFactory;
         _content = content;
         _assembly = assembly;
@@ -233,6 +235,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             _loaded = GameLoader.Load(_assembly, _symbols);
             _loaded.Game.Log.Written += _log;
+            if (_imagePicker is not null) _loaded.Game.Services.Add<IGameImagePicker>(_imagePicker);
             _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory(), _save, _haptics);
             lock (_inputLock) { _host.SetDisplay(_display.Density, _display.Left, _display.Top, _display.Right, _display.Bottom); _displayDirty = false; }
             _host.Start(_width, _height);

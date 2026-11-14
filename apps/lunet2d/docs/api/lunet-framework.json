@@ -6575,6 +6575,67 @@
       ]
     },
     {
+      "id": "T:Lunet.Content.IGameImagePicker",
+      "name": "IGameImagePicker",
+      "namespace": "Lunet.Content",
+      "kind": "interface",
+      "signature": "public interface IGameImagePicker",
+      "summary": "Escolha de imagens dentro do jogo fornecida pelo host, sem permiss\u00F5es gerais de armazenamento.",
+      "remarks": "O seletor n\u00E3o bloqueia o jogo; consulte TryReceive em Update para obter a imagem.",
+      "examples": [
+        "\u0060\u0060\u0060\nif (Services.TryGet\u003CIGameImagePicker\u003E(out var picker) \u0026\u0026 picker.CanPick)\n    picker.Pick();\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Content.IGameImagePicker.CanPick",
+          "name": "CanPick",
+          "kind": "property",
+          "signature": "public abstract bool CanPick { get; }",
+          "summary": "Indica se o host oferece um seletor nativo de imagens.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Content.IGameImagePicker.Pick",
+          "name": "Pick",
+          "kind": "method",
+          "signature": "public abstract void Pick()",
+          "summary": "Abre o seletor. Chamadas repetidas enquanto j\u00E1 estiver aberto s\u00E3o ignoradas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Content.IGameImagePicker.TryReceive(Lunet.Content.PickedGameImage@)",
+          "name": "TryReceive",
+          "kind": "method",
+          "signature": "public abstract bool TryReceive(out PickedGameImage result)",
+          "summary": "Consome um resultado pendente, incluindo cancelamento e falha.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "PickedGameImage",
+              "description": "Resultado selecionado, ou cancelamento/falha com Rgba nulo."
+            }
+          ],
+          "returns": "Verdadeiro quando existe um resultado novo para consumir.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Content.Localization",
       "name": "Localization",
       "namespace": "Lunet.Content",
@@ -6749,6 +6810,110 @@
             }
           ],
           "returns": "O idioma escolhido.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Content.PickedGameImage",
+      "name": "PickedGameImage",
+      "namespace": "Lunet.Content",
+      "kind": "class",
+      "signature": "public sealed class PickedGameImage : IEquatable\u003CPickedGameImage\u003E",
+      "summary": "Imagem RGBA decodificada e limitada; crie a textura na thread gr\u00E1fica usando Texture2D.FromPixels.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar result = new PickedGameImage(1, 1, new byte[] { 255, 255, 255, 255 });\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Content.PickedGameImage.#ctor(System.Int32,System.Int32,System.Byte[],System.String)",
+          "name": "PickedGameImage",
+          "kind": "constructor",
+          "signature": "public PickedGameImage(int Width, int Height, byte[]? Rgba, string? Error = null)",
+          "summary": "Imagem RGBA decodificada e limitada; crie a textura na thread gr\u00E1fica usando Texture2D.FromPixels.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Width",
+              "type": "int",
+              "description": "Largura, em pixels."
+            },
+            {
+              "name": "Height",
+              "type": "int",
+              "description": "Altura, em pixels."
+            },
+            {
+              "name": "Rgba",
+              "type": "byte[]",
+              "description": "Bytes R,G,B,A em ordem de linhas; nulo em cancelamento/falha."
+            },
+            {
+              "name": "Error",
+              "type": "string",
+              "description": "Erro de leitura, ou nulo para sucesso/cancelamento."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar result = new PickedGameImage(1, 1, new byte[] { 255, 255, 255, 255 });\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Content.PickedGameImage.Error",
+          "name": "Error",
+          "kind": "property",
+          "signature": "public string? Error { get; init; }",
+          "summary": "Erro de leitura, ou nulo para sucesso/cancelamento.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Content.PickedGameImage.Height",
+          "name": "Height",
+          "kind": "property",
+          "signature": "public int Height { get; init; }",
+          "summary": "Altura, em pixels.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Content.PickedGameImage.Rgba",
+          "name": "Rgba",
+          "kind": "property",
+          "signature": "public byte[]? Rgba { get; init; }",
+          "summary": "Bytes R,G,B,A em ordem de linhas; nulo em cancelamento/falha.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Content.PickedGameImage.Width",
+          "name": "Width",
+          "kind": "property",
+          "signature": "public int Width { get; init; }",
+          "summary": "Largura, em pixels.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"

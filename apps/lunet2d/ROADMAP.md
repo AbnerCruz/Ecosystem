@@ -25,6 +25,9 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 
 ### Ordem do proprietário em 14/11/2026 — IA como colega de trabalho e redesenho da experiência
 
+- [ ] **LUNET-508 — Seletor de fotos dentro dos jogos (implementado, testes verdes, DEVICE pendente):** solicitação de 14/11/2026 para o FotoPuzzle com imagens escolhidas durante a partida (PR #944; o ID LUNET-502 usado no início do PR já pertencia ao servidor dedicado). Contrato portátil `IGameImagePicker`/`PickedGameImage` em `Lunet.Content`; Android pelo seletor de documentos (SAF), sem permissão de armazenamento nem URI exposta ao jogo; redução para no máximo 1024 px por lado fora das threads de UI e GL; orientação EXIF aplicada (`ImageOrientation`, fotos da câmera chegam em pé). Preview rápido e APK standalone registram o serviço; Preview isolado e `lunet-server` não. Guia `docs/guides/fotos-no-jogo.md` (exemplo compilado por teste); testes `GameImagePickerTests`. Projeto FotoPuzzle entregue à parte como ZIP. DEVICE: guia §Validação (moto g32, Android 13).
+
+
 Diagnóstico: `docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md` (nível do Ecosystem). O proprietário deu autorização total para desenvolver até uma release funcional. A camada visual é refeita sobre os módulos existentes; Framework, Compiler, serviços do Editor e Build ficam preservados.
 
 - [ ] **LUNET-501 — Multiplayer realtime:** ver Fase 7 (mesmo item, aqui por ser prioridade do proprietário).
