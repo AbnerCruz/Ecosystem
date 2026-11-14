@@ -53,9 +53,10 @@
     {
       "check": "Validação no aparelho de composição, reprodução, exportação e efeitos",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/estudio-de-musica.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/939); registro em docs/governance/responses/VAL-HO-20261114-lunet-music-studio-8724346fcebc.md."
     }
   ],
   "known_issues": [
