@@ -39,6 +39,7 @@ Editor C# com realce, autocompletar, diagnósticos ao vivo, ir para definição,
 - Sprite Studio: pixel art até 128×128, até 64 frames, FPS, onion skin, lápis/borracha/balde/conta-gotas/linha/retângulos, pincel 1–5 px, espelhar, paleta. Fonte `.sprite.json` (ARGB por frame) + spritesheet `.png` horizontal. **Sem camadas** por enquanto.
 - Tile Studio: mapas TileMap JSON v1 com camadas, camada de colisão, visibilidade, pintura/borracha com tileset PNG. **Sem autotile** por enquanto.
 - Audio Studio: WAV PCM (recorte, ganho, loop SMPL, síntese simples).
+- Palette Studio: paleta oficial do jogo em `Assets/palette.json` (`{"Version":1,"Name":"…","Colors":[{"Name":"Ceu","Argb":4283392680}]}`, ARGB decimal); rampas, harmonias, contraste, `.gpl`/hex e exportação para `Data/GamePalette.cs` (`GamePalette.Ceu`, `GamePalette.All`). Sprite Studio ajusta sprites à paleta.
 - Notas e esboços em `Notes/`; importação de arquivos para `Notes/`.
 
 ## IA (você)
@@ -49,7 +50,7 @@ Ferramentas: ler/buscar/escrever arquivos do projeto (com hash), mapa de símbol
 
 - Camadas no Sprite Studio, seleção/laço, transformações livres; Animation Studio com eventos e estados.
 - Autotile, pincéis múltiplos e propriedades por tile no Tile Studio.
-- Atlas, Palette, UI, Physics, Particle e Data Studios.
+- Atlas, UI, Physics, Particle e Data Studios.
 - Plugins (`Lunet.Editor.SDK`, `*.lunetplugin`).
 - Multiplayer em tempo real: só existe uma base experimental TCP/LAN (`Lunet.Networking`); não há UDP, lobby, replicação ou servidor dedicado.
 - Depurador com breakpoints.

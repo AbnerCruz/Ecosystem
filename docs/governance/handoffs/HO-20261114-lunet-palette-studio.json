@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-palette-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T13:56:31Z",
+  "agent": {
+    "id": "claude-lunet-palette-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-499",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "bbc849e8f06a4f896976e857b0afb1b0b1ad1f62",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/933",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Studio/ProjectPalette.cs",
+    "apps/lunet2d/src/Lunet.Studio/Icons/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Palette.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiPerception.cs",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectPaletteTests.cs",
+    "apps/lunet2d/docs/guides/paleta-de-cores.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261114-lunet-palette-studio.json"
+  ],
+  "work_completed": [
+    "Modelo de paleta canônica por projeto (Assets/palette.json) com geração (rampas, harmonias, extração), consistência (remapear, cores fora, contraste) e exportação (C#, .gpl).",
+    "Palette Studio Android; Sprite Studio prioriza a paleta do projeto e ajusta sprites a ela.",
+    "IA trata o arquivo como paleta oficial e recomenda GamePalette no código."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "951 testes, 0 falhas (ProjectPaletteTests: 20 casos, inclui compilação do GamePalette.cs gerado)"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Validação no aparelho do Palette Studio, Sprite Studio e IA com paleta",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/paleta-de-cores.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Ainda não substitui uma cor em todos os assets de uma vez; Tile Studio não lê a paleta (usa o tileset)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR #933; DEVICE pelo guia."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma autoridade de paleta por projeto (Assets/palette.json); análise de sprites é só fallback."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Fica no Lunet.Studio, sem extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-project-palette",
+      "status": "product-specific",
+      "rationale": "Formato e fluxo de paleta do Studio de jogos; sem consumidor externo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
