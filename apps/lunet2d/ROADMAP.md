@@ -62,6 +62,8 @@ Diagnóstico: `docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md` (
 
 - [ ] **LUNET-AI-001 — IA especializada no IDE com núcleo único (PR #880, feito, CI/DEVICE pendentes):** painel Android para conversa por projeto; provider OpenAI-compatible; ferramentas `lunet.files.list/read/write` com grants por Context, SHA-256 para impedir sobreposição de edição concorrente, escopo de arquivos do projeto e histórico local privado. O código canônico das políticas do agente permanece centralizado, com projeção verificável em `platform/agent-runtime/projection.py` para builds do Lunet autocontidos (NN-002/NN-023). Sem dependência do Framework nem do Runtime de jogos. Testes unitários, CI Android, provider real e DEVICE precisam de evidências; a evolução para produção de sprite, áudio, tilemap, agentes múltiplos, verificação de build e UI de diff requer itens próprios. Guia: `docs/guides/ia-lunet.md`.
 
+- [ ] **Projeto Em branco — correção (implementada, CI pendente):** criar um projeto `Blank` deve gerar somente uma classe vazia derivada de `Game`, sem bola, fundo, input, entidades ou assets de demonstração. Testes de contrato e jornada E2E atualizados para provar que o exemplo só aparece quando o usuário o escreve.
+
 ## Estado atual
 
 | Fase | Estado |
