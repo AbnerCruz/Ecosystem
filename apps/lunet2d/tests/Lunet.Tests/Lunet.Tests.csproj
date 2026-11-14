@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Lunet.Runtime\Lunet.Runtime.csproj" />
     <ProjectReference Include="../../src/Lunet.Server/Lunet.Server.csproj" />
     <ProjectReference Include="../../src/Lunet.Host/Lunet.Host.csproj" />
+    <ProjectReference Include="../../src/Lunet.Desktop/Lunet.Desktop.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

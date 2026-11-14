@@ -69,5 +69,5 @@ Ferramentas: ler/buscar/escrever arquivos do projeto (com hash), mapa de símbol
 - Multiplayer pela internet pública com segurança: não há autenticação, criptografia, relay/NAT traversal nem diretório online de partidas; use LAN ou um servidor dedicado próprio. Não há delta compression nem compensação de lag.
 - Depurador com breakpoints.
 - Publicação em lojas, assinatura de release com chave do usuário e AAB (o APK gerado é de desenvolvimento).
-- Versão desktop do Lunet.
+- Versão desktop completa do Lunet: existe uma prévia (spike) para Windows/Linux/macOS que abre, edita, compila e roda projetos, ainda sem Studios, IA e shaders customizados na prévia.
 - Ver imagens nativamente: imagens são lidas pela grade de `lunet.image.inspect`.

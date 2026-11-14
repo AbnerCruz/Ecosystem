@@ -1,0 +1,117 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-desktop-spike",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T15:33:00Z",
+  "agent": {
+    "id": "claude-lunet-desktop-spike",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-482",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "5fced65f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/Lunet.slnx",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+    "apps/lunet2d/docs/architecture/img/",
+    "apps/lunet2d/docs/architecture/spike-avalonia-desktop-2026-11-14.md",
+    "apps/lunet2d/docs/guides/particle-studio.md",
+    "apps/lunet2d/docs/guides/particulas.md",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Desktop/",
+    "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
+    "apps/lunet2d/src/Lunet.Host/Lunet.Host.csproj",
+    "apps/lunet2d/src/Lunet.Host/WorkspaceSession.cs",
+    "apps/lunet2d/src/Lunet.Runtime/HeadlessGameRunner.cs",
+    "apps/lunet2d/src/Lunet.Runtime/SoftwareGraphicsBackend.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DesktopHostTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "apps/lunet2d/tests/Lunet.Tests/SoftwareRendererTests.cs",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261114-lunet-desktop-spike.json",
+    "docs/governance/handoffs/HO-20261114-lunet-particle-studio.json"
+  ],
+  "work_completed": [
+    "Consequências de DEC-0062 (A) aplicadas: SPEC §2/§3, ADR 0012 Aceito, consequencesApplied.",
+    "Rasterizador em CPU com semântica GL e caminho rápido para sprites.",
+    "WorkspaceSession portátil e casca Avalonia desktop com prévia e modo de medição.",
+    "Restaurado o guia de partículas sobrescrito por engano."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1025 testes; SoftwareRendererTests e DesktopHostTests"
+    },
+    {
+      "check": "dotnet run -c Release --project src/Lunet.Desktop -- --measure",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "números em docs/architecture/spike-avalonia-desktop-2026-11-14.md; captura docs/architecture/img/spike-desktop-2026-11-14.png"
+    },
+    {
+      "check": "Abrir o Lunet desktop num computador com tela, rodar --measure e um jogo com mouse e teclado",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/architecture/spike-avalonia-desktop-2026-11-14.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Shaders customizados não rodam na prévia CPU.",
+    "Desktop sem Studios, IA e empacotamento ainda.",
+    "Itens validados pelo proprietário ainda sem [x] no ROADMAP."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "LUNET-493: Studios e IA no desktop; empacotamento por sistema."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+    "docs/governance/responses/DEC-0062.md",
+    "docs/governance/decisions.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-011",
+      "evidence": "Executa a alternativa A escolhida pelo proprietário em DEC-0062; ADR 0012 Aceito."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita: reutiliza Core/Compiler/Runtime/Framework."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência de outro Product; Avalonia é dependência do Lunet.Desktop apenas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Medição em desktop real pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-desktop-shell",
+      "status": "product-specific",
+      "rationale": "Casca do Lunet; o editor de notas tem sua própria casca Avalonia, sem código compartilhado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

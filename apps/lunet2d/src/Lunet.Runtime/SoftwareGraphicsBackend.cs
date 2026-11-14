@@ -135,9 +135,95 @@ public sealed class SoftwareGraphicsBackend : IGraphicsBackend
                 var clip = Vector4.Transform(new Vector4(quad[i].Position, 0, 1), projection);
                 screen[i] = new Vector2((clip.X / clip.W + 1) * 0.5f * _viewport.W + _viewport.X, (clip.Y / clip.W + 1) * 0.5f * _viewport.H + _viewport.Y);
             }
+            QuadsDrawn++;
+            if (AxisAligned(screen) && quad[0].Color == quad[1].Color && quad[1].Color == quad[2].Color && quad[2].Color == quad[3].Color &&
+                _state.Blend is BlendMode.Alpha or BlendMode.Additive or BlendMode.Opaque or BlendMode.Premultiplied)
+            {
+                FastRect(screen, quad, texture, linear, repeat, cx0, cy0, cx1, cy1);
+                continue;
+            }
             Triangle(screen[0], screen[1], screen[2], quad[0], quad[1], quad[2], texture, linear, repeat, cx0, cy0, cx1, cy1, false);
             Triangle(screen[0], screen[2], screen[3], quad[0], quad[2], quad[3], texture, linear, repeat, cx0, cy0, cx1, cy1, true);
-            QuadsDrawn++;
+        }
+    }
+
+    private static bool AxisAligned(ReadOnlySpan<Vector2> s)
+    {
+        const float e = 1e-3f;
+        return MathF.Abs(s[0].Y - s[1].Y) < e && MathF.Abs(s[1].X - s[2].X) < e && MathF.Abs(s[2].Y - s[3].Y) < e && MathF.Abs(s[3].X - s[0].X) < e;
+    }
+
+    /// <summary>
+    /// The common case — an unrotated sprite with one tint — with integer blending and incremental texture coordinates.
+    /// Same pixel coverage as the triangle path (pixel centers inside the rectangle).
+    /// </summary>
+    private void FastRect(ReadOnlySpan<Vector2> s, ReadOnlySpan<SpriteVertex> quad, Surface texture, bool linear, bool repeat,
+        int cx0, int cy0, int cx1, int cy1)
+    {
+        float left = MathF.Min(s[0].X, s[1].X), right = MathF.Max(s[0].X, s[1].X);
+        float bottom = MathF.Min(s[0].Y, s[2].Y), top = MathF.Max(s[0].Y, s[2].Y);
+        int x0 = Math.Max(cx0, (int)MathF.Ceiling(left - 0.5f)), x1 = Math.Min(cx1, (int)MathF.Ceiling(right - 0.5f));
+        int y0 = Math.Max(cy0, (int)MathF.Ceiling(bottom - 0.5f)), y1 = Math.Min(cy1, (int)MathF.Ceiling(top - 0.5f));
+        if (x1 <= x0 || y1 <= y0) return;
+        // u along screen x (from vertex 0 to 1), v along screen y (from vertex 0 to 2/3).
+        float su0 = s[0].X, su1 = s[1].X, sv0 = s[0].Y, sv1 = s[3].Y;
+        float u0 = quad[0].TexCoord.X, u1 = quad[1].TexCoord.X, v0 = quad[0].TexCoord.Y, v1 = quad[3].TexCoord.Y;
+        float du = (u1 - u0) / (su1 - su0), dv = (v1 - v0) / (sv1 - sv0);
+        uint tint = quad[0].Color;
+        int tr = (int)(tint & 0xff), tg = (int)(tint >> 8 & 0xff), tb = (int)(tint >> 16 & 0xff), ta = (int)(tint >> 24);
+        bool whiteTint = tint == 0xffffffff;
+        var mode = _state.Blend;
+        var target = _current;
+        int tw = texture.Width, th = texture.Height;
+        // Linear filtering at a 1:1 texel-to-pixel scale samples texel centers exactly: nearest gives the same result.
+        bool nearest = !linear || MathF.Abs(MathF.Abs(du) * tw - 1) < 1e-3f && MathF.Abs(MathF.Abs(dv) * th - 1) < 1e-3f;
+        var pixels = texture.Pixels;
+        for (int y = y0; y < y1; y++)
+        {
+            float v = v0 + (y + 0.5f - sv0) * dv;
+            int row = y * target.Width;
+            float u = u0 + (x0 + 0.5f - su0) * du;
+            for (int x = x0; x < x1; x++, u += du)
+            {
+                uint src;
+                if (nearest)
+                {
+                    int ix = (int)MathF.Floor(u * tw), iy = (int)MathF.Floor(v * th);
+                    if (repeat) { ix = ((ix % tw) + tw) % tw; iy = ((iy % th) + th) % th; }
+                    else { ix = ix < 0 ? 0 : ix >= tw ? tw - 1 : ix; iy = iy < 0 ? 0 : iy >= th ? th - 1 : iy; }
+                    src = pixels[iy * tw + ix];
+                }
+                else
+                {
+                    var (fr, fg, fb, fa) = Sample(texture, u, v, true, repeat);
+                    src = (uint)(fr * 255 + 0.5f) | (uint)(fg * 255 + 0.5f) << 8 | (uint)(fb * 255 + 0.5f) << 16 | (uint)(fa * 255 + 0.5f) << 24;
+                }
+                int r = (int)(src & 0xff), g = (int)(src >> 8 & 0xff), b = (int)(src >> 16 & 0xff), a = (int)(src >> 24);
+                if (!whiteTint) { r = (r * tr + 127) / 255; g = (g * tg + 127) / 255; b = (b * tb + 127) / 255; a = (a * ta + 127) / 255; }
+                if (a == 0 && mode != BlendMode.Opaque && mode != BlendMode.Premultiplied) continue;
+                ref uint dst = ref target.Pixels[row + x];
+                uint d = dst;
+                int dr = (int)(d & 0xff), dg = (int)(d >> 8 & 0xff), db = (int)(d >> 16 & 0xff), da = (int)(d >> 24);
+                int ia = 255 - a;
+                switch (mode)
+                {
+                    case BlendMode.Opaque: break;
+                    case BlendMode.Additive:
+                        r = Math.Min(255, dr + (r * a + 127) / 255); g = Math.Min(255, dg + (g * a + 127) / 255);
+                        b = Math.Min(255, db + (b * a + 127) / 255); a = Math.Min(255, da + a);
+                        break;
+                    case BlendMode.Premultiplied:
+                        r = Math.Min(255, r + (dr * ia + 127) / 255); g = Math.Min(255, g + (dg * ia + 127) / 255);
+                        b = Math.Min(255, b + (db * ia + 127) / 255); a = Math.Min(255, a + (da * ia + 127) / 255);
+                        break;
+                    default:
+                        if (a == 255) break;
+                        r = (r * a + dr * ia + 127) / 255; g = (g * a + dg * ia + 127) / 255;
+                        b = (b * a + db * ia + 127) / 255; a = Math.Min(255, a + (da * ia + 127) / 255);
+                        break;
+                }
+                dst = (uint)r | (uint)g << 8 | (uint)b << 16 | (uint)a << 24;
+            }
         }
     }
 

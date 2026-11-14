@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Lunet.Desktop</RootNamespace>
+    <AssemblyName>Lunet</AssemblyName>
+    <AvaloniaVersion>12.1.3</AvaloniaVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- DEC-0062 (alternativa A) / ADR 0012: spike da casca desktop. Não substitui o host Android. -->
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <!-- Measurement mode of the spike (modo measure): the real window rendered offscreen with Skia. -->
+    <PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Lunet.Host/Lunet.Host.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,5 +1,8 @@
 # Changelog
 
+- LUNET-482 (DEC-0062, alternativa A): primeira versão do Lunet para desktop (Windows, Linux, macOS) em Avalonia — abre projetos, edita, compila e roda o jogo com prévia, mouse e teclado. Rasterizador em CPU com o mesmo resultado do Android (2000 sprites em 4 ms). Ainda é um spike: falta medir num computador com tela real. O Android não mudou.
+- Correção: o guia do modelo de partículas (`docs/guides/particulas.md`) havia sido substituído pelo do Particle Studio; foi restaurado e o novo guia está em `docs/guides/particle-studio.md`.
+
 - LUNET-504: Particle Studio — efeitos de fogo, fumaça, faíscas, explosão, chuva, neve, magia, poeira, bolhas e confete com prévia ao vivo; o Framework ganha direção e abertura, formas de nascimento, resistência do ar, variações, giro, gradiente de cor e brilho aditivo, e o jogo carrega o efeito salvo com `Content.LoadParticleEmitter`. Efeitos antigos continuam idênticos.
 
 - LUNET-503: multijogador no mesmo aparelho — tela dividida para até 4 jogadores com toques por região e uma câmera por jogador (`SpriteBatch.Begin(camera, região)`), e `TurnOrder` para jogos por vez (hot-seat) e partidas assíncronas com proteção contra jogadas sobre um estado antigo.
