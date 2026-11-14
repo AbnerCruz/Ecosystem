@@ -72,6 +72,14 @@ public sealed class LunetAiSpriteTool : ITool
             using (var stream = new MemoryStream(png))
                 _project.Import(System.IO.Path.GetDirectoryName(path)!.Replace('\\', '/'), System.IO.Path.GetFileName(path) + ".png", stream);
 
+            // Content.LoadTexture paths are relative to Content/, not to the project root.
+            var loadPath = path.StartsWith("Content/", StringComparison.Ordinal)
+                ? path["Content/".Length..] + ".png" : path + ".png";
+            var physicalPng = System.IO.Path.Combine(_project.Directory,
+                (path + ".png").Replace('/', System.IO.Path.DirectorySeparatorChar));
+            if (!File.Exists(physicalPng))
+                throw new IOException("PNG do sprite não foi persistido: " + path + ".png");
+
             var frameList = string.Join(", ", Enumerable.Range(0, pixels.Count));
             return ValueTask.FromResult(ToolOutcome.Ok(JsonSerializer.Serialize(new
             {
@@ -79,7 +87,7 @@ public sealed class LunetAiSpriteTool : ITool
                 sheet = path + ".png",
                 width, height, frames = pixels.Count, fps,
                 coerencia = coherence,
-                usage = $"var sheet = new SpriteSheet(Content.LoadTexture(\"{path}.png\"), {width}, {height}); " +
+                usage = $"var sheet = new SpriteSheet(Content.LoadTexture(\"{loadPath}\"), {width}, {height}); " +
                         $"var clip = SpriteAnimationClip.FromSheet(sheet, new[] {{ {frameList} }}, 1.0 / {fps}); var animator = new SpriteAnimator(clip);",
             }, ReadableJson), new ArtifactRef(path, "lunet.asset", path + ".png")));
         }

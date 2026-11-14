@@ -94,9 +94,17 @@ public sealed partial class MainActivity
     {
         var project = _project!;
         if (_aiSession is not null && _aiSessionProject == project.Manifest.GameId) return;
+        var active = LunetAiRuns.Current;
+        if (active is { IsRunning: true } && active.ProjectId == project.Manifest.GameId)
+        {
+            _aiSession = active.Session;
+            _aiSessionProject = project.Manifest.GameId;
+            return;
+        }
         var identifier = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
         _aiSession = new LunetAiSession(project, System.IO.Path.Combine(FilesDir!.AbsolutePath, "ai", identifier + ".json"));
         _aiSessionProject = project.Manifest.GameId;
+        _aiSession.MarkInterruptedIfPending();
         _aiAttachments.Clear();
     }
 
@@ -192,7 +200,8 @@ public sealed partial class MainActivity
     private void RefreshSendButton()
     {
         if (_aiSend is null) return;
-        bool running = _aiRunCancellation is not null;
+        bool running = LunetAiRuns.Current is { IsRunning: true } current &&
+            current.ProjectId == _project?.Manifest.GameId;
         bool hasText = !string.IsNullOrWhiteSpace(_aiInput?.Text) || _aiAttachments.Count > 0;
         LunetUi.SetLabel(_aiSend, running ? "■" : "↑");
         _aiSend.ContentDescription = running ? "Parar a IA" : "Enviar";
@@ -201,7 +210,16 @@ public sealed partial class MainActivity
 
     private void ShowChatMenu() => ShowActionMenu("Conversa",
     [
-        ("Nova conversa", () => { _aiSession?.ClearHistory(); RenderConversation(); }),
+        ("Nova conversa", () =>
+        {
+            if (LunetAiRuns.Current is { IsRunning: true } current && current.ProjectId == _project?.Manifest.GameId)
+            {
+                Toast.MakeText(this, "Pare a execução antes de iniciar outra conversa.", ToastLength.Short)?.Show();
+                return;
+            }
+            _aiSession?.ClearHistory();
+            RenderConversation();
+        }),
         ("Configurar provedor, modelo e chave", () => ShowAiSettings()),
         ("Copiar a conversa inteira", () => CopyToClipboard(string.Join("\n\n", (_aiSession?.History ?? []).Select(t => t.Role + ":\n" + t.Text)))),
         ("O que a IA sabe e consegue fazer", () => OpenAiPanel("O que você consegue fazer neste projeto e o que o Lunet ainda não tem?", autoSend: true)),
@@ -293,16 +311,54 @@ public sealed partial class MainActivity
     private void RenderConversation()
     {
         if (_aiLog is null || _aiSession is null) return;
+        var work = LunetAiRuns.Current;
+        bool belongs = work is not null && work.ProjectId == _project?.Manifest.GameId;
+        int oldY = _aiScroll?.ScrollY ?? 0;
+        bool followBottom = _aiScroll is null || _aiLog.Height - oldY - _aiScroll.Height < Dp(96);
+
         _aiLog.RemoveAllViews();
-        if (_aiSession.History.Count == 0) { RenderEmptyState(); return; }
         var history = _aiSession.History;
+        if (history.Count == 0 && !(belongs && work!.IsRunning)) { RenderEmptyState(); return; }
         for (int i = 0; i < history.Count; i++)
         {
             var turn = history[i];
             if (turn.Role == "Você") AddUserMessage(turn.Text);
-            else AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você" ? StripAttachments(history[i - 1].Text) : null);
+            else AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você"
+                ? StripAttachments(history[i - 1].Text) : null);
         }
-        ScrollAiToEnd();
+        if (belongs && work!.IsRunning)
+        {
+            // During the few milliseconds before the service persists the pending turn, show the request.
+            if (history.Count == 0) AddUserMessage(work.Prompt);
+            AddAiWorkStatus(work);
+        }
+        else if (belongs && work!.Error is { } error)
+        {
+            _aiLog.AddView(LunetUi.Label(this, error, LunetUi.TextBody, LunetUi.Danger),
+                Spaced(LunetUi.FillWidth(), 12));
+        }
+
+        if (followBottom) ScrollAiToEnd();
+        else _aiScroll?.Post(() => _aiScroll?.ScrollTo(0, oldY));
+    }
+
+    private void AddAiWorkStatus(LunetAiWork work)
+    {
+        var state = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        state.AddView(LunetUi.Label(this, "✦ Lunet · trabalhando em segundo plano",
+            LunetUi.TextLabel, LunetUi.AccentText, bold: true));
+        var steps = work.Steps;
+        if (steps.Count == 0)
+            state.AddView(LunetUi.Label(this, "Iniciando…", LunetUi.TextBody, LunetUi.TextMuted));
+        else
+        {
+            var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
+            box.SetPadding(Dp(10), Dp(8), Dp(10), Dp(8));
+            box.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
+            foreach (var step in steps.TakeLast(12)) box.AddView(StepRow(step));
+            state.AddView(box, Spaced(LunetUi.FillWidth(), 8));
+        }
+        _aiLog!.AddView(state, Spaced(LunetUi.FillWidth(), 14));
     }
 
     private static string StripAttachments(string text)
@@ -655,127 +711,75 @@ public sealed partial class MainActivity
 
     // ---------- Sending ----------
 
+    private LunetAiWork? _aiLastAppliedWork;
+    private int _aiUiRefreshQueued;
+
     private void SendAi()
     {
-        if (_aiRunCancellation is not null) { _aiRunCancellation.Cancel(); return; }
-        var request = (_aiInput?.Text ?? "").Trim();
-        if (request.Length == 0 && _aiAttachments.Count > 0) request = "Veja o anexo e me diga como podemos usá-lo no jogo.";
-        if (request.Length == 0 || _project is null || _aiSession is null) return;
+        var ongoing = LunetAiRuns.Current;
+        if (ongoing is { IsRunning: true })
+        {
+            if (ongoing.ProjectId == _project?.Manifest.GameId) ongoing.Cancel();
+            else Toast.MakeText(this, "A IA já trabalha em outro projeto. Aguarde ou cancele a tarefa atual.", ToastLength.Long)?.Show();
+            return;
+        }
+
+        var prompt = (_aiInput?.Text ?? "").Trim();
+        if (prompt.Length == 0 && _aiAttachments.Count > 0)
+            prompt = "Veja o anexo e me diga como podemos usá-lo no jogo.";
+        if (prompt.Length == 0 || _project is null || _aiSession is null) return;
         var ai = Ai;
         if (!ai.IsConfigured) { ShowAiSettings(SendAi); return; }
 
-        SaveCurrent(); // the agent reads and edits what is on disk
+        SaveCurrent();
         var context = CurrentAiContext();
+        var attachments = _aiAttachments.ToArray();
+        var project = _project;
+        var request = new LunetAiRequest(ai.Settings, ai.ApiKey!, context, new AndroidAiBuild(project),
+            Knowledge: AiKnowledge(), Images: new AndroidAiImages(), Attachments: attachments);
+        var work = new LunetAiWork(project, _aiSession, prompt, request);
+        if (!LunetAiRuns.TryStart(this, work, out var error))
+        {
+            Toast.MakeText(this, error ?? "Não foi possível iniciar a IA.", ToastLength.Long)?.Show();
+            return;
+        }
+
         _aiPendingSelection = null;
         _aiInput!.Text = "";
-        var attachments = _aiAttachments.ToArray();
         _aiAttachments.Clear();
         RefreshAttachmentRow();
-        if (_aiSession.History.Count == 0) _aiLog?.RemoveAllViews();
-        AddUserMessage(request + (attachments.Length > 0 ? "\n📎 " + string.Join(", ", attachments) : ""));
-        _aiLastPrompt = request;
-
-        // Live answer: header + live steps + thinking line.
-        var live = new LinearLayout(this) { Orientation = Orientation.Vertical };
-        live.AddView(LunetUi.Label(this, "✦ Lunet", LunetUi.TextCaption, LunetUi.AccentText, bold: true));
-        var stepList = new LinearLayout(this) { Orientation = Orientation.Vertical };
-        stepList.SetPadding(Dp(12), Dp(6), Dp(12), Dp(6));
-        stepList.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
-        stepList.Visibility = ViewStates.Gone;
-        live.AddView(stepList, Spaced(LunetUi.FillWidth(), 6));
-        var thinking = LunetUi.Label(this, "Pensando…", LunetUi.TextBody, LunetUi.TextMuted);
-        live.AddView(thinking, Spaced(LunetUi.FillWidth(), 8));
-        _aiLog!.AddView(live, Spaced(LunetUi.FillWidth(), 14));
-        var pulse = global::Android.Animation.ObjectAnimator.OfFloat(thinking, "alpha", 1f, 0.35f)!;
-        pulse.SetDuration(700);
-        pulse.RepeatMode = global::Android.Animation.ValueAnimatorRepeatMode.Reverse;
-        pulse.RepeatCount = global::Android.Animation.ValueAnimator.Infinite;
-        pulse.Start();
-        ScrollAiToEnd();
-
-        var steps = new List<LunetAiStep>();
-        var stepViews = new Dictionary<string, View>(StringComparer.Ordinal);
-        var stepProgress = new Progress<LunetAiStep>(step => RunOnUiThread(() =>
-        {
-            steps.Add(step);
-            stepList.Visibility = ViewStates.Visible;
-            var view = StepRow(step);
-            if (stepViews.TryGetValue(step.Id, out var old))
-            {
-                int index = stepList.IndexOfChild(old);
-                stepList.RemoveView(old);
-                stepList.AddView(view, Math.Max(0, index));
-            }
-            else stepList.AddView(view);
-            stepViews[step.Id] = view;
-            thinking.Text = step.Status == LunetAiStepStatus.Running ? step.Label + "…" : "Pensando…";
-            ScrollAiToEnd();
-        }));
-
-        var cts = new CancellationTokenSource();
-        _aiRunCancellation = cts;
+        _aiLastPrompt = prompt;
+        RenderConversation();
         RefreshSendButton();
-        var started = DateTime.UtcNow;
-        var project = _project;
-        var session = _aiSession;
-        var build = new AndroidAiBuild(project);
-        Task.Run(async () =>
-        {
-            try
-            {
-                var knowledge = AiKnowledge();
-                var reply = await session.AskAsync(request, new LunetAiRequest(ai.Settings, ai.ApiKey!, context, build,
-                    Knowledge: knowledge, Images: new AndroidAiImages(), Attachments: attachments, Steps: stepProgress), cts.Token);
-                RunOnUiThread(() =>
-                {
-                    pulse.Cancel();
-                    _aiLog?.RemoveView(live);
-                    var message = AddAssistantMessage(reply.Text, request, steps, reply);
-                    var seconds = (int)(DateTime.UtcNow - started).TotalSeconds;
-                    var meta = LunetUi.Label(this, $"{seconds}s · {reply.ModelSteps} interações com o modelo", LunetUi.TextCaption, LunetUi.TextFaint);
-                    message.AddView(meta);
-                    if (reply.Changes.Count > 0)
-                    {
-                        ReloadOpenFileIfChanged(reply.Changes.Select(c => c.Path));
-                        RefreshExplorer();
-                        if (build.LastErrors.Count == 0) _problems = [];
-                    }
-                    RefreshAiHeader();
-                    ScrollAiToEnd();
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                RunOnUiThread(() => ShowRunProblem(live, pulse, thinking, "Parado. O que já foi alterado continua no projeto.", null));
-            }
-            catch (Exception ex)
-            {
-                RunOnUiThread(() => ShowRunProblem(live, pulse, thinking, ExplainAiError(ex), request));
-            }
-            finally
-            {
-                RunOnUiThread(() =>
-                {
-                    cts.Dispose();
-                    if (ReferenceEquals(_aiRunCancellation, cts)) _aiRunCancellation = null;
-                    RefreshSendButton();
-                });
-            }
-        });
     }
 
-    private void ShowRunProblem(LinearLayout live, global::Android.Animation.ObjectAnimator pulse, TextView thinking, string message, string? retry)
+    // Lifecycle-independent run events: no network task captures MainActivity or a chat View.
+    private void OnAiRunChanged()
     {
-        pulse.Cancel();
-        thinking.Alpha = 1;
-        thinking.Text = message;
-        thinking.SetTextColor(retry is null ? LunetUi.TextMuted : LunetUi.Danger);
-        if (retry is not null)
+        if (IsDestroyed || System.Threading.Interlocked.Exchange(ref _aiUiRefreshQueued, 1) != 0) return;
+        RunOnUiThread(() =>
         {
-            var again = LunetUi.Button(this, "↻ Tentar de novo", () => { _aiInput!.Text = retry; SendAi(); }, ButtonStyle.Secondary);
-            live.AddView(again, Spaced(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)), 8));
-        }
-        ScrollAiToEnd();
+            System.Threading.Interlocked.Exchange(ref _aiUiRefreshQueued, 0);
+            if (IsDestroyed || _project is null) return;
+            var work = LunetAiRuns.Current;
+            if (work is null || work.ProjectId != _project.Manifest.GameId) return;
+
+            if (!work.IsRunning && work.Reply is { } reply && !ReferenceEquals(_aiLastAppliedWork, work))
+            {
+                _aiLastAppliedWork = work;
+                if (reply.Changes.Count > 0)
+                {
+                    if (_preview is not null) _session.Unload(); // do not write stale editor contents over AI changes
+                    else ReloadOpenFileIfChanged(reply.Changes.Select(change => change.Path));
+                    RefreshExplorer();
+                    if (work.Request.Build is AndroidAiBuild build && build.LastErrors.Count == 0)
+                        _problems = [];
+                }
+            }
+
+            if (AiPanelOpen) RenderConversation();
+            RefreshSendButton();
+        });
     }
 
     private static string ExplainAiError(Exception ex)

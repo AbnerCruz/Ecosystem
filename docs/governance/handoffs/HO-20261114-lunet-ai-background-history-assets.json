@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-ai-background-history-assets",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T13:19:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-ai-background",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-497",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-ai-background-history-assets-20261114",
+  "base_commit": "bbc849e8f06a4f896976e857b0afb1b0b1ad1f62",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/932",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Content/ContentManager.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSpriteTool.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiAssetValidation.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/AiRunCoordinator.cs",
+    "apps/lunet2d/src/Lunet.Android/LunetAiForegroundService.cs",
+    "apps/lunet2d/src/Lunet.Android/Properties/AndroidManifest.xml",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiAssetsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiAssetValidationTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiChatTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ContentTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/docs/guides/ia-lunet.md",
+    "docs/governance/handoffs/HO-20261114-lunet-ai-background-history-assets.json"
+  ],
+  "work_completed": [
+    "Auditoria e confronto dos prints com o runtime, a UI e o carregador de conteúdo: acoplamento de execução à Activity, salvamento tardio de mensagens e caminhos de textura redundantes.",
+    "Foreground service Android dataSync, coordenador da tarefa independente da tela, notificação, cancelamento, reconexão e feed de passos.",
+    "Persistência imediata de turnos da IA e recuperação de estado interrompido sem apagar conversas antigas.",
+    "Compatibilidade para caminhos Content/ antigos, orientação correta do gerador de sprites e comprovação de gravação do PNG.",
+    "Validação estática de caminhos literais de texturas e assinatura PNG no build do agente, regressões de histórico, arquivo ausente, PNG inválido e conteúdo legado.",
+    "Documentação de uso e validação real atualizadas."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test tests/Lunet.Tests (GitHub Actions)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "886 testes, 0 falhas; https://github.com/AbnerCruz/Ecosystem/actions/runs/43598815735",
+      "tested_commit": "6eeac0f5488379ba6779a9eefb2d7c891adb4918"
+    },
+    {
+      "check": "Consistency, UI screenshots Android 13 e release/build smoke",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43598815761 ; https://github.com/AbnerCruz/Ecosystem/actions/runs/43598815712 ; https://github.com/AbnerCruz/Ecosystem/actions/runs/43598815729",
+      "tested_commit": "6eeac0f5488379ba6779a9eefb2d7c891adb4918"
+    },
+    {
+      "check": "Validação física de chat persistente, background, cancelamento e preview do Cells.png",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/ia-lunet.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Process death/force-stop interrompe trabalho, sem retomada automática; histórico sobrevive e indica a interrupção.",
+    "Validação de textura não executa Game.cs e cobre caminhos literais e assinatura; não é teste de runtime.",
+    "Projeto Zombie do print está no dispositivo, não foi fornecido como fonte para executar no CI.",
+    "Android pode restringir notificações/serviços segundo versão e configuração."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revalidar CI completo após documentação e ajuste de retenção de histórico.",
+    "Integrar PR pelo fluxo de governança; gerar release candidata.",
+    "Executar roteiro DEVICE no moto g32 e confirmar correção do jogo original."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/guides/ia-lunet.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em Lunet2D e seu handoff; Urbe e o runtime compartilhado intactos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #932, item de ROADMAP LUNET-497, AgentsChat e handoff associados."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Mesmo isolamento de ferramentas por projeto; sem chaves persistidas no histórico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI verde, mas teste físico DEVICE explicitamente pendente."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Serviço Android integrado ao próprio APK Lunet sem dependência do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ai-background-execution",
+      "status": "product-specific",
+      "rationale": "Implementação específica da Activity e foreground service do Lunet; sem consumidor externo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

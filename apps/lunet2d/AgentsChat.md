@@ -673,3 +673,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação: bootstrap code-first com Initialize/LoadContent/Update/Draw/UnloadContent, SpriteBatch.Begin/End e Clear CornflowerBlue, sem sprite ou input de demonstração; criação customizada com validação de nome, orientação, dimensões, updates/s, Fit/Fill, versão e PackageId opcional estável com detecção de duplicatas. UI única de configuração no launcher; nenhuma opção demo. Demos de teste continuam internas.
 - Verificação: testes de contrato, integridade do manifesto, segurança do ID Android e jornada E2E revisados. Aguardar execução real no CI e validação da interface em Android físico.
 - Importante: versão inicial fica em lunet.json; não declarar versionCode/versionName do APK com base nela sem conferir o empacotador.
+
+### 20261114-lunet-ai-background-history-assets — acompanhamento LUNET-497
+- PR #932; branch `fix/lunet-ai-background-history-assets-20261114`. Prints mostram perda de continuidade do chat e `FileNotFoundException: Content/Textures/Cells.png` depois da alegação de correção.
+- Auditoria de `MainActivity.Chat`, `LunetAiSession`, `LunetAiSpriteTool`, `ContentManager` e Preview identificou estado acoplado à tela, mensagens só persistidas ao terminar e caminho redundante `Content/` na sugestão da ferramenta.
+- Implementado serviço Android foreground `dataSync`, estado independente de Activity, passos reexibidos, histórico local integral, validação de textura e fallback legado; adicionados testes. Nenhum outro produto nem o runtime compartilhado foi alterado.
+- Evidências: `lunet2d-ci` 886/886, screens, consistency e release workflows verdes no commit `6eeac0f5488379ba6779a9eefb2d7c891adb4918`. O projeto real do print não foi testado. A validação física no aparelho permanece pendente.
+- Próximo passo: integrar o PR e distribuir APK candidato; testar navegação, bloqueio da tela, interrupção, cancelamento e Preview do projeto com `Cells.png`.

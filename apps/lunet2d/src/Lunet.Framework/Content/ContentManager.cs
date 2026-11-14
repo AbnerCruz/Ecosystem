@@ -51,7 +51,7 @@ public sealed class ContentManager : IDisposable
     public Texture2D LoadTexture(string path, TextureFilter filter = TextureFilter.Linear)
     {
         if (_textures.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
-        using var stream = _source.Open(path);
+        using var stream = OpenContent(path);
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
         DecodedImage image;
@@ -80,7 +80,7 @@ public sealed class ContentManager : IDisposable
         characters ??= TrueTypeFont.DefaultCharacters;
         var key = (path, pixelHeight, characters, atlasSize);
         if (_trueTypeFonts.TryGetValue(key, out var cached) && !cached.IsDisposed) return cached;
-        using var input = _source.Open(path);
+        using var input = OpenContent(path);
         using var memory = new MemoryStream();
         input.CopyTo(memory);
         var loaded = TrueTypeFont.Bake(_device, memory.ToArray(), pixelHeight, characters, atlasSize);
@@ -94,7 +94,7 @@ public sealed class ContentManager : IDisposable
     public SoundEffect LoadSound(string path)
     {
         if (_sounds.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
-        using var stream = _source.Open(path);
+        using var stream = OpenContent(path);
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
         var sound = new SoundEffect(_audio, Audio, _audio.LoadSound(memory.ToArray(), path), path);
@@ -108,7 +108,7 @@ public sealed class ContentManager : IDisposable
     public Music LoadMusic(string path)
     {
         if (_music.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
-        using var stream = _source.Open(path);
+        using var stream = OpenContent(path);
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
         var music = new Music(_audio, _audio.LoadMusic(memory.ToArray(), path), path);
@@ -161,14 +161,34 @@ public sealed class ContentManager : IDisposable
     /// <returns>O conteúdo do arquivo.</returns>
     public string ReadText(string path)
     {
-        using var reader = new StreamReader(_source.Open(path));
+        using var reader = new StreamReader(OpenContent(path));
         return reader.ReadToEnd();
     }
 
     /// <summary>Diz se o arquivo existe em Content.</summary>
     /// <param name="path">Caminho relativo a Content, com barras normais.</param>
     /// <returns>Verdadeiro se existe.</returns>
-    public bool Exists(string path) => _source.Exists(path);
+    public bool Exists(string path) => _source.Exists(path) ||
+        (TryLegacyPath(path, out var relative) && _source.Exists(relative));
+
+    // Legacy AI-generated code sometimes includes Content/ twice. Prefer the exact path when present.
+    private Stream OpenContent(string path)
+    {
+        if (_source.Exists(path)) return _source.Open(path);
+        if (TryLegacyPath(path, out var relative) && _source.Exists(relative))
+            return _source.Open(relative);
+        return _source.Open(path);
+    }
+
+    private static bool TryLegacyPath(string path, out string relative)
+    {
+        relative = "";
+        if (string.IsNullOrWhiteSpace(path) || !path.StartsWith("Content/", StringComparison.Ordinal) ||
+            path.Length <= "Content/".Length)
+            return false;
+        relative = path["Content/".Length..];
+        return true;
+    }
 
     /// <summary>Libera todas as texturas, sons e músicas carregadas.</summary>
     public void Dispose()
