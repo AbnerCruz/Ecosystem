@@ -39,6 +39,7 @@ case "$*" in
   "release view"*) exit 1 ;;
   "api repos/"*"/commits/"*"/check-runs"*) echo '{"id":1,"name":"fixture-tests","status":"completed","conclusion":"success"}' ;;
   "api repos/"*"/commits/"*"/statuses?"*) ;;
+  "api repos/"*"/actions/runs/"*) echo '{"workflow_id":42,"check_suite_id":10}' ;;
   "api repos/"*"/actions/workflows/"*) echo '{"workflow_runs":[]}' ;;
   "pr view"*) echo "PR simulado" ;;
   "pr edit"*)
@@ -65,6 +66,7 @@ esac
 exit 0
 GH
 chmod +x "$T/bin/gh"
+export GITHUB_RUN_ID=999
 export PATH="$T/bin:$PATH" GHLOG="$T/gh.log" GHSTATE="$T/gh" GITHUB_REPOSITORY=sim/sim GITHUB_REPOSITORY_OWNER=AbnerCruz RUN_URL=https://example.invalid/run DEFAULT_BRANCH=main
 O="$T/out.txt"
 tick() { local n; n=$(( $(cat "$T/gh/clock") + 1 )); echo "$n" > "$T/gh/clock"; date -u -d "@$((1790000000 + n))" +%Y-%m-%dT%H:%M:%SZ; }
