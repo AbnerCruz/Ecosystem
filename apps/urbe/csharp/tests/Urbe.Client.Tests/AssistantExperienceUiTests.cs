@@ -117,7 +117,7 @@ public sealed partial class HeadlessUiTests
             selection.SelectionEnd = 0;
             await Task.Delay(300);
             Dispatcher.UIThread.RunJobs();
-            Assert.NotNull(panel.Input.ContextMenu);
+            Assert.IsType<MenuFlyout>(panel.Input.ContextFlyout);   // the Portuguese copy/paste/select-all menu
             window.Width = 1280;
             await Settle(window, view);
             Snapshot(window, "native-assistant-experience-desktop.png");

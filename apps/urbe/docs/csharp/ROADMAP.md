@@ -484,6 +484,7 @@ Issue [#945](https://github.com/AbnerCruz/Ecosystem/issues/945); branch `ccr-c71
 - [~] Escrita contínua: desfazer da nota inteira, setas/Backspace/Delete entre blocos, seleção entre blocos, bloco em edição formatado, troca de bloco sem redesenhar a nota.
 - [~] Formatação pela barra igual nos dois modos (marcas junto ao texto, uma por linha, itálico no meio da palavra, título no início da linha).
 - [~] Fórmulas: matrizes sem delimitador sobre a última coluna; fórmulas largas reduzidas para caber.
-- [ ] CI, integração autorizada e publicação da beta.53 pelo workflow oficial.
+- [x] CI, integração autorizada e publicação da beta.53 pelo workflow oficial ([release](https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.53)).
+- [~] beta.54 — seleção, cópia e colagem no celular em todo o app: menu em português com Selecionar tudo em todos os campos; no Visual, segurar seleciona com alças e a bolha copia/recorta/cola/seleciona tudo; alça solta fora do bloco estende a seleção entre blocos; textos só de leitura (inclusive nota em leitura, painel fixado e tutorial) selecionáveis por toque prolongado.
 - [ ] Validação no aparelho (Android e Windows) de cada item acima (NN-017).
 - [ ] Fonte em notas muito longas: custo por tecla dentro do `TextBox` do Avalonia; resolver exige controle de edição próprio (decisão de arquitetura, NN-011).

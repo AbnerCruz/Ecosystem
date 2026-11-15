@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.53 — 15/11/2026
+- Revisão completa do editor: teclado sem fechar/reabrir entre blocos, toque e cursor no lugar certo, texto da IA sem perda, desfazer da nota inteira, formatação e fórmulas corrigidas.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.53
+
 ## 2.0.0-beta.52 — 08/11/2026
 - Popup do Assistente sobre o editor mostra a conversa completa, com rolagem própria e campo de escrita sempre acessível.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.52

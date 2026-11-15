@@ -138,7 +138,7 @@ public sealed class TutorialPanel : Border
         _prev.IsEnabled = i > 0;
         _next.IsEnabled = i < _articles.Count - 1;
         // read only: the reader has no task toggles, formula or comment editing, only links
-        var reader = new MarkdownReader { WikiLinkTapped = name => FollowLink(name) };
+        var reader = new MarkdownReader { Selectable = true, WikiLinkTapped = name => FollowLink(name) };
         _scroll.Content = new Border { Padding = new Thickness(20, 4, 20, 32), Child = reader.BuildMarkdown(article.Content) };
         _scroll.Offset = default;
         return true;
