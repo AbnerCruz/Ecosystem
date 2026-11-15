@@ -48,6 +48,8 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RestoreAllUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerBackUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SelectFilesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SilentFailureUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
@@ -76,6 +78,7 @@
     "CST-010 (parte): NotesExplorer.HandleBack (seleção, renomear, Lixeira/coleção/busca) antes de fechar Notas (ExplorerBackUiTests).",
     "CST-148 (investigação, parte): medido o tempo da thread de UI ao abrir 2.000 notas (headless): OpeningIds 20–220 ms e NoteLibrary.Open 36–61 ms passam para fora da thread de UI; RefreshNotes ~25 ms, renderização e layout da Área de trabalho ~115 ms (3.179 visuais), restauração da sessão 57–142 ms ficam nela. Congelamento máximo medido ao abrir frio caiu de ~1,1 s para ~0,8 s; o restante medido neste contêiner mistura disputa de CPU com a leitura em segundo plano; sem afirmação sobre o aparelho.",
     "CST-037/038 (parte): arquivos na multisseleção (Selecionar no menu do arquivo; toque marca durante a seleção); mover notas e arquivos juntos; excluir arquivos com aviso explícito (SelectFilesUiTests).",
+    "Botões que falhavam em silêncio: o CrashLog marcava como tratados os erros que chegavam à interface (o app não fechava, mas nada era dito). CrashLog.Report agora avisa na tela com StorageProblems.Explain (SilentFailureUiTests). Sondagem automática de todos os botões da Personalização: tema, cor de destaque, cor/ícone de tag e numeração de linhas mudam o que prometem.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [

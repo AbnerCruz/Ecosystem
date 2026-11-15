@@ -113,6 +113,8 @@ public sealed partial class MainView : Grid
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
         Editor.CreateHere = () => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", open: false);
         Explorer.SelectingChanged += UpdateFloatingNav;
+        // an action that failed with an error nobody caught: said on the screen, never a button that silently does nothing
+        CrashLog.Failed += ex => ShowLifeNotice("Não foi possível concluir: " + StorageProblems.Explain(ex), Ui.ToastKind.Warning);
         Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
         Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
         Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };
