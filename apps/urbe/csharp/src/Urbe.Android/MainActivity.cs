@@ -190,7 +190,9 @@ public sealed class MainActivity : AvaloniaMainActivity
     private static bool ShowKeyboard(View root, Android.Views.InputMethods.InputMethodManager ime)
     {
         var target = root.FindFocus() ?? root;
-        return ime.ShowSoftInput(target, Android.Views.InputMethods.ShowFlags.Implicit);
+        // a direct tap on the text is an explicit request (what EditText does on a tap): Implicit is ignored by Android
+        // once the person has closed the keyboard (Back), and then a tap on the line did not bring it back
+        return ime.ShowSoftInput(target, (Android.Views.InputMethods.ShowFlags)0);
     }
 
     /// <summary>workspace.js flushPending on visibilitychange hidden: write a pending map now.</summary>

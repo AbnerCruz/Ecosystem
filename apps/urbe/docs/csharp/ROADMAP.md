@@ -474,3 +474,16 @@ Issue [#902](https://github.com/AbnerCruz/Ecosystem/issues/902); branch `feat/ur
 - [ ] Concluir os demais critérios CST-229–246 (EPUB, navegador/YouTube, slides/documentos, OCR, marcações, persistência de sessão, PDF visual Windows, virtualização/corpus). Nenhum desses itens é fechado por este incremento.
 
 Pesquisa, confronto, fluxo e limitações: [REFERENCE-STUDY-20261102.md](REFERENCE-STUDY-20261102.md). Fonte canônica do escopo integral: Numa 2.6 §4.17; as caixas acima são rastreio do incremento e continuam abertas até suas evidências.
+
+## Editor — revisão completa e beta.53 (14–15/11/2026)
+
+Issue [#945](https://github.com/AbnerCruz/Ecosystem/issues/945); branch `ccr-c717cbe5-9x21rb`. Pedido do proprietário: foco exclusivo no editor. Achados, causas, correções e provas em [EDITOR-REVIEW-20261114.md](EDITOR-REVIEW-20261114.md). Escopo canônico: Numa 2.6 §4.3; nenhum CST é fechado por este registro.
+
+- [~] Toque e teclado: toque abaixo depois de digitar abre o bloco tocado; foco passa direto de caixa em caixa (teclado não fecha/reabre); toque pede o teclado de forma explícita; marcar tarefa não fecha o bloco; reabrir a mesma nota não interrompe a escrita.
+- [~] Texto nunca desfeito: selos de IA compostos no Visual sempre aceitos pela proteção do editor e pela gravação.
+- [~] Escrita contínua: desfazer da nota inteira, setas/Backspace/Delete entre blocos, seleção entre blocos, bloco em edição formatado, troca de bloco sem redesenhar a nota.
+- [~] Formatação pela barra igual nos dois modos (marcas junto ao texto, uma por linha, itálico no meio da palavra, título no início da linha).
+- [~] Fórmulas: matrizes sem delimitador sobre a última coluna; fórmulas largas reduzidas para caber.
+- [ ] CI, integração autorizada e publicação da beta.53 pelo workflow oficial.
+- [ ] Validação no aparelho (Android e Windows) de cada item acima (NN-017).
+- [ ] Fonte em notas muito longas: custo por tecla dentro do `TextBox` do Avalonia; resolver exige controle de edição próprio (decisão de arquitetura, NN-011).

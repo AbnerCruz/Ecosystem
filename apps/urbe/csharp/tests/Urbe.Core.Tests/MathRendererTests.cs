@@ -268,4 +268,41 @@ public sealed class MathRendererTests
         Assert.NotNull(dir);
         return dir!.FullName;
     }
+
+
+    // the x extents of the drawn paths (the first path is the background box)
+    private static List<(double Min, double Max, int Points)> Paths(string svg) =>
+        System.Text.RegularExpressions.Regex.Matches(svg, "<path d='([^']*)'").Skip(1).Select(m =>
+        {
+            var xs = System.Text.RegularExpressions.Regex.Matches(m.Groups[1].Value, @"-?\d+\.?\d*")
+                .Select(x => double.Parse(x.Value, System.Globalization.CultureInfo.InvariantCulture)).Where((_, i) => i % 2 == 0).ToList();
+            return (xs.Min(), xs.Max(), xs.Count);
+        }).ToList();
+
+    [Theory]
+    [InlineData(@"\begin{pmatrix} d & -b \\ -c & a \end{pmatrix}")]
+    [InlineData(@"\begin{pmatrix} 10 & 2 \\ 3 & 40 \end{pmatrix}")]
+    [InlineData(@"\begin{bmatrix} 1 & x \\ 100 & y \\ z & 2 \end{bmatrix}")]
+    [InlineData(@"\begin{vmatrix} a & 12 \\ 345 & b \end{vmatrix}")]
+    public void TheClosingDelimiterOfAMatrixIsDrawnAfterItsLastColumn(string tex)
+    {
+        var r = MathRenderer.RenderSvg(tex, display: true, fontSize: 20);
+        Assert.True(r.Success, r.Diagnostic);
+        var paths = Paths(r.Svg);
+        // the closing delimiter is the rightmost path; everything else ends before it starts
+        var closing = paths.MaxBy(p => p.Max);
+        var inside = paths.Where(p => p != closing && p.Min > paths.Min(q => q.Max)).ToList();
+        Assert.All(inside, p => Assert.True(p.Max <= closing.Min + .5, $"glyph {p.Min:0.0}-{p.Max:0.0} under the closing delimiter at {closing.Min:0.0}"));
+    }
+
+    [Fact]
+    public void WhatFollowsAMatrixIsNotDrawnOverIt()
+    {
+        var r = MathRenderer.RenderSvg(@"\begin{pmatrix} 10 & 2 \\ 3 & 40 \end{pmatrix} + x", display: true, fontSize: 20);
+        var paths = Paths(r.Svg).OrderBy(p => p.Min).ToList();
+        for (int i = 1; i < paths.Count; i++)
+            if (paths[i].Min > paths[0].Max) // past the opening parenthesis
+                Assert.True(paths[i].Min >= paths.Take(i).Where(p => p.Min > paths[0].Max && p.Max < paths[i].Max).Select(p => p.Min).DefaultIfEmpty(0).Max() - .5);
+        Assert.True(r.Width >= paths.Max(p => p.Max) - .5, "the formula's width holds all it draws");
+    }
 }

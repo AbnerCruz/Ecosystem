@@ -34,19 +34,19 @@ public sealed class EditorTests
     }
 
     [Fact]
-    public async Task Fonte_ToolbarInsertsAtTheCursorLikeTheOriginal() => Assert.True(await Session.Dispatch<bool>(() =>
+    public async Task Fonte_ToolbarFormatsTheLineAndTheSelection() => Assert.True(await Session.Dispatch<bool>(() =>
     {
         var (editor, _) = Show();
         editor.SetMode(EditorMode.Fonte);
         editor.Editor.CaretIndex = 12;
         Click(editor, "Título 2");
-        Assert.Equal("linha um\nlin## ha dois", editor.Editor.Text);      // insertAtCursor: at the caret, not at the line start
+        Assert.Equal("linha um\n## linha dois", editor.Editor.Text);      // at the start of the caret's line, never inside a word
         editor.Editor.Text = "linha um";
         editor.Editor.SelectionStart = 0;
         editor.Editor.SelectionEnd = 5;
         Click(editor, "Itálico");
         Assert.Equal("_linha_ um", editor.Editor.Text);
-        Assert.Equal(7, editor.Editor.CaretIndex);
+        Assert.Equal(6, editor.Editor.CaretIndex);   // the word stays selected inside its marks
         editor.Editor.SelectionStart = editor.Editor.SelectionEnd = 0;
         Click(editor, "Link externo");
         Assert.StartsWith("[](url)", editor.Editor.Text);

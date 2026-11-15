@@ -71,7 +71,7 @@ public sealed class WorkspaceView : Grid
             Background = UrbeTheme.Brush(UrbeTheme.Surface2), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2)
         };
         AutomationProperties.SetName(_search, "Buscar na Área de trabalho");
-        _search.TextChanged += (_, _) => SearchSoon();
+        _search.TextChanged += (_, _) => { _looseOnly = false; SearchSoon(); };
         var searchIcon = UrbeTheme.Icon(UrbeTheme.Icons.Search, 18, UrbeTheme.Text3, 1.8);
         searchIcon.Margin = new Thickness(14, 0, 0, 0);
         searchIcon.HorizontalAlignment = HorizontalAlignment.Left;
@@ -107,10 +107,10 @@ public sealed class WorkspaceView : Grid
     private bool _asList;
 
     /// <summary>Only items of this kind (null: all), in the open box and its subfolders, or everywhere at the root.</summary>
-    public WorkspaceItemKind? KindFilter { get => _kind; set { _kind = value; _shown = Page; Render(); } }
+    public WorkspaceItemKind? KindFilter { get => _kind; set { _kind = value; _shown = Page; _looseOnly = false; Render(); } }
 
     /// <summary>Only items with this tag (null: any).</summary>
-    public string? TagFilter { get => _tag; set { _tag = value; _shown = Page; Render(); } }
+    public string? TagFilter { get => _tag; set { _tag = value; _shown = Page; _looseOnly = false; Render(); } }
 
     /// <summary>How the items are ordered (kept for the open box, UC-85).</summary>
     public WorkspaceOrder Order { get => _order; set { _order = value; Render(); if (Folder.Length > 0) PresentationChanged?.Invoke(Folder); } }
@@ -221,6 +221,7 @@ public sealed class WorkspaceView : Grid
     /// <summary>Opens a folder's box ("" for the root).</summary>
     public void Open(string folder)
     {
+        _looseOnly = false;
         Folder = folder;
         _shown = Page;
         _kind = null;
@@ -268,6 +269,8 @@ public sealed class WorkspaceView : Grid
         _body.Children.Clear();
         var query = (_search.Text ?? "").Trim();
         RenderTools(query);
+        if (_looseOnly && Folder.Length == 0 && (query.Length > 0 || _kind is not null || _tag is not null)) { ShowLooseMatches(query); return; }
+        _looseOnly = false;
         if (query.Length > 0 || _kind is not null || _tag is not null) RenderMatches(query);
         else if (Folder.Length == 0) RenderRoot();
         else RenderFolder();
@@ -515,8 +518,12 @@ public sealed class WorkspaceView : Grid
     }
 
     /// <summary>Every loose note matching the root's search and filters (CST-197), not only the first ones.</summary>
+    // "Ver todos os N soltos" was chosen: a refresh of the vault (Render) shows that list again, not the preview of 12
+    private bool _looseOnly;
+
     private void ShowLooseMatches(string query)
     {
+        _looseOnly = true;
         IEnumerable<WorkspaceItem> pool = query.Length > 0 ? _index.Search(query, null) : _index.Recent("", int.MaxValue);
         var loose = WorkspaceIndex.Arrange(pool, _kind, _tag, _order).Where(i => WorkspaceIndex.ProjectOf(i.Path).Length == 0).ToList();
         _body.Children.Clear();

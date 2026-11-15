@@ -97,8 +97,9 @@ public static partial class LegacyEditorTools
         return id switch
         {
             "code" => Pair(@"`[^`\n]*`", 1, false),
-            "bold" => Pair(@"\*\*(?=\S)(.+?)(?<=\S)\*\*", 2, true),
-            "italic" => Pair(@"(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w])", 1, true),
+            "bold" => Pair(@"\*\*(?=\S)(.+?)(?<=\S)\*\*", 2, true) ?? Pair(@"(?<!_)__(?=\S)(.+?)(?<=\S)__(?!_)", 2, true),
+            // italic in either form: _x_, or *x* (one star, not the stars of bold)
+            "italic" => Pair(@"(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w])", 1, true) ?? Pair(@"(?<!\*)\*(?=[^\s*])(.+?)(?<=[^\s*])\*(?!\*)", 1, true),
             _ => null,
         };
     }
