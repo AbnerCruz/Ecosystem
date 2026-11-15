@@ -91,6 +91,8 @@
     }
   ],
   "known_issues": [
+    "CI do integrador: android-runtime-smoke falhou uma vez em 4a1f14f porque o adb caiu durante o despejo do logcat (logcat.txt cortado às 13:53:31, gravado às 13:53:51; pidof não chegou a rodar); o mesmo teste passou no urbe-checks do mesmo commit. Infraestrutura do emulador, não queda do app.",
+    "Teste Source_DraggingAFingerScrolls (gesto de arremesso por tempo) falhou uma vez no CI em Release: com a máquina carregada o gesto vira arrasto lento, que corretamente não desliza; o teste agora mede o gesto e o refaz quando a máquina travou (até 3 vezes), sem mudar a asserção.",
     "A releitura ao voltar ao app lê a pasta inteira em segundo plano (com o cache por tamanho/data do Android); num vault muito grande isso leva o tempo de uma abertura, sem bloquear a tela.",
     "Renomear pasta ainda relê o vault uma vez depois da operação, para conferir cada caminho renomeado."
   ],
