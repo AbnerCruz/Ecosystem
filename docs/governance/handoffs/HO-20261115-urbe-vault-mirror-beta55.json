@@ -46,6 +46,8 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/OutsideChangeSaveUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/OpenNoteGoneUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RestoreAllUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerBackUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VaultScaleBenchUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SelectionSpeedUiTests.cs",
@@ -68,6 +70,7 @@
     "CST-101 (parte): nota aberta movida fora do app é seguida pelo editor; apagada, o app avisa e salvar a recria com o texto (OpenNoteGoneUiTests).",
     "CST-099 (parte): Bench_VaultOperationsAtScale mede abrir, selecionar 30, mover 30, confirmar e excluir 30 e reler sem mudança com 200 e 2.000 notas, com limites largos contra regressões de ordem de grandeza.",
     "Lixeira: Restaurar tudo (RestoreAllUiTests); EnsureFolderAsync passa a consultar as pastas diretamente em vez de reconstruir a árvore a cada nota.",
+    "CST-010 (parte): NotesExplorer.HandleBack (seleção, renomear, Lixeira/coleção/busca) antes de fechar Notas (ExplorerBackUiTests).",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [

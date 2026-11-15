@@ -25,6 +25,8 @@ public sealed partial class MainView
         if (_sky is { IsVisible: true } sky) { sky.IsVisible = false; return true; }
         if (GraphOpen) { _ = CloseGraphAsync(); return true; }
         if (_pagesPanel is { IsVisible: true } pages) { pages.Close(); return true; }
+        // CST-010: a selection, a name being typed, the Lixeira or a search close before Notas itself
+        if (Explorer.IsEffectivelyVisible && Explorer.HandleBack()) return true;
         if (NotesOverEditor) { CloseNotesOverEditor(); return true; }
         if (Editor.IsVisible) { _ = Editor.BackAsync(); return true; }
         // CST-010: inside a project of the Área de trabalho, Voltar goes up before it leaves the app

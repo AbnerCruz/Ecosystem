@@ -462,6 +462,19 @@ public sealed class NotesExplorer : Border
         RenderBar();
     }
 
+    /// <summary>
+    /// CST-010: Voltar inside Notas closes what is going on there first: a selection, a name being typed, then the
+    /// Lixeira, a collection or a search (back to the tree). False when there is nothing to close here.
+    /// </summary>
+    public bool HandleBack()
+    {
+        if (_selected.Count > 0) { ClearSelection(); return true; }
+        if (_renaming is not null) { _renaming = null; Render(); return true; }
+        if (_view is "trash" or "collection") { Show("tree"); return true; }
+        if (_view == "search" || (_search.Text ?? "").Length > 0) { _search.Text = ""; Show("tree"); return true; }
+        return false;
+    }
+
     /// <summary>model.clear().</summary>
     public void ClearSelection()
     {
