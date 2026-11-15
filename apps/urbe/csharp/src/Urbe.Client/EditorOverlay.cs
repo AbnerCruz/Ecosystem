@@ -1501,6 +1501,7 @@ public sealed class EditorOverlay : Grid
         // block and not the whole note (a TextBox lays the whole text out on every key: ~30 ms for 15 KB on the runner)
         _blocks = nextBlocks;
         _visual.Raw = _blocks;
+        _visual.RawLineNumbers = _blocks && _lineNumbers == EditorLineNumbers.Always;
         PlaceProperties();
         ShowActiveTools(new HashSet<string>());
         UpdateActiveTools();

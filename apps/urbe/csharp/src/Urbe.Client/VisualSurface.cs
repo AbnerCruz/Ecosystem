@@ -676,10 +676,33 @@ public sealed class VisualSurface : StackPanel
         Control drawn;
         if (Raw)
         {
-            var plain = new TextBlock { Text = AiAuthorship.Strip(source).TrimEnd('\n'), TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.MonoFont,
-                FontSize = TextSize * .9, LineHeight = TextSize * .9 * LineFactor, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 2) };
-            plain.Classes.Add(MarkdownReader.TextClass);
-            drawn = plain;
+            TextBlock Line(string text)
+            {
+                var t = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.MonoFont,
+                    FontSize = TextSize * .9, LineHeight = TextSize * .9 * LineFactor, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
+                t.Classes.Add(MarkdownReader.TextClass);
+                return t;
+            }
+            var raw = AiAuthorship.Strip(source).TrimEnd('\n');
+            if (!RawLineNumbers) drawn = new Border { Margin = new Thickness(0, 2), Child = Line(raw) };
+            else
+            {
+                // CST-147 in Fonte by blocks: each source line with its number (the lines joined are the block's text)
+                var rows = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(0, 2) };
+                int first = LineOf(block.Start), row = 0;
+                foreach (var text in raw.Split('\n'))
+                {
+                    rows.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                    var number = new TextBlock { Text = (first + row).ToString(System.Globalization.CultureInfo.InvariantCulture), FontFamily = UrbeTheme.MonoFont,
+                        FontSize = TextSize * .75, LineHeight = TextSize * .9 * LineFactor, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                        TextAlignment = TextAlignment.Right, MinWidth = TextSize * 2.2, Margin = new Thickness(0, 0, 10, 0), IsHitTestVisible = false };
+                    var line = Line(text);
+                    Grid.SetRow(number, row); Grid.SetRow(line, row); Grid.SetColumn(line, 1);
+                    rows.Children.Add(number); rows.Children.Add(line);
+                    row++;
+                }
+                drawn = rows;
+            }
         }
         else drawn = container ? reader.BuildMarkdown(shown) : reader.Build(NoteMarks.Parse(shown));
         var holder = new Border { Background = Brushes.Transparent, Child = drawn };
@@ -715,6 +738,24 @@ public sealed class VisualSurface : StackPanel
 
     /// <summary>The blocks drawn as their plain Markdown (Fonte by blocks), not formatted.</summary>
     public bool Raw { get; set; }
+    /// <summary>In <see cref="Raw"/>, each source line with its number on the left.</summary>
+    public bool RawLineNumbers { get; set; }
+
+    private string? _linesOf;
+    private int[] _lineStarts = [];
+    // the 1-based line of an offset of the note (line starts cached per text)
+    private int LineOf(int offset)
+    {
+        if (!ReferenceEquals(_linesOf, _text))
+        {
+            var starts = new List<int> { 0 };
+            for (int i = 0; i < _text.Length; i++) if (_text[i] == '\n') starts.Add(i + 1);
+            _lineStarts = [.. starts];
+            _linesOf = _text;
+        }
+        int at = Array.BinarySearch(_lineStarts, offset);
+        return (at >= 0 ? at : ~at - 1) + 1;
+    }
 
     public Func<string, string?>? ProgressNoteResolver { get; set; }
     public Func<string, Task<string?>>? DataReader { get; set; }

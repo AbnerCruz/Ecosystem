@@ -71,6 +71,14 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(EditorMode.Fonte, editor.Mode);
             Assert.True(editor.SourceByBlocks);
             Assert.Contains(editor.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "## Seção 2");   // the Markdown as written
+            // CST-147: the source line numbers stand beside it (## Seção 2 is line 15 of the bench note)
+            var seção2 = note[..note.IndexOf("## Seção 2", StringComparison.Ordinal)].Count(c => c == '\n') + 1;
+            Assert.Contains(editor.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == seção2.ToString(System.Globalization.CultureInfo.InvariantCulture) && !t.Classes.Contains(MarkdownReader.TextClass));
+            if (Environment.GetEnvironmentVariable("URBE_SHOT") is { } shot)
+            {
+                for (int i = 0; i < 6; i++) { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); }
+                window.CaptureRenderedFrame()!.Save(shot, Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+            }
             // a block written, then Visual and back: the text is the note with the change
             var line = editor.GetLogicalDescendants().OfType<TextBlock>().First(t => t.Text == "## Seção 2");
             var at = line.TranslatePoint(new Point(line.Bounds.Width - 2, line.Bounds.Height / 2), window)!.Value;
