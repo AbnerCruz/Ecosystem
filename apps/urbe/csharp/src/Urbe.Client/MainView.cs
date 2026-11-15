@@ -1140,6 +1140,9 @@ public sealed partial class MainView : Grid
     private bool _recoveringWrites;
 
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
+    /// <summary>The Explorer redrawn from the vault as it is in memory (what a save or a refresh does; tests).</summary>
+    public void RefreshNotesForTests() => RefreshNotes();
+
     private void RefreshNotes()
     {
         if (RefreshLastNames()) { _notesShown = null; return; }

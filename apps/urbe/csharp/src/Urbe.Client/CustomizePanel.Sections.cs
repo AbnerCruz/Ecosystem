@@ -72,7 +72,15 @@ public sealed partial class CustomizePanel
     private static string S(JsonObject o, string k, string d = "") => o[k] is JsonValue v && v.TryGetValue<string>(out var s) ? s : d;
     private static double N(JsonObject o, string k, double d) => o[k] is JsonValue v && v.TryGetValue<double>(out var x) ? x : d;
     private static bool Bo(JsonObject o, string k, bool d = false) => o[k] is JsonValue v && v.TryGetValue<bool>(out var x) ? x : d;
-    private Task Set(string path, JsonNode value) => Customization.SetAsync(Patch(path, value));
+    /// <summary>One setting changed: shown at once, written to the vault; a write refused is told, never silent.</summary>
+    private async Task Set(string path, JsonNode value)
+    {
+        try { await Customization.SetAsync(Patch(path, value)); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        {
+            await Dialogs.AlertAsync("Não foi possível salvar a personalização", StorageProblems.Explain(ex));
+        }
+    }
 
     // ---------------------------------------------------------------- pieces
 

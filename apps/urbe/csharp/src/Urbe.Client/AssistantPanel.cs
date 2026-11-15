@@ -526,15 +526,21 @@ public sealed partial class AssistantPanel : Border
 
     private void Persist() { if (_conv.Messages.Count > 0) _store.SaveConversation(_conv); }
 
+    /// <summary>
+    /// "Nova conversa" always answers (observation of 15/11/2026: it did nothing or answered late): a run going on keeps
+    /// going in its own conversation (runs belong to their conversation's id, as when switching agents), and a view
+    /// open over the chat (Conversas, Configurações) closes so the new conversation shows.
+    /// </summary>
     private void NewConversationClicked()
     {
-        if (_running is not null) return;
         Persist();
         _conv = NewConversation();
         RememberCurrentChat();
         SyncActiveConversation();
         _views.Clear();
+        CloseView();
         RenderAll();
+        _input.Focus();
     }
 
     private (string? Path, string? Selection) EditorInfo() => _app.EditorNote();

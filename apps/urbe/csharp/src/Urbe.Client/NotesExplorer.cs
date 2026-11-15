@@ -343,13 +343,20 @@ public sealed class NotesExplorer : Border
     public void SetNotes(IEnumerable<CityNote> notes, IEnumerable<string>? folders = null)
     {
         ArgumentNullException.ThrowIfNull(notes);
+        var before = TreeSignature();
         _notes.Clear();
         _notes.AddRange(notes.Where(n => !string.IsNullOrWhiteSpace(n.Path)));
         _extraFolders.Clear();
         foreach (var f in folders ?? []) if (!string.IsNullOrEmpty(f)) _extraFolders.Add(f);
-        _selected.Clear();
+        // an action that changed the tree (moved, duplicated, deleted) ends the selection, as a file manager does; a
+        // refresh that changed nothing (a save, the folder read again) keeps a selection being made (observation of
+        // 15/11/2026: "não consigo organizar meu vault")
+        if (TreeSignature() != before) _selected.Clear();
         Render();
     }
+
+    private string TreeSignature() =>
+        string.Join("\n", _notes.Select(n => n.Path)) + "\u001f" + string.Join("\n", _extraFolders.Order(StringComparer.Ordinal));
 
     /// <summary>
     /// The files of the vault that are not notes (images, PDFs, other attachments). The 1.8.4 listed only the notes;
@@ -439,6 +446,19 @@ public sealed class NotesExplorer : Border
         return true;
     }
 
+    /// <summary>Selects every note shown now (with what was selected already); the rows and the bar change, not the tree.</summary>
+    public void SelectAllShown()
+    {
+        Fresh();
+        foreach (var path in _visibleNotes)
+        {
+            if (_selected.Contains(path)) continue;
+            _selected.Add(path);
+            if (_rowButtons.TryGetValue(path, out var b)) PaintSelected(b, true);
+        }
+        RenderBar();
+    }
+
     /// <summary>model.clear().</summary>
     public void ClearSelection()
     {
@@ -507,12 +527,33 @@ public sealed class NotesExplorer : Border
         return true;
     }
 
-    /// <summary>model.select(id,'toggle').</summary>
+    /// <summary>model.select(id,'toggle'): only the row and the bar change, the tree is not rebuilt (a tap while
+    /// selecting answers at once, however big the vault is).</summary>
     private void Toggle(string id)
     {
         if (!_selected.Remove(id)) _selected.Add(id);
-        Render();
+        if (_rowButtons.TryGetValue(id, out var button)) PaintSelected(button, _selected.Contains(id));
+        else Render();
+        RenderBar();
     }
+
+    /// <summary>The button of each note and folder row made now (its path, or <see cref="FolderPrefix"/> and the folder).</summary>
+    private readonly Dictionary<string, Button> _rowButtons = new(StringComparer.Ordinal);
+
+    private Control Registered(string key, Control row)
+    {
+        if ((row as Button ?? (row as Panel)?.Children.OfType<Button>().FirstOrDefault()) is { } b) _rowButtons[key] = b;
+        return row;
+    }
+
+    private static void PaintSelected(Button button, bool selected)
+    {
+        button.Background = selected ? UrbeTheme.AccentSoft : Brushes.Transparent;
+        button.BorderBrush = selected ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
+    }
+
+    /// <summary>Whether the row of this item is drawn selected now (tests).</summary>
+    public bool IsRowSelected(string key) => _rowButtons.TryGetValue(key, out var b) && b.Background is { } bg && !ReferenceEquals(bg, Brushes.Transparent);
 
     private void Show(string view)
     {
@@ -555,6 +596,7 @@ public sealed class NotesExplorer : Border
         _visibleFolders.Clear();
         _visibleFiles.Clear();
         _folderRows.Clear();
+        _rowButtons.Clear();
         switch (_view)
         {
             case "trash": RenderTrash(_trash ?? []); break;
@@ -801,8 +843,8 @@ public sealed class NotesExplorer : Border
         var path = n.Path;
         if (_renaming == path) { Emit(() => RenameRow(path, Base(path), depth)); return; }
         // the file name with its extension, as an explorer shows it (the 1.8.4 showed the title)
-        Emit(() => PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
-            depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay));
+        Emit(() => Registered(path, PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
+            depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay)));
     }
 
     private void AddFileRow(string path, int depth, bool withPath)
@@ -828,8 +870,8 @@ public sealed class NotesExplorer : Border
         caret.VerticalAlignment = VerticalAlignment.Center;
         caret.RenderTransform = open ? new RotateTransform(90) : null;
         var trailing = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { more, caret } };
-        return PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
-            () => TapFolder(folder), () => { if (HoldFolder(folder)) ArmDrag(); }, () => HoldDelay);
+        return Registered(FolderPrefix + folder, PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
+            () => TapFolder(folder), () => { if (HoldFolder(folder)) ArmDrag(); }, () => HoldDelay));
     }
 
     // A held note or folder can be dragged onto a folder row (the 1.8.4 did nothing, DEC-0045, UC-38, UC-54). The hold
@@ -1214,13 +1256,27 @@ public sealed class NotesExplorer : Border
                 Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger)
             }
         };
-        var row = new DockPanel { LastChildFill = false };
-        DockPanel.SetDock(clear, Dock.Left);
-        DockPanel.SetDock(_count, Dock.Left);
-        DockPanel.SetDock(actions, Dock.Right);
+        // every note shown (the open folders of the tree, or every result of a search) in one tap: a big vault is
+        // organized in one move, not note by note (observation of 15/11/2026)
+        var all = Act(UrbeTheme.Icons.Check, "Selecionar tudo", null, UrbeTheme.Text2);
+        Avalonia.Automation.AutomationProperties.SetName(all, "Selecionar tudo");
+        all.Click += (_, _) => SelectAllShown();
+        _count.VerticalAlignment = VerticalAlignment.Center;
+        // the actions scroll sideways on a narrow phone instead of being cut off
+        var scroller = new ScrollViewer
+        {
+            Content = actions, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*") };
+        Grid.SetColumn(all, 1);
+        Grid.SetColumn(_count, 2);
+        Grid.SetColumn(scroller, 3);
         row.Children.Add(clear);
+        row.Children.Add(all);
         row.Children.Add(_count);
-        row.Children.Add(actions);
+        row.Children.Add(scroller);
         clear.Margin = new Thickness(0, 0, 2, 0);
         _bar.Child = row;
         _bar.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .97);

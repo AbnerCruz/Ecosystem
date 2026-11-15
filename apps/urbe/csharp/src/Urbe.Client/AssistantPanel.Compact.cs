@@ -109,10 +109,10 @@ public sealed partial class AssistantPanel
         };
 
         // Fixed-height popup: only the transcript scrolls, never the composer.
-        var body = new Grid { Height = 260, RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto") };
+        var body = new Grid { Height = 380, RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto") };
         var heading = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 0, 5) };
-        heading.Children.Add(Label(agent, 11, UrbeTheme.Text3, FontWeight.SemiBold));
-        heading.Children.Add(Wrap(title, 15, UrbeTheme.Text, FontWeight.SemiBold));
+        heading.Children.Add(Label(agent, 13, UrbeTheme.Text3, FontWeight.SemiBold));
+        heading.Children.Add(Wrap(title, 17, UrbeTheme.Text, FontWeight.SemiBold));
         Grid.SetRow(heading, 0);
         body.Children.Add(heading);
 
@@ -125,7 +125,7 @@ public sealed partial class AssistantPanel
         }
         else if (status == "question" && _conv.Forms.Any(f => f.State == "pending"))
         {
-            transcript.Children.Add(Wrap("Preencha o formulário para o agente continuar. Seus valores ficam salvos ao sair.", 13, UrbeTheme.Text2));
+            transcript.Children.Add(Wrap("Preencha o formulário para o agente continuar. Seus valores ficam salvos ao sair.", 15, UrbeTheme.Text2));
             transcript.Children.Add(TextButton("Preencher formulário", Open));
         }
         else if (status == "question" && calls.LastOrDefault(b => b.Name == "ask_user") is { } question)
@@ -135,7 +135,7 @@ public sealed partial class AssistantPanel
         else if (status == "thinking")
         {
             if (last is not null && _progress.TryGetValue(last.Id, out var progress))
-                transcript.Children.Add(Wrap(progress, 12, UrbeTheme.Text2));
+                transcript.Children.Add(Wrap(progress, 14, UrbeTheme.Text2));
             if (!UrbeTokens.Motion.Reduced)
                 transcript.Children.Add(new ProgressBar { Height = 2, IsIndeterminate = true,
                     Foreground = UrbeTheme.Brush(UrbeTheme.Accent),
@@ -143,7 +143,7 @@ public sealed partial class AssistantPanel
         }
         else if (status == "error" && _conv.Runs.LastOrDefault()?.Error is { Length: > 0 } error)
         {
-            transcript.Children.Add(Wrap(error, 12, UrbeTheme.Text2));
+            transcript.Children.Add(Wrap(error, 14, UrbeTheme.Text2));
         }
 
         // Complete user-visible thread. Hidden instructions and internal tool
@@ -168,20 +168,26 @@ public sealed partial class AssistantPanel
                 Spacing = 3, Margin = new Thickness(0, 3),
                 HorizontalAlignment = user ? HorizontalAlignment.Right : HorizontalAlignment.Stretch
             };
-            bubble.Children.Add(Label(user ? "Você" : agent, 11, UrbeTheme.Text3, FontWeight.SemiBold));
+            bubble.Children.Add(Label(user ? "Você" : agent, 13, UrbeTheme.Text3, FontWeight.SemiBold));
             var content = new StackPanel { Spacing = 4 };
             if (text.Length > 0)
             {
-                var textBlock = new SelectableTextBlock
+                // the same reading as the full conversation (15 px, formatted): the popup is a reading surface too
+                // (observation of 15/11/2026: "olha como o texto tá pequeno" — it was 13 px plain text)
+                if (user)
                 {
-                    Text = text, FontSize = 13, TextWrapping = TextWrapping.Wrap,
-                    Foreground = UrbeTheme.Brush(UrbeTheme.Text)
-                };
-                Ui.TextActions.Attach(textBlock);
-                content.Children.Add(textBlock);
+                    var textBlock = new SelectableTextBlock
+                    {
+                        Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap,
+                        Foreground = UrbeTheme.Brush(UrbeTheme.Text)
+                    };
+                    Ui.TextActions.Attach(textBlock);
+                    content.Children.Add(textBlock);
+                }
+                else content.Children.Add(Markdown(text));
             }
             if (attachments.Length > 0)
-                content.Children.Add(Wrap("Anexos: " + attachments, 11, UrbeTheme.Text2));
+                content.Children.Add(Wrap("Anexos: " + attachments, 13, UrbeTheme.Text2));
             bubble.Children.Add(new Border
             {
                 Child = content, Padding = new Thickness(10, 8),
@@ -191,7 +197,7 @@ public sealed partial class AssistantPanel
             transcript.Children.Add(bubble);
         }
         if (transcript.Children.Count == 0)
-            transcript.Children.Add(Wrap("Envie uma mensagem para começar a conversa.", 13, UrbeTheme.Text2));
+            transcript.Children.Add(Wrap("Envie uma mensagem para começar a conversa.", 15, UrbeTheme.Text2));
 
         // Preserve the reader's position during streaming. Auto-follow only if
         // the person was already at the end of the conversation.
@@ -231,7 +237,7 @@ public sealed partial class AssistantPanel
         var compactInput = new TextBox
         {
             Text = _input.Text ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-            MinHeight = 44, MaxHeight = 104, FontSize = 14,
+            MinHeight = 44, MaxHeight = 120, FontSize = 15,
             PlaceholderText = "Pergunte ao Assistente…",
             CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8)
         };
