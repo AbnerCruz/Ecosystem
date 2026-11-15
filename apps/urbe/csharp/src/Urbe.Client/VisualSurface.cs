@@ -647,6 +647,8 @@ public sealed class VisualSurface : StackPanel
         var reader = new MarkdownReader
         {
             Size = TextSize, LineFactor = LineFactor,
+            // reading only: the text can be selected and copied (a finger held on a word, the handles, Copiar)
+            Selectable = _readOnly,
             ProgressContextMarkdown = _text,
             ProgressNoteResolver = ProgressNoteResolver,
             DataReader = DataReader,
@@ -905,7 +907,16 @@ public sealed class VisualSurface : StackPanel
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             _box.Resources[key] = Brushes.Transparent;
         _box.TextChanged += OnBoxChanged;
-        Ui.TextActions.Attach(_box);
+        // the bubble is this box's menu: copy, cut, paste and select all live there with the formatting (phone and mouse)
+        Ui.TextActions.UseOwnMenu(_box);
+        _box.ContextRequested += (_, e) =>
+        {
+            // a long press (or a right click) on the box: the bubble, with Colar / Selecionar tudo when nothing is selected
+            if (_box is null) return;
+            e.Handled = true;
+            var (a, b) = Range(_box);
+            ShowBubble(a, clipboardOnly: b <= a);
+        };
         // a double tap selects the word under the finger, to copy, cut or delete (UC-48; the mouse already does it)
         _box.DoubleTapped += (_, e) =>
         {
@@ -955,6 +966,7 @@ public sealed class VisualSurface : StackPanel
             if (scroll is not null && anchor is { } y && box.Parent is Control cell) KeepAt(cell, y, scroll);
             Place(box, tap, caret, select);
         }
+        WatchHandles();
         // the new box has the focus straight from the old one (the keyboard never sees "no text field")
         if (_retiring is not null)
         {
@@ -978,6 +990,8 @@ public sealed class VisualSurface : StackPanel
             var (from, to) = WordAt(box.Text ?? "", at);
             if (to > from) { box.SelectionStart = from; box.SelectionEnd = to; }
             Ui.PlatformHaptics.Hold();
+            // a finger held on the text: the handles to widen or narrow the selection, and the bubble to copy it
+            if (directTouch && to > from) TouchTextScroll.ShowSelectionHandles(box);
         }
         // a box focused by the app does not always bring up the phone's keyboard: ask for it (UC-48)
         if (directTouch) PlatformInput.ShowKeyboard?.Invoke();
@@ -1113,7 +1127,7 @@ public sealed class VisualSurface : StackPanel
         // while a key or the keyboard (IME) changes the text, the selection can still point past its end
         var (a, b) = Range(_box);
         var bubbleOn = b > a && text[a..b].Trim().Length > 0;
-        if (bubbleOn) ShowBubble(a); else _bubble.IsVisible = false;
+        if (bubbleOn) ShowBubble(a); else if (!_clipboardBubble || a != _clipboardAt) _bubble.IsVisible = false;
         _caretLink = !bubbleOn && a == b ? EditorLinks.At(text, a) : null;
         if (_caretLink is { } link) ShowOpenChip(link); else _openChip.IsVisible = false;
         ActiveToolsChanged?.Invoke(LegacyEditorTools.ActiveTools(text, a, b));
@@ -1201,16 +1215,70 @@ public sealed class VisualSurface : StackPanel
         return Widen(start, end, 0, len);
     }
 
-    private bool ExtendTo(MarkdownBlock block, Control holder, Visual? hit, Point at)
+    private bool ExtendTo(MarkdownBlock block, Control holder, Visual? hit, Point at, int? keep = null)
     {
         if (_box is not { } box || _editStart < 0 || _readOnly) return false;
         var source = AiAuthorship.Strip(_text[block.Start..block.End]);
         var inBlock = RenderedIndex(holder, hit, at) is { } r ? SourceIndex(source, PlainText(holder), r) : source.Length;
-        var anchorOld = Math.Clamp(box.SelectionStart, 0, (box.Text ?? "").Length);
+        var anchorOld = Math.Clamp(keep ?? box.SelectionStart, 0, (box.Text ?? "").Length);
         int start = Math.Min(block.Start, _editStart), end = Math.Max(block.End, _editEnd);
         var anchor = AiAuthorship.Strip(_text[start.._editStart]).Length + anchorOld;
         var active = AiAuthorship.Strip(_text[start..block.Start]).Length + inBlock;
         return Widen(start, end, anchor, active);
+    }
+
+    // ------------------------------------------------------------------ the selection handles past the box (touch)
+
+    private TopLevel? _handlesTop;
+    private bool _handleDrag;
+    private Point? _handlePoint;
+
+    /// <summary>
+    /// On a phone the selection is widened by dragging its handles; the handles of a text box stop at the box's edge. A
+    /// handle let go above or below the box being written carries the selection into the block under the finger (the
+    /// box then holds those blocks, the other end of the selection stays).
+    /// </summary>
+    private void WatchHandles()
+    {
+        if (TopLevel.GetTopLevel(this) is not { } top || ReferenceEquals(top, _handlesTop)) return;
+        _handlesTop = top;
+        top.AddHandler(Avalonia.Controls.Primitives.Thumb.DragStartedEvent, (object? _, Avalonia.Input.VectorEventArgs e) =>
+        {
+            _handleDrag = e.Source is Avalonia.Controls.Primitives.TextSelectionHandle && _box is { IsFocused: true };
+            _handlePoint = null;
+        }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        top.AddHandler(PointerMovedEvent, (object? _, PointerEventArgs e) => { if (_handleDrag) _handlePoint = e.GetPosition(this); },
+            Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        top.AddHandler(Avalonia.Controls.Primitives.Thumb.DragCompletedEvent, (object? _, Avalonia.Input.VectorEventArgs _) =>
+        {
+            if (!_handleDrag) return;
+            _handleDrag = false;
+            if (_handlePoint is { } p) HandleLetGo(p);
+        }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+    }
+
+    /// <summary>A selection handle let go at <paramref name="p"/> (in this surface): past the box, the selection goes on there.</summary>
+    public bool HandleLetGo(Point p)
+    {
+        if (_box is not { } box || box.TranslatePoint(new Point(0, 0), this) is not { } top) return false;
+        if (p.Y >= top.Y && p.Y <= top.Y + box.Bounds.Height) return false;
+        // the drawn block under the finger (or the nearest one in that direction)
+        Control? target = null;
+        double best = double.MaxValue;
+        foreach (var (_, holder) in _holders)
+        {
+            if (!holder.IsAttachedToVisualTree() || holder.TranslatePoint(new Point(0, 0), this) is not { } at) continue;
+            var dist = p.Y < at.Y ? at.Y - p.Y : p.Y > at.Y + holder.Bounds.Height ? p.Y - at.Y - holder.Bounds.Height : 0;
+            if (dist < best) { best = dist; target = holder; }
+        }
+        if (target is null || !_refs.TryGetValue(target, out var r) || r.Block.Kind == "frontmatter") return false;
+        var local = this.TranslatePoint(p, target) ?? new Point(0, 0);
+        int a = Math.Min(box.SelectionStart, box.SelectionEnd), b = Math.Max(box.SelectionStart, box.SelectionEnd);
+        // the end that stays: the start when going down, the end when going up
+        var below = p.Y > top.Y + box.Bounds.Height;
+        var done = ExtendTo(r.Block, target, target.InputHitTest(local) as Visual, local, keep: below ? a : b);
+        if (done && _box is { } wide) TouchTextScroll.ShowSelectionHandles(wide);
+        return done;
     }
 
     private bool Widen(int start, int end, int anchor, int active)
@@ -1607,6 +1675,14 @@ public sealed class VisualSurface : StackPanel
             case "noteLink": Apply(LegacyEditorTools.InsertAtCursor(text, a, b, "[[")); break;
             case "rule": InsertRule(); break;
             case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
+            case "copy": Ui.TextActions.Copy(_box); _bubble.IsVisible = false; return;
+            case "cut": if (b > a && !_box.IsReadOnly) _box.Cut(); _bubble.IsVisible = false; return;
+            case "paste": if (!_box.IsReadOnly) _box.Paste(); _bubble.IsVisible = false; _clipboardBubble = false; return;
+            case "selectAll":
+                // the block first, then (again) the whole note, as Ctrl+A
+                if (a == 0 && b == text.Length && text.Length > 0) SelectWholeNote(); else _box.SelectAll();
+                if (_box is { } all) { TouchTextScroll.ShowSelectionHandles(all); var (x, y) = Range(all); if (y > x) ShowBubble(x); }
+                return;
             case "wordComment": _ = WordCommentAsync(text, a, b); break;
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
             case "plot": Apply(LegacyVisualEdit.Plot(text, _box.CaretIndex)); break;
@@ -1712,9 +1788,24 @@ public sealed class VisualSurface : StackPanel
     // ------------------------------------------------------------------ the selection bubble (#urbeFormatBubble)
 
     /// <summary>The bubble floats just above the selection (below it at the top of the screen), springing in.</summary>
-    private void ShowBubble(int selectionStart)
+    // the bubble opened by a long press with nothing selected: only Colar and Selecionar tudo, until the caret moves
+    private bool _clipboardBubble;
+    private int _clipboardAt = -1;
+    private readonly List<Control> _formatting = [];
+    private Button? _copyButton, _cutButton, _pasteButton, _allButton;
+
+    private void ShowBubble(int selectionStart, bool clipboardOnly = false)
     {
         if (_box is null) return;
+        _clipboardBubble = clipboardOnly;
+        _clipboardAt = clipboardOnly ? selectionStart : -1;
+        foreach (var c in _formatting) c.IsVisible = !clipboardOnly;
+        var len = (_box.Text ?? "").Length;
+        var (sa, sb) = Range(_box);
+        if (_copyButton is not null) _copyButton.IsVisible = sb > sa;
+        if (_cutButton is not null) _cutButton.IsVisible = sb > sa && !_box.IsReadOnly;
+        if (_pasteButton is not null) _pasteButton.IsVisible = !_box.IsReadOnly;
+        if (_allButton is not null) _allButton.IsVisible = len > 0 || _blocks.Count > 1;
         var was = _bubble.IsVisible;
         _bubble.IsVisible = true;
         _bubble.MaxWidth = Math.Max(120, Bounds.Width + PadX);
@@ -1800,11 +1891,12 @@ public sealed class VisualSurface : StackPanel
     private Border BuildBubble()
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
-        void Add(string act, Control content, string tip)
+        bool clipboard = true;
+        Button Add(string act, Control content, string tip, bool wide = false)
         {
             var b = new Button
             {
-                Content = content, Width = 44, Height = 44, Padding = new Thickness(0), CornerRadius = new CornerRadius(UrbeTokens.Radius.M), Focusable = false,
+                Content = content, Width = wide ? double.NaN : 44, MinWidth = 44, Height = 44, Padding = new Thickness(wide ? 10 : 0, 0), CornerRadius = new CornerRadius(UrbeTokens.Radius.M), Focusable = false,
                 Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text),
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
             };
@@ -1815,9 +1907,19 @@ public sealed class VisualSurface : StackPanel
             Ui.UrbeMotion.Pressable(b, haptic: true);
             b.Click += (_, _) => Run(act);
             row.Children.Add(b);
+            if (!clipboard) _formatting.Add(b);
+            return b;
         }
-        void Sep() => row.Children.Add(new Border { Width = 1, Height = 20, Margin = new Thickness(3, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) });
+        void Sep() { var sep = new Border { Width = 1, Height = 20, Margin = new Thickness(3, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) }; row.Children.Add(sep); if (!clipboard) _formatting.Add(sep); }
         Control Ic(string name) => UrbeTheme.Icon(SlashMenu.Icons[name], 18);
+        TextBlock Word(string text) => new() { Text = text, FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        // the clipboard first, in words (as the phone's own text menu): Copiar, Recortar, Colar, Selecionar tudo
+        _copyButton = Add("copy", Word("Copiar"), "Copiar", wide: true);
+        _cutButton = Add("cut", Word("Recortar"), "Recortar", wide: true);
+        _pasteButton = Add("paste", Word("Colar"), "Colar", wide: true);
+        _allButton = Add("selectAll", Word("Tudo"), "Selecionar tudo", wide: true);
+        clipboard = false;
+        Sep();
         Add("bold", new TextBlock { Text = "B", FontWeight = FontWeight.Bold, FontSize = 15 }, "Negrito");
         Add("italic", new TextBlock { Text = "I", FontStyle = FontStyle.Italic, FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.SemiBold, FontSize = 15 }, "Itálico");
         Add("code", Ic("code"), "Código");
