@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-urbe-editor-review-beta53",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-15T09:38:51.000Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-57",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-c717cbe5-9x21rb",
+  "base_commit": "0dc7c759965063156a5ecf8847fca4944f641bbc",
+  "commit": "fda0c6c1b78df8da5d38ddddd7fb52c8f4840f7c",
+  "pr": "pending",
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownTextPresenter.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EditHistory.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EditorLinks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownSyntax.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorFlowUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorFuzzUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTypingProfileTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditHistoryTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorFormattingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorLinksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownSyntaxTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathRendererTests.cs",
+    "apps/urbe/docs/csharp/EDITOR-REVIEW-20261114.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261115-urbe-editor-review-beta53.json"
+  ],
+  "work_completed": [
+    "Estudo do código-fonte do Avalonia 12.1.3 (TextBox, TextPresenter, cliente de IME, IME do Android, FocusManager/KeyboardDevice, TextLayout) e do CSharpMath (Typesetter.MakeTable, ListDisplay/InnerDisplay, CollectionWidth); perfis com dotnet-trace; teste de fuzz do Visual.",
+    "Toque abaixo do bloco em edição, depois de digitar, abria o bloco errado (posições velhas) — corrigido; reproduzido na main beta.52.",
+    "Teclado fechando e reabrindo ao trocar de bloco (foco passava por nenhum ao remover a caixa) — foco passa direto de caixa em caixa; painéis movem filhos no lugar.",
+    "Teclado não reabrindo ao tocar depois de fechado com Voltar (SHOW_IMPLICIT) — pedido explícito no toque, inclusive no bloco em edição e na Fonte.",
+    "Digitar em bloco com selo de IA desfazia a letra e fechava o bloco; gravação podia ser recusada — selos relidos de forma consistente (Visual, overlay e gravação).",
+    "Marcar tarefa enquanto escreve fechava o bloco (caixa saía da árvore) — célula da caixa estável.",
+    "Desfazer/Refazer da nota inteira no Visual; setas, Backspace/Delete e seleção entre blocos; bloco em edição com Markdown formatada; troca de bloco redesenha só o bloco (≈42→20 ms no runner).",
+    "Formatação pela barra: espaços fora das marcas, uma marca por linha, itálico no meio da palavra, *x* e __x__ reconhecidos; Fonte com as mesmas ações (título no início da linha).",
+    "Matrizes com delimitador sobre a última coluna (bug de largura do CSharpMath) e fórmulas largas cortadas — corrigidos.",
+    "Versão 2.0.0-beta.53 / 2000053, PATCHNOTES, histórico, ROADMAP (Issue #945) e EDITOR-REVIEW-20261114.md."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Client.Tests local (headless Avalonia)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "614 testes; a única falha intermitente (AgentWorkspaces_SelectResumeFilterAndRestartWithoutReassigningHistory) falha igualmente na base 0dc7c75 e passa isolada."
+    },
+    {
+      "check": "Urbe.Core.Tests local",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1609/1609."
+    },
+    {
+      "check": "Fuzz do Visual (URBE_FUZZ_SEEDS=150)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "150 sequências aleatórias sem letra perdida, bloco fechado ou divergência Fonte/Visual; 10 sequências no CI."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks."
+    },
+    {
+      "check": "Builds Android/Windows e CI do PR",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Não há workload Android neste ambiente; o CI do PR compila os heads (MainActivity.ShowKeyboard alterado)."
+    },
+    {
+      "check": "Teclado, toque, cursor, formatação e fórmulas no Android físico e no Windows",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/EDITOR-REVIEW-20261114.md",
+      "evidence": "Itens 1–16 e seção 5 do documento; NN-017."
+    }
+  ],
+  "known_issues": [
+    "Fonte em notas muito longas: ~95% do custo por tecla está no TextBox do Avalonia (layout do texto inteiro); exige controle de edição próprio, decisão de arquitetura não tomada.",
+    "Bloco de código puxado para o meio de uma linha faz AiAuthorship ler selos como código e acrescentar um selo a cada leitura (UC-51).",
+    "Com fórmula inline ou comentário de palavra antes do ponto tocado, o texto depois pode descer uma linha ao virar caixa (a fonte é maior que o desenho)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar o CI do PR e corrigir falhas sem ampliar o escopo.",
+    "O bump de versão no csproj é distribuição crítica: a integração espera a autorização do proprietário (label integrar).",
+    "Após a integração, publicar 2.0.0-beta.53 somente pelo workflow urbe-csharp-mobile-release.yml.",
+    "Validação no aparelho dos itens da seção 5 do EDITOR-REVIEW-20261114.md."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Texto da nota continua com uma autoridade (Editor.Text sincronizado pelo Visual); o histórico do Visual guarda diferenças, não cópias concorrentes; uma versão no csproj canônico."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #945, commits na branch, este handoff e o documento de revisão."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma mudança de arquitetura: o editor de controle próprio para a Fonte foi registrado como decisão pendente de fundamento, não implementado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teclado/toque validados só no headless; validação física registrada como pendente e crítica."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Cada correção tem teste vermelho→verde citado no documento; nenhum CST fechado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-visual-editor-interaction",
+      "status": "product-specific",
+      "rationale": "Correções do editor do Urbe e do renderizador de matemática do próprio produto; sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Bump de versão no csproj Android (caminho de distribuição); identidade, assinatura e workflow inalterados. Proprietário pediu a release; a integração segue a autorização da política."
+  }
+}
