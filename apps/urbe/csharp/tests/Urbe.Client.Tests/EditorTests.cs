@@ -199,22 +199,31 @@ public sealed class EditorTests
 
         // a flick: the note glides on after the finger leaves (released right after the last move, at about
         // 1 px/ms, so the glide is long enough on a slow machine and never runs into the end of the note)
-        scroll.Offset = default;
-        Dispatcher.UIThread.RunJobs();
-        await Task.Delay(TouchIntent.SettleMs + 50);
-        var flickFrom = editor.Editor.TranslatePoint(new Point(60, 400), window)!.Value;
-        var flick = window.TouchBegin(flickFrom, RawInputModifiers.None);
-        for (int i = 1; i <= 4; i++)
+        // a flick is fast: when the machine stalls between the moves (a loaded CI runner turned 30 ms into hundreds),
+        // what was made is a slow drag, which rightly does not glide; that gesture is made again (at most 3 times)
+        double released = 0;
+        for (int attempt = 0; attempt < 3; attempt++)
         {
-            await Task.Delay(30);
-            window.TouchMove(flick, new Point(flickFrom.X, flickFrom.Y - i * 30), RawInputModifiers.None);
+            scroll.Offset = default;
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(TouchIntent.SettleMs + 50);
+            var flickFrom = editor.Editor.TranslatePoint(new Point(60, 400), window)!.Value;
+            var flick = window.TouchBegin(flickFrom, RawInputModifiers.None);
+            var gesture = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 1; i <= 4; i++)
+            {
+                await Task.Delay(30);
+                window.TouchMove(flick, new Point(flickFrom.X, flickFrom.Y - i * 30), RawInputModifiers.None);
+            }
+            window.TouchEnd(flick, new Point(flickFrom.X, flickFrom.Y - 120), RawInputModifiers.None);
+            bool stalled = gesture.ElapsedMilliseconds > 240;
+            // the drag's own work still waiting (a loaded machine) is done first: the glide is what comes after it
+            Dispatcher.UIThread.RunJobs();
+            released = scroll.Offset.Y;
+            // the glide's first frame comes from a timer: a slow machine may take longer than a frame to run it
+            for (int i = 0; i < 20 && scroll.Offset.Y <= released; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
+            if (scroll.Offset.Y > released || !stalled) break;
         }
-        window.TouchEnd(flick, new Point(flickFrom.X, flickFrom.Y - 120), RawInputModifiers.None);
-        // the drag's own work still waiting (a loaded machine) is done first: the glide is what comes after it
-        Dispatcher.UIThread.RunJobs();
-        var released = scroll.Offset.Y;
-        // the glide's first frame comes from a timer: a slow machine may take longer than a frame to run it
-        for (int i = 0; i < 20 && scroll.Offset.Y <= released; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
         Assert.True(scroll.Offset.Y > released, $"a nota não deslizou ({released} → {scroll.Offset.Y})");
 
         // the note still glides: a tap only stops it (no caret, so no keyboard), as on a phone (22/10/2026)

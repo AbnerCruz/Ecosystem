@@ -42,10 +42,12 @@ public sealed class NoteLibrary
     /// The notes of a vault. <paramref name="notes"/> are its text documents with the id each one has after the opening
     /// (<see cref="Ids"/>). Dates and folders come from .urbe/notas.json when there is one (<paramref name="notasJson"/>),
     /// otherwise from the 1.8.4 map (<paramref name="legacyMapJson"/>, read only). <paramref name="otherFiles"/> are the
-    /// vault's other files (attachments): their folders are folders too.
+    /// vault's other files (attachments): their folders are folders too. <paramref name="diskFolders"/>, when the host
+    /// lists them, are the folders that exist on disk now: they replace the recorded ones, so the app is the folder 1:1
+    /// (a folder deleted outside the app is gone, an empty one created outside appears).
     /// </summary>
     public static NoteLibrary Open(IReadOnlyList<(string Path, string Content, string Id)> notes, string? notasJson,
-        string? legacyMapJson, IEnumerable<string>? otherFiles = null)
+        string? legacyMapJson, IEnumerable<string>? otherFiles = null, IEnumerable<string>? diskFolders = null)
     {
         ArgumentNullException.ThrowIfNull(notes);
         var record = ParseRecord(notasJson, out _);
@@ -58,7 +60,7 @@ public sealed class NoteLibrary
             store.Upsert(new DocumentInput { Id = id, Path = path, Content = content, Created = known?.Created, Modified = known?.Modified });
         }
         var library = new NoteLibrary(store);
-        foreach (var f in record?.Folders ?? legacy?.Folders ?? []) library.AddFolder(f);
+        foreach (var f in diskFolders ?? record?.Folders ?? legacy?.Folders ?? []) library.AddFolder(f);
         foreach (var d in store.List()) library.AddFolderOf(d.Path);
         foreach (var f in otherFiles ?? []) library.AddFolderOf(f);
         return library;

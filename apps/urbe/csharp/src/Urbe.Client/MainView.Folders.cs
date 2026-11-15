@@ -250,7 +250,7 @@ public sealed partial class MainView
             && !folders.Any(f => x.StartsWith(f + "/", StringComparison.Ordinal))).ToList();
         foreach (var f in folders)
             if (!await MoveFolderAsync(f, target)) return;
-        if (notes.Count > 0) await MoveNotesToAsync(notes, target);
+        if (notes.Count > 0) await MoveNotesAndFilesToAsync(notes, target);
     }
 
     /// <summary>

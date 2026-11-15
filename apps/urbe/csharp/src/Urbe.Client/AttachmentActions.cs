@@ -25,6 +25,8 @@ public sealed partial class MainView
             items.Add(new DialogItem("Transcrever em nota", UrbeTheme.Icons.Mic, "Uma nota ao lado, com o texto e os horários, para revisar.", Run: () => TranscribeAudioToNoteAsync(path)));
         items.AddRange(
         [
+            // organizing many files at once: this one starts a selection (tap the others), as holding a note does
+            new DialogItem("Selecionar", UrbeTheme.Icons.Check, "Para mover ou excluir vários de uma vez.", Run: () => { Explorer.SelectFile(path); return Task.CompletedTask; }),
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, "Mantenha a extensão para preservar o tipo.", Run: () => RenameAttachmentAsync(path)),
             new DialogItem("Mover", UrbeTheme.Icons.Folder, "Para outra pasta.", Run: () => MoveAttachmentAsync(path)),
             new DialogItem("Excluir", UrbeTheme.Icons.Trash, "O arquivo será apagado do vault.", Danger: true, Run: () => DeleteAttachmentAsync(path))

@@ -29,6 +29,16 @@ public static partial class CrashLog
     /// <summary>The errors written since the app opened (tests).</summary>
     public static int Count { get; private set; }
 
+    /// <summary>An error that reached the interface and was kept from closing the app: the screen tells the person.</summary>
+    public static event Action<Exception>? Failed;
+
+    /// <summary>Tells the screen an error that was kept from closing the app: a button whose work failed is not left
+    /// silent (observation of 15/11/2026: "botões que não funcionam").</summary>
+    public static void Report(Exception error)
+    {
+        try { Failed?.Invoke(error); } catch { /* telling must never fail the app */ }
+    }
+
     public static void Install()
     {
         if (_installed) return;
@@ -37,6 +47,7 @@ public static partial class CrashLog
         {
             Write(e.Exception, "interface");
             e.Handled = true;
+            Report(e.Exception);
         };
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {

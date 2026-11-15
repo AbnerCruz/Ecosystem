@@ -112,6 +112,9 @@ public sealed partial class MainView : Grid
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
         Editor.CreateHere = () => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", open: false);
+        Explorer.SelectingChanged += UpdateFloatingNav;
+        // an action that failed with an error nobody caught: said on the screen, never a button that silently does nothing
+        CrashLog.Failed += ex => ShowLifeNotice("Não foi possível concluir: " + StorageProblems.Explain(ex), Ui.ToastKind.Warning);
         Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
         Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
         Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };
@@ -132,6 +135,7 @@ public sealed partial class MainView : Grid
         Explorer.FileMoveRequested += (path, folder) => { if (!StillReading()) _ = MoveAttachmentAsync(path, folder); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
+        Explorer.RestoreAllRequested += () => _ = RestoreAllFromTrashAsync();
         Explorer.NoteRequested += OpenFromNotes;
         // UC-69: Voltar slides the editor away the way it came (a picture of it; the screen under it is there at once)
         Editor.Leaving += () => Ui.UrbeMotion.Ghost(Editor, _stage, dy: 12);
@@ -380,7 +384,8 @@ public sealed partial class MainView : Grid
         finally { Explorer.Opening = Workspace.Opening = false; }
     }
 
-    private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)
+    private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false,
+        IReadOnlyList<string>? listedFiles = null, IReadOnlyList<string>? listedFolders = null)
     {
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
@@ -412,12 +417,18 @@ public sealed partial class MainView : Grid
         // .urbe/notas.json: ids, dates and folders; a vault without it takes them from its 1.8.4 map, read only
         var record = Text(NoteLibrary.Path);
         _notesReadOnly = NoteLibrary.IsFuture(record);
-        var ids = OpeningIds(snapshot, notes, record);
+        // CST-148: identifying the notes is pure work over every note's text: off the screen's thread, so a big vault
+        // opening never freezes the app (the fields it sets are read only after it, by this same opening)
+        var ids = await Task.Run(() => OpeningIds(snapshot, notes, record));
         _attachments.Clear();
+        IReadOnlyList<string>? diskFolders = null;
         if (_vault is not null)
         {
+            // the folders as they are on disk now (1:1): one deleted on the device is gone, one created there appears
+            try { diskFolders = listedFolders ?? await _vault.ListFolderPathsAsync(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the record's folders */ }
             // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
-            try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
+            try { foreach (var path in listedFiles ?? await _vault.ListFilePathsAsync()) _attachments.Add(path); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
             // CST-006: a write the app closing cut in the middle left the storage's copy of the previous text: it is
             // resolved and the folder read again, once, before the notes are shown
@@ -438,7 +449,10 @@ public sealed partial class MainView : Grid
             }
         }
         _lastNames = null;   // UC-78: the folder read replaces the names of the last opening
-        Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments), notes);
+        // the library (every note's document, links, tags) is built off the screen's thread too; shown on it
+        var otherFiles = _attachments.ToList();
+        var library = await Task.Run(() => NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, otherFiles, diskFolders));
+        Open(library, notes);
         // the other files only: a note deleted later must not stay behind as a file of its folder
         _attachments.ExceptWith(notes.Select(n => n.Path));
         Explorer.Status = snapshot.IsReadOnly ? "Somente leitura" : null;
@@ -651,6 +665,8 @@ public sealed partial class MainView : Grid
             // This cannot authorize a generic replacement or stale restoration.
             !string.Equals(previous, expectedUndoContent, StringComparison.Ordinal))
             throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Urbe. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
+        // CST-101: the open note was deleted outside the Urbe: it is created again, never lost
+        if (await RecreateIfGoneAsync(note)) return;
         try { await _vault.SaveExistingTextFileAsync(note.Path, note.Content); }
         catch (Exception error) when (error is not VaultChangedOutsideException)
         {
@@ -1135,6 +1151,9 @@ public sealed partial class MainView : Grid
     private bool _recoveringWrites;
 
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
+    /// <summary>The Explorer redrawn from the vault as it is in memory (what a save or a refresh does; tests).</summary>
+    public void RefreshNotesForTests() => RefreshNotes();
+
     private void RefreshNotes()
     {
         if (RefreshLastNames()) { _notesShown = null; return; }
@@ -1143,7 +1162,9 @@ public sealed partial class MainView : Grid
         var shown = NotesFingerprint();
         if (shown == _notesShown) return;
         _notesShown = shown;
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), _library?.Folders);
+        Explorer.SetNotes(_contents.Select(n => _store?.Get(n.Key) is { } d
+            ? new CityNote(n.Key, n.Value) { Title = d.Title, Modified = d.Modified ?? d.Created, Created = d.Created }
+            : new CityNote(n.Key, n.Value)), _library?.Folders);
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
@@ -1391,8 +1412,11 @@ public sealed partial class MainView : Grid
             .Select(x => x[NotesExplorer.FolderPrefix.Length..]).Where(f => f.Length > 0).ToList();
         folders = folders.Where(f => !folders.Any(g => g != f && f.StartsWith(g + "/", StringComparison.Ordinal))).ToList();
         bool Within(string path) => folders.Any(f => path.StartsWith(f + "/", StringComparison.Ordinal));
-        var notes = selection.Where(x => !x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal) && !Within(x)).ToList();
-        if (notes.Count == 0 && folders.Count == 0) return;
+        var chosen = selection.Where(x => !x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal) && !Within(x)).ToList();
+        // the vault's other files chosen with them have no Lixeira: they are deleted for good, and the question says so
+        var files = chosen.Where(x => _attachments.Contains(x)).ToList();
+        var notes = chosen.Where(x => !_attachments.Contains(x)).ToList();
+        if (notes.Count == 0 && folders.Count == 0 && files.Count == 0) return;
         static string Plural(int n, string one, string many) => n.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + (n == 1 ? one : many);
         string title, message;
         if (folders.Count > 0)
@@ -1406,25 +1430,36 @@ public sealed partial class MainView : Grid
                 ? Plural(total, "nota vai", "notas vão") + " para a Lixeira e " + (total == 1 ? "pode" : "podem") + " ser restaurada" + (total == 1 ? "" : "s") + ". Outros arquivos da pasta ficam no vault."
                 : "A pasta está vazia.";
         }
-        else
+        else if (notes.Count > 0)
         {
             title = "Mover para a lixeira?";
             message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
         }
+        else
+        {
+            title = files.Count == 1 ? "Excluir “" + files[0][(files[0].LastIndexOf('/') + 1)..] + "”?" : "Excluir " + files.Count + " arquivos?";
+            message = "";
+        }
+        if (files.Count > 0)
+            message = (message.Length > 0 ? message + "\n\n" : "") + (files.Count == 1 ? "1 arquivo (imagem, PDF, áudio…) será apagado do vault de vez: arquivos não vão para a Lixeira."
+                : files.Count + " arquivos (imagens, PDFs, áudio…) serão apagados do vault de vez: arquivos não vão para a Lixeira.");
         // CST-226: what depends on the notes is said before they go (nothing dependent is changed)
         if (_store is { } usageStore)
         {
-            var impact = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>()
-                .Select(d => NoteUsage.Summary(NoteUsage.Of(usageStore, d))).OfType<string>().ToList();
+            // one pass over the vault for every note chosen (each one read the whole vault before)
+            var docs = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>().ToList();
+            var usage = NoteUsage.OfMany(usageStore, docs);
+            var impact = docs.Select(d => NoteUsage.Summary(usage[d.Id])).OfType<string>().ToList();
             if (impact.Count > 0) message += "\n\n" + string.Join("\n", impact.Take(3)) + "\nEsses itens vão mostrar a fonte como indisponível até você restaurar a nota.";
         }
-        if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
+        if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 || files.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
         await InBatchAsync(notes.Count + folders.Sum(f => NoteLibrary.FolderDocuments(_store!, f).Count), async () =>
         {
             foreach (var f in folders)
                 if (!await DeleteFolderAsync(f)) break;
             var picked = notes.Select(p => _store?.Get(p)).OfType<UrbeDocument>().ToList();
             if (picked.Count > 0) await TrashNotesAsync(picked);
+            foreach (var file in files) await DeleteAttachmentAsync(file, confirmed: true);
             return true;
         });
         Explorer.ClearSelection();
@@ -1444,6 +1479,8 @@ public sealed partial class MainView : Grid
             new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
+            new DialogItem("Ordenar notas", UrbeTheme.Icons.Layers, ExplorerState.Sort switch { "modificadas" => "Modificadas por último primeiro", "criadas" => "Criadas por último primeiro", _ => "Por nome" },
+                Run: () => ChooseSortAsync()),
             new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: () => ShowConstellationAsync()),
             new DialogItem("Grafos", UrbeTheme.Icons.Layers, "Criar e navegar em grafos livres", Run: () => ShowGraphsHomeAsync()),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
@@ -1453,6 +1490,20 @@ public sealed partial class MainView : Grid
             .. (_vault is null ? Array.Empty<DialogItem>() :
                 [new DialogItem("Pasta do Urbe no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
         ]);
+    }
+
+    /// <summary>How the notes of each folder are ordered in the tree (kept on this device); folders stay first.</summary>
+    public async Task ChooseSortAsync()
+    {
+        var options = new (string Id, DialogItem Item)[]
+        {
+            ("nome", new DialogItem("Por nome", UrbeTheme.Icons.Notes, "De A a Z")),
+            ("modificadas", new DialogItem("Modificadas por último", UrbeTheme.Icons.Clock, "As que você mexeu por último primeiro")),
+            ("criadas", new DialogItem("Criadas por último", UrbeTheme.Icons.Plus, "As mais novas primeiro"))
+        };
+        if (await Dialogs.ChooseAsync("Ordenar notas", options.Select(o => o.Item).ToList()) is not { } chosen) return;
+        ExplorerState.Sort = options[chosen].Id;
+        Explorer.Resort();
     }
 
     /// <summary>Where the .zip goes (a save dialog); the tests replace it. Null = cancelled.</summary>
@@ -1596,7 +1647,21 @@ public sealed partial class MainView : Grid
             return;
         }
         if (await ChooseFolderAsync(current: SharedFolder(paths)) is not { } folder) return;
-        await MoveNotesToAsync(paths, folder);
+        await MoveNotesAndFilesToAsync(paths, folder);
+    }
+
+    /// <summary>Notes and the vault's other files (images, PDFs, audio) chosen together go to one folder: the notes as
+    /// notes (ids, dates, links), each file with the links to it updated.</summary>
+    private async Task MoveNotesAndFilesToAsync(IReadOnlyList<string> paths, string folder)
+    {
+        var files = paths.Where(p => _attachments.Contains(p)).ToList();
+        var notes = paths.Where(p => !_attachments.Contains(p)).ToList();
+        if (notes.Count > 0) await MoveNotesToAsync(notes, folder);
+        foreach (var file in files)
+        {
+            var to = (folder.Length > 0 ? folder + "/" : "") + file[(file.LastIndexOf('/') + 1)..];
+            if (to != file) await MoveAttachmentToAsync(file, to, files.Count == 1 ? "Arquivo movido." : "Arquivos movidos.");
+        }
     }
 
     /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled. A folder
@@ -1689,6 +1754,9 @@ public sealed partial class MainView : Grid
         RefreshNotes();
     }
 
+    /// <summary>Where each note of the Lixeira came from (tests).</summary>
+    public IReadOnlyList<string> TrashOriginalPaths() => _trash.Items.Select(i => (string?)i["originalPath"] ?? "").ToList();
+
     /// <summary>show('trash'): the Lixeira in Notas.</summary>
     public void ShowTrashView() => Explorer.ShowTrash(_trash.Items.Select(i =>
         new NotesExplorer.TrashEntry((string?)i["document"]?["id"] ?? "", (string?)i["document"]?["title"] ?? "", (string?)i["originalPath"] ?? "")).ToList());
@@ -1730,6 +1798,62 @@ public sealed partial class MainView : Grid
         NotesChanged();
         RefreshNotes();
         ShowTrashView();
+    }
+
+    /// <summary>
+    /// Restaurar tudo: every note of the Lixeira goes back to where it was, its folder made again when it is gone. Each
+    /// file is created first; the trash is rewritten once at the end without the ones restored. A note whose place is
+    /// taken stays in the Lixeira, and the person is told how many.
+    /// </summary>
+    public async Task RestoreAllFromTrashAsync()
+    {
+        if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Lixeira", problem!); return; }
+        if (_library is not { } library || _store is null || _vault is null) return;
+        var items = _trash.Items.ToList();
+        if (items.Count == 0) return;
+        ShowLifeNotice($"Restaurando {items.Count} notas…");
+        var restored = new List<string>();
+        int taken = 0, failed = 0;
+        var placed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            var id = (string?)item["document"]?["id"];
+            var path = (string?)item["originalPath"] ?? (string?)item["document"]?["path"] ?? "";
+            var content = (string?)item["document"]?["content"] ?? "";
+            if (id is null || path.Length == 0) { failed++; continue; }
+            if (_store.Get(path) is not null || _contents.ContainsKey(path) || !placed.Add(path)) { taken++; continue; }
+            try
+            {
+                await EnsureFolderAsync(DirOf(path));
+                await _vault.CreateTextFileAsync(path, content);
+                restored.Add(id);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException)
+            {
+                // the bytes may be there although the answer was lost (CST-004)
+                if (await OnDiskAsync(path) == content) restored.Add(id); else failed++;
+            }
+        }
+        if (restored.Count > 0)
+        {
+            bool trashWritten = await WriteOrAskAsync("As notas voltaram, mas a lixeira não foi atualizada",
+                () => _vault.SaveTrashAsync(_trash.ExportAfter(t => { foreach (var id in restored) t.Purge(id); })),
+                async () => { foreach (var id in restored) if (await TrashOnDiskHoldsAsync(id)) return false; return true; });
+            foreach (var id in restored)
+                if (_trash.Restore(_store, id) is { } back)
+                {
+                    var doc = library.Restore(back, Now);
+                    _contents[doc.Path] = doc.Content;
+                }
+            if (!trashWritten) ShowLifeNotice("As notas foram restauradas. A lixeira ainda as lista até a próxima gravação.", Ui.ToastKind.Warning);
+            NotesChanged();
+            RefreshNotes();
+        }
+        ShowTrashView();
+        var told = restored.Count == 1 ? "1 nota restaurada" : restored.Count + " notas restauradas";
+        if (taken > 0) told += "; " + taken + (taken == 1 ? " ficou" : " ficaram") + " na Lixeira porque já existe uma nota no mesmo lugar";
+        if (failed > 0) told += "; " + failed + (failed == 1 ? " não pôde" : " não puderam") + " ser restaurada" + (failed == 1 ? "" : "s");
+        ShowLifeNotice(told + ".", taken + failed > 0 ? Ui.ToastKind.Warning : Ui.ToastKind.Success);
     }
 
     /// <summary>✕ Excluir de vez (trash.purge) after "Excluir de vez?".</summary>

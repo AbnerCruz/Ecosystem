@@ -446,7 +446,9 @@ public static partial class MarkdownEngine
             }
 
             CloseList();
-            output.Append("<p>").Append(InlineMarkdown(line)).Append("</p>");
+            // the spaces and tabs before a paragraph's text are not part of it (CommonMark, Obsidian): a note with lines
+            // indented by hand no longer shows its paragraphs pushed to the right (owner's screenshot, 15/11/2026)
+            output.Append("<p>").Append(InlineMarkdown(line.TrimStart(' ', '\t'))).Append("</p>");
         }
 
         CloseList();

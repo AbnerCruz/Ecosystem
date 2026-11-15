@@ -1,19 +1,48 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.54
+**Versão canônica preparada:** 2.0.0-beta.55
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
 **Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
 
-## Selecionar, copiar, recortar, colar e selecionar tudo — no celular, em todo o app (beta.54)
+## O app é a sua pasta, 1:1 — e tudo responde na hora (beta.55)
 
-- **Menu em português em todos os campos de texto**: Recortar, Copiar, Colar e **Selecionar tudo**, em linha ao lado da seleção no celular. Antes, no celular, aparecia o menu do sistema de interface em inglês ("Cut / Copy / Paste") e sem "Selecionar tudo".
-- **No editor (modo Visual)**:
-  - segure o dedo numa palavra: ela fica selecionada, aparecem as **alças** para aumentar ou diminuir a seleção, e a bolha traz **Copiar, Recortar, Colar e Tudo** (uma vez seleciona o bloco, a segunda vez a nota inteira), além da formatação;
-  - segure o dedo sem nada selecionado: aparecem **Colar** e **Tudo**;
-  - **arraste a alça da seleção para fora do bloco**, para cima ou para baixo: a seleção continua até onde você soltar, atravessando blocos.
-- **Textos só de leitura** (respostas do Assistente, código, formulários): segure o dedo numa palavra para selecioná-la e abrir **Copiar / Selecionar tudo**.
-- **Nota no modo leitura, painel fixado e tutorial** agora têm texto selecionável e copiável (antes não dava para selecionar nada neles).
-- Área de trabalho: "Ver todos os N soltos" não volta mais sozinho para a prévia de 12 quando o vault é atualizado.
+- **O que está no aparelho é o que aparece no app.** Uma pasta apagada no aparelho (pelo gerenciador de arquivos ou por outro app) some do Urbe; uma pasta criada lá aparece, mesmo vazia. Ao voltar para o app, ele relê a pasta e mostra o que mudou fora dele: notas apagadas, criadas ou editadas e pastas. Não é sincronização: o app não guarda uma cópia, mostra a pasta.
+- **Excluir, Lixeira, mover e salvar sem espera, no celular e no computador.** Cada gravação agora confere e relê só os arquivos que ela mexe. Antes, cada uma lia o vault inteiro duas vezes, e a demora crescia com o vault. Num vault de 2.000 notas no computador, mover 30 notas caiu de 2,1 s para 0,8 s. Restaurar, excluir de vez e esvaziar a Lixeira também ficaram imediatos, e a Lixeira com muitos itens abre rápido.
+- **Excluir várias notas pergunta na hora.** Antes de mostrar a confirmação, o app lia o vault inteiro uma vez para cada nota escolhida, para avisar o que depende dela. Agora lê uma vez só para todas.
+- **A nota aberta não se perde quando muda fora do app.** Se ela for movida pelo gerenciador de arquivos enquanto está aberta, o editor acompanha a nota no novo lugar. Se for apagada, o app avisa na hora, o texto continua no editor e, ao salvar, a nota é criada de novo com o que você escreveu.
+- **Voltar do Android dentro de Notas:** primeiro desfaz a seleção, depois sai da Lixeira, de Favoritos ou da busca, e só então fecha Notas. Antes, Voltar fechava Notas no meio de uma seleção.
+- **Restaurar tudo, na Lixeira.** Uma pasta ou uma seleção apagada por engano volta inteira com um toque: cada nota vai para onde estava, e a pasta é criada de novo se for preciso. Se o lugar de uma nota já estiver ocupado, ela fica na Lixeira e o app avisa. Nada é sobrescrito.
+- **Uma mudança feita fora do app não trava mais o Urbe.** Antes, se qualquer arquivo do vault mudava fora do app (uma pasta apagada no aparelho, por exemplo), todas as gravações eram recusadas com "a pasta foi modificada fora do Urbe" até reabrir o vault. Agora só se recusa gravar por cima de um arquivo que mudou fora do app, que é o caso em que algo se perderia.
+- **Multi-seleção para organizar o vault:**
+  - cada toque marca ou desmarca a nota na hora, sem redesenhar a lista inteira;
+  - a seleção não se perde quando o app salva ou relê a pasta;
+  - o novo botão **Selecionar tudo** marca todas as notas e arquivos mostrados (as pastas abertas ou todos os resultados de uma busca), para mover, agrupar ou excluir de uma vez;
+  - a barra de seleção ficou mais clara: a contagem e **Selecionar tudo** em cima e, embaixo, todas as ações visíveis com nome (Mover, Nova pasta, Duplicar, Lixeira, Abrir, Renomear, Favoritar, Publicação). Antes eram só ícones, que ficavam cortados ou escondidos atrás do botão redondo flutuante;
+  - enquanto você seleciona, o botão flutuante sai da frente;
+  - cada pasta da árvore mostra quantas notas tem, contando as subpastas, para você ver onde o vault está crescendo;
+  - **Ordenar notas** (no ⋯ do Explorer): por nome, modificadas por último ou criadas por último, dentro de cada pasta. As pastas ficam sempre primeiro, e a escolha fica guardada no aparelho;
+  - **imagens, PDFs e áudios entram na seleção junto com as notas**: "Selecionar" no menu do arquivo começa a seleção, e os toques seguintes marcam outros arquivos e notas. Mover leva tudo para a pasta, atualizando os links. Excluir apaga os arquivos de vez, e a pergunta avisa que arquivos não vão para a Lixeira.
+- **Nova conversa (Assistente)** sempre responde: funciona mesmo com uma execução em andamento, que continua na conversa dela, e fecha a tela de Conversas ou de Configurações se ela estiver aberta.
+- **Nenhum botão falha em silêncio.** Quando uma ação dava erro (gravar no vault, por exemplo), o app não fechava, mas também não avisava nada, e parecia que o botão não funcionava. Agora aparece um aviso dizendo o que não deu certo.
+- **Personalização**: tema, cor de destaque e os outros botões aplicam na hora e gravam logo depois. Se a gravação falhar, a aparência anterior volta e o motivo aparece. Antes, o botão esperava a gravação e, se ela falhasse, nada acontecia.
+- **Texto da nota na largura inteira da tela.** Com o horário dos blocos ligado, cada bloco perdia um terço da largura para a coluna dos horários e o texto ficava espremido. Agora o horário fica pequeno no canto de cima de cada bloco, sem ocupar largura, e o texto usa a tela toda. Ao tocar para escrever, o bloco também não muda mais de largura.
+- **Parágrafos sem recuo indevido.** Espaços digitados antes do texto de um parágrafo apareciam como recuo; agora ficam fora do desenho, como no Obsidian. O arquivo continua com o que você escreveu.
+- **Texto maior no Assistente sobre a nota**: a conversa no popup usa 15 px, com a mesma formatação da conversa completa (antes eram 13 px, em texto simples), e o popup ficou mais alto.
+- **Fórmulas largas** só diminuem até 85 % para caber; as maiores que isso rolam para o lado e continuam legíveis (antes podiam diminuir até 60 %).
 
-Tudo foi testado automaticamente; o comportamento com o dedo no celular precisa da sua confirmação no aparelho.
+Tudo foi testado automaticamente. No aparelho, falta confirmar:
+- apagar uma pasta pelo gerenciador de arquivos e voltar ao app;
+- excluir várias notas e usar a Lixeira, com Restaurar tudo;
+- a multi-seleção com o dedo, com notas e fotos;
+- a nota aberta na largura inteira, com o horário dos blocos ligado;
+- mover ou apagar uma nota enquanto ela está aberta;
+- o Voltar dentro de Notas.
+
+## O que continua pendente
+
+Esta versão sai com o que foi verificado, sem esperar o plano inteiro:
+- **Plano de consolidação 2.6:** os demais itens seguem para as próximas versões, entre eles Publicações, a IA nativa, Leitura e Estudo, a identidade Numa, a acessibilidade revisada e as medições no aparelho.
+- **"Modificadas por último":** ordena pelo dia em que a nota mudou. Notas do mesmo dia ficam por nome.
+- **Arquivos (imagens, PDFs, áudio):** não têm Lixeira. Excluir apaga de vez, e o app avisa antes.
+- **Releitura da pasta ao voltar ao app:** num vault muito grande, ela leva o tempo de uma abertura em segundo plano, sem travar a tela nem as gravações.

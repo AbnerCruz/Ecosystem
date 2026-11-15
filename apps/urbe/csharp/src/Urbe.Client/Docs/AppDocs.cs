@@ -97,6 +97,8 @@ public static partial class AppDocs
 
         O **Explorer** mostra a pasta como uma árvore de arquivos e pastas. No computador ele fica ao lado da Área de trabalho; no celular, abre pelo botão **Pastas** e fecha ao escolher uma nota.
 
+        O Urbe é a sua pasta, um para um: o que está nela é o que aparece aqui. Uma pasta ou nota apagada, criada ou editada por outro app (o gerenciador de arquivos, uma sincronização) aparece assim quando você volta ao Urbe. Se a nota aberta for movida fora do app, o editor a acompanha; se for apagada, o Urbe avisa e, ao salvar, cria a nota de novo com o que você escreveu. Cada pasta mostra quantas notas tem, contando as subpastas.
+
         ## Navegar
 
         - **Buscar arquivos** filtra por nome e caminho.
@@ -117,8 +119,11 @@ public static partial class AppDocs
 
         ## Selecionar e mover
 
-        - **Segure** uma nota ou pasta para selecionar. A barra embaixo oferece **Abrir**, **Favoritar**, **Mover para pasta**, **Duplicar**, **Agrupar em nova pasta** e **Mover para a lixeira**.
+        - **Segure** uma nota ou pasta para selecionar; depois, cada toque marca ou desmarca outra. Num arquivo (imagem, PDF, áudio), **Selecionar** no menu dele começa a seleção, e os arquivos entram junto com as notas.
+        - A barra embaixo mostra quantos itens estão escolhidos e **Selecionar tudo** (todas as notas à vista, ou todos os resultados de uma busca). Embaixo, as ações: **Mover**, **Nova pasta** (agrupar), **Duplicar**, **Lixeira**, **Abrir**, **Renomear**, **Favoritar** e **Publicação**.
+        - **Mover** leva notas e arquivos para a pasta escolhida e atualiza os links. Excluir manda as notas para a Lixeira; arquivos não têm Lixeira e são apagados de vez, e a pergunta avisa.
         - **Segure e arraste** sobre uma pasta para mover para ela. O arquivo muda de pasta no vault.
+        - No Android, **Voltar** desfaz a seleção antes de fechar o Explorer.
 
         ## Mais opções
 
@@ -126,7 +131,7 @@ public static partial class AppDocs
 
         ## Lixeira
 
-        O que você exclui vai para a lixeira: **Restaurar** devolve a nota, **Excluir de vez** apaga e **Esvaziar** limpa tudo.
+        O que você exclui vai para a lixeira: **Restaurar** devolve a nota, **Restaurar tudo** devolve todas de uma vez (cada uma para onde estava, recriando a pasta se for preciso), **Excluir de vez** apaga e **Esvaziar** limpa tudo. Se o lugar de uma nota já estiver ocupado, ela fica na Lixeira e o Urbe avisa: nada é sobrescrito.
         """;
 
     private const string Editor = """
