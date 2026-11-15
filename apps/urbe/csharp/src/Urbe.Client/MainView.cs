@@ -133,6 +133,7 @@ public sealed partial class MainView : Grid
         Explorer.FileMoveRequested += (path, folder) => { if (!StillReading()) _ = MoveAttachmentAsync(path, folder); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
+        Explorer.RestoreAllRequested += () => _ = RestoreAllFromTrashAsync();
         Explorer.NoteRequested += OpenFromNotes;
         // UC-69: Voltar slides the editor away the way it came (a picture of it; the screen under it is there at once)
         Editor.Leaving += () => Ui.UrbeMotion.Ghost(Editor, _stage, dy: 12);
@@ -1702,6 +1703,9 @@ public sealed partial class MainView : Grid
         RefreshNotes();
     }
 
+    /// <summary>Where each note of the Lixeira came from (tests).</summary>
+    public IReadOnlyList<string> TrashOriginalPaths() => _trash.Items.Select(i => (string?)i["originalPath"] ?? "").ToList();
+
     /// <summary>show('trash'): the Lixeira in Notas.</summary>
     public void ShowTrashView() => Explorer.ShowTrash(_trash.Items.Select(i =>
         new NotesExplorer.TrashEntry((string?)i["document"]?["id"] ?? "", (string?)i["document"]?["title"] ?? "", (string?)i["originalPath"] ?? "")).ToList());
@@ -1743,6 +1747,62 @@ public sealed partial class MainView : Grid
         NotesChanged();
         RefreshNotes();
         ShowTrashView();
+    }
+
+    /// <summary>
+    /// Restaurar tudo: every note of the Lixeira goes back to where it was, its folder made again when it is gone. Each
+    /// file is created first; the trash is rewritten once at the end without the ones restored. A note whose place is
+    /// taken stays in the Lixeira, and the person is told how many.
+    /// </summary>
+    public async Task RestoreAllFromTrashAsync()
+    {
+        if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Lixeira", problem!); return; }
+        if (_library is not { } library || _store is null || _vault is null) return;
+        var items = _trash.Items.ToList();
+        if (items.Count == 0) return;
+        ShowLifeNotice($"Restaurando {items.Count} notas…");
+        var restored = new List<string>();
+        int taken = 0, failed = 0;
+        var placed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            var id = (string?)item["document"]?["id"];
+            var path = (string?)item["originalPath"] ?? (string?)item["document"]?["path"] ?? "";
+            var content = (string?)item["document"]?["content"] ?? "";
+            if (id is null || path.Length == 0) { failed++; continue; }
+            if (_store.Get(path) is not null || _contents.ContainsKey(path) || !placed.Add(path)) { taken++; continue; }
+            try
+            {
+                await EnsureFolderAsync(DirOf(path));
+                await _vault.CreateTextFileAsync(path, content);
+                restored.Add(id);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException)
+            {
+                // the bytes may be there although the answer was lost (CST-004)
+                if (await OnDiskAsync(path) == content) restored.Add(id); else failed++;
+            }
+        }
+        if (restored.Count > 0)
+        {
+            bool trashWritten = await WriteOrAskAsync("As notas voltaram, mas a lixeira não foi atualizada",
+                () => _vault.SaveTrashAsync(_trash.ExportAfter(t => { foreach (var id in restored) t.Purge(id); })),
+                async () => { foreach (var id in restored) if (await TrashOnDiskHoldsAsync(id)) return false; return true; });
+            foreach (var id in restored)
+                if (_trash.Restore(_store, id) is { } back)
+                {
+                    var doc = library.Restore(back, Now);
+                    _contents[doc.Path] = doc.Content;
+                }
+            if (!trashWritten) ShowLifeNotice("As notas foram restauradas. A lixeira ainda as lista até a próxima gravação.", Ui.ToastKind.Warning);
+            NotesChanged();
+            RefreshNotes();
+        }
+        ShowTrashView();
+        var told = restored.Count == 1 ? "1 nota restaurada" : restored.Count + " notas restauradas";
+        if (taken > 0) told += "; " + taken + (taken == 1 ? " ficou" : " ficaram") + " na Lixeira porque já existe uma nota no mesmo lugar";
+        if (failed > 0) told += "; " + failed + (failed == 1 ? " não pôde" : " não puderam") + " ser restaurada" + (failed == 1 ? "" : "s");
+        ShowLifeNotice(told + ".", taken + failed > 0 ? Ui.ToastKind.Warning : Ui.ToastKind.Success);
     }
 
     /// <summary>✕ Excluir de vez (trash.purge) after "Excluir de vez?".</summary>

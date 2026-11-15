@@ -198,6 +198,9 @@ public sealed class NotesExplorer : Border
     public event Action<string>? PurgeRequested;
     /// <summary>Lixeira: Esvaziar.</summary>
     public event Action? EmptyTrashRequested;
+
+    /// <summary>Restaurar tudo, in the Lixeira.</summary>
+    public event Action? RestoreAllRequested;
     public event Action<CityNote>? NoteRequested;
 
     /// <summary>A tap on a file that is not a note (an image, a PDF…): the host shows it (DEC-0045, UC-38).</summary>
@@ -976,9 +979,15 @@ public sealed class NotesExplorer : Border
         // .ume-trash-head: padding 6px 12px 10px, 13px text-3; Esvaziar .ui-btn 36px, danger
         var empty = SmallButton(UrbeTheme.Icons.Trash, "Esvaziar", UrbeTheme.Danger);
         empty.Click += (_, _) => EmptyTrashRequested?.Invoke();
+        // everything back at once (a folder or a selection deleted by mistake), each note to where it was
+        var all = SmallButton(UrbeTheme.Icons.Restore, "Restaurar tudo", UrbeTheme.Text);
+        all.Margin = new Thickness(0, 0, 6, 0);
+        all.Click += (_, _) => RestoreAllRequested?.Invoke();
         var head = new DockPanel { Margin = new Thickness(12, 6, 12, 10) };
         DockPanel.SetDock(empty, Dock.Right);
+        DockPanel.SetDock(all, Dock.Right);
         head.Children.Add(empty);
+        head.Children.Add(all);
         head.Children.Add(new TextBlock { Text = items.Count + " item(ns) · restaure ou exclua de vez", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
         _list.Children.Add(head);
         // many items (UC-78, observation of 15/11/2026: the trash was slow): only the rows near the screen are made

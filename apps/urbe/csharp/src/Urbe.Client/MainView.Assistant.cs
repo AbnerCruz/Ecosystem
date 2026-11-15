@@ -383,7 +383,8 @@ public sealed partial class MainView : IAssistantApp
     /// <summary>The folders of <paramref name="folder"/>, each made in the vault when missing, and recorded.</summary>
     private async Task EnsureFolderAsync(string folder)
     {
-        if (folder.Length == 0 || NoteFolders().Contains(folder)) return;
+        // a direct look-up (the folders on disk, 1:1): the whole tree is not rebuilt for each note that needs a folder
+        if (folder.Length == 0 || _library?.Folders.Contains(folder) == true) return;
         await _vault!.CreateDirectoryAsync(folder);
         _library!.AddFolder(folder);
         NotesChanged();
