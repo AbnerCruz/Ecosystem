@@ -37,7 +37,8 @@
     "docs/migration/archive-origin-sync-legacy-2026-10-04.md",
     "docs/governance/handoffs/HO-20261004-p4-9-cutover-workflow.json",
     "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md",
-    "apps/lunet2d/AgentsChat.md"
+    "apps/lunet2d/AgentsChat.md",
+    "tests/consistency/Check.cs"
   ],
   "work_completed": [
     "Desativada sincronização agendada do repositório Lunet2D antigo: commit 56f0beb1",
@@ -45,7 +46,8 @@
     "Remoção proposta de origin-sync e workflow CI legado inerte; pipelines oficiais preservados",
     "Auditoria atualizada de framework, IDE, Studio, IA, builds, riscos e próximos passos, sem alterar código funcional",
     "Estudo adicional LUNET-510–512 sobre Home/área de trabalho, Studios independentes e biblioteca reutilizável e explorador offline de referências; registro e critérios, sem implementação funcional.",
-    "Ajustes de consistência: ADR-0050 com seções obrigatórias e índice; migração arquivou o script removido para preservar a fonte histórica de handoff."
+    "Ajustes de consistência: ADR-0050 com seções obrigatórias e índice; migração arquivou o script removido para preservar a fonte histórica de handoff.",
+    "Self-tests ajustados para mutações semânticas de JSON (não ancorados na formatação anterior), e novos checks de regressão que rejeitam a reintrodução de origin-sync e de canal source.repository do Lunet."
   ],
   "verification": [
     {
@@ -71,6 +73,12 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Correções motivadas pelo log da execução 43753413760 (ADR-0050 faltava seções/índice; handoff histórico apontava script removido); aguardando novo CI."
+    },
+    {
+      "check": "Revisão do self-test de consistência após DEC-0064",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Commit 4c2d953; execução de CI do PR decide se os casos passam, não alegar conclusão antecipada."
     }
   ],
   "known_issues": [
@@ -101,7 +109,8 @@
     "docs/governance/integration-policy.json",
     "apps/lunet2d/AGENTS.md",
     "apps/lunet2d/ROADMAP.md",
-    "apps/lunet2d/docs/SPEC.md"
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/adr/0050-lunet-canal-exclusivo-ecosystem.md"
   ],
   "invariants": [
     {
