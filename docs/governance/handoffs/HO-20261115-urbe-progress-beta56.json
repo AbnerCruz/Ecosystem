@@ -14,20 +14,42 @@
   "branch": "ccr-c717cbe5-9x21rb",
   "base_commit": "741074559b186976cd097d6bf7884b771cb88c67",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/952",
   "files_changed": [
-    "apps/urbe/csharp/PATCHNOTES.md",
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidStudyBrowser.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EpubStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MediaStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyBrowserPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyWebView.cs",
     "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EditorialNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EpubReadingDocument.cs",
     "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.Blocks.cs",
     "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/NoteProgress.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WebClip.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/WindowsStudyWebView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EpubFootnoteUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteProgressUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationAdaptationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudyBrowserUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorialNotesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EpubReadingTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteProgressTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ToolPermissionMatrixTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WebClipTests.cs",
     "apps/urbe/docs/csharp/CONSOLIDATION.md",
     "docs/governance/handoffs/HO-20261115-urbe-progress-beta56.json"
   ],
@@ -36,7 +58,14 @@
     "CST-227: −/+ na barra de meta numérica mudam o valor onde ele mora (linha value: ou propriedade $nome), presos entre 0 e a meta, com Desfazer.",
     "CST-228: Checklist de uma seção ao inserir; Ver pendentes lista as tarefas e leva o cursor à escolhida; cada caixa conta uma vez; read_note entrega ao agente o progresso calculado.",
     "Achado: três regras ingênuas de cerca de código (blocos do editor, HTML, títulos) unificadas numa regra CommonMark (``` ou ~~~, fechada só pela mesma marca, do mesmo tamanho ou maior).",
-    "Testado com clique real de ponteiro que o + não abre o bloco para escrita; captura a 360 dp conferida."
+    "Testado com clique real de ponteiro que o + não abre o bloco para escrita; captura a 360 dp conferida.",
+    "CST-236: Anotar instante lê o segundo do player oficial do YouTube (Android e Windows); o campo fica para ajuste; rótulo 'Vídeo em 3:25'.",
+    "CST-235: pesquisa das comunidades (fórum do Obsidian sobre o Web viewer): modo leitura, salvar no vault e tema escuro são os pedidos mais frequentes. Entregues Modo leitura nativo (sem tela branca à noite, seleção citável) e Salvar página como nota (fonte e dia nas propriedades; nunca grava por cima).",
+    "CST-234: notas de rodapé/fim de EPUB (epub:type/role DPUB) abrem num cartão sob a página, com Ir até a nota.",
+    "CST-155: Adaptar no estúdio cria nota editorial real ligada à origem (link, id, tipo, impressão digital do texto); aviso quando a origem muda, Abrir a origem, Marcar como revisada; agentes recebem o mesmo contrato.",
+    "CST-103: artigo do tutorial sobre o antigo editor de Páginas reescrito como Publicações; seção Estudar com uma fonte ao lado.",
+    "CST-072: teste de invariante sobre o catálogo inteiro — ferramenta cujo nome diz que muda algo é classificada como escrita; agente/política só de leitura não recebe nenhuma que grave. Nenhuma ferramenta mal classificada encontrada.",
+    "Versão canônica 2.0.0-beta.56 (código 2000056) no csproj, para as notas embutidas baterem com ela."
   ],
   "verification": [
     {
@@ -52,7 +81,7 @@
       "evidence": "635/635 local"
     },
     {
-      "check": "Toque no aparelho: −/+, Ver pendentes e Checklist de uma seção (moto g32 e Windows)",
+      "check": "Toque no aparelho: progresso −/+, Ver pendentes, Anotar instante, Modo leitura, Salvar página, notas de rodapé e Adaptar (moto g32 e Windows)",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/csharp/PATCHNOTES.md",
@@ -64,7 +93,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "CST-224: operações semânticas de edição pelo mesmo serviço do editor."
+    "CST-154/226: impacto das mudanças entre fontes, adaptações e Publicações.",
+    "CST-205: transações multiarquivo de agentes."
   ],
   "decisions_required": [],
   "normative_sources": [
