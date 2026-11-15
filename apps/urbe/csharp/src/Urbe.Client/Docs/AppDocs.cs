@@ -17,7 +17,7 @@ public static partial class AppDocs
         new("Tutorial/Escrever/Explorer.md", Explorer),
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
-        new("Tutorial/Ferramentas/Páginas.md", Paginas),
+        new("Tutorial/Ferramentas/Publicações.md", Paginas),
         new("Tutorial/Ferramentas/Código e prévia ao vivo.md", Codigo),
         new("Tutorial/Ferramentas/Assistente.md", Assistente),
         new("Tutorial/Ferramentas/Plugins.md", Plugins),
@@ -329,8 +329,6 @@ public static partial class AppDocs
         ## Usar
 
         No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta. Prefere escrever direto na nota? **Preencher no editor** cria a nota com o que você já respondeu e deixa o resto em branco para completar no editor.
-
-        Páginas têm modelos próprios, no estúdio (veja [[Páginas]]).
         """;
 
     private const string Codigo = """
@@ -383,34 +381,31 @@ public static partial class AppDocs
         """;
 
     private const string Paginas = """
-        # Páginas
+        # Publicações
 
-        **Páginas** transforma notas em sites e páginas HTML: portfólios, currículos, livros… Abra em **Configurações → Páginas**.
+        **Publicações** transforma notas em produtos para outras pessoas: artigo, livro com sumário, apresentação, curso ou vídeo. A publicação não copia o texto: ela aponta para as notas. Editar a nota muda a publicação, e editar pelo estúdio é editar a própria nota.
+
+        ## Criar
+
+        - **Criar publicação desta nota** (no **Mais ações** do editor ou no menu de um cartão), **Criar publicação de um trecho** (só um título da nota e o que vem embaixo dele) ou **Nova publicação de uma tag** (na busca de comandos).
+        - O projeto fica em `Publicações/Nome.publication.json`, com a ordem das notas, o layout e o tema. O texto continua nas notas.
 
         ## O estúdio
 
-        - **Nova página** cria uma e abre o estúdio.
-        - A página é feita de **blocos**: toque em **Adicionar bloco**, arraste para reordenar e use o menu de cada bloco para **Mover para cima / baixo**, **Duplicar**, **Salvar como bloco reutilizável**, **Trocar tipo de bloco** ou **Remover**.
-        - Em **＋ → Modelos** há modelos prontos; aplicar um pode **substituir a página**, **adicionar as seções ao fim** ou trocar **só o visual**.
-        - O estúdio salva sozinho e mostra **Salvo**.
-        - **Criar página daqui**, no ⋯ de uma pasta, de um cartão de nota ou no **Mais ações** do editor: de uma pasta, uma capa e as notas dela; de uma nota, a própria nota.
-        - Na prévia, títulos, rótulos e itens de uma linha se escrevem **no lugar**: toque, escreva e saia (Enter também termina). Tocar numa imagem abre a escolha de imagem. Textos com Markdown continuam no painel **Editar**.
-        - O bloco **Notas** lista notas do seu vault e acompanha as mudanças: de uma **pasta** (com ou sem as subpastas), de uma **tag**, as **escolhidas**, as **recentes**, as que **ligam a uma nota**, as **ligadas por uma nota** ou as de uma **busca**.
-
-        ## Prévia e comentários
-
-        **Ver página** mostra a página dentro do Urbe, como ela será publicada. Os comentários das notas (`%%…%%` e `{"…"}`) não aparecem na página. Na prévia, o 💬 de uma palavra permite **comentar**, e o comentário é salvo no texto.
+        - **Adicionar nota** põe mais uma nota na composição; as setas mudam a ordem e a lixeira tira a nota da publicação (a nota fica no vault).
+        - Tocar no nome de uma nota abre a nota para editar.
+        - **Adaptar** (o lápis em cada nota) cria um **resumo, roteiro, fala, tradução ou adaptação** como nota de verdade, ao lado da original, começando com o texto dela. A publicação passa a mostrar a adaptação e a original não muda. Se a original mudar depois, o estúdio avisa, com **Abrir a origem** e **Marcar como revisada**.
+        - **Configurar composição**: layout (artigo, livro com sumário, apresentação com uma nota por slide, curso, vídeo com uma nota por cena), tema, objetivo e público.
+        - **Desfazer** e **Refazer** valem para a composição. O estúdio salva sozinho.
+        - **Verificar publicação** lista o que corrigir antes de exportar, como notas que não existem mais.
 
         ## Exportar
 
-        No botão **Exportar** ou no **⋯** da página:
+        Em **⋯** do estúdio: HTML, **PDF**, livro **EPUB**, documento **Word (DOCX)** e **OpenDocument (ODT)**, apresentação **PowerPoint (PPTX)**, **vídeo MP4** com legendas (SRT) e **Imprimir ou salvar como PDF**. Cada exportação é feita na hora, a partir das notas como estão.
 
-        - **Imprimir ou salvar PDF**
-        - **Baixar HTML**: um arquivo único, que funciona em qualquer hospedagem
-        - **Salvar HTML no vault**, ao lado da página
-        - **Copiar HTML**
+        ## Páginas antigas
 
-        No menu do estúdio também estão **Salvar como modelo** (com os textos ou só a estrutura), **Duplicar página** e **Editar JSON**. O arquivo da página é um `.page.json` na sua pasta.
+        Os arquivos `.page.json` do antigo editor de Páginas continuam no vault, sem mudança: dá para vê-los e exportá-los, mas eles não são mais editados.
         """;
 
     private const string Assistente = """

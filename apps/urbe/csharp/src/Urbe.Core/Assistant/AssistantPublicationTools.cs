@@ -54,7 +54,10 @@ public static class AssistantPublicationTools
         "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step}], motions:[{property, expression (fórmula de t)}]}]}], " +
         "audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT; " +
-        "a exportação e o salvamento do arquivo são sempre da pessoa. Não crie .page.json; esse editor foi substituído.";
+        "a exportação e o salvamento do arquivo são sempre da pessoa. Não crie .page.json; esse editor foi substituído. " +
+        "Texto fiel à fonte é editado na própria nota. Quando a publicação precisa de outra redação (resumo, roteiro, fala, tradução), crie uma nota ao lado da " +
+        "fonte com as propriedades adaptacao_de: \"[[Nome da fonte]]\", adaptacao_id (id da fonte), adaptacao_tipo e adaptacao_origem (deixe vazio: o app avisa que a fonte mudou até alguém revisar) " +
+        "e troque a fonte da seção por essa nota; nunca esconda texto no .publication.json.";
 
     private static (string Path, string Text, UrbeDocument? Previous) Validate(JsonObject input, IAssistantHost host)
     {

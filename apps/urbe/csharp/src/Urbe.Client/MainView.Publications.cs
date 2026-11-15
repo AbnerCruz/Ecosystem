@@ -41,6 +41,8 @@ public sealed partial class MainView
             if (_store?.Get(reference.DocumentId) is { } source && Editor.Current?.Path == source.Path &&
                 reference.Fragment is { Length: > 0 } fragment) Editor.RevealFragment(fragment);
         };
+        studio.AdaptRequested += piece => _ = AdaptPublicationPieceAsync(piece);
+        studio.AdaptationReviewed += (adaptation, origin) => _ = MarkAdaptationReviewedAsync(adaptation, origin);
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
         studio.OfficeRequested += format => _ = ExportPublicationOfficeAsync(format);
@@ -62,6 +64,35 @@ public sealed partial class MainView
         };
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), studio);
         return studio;
+    }
+
+    /// <summary>
+    /// CST-155 "Adaptar": a real note beside the source (named after it and the kind), starting from its text and linked
+    /// to it, takes the piece's place in the publication. The source is not touched.
+    /// </summary>
+    public async Task AdaptPublicationPieceAsync(PublicationPlacement piece)
+    {
+        if (_store?.Get(piece.Source.DocumentId) is not { } origin) return;
+        if (await Dialogs.ChooseAsync("Adaptar " + System.IO.Path.GetFileNameWithoutExtension(origin.Path),
+                EditorialNotes.Kinds.Select(k => new DialogItem(k)).ToList(),
+                "Uma nota nova, ao lado da origem, começa com o texto dela. A origem não muda; a publicação passa a mostrar a adaptação.") is not int kind) return;
+        var folder = System.IO.Path.GetDirectoryName(origin.Path)?.Replace('\\', '/') ?? "";
+        var name = System.IO.Path.GetFileNameWithoutExtension(origin.Path) + " — " + EditorialNotes.Kinds[kind];
+        var content = EditorialNotes.Create(origin.Id, origin.Path, origin.Content, EditorialNotes.Kinds[kind]);
+        var free = _store.Get((folder.Length > 0 ? folder + "/" : "") + name + ".md") is null;
+        var path = await CreateNoteInNotesAsync(free ? name : null, folder, _ => Task.FromResult<string?>(content), open: false);
+        if (path is null || _store.Get(path) is not { } adaptation || PublicationsStudio.Project is not { } project ||
+            !project.Sections.Any(s => s.Id == piece.Id)) return;
+        PublicationsStudio.UpdateProject(project.ReplacePlacementSource(piece.Id, new PublicationSourceReference(adaptation.Id)));
+        _notice.Show("Adaptação criada em " + path + ".", TimeSpan.FromSeconds(8), "Abrir", () => EditPublicationSource(adaptation.Id));
+    }
+
+    /// <summary>CST-155: the adaptation was checked against the source as it is now (only its property changes).</summary>
+    public async Task MarkAdaptationReviewedAsync(string adaptationId, string originId)
+    {
+        if (_store?.Get(adaptationId) is not { } adaptation || _store.Get(originId) is not { } origin) return;
+        await SaveNoteAsync(new CityNote(adaptation.Path, EditorialNotes.Reviewed(adaptation.Content, origin.Content)));
+        PublicationsStudio.Refresh();
     }
 
     /// <summary>Open an existing project by path, preserving the current unsaved note first.</summary>

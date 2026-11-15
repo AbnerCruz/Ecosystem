@@ -75,6 +75,15 @@ public sealed record PublicationProject
         return this with { Sections = sections, Sources = Sources.Where(s => sections.Any(p => p.Source == s)).ToList() };
     }
 
+    /// <summary>CST-155: a piece now shows another real note (an adaptation of its source); its place and role stay.</summary>
+    public PublicationProject ReplacePlacementSource(string placementId, PublicationSourceReference source)
+    {
+        var piece = Sections.FirstOrDefault(s => s.Id == placementId) ?? throw new InvalidOperationException("Peça inexistente.");
+        var sections = Sections.Select(s => s.Id == placementId ? s with { Source = source } : s).ToList();
+        var sources = sections.Select(s => s.Source).Distinct().ToList();
+        return this with { Sections = sections, Sources = sources };
+    }
+
     public PublicationProject MovePlacement(string placementId, int index)
     {
         var sections = Sections.ToList();

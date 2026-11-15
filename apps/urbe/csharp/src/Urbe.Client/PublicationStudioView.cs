@@ -145,6 +145,10 @@ public sealed class PublicationStudioView : Border
     public event Action<string>? EditSourceRequested;
     public event Action<PublicationSourceReference>? EditReferenceRequested;
     public event Action<PublicationProject>? ProjectChanged;
+    /// <summary>CST-155: "Adaptar" on a piece — a real note adapted from its source takes its place.</summary>
+    public event Action<PublicationPlacement>? AdaptRequested;
+    /// <summary>CST-155: the adaptation (its id) was checked against its source as it is now (the source's id).</summary>
+    public event Action<string, string>? AdaptationReviewed;
     public event Action? VideoExportRequested;
     public event Action? VideoCancelRequested;
     public event Action? SubtitlesRequested;
@@ -273,6 +277,35 @@ public sealed class PublicationStudioView : Border
         return b;
     }
 
+    /// <summary>
+    /// CST-155: an adaptation shows what it adapts, and says so when the source's text changed since it was made or last
+    /// checked, with the source a tap away; nothing is updated by itself.
+    /// </summary>
+    private Control? Provenance(PublicationSourceView adaptation, PublicationSourceCatalog catalog)
+    {
+        if (EditorialNotes.Read(adaptation.Markdown) is not { } link) return null;
+        PublicationSourceView? origin;
+        try { origin = catalog.Read(new PublicationSourceReference(link.OriginId)); }
+        catch (NotSupportedException) { origin = null; }
+        var panel = new StackPanel { Spacing = 4, Margin = new Thickness(14, 8, 14, 0) };
+        var name = origin is null ? "uma nota que não existe mais" : System.IO.Path.GetFileNameWithoutExtension(origin.Path);
+        panel.Children.Add(new TextBlock { Text = link.Kind + " de " + name, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+        if (origin is null) return panel;
+        var actions = new WrapPanel();
+        var open = new Ui.UrbeButton("Abrir a origem", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
+        open.Click += (_, _) => EditSourceRequested?.Invoke(link.OriginId);
+        actions.Children.Add(open);
+        if (EditorialNotes.IsBehind(link, origin.Markdown))
+        {
+            panel.Children.Add(new TextBlock { Text = "A origem mudou desde esta adaptação. Confira e marque como revisada.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            var reviewed = new Ui.UrbeButton("Marcar como revisada", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
+            reviewed.Click += (_, _) => AdaptationReviewed?.Invoke(adaptation.DocumentId, link.OriginId);
+            actions.Children.Add(reviewed);
+        }
+        panel.Children.Add(actions);
+        return panel;
+    }
+
     public void Refresh()
     {
         if (_project is not { } project || _catalog is not { } catalog) return;
@@ -326,6 +359,11 @@ public sealed class PublicationStudioView : Border
             up.Click += (_, _) => { if (_project is { } p) UpdateProject(p.MovePlacement(piece.Id, Math.Max(0, p.Sections.FindIndex(s => s.Id == piece.Id) - 1))); };
             DockPanel.SetDock(up, Dock.Right);
             item.Children.Add(up);
+            var adapt = ActionButton(UrbeTheme.Icons.Edit, "Adaptar: resumo, roteiro, fala ou tradução");
+            adapt.IsEnabled = source is not null;
+            adapt.Click += (_, _) => AdaptRequested?.Invoke(piece);
+            DockPanel.SetDock(adapt, Dock.Right);
+            item.Children.Add(adapt);
             var edit = new Button
             {
                 Content = label, MinHeight = 44, Padding = new Thickness(10, 4),
@@ -346,6 +384,8 @@ public sealed class PublicationStudioView : Border
             if (source is not null)
             {
                 var text = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;
+                var origin = Provenance(source, catalog);
+                if (origin is not null) _preview.Children.Add(origin);
                 _preview.Children.Add(new Border
                 {
                     Padding = new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
