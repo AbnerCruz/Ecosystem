@@ -1,5 +1,10 @@
 # Trabalho multiagente: paralelizar, coordenar, revalidar
 
+## Diretriz vigente de autonomia e entrega (DEC-0063 / ADD-0034)
+
+[ADD-0034](addenda/ADD-0034-autonomia-integracao-releases.md) prevalece sobre a exigência anterior de label: PR pronto, escopo autorizado e todos os checks verdes integram automaticamente. Cada app cujo código mudou recebe release própria; estágio alfa/beta/dev/estável pertence exclusivamente ao usuário, agente apenas incrementa número. Claude tem máxima no Urbe, sem autoridade sobre governança do Ecosystem, própria concessão ou estágio. Pendência bloqueia só a ação dependente; registrar proposta de mudança da regra e avançar trabalho independente autorizado. Governança não é contornada; review do proprietário vinculada ao head substitui label quando necessária. CI não significa DEVICE.
+
+
 > **Autoridade:** normativa, subordinada a MANIFEST §23 e §27, ao [ADD-0010](addenda/ADD-0010-concorrencia-multiagente.md), ao [ADD-0011](addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md), ao [ADD-0012](addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md), ao [ADR-0014](../adr/0014-fluxo-multiagente-minimo.md) e ao [ADR-0015](../adr/0015-integrador-automatico.md). Complementa [`communication.md`](communication.md) §6–§8.
 
 **Premissa:** o mundo pode ter mudado enquanto um agente trabalhava. Nenhum agente integra trabalho presumindo que a `main` lida no início ainda é a `main` atual.
@@ -27,7 +32,7 @@ integrador (§5): main ATUAL + PR ──► conflito? ── sim ──► volta
    - `STALE` (3): a `main` andou — faça merge da `main` na branch (sem rebase/force-push em branch de outro agente), rerode os checks;
    - `STALE` + sobreposição (4): os dois lados mudaram os mesmos arquivos — reconciliação semântica obrigatória (§3).
 6. **Checks no estado combinado:** `Check.cs` e `--self-test`; para cada Product tocado, o CI do Product no PR (e localmente, quando possível: `npm ci && npm run check` em `apps/urbe`). O que vale é **A + B juntos**, não A e B separados. Registrar em `verification[].tested_commit` o estado testado.
-7. **Integrar** — quem integra é o integrador (§5): rotina entra sozinha; crítico (classes em [`integration-policy.json`](integration-policy.json), inclusive as zonas críticas do Urbe e do Lunet2D) espera a autorização do proprietário; validação humana pendente continua pendente (NN-017) e não bloqueia a integração.
+7. **Integrar** — quem integra é o integrador (§5): escopo autorizado entra sozinho com todos os testes verdes, sem label; mudanças reservadas de governança/estágio aguardam review do proprietário vinculada ao head; validação humana pendente continua pendente (NN-017) e não bloqueia a integração.
 8. **Estado final:** o handoff pode entrar na `main` já como `done` **no próprio PR que integra o trabalho** (na `main`, `done` ⇒ integrado; enquanto o PR não é integrado, o `done` da branch é só proposta — o integrador só integra o que passou). Se ainda faltar validação humana, fica em `review`. ROADMAP/Issue atualizados no mesmo PR; se mudou `apps/<id>`, quem estiver presente dispara `sync-from-ecosystem.yml` na origem (DEC-0017-A); senão, o agendamento da origem leva a mudança e o portal mostra o atraso.
 
 ## 2. Quatro identidades (ADR-0014)
@@ -60,7 +65,7 @@ O integrador (`.github/workflows/integrate.yml`, componente `integrator`) faz so
 3. confere o handoff (pelo menos um em `review`, `verifying` ou `done`; NN-008);
 4. **classifica** a mudança com a política e as regras **da `main`** ([`integration-policy.json`](integration-policy.json)): **rotina** ou **crítica**;
 5. roda os checks **da `main`** sobre o candidato (checker confiável) e os do próprio candidato + o CI de cada Product tocado;
-6. **rotina verde ⇒ integra sozinha**; **crítica verde ⇒ explica a consequência no PR e espera a label `integrar` posta pelo proprietário** (o autor do evento é conferido);
+6. **rotina verde ⇒ integra sozinha**; **risco crítico dentro do escopo autorizado verde ⇒ integra sem label; governança/estágio ⇒ review do proprietário vinculada ao head**;
 7. antes de integrar, confere de novo head do PR, ref de integração = commit testado e `main` = `main` testada; avança a `main` para **exatamente** esse commit, sem force.
 
 | No PR | Significa | Quem age |

@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-autonomia-integracao-releases",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-15T18:15:09Z",
+  "agent": {
+    "id": "codex-ecosystem-autonomy",
+    "kind": "ai-agent"
+  },
+  "task_id": "GOV-0063",
+  "component": "integrator",
+  "state": "review",
+  "branch": "codex/ecosystem-autonomy-releases",
+  "base_commit": "c6be69dc764995dea7b93bbdf28b17ed0df0e99d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/integrator/lifecycle.py",
+    ".github/integrator/release-metadata.py",
+    ".github/integrator/simulate.sh",
+    ".github/integrator/tests/test_lifecycle.py",
+    ".github/workflows/consistency.yml",
+    ".github/workflows/ecosystem-ai-release.yml",
+    ".github/workflows/hub-release.yml",
+    ".github/workflows/integrate.yml",
+    ".github/workflows/lunet2d-release.yml",
+    ".github/workflows/product-package-release.yml",
+    ".github/workflows/release-reconcile.yml",
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    ".gitignore",
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/ecosystem-ai/VERSION",
+    "apps/hub/VERSION",
+    "apps/hub/VERSION_CODE",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0049-autonomia-por-escopo-e-releases-automaticas.md",
+    "docs/adr/README.md",
+    "docs/contracts/schemas/integration-policy.schema.json",
+    "docs/distribution/automatic-releases.json",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261115-autonomia-integracao-releases.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "tests/consistency/Check.cs",
+    "apps/hub/tests/Hub.Tests/TimelineTests.cs"
+  ],
+  "work_completed": [
+    "Registrada a decisão explícita DEC-0063/ADD-0034 e ADR-0049; Claude máximo no Urbe, governança/estágio reservados ao proprietário.",
+    "Integração automática por escopo com CI do estado combinado e checks adicionais do PR; labels não autorizam.",
+    "Incremento canônico antes dos testes e fila persistente de release por Product, com source_sha imutável, retries e estágio preservado.",
+    "Distribuição dos sete Products por pipelines existentes ou pacotes de bibliotecas/HTML offline reais.",
+    "Corrigida premissa obsoleta do teste real do Hub: Next pode estar vazio quando o roadmap só declara itens concluídos/verificados; comparação exata dos abertos e fixture negativa preservam fiscalização sem inventar roadmap.",
+    "Checagem adicional separa suites/workflows: dois jobs chamados test não se sobrepõem nem escondem falha de outra suite."
+  ],
+  "verification": [
+    {
+      "check": "Consistency checks",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks aprovados localmente; estado final será repetido após handoff."
+    },
+    {
+      "check": "Lifecycle regression tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "python3 -m unittest discover -s .github/integrator/tests: nove cenários aprovados, incluindo jobs homônimos de workflows distintos (um verde não esconde um vermelho)."
+    },
+    {
+      "check": "Simulação git do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "bash .github/integrator/simulate.sh: todos os cenários aprovados, inclusive CI skipped em Product tocado, corridas, revisão no head, falhas de dispatch e fila persistente."
+    },
+    {
+      "check": "Self-test completo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs -- --self-test: todos os checks provaram detectar suas violações (log local final)."
+    },
+    {
+      "check": "CI GitHub do PR #950",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Lunet CI e Ecosystem AI release aprovados; teste obsoleto do Hub corrigido para nova execução. https://github.com/AbnerCruz/Ecosystem/pull/950"
+    }
+  ],
+  "known_issues": [
+    "A concessão por nome de agente é autoridade de processo: a mesma credencial GitHub não autentica fornecedores diferentes.",
+    "Math Authoring e Tabletop RPG distribuem bibliotecas; não possuem APK inventado.",
+    "Publicação no GitHub e validação física ainda não executadas neste handoff."
+  ],
+  "blockers": [
+    "Validação final automatizada e CI do PR."
+  ],
+  "next_actions": [
+    "Concluir regressões e atualizar evidência.",
+    "Abrir PR e verificar CI no head exato.",
+    "Aplicar a migração de governança expressamente autorizada pelo proprietário; não simular sua review nem usar label."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/adr/0049-autonomia-por-escopo-e-releases-automaticas.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão e contador Android canônicos por Product; configuração só aponta para as autoridades."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff, PR, head/base/combinado e intenções persistentes rastreáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Ordem direta registrada em DEC-0063/ADD-0034."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0049 aceito pela decisão explícita; sem concessão genérica de governança."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Releases seletivas por código/consumidores afetados."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Política confiável da main; review do proprietário no head para autoridade reservada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não marca DEVICE como validado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review enquanto falta CI/integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reaproveita integrador e workflows; glue local sem runtime novo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "Mudança de governança, automação e distribuição solicitada expressamente pelo proprietário nesta conversa em 15/11/2026."
+  }
+}

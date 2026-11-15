@@ -1,4 +1,5 @@
 name: ecosystem-ai-release
+run-name: ecosystem-ai-release ${{ inputs.source_sha || github.sha }}
 
 # Distribuição independente do Hub: SDK .NET NÃO requerido no dispositivo.
 # PR: testes/build apenas, sem release, credenciais, endpoint ou provider real.
@@ -14,6 +15,11 @@ on:
       - 'apps/ecosystem-ai/**'
       - '.github/workflows/ecosystem-ai-release.yml'
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Immutable tested commit to publish
+        type: string
+        required: false
 
 concurrency:
   group: ecosystem-ai-release-${{ github.ref }}
@@ -27,6 +33,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -45,6 +63,18 @@ jobs:
         runtime: [linux-x64, win-x64, osx-arm64]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -85,7 +115,7 @@ jobs:
           set -euo pipefail
           rid="${{ matrix.runtime }}"
           version="$(tr -d '[:space:]' < VERSION)"
-          dev_version="$version-dev.${GITHUB_RUN_NUMBER}"
+          dev_version="$version"
           dir="dist/$rid"
           cp README.md "$dir/README.md"
           cp VERSION "$dir/VERSION"
@@ -117,6 +147,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/download-artifact@v4
         with:
           pattern: ecosystem-ai-*
@@ -126,20 +168,20 @@ jobs:
         working-directory: apps/ecosystem-ai
         env:
           GH_TOKEN: ${{ github.token }}
-          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SHA: ${{ inputs.source_sha || github.sha }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         shell: bash
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < VERSION)"
-          tag="ecosystem-ai-v$version-dev.$GITHUB_RUN_NUMBER"
+          tag="ecosystem-ai-v$version"
           gh release view "$tag" >/dev/null 2>&1 && exit 0
-          printf 'Ecosystem AI %s (development)\n\n' "$version" > release-notes.txt
+          printf 'Ecosystem AI %s\n\n' "$version" > release-notes.txt
           printf 'Execução standalone C# desktop com Runtime .NET embutido.\n' >> release-notes.txt
           printf 'Somente localhost; configuração do provider e chave são do operador.\n' >> release-notes.txt
           printf 'Não é APK Android. Testes de Runtime e Product aprovados no CI.\n' >> release-notes.txt
           gh release create "$tag" release/* \
             --repo "${{ github.repository }}" --target "$GITHUB_SHA" \
-            --prerelease --latest=false \
-            --title "Ecosystem AI $version-dev.$GITHUB_RUN_NUMBER" \
+            $(python3 ../../.github/integrator/release-metadata.py flags "$version") \
+            --title "Ecosystem AI $version" \
             --notes-file release-notes.txt

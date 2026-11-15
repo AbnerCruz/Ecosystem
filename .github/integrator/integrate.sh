@@ -2,7 +2,7 @@
 # Integrador automático (ADR-0015, ADD-0012): efeitos colaterais da fila de integração. As DECISÕES ficam em
 # `tests/consistency/Check.cs -- --integration-plan | --integration-gates | --integration-authorization` (funções puras testadas pelo
 # self-test) e a POLÍTICA em docs/governance/integration-policy.json — sempre as da main (diretório `trusted`); o código do PR nunca
-# é executado aqui. Rotina verde entra sozinha; crítico verde espera a autorização do proprietário.
+# é executado aqui. Escopo autorizado verde entra sozinho; governança exige review do proprietário (ADD-0034).
 #
 #   integrate.sh collect                 JSON com a main atual e os PRs abertos + status 'ecosystem/integration' (stdout)
 #   integrate.sh prepare                 monta main+PR em ../work, classifica, roda os checks confiáveis, publica integration/pr-N
@@ -33,7 +33,6 @@ status() { # status <sha> <state> <resultado> <main> <combined|-> <routine|criti
 }
 
 ensure_labels() {
-  gh label create "$LABEL" --repo "$repo" --color 0E8A16 --description "Autorização do proprietário para uma mudança CRÍTICA (só vale se posta por ele)" --force >/dev/null
   gh label create critico --repo "$repo" --color B60205 --description "Classificada como crítica pela política da main (ADD-0012)" --force >/dev/null
   gh label create pronto-para-integrar --repo "$repo" --color 1D76DB --description "Crítica, verde no estado combinado; aguardando autorização do proprietário" --force >/dev/null
   gh label create precisa-reconciliar --repo "$repo" --color D93F0B --description "Conflito ou checks vermelhos no estado combinado; ação do agente autor" --force >/dev/null
@@ -76,6 +75,11 @@ collect() {
     local sha st
     sha="$(jq -r '.headRefOid' <<<"$pr")"
     st="$(gh api "repos/${repo}/commits/${sha}/status" --jq "[.statuses[] | select(.context==\"${CONTEXT}\")][0] // null")"
+    local reviews ready=false
+    reviews="$(gh api "repos/${repo}/pulls/$(jq -r .number <<<"$pr")/reviews" --paginate --jq '.[]' | jq -s .)"
+    printf '%s' "$reviews" > /tmp/owner-reviews.json
+    if python3 .github/integrator/lifecycle.py authorize --reviews /tmp/owner-reviews.json --owner "$owner" --head "$sha" | grep -qx authorized=true; then ready=true; fi
+    pr="$(jq --arg label "$LABEL" --argjson ready "$ready" '.labels = ([.labels[] | select(.name != $label)] + (if $ready then [{name:$label}] else [] end))' <<<"$pr")"
     items="$(jq -c --argjson pr "$pr" --argjson st "${st:-null}" '. + [{
       number: $pr.number, draft: $pr.isDraft, crossRepository: $pr.isCrossRepository, headRef: $pr.headRefName,
       headSha: $pr.headRefOid, labels: [$pr.labels[].name],
@@ -100,9 +104,20 @@ prepare() {
     return 0
   fi
   git -C ../work diff --cached --name-only "$MAIN" > /tmp/changed.txt
+  # Increment versions in the combined candidate BEFORE any checks; never after testing.
+  if ! python3 "$trusted/.github/integrator/lifecycle.py" prepare --work ../work --base "$MAIN" --head "$HEAD_SHA" --files /tmp/changed.txt > /tmp/lifecycle.txt 2>/tmp/lifecycle-error.txt; then
+    git -C ../work merge --abort || true
+    status "$HEAD_SHA" failure bloqueado "$MAIN" - - "versão inválida; reconciliar com a main"
+    { echo "action=blocked"; echo "outcome=bloqueado"; echo "gate_reason=Versão inválida ou não monotônica; reconciliar com a main. $(tail -1 /tmp/lifecycle-error.txt)"; } >> "$out"
+    return 0
+  fi
+  git -C ../work add -A
+  git -C ../work diff --cached --name-only "$MAIN" > /tmp/changed.txt
   # Portões e criticidade: política e regras da MAIN (--base-root . = cópia confiável), aplicadas à árvore candidata.
   check --integration-gates --base-root . --combined-root ../work --files /tmp/changed.txt | grep -E '^[a-z_]+=' > /tmp/gates.txt
+  if grep -qx 'requires_owner=true' /tmp/lifecycle.txt; then sed -i 's/^requires_owner=.*/requires_owner=true/' /tmp/gates.txt; fi
   cat /tmp/gates.txt >> "$out"
+  grep '^release_products=' /tmp/lifecycle.txt >> "$out"
   local criticality classes handoffs
   criticality="$(sed -n 's/^criticality=//p' /tmp/gates.txt)"; classes="$(sed -n 's/^critical_classes=//p' /tmp/gates.txt)"
   handoffs="$(sed -n 's/^handoffs=//p' /tmp/gates.txt)"
@@ -143,7 +158,7 @@ dispatch_hub_release() {
   git diff --quiet "$MAIN" "$COMBINED" -- "${paths[@]}" || result=$?
   case "$result" in
     0) return 0 ;;  # docs/testes isolados e outros Products não criam release do Hub (NN-014)
-    1) gh workflow run hub-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" ;;
+    1) gh workflow run hub-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" -f "source_sha=${COMBINED}" ;;
     *) echo "Não foi possível verificar os arquivos do Hub no estado integrado." >&2; return 1 ;;
   esac
 }
@@ -153,18 +168,21 @@ dispatch_hub_release() {
 # Once a critical release change was owner-authorized and tested, dispatch the exact
 # existing signed native release workflow; the legacy urbe-v* tag channel stays separate.
 URBE_CSHARP_RELEASE_PATHS=(
+  'apps/urbe/csharp/src/**'
+  'apps/urbe/csharp/Directory.Build.props'
   'apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj'
   '.github/workflows/urbe-csharp-mobile-release.yml'
 )
 
 dispatch_urbe_csharp_release() {
-  local result=0
+  local result=0 paths=() path
+  for path in "${URBE_CSHARP_RELEASE_PATHS[@]}"; do paths+=(":(glob)$path"); done
   # Compare the immutable authorized base and the exact combined commit that was pushed.
   # A change to notes, assistant code, or any other product never auto-publishes an APK.
-  git diff --quiet "$MAIN" "$COMBINED" -- "${URBE_CSHARP_RELEASE_PATHS[@]}" || result=$?
+  git diff --quiet "$MAIN" "$COMBINED" -- "${paths[@]}" || result=$?
   case "$result" in
     0) return 0 ;;
-    1) gh workflow run urbe-csharp-mobile-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" ;;
+    1) gh workflow run urbe-csharp-mobile-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" -f "source_sha=${COMBINED}" ;;
     *) echo "Não foi possível determinar se a versão do Urbe nativo foi modificada." >&2; return 1 ;;
   esac
 }
@@ -185,7 +203,7 @@ dispatch_lunet_release() {
   git diff --quiet "$MAIN" "$COMBINED" -- "${paths[@]}" || result=$?
   case "$result" in
     0) return 0 ;;
-    1) gh workflow run lunet2d-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" ;;
+    1) gh workflow run lunet2d-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" -f "source_sha=${COMBINED}" ;;
     *) echo "Não foi possível verificar os arquivos do Lunet no estado integrado." >&2; return 1 ;;
   esac
 }
@@ -205,11 +223,16 @@ guard_main() { # a main atual é a main testada (primeiro pai) e o segundo pai �
   git fetch -q origin "${DEFAULT_BRANCH:-main}" || return 1
   [ "$(git rev-parse FETCH_HEAD)" = "$MAIN" ] && [ "$(git rev-parse "${COMBINED}^1")" = "$MAIN" ] && [ "$(git rev-parse "${COMBINED}^2")" = "$HEAD_SHA" ]
 }
-guard_authorization() { # crítico: a label vale só se o EVENTO foi de um autorizador, depois de este head ser avaliado
-  gh api "repos/${repo}/issues/${PR}/events" --paginate --jq '.[] | select(.event=="labeled" or .event=="unlabeled") | {event, label: {name: .label.name}, actor: {login: .actor.login}, created_at}' | jq -s . > /tmp/events.json
-  gh api "repos/${repo}/commits/${HEAD_SHA}/statuses" --paginate --jq ".[] | select(.context==\"${CONTEXT}\") | {description, created_at, creator: {login: .creator.login}}" | jq -s . > /tmp/statuses.json
-  check --integration-authorization --events /tmp/events.json --statuses /tmp/statuses.json --owner "$owner" --policy "$POLICY" | grep -E '^[a-z_]+=' > /tmp/auth.txt
+guard_authorization() {
+  gh api "repos/${repo}/pulls/${PR}/reviews" --paginate --jq '.[]' | jq -s . > /tmp/owner-reviews.json
+  python3 .github/integrator/lifecycle.py authorize --reviews /tmp/owner-reviews.json --owner "$owner" --head "$HEAD_SHA" > /tmp/auth.txt
   grep -qx 'authorized=true' /tmp/auth.txt
+}
+
+guard_all_checks() {
+  gh api "repos/${repo}/commits/${HEAD_SHA}/check-runs?per_page=100" --paginate --jq '.check_runs[]' | jq -s . > /tmp/head-checks.json
+  gh api "repos/${repo}/commits/${HEAD_SHA}/statuses?per_page=100" --paginate --jq '.[]' | jq -s . > /tmp/head-statuses.json
+  python3 .github/integrator/lifecycle.py checks --checks /tmp/head-checks.json --statuses /tmp/head-statuses.json
 }
 
 land() {
@@ -232,6 +255,11 @@ land() {
     status "$HEAD_SHA" success pronto "$MAIN" "$COMBINED" "$CRITICALITY" "aguardando autorização válida"
     { echo "**Autorização inválida — não integrado.** ${why}"; echo; identity; } > "$body"
     comment "$PR" "$body"; return 0
+  fi
+  if ! guard_all_checks; then
+    status "$HEAD_SHA" pending testando "$MAIN" "$COMBINED" "$CRITICALITY" "checks adicionais do head pendentes ou falhos"
+    echo "Checks adicionais pendentes/falhos; a main não avança. A conclusão do CI ou o agendamento reavalia."
+    return 0
   fi
   if ! git push -q origin "${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}"; then
     status "$HEAD_SHA" pending testando "$MAIN" "$COMBINED" "$CRITICALITY" "push recusado; reavaliando"
@@ -272,26 +300,22 @@ land() {
     echo "**Publicação nativa do Urbe pendente:** falhou o dispatch de urbe-csharp-mobile-release; execute o workflow oficial na main e verifique a tag antes de declarar release." >> "$body"
     comment "$PR" "$body"
   fi
+  if ! python3 .github/integrator/lifecycle.py dispatch --repo "$repo" --sha "$COMBINED"; then
+    publication_result=1
+    echo "::error::Publicação pendente na fila persistente; o reconciliador tentará novamente."
+  fi
   redispatch  # a main mudou: os outros PRs precisam ser reavaliados contra ela, mesmo se publicação falhar
   return "$publication_result"
 }
 
-critical_explanation() { # o que o proprietário precisa decidir — em termos da decisão, não do código
-  echo "**Mudança crítica pronta e testada — precisa da sua autorização.**"
+critical_explanation() {
+  echo "**Mudança na autoridade do Ecosystem: aguarda decisão do proprietário.**"
   echo
-  echo "Todos os checks passaram no estado combinado (este PR + \`main\` atual). Pela política da \`main\` ([ADD-0012](https://github.com/${repo}/blob/${DEFAULT_BRANCH:-main}/docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md)), ela não entra sozinha porque:"
+  echo "Todos os checks passaram. A autonomia de produto não permite modificar governança, concessões ou estágio por conta própria (ADD-0034)."
+  echo "Para autorizar este head: review APPROVED do proprietário no PR. Nenhuma label é necessária."
+  echo "Enquanto isso, o agente registra a proposta e continua trabalho independente autorizado."
   echo
-  jq -r --argjson cls "${CRITICAL_CLASSES:-[]}" '.classes[] | select(.id as $i | $cls | index($i)) | "- **\(.title)** — \(.consequence)"' "$POLICY" 2>/dev/null || true
-  echo
-  echo "Detalhes: ${CRITICAL_REASON:-—}"
-  if [ "${TRUSTED:-success}" != success ]; then
-    echo
-    echo "⚠️ A versão confiável da \`main\` reprova o estado combinado em: \`${TRUSTED_FAILURES:-?}\`. Esperado só se este PR muda exatamente essas regras; senão, não autorize."
-  fi
-  echo
-  echo "**Se autorizar** (label \`${LABEL}\`, posta por você): entra exatamente o commit testado abaixo; se a \`main\` ou o PR mudarem antes, o integrador testa de novo e pede de novo."
-  echo "**Se não autorizar:** nada entra; o PR fica aberto. Se for preciso escolher uma direção nova, o agente abre uma decisão no portal."
-  echo
+  echo "Motivo: ${CRITICAL_REASON:-mudança fora do escopo autônomo}"
   identity
 }
 
@@ -320,6 +344,17 @@ finish() {
     # Reclassificado como rotina (ex.: avaliação anterior crítica): labels de crítico não ficam penduradas no PR.
     [ "${REQUIRES_OWNER}" = "true" ] || labels "$PR" -critico -pronto-para-integrar
     local failed=""
+    # A skipped/missing job is not success for a selected Product.
+    local product result
+    while read -r product; do
+      case "$product" in
+        urbe) result="${R_URBE:-missing}" ;; lunet2d) result="${R_LUNET2D:-missing}" ;;
+        hub) result="${R_HUB:-missing}" ;; ecosystem-ai) result="${R_ECOSYSTEM_AI:-missing}" ;;
+        tabletop-rpg) result="${R_TABLETOP_RPG:-missing}" ;; math-authoring) result="${R_MATH_AUTHORING:-missing}" ;;
+        atlas-forge) result="${R_ATLAS_FORGE:-missing}" ;; *) result=missing ;;
+      esac
+      [ "$result" = success ] || failed="${failed} $product($result)"
+    done < <(jq -r '.[]' <<<"${PRODUCTS:-[]}")
     [ "${R_CONSISTENCY}" = "success" ] || failed="${failed} consistency(${R_CONSISTENCY})"
     case "${R_URBE}" in success|skipped|"") ;; *) failed="${failed} urbe-checks(${R_URBE})" ;; esac
     case "${R_LUNET2D}" in success|skipped|"") ;; *) failed="${failed} lunet2d-ci(${R_LUNET2D})" ;; esac
@@ -329,7 +364,7 @@ finish() {
     case "${R_MATH_AUTHORING:-}" in success|skipped|"") ;; *) failed="${failed} math-authoring-ci(${R_MATH_AUTHORING})" ;; esac
     case "${R_ATLAS_FORGE:-}" in success|skipped|"") ;; *) failed="${failed} atlas-forge-ci(${R_ATLAS_FORGE})" ;; esac
     # Rotina: os checks da main sobre o candidato também precisam passar. Crítico: a divergência vira informação para o proprietário.
-    [ "${TRUSTED:-success}" = success ] || [ "${REQUIRES_OWNER}" = "true" ] || failed="${failed} confiável-main(${TRUSTED_FAILURES:-?})"
+    [ "${TRUSTED:-success}" = success ] || failed="${failed} confiável-main(${TRUSTED_FAILURES:-?})"
     if [ -n "$failed" ]; then
       status "$HEAD_SHA" failure falhou "$MAIN" "$COMBINED" "$CRITICALITY" "${failed# }"
       { echo "**Não integrado: checks vermelhos no estado combinado** (este PR + \`main@${MAIN:0:12}\`):${failed}. Corrija e envie — o integrador reavalia a cada push."; echo; identity; } > "$body"
@@ -339,15 +374,10 @@ finish() {
       return 0
     fi
     if [ "${REQUIRES_OWNER}" != "true" ]; then land; return 0; fi
-    # Crítico verde: se o proprietário já autorizou ESTE head (evento posterior à avaliação), integra; senão pede.
-    local stale=""
-    if [ "${AUTHORIZED}" = "true" ]; then
-      if guard_authorization; then land; return 0; fi
-      labels "$PR" "-$LABEL"
-      stale="A label \`${LABEL}\` que estava no PR não vale para este estado: $(sed -n 's/^authorization_reason=//p' /tmp/auth.txt)."
-    fi
+    # Owner review is checked against this exact head; labels never authorize.
+    if guard_authorization; then land; return 0; fi
     status "$HEAD_SHA" success pronto "$MAIN" "$COMBINED" "$CRITICALITY" "aguardando autorização do proprietário"
-    { critical_explanation; [ -n "$stale" ] && { echo; echo "$stale"; }; true; } > "$body"
+    { critical_explanation; } > "$body"
     labels "$PR" +critico +pronto-para-integrar -precisa-reconciliar
     comment "$PR" "$body"
     gh workflow run pages.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" >/dev/null || true  # "Precisa de você" no portal

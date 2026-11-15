@@ -1,4 +1,5 @@
 name: lunet2d-release
+run-name: lunet2d-release ${{ inputs.source_sha || github.sha }}
 
 on:
   push:
@@ -7,6 +8,11 @@ on:
   pull_request:
     paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-release.yml']
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Immutable tested commit to publish
+        type: string
+        required: false
 
 concurrency:
   group: lunet2d-release-${{ github.ref }}
@@ -22,6 +28,18 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -44,6 +62,18 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -183,7 +213,7 @@ jobs:
         run: >
           dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug
           -p:AndroidSdkDirectory="$ANDROID_HOME"
-          -p:GITHUB_RUN_NUMBER=$((1000000 + ${{ github.run_number }}))
+          -p:GITHUB_RUN_NUMBER="$(tr -d '[:space:]' < VERSION_CODE)"
       - name: Collect APK
         run: |
           apk=$(find src/Lunet.Android/bin -name '*-Signed.apk' | head -n1)
@@ -211,6 +241,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/download-artifact@v4
         with:
           name: lunet-apk
@@ -219,8 +261,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="lunet2d-v$(tr -d '[:space:]' < VERSION)-dev.$((1000000 + ${{ github.run_number }}))"
-          tools/make-release-files.sh dist/lunet.apk "${tag#lunet2d-v}" development "${{ github.sha }}" out
+          tag="lunet2d-v$(tr -d '[:space:]' < VERSION)"
+          tools/make-release-files.sh dist/lunet.apk "${tag#lunet2d-v}" "$(python3 ../../.github/integrator/release-metadata.py stage "${tag#lunet2d-v}")" "${{ inputs.source_sha || github.sha }}" out
           gh release view "$tag" >/dev/null 2>&1 && exit 0
-          gh release create "$tag" out/* --target "${{ github.sha }}" --prerelease --latest=false \
-            --title "Lunet ${tag#lunet2d-v} (development)" --notes-file out/release-notes.md
+          gh release create "$tag" out/* --target "${{ inputs.source_sha || github.sha }}" $(python3 ../../.github/integrator/release-metadata.py flags "${tag#lunet2d-v}") \
+            --title "Lunet ${tag#lunet2d-v}" --notes-file out/release-notes.md

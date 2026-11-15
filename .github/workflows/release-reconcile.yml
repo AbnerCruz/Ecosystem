@@ -1,0 +1,25 @@
+name: release-reconcile
+on:
+  push:
+    branches: [main]
+    paths: ['docs/distribution/release-queue/**']
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: release-reconcile
+  cancel-in-progress: false
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Retry durable release intents whose artifacts are missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/integrator/lifecycle.py dispatch --repo "$GITHUB_REPOSITORY"
