@@ -206,6 +206,69 @@ public sealed class LunetAiCoworkTests
     }
 
     [Fact]
+    public async Task Checkpoint_DoesNotOverwriteSubsequentUserEdits_AndRejectsWholeBatch()
+    {
+        var root = TempRoot();
+        try
+        {
+            var project = new ProjectStore(root).Create("AiSafeUndo");
+            var entry = project.Manifest.EntryPoint;
+            var original = project.ReadText(entry);
+            var editedByAi = original + "\n// escrito pela IA\n";
+            var provider = new ScriptedProvider(
+                Tool("lunet.files.write", new { path = entry, content = editedByAi,
+                    expected_sha256 = LunetAiProjectFiles.Hash(original) }),
+                Tool("lunet.files.write", new { path = "Enemy.cs", content = "class Enemy {}\n", expected_sha256 = "" }),
+                Text("Pronto."));
+            var session = new LunetAiSession(project, Path.Combine(root, "history.json"));
+            var reply = await session.AskAsync("crie um inimigo e comente o jogo", new LunetAiRequest(
+                LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
+                LunetAiEditorContext.Empty, new FakeBuild(project), provider), TestContext.Current.CancellationToken);
+
+            Assert.Equal(RunStatus.Succeeded, reply.Status);
+            project.WriteText(entry, editedByAi + "// edição posterior da pessoa\n");
+            var failure = Assert.Throws<InvalidOperationException>(() => reply.Checkpoint.Revert());
+            Assert.Contains(entry, failure.Message);
+            Assert.Contains("edição posterior da pessoa", project.ReadText(entry));
+            Assert.True(File.Exists(Path.Combine(project.Directory, "Enemy.cs"))); // preflight: no partial undo
+
+            project.WriteText(entry, editedByAi); // conflicts resolved, original AI bytes restored
+            reply.Checkpoint.Revert();
+            Assert.Equal(original, project.ReadText(entry));
+            Assert.False(File.Exists(Path.Combine(project.Directory, "Enemy.cs")));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task Checkpoint_ReopenedAfterRestartRefusesToDeleteModifiedAgentFile()
+    {
+        var root = TempRoot();
+        try
+        {
+            var project = new ProjectStore(root).Create("AiSafeRestart");
+            var provider = new ScriptedProvider(
+                Tool("lunet.files.write", new { path = "Enemy.cs", content = "class Enemy {}\n", expected_sha256 = "" }),
+                Text("Pronto."));
+            var historyPath = Path.Combine(root, "history.json");
+            var session = new LunetAiSession(project, historyPath);
+            var reply = await session.AskAsync("crie o inimigo", new LunetAiRequest(
+                LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
+                LunetAiEditorContext.Empty, new FakeBuild(project), provider), TestContext.Current.CancellationToken);
+            Assert.Equal(RunStatus.Succeeded, reply.Status);
+            var reopened = new LunetAiSession(project, historyPath);
+            var checkpoint = Assert.IsType<LunetAiCheckpoint>(reopened.CheckpointFor(reopened.History.Last()));
+            project.WriteText("Enemy.cs", "class Enemy { /* mudança manual */ }\n");
+            Assert.Throws<InvalidOperationException>(() => checkpoint.Revert());
+            Assert.Contains("mudança manual", project.ReadText("Enemy.cs"));
+            project.WriteText("Enemy.cs", "class Enemy {}\n");
+            checkpoint.Revert();
+            Assert.False(File.Exists(Path.Combine(project.Directory, "Enemy.cs")));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public async Task EditorContextReachesTheModel_AndReadOnlyHidesWriteTools()
     {
         var root = TempRoot();

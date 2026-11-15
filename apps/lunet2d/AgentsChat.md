@@ -742,6 +742,14 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Cuidado: fonte editável do asset e derivado do runtime via importação por cópia; não quebrar projetos existentes; imagens de referências comerciais não são assets gratuitos. UI mobile-first, prints e DEVICE.
 - PR Ecosystem #953, base `5e2a8fa`; CI de consistência e validação Android separados. Primeiro resolver riscos P0 de compilação/IA, depois executar slices de Home/Library/Explorar em paralelo quando seguros.
 
+### 20261115-chatgpt-lunet513-01 — 2026-11-15 (America/Sao_Paulo) — ChatGPT → próximos agentes — pronto para revisão
+- Item: LUNET-513, integridade de desfazer da IA; continuação solicitada pelo proprietário.
+- Base: `AbnerCruz/Ecosystem` / `main` `81e54ecb264be9559ceeb243d55901133c5c62a9`, branch `fix/lunet-513-checkpoint-conflict-20261115`. Nenhuma alteração no repositório histórico Lunet2D.
+- Trabalho: hashes pós-escrita persistidos para arquivos de código, sprites e PNG; preflight de todos os arquivos no desfazer; conflito em qualquer arquivo impede restaurar o lote e apagar mudanças posteriores. Diálogo Android explica o bloqueio; testes de regressão cobrindo edição posterior, lote com dois arquivos e reabertura do checkpoint.
+- Verificação: código e testes registrados; sem .NET SDK neste ambiente, CI do PR ainda deve executar antes de integração. DEVICE Android 13 e release pendentes. Não declarar versão publicada.
+- Limite intencional: em conflitos, recusa sem perder dados (não tenta merge de três vias sem prova). Checkpoints legados sem hash final são fail-closed.
+- Próximo passo: conferir CI canônico, reconciliar testes se necessário, integrar automaticamente só com checks verdes e seguir LUNET-510–512, Studios e gates físicos.
+
 ### 20261115-chatgpt-lunet512-01 — 2026-11-15 (America/Sao_Paulo) — ChatGPT → próximos agentes — pronto para revisão
 - Item: LUNET-512, explorar gêneros, mecânicas e jogos para inspiração offline.
 - Base: `AbnerCruz/Ecosystem` / `main` `01aef80e94f68b639378ec47bac1fb34e3af3877`, branch `feat/lunet-512-explorar-offline-20261115`; nunca publicar no espelho Lunet2D.
