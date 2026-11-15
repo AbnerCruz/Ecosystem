@@ -56,7 +56,8 @@
     "Integração automática por escopo com CI do estado combinado e checks adicionais do PR; labels não autorizam.",
     "Incremento canônico antes dos testes e fila persistente de release por Product, com source_sha imutável, retries e estágio preservado.",
     "Distribuição dos sete Products por pipelines existentes ou pacotes de bibliotecas/HTML offline reais.",
-    "Corrigida premissa obsoleta do teste real do Hub: Next pode estar vazio quando o roadmap só declara itens concluídos/verificados; comparação exata dos abertos e fixture negativa preservam fiscalização sem inventar roadmap."
+    "Corrigida premissa obsoleta do teste real do Hub: Next pode estar vazio quando o roadmap só declara itens concluídos/verificados; comparação exata dos abertos e fixture negativa preservam fiscalização sem inventar roadmap.",
+    "Checagem adicional separa suites/workflows: dois jobs chamados test não se sobrepõem nem escondem falha de outra suite."
   ],
   "verification": [
     {
@@ -69,7 +70,7 @@
       "check": "Lifecycle regression tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "python3 -m unittest discover -s .github/integrator/tests: 8 cenários aprovados."
+      "evidence": "python3 -m unittest discover -s .github/integrator/tests: nove cenários aprovados, incluindo jobs homônimos de workflows distintos (um verde não esconde um vermelho)."
     },
     {
       "check": "Simulação git do integrador",

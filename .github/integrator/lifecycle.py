@@ -38,7 +38,8 @@ def checks_passed(checks, statuses):
     for check in checks:
         name = check.get('name')
         if not name: return False
-        if name not in latest or check.get('id', 0) > latest[name].get('id', 0): latest[name] = check
+        key = (check.get('app', {}).get('id'), check.get('check_suite', {}).get('id'), name)
+        if key not in latest or check.get('id', 0) > latest[key].get('id', 0): latest[key] = check
     contexts = {}
     for status in statuses:
         name = status.get('context')

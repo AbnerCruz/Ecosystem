@@ -74,3 +74,9 @@ class ChecksTests(unittest.TestCase):
         self.assertFalse(m.checks_passed([dict(good, status='in_progress')], []))
         self.assertFalse(m.checks_passed([good], [{'context':'external-ci','state':'pending'}]))
         self.assertTrue(m.checks_passed([good], [{'context':'ecosystem/integration','state':'pending'}]))
+
+class DuplicateNamesTests(unittest.TestCase):
+    def test_same_job_name_from_two_workflows_must_not_hide_failure(self):
+        failed = {'id':1,'name':'test','status':'completed','conclusion':'failure','check_suite':{'id':10}}
+        passed = {'id':2,'name':'test','status':'completed','conclusion':'success','check_suite':{'id':20}}
+        self.assertFalse(m.checks_passed([failed, passed], []))
