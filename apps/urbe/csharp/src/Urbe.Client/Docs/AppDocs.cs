@@ -170,6 +170,17 @@ public static partial class AppDocs
 
         Para mostrar só uma parte da nota: `![[Plano#Orçamento]]` traz a seção desse título (até o próximo título do mesmo nível; `#Título#Subtítulo` desce mais um nível), `![[Plano#^meta]]` traz o parágrafo ou o item de lista que termina com ` ^meta`, e `![[Plano#L3-L8]]` traz as linhas 3 a 8. Os marcadores ` ^meta` não aparecem nos cartões. Um nome que não existe mostra “Não encontrei … no vault”.
 
+        ## Progresso
+
+        O botão **%** da barra insere uma barra de progresso na nota. Ela é um bloco de texto, legível em qualquer editor:
+
+        - **Meta numérica**: `value: 54` e `total: 224` mostram 54/224 · 24,1% · faltam 170. Os botões **−** e **+** mudam o valor na própria nota (Desfazer volta). `value: $lidas` usa a propriedade `lidas` da nota, e os botões mudam a propriedade.
+        - **Checklist desta nota** (`source: tasks`) conta as tarefas `- [ ]` e `- [x]` sozinho: marcar, desmarcar, acrescentar ou apagar uma tarefa atualiza a barra. Cada caixa conta uma vez, subtarefa também; tarefas dentro de código ou de comentários não contam. Sem tarefas, diz “Sem tarefas”, nunca 100%.
+        - **Checklist de uma seção** (`section: Hoje`) conta só as tarefas sob esse título. `note:` com o id de outra nota conta as dela, mesmo se ela for renomeada ou movida.
+        - **Ver pendentes** lista as tarefas que faltam; tocar numa leva até ela.
+
+        A barra nunca marca uma tarefa por conta própria. O Assistente, ao ler a nota, recebe os mesmos números que você vê.
+
         ## Fórmulas
 
         Escreva LaTeX entre `$…$` no texto ou `$$…$$` em destaque, por exemplo $E = mc^2$. O botão **∑** (ou **Ctrl+M**) abre o editor de fórmulas, com **No texto** / **Destaque**, prévia, símbolos e modelos. Toque numa fórmula pronta para editar.

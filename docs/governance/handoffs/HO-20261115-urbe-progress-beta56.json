@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-urbe-progress-beta56",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-15T19:15:36.000Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-228",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-c717cbe5-9x21rb",
+  "base_commit": "741074559b186976cd097d6bf7884b771cb88c67",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.Blocks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteProgress.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteProgressUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteProgressTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "docs/governance/handoffs/HO-20261115-urbe-progress-beta56.json"
+  ],
+  "work_completed": [
+    "Pesquisa: plugins de progresso do Obsidian (Checklist Progress Bar, Doneut, Task Genius, Checkboxes) — contagem ao vivo por título e x/y.",
+    "CST-227: −/+ na barra de meta numérica mudam o valor onde ele mora (linha value: ou propriedade $nome), presos entre 0 e a meta, com Desfazer.",
+    "CST-228: Checklist de uma seção ao inserir; Ver pendentes lista as tarefas e leva o cursor à escolhida; cada caixa conta uma vez; read_note entrega ao agente o progresso calculado.",
+    "Achado: três regras ingênuas de cerca de código (blocos do editor, HTML, títulos) unificadas numa regra CommonMark (``` ou ~~~, fechada só pela mesma marca, do mesmo tamanho ou maior).",
+    "Testado com clique real de ponteiro que o + não abre o bloco para escrita; captura a 360 dp conferida."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1619/1619 local"
+    },
+    {
+      "check": "Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "635/635 local"
+    },
+    {
+      "check": "Toque no aparelho: −/+, Ver pendentes e Checklist de uma seção (moto g32 e Windows)",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Ver pendentes só para tarefas da própria nota; para note: (outra nota) a lista não aparece."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CST-224: operações semânticas de edição pelo mesmo serviço do editor."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O progresso é derivado das caixas e do value:/propriedade; nenhuma cópia do resultado é gravada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente, registrada acima."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Cada mudança com teste."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-note-progress",
+      "status": "product-specific",
+      "rationale": "Componente das notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature e correção de editor dentro da direção autorizada (ADD-0034)."
+  }
+}
