@@ -80,3 +80,23 @@ class DuplicateNamesTests(unittest.TestCase):
         failed = {'id':1,'name':'test','status':'completed','conclusion':'failure','check_suite':{'id':10}}
         passed = {'id':2,'name':'test','status':'completed','conclusion':'success','check_suite':{'id':20}}
         self.assertFalse(m.checks_passed([failed, passed], []))
+
+class IntegratorSuiteTests(unittest.TestCase):
+    def test_integrator_does_not_wait_for_its_own_finish_job(self):
+        own = {'id':1,'name':'Integrar','status':'in_progress','conclusion':None,'check_suite':{'id':10}}
+        tests = {'id':2,'name':'test','status':'completed','conclusion':'success','check_suite':{'id':20}}
+        self.assertTrue(m.checks_passed([own, tests], [], {10}))
+        self.assertFalse(m.checks_passed([own, dict(tests, conclusion='failure')], [], {10}))
+        self.assertFalse(m.checks_passed([own], [], {10}))
+
+class WorkflowIdentityTests(unittest.TestCase):
+    def test_only_verified_integrator_workflow_suites_are_excluded(self):
+        from unittest.mock import patch
+        checks = [
+            {'check_suite':{'id':10}, 'app':{'slug':'github-actions'}, 'details_url':'https://github.com/owner/repo/actions/runs/1/job/10'},
+            {'check_suite':{'id':20}, 'app':{'slug':'github-actions'}, 'details_url':'https://github.com/owner/repo/actions/runs/2/job/20'},
+            {'check_suite':{'id':30}, 'app':{'slug':'third-party'}, 'details_url':'https://github.com/owner/repo/actions/runs/1/job/10'}]
+        def api(endpoint):
+            return {'workflow_id':42 if endpoint.endswith('/1') else 99, 'check_suite_id':10 if endpoint.endswith('/1') else 20}
+        with patch.object(m, 'gh_json', side_effect=api):
+            self.assertEqual(m.integrator_suites(checks, 'owner/repo', '1'), {10})

@@ -33,9 +33,10 @@ def protected(paths):
                for p in paths if not p.startswith('docs/governance/handoffs/'))
 
 
-def checks_passed(checks, statuses):
+def checks_passed(checks, statuses, ignored_suites=()):
     latest = {}
     for check in checks:
+        if check.get('check_suite', {}).get('id') in ignored_suites: continue
         name = check.get('name')
         if not name: return False
         key = (check.get('app', {}).get('id'), check.get('check_suite', {}).get('id'), name)
@@ -46,6 +47,30 @@ def checks_passed(checks, statuses):
         if name == 'ecosystem/integration': continue
         if name not in contexts: contexts[name] = status
     return bool(latest or contexts) and all(c.get('status') == 'completed' and c.get('conclusion') in ('success', 'skipped', 'neutral') for c in latest.values()) and all(s.get('state') == 'success' for s in contexts.values())
+
+
+def gh_json(endpoint):
+    return json.loads(subprocess.check_output(['gh', 'api', endpoint], text=True))
+
+
+def integrator_suites(checks, repo, current_run):
+    # A job name is not an identity. Resolve Actions run metadata from GitHub and
+    # compare workflow IDs and suite IDs; only this workflow's own evaluations are excluded.
+    own = gh_json(f'repos/{repo}/actions/runs/{current_run}')
+    workflow_id = own['workflow_id']
+    ignored = {own['check_suite_id']}
+    runs = {str(current_run): own}
+    pattern = re.compile(r'https://github\.com/' + re.escape(repo) + r'/actions/runs/(\d+)(?:/|$)', re.I)
+    for check in checks:
+        if check.get('app', {}).get('slug') != 'github-actions': continue
+        match = pattern.match(check.get('details_url') or '')
+        if not match: continue
+        run_id = match[1]
+        if run_id not in runs: runs[run_id] = gh_json(f'repos/{repo}/actions/runs/{run_id}')
+        run = runs[run_id]
+        if run.get('workflow_id') == workflow_id and run.get('check_suite_id') == check.get('check_suite', {}).get('id'):
+            ignored.add(run['check_suite_id'])
+    return ignored
 
 
 def owner_approved(reviews, owner, head):
@@ -145,10 +170,12 @@ def prepare(work, base, head, files):
 def main():
     p = argparse.ArgumentParser(); p.add_argument('command', choices=['prepare','authorize','dispatch','checks'])
     p.add_argument('--work'); p.add_argument('--base'); p.add_argument('--head'); p.add_argument('--files')
-    p.add_argument('--checks'); p.add_argument('--statuses'); p.add_argument('--reviews'); p.add_argument('--owner'); p.add_argument('--repo'); p.add_argument('--sha')
+    p.add_argument('--integrator-run'); p.add_argument('--checks'); p.add_argument('--statuses'); p.add_argument('--reviews'); p.add_argument('--owner'); p.add_argument('--repo'); p.add_argument('--sha')
     a = p.parse_args()
     if a.command == 'checks':
-        raise SystemExit(0 if checks_passed(json.loads(Path(a.checks).read_text()), json.loads(Path(a.statuses).read_text())) else 1)
+        checks = json.loads(Path(a.checks).read_text())
+        ignored = integrator_suites(checks, a.repo, a.integrator_run) if a.repo and a.integrator_run else set()
+        raise SystemExit(0 if checks_passed(checks, json.loads(Path(a.statuses).read_text()), ignored) else 1)
     if a.command == 'authorize':
         approved = owner_approved(json.loads(Path(a.reviews).read_text()), a.owner, a.head)
         print('authorized=' + str(approved).lower()); print('authorization_reason=owner review bound to PR head' if approved else 'authorization_reason=owner review required for this head')
