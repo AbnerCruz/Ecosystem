@@ -672,7 +672,17 @@ public sealed class VisualSurface : StackPanel
         };
         // seals drawn where they belong (one per block, after its text), whatever an older version left in the file (UC-51)
         var shown = AiAuthorship.Canonical(source);
-        var holder = new Border { Background = Brushes.Transparent, Child = container ? reader.BuildMarkdown(shown) : reader.Build(NoteMarks.Parse(shown)) };
+        // Fonte by blocks: each block drawn as its own Markdown, plain, so a long note costs one block per key
+        Control drawn;
+        if (Raw)
+        {
+            var plain = new TextBlock { Text = AiAuthorship.Strip(source).TrimEnd('\n'), TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.MonoFont,
+                FontSize = TextSize * .9, LineHeight = TextSize * .9 * LineFactor, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 2) };
+            plain.Classes.Add(MarkdownReader.TextClass);
+            drawn = plain;
+        }
+        else drawn = container ? reader.BuildMarkdown(shown) : reader.Build(NoteMarks.Parse(shown));
+        var holder = new Border { Background = Brushes.Transparent, Child = drawn };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
         // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")
@@ -702,6 +712,9 @@ public sealed class VisualSurface : StackPanel
         _refs.Add(holder, r);
         return holder;
     }
+
+    /// <summary>The blocks drawn as their plain Markdown (Fonte by blocks), not formatted.</summary>
+    public bool Raw { get; set; }
 
     public Func<string, string?>? ProgressNoteResolver { get; set; }
     public Func<string, Task<string?>>? DataReader { get; set; }

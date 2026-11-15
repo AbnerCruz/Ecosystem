@@ -82,6 +82,13 @@ public sealed class EditorOverlay : Grid
     /// <summary>state.ratio: the editor's share of the width (.25–.75; the pane gets the rest).</summary>
     public double SplitRatio { get; set; } = .5;
     public EditorMode Mode { get; private set; } = EditorMode.Visual;
+    /// <summary>The note's length from which Fonte edits block by block (see <see cref="ShowMode"/>).</summary>
+    public const int BlocksFrom = 8000;
+    private bool _blocks, _wholeText;
+    /// <summary>Fonte by blocks is on (a long Markdown note in Fonte).</summary>
+    public bool SourceByBlocks => _blocks;
+    // where the text is edited: the block surface (Visual, or Fonte by blocks) or the whole-text box
+    private bool OnSurface => Mode == EditorMode.Visual || _blocks;
     /// <summary>"Abrir notas no modo" (Personalização → editor.modoInicial): Visual unless "texto".</summary>
     public bool StartInVisual { get; set; } = true;
     /// <summary>The notes of the open vault (for [[ suggestions and wikilink targets).</summary>
@@ -103,7 +110,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Draws the note again in Visual (the colours of the tags changed in Personalização).</summary>
     public void RefreshVisual()
     {
-        if (_note is not null && Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
+        if (_note is not null && OnSurface) _visual.SetText(Editor.Text ?? "");
         if (Pinned.Text is { } pinned && Pinned.SourcePath is { } from) Pinned.Pin(pinned, from);
     }
 
@@ -116,7 +123,7 @@ public sealed class EditorOverlay : Grid
         get
         {
             if (_note is null) return null;
-            if (Mode == EditorMode.Visual) return _visual.SelectedText;
+            if (OnSurface) return _visual.SelectedText;
             var all = Editor.Text ?? "";
             int a = Math.Clamp(Math.Min(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
             int b = Math.Clamp(Math.Max(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
@@ -270,7 +277,7 @@ public sealed class EditorOverlay : Grid
             if (mod && e.Key == Key.Enter && _note is not null && AgentAsked is not null && AgentCallAtCaret() is { } call)
             {
                 e.Handled = true;
-                if (Mode == EditorMode.Visual) _visual.FinishEdit();
+                if (OnSurface) _visual.FinishEdit();
                 AgentAsked.Invoke(call);
                 return;
             }
@@ -301,7 +308,7 @@ public sealed class EditorOverlay : Grid
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
         _visual.BlockTimes = () => _note is { } open ? BlockTimesFor?.Invoke(open.Path) : null;
-        _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
+        _visual.ActiveToolsChanged += on => { if (OnSurface) ShowActiveTools(on); };
         _visual.EditingChanged += _ => { UpdateChrome(); WritingChanged?.Invoke(); };
         Editor.GotFocus += (_, _) => WritingChanged?.Invoke();
         Editor.LostFocus += (_, _) => WritingChanged?.Invoke();
@@ -313,7 +320,8 @@ public sealed class EditorOverlay : Grid
 
         AddRow(_header = TopBar(), 0);
         // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar
-        FindBar = new EditorFindBar(() => Editor, () => SetMode(EditorMode.Fonte));
+        // find works on the whole text: while it is used, Fonte is the whole-text box
+        FindBar = new EditorFindBar(() => Editor, () => { _wholeText = true; SetMode(EditorMode.Fonte); });
         AddRow(FindBar, 1);
         AddRow(Toolbars(), ToolbarRowTop);
         SizeChanged += (_, e) => PlaceToolbar(e.NewSize.Width);
@@ -363,7 +371,7 @@ public sealed class EditorOverlay : Grid
             if (e.HeightChanged && !HeaderMoving && EditorScrolling.InSight(Editor, _sourceScroll, e.PreviousSize.Height)) KeepSourceCaretSoon(typing: true);
         };
         // #mathDock: the formula bar of Fonte, over the bottom of the text
-        MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
+        MathBar = new MathDock(Editor, () => !OnSurface && IsVisible);
         var text = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context, Connections } };
         text.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); Connections.Place(e.NewSize.Width); };
         // one side panel at a time
@@ -398,7 +406,7 @@ public sealed class EditorOverlay : Grid
         bodyHost.SizeChanged += (_, e) => { PlaceSource(); Properties.LimitHeight(e.NewSize.Height); };
         PlaceSource();
         // the form reads and writes the note's text: in Visual the block being written is finished first
-        Properties.TextSource = () => { if (Mode == EditorMode.Visual) { _visual.FinishEdit(); return _visual.Text; } return Editor.Text ?? ""; };
+        Properties.TextSource = () => { if (OnSurface) { _visual.FinishEdit(); return _visual.Text; } return Editor.Text ?? ""; };
         Properties.Changed += ApplyPropertyText;
         _visual.HideFrontmatter = true;
         AddRow(bodyHost, 3);
@@ -502,7 +510,7 @@ public sealed class EditorOverlay : Grid
     public event Action? BottomChromeChanged;
 
     /// <summary>Someone is writing: a Visual block is open or the Fonte text has the focus (the keyboard is up).</summary>
-    public bool Writing => IsVisible && (_visual.IsEditing || Mode == EditorMode.Fonte && Editor.IsFocused);
+    public bool Writing => IsVisible && (_visual.IsEditing || !OnSurface && Editor.IsFocused);
     public event Action? WritingChanged;
     private double _bottomChrome = -1;
 
@@ -540,7 +548,7 @@ public sealed class EditorOverlay : Grid
     {
         if (_readOnly) return;
         if (_note is null) return;
-        if (Mode == EditorMode.Visual)
+        if (OnSurface)
         {
             if (AskFormula is { } ask) await _visual.FormulaAsync((t, b) => ask(t, b, false), block);
             return;
@@ -598,8 +606,8 @@ public sealed class EditorOverlay : Grid
         pos = Math.Min(pos, text.Length);
         Editor.SelectionStart = Editor.SelectionEnd = Editor.CaretIndex = pos;
         // in Visual the block of that line comes on screen too (the outline and the links to a heading)
-        if (Mode == EditorMode.Visual) _visual.RevealOffset(pos);
-        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && Mode == EditorMode.Fonte) Editor.Focus();
+        if (OnSurface) _visual.RevealOffset(pos);
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && !OnSurface) Editor.Focus();
     }
 
     /// <summary>"Localizar e substituir" (ui.find.open, Ctrl+F).</summary>
@@ -648,11 +656,11 @@ public sealed class EditorOverlay : Grid
             {
                 var resume = _visual.Snapshot();
                 var caret = Editor.CaretIndex;
-                var wasFonte = Mode == EditorMode.Fonte && Editor.IsFocused;
-                var offset = (Mode == EditorMode.Visual ? _visualScroll : _sourceScroll).Offset;
+                var wasFonte = !OnSurface && Editor.IsFocused;
+                var offset = (OnSurface ? _visualScroll : _sourceScroll).Offset;
                 Show(note);
-                (Mode == EditorMode.Visual ? _visualScroll : _sourceScroll).Offset = offset;
-                if (Mode == EditorMode.Visual && resume is not null) _visual.Resume(resume);
+                (OnSurface ? _visualScroll : _sourceScroll).Offset = offset;
+                if (OnSurface && resume is not null) _visual.Resume(resume);
                 else if (wasFonte) { Editor.CaretIndex = Math.Clamp(caret, 0, (Editor.Text ?? "").Length); Editor.Focus(); }
                 return;
             }
@@ -733,13 +741,13 @@ public sealed class EditorOverlay : Grid
     /// <summary>editor.undo / editor.redo: of the text being edited (Fonte, or the block in Visual).</summary>
     public void Undo()
     {
-        if (Mode == EditorMode.Fonte) Editor.Undo();
+        if (!OnSurface) Editor.Undo();
         else HistoryStep(undo: true);
     }
 
     public void Redo()
     {
-        if (Mode == EditorMode.Fonte) Editor.Redo();
+        if (!OnSurface) Editor.Redo();
         else HistoryStep(undo: false);
     }
 
@@ -897,6 +905,7 @@ public sealed class EditorOverlay : Grid
         RebuildIndex();
         var canVisual = CanVisual(note.Path);
         PlaceSwitch();
+        _wholeText = false;
         ShowMode(canVisual && StartInVisual ? EditorMode.Visual : EditorMode.Fonte);
         ApplyCodeSwitch();
         ColourCode();
@@ -906,13 +915,13 @@ public sealed class EditorOverlay : Grid
         IsVisible = true;
         if (pendingFrom is not null) ScheduleAutosave();
         // Focus after the overlay is laid out; on Android this brings up the soft keyboard (Fonte; Visual edits on tap).
-        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && !OnSurface) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
     }
 
     /// <summary>The Fonte text gets the focus and the phone's keyboard comes up (a focus set by the app does not always bring it).</summary>
     private void FocusSource()
     {
-        if (!IsVisible || Mode != EditorMode.Fonte || !KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) return;
+        if (!IsVisible || OnSurface || !KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) return;
         Editor.Focus();
         PlatformInput.ShowKeyboard?.Invoke();
     }
@@ -928,7 +937,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>UC-80: an agent's suggestion shown in the note (in Visual), or null to take it away.</summary>
     public void ShowSuggestion(VisualSurface.Suggestion? suggestion)
     {
-        if (suggestion is not null && Mode != EditorMode.Visual) SetMode(EditorMode.Visual);
+        if (suggestion is not null && !OnSurface) SetMode(EditorMode.Visual);
         _visual.ShowSuggestion(suggestion);
     }
 
@@ -942,7 +951,7 @@ public sealed class EditorOverlay : Grid
     private NoteMarks.AgentCall? AgentCallAtCaret()
     {
         var text = Editor.Text ?? "";
-        int? caret = Mode == EditorMode.Visual ? _visual.SourceCaret : Editor.CaretIndex;
+        int? caret = OnSurface ? _visual.SourceCaret : Editor.CaretIndex;
         return caret is { } at ? NoteMarks.AgentCalls(text).FirstOrDefault(c => at >= c.Start && at <= c.Start + c.Length) : null;
     }
 
@@ -959,7 +968,7 @@ public sealed class EditorOverlay : Grid
         RebuildIndex();
         var canVisual = CanVisual(path);
         PlaceSwitch();
-        if (!canVisual && Mode == EditorMode.Visual) ShowMode(EditorMode.Fonte);
+        if (!canVisual && OnSurface) ShowMode(EditorMode.Fonte);
         ApplyCodeSwitch();
         UpdateChrome();
         UpdateStatus(changed: HasChanges);
@@ -1301,7 +1310,7 @@ public sealed class EditorOverlay : Grid
     private void ColourCode()
     {
         _highlightSoon.Stop();
-        if (_note is null || Mode != EditorMode.Fonte || Urbe.Core.CodeHighlighter.LanguageOf(_note.Path) is not { } language) { ShowCodePlain(); return; }
+        if (_note is null || OnSurface || Urbe.Core.CodeHighlighter.LanguageOf(_note.Path) is not { } language) { ShowCodePlain(); return; }
         var text = Editor.Text ?? "";
         var inlines = new Avalonia.Controls.Documents.InlineCollection();
         int at = 0;
@@ -1399,7 +1408,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>The form goes above the text of the mode on the screen.</summary>
     private void PlaceProperties()
     {
-        var into = Mode == EditorMode.Visual ? _visualColumn : _sourceColumn;
+        var into = OnSurface ? _visualColumn : _sourceColumn;
         if (Properties.Parent is Panel parent && parent != into) parent.Children.Remove(Properties);
         if (Properties.Parent is null) into.Children.Insert(0, Properties);
     }
@@ -1423,7 +1432,7 @@ public sealed class EditorOverlay : Grid
     {
         if (ReadOnly || _note is null) return;
         Editor.Text = text;
-        if (Mode == EditorMode.Visual) _visual.SetText(text);
+        if (OnSurface) _visual.SetText(text);
     }
 
     private bool _readOnly;
@@ -1469,7 +1478,7 @@ public sealed class EditorOverlay : Grid
     }
 
     /// <summary>#editorScroll.previewMode #propertiesBox{display:none}.</summary>
-    private void UpdateProperties() => _properties.IsVisible = _hasProperties && Mode == EditorMode.Fonte;
+    private void UpdateProperties() => _properties.IsVisible = _hasProperties && !OnSurface;
 
     /// <summary>The block being written goes into the text (before the Assistente reads the note, from any button).</summary>
     public void FinishEditing() => _visual.FinishEdit();
@@ -1479,22 +1488,28 @@ public sealed class EditorOverlay : Grid
     private void ShowMode(EditorMode mode)
     {
         var wasEditing = Editor.IsFocused || _visual.IsKeyboardFocusWithin;
-        if (Mode == EditorMode.Visual && mode != EditorMode.Visual) _visual.FinishEdit();   // serialise what was edited
+        var nextBlocks = mode == EditorMode.Fonte && !_wholeText && IsMarkdown && (Editor.Text?.Length ?? 0) >= BlocksFrom;
+        // serialise what was edited when the surface goes away or changes how it draws
+        if (OnSurface && (mode != EditorMode.Visual && !nextBlocks || nextBlocks != _blocks)) _visual.FinishEdit();
         if (OperatingSystem.IsAndroid() && IsVisible && Mode != mode && wasEditing)
         {
             Focusable = true;
             Focus(); // noneditable overlay: closes the old IME without selecting the new field
         }
         Mode = mode;
+        // Fonte by blocks for a long note: the same block surface, each block as its plain Markdown, so a key costs one
+        // block and not the whole note (a TextBox lays the whole text out on every key: ~30 ms for 15 KB on the runner)
+        _blocks = nextBlocks;
+        _visual.Raw = _blocks;
         PlaceProperties();
         ShowActiveTools(new HashSet<string>());
         UpdateActiveTools();
         UpdateProperties();
         MathBar?.Update();
         var visual = mode == EditorMode.Visual;
-        _visualScroll.IsVisible = visual;
-        _sourceScroll.IsVisible = !visual;
-        if (visual) _visual.SetText(Editor.Text ?? "");
+        _visualScroll.IsVisible = OnSurface;
+        _sourceScroll.IsVisible = !OnSurface;
+        if (OnSurface) _visual.SetText(Editor.Text ?? "");
         else _wiki.Hide();
         if (_modeToggle is not null)
         {
@@ -1576,7 +1591,7 @@ public sealed class EditorOverlay : Grid
 
     private void KeepSourceCaretSoon(bool typing)
     {
-        if (Mode != EditorMode.Fonte || _opening) return;
+        if (OnSurface || _opening) return;
         _sourceKeepTyping |= typing;
         if (_sourceKeepPending) return;
         _sourceKeepPending = true;
@@ -1585,7 +1600,7 @@ public sealed class EditorOverlay : Grid
             _sourceKeepPending = false;
             var t = _sourceKeepTyping;
             _sourceKeepTyping = false;
-            if (Mode == EditorMode.Fonte && IsVisible && EditorScrolling.ShouldKeepCaret(Editor.IsFocused, UserScrolling))
+            if (!OnSurface && IsVisible && EditorScrolling.ShouldKeepCaret(Editor.IsFocused, UserScrolling))
                 EditorScrolling.KeepCaret(Editor, _sourceScroll, t);
         }, DispatcherPriority.Loaded);
     }
@@ -1855,10 +1870,11 @@ public sealed class EditorOverlay : Grid
     public void SelectEntireNote()
     {
         if (_note is null) return;
-        if (Mode == EditorMode.Visual) SetMode(EditorMode.Fonte);
+        if (_blocks) { _visual.SelectWholeNote(); return; }
+        if (OnSurface) SetMode(EditorMode.Fonte);
         Dispatcher.UIThread.Post(() =>
         {
-            if (!IsVisible || Mode != EditorMode.Fonte) return;
+            if (!IsVisible || OnSurface) return;
             Editor.Focus();
             Editor.SelectAll();
             TouchTextScroll.ShowSelectionHandles(Editor);
@@ -1868,7 +1884,7 @@ public sealed class EditorOverlay : Grid
     public void FinishWriting()
     {
         _wiki.Hide();
-        if (Mode == EditorMode.Visual) _visual.FinishEdit();
+        if (OnSurface) _visual.FinishEdit();
         // the focus leaves the text (the overlay takes it): the platform lowers the keyboard
         Focusable = true;
         Focus();
@@ -1917,7 +1933,7 @@ public sealed class EditorOverlay : Grid
     // Fonte: the state of the buttons is the Markdown under the caret (DEC-0045, UC-37)
     private void UpdateActiveTools()
     {
-        if (Mode != EditorMode.Fonte) return;
+        if (OnSurface) return;
         var text = Editor.Text ?? "";
         ShowActiveTools(LegacyEditorTools.ActiveTools(text, Editor.SelectionStart, Editor.SelectionEnd));
     }
@@ -1962,7 +1978,7 @@ public sealed class EditorOverlay : Grid
     }
 
     /// <summary>The calm reading mode (UX.md P3, P11): on a phone, Visual with no block being written shows only the text.</summary>
-    public bool Reading => Mode == EditorMode.Visual && !_visual.IsEditing && ToolbarAtBottom;
+    public bool Reading => OnSurface && !_visual.IsEditing && ToolbarAtBottom;
 
     private void UpdateChrome()
     {
@@ -1978,7 +1994,7 @@ public sealed class EditorOverlay : Grid
         _markdownTools.IsVisible = IsMarkdown;
         _codeTools.IsVisible = !IsMarkdown;
         // writing a block on a phone: the numbers of the footer give their line to the text
-        if (_footer is not null) _footer.IsVisible = !(ToolbarAtBottom && Mode == EditorMode.Visual && _visual.IsEditing);
+        if (_footer is not null) _footer.IsVisible = !(ToolbarAtBottom && OnSurface && _visual.IsEditing);
     }
 
     // ------------------------------------------------------------------ text changes, status, autosave
@@ -2007,7 +2023,7 @@ public sealed class EditorOverlay : Grid
         if ((Editor.Text?.Length ?? 0) < 4096) { _statsUpdate.Stop(); UpdateStatus(changed: true); }
         else { UpdateSaveDot(); ScheduleStatsUpdate(); }
         if (IsMarkdown && Properties.IsVisible) Properties.Sync(Editor.Text ?? "");
-        if (!_fromVisual && Mode == EditorMode.Fonte) { UpdateWiki(); UpdateActiveTools(); }
+        if (!_fromVisual && !OnSurface) { UpdateWiki(); UpdateActiveTools(); }
         ScheduleAutosave();
     }
 
@@ -2125,12 +2141,12 @@ public sealed class EditorOverlay : Grid
         {
             note = note with { Content = sealed_ };
             // the open text takes the same seals now, unless a block is being written (it takes them when it is left)
-            if (Mode == EditorMode.Fonte || !_visual.IsEditing)
+            if (!OnSurface || !_visual.IsEditing)
             {
                 _fromVisual = true;
                 try { ReplaceSourceText(sealed_); }
                 finally { _fromVisual = false; }
-                if (Mode == EditorMode.Visual) _visual.SetText(sealed_);
+                if (OnSurface) _visual.SetText(sealed_);
             }
         }
         if (SaveRequested is null)
@@ -2184,13 +2200,13 @@ public sealed class EditorOverlay : Grid
         _visual.FinishEdit();
         var text = Editor.Text ?? "";
         var (a, b) = VisualSurface.Range(Editor);
-        if (append || Mode == EditorMode.Visual)
+        if (append || OnSurface)
         {
             a = b = text.Length;
             if (text.Length > 0 && !text.EndsWith('\n')) insert = "\n" + insert;
         }
         ApplyEdit(new LegacyEditorTools.TextEdit(text[..a] + insert + text[b..], a + insert.Length, a + insert.Length));
-        if (Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
+        if (OnSurface) _visual.SetText(Editor.Text ?? "");
     }
 
     public Func<string, Task<string?>>? DataReader
@@ -2287,7 +2303,7 @@ public sealed class EditorOverlay : Grid
     private async Task RunToolAsync(LegacyEditorTools.ToolbarButton tool)
     {
         // v23: in the Visual mode the bar acts on the block of the caret
-        if (Mode == EditorMode.Visual) { _visual.Toolbar(tool.Id); return; }
+        if (OnSurface) { _visual.Toolbar(tool.Id); return; }
         var text = Editor.Text ?? "";
         var (a, b) = (Editor.SelectionStart, Editor.SelectionEnd);
         if (tool.Special == "noteLink")
@@ -2395,7 +2411,7 @@ public sealed class EditorOverlay : Grid
 
     private void UpdateWiki()
     {
-        if (Mode != EditorMode.Fonte) return;
+        if (OnSurface) return;
         var ctx = LegacyEditorTools.FindWikiContext(Editor.Text ?? "", Editor.CaretIndex);
         if (ctx is null) _wiki.Hide(); else _wiki.Show(Candidates(ctx.Query));
     }
@@ -2413,7 +2429,7 @@ public sealed class EditorOverlay : Grid
     public async Task InsertBoxAsync()
     {
         if (_note is null || !IsMarkdown) return;
-        if (Mode == EditorMode.Visual) { _visual.Toolbar("box"); return; }
+        if (OnSurface) { _visual.Toolbar("box"); return; }
         var text = Editor.Text ?? "";
         var (a, b) = VisualSurface.Range(Editor);
         if (await AskBoxAsync() is not { } box) { if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Editor.Focus(); return; }

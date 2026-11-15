@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261115-urbe-progress-beta56",
   "category": "HANDOFF",
-  "timestamp": "2026-11-15T19:53:02.000Z",
+  "timestamp": "2026-11-15T20:12:36.000Z",
   "agent": {
     "id": "claude-code-urbe-editor",
     "kind": "ai-agent"
@@ -41,6 +41,7 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTextAttachments.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/EditorialNotes.cs",
     "apps/urbe/csharp/src/Urbe.Core/EpubReadingDocument.cs",
@@ -58,12 +59,16 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantMemoryUsedUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CommentDialogUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EpubFootnoteUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FonteCostBenchTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PageConversionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationAdaptationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuietSelectionHandlesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RawBlocksUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ReaderEngineTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/StudyBrowserUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/BoundedReadTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorialNotesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EpubReadingTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/FormRulesTests.cs",
@@ -96,7 +101,10 @@
     "CST-022: comentários de palavras podem ser editados e excluídos na janela do 💬.",
     "CST-048: campo calculado não soma campos ocultos; grupo repetível diz qual item e campo corrigir; cada tipo de campo diz o formato certo.",
     "CST-086: a resposta mostra as lembranças que usou, com Editar e Esquecer no próprio chat.",
-    "Medição: digitação no Fonte ~30 ms/tecla vs Visual ~11 ms/tecla (runner); custo no TextBox inteiro, não nos complementos do Urbe — próxima frente do gate do editor (editor de fonte virtualizado por blocos)."
+    "Medição: digitação no Fonte ~30 ms/tecla vs Visual ~11 ms/tecla (runner); custo no TextBox inteiro, não nos complementos do Urbe — próxima frente do gate do editor (editor de fonte virtualizado por blocos).",
+    "#954 (ordem do proprietário no PR #952): causa confirmada no código e reproduzida por teste — ReadBoundedAsync alocava new byte[limite+1] = 512 MiB para todo PDF anexado (515 MB medidos para um PDF de 3 MB). Leitura agora proporcional ao arquivo, sem segunda cópia quando o tamanho é conhecido (BoundedReadTests). Confirmação no aparelho pendente (DEVICE), sem declarar o crash resolvido no Android antes disso.",
+    "#902 reconhecida: frente de estudo excepcional no celular/tablet segue em incrementos (deste PR: Modo leitura, Ler por páginas, rodapés, Anotar instante, Salvar página).",
+    "Gate do editor: Fonte por blocos em notas longas (≥ 8.000 caracteres): ~10 ms/tecla vs ~30 ms do TextBox inteiro, sem crescer com a nota; busca usa o texto inteiro; numeração de linhas ainda não aparece nesse modo."
   ],
   "verification": [
     {
@@ -117,6 +125,13 @@
       "result": "pending",
       "object": "apps/urbe/csharp/PATCHNOTES.md",
       "critical": false
+    },
+    {
+      "check": "Anexar PDF de livro ao Assistente no Android (#954)",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "critical": true
     }
   ],
   "known_issues": [

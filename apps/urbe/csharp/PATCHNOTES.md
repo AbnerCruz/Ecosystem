@@ -7,6 +7,8 @@
 
 ## Progresso nas notas (beta.56)
 
+- **Anexar um PDF ao Assistente não fecha mais o app (#954).** Ao anexar qualquer PDF, o app reservava de uma vez 512 MB de memória, o limite de tamanho, mesmo para um arquivo de 3 MB, e no celular isso estourava a memória. Agora a memória acompanha o tamanho real do arquivo, sem cópia extra. Um livro continua indo para Livros/ e o Assistente o lê por partes.
+
 - **− e + na barra de progresso.** Uma meta numérica (por exemplo, 54 de 224 páginas) muda com um toque, direto na nota, sem abrir a configuração. O valor para na meta e no zero, e Desfazer volta. Se o valor vem de uma propriedade da nota (`value: $lidas`), os botões mudam a propriedade.
 - **Checklist de uma seção.** Ao inserir um progresso (botão **%**), dá para contar só as tarefas sob um título da nota, não a nota inteira.
 - **Ver pendentes.** A barra de uma checklist mostra quantas tarefas faltam e lista quais são; tocar numa leva até ela.
@@ -21,9 +23,10 @@
 - **Editar e excluir comentários de palavras.** Na janela que abre ao tocar no 💬, cada comentário agora tem **Editar** (o texto vai para a caixa e o botão vira **Salvar**) e **Excluir**. A palavra e os outros comentários continuam como estavam. Antes, só dava para ler e acrescentar; corrigir exigia o modo Fonte.
 - **Formulários e modelos: o total não soma o que está escondido, e cada erro diz o que escrever.** Um campo calculado somava também campos que a condição tinha escondido; agora só soma o que aparece. Num grupo de itens (como uma lista de autores), o erro diz qual item e qual campo corrigir ("Item 2 — Nome: Preencha este campo."), e quantos itens faltam ou sobram. Datas, horas, cores, opções, notas, pastas e tamanho do texto dizem o formato certo ("Use uma data como 2026-12-31.") em vez de "Valor inválido".
 - **Ver e corrigir as lembranças que uma resposta usou.** Embaixo de uma resposta do Assistente aparece **Usou N lembranças** quando ele tirou algo da memória de conversas anteriores. Tocar mostra quais foram, e cada uma pode ser **editada** ou **esquecida** ali mesmo, sem sair da conversa. Antes era preciso adivinhar qual lembrança estava errada e procurá-la no gerenciador de memória.
+- **Fonte rápido em notas longas.** Numa nota com mais de 8.000 caracteres, o modo Fonte passa a editar um bloco por vez (como o Visual, mas mostrando o Markdown como está escrito). Antes, cada tecla fazia o app redesenhar a nota inteira: medido em ~30 ms por tecla numa nota de 15 KB, contra ~10 ms agora, e o custo não cresce mais com o tamanho da nota. Nas notas menores nada muda. A busca na nota usa o texto inteiro, como antes, enquanto estiver aberta. Ainda falta: nesse modo, a numeração de linhas não aparece.
 - **Blocos de código dentro de blocos de código.** Um exemplo entre `~~~` com crases dentro, ou um bloco de quatro crases, aparecia quebrado no editor e na página; agora segue a regra do Markdown (só a mesma marca, do mesmo tamanho ou maior, fecha o bloco).
 
 ## O que continua pendente
 
 - **Plano de consolidação 2.6:** os demais itens seguem para as próximas versões.
-- **No aparelho:** conferir os botões − / + e Ver pendentes com o dedo, o Anotar instante num vídeo do YouTube, o Modo leitura e Salvar página como nota em sites reais, as notas de rodapé em livros reais, Adaptar no estúdio, Converter em publicação, Ler por páginas num livro longo, Editar e Excluir comentários, Usou N lembranças, no celular e no computador.
+- **No aparelho:** conferir os botões − / + e Ver pendentes com o dedo, o Anotar instante num vídeo do YouTube, o Modo leitura e Salvar página como nota em sites reais, as notas de rodapé em livros reais, Adaptar no estúdio, Converter em publicação, Ler por páginas num livro longo, Editar e Excluir comentários, Usou N lembranças, digitar no Fonte de uma nota longa, no celular e no computador.

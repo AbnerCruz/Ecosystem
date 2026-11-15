@@ -142,7 +142,7 @@ public static partial class AppDocs
         ## Visual e Fonte
 
         - **Visual** mostra a nota formatada; toque num trecho para editar aquele bloco.
-        - **Fonte** mostra o Markdown puro.
+        - **Fonte** mostra o Markdown puro. Numa nota longa (mais de 8.000 caracteres), o Fonte edita um bloco por vez, para a digitação continuar rápida; a busca na nota volta ao texto inteiro.
         - O modo inicial fica em **Personalização → Editor**.
         - **Horário de cada bloco** (Personalização → Editor) mostra, à direita de cada bloco, quando ele mudou pela última vez. Vem das **Versões anteriores**: um bloco só movido mantém o horário, um bloco dividido, juntado, colado ou desfeito ganha o da mudança, e um bloco mais antigo que as versões guardadas mostra o dia em que a nota foi criada, quando o Urbe o conhece.
 
