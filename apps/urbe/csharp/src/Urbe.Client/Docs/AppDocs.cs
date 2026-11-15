@@ -405,7 +405,7 @@ public static partial class AppDocs
 
         ## Páginas antigas
 
-        Os arquivos `.page.json` do antigo editor de Páginas continuam no vault, sem mudança: dá para vê-los e exportá-los, mas eles não são mais editados.
+        Os arquivos `.page.json` do antigo editor de Páginas continuam no vault, sem mudança: dá para vê-los e exportá-los, mas eles não são mais editados. No menu de uma página, **Converter em publicação** leva os textos dela para notas de verdade, aponta para as notas que ela mostrava e diz o que não tem equivalente; a página antiga fica como está.
         """;
 
     private const string Assistente = """

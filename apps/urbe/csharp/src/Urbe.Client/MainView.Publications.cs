@@ -209,6 +209,42 @@ public sealed partial class MainView
         await OpenPublicationAsync(path);
     }
 
+    /// <summary>
+    /// CST-157/159: an old page turned into a publication, on command. Its text becomes real notes in
+    /// Publicações/&lt;título&gt;/, its notes are referenced, and a report says what had no equivalent. The page file is not touched.
+    /// </summary>
+    public async Task ConvertPageToPublicationAsync(string pagePath)
+    {
+        if (!VaultWritable || _store is null || _store.Get(pagePath) is not { } file) return;
+        var page = PageDocument.Parse(file.Content);
+        if (page.State is PageDocumentState.Corrupt) { await Dialogs.AlertAsync("Converter em publicação", "A página não pôde ser lida; o arquivo fica como está."); return; }
+        var store = _store;
+        var result = PageToPublication.Convert(page, path => store.Get(path) is { } d && ArtifactModel.IsNote(d.Path) ? d.Id : null);
+        if (result.Pieces.Count == 0) { await Dialogs.AlertAsync("Converter em publicação", "Nada desta página tem equivalente numa publicação.\n\n" + string.Join("\n", result.Report)); return; }
+        var title = page.Title.Trim();
+        var folder = "Publicações/" + ArtifactModel.SafeName(title);
+        var project = PublicationProject.Create(title);
+        int part = 0, texts = result.Pieces.Count(p => p.Markdown is not null);
+        foreach (var piece in result.Pieces)
+        {
+            if (piece.NoteId is { } id) { project = project.AddSource(id); continue; }
+            part++;
+            var name = texts == 1 ? title : title + " — parte " + part;
+            var created = await CreateNoteInNotesAsync(store.Get(folder + "/" + ArtifactModel.SafeName(name) + ".md") is null ? ArtifactModel.SafeName(name) : null,
+                folder, _ => Task.FromResult<string?>(piece.Markdown), open: false);
+            if (created is null || store.Get(created) is not { } note) return;   // nothing half made is hidden: the notes made so far stay
+            project = project.AddSource(note.Id);
+        }
+        var target = "Publicações/" + ArtifactModel.SafeName(title) + ".publication.json";
+        for (var n = 2; store.Get(target) is not null; n++) target = "Publicações/" + ArtifactModel.SafeName(title) + "-" + n + ".publication.json";
+        try { await ((IAssistantApp)this).CreateNoteAsync(target, PublicationProjectCodec.Serialize(project)); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível criar a publicação", StorageProblems.Explain(ex)); return; }
+        await OpenPublicationAsync(target);
+        await Dialogs.AlertAsync("Página convertida", (texts > 0 ? (texts == 1 ? "1 nota" : texts + " notas") + " com os textos da página em " + folder + ".\n" : "") +
+            "A página antiga continua em " + pagePath + ", sem mudança.\n\n" + string.Join("\n", result.Report));
+    }
+
     /// <summary>CST-135: a publication of the notes with a tag (chosen from the vault's tags).</summary>
     public async Task CreatePublicationFromTagAsync()
     {
