@@ -241,17 +241,51 @@ public sealed class VisualSurface : StackPanel
     {
         var writing = _box is not null;
         var focused = _box?.IsFocused == true;
-        SetText(text);
-        if (!writing || _readOnly) return;
+        if (!writing || _readOnly) { SetText(text); return; }
+        // the box is handed over to the block of the change (the keyboard stays)
+        if (focused) _retiring = _box;
+        _box = null;
+        _editStart = _editEnd = -1;
+        _text = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        _blocks = ComputeBlocks(_text);
+        _lastRebuiltText = null;
         caret = Math.Clamp(caret, 0, _text.Length);
         var block = _blocks.LastOrDefault(b => b.Start <= caret && (!_hideFrontmatter || b.Kind != "frontmatter")) ?? _blocks.FirstOrDefault(b => !_hideFrontmatter || b.Kind != "frontmatter");
-        if (block is null) return;
+        if (block is null) { Rebuild(); Retire(); EditingChanged?.Invoke(false); return; }
         _tapCaret = AiAuthorship.Strip(_text[block.Start..Math.Clamp(caret, block.Start, block.End)]).Length;
         StartBox(AiAuthorship.Strip(_text[block.Start..block.End]), block.Start, block.End, block.Kind);
         if (focused) _box?.Focus();
     }
 
-    public void FinishEdit()
+    public void FinishEdit() => FinishEditCore(handOver: false);
+
+    /// <summary>
+    /// Finishes the block being written because another one is opened right after (a tap on another block, an arrow,
+    /// Backspace/Delete at an edge, a new block): the old box stays in the tree, focused, until the new one takes the
+    /// focus straight from it. Taking it out first sent the focus to nothing, and Android hid the keyboard and showed it
+    /// again (the keyboard closing and opening by itself at every block change, and sometimes not coming back).
+    /// </summary>
+    private void HandOver()
+    {
+        if (_box is { } old && old.IsFocused) _retiring = old;
+        FinishEditCore(handOver: true);
+        // nothing took the focus after all (no block opened): the old box goes now
+        Dispatcher.UIThread.Post(() => { if (_box is null) Retire(); }, DispatcherPriority.Background);
+    }
+
+    // the box of the block just left, kept in the tree (and focused) until the next box takes the focus from it
+    private TextBox? _retiring;
+
+    /// <summary>The old box leaves the tree: the new one takes the focus first, so the keyboard stays.</summary>
+    private void Retire()
+    {
+        if (_retiring is not { } old) return;
+        _retiring = null;
+        if (_box is { } box && old.IsFocused && box.IsAttachedToVisualTree()) box.Focus();
+        if (old.Parent is Panel cell) cell.Children.Remove(old);
+    }
+
+    private void FinishEditCore(bool handOver)
     {
         if (_box is null) return;
         // the block keeps its place on the screen when it is drawn again (UC-57)
@@ -271,7 +305,15 @@ public sealed class VisualSurface : StackPanel
             if (!kept) Collapse(_editStart);
         }
         _editStart = _editEnd = -1;
+        if (handOver)
+        {
+            // the next box is opened at once: the blocks are read again, the drawing waits for it (one build, no flash)
+            _blocks = ComputeBlocks(_text);
+            TextEdited?.Invoke(_text);
+            return;
+        }
         Rebuild();
+        Retire();
         if (kept && Made(_holders.GetValueOrDefault(at)) is { } drawn)
         {
             if (scroll is not null && before is { } y) KeepAt(drawn, y, scroll);
@@ -336,6 +378,9 @@ public sealed class VisualSurface : StackPanel
         source.Contains("```progress", StringComparison.Ordinal) || source.Contains("```progresso", StringComparison.Ordinal) ||
         source.Contains("~~~progress", StringComparison.Ordinal);
 
+    private static IReadOnlyList<MarkdownBlock> ComputeBlocks(string text) =>
+        AiAuthorship.WithSealLines(WithContainers(MarkdownEngine.SplitBlocks(text), NoteContainers.Parse(text)), text);
+
     private void Rebuild()
     {
         var unchanged = _lastRebuiltText == _text;
@@ -352,7 +397,7 @@ public sealed class VisualSurface : StackPanel
         _holders.Clear();
         var drawn = new List<(string Source, string Kind, Control Drawn, BlockRef Ref)>();
         LastBuildDrawn = 0;
-        if (!unchanged) _blocks = AiAuthorship.WithSealLines(WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text)), _text);
+        if (!unchanged) _blocks = ComputeBlocks(_text);
         if (_blocks.Count == 0 && _box is null)
         {
             var empty = _empty ??= new Border
@@ -413,7 +458,7 @@ public sealed class VisualSurface : StackPanel
             list.Add(made);
         }
         if (!suggested) list.Add(SuggestionCard(_suggestion!));
-        if (_box is not null && !editorAdded) list.Add(EditorFor());
+        if ((_box is not null || _retiring is not null) && !editorAdded) list.Add(EditorFor());
         list.Add(_tail ??= Tail());
         Reconcile(list);
         _drawn = drawn;
@@ -482,20 +527,22 @@ public sealed class VisualSurface : StackPanel
     /// measured the whole note at each block switch). Kept drawings are in the same order in both lists (blocks keep
     /// the order of the text), so inserting in place is enough.
     /// </summary>
-    private void Reconcile(List<Control> next)
+    private void Reconcile(List<Control> next) => Reconcile(Children, this, next);
+
+    // a control that is already a child is moved in place (Move never takes it out of the tree, Remove+Insert did)
+    private static void Reconcile(Avalonia.Controls.Controls children, Panel owner, IList<Control> next)
     {
         var keep = new HashSet<Control>(next);
-        for (int i = Children.Count - 1; i >= 0; i--)
-            if (!keep.Contains(Children[i])) Children.RemoveAt(i);
+        for (int i = children.Count - 1; i >= 0; i--)
+            if (!keep.Contains(children[i])) children.RemoveAt(i);
         for (int i = 0; i < next.Count; i++)
         {
-            if (i < Children.Count && ReferenceEquals(Children[i], next[i])) continue;
-            // a kept drawing that is not here yet sits further down: what is before it is new
-            if (next[i].Parent is Panel other && !ReferenceEquals(other, this)) other.Children.Remove(next[i]);
-            if (ReferenceEquals(next[i].Parent, this)) { Children.Remove(next[i]); }
-            Children.Insert(i, next[i]);
+            if (i < children.Count && ReferenceEquals(children[i], next[i])) continue;
+            if (ReferenceEquals(next[i].Parent, owner)) { children.Move(children.IndexOf(next[i]), i); continue; }
+            if (next[i].Parent is Panel other) other.Children.Remove(next[i]);
+            children.Insert(i, next[i]);
         }
-        while (Children.Count > next.Count) Children.RemoveAt(Children.Count - 1);
+        while (children.Count > next.Count) children.RemoveAt(children.Count - 1);
     }
 
     /// <summary>UC-80: an agent's suggestion in the note — the lines it changes, what takes their place, and the answers.</summary>
@@ -696,7 +743,7 @@ public sealed class VisualSurface : StackPanel
         if (_readOnly) return;
         if (fromTouch) _tapAt = new Point(0, 0); // the empty note was tapped directly
         if (_suggestion is not null) return;
-        FinishEdit();
+        HandOver();
         var sep = _text.Length == 0 || _text.EndsWith("\n\n", StringComparison.Ordinal) ? "" : _text.EndsWith('\n') ? "\n" : "\n\n";
         _text += sep;
         var at = _text.Length;
@@ -800,7 +847,7 @@ public sealed class VisualSurface : StackPanel
     {
         var before = _text.Length;
         var startedAt = _editStart;
-        FinishEdit();
+        HandOver();
         // the previous block may have changed length: the tapped block moved with it
         var shift = _text.Length - before;
         var target = blockStart > startedAt && startedAt >= 0 ? blockStart + shift : blockStart;
@@ -903,6 +950,12 @@ public sealed class VisualSurface : StackPanel
             if (scroll is not null && anchor is { } y && box.Parent is Control cell) KeepAt(cell, y, scroll);
             Place(box, tap, caret, select);
         }
+        // the new box has the focus straight from the old one (the keyboard never sees "no text field")
+        if (_retiring is not null)
+        {
+            if (box.IsAttachedToVisualTree()) box.Focus();
+            Retire();
+        }
         EditingChanged?.Invoke(true);
         // a box not laid out yet (the surface was not on screen): the same once it is
         Dispatcher.UIThread.Post(() => { if (_box == box && !box.IsFocused) Place(box, tap, caret, select); }, DispatcherPriority.Loaded);
@@ -987,20 +1040,11 @@ public sealed class VisualSurface : StackPanel
     {
         _editorHost ??= new StackPanel { ZIndex = 1 };
         // the bubble floats over the text (a canvas of no height): showing it never pushes the block down (UC-57)
-        Control[] cell = [_backdrop, _box!, _bubbleLayer];
-        if (!_editorCell.Children.SequenceEqual(cell))
-        {
-            foreach (var c in cell) if (c.Parent is Panel old && !ReferenceEquals(old, _editorCell)) old.Children.Remove(c);
-            _editorCell.Children.Clear();
-            _editorCell.Children.AddRange(cell);
-        }
-        Control[] host = [_editorCell, _slash, _wiki];
-        if (!_editorHost.Children.SequenceEqual(host))
-        {
-            foreach (var c in host) if (c.Parent is Panel old && !ReferenceEquals(old, _editorHost)) old.Children.Remove(c);
-            _editorHost.Children.Clear();
-            _editorHost.Children.AddRange(host);
-        }
+        // the box just left stays, invisible and out of the way, until the new one has the focus (see HandOver)
+        if (_retiring is { } leaving) { leaving.IsHitTestVisible = false; leaving.Opacity = 0; leaving.Height = 0; leaving.Margin = default; }
+        Control[] cell = _box is null ? (_retiring is null ? [] : [_retiring]) : _retiring is null ? [_backdrop, _box, _bubbleLayer] : [_retiring, _backdrop, _box, _bubbleLayer];
+        Reconcile(_editorCell.Children, _editorCell, cell);
+        Reconcile(_editorHost.Children, _editorHost, [_editorCell, _slash, _wiki]);
         return _editorHost;
     }
 
@@ -1008,7 +1052,7 @@ public sealed class VisualSurface : StackPanel
 
     private void OnBoxChanged(object? sender, TextChangedEventArgs e)
     {
-        if (_box is null || _normalizingOrphanMark) return;
+        if (_box is null || _normalizingOrphanMark || !ReferenceEquals(sender, _box)) return;
         var block = _box.Text ?? "";
         // seals are the Urbe's (UC-51): one typed or pasted here is only text that pretends, so it goes
         var plain = AiAuthorship.Strip(block);
@@ -1167,6 +1211,7 @@ public sealed class VisualSurface : StackPanel
     private bool Widen(int start, int end, int anchor, int active)
     {
         var focused = _box?.IsFocused == true;
+        if (focused) _retiring = _box;
         _box = null;
         _editStart = _editEnd = -1;
         _lastRebuiltText = null;
@@ -1252,7 +1297,7 @@ public sealed class VisualSurface : StackPanel
         if (_blocks[lower].Start == _editStart && (_box?.Text ?? "x").Length == 0)
         {
             var up = _blocks[upper].Start;
-            FinishEdit();
+            HandOver();
             _caretAt = box => box.Text?.Length ?? 0;
             Edit(up);
             _caretAt = null;
@@ -1267,7 +1312,7 @@ public sealed class VisualSurface : StackPanel
         // the box being written is folded into the text first (its length may have changed)
         var before = _text.Length;
         var editing = _editStart;
-        FinishEdit();
+        HandOver();
         var shift = _text.Length - before;
         if (editing >= 0 && lowerStart > editing) lowerStart += shift;
         if (editing >= 0 && upperStart > editing) upperStart += shift;
@@ -1649,7 +1694,7 @@ public sealed class VisualSurface : StackPanel
         // hr + a new empty paragraph after it: the block becomes "---" and a fresh block is opened below
         _box.Text = "---";
         var at = _editStart;
-        FinishEdit();
+        HandOver();
         var block = _blocks.FirstOrDefault(x => x.Start == at);
         var end = block?.End ?? _text.Length;
         _text = _text[..end] + "\n\n" + _text[end..];

@@ -623,4 +623,44 @@ public sealed class EditorFlowUiTests
             return true;
         }, TestContext.Current.CancellationToken));
 
+
+    [Fact]
+    public async Task MovingBetweenBlocksNeverLeavesTheKeyboardWithoutATextField() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um parágrafo.\n\nDois parágrafos.\n\nTrês.\n\n```\ncódigo\n```\n\nQuatro.\n");
+            var focus = TopLevel.GetTopLevel(window)!.FocusManager!;
+            var gaps = new List<string>();
+            void Watch(TextBox b) => b.LostFocus += (_, e) => { if (e is not FocusChangedEventArgs { NewFocusedElement: TextBox }) gaps.Add("sem campo de texto depois de [" + b.Text + "]"); };
+            var box = Edit(editor, 0);
+            box.Focus();
+            Watch(box);
+            void Next(string what)
+            {
+                Dispatcher.UIThread.RunJobs();
+                var now = editor.Surface.EditBox!;
+                Assert.True(now.IsFocused, what);
+                if (!ReferenceEquals(now, box)) { box = now; Watch(box); }
+            }
+            box.CaretIndex = box.Text!.Length;
+            window.KeyTextInput("x");
+            // a tap on another block
+            var holder = editor.Surface.BlockView(editor.Surface.BlockStarts[1])!;
+            Click(window, PointOf(window, holder, "Dois", 1));
+            Next("tap");
+            // arrows across blocks, into and out of code
+            Key(window, Avalonia.Input.Key.Down, PhysicalKey.ArrowDown); Next("down");
+            Key(window, Avalonia.Input.Key.Down, PhysicalKey.ArrowDown); Next("down into code");
+            Key(window, Avalonia.Input.Key.Down, PhysicalKey.ArrowDown); Next("down out of code");
+            // Backspace at the start joins, Enter-like new block at the end
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 0;
+            Key(window, Avalonia.Input.Key.Left, PhysicalKey.ArrowLeft); Next("left");
+            Key(window, Avalonia.Input.Key.Right, PhysicalKey.ArrowRight); Next("right");
+            Key(window, Avalonia.Input.Key.Back, PhysicalKey.Backspace); Next("backspace at start");
+            Assert.Empty(gaps);
+            // the boxes left behind are gone from the tree
+            Assert.Single(editor.Surface.GetVisualDescendants().OfType<TextBox>());
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }
