@@ -42,6 +42,9 @@ public sealed partial class HeadlessUiTests
             Assert.False(view.AssistantLauncher.IsVisible);
             foreach (var name in new[] { "Mover", "Nova pasta", "Duplicar", "Lixeira", "Abrir", "Renomear", "Favoritar", "Publicação" })
                 Assert.Contains(view.Explorer.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == name && t.IsVisible);
+            // CST-105: every action of the bar has a name for the screen reader
+            foreach (var spoken in new[] { "Limpar seleção", "Selecionar tudo", "Mover para pasta", "Agrupar em nova pasta", "Duplicar", "Mover para a lixeira", "Abrir", "Renomear", "Favoritar", "Criar publicação com estas notas" })
+                Assert.Contains(view.Explorer.GetLogicalDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == spoken);
             var before = view.Explorer.GetLogicalDescendants().OfType<Button>().ToList();
             Assert.True(view.Explorer.TryOpenNote("Nota 01.md"));
             Assert.True(view.Explorer.TryOpenNote("Nota 02.md"));

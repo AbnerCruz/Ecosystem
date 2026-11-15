@@ -1017,6 +1017,8 @@ public sealed class NotesExplorer : Border
         var all = SmallButton(UrbeTheme.Icons.Restore, "Restaurar tudo", UrbeTheme.Text);
         all.Margin = new Thickness(0, 0, 6, 0);
         all.Click += (_, _) => RestoreAllRequested?.Invoke();
+        Avalonia.Automation.AutomationProperties.SetName(all, "Restaurar tudo");
+        Avalonia.Automation.AutomationProperties.SetName(empty, "Esvaziar a lixeira");
         var head = new DockPanel { Margin = new Thickness(12, 6, 12, 10) };
         DockPanel.SetDock(empty, Dock.Right);
         DockPanel.SetDock(all, Dock.Right);
@@ -1309,6 +1311,8 @@ public sealed class NotesExplorer : Border
             b.Resources["ButtonBackgroundDisabled"] = Brushes.Transparent;
             b.PropertyChanged += (_, e) => { if (e.Property == IsEnabledProperty) b.Opacity = b.IsEnabled ? 1 : .3; };
             ToolTip.SetTip(b, tip);
+            // CST-105: the screen reader says what each action does, not only "botão"
+            Avalonia.Automation.AutomationProperties.SetName(b, tip);
             if (action is null) return b;
             b.Click += (_, _) => { if (_selected.Count > 0) SelectionAction?.Invoke(action, _selected.ToList()); };
             // renderBar: the actions that only apply to notes are disabled when only folders are selected
