@@ -112,6 +112,7 @@ public sealed partial class MainView : Grid
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
         Editor.CreateHere = () => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", open: false);
+        Explorer.SelectingChanged += UpdateFloatingNav;
         Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
         Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
         Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };

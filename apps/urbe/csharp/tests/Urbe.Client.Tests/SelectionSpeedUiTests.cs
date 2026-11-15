@@ -35,7 +35,13 @@ public sealed partial class HeadlessUiTests
             await Settled();
 
             // a hold selects; a tap toggles: the rows stay the same controls (the tree is not rebuilt)
+            bool launcherBefore = view.AssistantLauncher.IsVisible;
             Assert.True(view.Explorer.HoldNote("Nota 00.md"));
+            // the bar has every action, named; nothing floats over it while selecting
+            Assert.True(view.Explorer.Selecting);
+            Assert.False(view.AssistantLauncher.IsVisible);
+            foreach (var name in new[] { "Mover", "Nova pasta", "Duplicar", "Lixeira", "Abrir", "Renomear", "Favoritar", "Publicação" })
+                Assert.Contains(view.Explorer.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == name && t.IsVisible);
             var before = view.Explorer.GetLogicalDescendants().OfType<Button>().ToList();
             Assert.True(view.Explorer.TryOpenNote("Nota 01.md"));
             Assert.True(view.Explorer.TryOpenNote("Nota 02.md"));
@@ -64,6 +70,8 @@ public sealed partial class HeadlessUiTests
             for (int i = 0; i < 12; i++) Assert.True(File.Exists(Path.Combine(vault, "Destino", $"Nota {i:00}.md")));
             Assert.Empty(Directory.GetFiles(vault, "*.md"));
             Assert.Empty(view.Explorer.SelectedPaths);
+            Assert.False(view.Explorer.Selecting);
+            Assert.Equal(launcherBefore, view.AssistantLauncher.IsVisible);
             window.Close();
             return true;
         }

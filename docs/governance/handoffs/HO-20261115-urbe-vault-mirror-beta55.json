@@ -53,6 +53,7 @@
     "Causa 5 (confirmada pelo print do proprietário): com o horário dos blocos ligado, a coluna dos horários (Grid *,Auto) tirava um terço da largura de cada bloco no celular; o horário agora fica sobreposto no alto à direita, sem ocupar largura, e o teste de horários confere a largura. Também: popup do Assistente com 13/11 px em texto simples. Correção: 15 px com Markdown, popup mais alto; fórmulas largas não reduzem abaixo de 85 %.",
     "Parágrafos: espaços e tabs antes do texto não aparecem mais como recuo (CommonMark); o oráculo da 1.8.4 (editor-oracle.mjs markdownFlanking) registra a mesma melhoria (DEC-0059).",
     "Teste AgentWorkspaces: corrida corrigida (o histórico é lido fora da thread de UI; o teste agora espera a lista, com limite), falhava em cerca de metade das execuções completas.",
+    "Barra de seleção refeita a partir de captura em tamanho de celular: as ações ficavam cortadas ou sob o menu flutuante; agora contagem e Selecionar tudo em cima, oito ações nomeadas em grade 4×2, barra opaca, lista com folga embaixo, menu flutuante oculto durante a seleção.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [

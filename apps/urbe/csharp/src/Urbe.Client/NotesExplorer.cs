@@ -1221,13 +1221,22 @@ public sealed class NotesExplorer : Border
     /// the compositions.</summary>
     private Control SelectionBar()
     {
-        Button Act(string icon, string tip, string? action, string color)
+        Button Act(string icon, string tip, string? action, string color, string? label = null)
         {
             var b = new Button
             {
-                Content = UrbeTheme.Icon(icon, 20, color, 1.8),
-                Width = 38,
-                MinHeight = 44,
+                Content = label is null ? UrbeTheme.Icon(icon, 20, color, 1.8) : new StackPanel
+                {
+                    Spacing = 3, HorizontalAlignment = HorizontalAlignment.Center,
+                    Children =
+                    {
+                        UrbeTheme.Icon(icon, 20, color, 1.8),
+                        new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(color), HorizontalAlignment = HorizontalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis }
+                    }
+                },
+                Width = label is null ? 38 : double.NaN,
+                HorizontalAlignment = label is null ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
+                MinHeight = label is null ? 44 : 56,
                 Padding = new Thickness(0),
                 CornerRadius = new CornerRadius(8),
                 Background = Brushes.Transparent,
@@ -1246,53 +1255,57 @@ public sealed class NotesExplorer : Border
         }
         var clear = Act(UrbeTheme.Icons.CloseUi, "Limpar seleção", null, UrbeTheme.Text2);
         // UC-83: one item selected is renamed right there, in its row
-        _renameAction = Act(UrbeTheme.Icons.Pencil, "Renomear", null, UrbeTheme.Text2);
+        _renameAction = Act(UrbeTheme.Icons.Pencil, "Renomear", null, UrbeTheme.Text2, "Renomear");
         Avalonia.Automation.AutomationProperties.SetName(_renameAction, "Renomear");
         _renameAction.Click += (_, _) => { if (_selected.Count == 1) BeginRename(_selected.First()); };
         clear.Click += (_, _) => ClearSelection();
-        _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
+        _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        _count.FontSize = 15;
+        _count.FontWeight = FontWeight.SemiBold;
         _count.Margin = new Thickness(6, 0);
-        var actions = new StackPanel
+        _count.VerticalAlignment = VerticalAlignment.Center;
+        // every action in sight, with its name (observation of 15/11/2026: organizing was hard; on the phone the
+        // actions were icons only, scrolled off the bar or under the floating button): two rows of four
+        var actions = new Avalonia.Controls.Primitives.UniformGrid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 2,
+            Columns = 4, Margin = new Thickness(0, 4, 0, 0),
             Children =
             {
-                Act(UrbeTheme.Icons.Open, "Abrir", "open", UrbeTheme.Text2),
+                Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2, "Mover"),
+                Act(UrbeTheme.Icons.Folder, "Agrupar em nova pasta", "group", UrbeTheme.Text2, "Nova pasta"),
+                Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2, "Duplicar"),
+                Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger, "Lixeira"),
+                Act(UrbeTheme.Icons.Open, "Abrir", "open", UrbeTheme.Text2, "Abrir"),
                 _renameAction,
-                Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Folder, "Agrupar em nova pasta", "group", UrbeTheme.Text2),
+                Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2, "Favoritar"),
                 // CST-135: a publication of the selected notes, in the order they were chosen (references, not copies)
-                Act(UrbeTheme.Icons.Page, "Criar publicação com estas notas", "publication", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger)
+                Act(UrbeTheme.Icons.Page, "Criar publicação com estas notas", "publication", UrbeTheme.Text2, "Publicação")
             }
         };
         // every note shown (the open folders of the tree, or every result of a search) in one tap: a big vault is
         // organized in one move, not note by note (observation of 15/11/2026)
-        var all = Act(UrbeTheme.Icons.Check, "Selecionar tudo", null, UrbeTheme.Text2);
+        var all = new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 6,
+                Children = { UrbeTheme.Icon(UrbeTheme.Icons.Check, 17, UrbeTheme.Accent, 2), new TextBlock { Text = "Selecionar tudo", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center } }
+            },
+            MinHeight = 44, Padding = new Thickness(10, 0), CornerRadius = new CornerRadius(10), Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0), VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right
+        };
+        ToolTip.SetTip(all, "Selecionar tudo");
         Avalonia.Automation.AutomationProperties.SetName(all, "Selecionar tudo");
         all.Click += (_, _) => SelectAllShown();
-        _count.VerticalAlignment = VerticalAlignment.Center;
-        // the actions scroll sideways on a narrow phone instead of being cut off
-        var scroller = new ScrollViewer
-        {
-            Content = actions, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-            HorizontalAlignment = HorizontalAlignment.Right
-        };
-        var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,*") };
-        Grid.SetColumn(all, 1);
-        Grid.SetColumn(_count, 2);
-        Grid.SetColumn(scroller, 3);
-        row.Children.Add(clear);
-        row.Children.Add(all);
-        row.Children.Add(_count);
-        row.Children.Add(scroller);
-        clear.Margin = new Thickness(0, 0, 2, 0);
+        var head = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
+        Grid.SetColumn(_count, 1);
+        Grid.SetColumn(all, 2);
+        head.Children.Add(clear);
+        head.Children.Add(_count);
+        head.Children.Add(all);
+        var row = new StackPanel { Children = { head, actions } };
         _bar.Child = row;
-        _bar.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .97);
+        _bar.Background = UrbeTheme.Brush(UrbeTheme.Surface2);
         _bar.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
         _bar.BorderThickness = new Thickness(1);
         _bar.CornerRadius = new CornerRadius(16);
@@ -1306,9 +1319,19 @@ public sealed class NotesExplorer : Border
     }
 
     /// <summary>renderBar: shown while something is selected (never in the Lixeira); "1 pasta · 2 notas".</summary>
+    /// <summary>Whether the selection bar is up (the floating menu steps aside so it covers none of its actions).</summary>
+    public bool Selecting => _bar.IsVisible;
+
+    /// <summary>The selection bar came up or went away.</summary>
+    public event Action? SelectingChanged;
+
     private void RenderBar()
     {
+        bool was = _bar.IsVisible;
         _bar.IsVisible = _selected.Count > 0 && _view != "trash";
+        // the last rows can always be scrolled above the bar
+        _list.Margin = new Thickness(8, 0, 8, _bar.IsVisible ? 170 : 88);
+        if (was != _bar.IsVisible) SelectingChanged?.Invoke();
         int f = _selected.Count(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal)), d = _selected.Count - f;
         static string Plural(int n, string one, string many) => n + " " + (n == 1 ? one : many);
         _count.Text = string.Join(" · ", new[] { f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "" }.Where(x => x.Length > 0));
