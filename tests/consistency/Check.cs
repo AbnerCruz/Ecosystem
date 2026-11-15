@@ -234,6 +234,12 @@ static class Checks
             c.R.Fail(id, $"segundo manifest raiz encontrado: {f} (a autoridade é /ecosystem.json)");
 
         var comps = c.Components().ToList();
+        // DEC-0064: importação preservada como histórico, sem segunda autoridade operacional.
+        if (comps.Any(x => x.Id == "origin-sync"))
+            c.R.Fail(id, "origin-sync não pode voltar a ser componente operacional (DEC-0064)");
+        if (File.Exists(c.P(".github/origin-sync/sync-from-ecosystem.sh")) ||
+            File.Exists(c.P(".github/origin-sync/sync-from-ecosystem.workflow.yml")))
+            c.R.Fail(id, "sincronização legada reintroduzida; somente Ecosystem publica o Lunet (DEC-0064)");
         foreach (var (a, ca) in comps)
             foreach (var (b, cb) in comps)
             {
@@ -834,6 +840,12 @@ static class Checks
             {
                 var inReal = c.Rel(f).StartsWith("docs/distribution/");
                 if (inReal && doc.RootElement.Str("status") is not ("current" or "target")) c.R.Fail(id, $"{c.Rel(f)}: perfil em docs/distribution/ precisa ter status 'current' ou 'target'");
+                // DEC-0064: o campo source.repository é proveniência da migração, nunca canal do Lunet.
+                if (inReal)
+                    foreach (var entry in doc.RootElement.Arr("entries").Where(e => e.Str("component") == "lunet2d"))
+                        foreach (var channel in entry.Arr("channels"))
+                            if (channel.Str("locationFrom") == "source.repository")
+                                c.R.Fail(id, $"{c.Rel(f)}: Lunet não pode distribuir por source.repository (DEC-0064)");
                 foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, compMap, decisionIds, c.Ecosystem!.Value)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
             }
         if (!profileFiles.Any(f => c.Rel(f) == "docs/distribution/current.profile.json")) c.R.Fail(id, "docs/distribution/current.profile.json ausente: a distribuição atual dos Products precisa estar descrita como dado (P2-12)");
@@ -2655,6 +2667,14 @@ static class SelfTest
 {
     record Case(string Name, string ExpectedCheck, Action<string> Mutate);
 
+    static void ModifyJson(string root, string rel, Action<System.Text.Json.Nodes.JsonNode> modify)
+    {
+        var path = Path.Combine(root, rel);
+        var node = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+        modify(node);
+        File.WriteAllText(path, node.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+    }
+
     static void Replace(string root, string rel, string from, string to)
     {
         var p = Path.Combine(root, rel);
@@ -2717,8 +2737,12 @@ static class SelfTest
         new("segundo ecosystem.json", "CHK-SINGLE-AUTHORITY",
             r => { Directory.CreateDirectory(Path.Combine(r, "platform")); File.WriteAllText(Path.Combine(r, "platform", "ecosystem.json"), "{}"); }),
         new("Urbe → Lunet2D", "CHK-BOUNDARIES",
-            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/urbe/package.json\" },\n      \"dependencies\": []",
-                "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/urbe/package.json\" },\n      \"dependencies\": [{ \"component\": \"lunet2d\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
+            r => ModifyJson(r, "ecosystem.json", root =>
+                root["components"]!["urbe"]!["dependencies"]!.AsArray().Add(
+                    new System.Text.Json.Nodes.JsonObject
+                    {
+                        ["component"] = "lunet2d", ["kind"] = "optional", ["reason"] = "teste"
+                    }))),
         new("Urbe referencia o Lunet2D no código", "CHK-ARCH-REFS",
             r => File.AppendAllText(Path.Combine(r, "apps", "urbe", "package.json"), "\n// usa lunet2d\n")),
         new("Lunet2D referencia o Hub no código", "CHK-ARCH-REFS",
@@ -2778,8 +2802,12 @@ static class SelfTest
         new("ID de tarefa duplicado em P4", "CHK-ROADMAP", r => File.AppendAllText(Path.Combine(r, "ROADMAP.md"), "\n- [~] P4-8 — duplicado\n")),
         new("fase ausente do ROADMAP", "CHK-ROADMAP", r => Replace(r, "ROADMAP.md", "## Fase 7 — ", "## Fase sete — ")),
         new("dependência de um componente no portal", "CHK-BOUNDARIES",
-            r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": []",
-                "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": [{ \"component\": \"portal\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
+            r => ModifyJson(r, "ecosystem.json", root =>
+                root["components"]!["consistency-checks"]!["dependencies"]!.AsArray().Add(
+                    new System.Text.Json.Nodes.JsonObject
+                    {
+                        ["component"] = "portal", ["kind"] = "optional", ["reason"] = "teste"
+                    }))),
         new("portal sem gatilho release.published", "CHK-PORTAL",
             r => Replace(r, ".github/workflows/pages.yml", "  release:\n    types: [published]\n", "")),
         new("portal não observa produtores de release do próprio token", "CHK-PORTAL",
@@ -2843,7 +2871,11 @@ static class SelfTest
         new("vertical slice: negativo não falha como esperado", "CHK-REGISTRY",
             r => Replace(r, "docs/contracts/examples/registry-slice/negative-incompatible.json", "\"error\": \"CAP_INCOMPATIBLE\"", "\"error\": \"CAP_NO_PROVIDER\"")),
         new("componente real exige capability sem contrato", "CHK-REGISTRY",
-            r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"requires\": [{ \"capability\": \"nao.existe\", \"range\": \"^1.0.0\" }],")),
+            r => ModifyJson(r, "ecosystem.json", root =>
+                root["components"]!["consistency-checks"]!["requires"] =
+                    System.Text.Json.Nodes.JsonNode.Parse("""
+                        [{"capability":"nao.existe","range":"^1.0.0"}]
+                        """))),
         new("Context fora de ordem", "CHK-REGISTRY",
             r => Replace(r, "docs/contracts/examples/context/lunet-editor.json", "\"level\": \"tool\"", "\"level\": \"project\"")),
         new("Host API v1 sem revogação", "CHK-REGISTRY",
@@ -2859,9 +2891,24 @@ static class SelfTest
         new("perfil de distribuição atual cita decisão inexistente", "CHK-REGISTRY",
             r => Replace(r, "docs/distribution/current.profile.json", "\"DEC-0008\"", "\"DEC-8888\"")),
         new("perfil de distribuição alvo sem a decisão que o sustenta", "CHK-REGISTRY",
-            r => Replace(r, "docs/distribution/target.profile.json", "\"decisions\": [\n    \"DEC-0021\",\n    \"DEC-0039\"\n  ],", "\"decisions\": [],")),
+            r => ModifyJson(r, "docs/distribution/target.profile.json", root =>
+                root["decisions"] = new System.Text.Json.Nodes.JsonArray())),
         new("perfil de distribuição alvo com canal existente sem localização", "CHK-REGISTRY",
-            r => Replace(r, "docs/distribution/target.profile.json", "\"locationFrom\": \"source.repository\",", "")),
+            r => ModifyJson(r, "docs/distribution/target.profile.json", root =>
+                root["entries"]!.AsArray()[0]!["channels"]!.AsArray()[0]!["kind"] = "github-release")),
+        new("canal legado Lunet volta ao perfil current", "CHK-REGISTRY",
+            r => ModifyJson(r, "docs/distribution/current.profile.json", root =>
+                root["entries"]!.AsArray()[0]!["channels"]!.AsArray().Add(
+                    System.Text.Json.Nodes.JsonNode.Parse("""
+                    {"id":"lunet2d-github-release","kind":"github-release","role":"alternative",
+                     "locationFrom":"source.repository","artifacts":["android-apk"]}
+                    """)))),
+        new("sincronização legada é reintroduzida", "CHK-SINGLE-AUTHORITY",
+            r => {
+                var dir = Path.Combine(r, ".github", "origin-sync");
+                Directory.CreateDirectory(dir);
+                File.WriteAllText(Path.Combine(dir, "sync-from-ecosystem.sh"), "#!/bin/sh\\nexit 0\\n");
+            }),
         new("perfil de distribuição com ecosystem.repository sem autoridade", "CHK-REGISTRY",
             r => Replace(r, "ecosystem.json", "\"repository\": \"https://github.com/AbnerCruz/Ecosystem\",", "\"repository\": \"\",")),
         new("perfil de distribuição atual removido", "CHK-REGISTRY",
@@ -3021,7 +3068,6 @@ static class SelfTest
         failures += ApplierTests(repoRoot);
         failures += ValidationApplierTests(repoRoot);
         failures += DecisionVerdictTests(repoRoot);
-        failures += OriginSyncTests(repoRoot);
         failures += RegistryUnitTests();
         failures += MigrationHistoryTests(repoRoot);
         failures += IntegrationTests();
@@ -3422,63 +3468,10 @@ static class SelfTest
         return (proc.ExitCode, o.Trim());
     }
 
-    /// <summary>Prova o espelho de distribuição das origens (plano §7): âncora na primeira execução, idempotência, propagação de mudança e remoção, deriva.</summary>
-    static int OriginSyncTests(string repoRoot)
-    {
-        var failures = 0;
-        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  espelho das origens: {name}"); if (!ok) failures++; }
-        var script = Path.Combine(repoRoot, ".github", "origin-sync", "sync-from-ecosystem.sh");
-        if (!File.Exists(script)) { Report(false, "script ausente"); return 1; }
-        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-sync-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            Directory.CreateDirectory(tmp);
-            var g = new Dictionary<string, string> { ["GIT_AUTHOR_NAME"] = "t", ["GIT_AUTHOR_EMAIL"] = "t@t", ["GIT_COMMITTER_NAME"] = "t", ["GIT_COMMITTER_EMAIL"] = "t@t" };
-            (int Code, string Output) Git(string dir, params string[] a) => Sh(dir, "git", a, g);
-            string eco = Path.Combine(tmp, "eco"), originBare = Path.Combine(tmp, "origin.git"), work = Path.Combine(tmp, "work"), bin = Path.Combine(tmp, "bin");
-            Directory.CreateDirectory(Path.Combine(eco, "apps", "demo", "sub")); Directory.CreateDirectory(bin);
-            File.WriteAllText(Path.Combine(eco, "apps", "demo", "a.txt"), "a\n"); File.WriteAllText(Path.Combine(eco, "apps", "demo", "sub", "b.txt"), "b\n");
-            File.WriteAllText(Path.Combine(bin, "gh"), "#!/usr/bin/env bash\nexit 0\n"); Sh(tmp, "chmod", ["+x", Path.Combine(bin, "gh")]);
-            Git(eco, "init", "-q", "-b", "main"); Git(eco, "add", "-A"); Git(eco, "commit", "-qm", "inicial");
-            // origem: mesmo conteúdo + .github próprio
-            Git(tmp, "clone", "-q", "--bare", eco, originBare);
-            Git(tmp, "clone", "-q", originBare, work);
-            // a origem tem a árvore na raiz (sem apps/demo): reconstruir
-            foreach (var f in Directory.GetFileSystemEntries(work).Where(x => !x.EndsWith(".git"))) { if (Directory.Exists(f)) Directory.Delete(f, true); else File.Delete(f); }
-            Directory.CreateDirectory(Path.Combine(work, "sub")); Directory.CreateDirectory(Path.Combine(work, ".github", "workflows"));
-            File.WriteAllText(Path.Combine(work, "a.txt"), "a\n"); File.WriteAllText(Path.Combine(work, "sub", "b.txt"), "b\n");
-            File.WriteAllText(Path.Combine(work, ".github", "workflows", "ci.yml"), "name: ci\n");
-            Git(work, "add", "-A"); Git(work, "commit", "-qm", "origem"); Git(work, "push", "-q", "origin", "HEAD:main");
-            var env = new Dictionary<string, string> { ["COMPONENT"] = "demo", ["ECOSYSTEM_REPO"] = eco, ["PATH"] = bin + ":" + Environment.GetEnvironmentVariable("PATH") };
-            (int Code, string Output) Sync() => Sh(work, "bash", [script], env);
-
-            var r1 = Sync();
-            Report(r1.Code == 0 && Git(work, "log", "-1", "--format=%an").Output == "github-actions[bot]" && Git(work, "log", "-1", "--format=%B").Output.Contains("Ecosystem-Tree: "), "primeira execução registra a âncora (espelho idêntico)");
-            var n1 = Git(work, "rev-list", "--count", "HEAD").Output;
-            Sync();
-            Report(Git(work, "rev-list", "--count", "HEAD").Output == n1, "segunda execução não muda nada (idempotente)");
-
-            File.AppendAllText(Path.Combine(eco, "apps", "demo", "a.txt"), "mais\n"); File.Delete(Path.Combine(eco, "apps", "demo", "sub", "b.txt")); File.WriteAllText(Path.Combine(eco, "apps", "demo", "c.txt"), "c\n");
-            Git(eco, "add", "-A"); Git(eco, "commit", "-qm", "mudança");
-            var r2 = Sync();
-            Report(r2.Code == 0 && File.ReadAllText(Path.Combine(work, "a.txt")) == "a\nmais\n" && !File.Exists(Path.Combine(work, "sub", "b.txt")) && File.Exists(Path.Combine(work, "c.txt")), "propaga mudança, remoção e arquivo novo");
-            Report(File.ReadAllText(Path.Combine(work, ".github", "workflows", "ci.yml")) == "name: ci\n", ".github da origem fica intacto");
-            Report(Git(originBare, "rev-parse", "main").Output == Git(work, "rev-parse", "HEAD").Output, "empurra para a origem");
-
-            File.AppendAllText(Path.Combine(work, "a.txt"), "humano\n"); Git(work, "add", "-A"); Git(work, "commit", "-qm", "edição humana"); Git(work, "push", "-q", "origin", "HEAD:main");
-            var before = Git(originBare, "rev-parse", "main").Output;
-            Report(Sync().Code == 1 && Git(originBare, "rev-parse", "main").Output == before, "detecta deriva e não empurra nada");
-
-            // primeira execução com espelho diferente da origem é recusada
-            var work2 = Path.Combine(tmp, "work2"); Git(tmp, "clone", "-q", originBare, work2);
-            Git(work2, "reset", "-q", "--hard", Git(work2, "rev-list", "--max-parents=0", "HEAD").Output); // histórico sem âncora
-            File.WriteAllText(Path.Combine(work2, "a.txt"), "diferente\n"); Git(work2, "add", "-A"); Git(work2, "commit", "-qm", "divergente");
-            Report(Sh(work2, "bash", [script], env).Code == 1, "primeira sincronização recusada se o espelho difere da origem");
-        }
-        catch (Exception e) { Report(false, "execução: " + e.Message); }
-        finally { try { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); } catch { } }
-        return failures;
-    }
+    // O teste de sincronização legado foi substituído por testes de regressão declarativos:
+    // CHK-SINGLE-AUTHORITY rejeita scripts/automação origin-sync;
+    // CHK-REGISTRY rejeita canal source.repository do Lunet nos perfis de distribuição.
+    // Os casos de SelfTest acima injetam essas violações para provar o enforcement.
 
     /// <summary>Prova CHK-MIGRATION-HISTORY num repositório git sintético: ponta fora do histórico, contagem errada, tag ausente/errada e o caso íntegro.</summary>
     static int MigrationHistoryTests(string repoRoot)

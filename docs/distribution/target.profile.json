@@ -4,10 +4,11 @@
   "id": "target-distribution",
   "name": "Distribuição alvo dos Products (direção, não operacional)",
   "status": "target",
-  "description": "DECISÃO DO PROPRIETÁRIO (DEC-0021-C): a plataforma first-party é a distribuição principal FUTURA, progressivamente. DEC-0039 remove o repositório legado do Urbe até como canal alternativo operacional: ele fica apenas como histórico congelado. O perfil current continua valendo até a plataforma first-party existir.",
+  "description": "Distribuição futura first-party, sem retorno do espelho Lunet2D (DEC-0064). Até que a plataforma first-party exista, o canal atual do Lunet permanece exclusivamente nas Releases do Ecosystem.",
   "decisions": [
     "DEC-0021",
-    "DEC-0039"
+    "DEC-0039",
+    "DEC-0064"
   ],
   "entries": [
     {
@@ -21,15 +22,6 @@
           "id": "lunet2d-first-party",
           "kind": "first-party-platform",
           "role": "primary",
-          "artifacts": [
-            "android-apk"
-          ]
-        },
-        {
-          "id": "lunet2d-github-release",
-          "kind": "github-release",
-          "role": "alternative",
-          "locationFrom": "source.repository",
           "artifacts": [
             "android-apk"
           ]

@@ -1,0 +1,157 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-lunet-canal-unico-e-auditoria",
+  "category": "RESULT",
+  "timestamp": "2026-11-15T19:07:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-audit",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-509",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "codex/lunet-canonical-only-audit-20261115",
+  "base_commit": "5e2a8fa0bd80836a7938a52f5d630c0fe9a41285",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ecosystem.json",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/target.profile.json",
+    "docs/governance/decisions.json",
+    "README.md",
+    "ARCHITECTURE.md",
+    "docs/migration/README.md",
+    "docs/distribution/direct-releases.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md",
+    "docs/adr/0050-lunet-canal-exclusivo-ecosystem.md",
+    "docs/architecture/audits/lunet-estado-atual-2026-11-15.md",
+    ".github/origin-sync/sync-from-ecosystem.sh",
+    ".github/origin-sync/sync-from-ecosystem.workflow.yml",
+    "apps/lunet2d/.github/workflows/ci.yml",
+    "docs/governance/handoffs/HO-20261115-lunet-canal-unico-e-auditoria.json",
+    "docs/adr/README.md",
+    "docs/migration/archive-origin-sync-legacy-2026-10-04.md",
+    "docs/governance/handoffs/HO-20261004-p4-9-cutover-workflow.json",
+    "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md",
+    "apps/lunet2d/AgentsChat.md",
+    "tests/consistency/Check.cs"
+  ],
+  "work_completed": [
+    "Desativada sincronização agendada do repositório Lunet2D antigo: commit 56f0beb1",
+    "Registradas DEC-0064, ADD-0035, ADR-0050 e exclusividade do Ecosystem em manifesto/perfis/docs",
+    "Remoção proposta de origin-sync e workflow CI legado inerte; pipelines oficiais preservados",
+    "Auditoria atualizada de framework, IDE, Studio, IA, builds, riscos e próximos passos, sem alterar código funcional",
+    "Estudo adicional LUNET-510–512 sobre Home/área de trabalho, Studios independentes e biblioteca reutilizável e explorador offline de referências; registro e critérios, sem implementação funcional.",
+    "Ajustes de consistência: ADR-0050 com seções obrigatórias e índice; migração arquivou o script removido para preservar a fonte histórica de handoff.",
+    "Self-tests ajustados para mutações semânticas de JSON (não ancorados na formatação anterior), e novos checks de regressão que rejeitam a reintrodução de origin-sync e de canal source.repository do Lunet."
+  ],
+  "verification": [
+    {
+      "check": "Inspeção dos workflows/release canônicos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Leitura direta do código e da release lunet2d-v0.0.1-dev.1000575; não é nova execução de pipeline."
+    },
+    {
+      "check": "JSON de manifesto, perfis, decisões e handoff",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "JSON parseado, assertions sobre canal único e ausência do origin-sync."
+    },
+    {
+      "check": "Execução de testes e CI do PR",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem dotnet local: ver CI da branch/PR no Ecosystem e integrador."
+    },
+    {
+      "check": "CHK-ADR e CHK-HANDOFFS reavaliados após falha inicial do CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Correções motivadas pelo log da execução 43753413760 (ADR-0050 faltava seções/índice; handoff histórico apontava script removido); aguardando novo CI."
+    },
+    {
+      "check": "Revisão do self-test de consistência após DEC-0064",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Commit 4c2d953; execução de CI do PR decide se os casos passam, não alegar conclusão antecipada."
+    }
+  ],
+  "known_issues": [
+    "Sem Android DEVICE nesta sessão; nenhum gate físico declarado concluído.",
+    "Repositório GitHub histórico permanece existente, mas seu workflow agendado foi excluído.",
+    "Risco de perda de edições posteriores ao checkpoint da IA; guard de write heurístico."
+  ],
+  "blockers": [
+    "Alterações estruturais e governança requerem review do proprietário vinculado ao head do PR (ADD-0034); não contornar."
+  ],
+  "next_actions": [
+    "Ler docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md, com planejamento LUNET-510–512; não confundir estudo com implementação.",
+    "Conferir main e PRs/CI no Ecosystem; nunca usar o repositório Lunet2D separado.",
+    "Ler docs/architecture/audits/lunet-estado-atual-2026-11-15.md e registrar próximas tarefas no ROADMAP.",
+    "Testar jornada real no Android e integridade de desfazer IA sob cancelamento/concorrência/reinício.",
+    "Fechar coesão dos Studios, performance e multiplayer sob DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/target.profile.json",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/integration-policy.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/adr/0050-lunet-canal-exclusivo-ecosystem.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma única autoridade operacional."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança estrutural expressamente decidida pelo proprietário e documentada."
+    },
+    {
+      "id": "NN-012",
+      "evidence": "Proveniência de commits migrados preservada."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Versionamento e pipeline oficial permanecem por Product."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar DEVICE por CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Status review até CI e integração."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Estado da arquitetura, distribuição e continuidade documentado."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Lunet distribuível sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "distribution"
+    ],
+    "reason": "Mudança canônica de canais e revogação da automação legada, aprovada expressamente pelo proprietário."
+  }
+}
