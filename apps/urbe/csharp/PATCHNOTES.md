@@ -33,5 +33,16 @@
 
 Tudo foi testado automaticamente. No aparelho, falta confirmar:
 - apagar uma pasta pelo gerenciador de arquivos e voltar ao app;
-- excluir várias notas e usar a Lixeira;
-- a multi-seleção com o dedo.
+- excluir várias notas e usar a Lixeira, com Restaurar tudo;
+- a multi-seleção com o dedo, com notas e fotos;
+- a nota aberta na largura inteira, com o horário dos blocos ligado;
+- mover ou apagar uma nota enquanto ela está aberta;
+- o Voltar dentro de Notas.
+
+## O que continua pendente
+
+Esta versão sai com o que foi verificado, sem esperar o plano inteiro:
+- **Plano de consolidação 2.6:** os demais itens seguem para as próximas versões, entre eles Publicações, a IA nativa, Leitura e Estudo, a identidade Numa, a acessibilidade revisada e as medições no aparelho.
+- **"Modificadas por último":** ordena pelo dia em que a nota mudou. Notas do mesmo dia ficam por nome.
+- **Arquivos (imagens, PDFs, áudio):** não têm Lixeira. Excluir apaga de vez, e o app avisa antes.
+- **Releitura da pasta ao voltar ao app:** num vault muito grande, ela leva o tempo de uma abertura em segundo plano, sem travar a tela nem as gravações.
