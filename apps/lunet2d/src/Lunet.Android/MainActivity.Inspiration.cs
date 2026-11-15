@@ -154,7 +154,7 @@ public sealed partial class MainActivity
                 if (!string.IsNullOrWhiteSpace(item.Url))
                     card.AddView(LunetUi.Button(this, "Abrir página da referência", () =>
                     {
-                        StartActivity(new Intent(Intent.ActionView, Android.Net.Uri.Parse(item.Url)));
+                        StartActivity(new Intent(Intent.ActionView, global::Android.Net.Uri.Parse(item.Url)));
                     }, ButtonStyle.Quiet));
                 if (!string.IsNullOrWhiteSpace(item.ProjectName) &&
                     _store.List().Contains(item.ProjectName, StringComparer.Ordinal))
