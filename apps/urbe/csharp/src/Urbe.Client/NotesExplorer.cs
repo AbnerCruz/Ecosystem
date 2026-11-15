@@ -962,9 +962,22 @@ public sealed class NotesExplorer : Border
         head.Children.Add(empty);
         head.Children.Add(new TextBlock { Text = items.Count + " item(ns) · restaure ou exclua de vez", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
         _list.Children.Add(head);
-        foreach (var item in items)
+        // many items (UC-78, observation of 15/11/2026: the trash was slow): only the rows near the screen are made
+        var rows = new List<Func<Control>>(items.Count);
+        foreach (var item in items) { var entry = item; rows.Add(() => TrashRow(entry)); }
+        if (rows.Count <= VirtualFrom) foreach (var make in rows) _list.Children.Add(make());
+        else
         {
-            var entry = item;
+            _rows = rows;
+            _rowsAt = _list.Children.Count;
+            _realized = (-1, -1);
+            Realize();
+        }
+    }
+
+    private Control TrashRow(TrashEntry entry)
+    {
+        {
             var restore = SmallButton(UrbeTheme.Icons.Restore, "Restaurar", UrbeTheme.Text);
             restore.Click += (_, _) => RestoreRequested?.Invoke(entry.Id);
             var purge = new Button
@@ -982,13 +995,13 @@ public sealed class NotesExplorer : Border
             ToolTip.SetTip(purge, "Excluir de vez");
             purge.Click += (_, _) => PurgeRequested?.Invoke(entry.Id);
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { restore, purge } };
-            _list.Children.Add(new Border
+            return new Border
             {
                 MinHeight = 48,
                 Padding = RowPadding(0),
                 CornerRadius = new CornerRadius(12),
                 Child = RowFrame(UrbeTheme.Icons.File, entry.Title, entry.OriginalPath, false, false, actions)
-            });
+            };
         }
     }
 

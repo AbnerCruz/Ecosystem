@@ -488,3 +488,13 @@ Issue [#945](https://github.com/AbnerCruz/Ecosystem/issues/945); branch `ccr-c71
 - [~] beta.54 — seleção, cópia e colagem no celular em todo o app: menu em português com Selecionar tudo em todos os campos; no Visual, segurar seleciona com alças e a bolha copia/recorta/cola/seleciona tudo; alça solta fora do bloco estende a seleção entre blocos; textos só de leitura (inclusive nota em leitura, painel fixado e tutorial) selecionáveis por toque prolongado.
 - [ ] Validação no aparelho (Android e Windows) de cada item acima (NN-017).
 - [ ] Fonte em notas muito longas: custo por tecla dentro do `TextBox` do Avalonia; resolver exige controle de edição próprio (decisão de arquitetura, NN-011).
+
+## Vault 1:1 com a pasta, gravações rápidas e organização — beta.55 (15/11/2026)
+
+Issue [#948](https://github.com/AbnerCruz/Ecosystem/issues/948); branch `ccr-c717cbe5-9x21rb`. Relato do proprietário: pastas apagadas no aparelho continuavam no app ("eu quero que seja um pra um"); multi-seleção, lixeira e excluir lentos ou sem resposta; Nova conversa e Personalização sem resposta; texto pequeno. Escopo canônico: Numa 2.6 §4.5 (CST-037, CST-038), §4.10 e §4.2; nenhum CST é fechado por este registro.
+
+- [~] Pastas vêm do disco (`ListFolderPathsAsync`), não de `.urbe/notas.json`; voltar ao app relê a pasta e mostra o que mudou fora dele (`RefreshFromDiskAsync`).
+- [~] Android: cada gravação confere e relê só os arquivos tocados (sem duas leituras do vault inteiro); mudança fora do app em outro arquivo não recusa mais as gravações.
+- [~] Explorer: toque durante a seleção repinta só a linha; seleção sobrevive a atualizações sem mudança; Selecionar tudo; ações rolam no celular; Lixeira virtualizada.
+- [~] Nova conversa com execução em andamento; Personalização aplica na hora e avisa falha; popup da IA a 15 px; fórmulas largas não abaixo de 85 %.
+- [ ] Validação no aparelho (NN-017): pasta apagada pelo gerenciador de arquivos, excluir várias notas, Lixeira e multi-seleção com o dedo.

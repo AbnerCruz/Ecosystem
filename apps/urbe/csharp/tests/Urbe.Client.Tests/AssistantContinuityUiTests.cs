@@ -153,13 +153,17 @@ public sealed partial class HeadlessUiTests
                     conversationScroll.VerticalScrollBarVisibility);
                 Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
                     conversationScroll.HorizontalScrollBarVisibility);
+                static string Shown(SelectableTextBlock t) => t.Text is { Length: > 0 } text ? text
+                    : string.Concat(t.Inlines?.OfType<Avalonia.Controls.Documents.Run>().Select(r => r.Text) ?? []);
                 var bubbles = conversationScroll.GetLogicalDescendants().OfType<SelectableTextBlock>()
-                    .Select(t => t.Text).ToList();
-                Assert.Equal(4, bubbles.Count);
+                    .Select(Shown).Where(t => t.Length > 0).ToList();
+                // the answers are drawn formatted (Markdown, one text per paragraph or line), the questions as typed
                 Assert.Equal("Primeira pergunta na conversa", bubbles[0]);
                 Assert.Equal("Primeira resposta da IA", bubbles[1]);
                 Assert.Equal("Segunda pergunta, com contexto", bubbles[2]);
-                Assert.Equal(fullAnswer, bubbles[3]); // No truncation, all turns remain accessible.
+                var answer = string.Join("\n", bubbles.Skip(3));
+                foreach (var line in fullAnswer.Split('\n')) Assert.Contains(line, answer); // No truncation, all turns remain accessible.
+                Assert.All(conversationScroll.GetLogicalDescendants().OfType<SelectableTextBlock>(), t => Assert.True(t.FontSize >= 15));
                 Assert.True(conversationScroll.Extent.Height > conversationScroll.Viewport.Height,
                     "A conversa completa deve exceder o viewport de leitura.");
                 conversationScroll.Offset = new Avalonia.Vector(0, 0);
