@@ -230,9 +230,9 @@ guard_authorization() {
 }
 
 guard_all_checks() {
-  gh api "repos/${repo}/commits/${HEAD_SHA}/check-runs?per_page=100" --paginate --jq '.check_runs[]' | jq -s . > /tmp/head-checks.json
-  gh api "repos/${repo}/commits/${HEAD_SHA}/statuses?per_page=100" --paginate --jq '.[]' | jq -s . > /tmp/head-statuses.json
-  python3 .github/integrator/lifecycle.py checks --checks /tmp/head-checks.json --statuses /tmp/head-statuses.json
+  gh api "repos/${repo}/commits/${HEAD_SHA}/check-runs?per_page=100" --paginate --jq '.check_runs[]' | jq -s . > /tmp/head-checks.json || return 1
+  gh api "repos/${repo}/commits/${HEAD_SHA}/statuses?per_page=100" --paginate --jq '.[]' | jq -s . > /tmp/head-statuses.json || return 1
+  python3 .github/integrator/lifecycle.py checks --checks /tmp/head-checks.json --statuses /tmp/head-statuses.json --repo "$repo" --integrator-run "${GITHUB_RUN_ID}"
 }
 
 land() {
