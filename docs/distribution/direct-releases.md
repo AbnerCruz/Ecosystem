@@ -27,9 +27,7 @@ estava abaixo desse piso; preserva io.lunet.studio e certificado SHA256 48:07:F9
 0B:F5:53:5D:20:73:44:76:E3:E3:BC:9F:E6:44:6C:70:E3:84:77:14:86:E6:AC:33:3E:DD:92:07.
 Não mudar o piso/renomear o workflow sem verificar monotonicidade de versionCode.
 
-Somente depois de publicar e conferir o primeiro APK direto, desativar
-sync-from-ecosystem.yml na origem Lunet2D. O histórico permanece. Rollback:
-reativar o espelho para diagnóstico; não distribuir APK com versionCode menor.
+**Canal único desde DEC-0064 / ADD-0035:** a sincronização `sync-from-ecosystem.yml` no Lunet2D legado foi desativada em 15/11/2026. Não reativar, consertar CI legado ou enviar releases para aquele repositório. Build, rollback compatível, assinatura e publicação acontecem exclusivamente no Ecosystem, respeitando versionCode e certificado.
 
 ## Urbe: corte direto, sem espelho
 

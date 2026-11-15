@@ -734,3 +734,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Revisão: código do seletor correto (SAF, redução, thread fora da UI/GL, request code sem colisão), mas fotos da câmera chegavam deitadas (EXIF ignorado), o item reutilizava o ID LUNET-502 (servidor dedicado; NN-019), faltavam handoff, testes e guia, e o PR estava em rascunho (o integrador não roda).
 - Correções: `ImageOrientation` (8 orientações EXIF) aplicada no `AndroidGameImagePicker`; ID novo LUNET-508; `GameImagePickerTests` (orientação, contrato, exemplo do guia compila); `docs/guides/fotos-no-jogo.md`; `capacidades.md` para a IA; handoff `HO-20261114-lunet-photo-picker.json`.
 - Verificação local: 1063 testes; build Android Debug sem erros; template standalone compila o C# (empacotamento exige jogo compilado, coberto pelo CI). DEVICE pendente.
+
+### HO-20261115-lunet-canal-unico-e-auditoria — 15/11/2026 — ChatGPT → próximo agente — estudo/review
+- Ecosystem é a única autoridade do Lunet (DEC-0064); não procurar espelho.
+- Estudo geral: `docs/architecture/audits/lunet-estado-atual-2026-11-15.md`. Nova direção: `docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md`.
+- LUNET-510: Home de trabalho sem projeto; LUNET-511: biblioteca global e Studios autônomos sem depender de `_project`; LUNET-512: explorador offline de gêneros/mecânicas/referências, IA opcional. **Somente estudo registrado, não implementado**.
+- Cuidado: fonte editável do asset e derivado do runtime via importação por cópia; não quebrar projetos existentes; imagens de referências comerciais não são assets gratuitos. UI mobile-first, prints e DEVICE.
+- PR Ecosystem #953, base `5e2a8fa`; CI de consistência e validação Android separados. Primeiro resolver riscos P0 de compilação/IA, depois executar slices de Home/Library/Explorar em paralelo quando seguros.

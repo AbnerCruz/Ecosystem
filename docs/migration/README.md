@@ -1,5 +1,7 @@
 # Estratégia de migração para o monorepo
 
+> **Atualização vigente (15/11/2026, DEC-0064):** a sincronização e a distribuição pelo antigo `AbnerCruz/Lunet2D` foram encerradas. Esse repositório serve apenas de referência histórica; desenvolvimento, PRs, CI e releases ocorrem exclusivamente no Ecosystem. O plano de importação abaixo é histórico, não instrução para reativar espelhos.
+
 > **Autoridade:** normativa para a Fase 1, subordinada a MANIFEST §11.2, §44 e às invariantes NN-012, NN-013 e NN-014.
 > Esta é a **estratégia**. Ela vale para qualquer importação futura (nenhuma importação pode ocorrer antes de: inventário completo do produto, §2, e plano de importação revisado). O estado de cada produto (`status`) é o de [`ecosystem.json`](../../ecosystem.json); o resultado da migração de Lunet2D e Urbe está em [`audit-post-migration.md`](audit-post-migration.md) e no [plano](import-plan.md).
 
