@@ -281,7 +281,7 @@ public static partial class AppDocs
         ```
 
         - `%%…%%` aparece separado no editor e fica fora das páginas e do HTML exportado.
-        - `palavra{"…"}` mostra um 💬 sobre a palavra; toque nele para ler e escrever comentários.
+        - `palavra{"…"}` mostra um 💬 sobre a palavra; toque nele para ler, escrever, **Editar** ou **Excluir** comentários.
         - `#Tag:` no começo do parágrafo dá a ele a cor da tag (Todo, Ideia, Feito, Aviso, Dúvida, Nota ou as suas, em **Personalização → Tags**).
 
         ## Caixas

@@ -1548,7 +1548,7 @@ public sealed class VisualSurface : StackPanel
     /// out (removeAtom: a display formula leaves its block empty, which then goes).
     /// </summary>
     /// <summary>The comments on a word (UC-49): shown, and the one written added at the end of the run, in the .md.</summary>
-    public Func<IReadOnlyList<string>, Task<string?>>? AskComment { get; set; }
+    public Func<IReadOnlyList<string>, Task<CommentChange?>>? AskComment { get; set; }
 
     /// <summary>UC-80: a request to an agent asked from the note (its line's button, or Ctrl+Enter on it); the line in the note's text.</summary>
     public event Action<NoteMarks.AgentCall>? AgentAsked;
@@ -1581,13 +1581,16 @@ public sealed class VisualSurface : StackPanel
         if (block is null) return;
         var groups = NoteMarks.CommentGroups(_text[block.Start..block.End]);
         if (index < 0 || index >= groups.Count) return;
-        string? added;
+        CommentChange? change;
+        var baseline = _text;
         _prompting = true;
-        try { added = await ask(groups[index].Comments); }
+        try { change = await ask(groups[index].Comments); }
         finally { _prompting = false; }
-        if (_readOnly || string.IsNullOrWhiteSpace(added)) return;
+        // the window never writes into a note or a version opened while it was open
+        if (_readOnly || change is null || _text != baseline) return;
         var g = groups[index];
-        var source = NoteMarks.AddComment(_text[block.Start..block.End], g, added);
+        var block0 = _text[block.Start..block.End];
+        var source = change.Index is { } at ? NoteMarks.ChangeComment(block0, g, at, change.Text) : NoteMarks.AddComment(block0, g, change.Text!);
         _text = _text[..block.Start] + source + _text[block.End..];
         Rebuild();
         TextEdited?.Invoke(_text);
@@ -1727,12 +1730,20 @@ public sealed class VisualSurface : StackPanel
         var at = b;
         var existing = NoteMarks.CommentGroups(text).FirstOrDefault(g => g.Start == b);
         if (existing is not null) at = existing.Start + existing.Length;
-        string? added;
+        CommentChange? change;
         _prompting = true;
-        try { added = await ask(existing?.Comments ?? []); }
+        try { change = await ask(existing?.Comments ?? []); }
         finally { _prompting = false; }
-        if (string.IsNullOrWhiteSpace(added) || _box is null || _box.Text != text) return;
-        var quoted = NoteMarks.Quote(added);
+        if (change is null || _box is null || _box.Text != text) return;
+        if (change.Index is { } index && existing is not null)
+        {
+            var changed = NoteMarks.ChangeComment(text, existing, index, change.Text);
+            var caret = Math.Min(at + changed.Length - text.Length, changed.Length);
+            Apply(new LegacyEditorTools.TextEdit(changed, caret, caret));
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(change.Text)) return;
+        var quoted = NoteMarks.Quote(change.Text);
         Apply(new LegacyEditorTools.TextEdit(text.Insert(at, quoted), at + quoted.Length, at + quoted.Length));
     }
 

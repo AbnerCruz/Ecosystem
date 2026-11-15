@@ -309,7 +309,7 @@ public sealed class EditorOverlay : Grid
         _visual.AskUrl = AskUrlAsync;
         _visual.AskBox = AskBoxAsync;
         _visual.AgentAsked += call => AgentAsked?.Invoke(call);
-        _visual.AskComment = comments => Dialogs?.CommentsAsync("Comentários", comments) ?? Task.FromResult<string?>(null);
+        _visual.AskComment = comments => Dialogs?.CommentsEditAsync("Comentários", comments) ?? Task.FromResult<CommentChange?>(null);
 
         AddRow(_header = TopBar(), 0);
         // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar
