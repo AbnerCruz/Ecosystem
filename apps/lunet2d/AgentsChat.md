@@ -741,3 +741,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-510: Home de trabalho sem projeto; LUNET-511: biblioteca global e Studios autônomos sem depender de `_project`; LUNET-512: explorador offline de gêneros/mecânicas/referências, IA opcional. **Somente estudo registrado, não implementado**.
 - Cuidado: fonte editável do asset e derivado do runtime via importação por cópia; não quebrar projetos existentes; imagens de referências comerciais não são assets gratuitos. UI mobile-first, prints e DEVICE.
 - PR Ecosystem #953, base `5e2a8fa`; CI de consistência e validação Android separados. Primeiro resolver riscos P0 de compilação/IA, depois executar slices de Home/Library/Explorar em paralelo quando seguros.
+
+### 20261115-chatgpt-lunet512-01 — 2026-11-15 (America/Sao_Paulo) — ChatGPT → próximos agentes — pronto para revisão
+- Item: LUNET-512, explorar gêneros, mecânicas e jogos para inspiração offline.
+- Base: `AbnerCruz/Ecosystem` / `main` `01aef80e94f68b639378ec47bac1fb34e3af3877`, branch `feat/lunet-512-explorar-offline-20261115`; nunca publicar no espelho Lunet2D.
+- Arquivos: `InspirationLibrary.cs`, `MainActivity.Inspiration.cs`, launcher `MainActivity.cs`, testes `InspirationLibraryTests.cs`, guia de uso, Roadmap, Changelog e handoff JSON.
+- Implementação: catálogo textual incorporado, filtro cruzado em vários eixos, pesquisa normalizada com acentos, referências pessoais, favoritos/notas armazenados atomicamente, associação opcional a projetos. Sem imagens protegidas.
+- Verificação: Código publicado no GitHub para CI canônico e compilação Android; DEVICE pendente. Não afirmar conclusão da Fase 5/UX do Lunet nem alteração de estágio.
+- Próximos passos: corrigir eventuais erros do CI, conferir navegação real/IME no Android 13 e continuar Home, biblioteca global, coesão entre Studios e engine.
