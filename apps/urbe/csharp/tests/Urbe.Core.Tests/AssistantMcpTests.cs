@@ -88,4 +88,39 @@ public sealed class AssistantMcpTests
         Assert.Equal("Previsão", server.Known["clima"].Description);
         Assert.Single(AssistantMcp.Tools(back));   // apagar is allowed but no longer offered: it stays out
     }
+
+    private const string StdioServer = """
+import sys, json
+for line in sys.stdin:
+    m = json.loads(line)
+    if "id" not in m: continue
+    method = m["method"]
+    if method == "initialize":
+        r = {"protocolVersion": m["params"]["protocolVersion"], "capabilities": {"tools": {}}, "serverInfo": {"name": "local", "version": "1"}}
+    elif method == "tools/list":
+        r = {"tools": [{"name": "eco", "description": "Repete", "inputSchema": {"type": "object", "properties": {"texto": {"type": "string"}}}}]}
+    elif method == "tools/call":
+        r = {"content": [{"type": "text", "text": "eco: " + m["params"]["arguments"]["texto"]}]}
+    else:
+        print(json.dumps({"jsonrpc": "2.0", "id": m["id"], "error": {"code": -32601, "message": "no"}}), flush=True); continue
+    print(json.dumps({"jsonrpc": "2.0", "id": m["id"], "result": r}), flush=True)
+""";
+
+    [Fact]
+    public async Task ALocalServerOnTheComputerRunsAsAProgram()
+    {
+        var python = new[] { "/usr/bin/python3", "/usr/local/bin/python3" }.FirstOrDefault(File.Exists);
+        if (python is null || !AssistantMcp.LocalServersAllowed) return;
+        var script = Path.Combine(Path.GetTempPath(), "urbe-mcp-" + Guid.NewGuid().ToString("N") + ".py");
+        File.WriteAllText(script, StdioServer);
+        try
+        {
+            var server = new AiMcpServer { Id = "l", Name = "Local", Command = python, Arguments = [script] };
+            await AssistantMcp.DiscoverAsync(server, TestContext.Current.CancellationToken);
+            server.Tools["eco"] = "read";
+            var output = await AssistantMcp.Tools(new AiConfig { McpServers = [server] }).Single().Run(new JsonObject { ["texto"] = "oi" }, null!);
+            Assert.Contains("eco: oi", output.Content);
+        }
+        finally { File.Delete(script); }
+    }
 }

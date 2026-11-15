@@ -18,8 +18,17 @@ public static partial class AssistantMcp
     /// <summary>The handler requests go through (tests put a fake server here); null uses the platform's.</summary>
     public static HttpMessageHandler? Handler { get; set; }
 
+    /// <summary>Local servers run a program: only on the computer (DEC-0061 C), never on the phone.</summary>
+    public static bool LocalServersAllowed => !OperatingSystem.IsAndroid() && !OperatingSystem.IsIOS();
+
     private static async Task<McpClient> ConnectAsync(AiMcpServer server, CancellationToken cancel)
     {
+        if (server.Command is { Length: > 0 } command)
+        {
+            if (!LocalServersAllowed) throw new AiToolException("Servidores MCP locais só funcionam no computador.");
+            var stdio = new StdioClientTransport(new StdioClientTransportOptions { Command = command, Arguments = server.Arguments, Name = server.Name }, null);
+            return await McpClient.CreateAsync(stdio, cancellationToken: cancel);
+        }
         if (!Uri.TryCreate(server.Url, UriKind.Absolute, out var url) || url.Scheme is not ("https" or "http") || url.UserInfo.Length > 0)
             throw new AiToolException("Endereço de servidor MCP inválido: use https://…");
         var options = new HttpClientTransportOptions { Endpoint = url, Name = server.Name, ConnectionTimeout = TimeSpan.FromSeconds(30) };

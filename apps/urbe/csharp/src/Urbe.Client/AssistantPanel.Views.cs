@@ -1222,10 +1222,21 @@ public sealed partial class AssistantPanel
     /// </summary>
     private async Task McpServersAsync()
     {
-        var items = _cfg.McpServers.Select(m => new DialogItem(m.Name, Detail: m.Url)).Append(new DialogItem("Adicionar servidor", UrbeTheme.Icons.Plus)).ToList();
+        var items = _cfg.McpServers.Select(m => new DialogItem(m.Name, Detail: m.Command is { } c ? "Local: " + c : m.Url)).Append(new DialogItem("Adicionar servidor", UrbeTheme.Icons.Plus)).ToList();
+        if (AssistantMcp.LocalServersAllowed) items.Add(new DialogItem("Adicionar servidor local", UrbeTheme.Icons.Plus, "Um programa deste computador"));
         if (await _app.Dialogs.ChooseAsync("Servidores MCP", items, "As ferramentas de um servidor só chegam ao Assistente depois que você libera cada uma.") is not int pick) return;
         AiMcpServer server;
-        if (pick == _cfg.McpServers.Count)
+        if (pick == _cfg.McpServers.Count + 1)
+        {
+            var line = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Comando", Placeholder: "npx -y @modelcontextprotocol/server-everything", Confirm: "Continuar",
+                Hint: "O Urbe vai executar esse programa neste computador. Adicione só servidores em que você confia."));
+            if (string.IsNullOrWhiteSpace(line)) return;
+            var parts = System.Text.RegularExpressions.Regex.Matches(line.Trim(), "\"([^\"]*)\"|(\\S+)").Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).ToList();
+            var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Nome", Value: System.IO.Path.GetFileNameWithoutExtension(parts[^1]), Confirm: "Conectar"));
+            if (name is null) return;
+            server = new AiMcpServer { Id = AssistantAgent.NewId("mcp"), Name = name.Trim(), Command = parts[0], Arguments = parts.Skip(1).ToList() };
+        }
+        else if (pick == _cfg.McpServers.Count)
         {
             var url = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Endereço", Placeholder: "https://…/mcp", Confirm: "Continuar",
                 Validate: v => Uri.TryCreate(v.Trim(), UriKind.Absolute, out var u) && u.Scheme is "https" or "http" ? null : "Use um endereço https://"));
@@ -1244,7 +1255,7 @@ public sealed partial class AssistantPanel
         }
         try { await AssistantMcp.DiscoverAsync(server); }
         catch (Exception e) when (e is not OutOfMemoryException)
-        { await _app.Dialogs.AlertAsync("Não foi possível conectar", server.Url + "\n\n" + e.Message); return; }
+        { await _app.Dialogs.AlertAsync("Não foi possível conectar", (server.Command ?? server.Url) + "\n\n" + e.Message); return; }
         if (!_cfg.McpServers.Contains(server)) _cfg.McpServers.Add(server);
         SaveConfig();
         while (true)

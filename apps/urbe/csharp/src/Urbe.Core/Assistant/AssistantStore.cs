@@ -159,6 +159,9 @@ public sealed class AiMcpServer
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Url { get; set; } = "";
+    /// <summary>A local server on the computer: the program and its arguments (instead of <see cref="Url"/>).</summary>
+    public string? Command { get; set; }
+    public List<string> Arguments { get; set; } = [];
     /// <summary>A bearer token for the server, when it asks for one (kept with the providers' keys).</summary>
     public string? Token { get; set; }
     public Dictionary<string, string> Tools { get; set; } = new(StringComparer.Ordinal);
@@ -544,7 +547,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
         // DEC-0061: the MCP servers, their permissions per tool and the tools they offered
         var mcp = new JsonArray(c.McpServers.Select(m => (JsonNode)new JsonObject
         {
-            ["id"] = m.Id, ["name"] = m.Name, ["url"] = m.Url, ["token"] = m.Token ?? "",
+            ["id"] = m.Id, ["name"] = m.Name, ["url"] = m.Url, ["token"] = m.Token ?? "", ["command"] = m.Command ?? "",
+            ["arguments"] = new JsonArray(m.Arguments.Select(a => (JsonNode)a).ToArray()),
             ["tools"] = new JsonObject(m.Tools.OrderBy(t => t.Key, StringComparer.Ordinal).Select(t => KeyValuePair.Create(t.Key, (JsonNode?)t.Value))),
             ["known"] = new JsonObject(m.Known.OrderBy(t => t.Key, StringComparer.Ordinal).Select(t => KeyValuePair.Create(t.Key, (JsonNode?)new JsonObject { ["description"] = t.Value.Description, ["schema"] = t.Value.Schema })))
         }).ToArray());
@@ -594,6 +598,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
                 c.McpServers.Add(new AiMcpServer
                 {
                     Id = Str(m["id"]), Name = Str(m["name"]), Url = Str(m["url"]), Token = Str(m["token"]) is { Length: > 0 } t ? t : null,
+                    Command = Str(m["command"]) is { Length: > 0 } command ? command : null,
+                    Arguments = (m["arguments"] as JsonArray ?? []).Select(a => Str(a)).ToList(),
                     Tools = (m["tools"] as JsonObject ?? []).Where(x => Str(x.Value) is "read" or "write").ToDictionary(x => x.Key, x => Str(x.Value), StringComparer.Ordinal),
                     Known = (m["known"] as JsonObject ?? []).Where(x => x.Value is JsonObject).ToDictionary(x => x.Key, x => new AiMcpToolInfo { Description = Str(x.Value!["description"]), Schema = Str(x.Value!["schema"], "{\"type\":\"object\"}") }, StringComparer.Ordinal)
                 });

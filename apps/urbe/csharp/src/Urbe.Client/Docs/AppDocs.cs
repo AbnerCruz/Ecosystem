@@ -494,7 +494,7 @@ public static partial class AppDocs
 
         ## Servidores MCP
 
-        Em **Configurações → Pesquisa → Servidores MCP**, adicione um servidor pelo endereço (e a chave, se ele pedir). O Urbe mostra as ferramentas que o servidor oferece; cada uma começa **desligada**. Libere como **Leitura** (o Assistente usa sem perguntar, como uma pesquisa na web) ou **Escrita** (pergunta antes de cada uso). O que o servidor responde é tratado como dado de terceiros, não como ordem.
+        Em **Configurações → Pesquisa → Servidores MCP**, adicione um servidor pelo endereço (e a chave, se ele pedir). O Urbe mostra as ferramentas que o servidor oferece; cada uma começa **desligada**. No computador também dá para adicionar um **servidor local** (um programa, com aviso antes). Libere cada ferramenta como **Leitura** (o Assistente usa sem perguntar, como uma pesquisa na web) ou **Escrita** (pergunta antes de cada uso). O que o servidor responde é tratado como dado de terceiros, não como ordem.
         """;
 
     private const string Plugins = """
