@@ -1,0 +1,56 @@
+{
+  "decision": "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+  "products": {
+    "urbe": {
+      "versionFile": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+      "format": "xml",
+      "workflow": "urbe-csharp-mobile-release.yml",
+      "tagPrefix": "urbe-csharp-v",
+      "minimumAssets": 4
+    },
+    "lunet2d": {
+      "versionFile": "apps/lunet2d/VERSION",
+      "format": "text",
+      "workflow": "lunet2d-release.yml",
+      "tagPrefix": "lunet2d-v",
+      "minimumAssets": 2,
+      "versionCodeFile": "apps/lunet2d/VERSION_CODE"
+    },
+    "hub": {
+      "versionFile": "apps/hub/VERSION",
+      "format": "text",
+      "workflow": "hub-release.yml",
+      "tagPrefix": "hub-v",
+      "minimumAssets": 2,
+      "versionCodeFile": "apps/hub/VERSION_CODE"
+    },
+    "ecosystem-ai": {
+      "versionFile": "apps/ecosystem-ai/VERSION",
+      "format": "text",
+      "workflow": "ecosystem-ai-release.yml",
+      "tagPrefix": "ecosystem-ai-v",
+      "minimumAssets": 6
+    },
+    "atlas-forge": {
+      "versionFile": "apps/atlas-forge/package.json",
+      "format": "json",
+      "workflow": "product-package-release.yml",
+      "tagPrefix": "atlas-forge-v",
+      "minimumAssets": 2
+    },
+    "math-authoring": {
+      "versionFile": "apps/math-authoring/VERSION",
+      "format": "text",
+      "workflow": "product-package-release.yml",
+      "tagPrefix": "math-authoring-v",
+      "minimumAssets": 2
+    },
+    "tabletop-rpg": {
+      "versionFile": "apps/tabletop-rpg/VERSION",
+      "format": "text",
+      "workflow": "product-package-release.yml",
+      "tagPrefix": "tabletop-rpg-v",
+      "minimumAssets": 2
+    }
+  }
+}

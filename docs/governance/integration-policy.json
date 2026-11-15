@@ -1,11 +1,14 @@
 {
   "$schema": "../contracts/schemas/integration-policy.schema.json",
   "schemaVersion": 1,
-  "decision": "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+  "decision": "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
   "mechanism": "docs/adr/0015-integrador-automatico.md",
+  "automaticProductChanges": true,
+  "grants": [{"agent": "claude", "component": "urbe", "level": "maximum", "grantedBy": "AbnerCruz", "record": "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md"}],
   "routine": "automatic",
   "critical": "owner-authorization",
   "authorization": {
+    "method": "owner-review",
     "label": "integrar",
     "authorizers": ["@repository-owner"]
   },

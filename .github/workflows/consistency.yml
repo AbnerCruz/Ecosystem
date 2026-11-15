@@ -38,6 +38,8 @@ jobs:
         run: dotnet run tests/consistency/Check.cs
       - name: P6-4 real Lunet Host + Agent Workspace pilot (test-only, two Products)
         run: dotnet run --project tests/integration/p6-lunet-host/P6LunetHost.csproj
+      - name: Lifecycle regression tests
+        run: python3 -m unittest discover -s .github/integrator/tests
       - name: Self-test (each check detects its violation)
         run: dotnet run tests/consistency/Check.cs -- --self-test
       - name: Simulação do integrador (ADR-0015; git local, sem GitHub)

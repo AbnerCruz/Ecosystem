@@ -36,6 +36,10 @@ S="$GHSTATE"; echo "gh $*" >> "$GHLOG"
 tick() { local n; n=$(( $(cat "$S/clock") + 1 )); echo "$n" > "$S/clock"; date -u -d "@$((1790000000 + n))" +%Y-%m-%dT%H:%M:%SZ; }
 arg() { local k="$1"; shift; while [ $# -gt 0 ]; do case "$1" in "$k="*) echo "${1#*=}"; return ;; esac; shift; done; }
 case "$*" in
+  "release view"*) exit 1 ;;
+  "api repos/"*"/commits/"*"/check-runs"*) echo '{"id":1,"name":"fixture-tests","status":"completed","conclusion":"success"}' ;;
+  "api repos/"*"/commits/"*"/statuses?"*) ;;
+  "api repos/"*"/actions/workflows/"*) echo '{"workflow_runs":[]}' ;;
   "pr view"*) echo "PR simulado" ;;
   "pr edit"*)
     n="$3"; lbl=""; op=""
@@ -51,6 +55,7 @@ case "$*" in
   "api -X POST repos/"*"/statuses/"*)
     sha="${4##*/}"; desc="$(arg description "$@")"; st="$(arg state "$@")"
     jq -nc --arg d "$desc" --arg s "$st" --arg t "$(tick)" '{state:$s, description:$d, created_at:$t, creator:{login:"github-actions[bot]"}}' >> "$S/statuses/$sha.jsonl" ;;
+  "api repos/"*"/pulls/"*"/reviews"*) n="$(cut -d/ -f5 <<<"$2")"; cat "$S/reviews-$n.jsonl" 2>/dev/null || true ;;
   "api repos/"*"/pulls/"*) n="${2##*/}"; cat "$S/prs/$n.json" ;;
   "api repos/"*"/issues/"*"/events"*) n="$(cut -d/ -f5 <<<"$2")"; cat "$S/events/$n.jsonl" 2>/dev/null || true ;;
   "api repos/"*"/commits/"*"/statuses"*) sha="$(cut -d/ -f5 <<<"$2")"; jq -c '{description, created_at, creator}' "$S/statuses/$sha.jsonl" 2>/dev/null || true ;;
@@ -93,9 +98,9 @@ prep() {
 finish_eval() { # finish_eval <pr> <head> [R_URBE] [R_HUB] [R_ATLAS_FORGE] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
   : > "$GHLOG"
   env GITHUB_OUTPUT=/dev/null ACTION=evaluate PR="$1" HEAD_SHA="$2" MAIN="$(out main_tested)" COMBINED="$(out combined)" CRITICALITY="$(out criticality)" \
-    REQUIRES_OWNER="$(out requires_owner)" CRITICAL_CLASSES="$(out critical_classes)" CRITICAL_REASON="$(out critical_reason)" HANDOFFS="$(out handoffs)" \
+    PRODUCTS="$(out products)" REQUIRES_OWNER="$(out requires_owner)" CRITICAL_CLASSES="$(out critical_classes)" CRITICAL_REASON="$(out critical_reason)" HANDOFFS="$(out handoffs)" \
     TRUSTED="$(out trusted)" TRUSTED_FAILURES="$(out trusted_failures)" AUTHORIZED="$(grep -qx integrar "$T/gh/labels/$1" && echo true || echo false)" MORE=false \
-    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" R_ATLAS_FORGE="${5:-skipped}" bash .github/integrator/integrate.sh finish >"$T/finish.log" 2>&1
+    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" R_ATLAS_FORGE="${5:-skipped}" bash .github/integrator/integrate.sh finish >"$T/finish.log" 2>&1 || { code=$?; cat "$T/finish.log" >&2; return "$code"; }
 }
 finish_land() { # finish_land <pr> — execução 'land' decidida pela fila real
   : > "$GHLOG"; plan "$1"
@@ -133,7 +138,7 @@ check "rotina fora do Hub: não dispara release do Hub" '! logged "workflow run 
 # 2. Rotina Urbe: bug normal em apps/urbe → CI do Urbe no estado combinado → integra sozinha.
 U="$(branch urbe 'echo "// botão corrigido" >> apps/urbe/src/app.js')"; open_pr 42 "$U"
 prep 42 "$U"; CU="$(out combined)"
-check "rotina Urbe: CI do Urbe exigido e nenhuma autorização" '[ "$(out products)" = "[\"urbe\"]" ] && [ "$(out criticality)" = routine ]'
+check "rotina Urbe: CI do Urbe exigido e nenhuma autorização" '[ "$(out products)" = "[\"urbe\"]" ] && [ "$(out requires_owner)" = false ]'
 finish_eval 42 "$U" success
 check "rotina Urbe verde: integrada automaticamente" 'main_is "$CU" && in_main "$U"'
 check "Urbe integrado: não cria release artificial do Hub" '! logged "workflow run hub-release.yml"'
@@ -152,9 +157,10 @@ finish_land 43
 check "label 'integrar' posta por não-proprietário: inválida, removida, main intocada" 'main_is "$M3" && ! grep -qx integrar "$T/gh/labels/43" && logged "remove-label integrar"'
 
 # 5. Proprietário autoriza → entra exatamente o commit combinado testado.
-label_event 43 labeled AbnerCruz
+printf '{"user":{"login":"AbnerCruz"},"commit_id":"%s","state":"APPROVED","submitted_at":"%s"}\n' "$C" "$(tick)" > "$T/gh/reviews-43.jsonl"
+label_event 43 labeled AbnerCruz # internal queue marker in this simulation; guard still requires the real review
 finish_land 43
-check "crítico autorizado pelo proprietário (evento conferido): main = commit combinado testado" 'main_is "$CC" && in_main "$C" && last_status "$C" | grep -q "^integrado .*combined=$CC critical"'
+check "governança autorizada por review do proprietário vinculada ao head: main = commit combinado testado" 'main_is "$CC" && in_main "$C" && last_status "$C" | grep -q "^integrado .*combined=$CC critical"'
 
 # 6. Ref de integração mutada depois do teste → não integra (não basta ter os mesmos pais).
 X="$(branch mutacao 'mkdir -p docs/notes && echo "outra nota" > docs/notes/mutacao.md')"; open_pr 44 "$X"
@@ -208,7 +214,7 @@ check "CI do Urbe vermelho no estado combinado: 'falhou', main intocada" 'main_i
 # 13. Hub (P3-3): mudança em apps/hub → Hub é o Product tocado → hub-ci exigido → verde integra; vermelho não mexe na main.
 H="$(branch hub 'echo "// nota" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 51 "$H"
 prep 51 "$H"; CH="$(out combined)"
-check "Hub: identificado como Product tocado (hub-ci exigido) e classificado pela política da main" '[ "$(out products)" = "[\"hub\"]" ] && [ "$(out criticality)" = routine ]'
+check "Hub: identificado como Product tocado (hub-ci exigido) e classificado pela política da main" '[ "$(out products)" = "[\"hub\"]" ] && [ "$(out requires_owner)" = false ]'
 HF="$(branch hub-vermelho 'echo "// quebra" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 52 "$HF"
 prep 52 "$HF"; M13="$(git --git-dir="$T/origin.git" rev-parse main)"; finish_eval 52 "$HF" skipped failure
 check "hub-ci vermelho no estado combinado: 'falhou' citando hub-ci, main intocada" 'main_is "$M13" && last_status "$HF" | grep -q "^falhou" && last_status "$HF" | grep -q "hub-ci"'
@@ -310,9 +316,11 @@ AF="$(branch atlas-forge-ci-red 'echo "// CI fixture" >> apps/atlas-forge/src/co
 prep 55 "$AF"; AF_MAIN="$(git --git-dir="$T/origin.git" rev-parse main)"
 finish_eval 55 "$AF" skipped skipped failure
 check "Atlas Forge: CI vermelho impede integração" 'main_is "$AF_MAIN" && last_status "$AF" | grep -q "^falhou"'
+finish_eval 55 "$AF" skipped skipped skipped
+check "Product tocado com CI skipped não passa por verde" 'main_is "$AF_MAIN" && last_status "$AF" | grep -q "^falhou"'
 finish_eval 55 "$AF" skipped skipped success
 check "Atlas Forge: CI verde permite integração rotineira do estado testado" 'in_main "$AF" && last_status "$AF" | grep -q "^integrado"'
-check "Atlas Forge: integrar não publica release de outro Product" '! logged "workflow run lunet2d-release.yml" && ! logged "workflow run hub-release.yml" && ! logged "workflow run urbe-release.yml"'
+check "Atlas Forge: só cria intenção nova para o próprio Product (retries antigos são permitidos)" '! git --git-dir="$T/origin.git" diff --name-only "$AF_MAIN" main -- docs/distribution/release-queue | grep -v "^docs/distribution/release-queue/atlas-forge/" | grep -q .'
 
 check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH" "$C14" "$C16"; do in_main "$x" || exit 1; done )'
 

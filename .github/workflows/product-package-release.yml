@@ -1,0 +1,84 @@
+name: product-package-release
+run-name: product-package-release ${{ inputs.source_sha || github.sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        type: choice
+        options: [atlas-forge, math-authoring, tabletop-rpg]
+        required: true
+      source_sha:
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: package-release-${{ inputs.product }}
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test, package and publish the exact product revision
+        env:
+          PRODUCT: ${{ inputs.product }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          case "$PRODUCT" in
+            atlas-forge)
+              cd apps/atlas-forge
+              npm ci
+              npx playwright install --with-deps chromium
+              npm run check
+              mkdir -p ../../out
+              (cd dist && zip -qr ../../../out/atlas-forge.zip .)
+              cd ../..
+              ;;
+            math-authoring|tabletop-rpg)
+              # These Products currently ship libraries, not an invented Android client.
+              cd "apps/$PRODUCT"
+              if [ "$PRODUCT" = math-authoring ]; then
+                dotnet test --project tests/MathAuthoring.Core.Tests
+              else
+                dotnet test --project tests/TabletopRpg.Core.Tests
+              fi
+              mkdir -p ../../out/packages
+              for project in src/*/*.csproj; do
+                dotnet pack "$project" -c Release -p:PackageVersion="$(cat VERSION)" -o ../../out/packages
+              done
+              cd ../..
+              (cd out/packages && zip -qr "../$PRODUCT-libraries.zip" .)
+              rm -rf out/packages
+              ;;
+            *) echo 'Unknown Product'; exit 1 ;;
+          esac
+          version=$(python3 -c 'import sys; sys.path.insert(0,".github/integrator"); import lifecycle as l; print(l.read_version(l.ROOT,l.config()[sys.argv[1]]))' "$PRODUCT")
+          tag="$PRODUCT-v$version"
+          (cd out && sha256sum *.zip > SHA256SUMS.txt)
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 && exit 0
+          printf 'Product: %s\nVersion: %s\nSource: %s\n\nAutomated checks passed. Physical-device validation is recorded separately.\n' "$PRODUCT" "$version" "$SOURCE_SHA" > out/notes.md
+          gh release create "$tag" out/*.zip out/SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" \
+            $(python3 .github/integrator/release-metadata.py flags "$version") --title "$PRODUCT $version" --notes-file out/notes.md
