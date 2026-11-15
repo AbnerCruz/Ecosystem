@@ -60,6 +60,7 @@
     "Barra de seleção refeita a partir de captura em tamanho de celular: as ações ficavam cortadas ou sob o menu flutuante; agora contagem e Selecionar tudo em cima, oito ações nomeadas em grade 4×2, barra opaca, lista com folga embaixo, menu flutuante oculto durante a seleção.",
     "Excluir seleção: o aviso CST-226 lia o vault inteiro uma vez por nota escolhida antes da confirmação (na thread de UI); NoteUsage.OfMany responde por todas numa única passagem.",
     "Computador (FolderVaultStorage): a mesma verificação só dos arquivos tocados (Known/After). Medido num vault de 2.000 notas (headless): mover 30 notas 2108 → 784 ms; confirmação de excluir 30, 534 → 102 ms; excluir 30 depois de confirmar, 650 → 319 ms. Testes de armazenamento reescritos para a nova regra: mudança externa no arquivo gravado continua recusando; em outro arquivo, não.",
+    "Releitura ao voltar ao app sem segurar a trava do vault (ReloadQuietlyAsync, Android e computador): uma gravação feita logo depois de voltar não espera a leitura da pasta inteira; a leitura só é aplicada se nada foi gravado enquanto ela corria (contador de geração da base).",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [
@@ -93,7 +94,7 @@
   "known_issues": [
     "CI do integrador: android-runtime-smoke falhou uma vez em 4a1f14f porque o adb caiu durante o despejo do logcat (logcat.txt cortado às 13:53:31, gravado às 13:53:51; pidof não chegou a rodar); o mesmo teste passou no urbe-checks do mesmo commit. Infraestrutura do emulador, não queda do app.",
     "Teste Source_DraggingAFingerScrolls (gesto de arremesso por tempo) falhou uma vez no CI em Release: com a máquina carregada o gesto vira arrasto lento, que corretamente não desliza; o teste agora mede o gesto e o refaz quando a máquina travou (até 3 vezes), sem mudar a asserção.",
-    "A releitura ao voltar ao app lê a pasta inteira em segundo plano (com o cache por tamanho/data do Android); num vault muito grande isso leva o tempo de uma abertura, sem bloquear a tela.",
+    "A releitura ao voltar ao app lê a pasta inteira em segundo plano (com o cache por tamanho/data do Android), sem segurar a trava: num vault muito grande ela leva o tempo de uma abertura, sem bloquear a tela nem as gravações.",
     "Renomear pasta ainda relê o vault uma vez depois da operação, para conferir cada caminho renomeado."
   ],
   "blockers": [],

@@ -52,7 +52,15 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private IReadOnlyList<string>? _listing;
     /// <summary>The folders found by the walk of the last opening (ListFolderPathsAsync right after it).</summary>
     private IReadOnlyList<string>? _folderListing;
-    private IReadOnlyDictionary<string, VaultFile>? _baseline;
+    private IReadOnlyDictionary<string, VaultFile>? _known;
+    /// <summary>Incremented whenever the known files change (a write, an opening): a reading made without the lock is
+    /// applied only when nothing was written meanwhile.</summary>
+    private long _generation;
+    private IReadOnlyDictionary<string, VaultFile>? _baseline
+    {
+        get => _known;
+        set { _known = value; Interlocked.Increment(ref _generation); }
+    }
     public bool IsConnected => _tree is not null && _baseline is not null;
     public string? AtlasVaultSessionKey => _tree?.ToString();
 
@@ -184,6 +192,31 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             _listing = listing;
             _folderListing = folders;
             return VaultReader.Read(files, UrbeApp.InstalledVersion);
+        }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>
+    /// The vault read again WITHOUT holding the lock (coming back to the app): a save tapped meanwhile never waits for
+    /// the walk of the whole folder. The reading is applied only when nothing was written while it ran; otherwise null
+    /// (the next return reads again).
+    /// </summary>
+    public async Task<VaultSnapshot?> ReloadQuietlyAsync(CancellationToken cancellationToken = default)
+    {
+        if (_tree is not { } tree) return null;
+        long generation = Interlocked.Read(ref _generation);
+        var listing = new List<string>();
+        var folders = new List<string>();
+        var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
+        var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!ReferenceEquals(tree, _tree) || Interlocked.Read(ref _generation) != generation) return null;
+            _baseline = Snapshot(files);
+            _listing = listing;
+            _folderListing = folders;
+            return snapshot;
         }
         finally { _gate.Release(); }
     }

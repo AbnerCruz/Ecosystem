@@ -64,6 +64,12 @@ public interface IUrbeVaultStorage
     Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(null);
 
     /// <summary>
+    /// The open folder read again for the return to the app, without making writes wait for the reading: applied only
+    /// when nothing was written while it ran, otherwise null. Hosts that cannot do it read it as <see cref="ReloadAsync"/>.
+    /// </summary>
+    Task<VaultSnapshot?> ReloadQuietlyAsync(CancellationToken cancellationToken = default) => ReloadAsync(cancellationToken);
+
+    /// <summary>
     /// Every file of the vault as it is on disk now, notes and attachments alike (exportarVault reads them all for the
     /// .zip), without following links out of the folder and within the same limits as the open. Read only: nothing is
     /// written. Hosts must override it.

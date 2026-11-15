@@ -24,7 +24,15 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     private readonly string _selectionFile;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _root;
-    private IReadOnlyDictionary<string, VaultFile>? _baseline;
+    private IReadOnlyDictionary<string, VaultFile>? _known;
+    /// <summary>Incremented whenever the known files change (a write, an opening): a reading made without the lock is
+    /// applied only when nothing was written meanwhile.</summary>
+    private long _generation;
+    private IReadOnlyDictionary<string, VaultFile>? _baseline
+    {
+        get => _known;
+        set { _known = value; Interlocked.Increment(ref _generation); }
+    }
 
     /// <param name="pickFolder">Asks the person for a folder (native picker); null when cancelled.</param>
     /// <param name="selectionFile">Where the chosen folder is remembered (app data, not the vault).</param>
@@ -81,6 +89,24 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) =>
         _root is { } root ? await OpenAsync(root, cancellationToken) : null;
+
+    /// <summary>The vault read again without holding the lock (the window activated); applied only when nothing was
+    /// written meanwhile, else null.</summary>
+    public async Task<VaultSnapshot?> ReloadQuietlyAsync(CancellationToken cancellationToken = default)
+    {
+        if (_root is not { } root) return null;
+        long generation = Interlocked.Read(ref _generation);
+        var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
+        var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!string.Equals(root, _root, StringComparison.Ordinal) || Interlocked.Read(ref _generation) != generation) return null;
+            _baseline = Snapshot(files);
+            return snapshot;
+        }
+        finally { _gate.Release(); }
+    }
 
     private async Task<VaultSnapshot> OpenAsync(string root, CancellationToken cancellationToken)
     {

@@ -21,7 +21,7 @@ public sealed partial class MainView
         _refreshingFromDisk = true;
         try
         {
-            if (await vault.ReloadAsync() is not { } snapshot) return false;
+            if (await vault.ReloadQuietlyAsync() is not { } snapshot) return false;   // writes never wait for this reading
             IReadOnlyList<string> files;
             IReadOnlyList<string>? folders;
             try
