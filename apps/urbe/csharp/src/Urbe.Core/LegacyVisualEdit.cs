@@ -100,12 +100,59 @@ public static partial class LegacyVisualEdit
     {
         var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
         var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        // Markdown only reads a mark that touches the text: "**palavra **" stays as stars. The spaces a selection
+        // takes at its ends (a double tap often takes the space after the word) stay outside the marks.
+        if (b > a && text.AsSpan(a, b - a).Trim().Length > 0)
+        {
+            while (a < b && char.IsWhiteSpace(text[a])) a++;
+            while (b > a && char.IsWhiteSpace(text[b - 1])) b--;
+        }
+        // a selection over several lines: each line gets its own marks (a mark never crosses a line break)
+        if (text.AsSpan(a, b - a).Contains('\n'))
+            return EachLine(text, a, b, marker);
         var m = marker.Length;
         if (a >= m && b + m <= text.Length && text.AsSpan(a - m, m).SequenceEqual(marker) && text.AsSpan(b, m).SequenceEqual(marker) && (marker.Length > 1 || !IsDouble(text, a - 1, b)))
             return new(text[..(a - m)] + text[a..b] + text[(b + m)..], a - m, b - m);
         if (b - a >= 2 * m && text.AsSpan(a, m).SequenceEqual(marker) && text.AsSpan(b - m, m).SequenceEqual(marker))
             return new(text[..a] + text[(a + m)..(b - m)] + text[b..], a, b - 2 * m);
         return new(text[..a] + marker + text[a..b] + marker + text[b..], a + m, b + m);
+    }
+
+    private static bool InsideWord(string text, int a, int b)
+    {
+        while (a < b && char.IsWhiteSpace(text[a])) a++;
+        while (b > a && char.IsWhiteSpace(text[b - 1])) b--;
+        return a > 0 && char.IsLetterOrDigit(text[a - 1]) || b < text.Length && char.IsLetterOrDigit(text[b]);
+    }
+
+    private static LegacyEditorTools.TextEdit EachLine(string text, int a, int b, string marker)
+    {
+        var sb = new System.Text.StringBuilder(text.Length + 16);
+        sb.Append(text, 0, a);
+        var lines = text[a..b].Split('\n');
+        // all of them marked already: the marks go; otherwise every line gets them
+        static string Prefix(string core) => System.Text.RegularExpressions.Regex.Match(core, @"^(#{1,6}\s+|>\s?|[-*+]\s+(\[[ xX]\]\s+)?|\d+[.)]\s+)").Value;
+        bool allMarked = lines.Select(l => l.Trim()).Where(c => c.Length > 0).Select(c => c[Prefix(c).Length..]).Where(body => body.Length > 0)
+            .All(body => body.Length >= 2 * marker.Length && body.StartsWith(marker, StringComparison.Ordinal) && body.EndsWith(marker, StringComparison.Ordinal));
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (i > 0) sb.Append('\n');
+            var line = lines[i];
+            var core = line.Trim();
+            if (core.Length == 0) { sb.Append(line); continue; }
+            int lead = line.Length - line.TrimStart().Length, trail = line.Length - line.TrimEnd().Length;
+            // a list, quote or heading mark stays outside: "- **item**", not "**- item**"
+            var prefix = Prefix(core);
+            var body = core[prefix.Length..];
+            sb.Append(line, 0, lead).Append(prefix);
+            if (body.Length == 0) { }
+            else if (allMarked) sb.Append(body, marker.Length, body.Length - 2 * marker.Length);
+            else sb.Append(marker).Append(body).Append(marker);
+            sb.Append(line, line.Length - trail, trail);
+        }
+        var changed = sb.Length - a;
+        sb.Append(text, b, text.Length - b);
+        return new(sb.ToString(), a, a + changed);
     }
 
     // "_" next to another "_" is the bold form of the other syntax, not italic
@@ -139,7 +186,8 @@ public static partial class LegacyVisualEdit
         return id switch
         {
             "code" => InlineCode(text, a, b),
-            "italic" => ToggleWrap(text, a, b, "_"),
+            // "_" inside a word is not read as italic ("pala_vra_"): there the star is used
+            "italic" => ToggleWrap(text, a, b, InsideWord(text, a, b) ? "*" : "_"),
             _ => ToggleWrap(text, a, b, "**"),
         };
     }

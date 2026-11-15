@@ -2284,8 +2284,12 @@ public sealed class EditorOverlay : Grid
         if (tool.Id is "bold" or "italic" or "code" && LegacyEditorTools.EnclosingMark(text, s, e, tool.Id) is not null)
         { ApplyEdit(LegacyVisualEdit.ToggleMark(text, s, e, tool.Id)); return; }
         if (tool.Id == "code") { ApplyEdit(LegacyVisualEdit.InlineCode(text, s, e)); return; }
-        if (tool.Id is "h1" or "h2" or "h3" or "list" or "task" or "quote" && LegacyEditorTools.ActiveTools(text, s, e).Contains(tool.Id))
-        { ApplyEdit(LegacyVisualEdit.ToggleBlock(text, s, tool.Md!)); return; }
+        // bold and italic as in Visual: marks hugging the text (spaces outside), one pair per line, * inside a word
+        if (tool.Id is "bold" or "italic") { ApplyEdit(LegacyVisualEdit.ToggleMark(text, s, e, tool.Id)); return; }
+        // a heading, list, task or quote mark goes at the start of the line (never in the middle of a word), and comes
+        // off when it is there: as in Visual
+        if (tool.Id is "h1" or "h2" or "h3" or "list" or "task" or "quote" && tool.Md is { } mark)
+        { ApplyEdit(LegacyVisualEdit.ToggleBlock(text, s, mark)); return; }
         if (LegacyEditorTools.ApplySource(tool, text, a, b) is { } edit) ApplyEdit(edit);
     }
 
