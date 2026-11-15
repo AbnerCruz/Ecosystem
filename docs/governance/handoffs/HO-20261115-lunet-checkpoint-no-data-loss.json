@@ -48,7 +48,8 @@
       "check": "Android 13 DEVICE - IA escreve, pessoa edita, desfazer e reabrir",
       "kind": "human",
       "result": "pending",
-      "critical": false
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/ia-lunet.md"
     }
   ],
   "known_issues": [
