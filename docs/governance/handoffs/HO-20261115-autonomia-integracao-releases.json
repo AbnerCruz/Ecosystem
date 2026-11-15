@@ -2,18 +2,18 @@
   "schemaVersion": 1,
   "message_id": "HO-20261115-autonomia-integracao-releases",
   "category": "HANDOFF",
-  "timestamp": "2026-11-15T18:15:09Z",
+  "timestamp": "2026-11-15T18:56:44Z",
   "agent": {
     "id": "codex-ecosystem-autonomy",
     "kind": "ai-agent"
   },
   "task_id": "GOV-0063",
   "component": "integrator",
-  "state": "review",
+  "state": "done",
   "branch": "codex/ecosystem-autonomy-releases",
   "base_commit": "c6be69dc764995dea7b93bbdf28b17ed0df0e99d",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/951",
   "files_changed": [
     ".github/integrator/integrate.sh",
     ".github/integrator/lifecycle.py",
@@ -86,25 +86,26 @@
       "evidence": "dotnet run tests/consistency/Check.cs -- --self-test: todos os checks provaram detectar suas violações (log local final)."
     },
     {
-      "check": "CI GitHub do PR #950",
+      "check": "CI GitHub do código final (PR #951)",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Lunet CI e Ecosystem AI release aprovados; teste obsoleto do Hub corrigido para nova execução. https://github.com/AbnerCruz/Ecosystem/pull/950"
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43748653250 — consistency completo, onze regressões, self-test e simulação aprovados. PR #950 integrou a base em 741074559b186976cd097d6bf7884b771cb88c67; #951 leva a correção final de autoespera.",
+      "tested_commit": "f6c06da74c6062e30f87b3828cc57dc30b9b3388"
+    },
+    {
+      "check": "Empacotamento dos Products de bibliotecas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet pack -c Release: dois pacotes Math Authoring e seis Tabletop RPG construídos localmente; versões canônicas preservadas."
     }
   ],
   "known_issues": [
-    "A concessão por nome de agente é autoridade de processo: a mesma credencial GitHub não autentica fornecedores diferentes.",
+    "A concessão por nome de agente é autoridade de processo: credencial GitHub compartilhada não autentica fornecedores diferentes.",
     "Math Authoring e Tabletop RPG distribuem bibliotecas; não possuem APK inventado.",
-    "Publicação no GitHub e validação física ainda não executadas neste handoff."
+    "Despachos de release foram simulados e pacotes de bibliotecas construídos; não há validação física inferida nesta mudança de governança."
   ],
-  "blockers": [
-    "Validação final automatizada e CI do PR."
-  ],
-  "next_actions": [
-    "Concluir regressões e atualizar evidência.",
-    "Abrir PR e verificar CI no head exato.",
-    "Aplicar a migração de governança expressamente autorizada pelo proprietário; não simular sua review nem usar label."
-  ],
+  "blockers": [],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

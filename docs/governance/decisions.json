@@ -2284,7 +2284,7 @@
       "related": [
         "docs/adr/0049-autonomia-por-escopo-e-releases-automaticas.md"
       ],
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }
