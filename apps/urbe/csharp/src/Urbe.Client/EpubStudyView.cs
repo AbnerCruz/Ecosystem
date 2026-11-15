@@ -24,6 +24,12 @@ public sealed class EpubStudyView : Grid, IDisposable
     private readonly ProgressBar _progress = new() { Minimum = 0, Height = 4 };
     private readonly Ui.UrbeIconButton _previous = new(UrbeTheme.Icons.Back, "Capítulo anterior"), _next = new(UrbeTheme.Icons.Forward, "Próximo capítulo");
     private readonly Ui.UrbeButton _moreSearch = new("Buscar mais", Ui.ButtonKind.Ghost);
+    // a footnote shown where it is read (outside the page's area: a native page covers anything drawn over it)
+    private readonly Border _note = new() { IsVisible = false, Padding = new Thickness(12, 8), Margin = new Thickness(4, 4, 4, 0), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1) };
+    private readonly SelectableTextBlock _noteText = new() { TextWrapping = TextWrapping.Wrap, FontSize = 15 };
+    private (int Part, string Anchor) _noteTarget;
+    /// <summary>The footnote shown now (tests); null when none.</summary>
+    public string? ShownNote => _note.IsVisible ? _noteText.Text : null;
     private bool _updating, _textMode;
     private volatile bool _closed;
     private int _version;
@@ -126,6 +132,13 @@ public sealed class EpubStudyView : Grid, IDisposable
         _moreSearch.IsVisible = false; _moreSearch.Click += async (_, _) => await SearchAsync(_searchQuery, true);
         _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         var footer = new StackPanel { Children = { _progress, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { quote, highlight, comment, bookmark, ask, _moreSearch } } }, _status } };
+        _note.Background = UrbeTheme.Brush(UrbeTheme.Surface2);
+        _note.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _noteText.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        var goToNote = Chip("Ir até a nota", UrbeTheme.Icons.Forward, async () => { _note.IsVisible = false; await FollowChapterAsync(_noteTarget.Part, _noteTarget.Anchor); });
+        var closeNote = Chip("Fechar", UrbeTheme.Icons.Close, () => { _note.IsVisible = false; return Task.CompletedTask; });
+        _note.Child = new StackPanel { Spacing = 4, Children = { new ScrollViewer { MaxHeight = 220, Content = _noteText }, new StackPanel { Orientation = Orientation.Horizontal, Children = { goToNote, closeNote } } } };
+        footer.Children.Insert(0, _note);
         SetRow(footer, 4); Children.Add(footer);
         _progress.Maximum = book.Chapters.Count;
         if (compact) { buttonScroll.IsVisible = search.IsVisible = footer.IsVisible = false; }
@@ -138,6 +151,7 @@ public sealed class EpubStudyView : Grid, IDisposable
     public async Task GoToChapterAsync(int index, int offset = 0, int length = 0, double scroll = 0)
     {
         if (_closed) return;
+        _note.IsVisible = false;
         CurrentOffset = Math.Max(0, offset); _highlightLength = Math.Max(0, length); CurrentScroll = Math.Clamp(scroll, 0, 1);
         CurrentChapter = Math.Clamp(index, 0, _book.Chapters.Count - 1);
         _updating = true; _chapters.SelectedIndex = CurrentChapter; _updating = false;
@@ -238,13 +252,24 @@ public sealed class EpubStudyView : Grid, IDisposable
     private void FollowLink(string target)
     {
         if (ReaderUris.Web(target) is not { } uri) return;
-        if (uri.Host == "urbe.reader.invalid" && int.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out int part)) _ = FollowChapterAsync(part,uri.Fragment.TrimStart('#'));
+        if (uri.Host == "urbe.reader.invalid" && int.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out int part)) _ = FollowBookLinkAsync(part, Uri.UnescapeDataString(uri.Fragment.TrimStart('#')));
         else ExternalLinkRequested?.Invoke(uri.AbsoluteUri);
     }
+    /// <summary>A link inside the book: a footnote or endnote opens under the page, where it is read; anything else goes there.</summary>
+    public async Task FollowBookLinkAsync(int part, string anchor)
+    {
+        var note = anchor.Length == 0 ? null : await Task.Run(() => { lock (_gate) return _closed ? null : _book.Footnote(part, anchor); });
+        if (_closed) return;
+        if (note is null) { await FollowChapterAsync(part, anchor); return; }
+        _noteTarget = (part, anchor);
+        _noteText.Text = note;
+        _note.IsVisible = true;
+    }
+
     private async Task FollowChapterAsync(int part,string anchor)
     {
         await GoToChapterAsync(part);
-        if (!_closed && anchor.Length>0 && _body.Content is IReaderTextLocation locator)await locator.GoToReaderAnchorAsync(Uri.UnescapeDataString(anchor));
+        if (!_closed && anchor.Length>0 && _body.Content is IReaderTextLocation locator)await locator.GoToReaderAnchorAsync(anchor);
     }
     private async Task WithSelectionAsync(bool ask, StudyAnnotationKind kind = StudyAnnotationKind.Citation)
     {

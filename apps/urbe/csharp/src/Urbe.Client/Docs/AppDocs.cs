@@ -193,6 +193,8 @@ public static partial class AppDocs
         - Num vídeo do YouTube, que toca no player oficial, **Anotar instante** cria na nota um link para o momento em que o vídeo está, como “Vídeo em 3:25”. O campo do instante serve para ajustar à mão.
         - Nada da página é guardado sem você pedir, e a página não tem acesso às suas notas.
 
+        Num livro (EPUB), tocar no número de uma nota de rodapé mostra a nota embaixo da página, sem sair do capítulo; **Ir até a nota** leva até ela.
+
         ## Fórmulas
 
         Escreva LaTeX entre `$…$` no texto ou `$$…$$` em destaque, por exemplo $E = mc^2$. O botão **∑** (ou **Ctrl+M**) abre o editor de fórmulas, com **No texto** / **Destaque**, prévia, símbolos e modelos. Toque numa fórmula pronta para editar.
