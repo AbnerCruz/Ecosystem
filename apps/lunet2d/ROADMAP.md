@@ -12,6 +12,10 @@ Fonte de verdade do que existe e do que falta. A especificação completa está 
 
 Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
 
+## Auditoria incremental e canal único (15/11/2026)
+
+- [ ] **LUNET-509 — Eliminar espelho e registrar a auditoria atual (implementação documental proposta; CI/integrador pendentes):** DEC-0064/ADD-0035 determinam apenas Ecosystem para código, CI e releases. O próximo agente deve ler `../../docs/architecture/audits/lunet-estado-atual-2026-11-15.md`, verificar a main e priorizar E2E no Android, segurança de edições da IA, fluxo completo dos Studios, desempenho e multiplayer real; não fechar gates sem DEVICE. Não mexer na maturidade alfa/beta/dev/estável por iniciativa própria.
+
 ## Prioridade de execução — ordem do proprietário em 25/10/2026
 
 O proprietário solicitou explicitamente framework, editores, UI e build APK utilizáveis,

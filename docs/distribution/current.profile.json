@@ -4,7 +4,7 @@
   "id": "current-distribution",
   "name": "Distribuição atual dos Products (transitória)",
   "status": "current",
-  "description": "FATO atual: código, Web/PWA, builds e releases dos Products vivem no Ecosystem. Lunet2D e Hub já usam Releases do monorepo; DEC-0039 corta o Urbe diretamente para o Ecosystem sem versão-ponte nem sincronização com AbnerCruz/Urbe. O repositório antigo do Urbe permanece apenas como histórico congelado, não como canal atual. A plataforma first-party continua direção futura de DEC-0021-C.",
+  "description": "Canal operacional do Lunet2D exclusivamente nas Releases do Ecosystem, sem origem/espelho paralelo (DEC-0064). Urbe e Hub também publicam a partir do Ecosystem. Plataforma first-party é uma direção futura, não canal atual.",
   "decisions": [
     "DEC-0008",
     "DEC-0009",
@@ -12,7 +12,8 @@
     "DEC-0028",
     "DEC-0029",
     "DEC-0031",
-    "DEC-0039"
+    "DEC-0039",
+    "DEC-0064"
   ],
   "entries": [
     {
@@ -27,16 +28,6 @@
           "kind": "github-release",
           "role": "primary",
           "locationFrom": "ecosystem.repository",
-          "artifacts": [
-            "android-apk"
-          ],
-          "updateMechanism": "none"
-        },
-        {
-          "id": "lunet2d-github-release",
-          "kind": "github-release",
-          "role": "alternative",
-          "locationFrom": "source.repository",
           "artifacts": [
             "android-apk"
           ],

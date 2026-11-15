@@ -23,7 +23,7 @@ Produtos principais: **Lunet2D** (Product Lunet, desenvolvimento 2D code-first e
 
 ## Onde estão os produtos
 
-O código de Lunet2D e Urbe vive em `apps/lunet2d/` e `apps/urbe/` deste repositório, com o histórico preservado (`ecosystem.json` é a fonte do `status` de cada um). Os repositórios `AbnerCruz/Lunet2D` e `AbnerCruz/Urbe` são **espelhos de distribuição** (releases e Urbe Web; arranjo transitório, DEC-0008/DEC-0009): o código só muda aqui. Detalhes: [`docs/migration/README.md`](docs/migration/README.md).
+O código de Lunet2D e Urbe vive em `apps/lunet2d/` e `apps/urbe/` deste repositório, com o histórico preservado (`ecosystem.json` é a fonte do `status` de cada um). **Não há espelho operacional do Lunet**: todo código, PR, CI e release está somente neste Ecosystem (DEC-0064 / [ADD-0035](docs/governance/addenda/ADD-0035-lunet-sem-espelho.md)). Os repositórios antigos são apenas proveniência histórica. Consulte [`docs/migration/README.md`](docs/migration/README.md) para o histórico da importação.
 
 ## Por onde começar
 

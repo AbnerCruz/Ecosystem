@@ -2,7 +2,9 @@
 
 > **Protocolo transversal obrigatório:** [auditoria interna → pesquisa externa aprofundada → comunidades → confronto crítico → consolidação → implementação/TDD/validação, quando autorizada](../../docs/governance/protocolo-estudo-desenvolvimento.md), subordinado ao MANIFEST. Ao investigar a consolidação Lunet, estudar em três frentes **separadas, nesta ordem: framework, editor e estúdio**, e investigar UX/acessibilidade do editor e estúdio. Não confundir estudo com autorização para alterar código.
 
-Este repositório implementa o Lunet2D. Antes de qualquer trabalho, siga `docs/DEVELOPMENT.md`:
+**Canal único (DEC-0064 / ADD-0035):** só `AbnerCruz/Ecosystem`, em `apps/lunet2d`, é fonte de código, PR, CI, decisões e releases. Nunca consultar/sincronizar/publicar no repositório separado `AbnerCruz/Lunet2D`; ele é apenas histórico. CI: `.github/workflows/lunet2d-ci.yml` da raiz; APK: `.github/workflows/lunet2d-release.yml`. **Antes de continuar o desenvolvimento, ler o diagnóstico incremental** [`docs/architecture/audits/lunet-estado-atual-2026-11-15.md`](../../docs/architecture/audits/lunet-estado-atual-2026-11-15.md), verificar a main/PRs atuais e seguir os gates de DEVICE.
+
+Este diretório implementa o Lunet2D. Antes de qualquer trabalho, siga `docs/DEVELOPMENT.md`:
 
 1. Leia `ROADMAP.md` (estado atual) e rode `bash tools/roadmap-status.sh --pending`.
 2. Releia as seções relevantes de `docs/SPEC.md` (a especificação integral, na íntegra).
