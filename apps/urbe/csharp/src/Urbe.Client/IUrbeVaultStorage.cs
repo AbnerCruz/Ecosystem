@@ -80,6 +80,14 @@ public interface IUrbeVaultStorage
         Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
+    /// Every folder of the vault as it is on disk now, empty ones too, without hidden ones (".urbe", ".git"…) and
+    /// links out of the folder. The Explorer shows these folders and only these: the app is the folder, 1:1 (a folder
+    /// deleted on the device is gone from the app). Read only. Null: a host that cannot list folders.
+    /// </summary>
+    Task<IReadOnlyList<string>?> ListFolderPathsAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<string>?>(null);
+
+    /// <summary>
     /// The opening shows the last note at once: the text of ONE file of the folder remembered for the next opening,
     /// read before the whole folder is. Only read and only shown (the folder's reading is what the app works from);
     /// null when there is no remembered folder, the file is missing, is a link or is not UTF-8 text.

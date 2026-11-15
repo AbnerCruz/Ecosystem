@@ -50,6 +50,8 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private AndroidUri? _tree;
     /// <summary>The files listed by the walk of the last opening, for the Explorer's ListFilePathsAsync right after it.</summary>
     private IReadOnlyList<string>? _listing;
+    /// <summary>The folders found by the walk of the last opening (ListFolderPathsAsync right after it).</summary>
+    private IReadOnlyList<string>? _folderListing;
     private IReadOnlyDictionary<string, VaultFile>? _baseline;
     public bool IsConnected => _tree is not null && _baseline is not null;
     public string? AtlasVaultSessionKey => _tree?.ToString();
@@ -117,9 +119,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         try
         {
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
+            var folders = new List<string>();
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
+            _folderListing = folders;
             _tree = selected;
             _baseline = Snapshot(files);
             Preferences.Edit()?.PutString(PreferenceKey, selected.ToString())?.Apply();
@@ -139,9 +143,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             var selected = AndroidUri.Parse(stored)
                 ?? throw new IOException("Pasta Android anteriormente selecionada é inválida.");
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
+            var folders = new List<string>();
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
+            _folderListing = folders;
             _tree = selected;
             _baseline = Snapshot(files);
             return snapshot;
@@ -172,9 +178,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             if (_tree is not { } tree) return null;
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
+            var folders = new List<string>();
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
             _baseline = Snapshot(files);
             _listing = listing;
+            _folderListing = folders;
             return VaultReader.Read(files, UrbeApp.InstalledVersion);
         }
         finally { _gate.Release(); }
@@ -309,6 +317,36 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 }
                 Walk(Root(tree), string.Empty, 0);
                 return (IReadOnlyList<string>)paths;
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<IReadOnlyList<string>?> ListFolderPathsAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            // the walk that just read the vault found them already (once: later the folder may have changed)
+            if (Interlocked.Exchange(ref _folderListing, null) is { } fresh) return fresh;
+            return await Task.Run(() =>
+            {
+                var folders = new List<string>();
+                var visited = new HashSet<string>(StringComparer.Ordinal);
+                void Walk(AndroidUri dir, string prefix)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (DocumentsContract.GetDocumentId(dir) is { } id && !visited.Add(id)) return;
+                    foreach (var entry in Children(tree, dir))
+                    {
+                        if (entry.Name.StartsWith('.') || entry.MimeType != DirectoryMime) continue;
+                        folders.Add(prefix + entry.Name);
+                        Walk(DocumentUri(tree, entry.DocumentId), prefix + entry.Name + "/");
+                    }
+                }
+                Walk(Root(tree), string.Empty);
+                return (IReadOnlyList<string>?)folders;
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -870,7 +908,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     /// The vault's files, read together (observation of 22/10/2026: the opening was slow). <paramref name="listing"/>, when
     /// given, gets every file of the vault by name, hidden folders out, from the same walk (no second walk to list them).
     /// </summary>
-    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false, List<string>? listing = null)
+    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false, List<string>? listing = null, List<string>? folders = null)
     {
         var wanted = new List<(string Path, AndroidUri Uri, Entry Entry)>();
         // no depth or item limit (DEC-0059); a folder met twice (a provider that loops) is walked once
@@ -889,6 +927,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 bool hide = hidden || entry.Name.StartsWith('.');
                 if (entry.MimeType == DirectoryMime)
                 {
+                    if (!hide) folders?.Add(path);
                     Walk(uri, path + "/", depth + 1, hide);
                     continue;
                 }

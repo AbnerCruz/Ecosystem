@@ -380,7 +380,8 @@ public sealed partial class MainView : Grid
         finally { Explorer.Opening = Workspace.Opening = false; }
     }
 
-    private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)
+    private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false,
+        IReadOnlyList<string>? listedFiles = null, IReadOnlyList<string>? listedFolders = null)
     {
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
@@ -414,10 +415,14 @@ public sealed partial class MainView : Grid
         _notesReadOnly = NoteLibrary.IsFuture(record);
         var ids = OpeningIds(snapshot, notes, record);
         _attachments.Clear();
+        IReadOnlyList<string>? diskFolders = null;
         if (_vault is not null)
         {
+            // the folders as they are on disk now (1:1): one deleted on the device is gone, one created there appears
+            try { diskFolders = listedFolders ?? await _vault.ListFolderPathsAsync(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the record's folders */ }
             // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
-            try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
+            try { foreach (var path in listedFiles ?? await _vault.ListFilePathsAsync()) _attachments.Add(path); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
             // CST-006: a write the app closing cut in the middle left the storage's copy of the previous text: it is
             // resolved and the folder read again, once, before the notes are shown
@@ -438,7 +443,7 @@ public sealed partial class MainView : Grid
             }
         }
         _lastNames = null;   // UC-78: the folder read replaces the names of the last opening
-        Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments), notes);
+        Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments, diskFolders), notes);
         // the other files only: a note deleted later must not stay behind as a file of its folder
         _attachments.ExceptWith(notes.Select(n => n.Path));
         Explorer.Status = snapshot.IsReadOnly ? "Somente leitura" : null;

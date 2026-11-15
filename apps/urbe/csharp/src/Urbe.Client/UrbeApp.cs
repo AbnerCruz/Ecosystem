@@ -53,6 +53,8 @@ public sealed class UrbeApp : Application
                     Content = view
                 };
                 SaveBeforeClosing(window, view);
+                // back to the window: what changed in the folder outside the app shows now (1:1 with the disk)
+                window.Activated += (_, _) => RefreshOnForeground();
                 desktop.MainWindow = window;
                 DesktopWindowReady?.Invoke(window);
                 break;
@@ -109,6 +111,21 @@ public sealed class UrbeApp : Application
     /// workspace.js flushPending (visibilitychange hidden): the app goes to the background, so a
     /// pending save of the notes' record is started now. Fire-and-forget: the platform does not wait for it.
     /// </summary>
+    /// <summary>
+    /// The app comes back to the foreground (Android resume, the window activated): the vault is read again and, when
+    /// the folder changed outside the app (a folder or note deleted, created or edited by another app), shown as it is
+    /// now. The app is the folder, 1:1, never a copy that drifts from it.
+    /// </summary>
+    public static void RefreshOnForeground()
+    {
+        if (ActiveView is not { } view) return;
+        _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            try { await view.RefreshFromDiskAsync(); }
+            catch { /* the vault stays as it was shown; the next write checks the folder again */ }
+        });
+    }
+
     public static void FlushPendingOnBackground()
     {
         if (ActiveView is not { } view) return;

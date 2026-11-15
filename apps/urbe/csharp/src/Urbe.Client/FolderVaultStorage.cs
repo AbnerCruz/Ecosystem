@@ -267,6 +267,23 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<IReadOnlyList<string>?> ListFolderPathsAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            return await Task.Run(() =>
+            {
+                var folders = new List<string>();
+                foreach (var (entry, path) in Entries(root, cancellationToken))
+                    if (entry is DirectoryInfo && !path.Split('/').Any(part => part.StartsWith('.'))) folders.Add(path);
+                return (IReadOnlyList<string>?)folders;
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureAttachmentPath(from);
