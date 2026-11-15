@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-lunet-checkpoint-no-data-loss",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-15T22:35:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-checkpoint-20261115",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-513",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-513-checkpoint-conflict-20261115",
+  "base_commit": "81e54ecb264be9559ceeb243d55901133c5c62a9",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSpriteTool.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiCoworkTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261115-lunet-checkpoint-no-data-loss.json"
+  ],
+  "work_completed": [
+    "Checkpoint passou a persistir SHA-256 do estado resultante de cada ferramenta de escrita bem-sucedida.",
+    "Desfazer agora verifica todos os arquivos antes de escrever; qualquer divergência bloqueia todo o lote sem apagar edições posteriores.",
+    "Sprite Studio via IA registra tanto fonte quanto PNG; diálogo Android alerta sobre conflitos.",
+    "Testes para edição manual posterior, atomicidade entre arquivos e reabertura do checkpoint."
+  ],
+  "verification": [
+    {
+      "check": "Revisão de estrutura / comparação de trechos na base vigente",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Substituições ancoradas no código atual do GitHub e guardas de ocorrência."
+    },
+    {
+      "check": "dotnet test tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem .NET SDK local; aguardando CI canônico."
+    },
+    {
+      "check": "Android 13 DEVICE - IA escreve, pessoa edita, desfazer e reabrir",
+      "kind": "human",
+      "result": "pending",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Conflitos não fazem merge automático; ficam protegidos até resolução manual.",
+    "Checkpoints legados sem hash pós-escrita não restauram arquivos divergentes.",
+    "Sem execução local de .NET ou instalação de APK neste ambiente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar e corrigir CI do PR no Ecosystem, sem forçar integração.",
+    "Após checks verdes, confirmar integração e release canônica, testar no Android físico.",
+    "Continuar LUNET-510–512, Studio e editor respeitando gates de DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Ecosystem é fonte única do código Lunet."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Guarda de hash e preflight fail-closed."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Device explicitamente pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não há extração do Runtime compartilhado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "checkpoint-after-write-integrity",
+      "status": "product-specific",
+      "rationale": "Correção diretamente no adaptador do Lunet; nenhuma abstração extraída."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

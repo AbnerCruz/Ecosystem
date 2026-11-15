@@ -162,6 +162,8 @@ public sealed class LunetAiCheckpoint
     private readonly LunetProject _project;
     private readonly string? _store;
     private readonly Dictionary<string, byte[]?> _originals = new(StringComparer.Ordinal);
+    // Only the agent's last successfully persisted bytes may be reverted. Missing hashes are fail-closed.
+    private readonly Dictionary<string, string?> _lastWrittenHashes = new(StringComparer.Ordinal);
     private readonly List<string> _order = [];
     private readonly List<string> _reverted = [];
     private readonly object _gate = new();
@@ -203,6 +205,7 @@ public sealed class LunetAiCheckpoint
                 }
                 checkpoint._originals[path] = bytes;
                 checkpoint._order.Add(path);
+                if (entry.LastWriteKnown) checkpoint._lastWrittenHashes[path] = entry.LastSha256;
             }
             checkpoint._reverted.AddRange(data.Reverted ?? []);
             return checkpoint;
@@ -229,6 +232,30 @@ public sealed class LunetAiCheckpoint
         }
     }
 
+    /// <summary>Records the exact on-disk result of a successful agent write, including deleted files.</summary>
+    internal void RecordWrite(string relativePath)
+    {
+        var path = Normalize(relativePath);
+        var root = System.IO.Path.GetFullPath(_project.Directory).TrimEnd(System.IO.Path.DirectorySeparatorChar)
+            + System.IO.Path.DirectorySeparatorChar;
+        var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, path));
+        if (!full.StartsWith(root, StringComparison.Ordinal))
+            throw new InvalidOperationException("O checkpoint não pode registrar arquivos fora do projeto.");
+        lock (_gate)
+        {
+            if (!_originals.ContainsKey(path))
+                throw new InvalidOperationException("A versão anterior não foi registrada; não é seguro confirmar a edição.");
+            _lastWrittenHashes[path] = File.Exists(full) ? Sha256(File.ReadAllBytes(full)) : null;
+            Persist();
+        }
+    }
+
+    private static string Sha256(byte[] bytes) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+
+    private static bool SameBytes(byte[]? first, byte[]? second) =>
+        first is null ? second is null : second is not null && first.AsSpan().SequenceEqual(second);
+
     public IReadOnlyList<LunetAiChange> Changes()
     {
         lock (_gate)
@@ -250,27 +277,46 @@ public sealed class LunetAiCheckpoint
         }
     }
 
-    /// <summary>Restores every file to its content before the run; files the agent created are deleted.</summary>
+    /// <summary>
+    /// Restores the agent's edits only when files still match its last successful writes.
+    /// Preflight checks ALL paths before touching ANY: a later user edit (or an old checkpoint without
+    /// a recorded post-write hash) is never overwritten or deleted silently.
+    /// </summary>
     public void Revert(string? onlyPath = null)
     {
         lock (_gate)
         {
-            var restored = new List<string>();
-            foreach (var path in _order.ToArray())
+            var selected = _order.Where(p => onlyPath is null || Normalize(onlyPath) == p).ToArray();
+            var conflicts = new List<string>();
+            foreach (var path in selected)
             {
-                if (onlyPath is not null && Normalize(onlyPath) != path) continue;
+                var full = System.IO.Path.Combine(_project.Directory, path);
+                var current = File.Exists(full) ? File.ReadAllBytes(full) : null;
+                if (SameBytes(_originals[path], current)) continue; // already at the original; nothing to lose
+                if (!_lastWrittenHashes.TryGetValue(path, out var expected) ||
+                    !string.Equals(expected, current is null ? null : Sha256(current), StringComparison.Ordinal))
+                    conflicts.Add(path);
+            }
+            if (conflicts.Count > 0)
+                throw new InvalidOperationException(
+                    "Desfazer bloqueado: existem edições posteriores ou um checkpoint antigo sem versão verificada em " +
+                    string.Join(", ", conflicts) + ". Nenhum arquivo foi alterado. Preserve essas mudanças e resolva o conflito manualmente.");
+
+            var restored = new List<string>();
+            foreach (var path in selected)
+            {
                 var before = _originals[path];
                 var full = System.IO.Path.Combine(_project.Directory, path);
                 if (before is null) { if (File.Exists(full)) _project.DeleteFile(path); }
                 else
                 {
-                    // Byte-exact atomic restore (text or binary, root or subfolder).
                     Directory.CreateDirectory(System.IO.Path.GetDirectoryName(full)!);
                     var temporary = full + ".lunet-revert";
                     File.WriteAllBytes(temporary, before);
                     File.Move(temporary, full, overwrite: true);
                 }
                 _originals.Remove(path);
+                _lastWrittenHashes.Remove(path);
                 _order.Remove(path);
                 restored.Add(path);
             }
@@ -299,14 +345,15 @@ public sealed class LunetAiCheckpoint
                     File.Move(target + ".tmp", target, overwrite: true);
                 }
             }
-            entries.Add(new StoredEntry(path, blob));
+            entries.Add(new StoredEntry(path, blob, _lastWrittenHashes.GetValueOrDefault(path), _lastWrittenHashes.ContainsKey(path)));
         }
         var manifest = System.IO.Path.Combine(_store, "checkpoint.json");
         File.WriteAllText(manifest + ".tmp", JsonSerializer.Serialize(new StoredCheckpoint(entries, _reverted.ToList())));
         File.Move(manifest + ".tmp", manifest, overwrite: true);
     }
 
-    private sealed record StoredEntry(string Path, string? Blob);
+    // Optional fields preserve reads of older checkpoints, but legacy entries may not undo changed files.
+    private sealed record StoredEntry(string Path, string? Blob, string? LastSha256 = null, bool LastWriteKnown = false);
     private sealed record StoredCheckpoint(List<StoredEntry> Entries, List<string>? Reverted);
 
     private static string Normalize(string path) => path.Replace('\\', '/').TrimStart('/');
@@ -317,21 +364,26 @@ internal sealed class CheckpointedTool(ITool inner, LunetAiCheckpoint checkpoint
 {
     public ToolDescriptor Descriptor => inner.Descriptor;
 
-    public ValueTask<ToolOutcome> InvokeAsync(ToolInvocation invocation, ToolContext context, CancellationToken cancellationToken)
+    public async ValueTask<ToolOutcome> InvokeAsync(ToolInvocation invocation, ToolContext context, CancellationToken cancellationToken)
     {
+        string? relativePath = null;
         if (invocation.Arguments.ValueKind == JsonValueKind.Object &&
             invocation.Arguments.TryGetProperty("path", out var path) && path.ValueKind == JsonValueKind.String &&
             path.GetString() is { Length: > 0 } relative)
         {
+            relativePath = relative;
             try { checkpoint.Capture(relative); }
             catch (ArgumentException) { /* invalid path: the tool itself rejects it */ }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // Without a saved original there is no way back: refuse the write instead of risking the file.
-                return ValueTask.FromResult(ToolOutcome.Error("Não foi possível guardar a versão anterior para desfazer; nada foi alterado."));
+                return ToolOutcome.Error("Não foi possível guardar a versão anterior para desfazer; nada foi alterado.");
             }
         }
-        return inner.InvokeAsync(invocation, context, cancellationToken);
+        var outcome = await inner.InvokeAsync(invocation, context, cancellationToken);
+        if (!outcome.IsError && relativePath is not null)
+            checkpoint.RecordWrite(relativePath);
+        return outcome;
     }
 }
 
