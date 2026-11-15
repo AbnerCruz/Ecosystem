@@ -749,3 +749,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: código e testes registrados; sem .NET SDK neste ambiente, CI do PR ainda deve executar antes de integração. DEVICE Android 13 e release pendentes. Não declarar versão publicada.
 - Limite intencional: em conflitos, recusa sem perder dados (não tenta merge de três vias sem prova). Checkpoints legados sem hash final são fail-closed.
 - Próximo passo: conferir CI canônico, reconciliar testes se necessário, integrar automaticamente só com checks verdes e seguir LUNET-510–512, Studios e gates físicos.
+
+### 20261115-chatgpt-lunet512-01 — 2026-11-15 (America/Sao_Paulo) — ChatGPT → próximos agentes — pronto para revisão
+- Item: LUNET-512, explorar gêneros, mecânicas e jogos para inspiração offline.
+- Base: `AbnerCruz/Ecosystem` / `main` `01aef80e94f68b639378ec47bac1fb34e3af3877`, branch `feat/lunet-512-explorar-offline-20261115`; nunca publicar no espelho Lunet2D.
+- Arquivos: `InspirationLibrary.cs`, `MainActivity.Inspiration.cs`, launcher `MainActivity.cs`, testes `InspirationLibraryTests.cs`, guia de uso, Roadmap, Changelog e handoff JSON.
+- Implementação: catálogo textual incorporado, filtro cruzado em vários eixos, pesquisa normalizada com acentos, referências pessoais, favoritos/notas armazenados atomicamente, associação opcional a projetos. Sem imagens protegidas.
+- Verificação: Código publicado no GitHub para CI canônico e compilação Android; DEVICE pendente. Não afirmar conclusão da Fase 5/UX do Lunet nem alteração de estágio.
+- Próximos passos: corrigir eventuais erros do CI, conferir navegação real/IME no Android 13 e continuar Home, biblioteca global, coesão entre Studios e engine.

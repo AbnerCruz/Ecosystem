@@ -118,6 +118,7 @@ public sealed partial class MainActivity : Activity
 
     private void ShowProjects()
     {
+        _inspirationOpen = false;
         SaveCurrent();
         DisposePreview();
         _session.Unload();
@@ -160,6 +161,9 @@ public sealed partial class MainActivity : Activity
         actions.AddView(LunetUi.Button(this, "Importar ZIP", ImportProject), new LinearLayout.LayoutParams(0, Dp(46), 1f));
         actions.AddView(LunetUi.Button(this, "Clonar do Git", AskClone), new LinearLayout.LayoutParams(0, Dp(46), 1f));
         root.AddView(actions);
+
+        root.AddView(LunetUi.Button(this, "Explorar gêneros, mecânicas e jogos", OpenInspirationExplorer,
+            ButtonStyle.Secondary), LunetUi.FillWidth(Dp(48)));
 
         var names = _store.List();
         var section = LunetUi.Label(this, names.Count == 0 ? "" : $"RECENTES · {names.Count}", LunetUi.TextCaption, LunetUi.TextFaint, bold: true);
@@ -384,6 +388,7 @@ public sealed partial class MainActivity : Activity
 
     private void OpenProject(string name)
     {
+        _inspirationOpen = false;
         try
         {
             _project = _store.Open(name);
@@ -1512,6 +1517,7 @@ public sealed partial class MainActivity : Activity
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ShowProjects();
+        else if (_inspirationOpen) ShowProjects();
         else base.OnBackPressed();
     }
 }
