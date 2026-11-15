@@ -513,8 +513,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 throw new IOException("Já existe um arquivo com esse nome: " + path);
             if (!create && !baseline.ContainsKey(path))
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(root, baseline, [path]), cancellationToken).ConfigureAwait(false);
             if (expectedSha256 is not null)
             {
                 if (expectedSha256.Length != 32 || files.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.Ordinal)) is not { } current ||
@@ -542,19 +541,10 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 WriteVerified(root, target, planned, create);
-                var observed = Snapshot(ReadFiles(root, cancellationToken));
-                foreach (var pair in baseline)
-                {
-                    if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
-                            ? planned : pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(planned)))
-                    throw new IOException("O arquivo criado não passou na verificação: " + target);
-                if (observed.Count != baseline.Count + (create ? 1 : 0))
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                _baseline = observed;
+                // the file is read back from the disk under the name asked
+                if (OnDisk(root, target) is not { } made || !made.AsSpan().SequenceEqual(planned))
+                    throw new IOException(create ? "O arquivo criado não passou na verificação: " + target : "Verificação pós-gravação detectou divergência em: " + target);
+                _baseline = After(baseline, [], (target, planned));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -567,8 +557,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(root, baseline, [from]), cancellationToken).ConfigureAwait(false);
             var (source, bytes, caseOnly) = IUrbeVaultStorage.PlanMove(files, from, to);
 
             await Task.Run(() =>
@@ -589,18 +578,11 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                     CreateVerified(Inside(root, to), bytes, to);
                     File.Delete(sourceFull);
                 }
-                var observed = Snapshot(ReadFiles(root, cancellationToken));
-                if (observed.Count != baseline.Count)
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                foreach (var pair in baseline)
-                {
-                    var key = string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase) ? to : pair.Key;
-                    if (!observed.TryGetValue(key, out var actual) || !actual.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + key);
-                }
-                if (!observed.Keys.Contains(to, StringComparer.Ordinal))
+                // the new name holds the text and the old one is gone (a change of case keeps the one entry)
+                if (OnDisk(root, to) is not { } moved || !moved.AsSpan().SequenceEqual(bytes) ||
+                    (!caseOnly && File.Exists(Inside(root, source))))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
-                _baseline = observed;
+                _baseline = After(baseline, [source], (to, bytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -613,8 +595,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(root, baseline, [path, LegacyTrash.Path]), cancellationToken).ConfigureAwait(false);
             var (source, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrash(files, path, trashJson);
             bool create = !baseline.ContainsKey(trashPath);
 
@@ -624,19 +605,11 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 // the trash holds the text before the file goes
                 WriteVerified(root, trashPath, trashBytes, create);
                 File.Delete(Inside(root, source));
-                var observed = Snapshot(ReadFiles(root, cancellationToken));
-                if (observed.Count != baseline.Count - 1 + (create ? 1 : 0) || observed.ContainsKey(source))
+                if (File.Exists(Inside(root, source)))
                     throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                foreach (var pair in baseline)
-                {
-                    if (string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase)) continue;
-                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
-                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                if (OnDisk(root, trashPath) is not { } written || !written.AsSpan().SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
-                _baseline = observed;
+                _baseline = After(baseline, [source], (trashPath, trashBytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -649,8 +622,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(root, baseline, [.. paths, LegacyTrash.Path]), cancellationToken).ConfigureAwait(false);
             var (sources, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrashMany(files, paths, trashJson);
             bool create = !baseline.ContainsKey(trashPath);
             var gone = new HashSet<string>(sources, StringComparer.OrdinalIgnoreCase);
@@ -661,19 +633,11 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 // the trash holds every text before any file goes
                 WriteVerified(root, trashPath, trashBytes, create);
                 foreach (var source in sources) File.Delete(Inside(root, source));
-                var observed = Snapshot(ReadFiles(root, cancellationToken));
-                if (observed.Count != baseline.Count - gone.Count + (create ? 1 : 0) || observed.Keys.Any(gone.Contains))
+                if (sources.Any(source => File.Exists(Inside(root, source))))
                     throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                foreach (var pair in baseline)
-                {
-                    if (gone.Contains(pair.Key)) continue;
-                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
-                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                if (OnDisk(root, trashPath) is not { } written || !written.AsSpan().SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
-                _baseline = observed;
+                _baseline = After(baseline, gone, (trashPath, trashBytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -712,30 +676,58 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
-            var (target, planned) = plan(files);
+            var (target, planned) = plan([.. baseline.Values]);
+            // only the file written is checked against the disk (it was planned on what is known of it)
+            await Task.Run(() => Known(root, baseline, [target]), cancellationToken).ConfigureAwait(false);
             bool create = !baseline.ContainsKey(target);
             if (createOnly && !create) throw new IOException(what + " já existe: " + target);
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 WriteVerified(root, target, planned, create);
-                var observed = Snapshot(ReadFiles(root, cancellationToken));
-                foreach (var pair in baseline)
-                {
-                    if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase) ? planned : pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(planned) ||
-                    observed.Count != baseline.Count + (create ? 1 : 0))
+                if (OnDisk(root, target) is not { } made || !made.AsSpan().SequenceEqual(planned))
                     throw new IOException(what + " não passou na verificação: " + target);
-                _baseline = observed;
+                _baseline = After(baseline, [], (target, planned));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
+
+    /// <summary>
+    /// The vault's files for a write that touches <paramref name="touched"/>: the files known since the last reading,
+    /// after checking that each touched file is on disk exactly as known (one not known must not exist). Only those are
+    /// read: a write no longer reads the whole vault twice (observation of 15/11/2026: moving and deleting took longer as
+    /// the vault grew), and a file changed outside the app that the write does not touch no longer refuses it.
+    /// </summary>
+    private static List<VaultFile> Known(string root, IReadOnlyDictionary<string, VaultFile> baseline, IEnumerable<string> touched)
+    {
+        foreach (var path in touched.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var known = baseline.TryGetValue(path, out var k) ? k : null;
+            var full = Path.GetFullPath(Path.Combine([root, .. Segments(known?.Path ?? path)]));
+            if (known is null)
+            {
+                if (File.Exists(full)) throw new VaultChangedOutsideException();
+                continue;
+            }
+            if (ExistingFile(root, known.Path) is not { } existing || !File.ReadAllBytes(existing).AsSpan().SequenceEqual(known.Bytes.Span))
+                throw new VaultChangedOutsideException();
+        }
+        return [.. baseline.Values];
+    }
+
+    /// <summary>The known files after a verified write: <paramref name="removed"/> gone, <paramref name="written"/> as written.</summary>
+    private static IReadOnlyDictionary<string, VaultFile> After(IReadOnlyDictionary<string, VaultFile> baseline,
+        IEnumerable<string> removed, params (string Path, byte[] Bytes)[] written)
+    {
+        var next = new Dictionary<string, VaultFile>(baseline, StringComparer.OrdinalIgnoreCase);
+        foreach (var r in removed) next.Remove(r);
+        foreach (var (path, bytes) in written) { next.Remove(path); next[path] = new VaultFile(path, bytes); }
+        return new System.Collections.ObjectModel.ReadOnlyDictionary<string, VaultFile>(next);
+    }
+
+    /// <summary>The bytes on disk now of a vault file (null when it is not there).</summary>
+    private static byte[]? OnDisk(string root, string path) => ExistingFile(root, path) is { } full ? File.ReadAllBytes(full) : null;
 
     /// <summary>The full path of a vault path, refused when it leaves the vault.</summary>
     private static string Inside(string root, string path)

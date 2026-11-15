@@ -94,9 +94,14 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.Equal(before.Count + 1, Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length);
         await storage.SaveTutorialMarkAsync(json.Replace("\"1\"", "\"2\""), Ct);   // rewritten on the new baseline
         Assert.Contains("\"2\"", File.ReadAllText(Path.Combine(Vault, ".urbe", "tutorial.json")));
-        // something changed outside Urbe: refused
+        // a note changed outside Urbe does not concern the mark: written
         File.WriteAllText(Path.Combine(Vault, "Comece.md"), "# fora\n");
-        await Assert.ThrowsAnyAsync<Exception>(() => storage.SaveTutorialMarkAsync(json, Ct));
+        await storage.SaveTutorialMarkAsync(json, Ct);
+        Assert.Equal("# fora\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
+        // the mark itself changed outside: refused, the other version stays
+        File.WriteAllText(Path.Combine(Vault, ".urbe", "tutorial.json"), "{\"versao\":\"9\"}");
+        await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveTutorialMarkAsync(json, Ct));
+        Assert.Equal("{\"versao\":\"9\"}", File.ReadAllText(Path.Combine(Vault, ".urbe", "tutorial.json")));
     }
 
     [Fact]
@@ -122,9 +127,17 @@ public sealed class FolderVaultStorageTests : IDisposable
     {
         var storage = Storage();
         await storage.PickAsync(Ct);
-        File.WriteAllText(Path.Combine(Vault, "Comece.md"), "# Comece\n\nEditado em outro app.\n");
+        // the note being saved changed outside: refused, the other app's text stays
+        File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Um\n\nEditado em outro app.\n");
         await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveExistingNoteAsync("Bairro/Um.md", "x", Ct));
-        Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.Equal("# Um\n\nEditado em outro app.\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+        // another note changed outside: this save touches nothing of it and goes through (15/11/2026: an outside change
+        // anywhere used to refuse every write until the vault was opened again)
+        var other = Storage();
+        await other.PickAsync(Ct);
+        File.WriteAllText(Path.Combine(Vault, "Comece.md"), "# Comece\n\nEditado em outro app.\n");
+        await other.SaveExistingNoteAsync("Bairro/Um.md", "# Um\n\nDo Urbe.\n", Ct);
+        Assert.Equal("# Um\n\nDo Urbe.\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
         Assert.Equal("# Comece\n\nEditado em outro app.\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
     }
 
@@ -299,11 +312,10 @@ public sealed class FolderVaultStorageTests : IDisposable
         var storage = Storage();
         await storage.PickAsync(Ct);
         await storage.SaveExistingNoteAsync("Comece.md", "# Comece\n\nmais\n", Ct);   // reads (and keeps) the old notes
-        File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Ux\n");             // same size, changed outside
-        File.SetLastWriteTimeUtc(Path.Combine(Vault, "Bairro", "Um.md"), DateTime.UtcNow.AddDays(-1));
+        File.WriteAllText(Path.Combine(Vault, "Comece.md"), "# Comece\n\nmaiz\n");      // same size, changed outside
+        File.SetLastWriteTimeUtc(Path.Combine(Vault, "Comece.md"), DateTime.UtcNow.AddDays(-1));
         await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveExistingNoteAsync("Comece.md", "# Comece\n", Ct));
-        Assert.Equal("# Comece\n\nmais\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
-        Assert.Equal("# Ux\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.Equal("# Comece\n\nmaiz\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
     }
 
     [Fact]
@@ -443,9 +455,11 @@ public sealed class FolderVaultStorageTests : IDisposable
     {
         var storage = Storage();
         await storage.PickAsync(Ct);
-        File.WriteAllText(Path.Combine(Vault, "Fora.md"), "# Fora\n");   // another device synced a note
+        // a record written outside (another device synced it): refused, never overwritten
+        Directory.CreateDirectory(Path.Combine(Vault, ".urbe"));
+        File.WriteAllText(Path.Combine(Vault, ".urbe", "notas.json"), Record2);
         await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveNotesRecordAsync(Record1, Ct));
-        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "notas.json")));
+        Assert.Equal(Record2, File.ReadAllText(Path.Combine(Vault, ".urbe", "notas.json")));
     }
 
     [Fact]

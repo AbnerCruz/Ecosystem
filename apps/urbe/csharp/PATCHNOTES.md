@@ -8,7 +8,7 @@
 ## O app é a sua pasta, 1:1 — e tudo responde na hora (beta.55)
 
 - **O que está no aparelho é o que aparece no app.** Uma pasta apagada no aparelho (pelo gerenciador de arquivos ou por outro app) some do Urbe; uma pasta criada lá aparece, mesmo vazia. Ao voltar para o app, ele relê a pasta e mostra o que mudou fora dele: notas apagadas, criadas ou editadas e pastas. Não é sincronização: o app não guarda uma cópia, mostra a pasta.
-- **Excluir, Lixeira, mover e salvar sem espera.** Cada gravação agora confere e relê só os arquivos que ela mexe. Antes, cada uma lia o vault inteiro duas vezes, e a demora crescia com o vault. Restaurar, excluir de vez e esvaziar a Lixeira também ficaram imediatos, e a Lixeira com muitos itens abre rápido.
+- **Excluir, Lixeira, mover e salvar sem espera, no celular e no computador.** Cada gravação agora confere e relê só os arquivos que ela mexe. Antes, cada uma lia o vault inteiro duas vezes, e a demora crescia com o vault. Num vault de 2.000 notas no computador, mover 30 notas caiu de 2,1 s para 0,8 s. Restaurar, excluir de vez e esvaziar a Lixeira também ficaram imediatos, e a Lixeira com muitos itens abre rápido.
 - **Excluir várias notas pergunta na hora.** Antes de mostrar a confirmação, o app lia o vault inteiro uma vez para cada nota escolhida, para avisar o que depende dela. Agora lê uma vez só para todas.
 - **Uma mudança feita fora do app não trava mais o Urbe.** Antes, se qualquer arquivo do vault mudava fora do app (uma pasta apagada no aparelho, por exemplo), todas as gravações eram recusadas com "a pasta foi modificada fora do Urbe" até reabrir o vault. Agora só se recusa gravar por cima de um arquivo que mudou fora do app, que é o caso em que algo se perderia.
 - **Multi-seleção para organizar o vault:**
