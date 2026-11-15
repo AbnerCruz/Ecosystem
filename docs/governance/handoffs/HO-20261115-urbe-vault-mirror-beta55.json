@@ -71,6 +71,7 @@
     "CST-099 (parte): Bench_VaultOperationsAtScale mede abrir, selecionar 30, mover 30, confirmar e excluir 30 e reler sem mudança com 200 e 2.000 notas, com limites largos contra regressões de ordem de grandeza.",
     "Lixeira: Restaurar tudo (RestoreAllUiTests); EnsureFolderAsync passa a consultar as pastas diretamente em vez de reconstruir a árvore a cada nota.",
     "CST-010 (parte): NotesExplorer.HandleBack (seleção, renomear, Lixeira/coleção/busca) antes de fechar Notas (ExplorerBackUiTests).",
+    "CST-148 (investigação, parte): medido o tempo da thread de UI ao abrir 2.000 notas (headless): OpeningIds 20–220 ms e NoteLibrary.Open 36–61 ms passam para fora da thread de UI; RefreshNotes ~25 ms, renderização e layout da Área de trabalho ~115 ms (3.179 visuais), restauração da sessão 57–142 ms ficam nela. Congelamento máximo medido ao abrir frio caiu de ~1,1 s para ~0,8 s; o restante medido neste contêiner mistura disputa de CPU com a leitura em segundo plano; sem afirmação sobre o aparelho.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [

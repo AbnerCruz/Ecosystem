@@ -415,7 +415,9 @@ public sealed partial class MainView : Grid
         // .urbe/notas.json: ids, dates and folders; a vault without it takes them from its 1.8.4 map, read only
         var record = Text(NoteLibrary.Path);
         _notesReadOnly = NoteLibrary.IsFuture(record);
-        var ids = OpeningIds(snapshot, notes, record);
+        // CST-148: identifying the notes is pure work over every note's text: off the screen's thread, so a big vault
+        // opening never freezes the app (the fields it sets are read only after it, by this same opening)
+        var ids = await Task.Run(() => OpeningIds(snapshot, notes, record));
         _attachments.Clear();
         IReadOnlyList<string>? diskFolders = null;
         if (_vault is not null)
@@ -445,7 +447,10 @@ public sealed partial class MainView : Grid
             }
         }
         _lastNames = null;   // UC-78: the folder read replaces the names of the last opening
-        Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments, diskFolders), notes);
+        // the library (every note's document, links, tags) is built off the screen's thread too; shown on it
+        var otherFiles = _attachments.ToList();
+        var library = await Task.Run(() => NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, otherFiles, diskFolders));
+        Open(library, notes);
         // the other files only: a note deleted later must not stay behind as a file of its folder
         _attachments.ExceptWith(notes.Select(n => n.Path));
         Explorer.Status = snapshot.IsReadOnly ? "Somente leitura" : null;
