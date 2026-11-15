@@ -15,22 +15,46 @@ public static partial class NoteUsage
 {
     public const string Publication = "publicação", Data = "dados", Progress = "progresso", Embed = "incorporação", Link = "ligação";
 
-    public static IReadOnlyList<NoteDependent> Of(DocumentStore store, UrbeDocument note)
+    public static IReadOnlyList<NoteDependent> Of(DocumentStore store, UrbeDocument note) => OfMany(store, [note])[note.Id];
+
+    /// <summary>
+    /// What depends on each of <paramref name="notes"/> (by id), in ONE pass over the vault: many notes chosen to go to
+    /// the trash no longer read every note of the vault once each before the question shows (observation of
+    /// 15/11/2026: "o botão de excluir notas ... delay absurdo").
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<NoteDependent>> OfMany(DocumentStore store, IReadOnlyList<UrbeDocument> notes)
     {
-        var result = new List<NoteDependent>();
-        var name = Path.GetFileNameWithoutExtension(note.Path);
-        var pathNoExt = note.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ? note.Path[..^3] : note.Path;
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(notes);
+        var found = new Dictionary<string, List<NoteDependent>>(StringComparer.Ordinal);
+        // the names a link may use for each note: its name, its path without .md, its path
+        var byName = new Dictionary<string, List<UrbeDocument>>(StringComparer.OrdinalIgnoreCase);
+        void Name(string key, UrbeDocument n)
+        {
+            key = Norm(key);
+            if (!byName.TryGetValue(key, out var list)) byName[key] = list = [];
+            if (!list.Contains(n)) list.Add(n);
+        }
+        foreach (var n in notes)
+        {
+            if (found.ContainsKey(n.Id)) continue;
+            found[n.Id] = [];
+            Name(Path.GetFileNameWithoutExtension(n.Path), n);
+            Name(n.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ? n.Path[..^3] : n.Path, n);
+            Name(n.Path, n);
+        }
+        if (found.Count == 0) return new Dictionary<string, IReadOnlyList<NoteDependent>>();
         foreach (var doc in store.List())
         {
-            if (doc.Id == note.Id) continue;
             if (doc.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase))
             {
                 PublicationProject? project = null;
                 try { project = PublicationProjectCodec.Parse(doc.Content); }
                 catch (Exception ex) when (ex is InvalidDataException or System.Text.Json.JsonException or NotSupportedException) { }
                 if (project is null) continue;
-                foreach (var source in project.Sources.Where(s => s.DocumentId == note.Id))
-                    result.Add(new NoteDependent(Publication, doc.Path, project.Title + (source.Fragment is { Length: > 0 } f ? " (trecho “" + f + "”)" : "")));
+                foreach (var source in project.Sources)
+                    if (source.DocumentId is { } id && id != doc.Id && found.TryGetValue(id, out var list))
+                        list.Add(new NoteDependent(Publication, doc.Path, project.Title + (source.Fragment is { Length: > 0 } f ? " (trecho “" + f + "”)" : "")));
                 continue;
             }
             if (!ArtifactModel.IsNote(doc.Path)) continue;
@@ -40,26 +64,39 @@ public static partial class NoteUsage
                 foreach (var source in Urbe.Core.Data.DataBlock.Sources(text))
                 {
                     var bare = source.Split('#')[0].Trim();
-                    if (Same(bare, note.Path) || Same(bare + ".md", note.Path))
-                        result.Add(new NoteDependent(Data, doc.Path, "lê a tabela " + (source.Contains('#') ? "sob “" + source[(source.IndexOf('#') + 1)..].Trim() + "”" : "da nota")));
+                    foreach (var n in Targets(bare).Concat(Targets(bare + ".md")).Distinct())
+                        if (n.Id != doc.Id && Same(n.Path, bare, bare + ".md"))
+                            found[n.Id].Add(new NoteDependent(Data, doc.Path, "lê a tabela " + (source.Contains('#') ? "sob “" + source[(source.IndexOf('#') + 1)..].Trim() + "”" : "da nota")));
                 }
-                if (text.Contains("note: " + note.Id, StringComparison.Ordinal))
-                    result.Add(new NoteDependent(Progress, doc.Path, "conta as tarefas desta nota"));
+                foreach (var id in found.Keys)
+                    if (id != doc.Id && text.Contains("note: " + id, StringComparison.Ordinal))
+                        found[id].Add(new NoteDependent(Progress, doc.Path, "conta as tarefas desta nota"));
             }
-            int embeds = 0, links = 0;
+            Dictionary<string, (int Embeds, int Links)>? counts = null;
             foreach (Match m in WikiRe().Matches(text))
             {
                 var target = m.Groups[2].Value.Split('|')[0].Split('#')[0].Trim();
-                if (!(Same(target, name) || Same(target, pathNoExt) || Same(target, note.Path))) continue;
-                if (m.Groups[1].Value == "!") embeds++; else links++;
+                foreach (var n in Targets(target))
+                {
+                    if (n.Id == doc.Id) continue;
+                    counts ??= new(StringComparer.Ordinal);
+                    var (e, l) = counts.GetValueOrDefault(n.Id);
+                    counts[n.Id] = m.Groups[1].Value == "!" ? (e + 1, l) : (e, l + 1);
+                }
             }
-            if (embeds > 0) result.Add(new NoteDependent(Embed, doc.Path, embeds == 1 ? "mostra esta nota" : "mostra esta nota " + embeds + " vezes"));
-            if (links > 0) result.Add(new NoteDependent(Link, doc.Path, links == 1 ? "liga para esta nota" : links + " ligações"));
+            foreach (var (id, (embeds, links)) in counts ?? [])
+            {
+                if (embeds > 0) found[id].Add(new NoteDependent(Embed, doc.Path, embeds == 1 ? "mostra esta nota" : "mostra esta nota " + embeds + " vezes"));
+                if (links > 0) found[id].Add(new NoteDependent(Link, doc.Path, links == 1 ? "liga para esta nota" : links + " ligações"));
+            }
         }
-        return result.OrderBy(r => Order(r.Kind)).ThenBy(r => r.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        return found.ToDictionary(p => p.Key, p => (IReadOnlyList<NoteDependent>)p.Value
+            .OrderBy(r => Order(r.Kind)).ThenBy(r => r.Path, StringComparer.OrdinalIgnoreCase).ToList(), StringComparer.Ordinal);
 
+        IEnumerable<UrbeDocument> Targets(string target) => byName.TryGetValue(Norm(target), out var list) ? list : [];
+        static string Norm(string p) => p.Replace('\\', '/').Trim('/');
+        static bool Same(string path, params string[] names) => names.Any(n => string.Equals(Norm(n), Norm(path), StringComparison.OrdinalIgnoreCase));
         static int Order(string kind) => kind switch { Publication => 0, Data => 1, Progress => 2, Embed => 3, _ => 4 };
-        static bool Same(string a, string b) => string.Equals(a.Replace('\\', '/').Trim('/'), b.Replace('\\', '/').Trim('/'), StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>A sentence for a confirmation: what would lose this note (links are only counted).</summary>

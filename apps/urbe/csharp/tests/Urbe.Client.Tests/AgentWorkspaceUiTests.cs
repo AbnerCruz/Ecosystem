@@ -229,6 +229,9 @@ public sealed partial class HeadlessUiTests
             Assert.NotEqual("one-old", panel.Conversation.Id);
             Assert.Empty(panel.Conversation.Messages);
             ClickNamed(panel, "Conversas");
+            // the history is read off the UI thread ("Carregando histórico…"): wait for it, never assume it is instant
+            for (int i = 0; i < 300 && !panel.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Private one"); i++)
+            { await Task.Delay(10); Avalonia.Threading.Dispatcher.UIThread.RunJobs(); }
             Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Private one");
             Assert.DoesNotContain(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Private two");
             panel.SelectAgent("two");

@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.54 — 15/11/2026
+- Selecionar, copiar, recortar, colar e selecionar tudo no celular em todo o app; alças de seleção entre blocos no Visual.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.54
+
 ## 2.0.0-beta.53 — 15/11/2026
 - Revisão completa do editor: teclado sem fechar/reabrir entre blocos, toque e cursor no lugar certo, texto da IA sem perda, desfazer da nota inteira, formatação e fórmulas corrigidas.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.53

@@ -58,7 +58,8 @@ const out = cases.map(c => {
       return md.render(c.md);
     }
     // CST-128: the same markdown.js with only inlineEmphasis following the CommonMark flanking rules (an opener is
-    // followed by a non-space, a closer preceded by one, "_" never inside a word). Everything else stays the original's.
+    // followed by a non-space, a closer preceded by one, "_" never inside a word). Also (15/11/2026, owner's screenshot):
+    // the spaces and tabs before a paragraph's text are not part of it, as in CommonMark. Everything else stays the original's.
     case 'markdownFlanking': {
       if (!mdFlanking) {
         const original = readFileSync(`${src}/editor/markdown.js`, 'utf8');
@@ -73,7 +74,11 @@ const out = cases.map(c => {
 }
 `;
         const w = {}; w.window = w;
-        runInNewContext(original.slice(0, from) + flanking + original.slice(to), w, { filename: 'markdown.js' });
+        const paragraph = 'out+=`<p>${inlineMarkdown(line)}</p>`;';
+        if (!original.includes(paragraph)) throw new Error('paragraph not found in markdown.js');
+        const patched = (original.slice(0, from) + flanking + original.slice(to))
+          .replace(paragraph, "out+=`<p>${inlineMarkdown(line.replace(/^[ \\t]+/,''))}</p>`;");
+        runInNewContext(patched, w, { filename: 'markdown.js' });
         mdFlanking = w.UrbeMarkdown;
       }
       return mdFlanking.render(c.md);

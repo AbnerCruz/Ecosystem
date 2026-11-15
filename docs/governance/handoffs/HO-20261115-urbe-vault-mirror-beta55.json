@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-urbe-vault-mirror-beta55",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-15T12:48:22.000Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-38",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-c717cbe5-9x21rb",
+  "base_commit": "9c7822b4d8e102981145830391b79e903398a8fa",
+  "commit": "2c14f30",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/949",
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Customization.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.DiskMirror.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteLibrary.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteUsage.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteUsageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ParagraphIndentTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs",
+    "apps/urbe/csharp/tools/editor-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContinuityUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/BlockTimesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DiskMirrorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/OutsideChangeSaveUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/OpenNoteGoneUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RestoreAllUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerBackUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SelectFilesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SilentFailureUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerSortUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ExplorerState.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Notes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VaultScaleBenchUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SelectionSpeedUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261115-urbe-vault-mirror-beta55.json"
+  ],
+  "work_completed": [
+    "Relato do proprietário (15/11/2026): pastas apagadas no aparelho continuavam no app; multi-seleção, lixeira e excluir lentos; Nova conversa e Personalização sem resposta; texto pequeno.",
+    "Causa 1: NoteLibrary.Open mostrava as pastas de .urbe/notas.json mesmo ausentes do disco; o app não relia a pasta ao voltar. Correção: ListFolderPathsAsync nos dois armazenamentos (Android SAF e pasta do computador), pastas do disco substituem as registradas; RefreshFromDiskAsync no retorno ao primeiro plano (OnResume e janela ativada) mostra o que mudou fora do app.",
+    "Causa 2: no Android cada gravação percorria e lia o vault inteiro antes e depois (IPC por pasta) e qualquer mudança externa em qualquer arquivo recusava todas as gravações. Correção: cada gravação confere só os arquivos tocados contra o que foi lido e relê do disco o que escreveu; a base em memória é atualizada sem nova varredura.",
+    "Causa 3: cada toque na seleção reconstruía a árvore; SetNotes limpava a seleção em toda atualização. Correção: repintura da linha, seleção mantida quando a árvore não mudou, Selecionar tudo, barra de ações rolável, Lixeira virtualizada.",
+    "Causa 4: Nova conversa ignorada com execução ativa; Personalização aplicava só depois de gravar e falha era silenciosa. Correção: nova conversa sempre (execuções pertencem ao id da conversa), fecha a vista aberta; personalização aplica na hora, reverte e avisa falha.",
+    "Causa 5 (confirmada pelo print do proprietário): com o horário dos blocos ligado, a coluna dos horários (Grid *,Auto) tirava um terço da largura de cada bloco no celular; o horário agora fica sobreposto no alto à direita, sem ocupar largura, e o teste de horários confere a largura. Também: popup do Assistente com 13/11 px em texto simples. Correção: 15 px com Markdown, popup mais alto; fórmulas largas não reduzem abaixo de 85 %.",
+    "Parágrafos: espaços e tabs antes do texto não aparecem mais como recuo (CommonMark); o oráculo da 1.8.4 (editor-oracle.mjs markdownFlanking) registra a mesma melhoria (DEC-0059).",
+    "Teste AgentWorkspaces: corrida corrigida (o histórico é lido fora da thread de UI; o teste agora espera a lista, com limite), falhava em cerca de metade das execuções completas.",
+    "Barra de seleção refeita a partir de captura em tamanho de celular: as ações ficavam cortadas ou sob o menu flutuante; agora contagem e Selecionar tudo em cima, oito ações nomeadas em grade 4×2, barra opaca, lista com folga embaixo, menu flutuante oculto durante a seleção.",
+    "Excluir seleção: o aviso CST-226 lia o vault inteiro uma vez por nota escolhida antes da confirmação (na thread de UI); NoteUsage.OfMany responde por todas numa única passagem.",
+    "Computador (FolderVaultStorage): a mesma verificação só dos arquivos tocados (Known/After). Medido num vault de 2.000 notas (headless): mover 30 notas 2108 → 784 ms; confirmação de excluir 30, 534 → 102 ms; excluir 30 depois de confirmar, 650 → 319 ms. Testes de armazenamento reescritos para a nova regra: mudança externa no arquivo gravado continua recusando; em outro arquivo, não.",
+    "Releitura ao voltar ao app sem segurar a trava do vault (ReloadQuietlyAsync, Android e computador): uma gravação feita logo depois de voltar não espera a leitura da pasta inteira; a leitura só é aplicada se nada foi gravado enquanto ela corria (contador de geração da base).",
+    "CST-101 (parte): nota aberta movida fora do app é seguida pelo editor; apagada, o app avisa e salvar a recria com o texto (OpenNoteGoneUiTests).",
+    "CST-099 (parte): Bench_VaultOperationsAtScale mede abrir, selecionar 30, mover 30, confirmar e excluir 30 e reler sem mudança com 200 e 2.000 notas, com limites largos contra regressões de ordem de grandeza.",
+    "Lixeira: Restaurar tudo (RestoreAllUiTests); EnsureFolderAsync passa a consultar as pastas diretamente em vez de reconstruir a árvore a cada nota.",
+    "CST-010 (parte): NotesExplorer.HandleBack (seleção, renomear, Lixeira/coleção/busca) antes de fechar Notas (ExplorerBackUiTests).",
+    "CST-148 (investigação, parte): medido o tempo da thread de UI ao abrir 2.000 notas (headless): OpeningIds 20–220 ms e NoteLibrary.Open 36–61 ms passam para fora da thread de UI; RefreshNotes ~25 ms, renderização e layout da Área de trabalho ~115 ms (3.179 visuais), restauração da sessão 57–142 ms ficam nela. Congelamento máximo medido ao abrir frio caiu de ~1,1 s para ~0,8 s; o restante medido neste contêiner mistura disputa de CPU com a leitura em segundo plano; sem afirmação sobre o aparelho.",
+    "CST-037/038 (parte): arquivos na multisseleção (Selecionar no menu do arquivo; toque marca durante a seleção); mover notas e arquivos juntos; excluir arquivos com aviso explícito (SelectFilesUiTests).",
+    "Botões que falhavam em silêncio: o CrashLog marcava como tratados os erros que chegavam à interface (o app não fechava, mas nada era dito). CrashLog.Report agora avisa na tela com StorageProblems.Explain (SilentFailureUiTests). Sondagem automática de todos os botões da Personalização: tema, cor de destaque, cor/ícone de tag e numeração de linhas mudam o que prometem.",
+    "Ordenar notas no Explorer (nome, modificadas, criadas; pastas primeiro; guardado no aparelho em ExplorerState) — ExplorerSortUiTests.",
+    "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Client.Tests local",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "624/624 em duas execuções completas seguidas; Urbe.Core.Tests 1614/1614; suíte completa local; testes novos DiskMirrorUiTests (pastas removidas/criadas fora do app, registro reescrito sem pastas fantasmas, gravação após retorno) e SelectionSpeedUiTests (toque não reconstrói a árvore, seleção sobrevive a atualização, Selecionar tudo e mover 12 notas)."
+    },
+    {
+      "check": "Build Android (net10.0-android) local",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build src/Urbe.Android com Android SDK local: 0 erros."
+    },
+    {
+      "check": "CI do PR (Android, Windows, e2e, consistência)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "A executar no PR."
+    },
+    {
+      "check": "Pasta apagada pelo gerenciador de arquivos some ao voltar ao app; excluir várias notas, Lixeira e multi-seleção com o dedo sem espera",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "NN-017: depende do provedor de documentos real do Android e do toque."
+    }
+  ],
+  "known_issues": [
+    "android-runtime-smoke falhou em be90002 no urbe-checks pelo mesmo motivo do adb: startup-logcat cortado no meio de linha em 450.560 bytes, app com 41 de 3.220 linhas e sem falha; o run seguinte (f3e683e, mesmo código do app) passou inteiro, incluindo o smoke.",
+    "CI do integrador: android-runtime-smoke falhou uma vez em 4a1f14f porque o adb caiu durante o despejo do logcat (logcat.txt cortado às 13:53:31, gravado às 13:53:51; pidof não chegou a rodar); o mesmo teste passou no urbe-checks do mesmo commit. Infraestrutura do emulador, não queda do app.",
+    "Teste Source_DraggingAFingerScrolls (gesto de arremesso por tempo) falhou uma vez no CI em Release: com a máquina carregada o gesto vira arrasto lento, que corretamente não desliza; o teste agora mede o gesto e o refaz quando a máquina travou (até 3 vezes), sem mudar a asserção.",
+    "A releitura ao voltar ao app lê a pasta inteira em segundo plano (com o cache por tamanho/data do Android), sem segurar a trava: num vault muito grande ela leva o tempo de uma abertura, sem bloquear a tela nem as gravações.",
+    "Renomear pasta ainda relê o vault uma vez depois da operação, para conferir cada caminho renomeado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar o CI do PR.",
+    "Integração precisa da autorização do proprietário (bump de versão = distribuição crítica).",
+    "Publicar 2.0.0-beta.55 só pelo workflow oficial."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "docs/governance/integration-policy.json",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas: o disco é a autoridade; notas.json registra, não concorre."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #948, handoff, ROADMAP."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente e crítica."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Cada mudança com teste."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-vault-disk-mirror",
+      "status": "product-specific",
+      "rationale": "Leitura e gravação do vault do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Bump de versão no csproj Android; identidade, assinatura e workflow inalterados. Proprietário pediu a release."
+  }
+}

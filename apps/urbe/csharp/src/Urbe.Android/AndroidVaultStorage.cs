@@ -50,7 +50,17 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private AndroidUri? _tree;
     /// <summary>The files listed by the walk of the last opening, for the Explorer's ListFilePathsAsync right after it.</summary>
     private IReadOnlyList<string>? _listing;
-    private IReadOnlyDictionary<string, VaultFile>? _baseline;
+    /// <summary>The folders found by the walk of the last opening (ListFolderPathsAsync right after it).</summary>
+    private IReadOnlyList<string>? _folderListing;
+    private IReadOnlyDictionary<string, VaultFile>? _known;
+    /// <summary>Incremented whenever the known files change (a write, an opening): a reading made without the lock is
+    /// applied only when nothing was written meanwhile.</summary>
+    private long _generation;
+    private IReadOnlyDictionary<string, VaultFile>? _baseline
+    {
+        get => _known;
+        set { _known = value; Interlocked.Increment(ref _generation); }
+    }
     public bool IsConnected => _tree is not null && _baseline is not null;
     public string? AtlasVaultSessionKey => _tree?.ToString();
 
@@ -117,9 +127,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         try
         {
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
+            var folders = new List<string>();
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
+            _folderListing = folders;
             _tree = selected;
             _baseline = Snapshot(files);
             Preferences.Edit()?.PutString(PreferenceKey, selected.ToString())?.Apply();
@@ -139,9 +151,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             var selected = AndroidUri.Parse(stored)
                 ?? throw new IOException("Pasta Android anteriormente selecionada é inválida.");
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
+            var folders = new List<string>();
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
+            _folderListing = folders;
             _tree = selected;
             _baseline = Snapshot(files);
             return snapshot;
@@ -172,10 +186,37 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             if (_tree is not { } tree) return null;
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
+            var folders = new List<string>();
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
             _baseline = Snapshot(files);
             _listing = listing;
+            _folderListing = folders;
             return VaultReader.Read(files, UrbeApp.InstalledVersion);
+        }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>
+    /// The vault read again WITHOUT holding the lock (coming back to the app): a save tapped meanwhile never waits for
+    /// the walk of the whole folder. The reading is applied only when nothing was written while it ran; otherwise null
+    /// (the next return reads again).
+    /// </summary>
+    public async Task<VaultSnapshot?> ReloadQuietlyAsync(CancellationToken cancellationToken = default)
+    {
+        if (_tree is not { } tree) return null;
+        long generation = Interlocked.Read(ref _generation);
+        var listing = new List<string>();
+        var folders = new List<string>();
+        var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing, folders: folders), cancellationToken).ConfigureAwait(false);
+        var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!ReferenceEquals(tree, _tree) || Interlocked.Read(ref _generation) != generation) return null;
+            _baseline = Snapshot(files);
+            _listing = listing;
+            _folderListing = folders;
+            return snapshot;
         }
         finally { _gate.Release(); }
     }
@@ -222,7 +263,8 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 // the provider keeps the name asked (never "foto (1).png") and the bytes read back are the ones written
                 if (FindDocument(tree, path) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(bytes))
                     throw new IOException("O arquivo criado não passou na verificação: " + path);
-                _baseline = Snapshot(ReadFiles(tree, cancellationToken));
+                // a text file among the known ones is known as written; other files are not kept in memory
+                if (IsIncluded(path) && bytes.LongLength <= InMemoryTextBytes) _baseline = After(_baseline!, [], (path, bytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -314,6 +356,36 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<IReadOnlyList<string>?> ListFolderPathsAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            // the walk that just read the vault found them already (once: later the folder may have changed)
+            if (Interlocked.Exchange(ref _folderListing, null) is { } fresh) return fresh;
+            return await Task.Run(() =>
+            {
+                var folders = new List<string>();
+                var visited = new HashSet<string>(StringComparer.Ordinal);
+                void Walk(AndroidUri dir, string prefix)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (DocumentsContract.GetDocumentId(dir) is { } id && !visited.Add(id)) return;
+                    foreach (var entry in Children(tree, dir))
+                    {
+                        if (entry.Name.StartsWith('.') || entry.MimeType != DirectoryMime) continue;
+                        folders.Add(prefix + entry.Name);
+                        Walk(DocumentUri(tree, entry.DocumentId), prefix + entry.Name + "/");
+                    }
+                }
+                Walk(Root(tree), string.Empty);
+                return (IReadOnlyList<string>?)folders;
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureAttachmentPath(from);
@@ -323,8 +395,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
                 static string Parent(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
@@ -347,7 +417,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 }
                 if (FindDocument(tree, to) is null || (!caseOnly && FindDocument(tree, from) is not null))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
-                EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
+                if (baseline.TryGetValue(from, out var known)) _baseline = After(baseline, [from], (to, known.Bytes.ToArray()));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -361,14 +431,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
                 var uri = FindDocument(tree, path) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", path);
                 if (!DocumentsContract.DeleteDocument(Resolver, uri) || FindDocument(tree, path) is not null)
                     throw new IOException("O provedor não excluiu o arquivo: " + path);
-                EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
+                _baseline = After(baseline, [path]);
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -382,8 +450,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -563,8 +629,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 throw new IOException("Já existe um arquivo com esse nome: " + path);
             if (!create && !baseline.ContainsKey(path))
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(tree, baseline, [path]), cancellationToken).ConfigureAwait(false);
             if (expectedSha256 is not null)
             {
                 if (expectedSha256.Length != 32 || files.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.Ordinal)) is not { } current ||
@@ -599,21 +664,10 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (create && FindDocument(tree, target) is not null)
                     throw new IOException("Já existe um arquivo com esse nome: " + target);
                 WriteVerified(tree, target, plannedBytes);
-                var persisted = ReadFiles(tree, cancellationToken);
-                var observed = Snapshot(persisted);
-                foreach (var pair in baseline)
-                {
-                    if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(
-                            string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
-                                ? plannedBytes : pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes)))
-                    throw new IOException("O arquivo criado não passou na verificação: " + target);
-                if (observed.Count != baseline.Count + (create ? 1 : 0))
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                _baseline = observed;
+                // the file is read back from the disk under the name asked (WriteVerified read it back already)
+                if (FindDocument(tree, target) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(plannedBytes))
+                    throw new IOException(create ? "O arquivo criado não passou na verificação: " + target : "Gravação não confirmada: " + target);
+                _baseline = After(baseline, [], (target, plannedBytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -628,8 +682,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(tree, baseline, [from]), cancellationToken).ConfigureAwait(false);
             var (source, bytes, caseOnly) = IUrbeVaultStorage.PlanMove(files, from, to);
 
             await Task.Run(() =>
@@ -661,18 +714,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                     if (!DocumentsContract.DeleteDocument(Resolver, sourceUri))
                         throw new IOException("O provedor não removeu o arquivo antigo: " + source);
                 }
-                var observed = Snapshot(ReadFiles(tree, cancellationToken));
-                if (observed.Count != baseline.Count)
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                foreach (var pair in baseline)
-                {
-                    var key = string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase) ? to : pair.Key;
-                    if (!observed.TryGetValue(key, out var actual) || !actual.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + key);
-                }
-                if (!observed.Keys.Contains(to, StringComparer.Ordinal))
+                // the new name holds the text, and the old one is gone (a change of case keeps the one entry)
+                if (FindDocument(tree, to) is not { } moved || !ReadBytes(moved).AsSpan().SequenceEqual(bytes) ||
+                    (!caseOnly && FindDocument(tree, source) is not null))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
-                _baseline = observed;
+                _baseline = After(baseline, [source], (to, bytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -687,8 +733,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(tree, baseline, [path, LegacyTrash.Path]), cancellationToken).ConfigureAwait(false);
             var (source, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrash(files, path, trashJson);
             var create = !baseline.ContainsKey(trashPath);
 
@@ -702,19 +747,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 WriteVerified(tree, trashPath, trashBytes);
                 if (!DocumentsContract.DeleteDocument(Resolver, sourceUri))
                     throw new IOException("O provedor não removeu o arquivo: " + source);
-                var observed = Snapshot(ReadFiles(tree, cancellationToken));
-                if (observed.Count != baseline.Count - 1 + (create ? 1 : 0) || observed.ContainsKey(source))
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                foreach (var pair in baseline)
-                {
-                    if (string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase)) continue;
-                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
-                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                if (FindDocument(tree, source) is not null)
+                    throw new IOException("O provedor não removeu o arquivo: " + source);
+                if (FindDocument(tree, trashPath) is not { } written || !ReadBytes(written).AsSpan().SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
-                _baseline = observed;
+                _baseline = After(baseline, [source], (trashPath, trashBytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -727,8 +764,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
+            var files = await Task.Run(() => Known(tree, baseline, [.. paths, LegacyTrash.Path]), cancellationToken).ConfigureAwait(false);
             var (sources, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrashMany(files, paths, trashJson);
             var create = !baseline.ContainsKey(trashPath);
             var gone = new HashSet<string>(sources, StringComparer.OrdinalIgnoreCase);
@@ -744,19 +780,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 for (int i = 0; i < uris.Count; i++)
                     if (!DocumentsContract.DeleteDocument(Resolver, uris[i]))
                         throw new IOException("O provedor não removeu o arquivo: " + sources[i]);
-                var observed = Snapshot(ReadFiles(tree, cancellationToken));
-                if (observed.Count != baseline.Count - gone.Count + (create ? 1 : 0) || observed.Keys.Any(gone.Contains))
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                foreach (var pair in baseline)
-                {
-                    if (gone.Contains(pair.Key)) continue;
-                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
-                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                foreach (var source in sources)
+                    if (FindDocument(tree, source) is not null)
+                        throw new IOException("O provedor não removeu o arquivo: " + source);
+                if (FindDocument(tree, trashPath) is not { } written || !ReadBytes(written).AsSpan().SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
-                _baseline = observed;
+                _baseline = After(baseline, gone, (trashPath, trashBytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -796,9 +825,9 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
-            EnsureUnchanged(baseline, files);
-            var (target, plannedBytes) = plan(files);
+            var (target, plannedBytes) = plan([.. baseline.Values]);
+            // only the file written is checked against the disk (it was planned on what is known of it)
+            await Task.Run(() => Known(tree, baseline, [target]), cancellationToken).ConfigureAwait(false);
             var create = !baseline.ContainsKey(target);
             if (createOnly && !create) throw new IOException(what + " já existe: " + target);
             await Task.Run(() =>
@@ -807,17 +836,9 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (create && FindDocument(tree, target) is not null)
                     throw new IOException("A pasta foi modificada fora do Urbe: " + target);
                 WriteVerified(tree, target, plannedBytes);
-                var observed = Snapshot(ReadFiles(tree, cancellationToken));
-                foreach (var pair in baseline)
-                {
-                    if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase) ? plannedBytes : pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes) ||
-                    observed.Count != baseline.Count + (create ? 1 : 0))
+                if (FindDocument(tree, target) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(plannedBytes))
                     throw new IOException(what + " não passou na verificação: " + target);
-                _baseline = observed;
+                _baseline = After(baseline, [], (target, plannedBytes));
             }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
@@ -870,7 +891,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     /// The vault's files, read together (observation of 22/10/2026: the opening was slow). <paramref name="listing"/>, when
     /// given, gets every file of the vault by name, hidden folders out, from the same walk (no second walk to list them).
     /// </summary>
-    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false, List<string>? listing = null)
+    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false, List<string>? listing = null, List<string>? folders = null)
     {
         var wanted = new List<(string Path, AndroidUri Uri, Entry Entry)>();
         // no depth or item limit (DEC-0059); a folder met twice (a provider that loops) is walked once
@@ -889,6 +910,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 bool hide = hidden || entry.Name.StartsWith('.');
                 if (entry.MimeType == DirectoryMime)
                 {
+                    if (!hide) folders?.Add(path);
                     Walk(uri, path + "/", depth + 1, hide);
                     continue;
                 }
@@ -993,6 +1015,38 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             original.Any(pair => !recent.TryGetValue(pair.Key, out var file) ||
                 !pair.Value.Bytes.Span.SequenceEqual(file.Bytes.Span)))
             throw new VaultChangedOutsideException();
+    }
+
+    /// <summary>
+    /// The vault's files for a write that touches <paramref name="touched"/>: the files known since the last reading,
+    /// after checking that each touched file is on disk exactly as known (a touched file that does not exist must not
+    /// exist yet). Only those are read: a write no longer walks and reads the whole vault twice (observation of
+    /// 15/11/2026: deleting, the trash and moving took seconds that grew with the vault). A file changed outside the app
+    /// that the write touches is still refused, as before; one the write does not touch cannot be harmed by it.
+    /// </summary>
+    private static List<VaultFile> Known(AndroidUri tree, IReadOnlyDictionary<string, VaultFile> baseline, IEnumerable<string> touched)
+    {
+        foreach (var path in touched.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var uri = FindDocument(tree, baseline.TryGetValue(path, out var k) ? k.Path : path);
+            if (k is null)
+            {
+                if (uri is not null) throw new VaultChangedOutsideException();
+                continue;
+            }
+            if (uri is null || !ReadBytes(uri).AsSpan().SequenceEqual(k.Bytes.Span)) throw new VaultChangedOutsideException();
+        }
+        return [.. baseline.Values];
+    }
+
+    /// <summary>The known files after a verified write: <paramref name="removed"/> gone, <paramref name="written"/> as written.</summary>
+    private static IReadOnlyDictionary<string, VaultFile> After(IReadOnlyDictionary<string, VaultFile> baseline,
+        IEnumerable<string> removed, params (string Path, byte[] Bytes)[] written)
+    {
+        var next = new Dictionary<string, VaultFile>(baseline, StringComparer.OrdinalIgnoreCase);
+        foreach (var r in removed) next.Remove(r);
+        foreach (var (path, bytes) in written) { next.Remove(path); next[path] = new VaultFile(path, bytes); }
+        return new ReadOnlyDictionary<string, VaultFile>(next);
     }
 
     private static string[] Segments(string path)

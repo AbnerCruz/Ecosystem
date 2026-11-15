@@ -41,7 +41,9 @@ public sealed partial class HeadlessUiTests
             Assert.True(await view.Editor.SaveAsync());
             Assert.Equal("# Diário\n\nHoje escrevi.\n", await ReadWhenWritten(Path.Combine(vault, "Diário.md"), t => t.Contains("Hoje")));
             Assert.Equal("# Lista\n\n- pão\n- café (do outro aplicativo)\n", File.ReadAllText(Path.Combine(vault, "Lista.md")));
-            Assert.Contains("café", view.Library!.Store.Get("Lista.md")!.Content);   // the change shows in the Urbe
+            // the change shows in the Urbe when it comes back to the foreground (the folder is read again, 1:1)
+            Assert.True(await view.RefreshFromDiskAsync());
+            Assert.Contains("café", view.Library!.Store.Get("Lista.md")!.Content);
             Assert.False(view.Editor.HasChanges);
             Assert.True(view.Editor.IsVisible);
             Assert.Equal("Diário.md", view.Editor.Current!.Path);

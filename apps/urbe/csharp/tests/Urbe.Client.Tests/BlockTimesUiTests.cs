@@ -41,6 +41,15 @@ public sealed partial class HeadlessUiTests
             var times = Times();
             // the new paragraph took the time of that edit; the older blocks, with no known creation date, show nothing
             Assert.Equal(["09:15"], times);
+            // the time takes no width from the text (observation of 15/11/2026: a column of times squeezed every block on
+            // the phone): the block drawn beside it is as wide as the blocks without a time
+            foreach (var label in view.Editor.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("urbe-block-time")))
+            {
+                var holder = Assert.IsType<Grid>(label.Parent);
+                Assert.Empty(holder.ColumnDefinitions);
+                var drawn = holder.Children.First(c => !ReferenceEquals(c, label));
+                Assert.Equal(holder.Bounds.Width, drawn.Bounds.Width + drawn.Margin.Left + drawn.Margin.Right, 1);
+            }
             Snapshot(window, "native-block-times.png");
             return true;
         }

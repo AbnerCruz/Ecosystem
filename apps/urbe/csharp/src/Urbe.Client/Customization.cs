@@ -151,16 +151,24 @@ public sealed partial class Customization
         _previewBase = null;
         var n = LegacyCustomize.Normalize(config, _savedTheme);
         if (n.Errors.Count > 0) return n;
+        // the change shows at once and is written right after (observation of 15/11/2026: the buttons answered only once
+        // the vault was written); a write that fails puts the previous look back and is told
+        var previous = (JsonObject)Config.DeepClone();
+        Apply(n.Config);
         if (Writer is { } write)
         {
             var text = LegacyCustomize.FileText(n.Config);
             if (FileContent != text)
             {
-                await write(LegacyCustomize.FilePath, text, FileContent is not null);
+                try { await write(LegacyCustomize.FilePath, text, FileContent is not null); }
+                catch
+                {
+                    Apply(previous);
+                    throw;
+                }
                 FileContent = text;
             }
         }
-        Apply(n.Config);
         return n;
     }
 

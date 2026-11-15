@@ -109,7 +109,9 @@ public sealed partial class MainView : IAssistantApp
         bool phone = !(Bounds.Width >= WideBreakpoint);
         // a reader (file, browser) covers the screen with its own bar and close: the floating menu would cover it
         bool free = _assistant is not { IsVisible: true } && _publicationsStudio is not { IsVisible: true }
-            && !FilePreview.IsVisible && !StudyBrowser.IsVisible;
+            && !FilePreview.IsVisible && !StudyBrowser.IsVisible
+            // the Explorer's selection bar has every action at the bottom: nothing floats over it
+            && !(Explorer.IsVisible && Explorer.Selecting);
         _assistantLauncher.IsVisible = free && !phone;
         if (_radial is null) return;
         // while writing (keyboard up) the menu would float over the text: it comes back when the block closes
@@ -381,7 +383,8 @@ public sealed partial class MainView : IAssistantApp
     /// <summary>The folders of <paramref name="folder"/>, each made in the vault when missing, and recorded.</summary>
     private async Task EnsureFolderAsync(string folder)
     {
-        if (folder.Length == 0 || NoteFolders().Contains(folder)) return;
+        // a direct look-up (the folders on disk, 1:1): the whole tree is not rebuilt for each note that needs a folder
+        if (folder.Length == 0 || _library?.Folders.Contains(folder) == true) return;
         await _vault!.CreateDirectoryAsync(folder);
         _library!.AddFolder(folder);
         NotesChanged();

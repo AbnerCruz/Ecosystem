@@ -44,6 +44,7 @@ public sealed class NotesExplorer : Border
     private readonly TextBlock _newLabel = new() { Text = "Nova", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly List<Button> _noteActions = [];
+    private Button? _moveAction;
     private Button _renameAction = new();
     private readonly List<CityNote> _notes = [];
     private readonly List<string> _files = [];
@@ -198,6 +199,9 @@ public sealed class NotesExplorer : Border
     public event Action<string>? PurgeRequested;
     /// <summary>Lixeira: Esvaziar.</summary>
     public event Action? EmptyTrashRequested;
+
+    /// <summary>Restaurar tudo, in the Lixeira.</summary>
+    public event Action? RestoreAllRequested;
     public event Action<CityNote>? NoteRequested;
 
     /// <summary>A tap on a file that is not a note (an image, a PDF…): the host shows it (DEC-0045, UC-38).</summary>
@@ -343,13 +347,20 @@ public sealed class NotesExplorer : Border
     public void SetNotes(IEnumerable<CityNote> notes, IEnumerable<string>? folders = null)
     {
         ArgumentNullException.ThrowIfNull(notes);
+        var before = TreeSignature();
         _notes.Clear();
         _notes.AddRange(notes.Where(n => !string.IsNullOrWhiteSpace(n.Path)));
         _extraFolders.Clear();
         foreach (var f in folders ?? []) if (!string.IsNullOrEmpty(f)) _extraFolders.Add(f);
-        _selected.Clear();
+        // an action that changed the tree (moved, duplicated, deleted) ends the selection, as a file manager does; a
+        // refresh that changed nothing (a save, the folder read again) keeps a selection being made (observation of
+        // 15/11/2026: "não consigo organizar meu vault")
+        if (TreeSignature() != before) _selected.Clear();
         Render();
     }
+
+    private string TreeSignature() =>
+        string.Join("\n", _notes.Select(n => n.Path)) + "\u001f" + string.Join("\n", _extraFolders.Order(StringComparer.Ordinal));
 
     /// <summary>
     /// The files of the vault that are not notes (images, PDFs, other attachments). The 1.8.4 listed only the notes;
@@ -388,7 +399,18 @@ public sealed class NotesExplorer : Border
     {
         Fresh();
         if (!_visibleFiles.Contains(path)) return false;
+        // while selecting, a file is chosen like a note (images, PDFs and audio are organized with them)
+        if (_selected.Count > 0) { Toggle(path); return true; }
         FileRequested?.Invoke(path);
+        return true;
+    }
+
+    /// <summary>A visible file joins the selection (or starts it): "Selecionar" in its menu, a hold while selecting.</summary>
+    public bool SelectFile(string path)
+    {
+        Fresh();
+        if (!_visibleFiles.Contains(path)) return false;
+        if (!_selected.Contains(path)) Toggle(path);
         return true;
     }
 
@@ -438,6 +460,36 @@ public sealed class NotesExplorer : Border
         FileMoveRequested?.Invoke(path, folder);
         return true;
     }
+
+    /// <summary>Selects every note and file shown now (with what was selected already); the rows and the bar change, not the tree.</summary>
+    public void SelectAllShown()
+    {
+        Fresh();
+        // the files shown (images, PDFs, audio) too: a folder of pictures moves in one tap
+        foreach (var path in _visibleNotes.Concat(_visibleFiles))
+        {
+            if (_selected.Contains(path)) continue;
+            _selected.Add(path);
+            if (_rowButtons.TryGetValue(path, out var b)) PaintSelected(b, true);
+        }
+        RenderBar();
+    }
+
+    /// <summary>
+    /// CST-010: Voltar inside Notas closes what is going on there first: a selection, a name being typed, then the
+    /// Lixeira, a collection or a search (back to the tree). False when there is nothing to close here.
+    /// </summary>
+    public bool HandleBack()
+    {
+        if (_selected.Count > 0) { ClearSelection(); return true; }
+        if (_renaming is not null) { _renaming = null; Render(); return true; }
+        if (_view is "trash" or "collection") { Show("tree"); return true; }
+        if (_view == "search" || (_search.Text ?? "").Length > 0) { _search.Text = ""; Show("tree"); return true; }
+        return false;
+    }
+
+    /// <summary>The tree ordered again (Ordenar, in the Explorer's ⋯).</summary>
+    public void Resort() => Render(force: true);
 
     /// <summary>model.clear().</summary>
     public void ClearSelection()
@@ -507,12 +559,42 @@ public sealed class NotesExplorer : Border
         return true;
     }
 
-    /// <summary>model.select(id,'toggle').</summary>
+    /// <summary>model.select(id,'toggle'): only the row and the bar change, the tree is not rebuilt (a tap while
+    /// selecting answers at once, however big the vault is).</summary>
     private void Toggle(string id)
     {
         if (!_selected.Remove(id)) _selected.Add(id);
-        Render();
+        if (_rowButtons.TryGetValue(id, out var button)) PaintSelected(button, _selected.Contains(id));
+        else Render();
+        RenderBar();
     }
+
+    /// <summary>The button of each note and folder row made now (its path, or <see cref="FolderPrefix"/> and the folder).</summary>
+    private readonly Dictionary<string, Button> _rowButtons = new(StringComparer.Ordinal);
+
+    private Control Registered(string key, Control row)
+    {
+        if ((row as Button ?? (row as Panel)?.Children.OfType<Button>().FirstOrDefault()) is { } b)
+        {
+            _rowButtons[key] = b;
+            if (_selected.Contains(key)) Avalonia.Automation.AutomationProperties.SetItemStatus(b, "selecionada");
+        }
+        return row;
+    }
+
+    private static void PaintSelected(Button button, bool selected)
+    {
+        button.Background = selected ? UrbeTheme.AccentSoft : Brushes.Transparent;
+        button.BorderBrush = selected ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
+        // CST-105: the screen reader says the row is chosen, not only the colour shows it
+        Avalonia.Automation.AutomationProperties.SetItemStatus(button, selected ? "selecionada" : null);
+    }
+
+    /// <summary>What the screen reader says of the row's state ("selecionada" or null; tests).</summary>
+    public string? RowStatus(string key) => _rowButtons.TryGetValue(key, out var b) ? Avalonia.Automation.AutomationProperties.GetItemStatus(b) : null;
+
+    /// <summary>Whether the row of this item is drawn selected now (tests).</summary>
+    public bool IsRowSelected(string key) => _rowButtons.TryGetValue(key, out var b) && b.Background is { } bg && !ReferenceEquals(bg, Brushes.Transparent);
 
     private void Show(string view)
     {
@@ -555,6 +637,7 @@ public sealed class NotesExplorer : Border
         _visibleFolders.Clear();
         _visibleFiles.Clear();
         _folderRows.Clear();
+        _rowButtons.Clear();
         switch (_view)
         {
             case "trash": RenderTrash(_trash ?? []); break;
@@ -582,6 +665,10 @@ public sealed class NotesExplorer : Border
             list.Add(item);
         }
         foreach (var f in folders) Put(Dir(f), (0, f, Base(f)));
+        // how many notes each folder holds, its subfolders included: where the vault grows shows in the tree
+        _noteCounts.Clear();
+        foreach (var n in _notes)
+            for (var f = Dir(n.Path); f.Length > 0; f = Dir(f)) _noteCounts[f] = _noteCounts.GetValueOrDefault(f) + 1;
         var notesByPath = new Dictionary<string, CityNote>(StringComparer.Ordinal);
         foreach (var n in _notes) { notesByPath.TryAdd(n.Path, n); Put(Dir(n.Path), (1, n.Path, Base(n.Path))); }
         foreach (var f in _files) Put(Dir(f), (2, f, Base(f)));
@@ -589,7 +676,12 @@ public sealed class NotesExplorer : Border
         {
             if (!inside.TryGetValue(parent, out var here)) return;
             // folders first, then every file by its name with the extension (notes and attachments together)
-            var kids = here.OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
+            // folders first, by name; then the notes and files by name, or the notes newest first (then the files)
+            var sort = State?.Sort ?? "nome";
+            string When(string path) => notesByPath.TryGetValue(path, out var n) ? (sort == "criadas" ? n.Created : n.Modified) ?? "" : "";
+            var kids = sort == "nome"
+                ? here.OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList()
+                : here.OrderBy(k => k.Kind).ThenByDescending(k => k.Kind == 1 ? When(k.Path) : "", StringComparer.Ordinal).ThenBy(k => k.Name, Locale).ToList();
             foreach (var k in kids)
             {
                 if (k.Kind == 0)
@@ -801,18 +893,23 @@ public sealed class NotesExplorer : Border
         var path = n.Path;
         if (_renaming == path) { Emit(() => RenameRow(path, Base(path), depth)); return; }
         // the file name with its extension, as an explorer shows it (the 1.8.4 showed the title)
-        Emit(() => PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
-            depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay));
+        Emit(() => Registered(path, PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
+            depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay)));
     }
 
     private void AddFileRow(string path, int depth, bool withPath)
     {
         _visibleFiles.Add(path);
-        Emit(() => Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
-            () => TryOpenFile(path), () => ArmDrag(path)));
+        Emit(() => Registered(path, Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, _selected.Contains(path),
+            () => TryOpenFile(path), () => { if (_selected.Count > 0) Toggle(path); else ArmDrag(path); })));
     }
 
     /// <summary>A folder row: the caret and a "⋯" with the folder's options (the 1.8.4 showed none, DEC-0045).</summary>
+    private readonly Dictionary<string, int> _noteCounts = new(StringComparer.Ordinal);
+
+    /// <summary>How many notes a folder of the tree holds, its subfolders included (tests).</summary>
+    public int NoteCountOf(string folder) => _noteCounts.GetValueOrDefault(folder);
+
     private Control FolderRow(string folder, string name, int depth, bool open)
     {
         var more = new Button
@@ -828,8 +925,18 @@ public sealed class NotesExplorer : Border
         caret.VerticalAlignment = VerticalAlignment.Center;
         caret.RenderTransform = open ? new RotateTransform(90) : null;
         var trailing = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { more, caret } };
-        return PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
-            () => TapFolder(folder), () => { if (HoldFolder(folder)) ArmDrag(); }, () => HoldDelay);
+        if (_noteCounts.GetValueOrDefault(folder) is > 0 and var count)
+        {
+            var counter = new TextBlock
+            {
+                Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 13,
+                Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 2, 0)
+            };
+            counter.Classes.Add("urbe-folder-count");
+            trailing.Children.Insert(0, counter);
+        }
+        return Registered(FolderPrefix + folder, PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
+            () => TapFolder(folder), () => { if (HoldFolder(folder)) ArmDrag(); }, () => HoldDelay));
     }
 
     // A held note or folder can be dragged onto a folder row (the 1.8.4 did nothing, DEC-0045, UC-38, UC-54). The hold
@@ -915,14 +1022,35 @@ public sealed class NotesExplorer : Border
         // .ume-trash-head: padding 6px 12px 10px, 13px text-3; Esvaziar .ui-btn 36px, danger
         var empty = SmallButton(UrbeTheme.Icons.Trash, "Esvaziar", UrbeTheme.Danger);
         empty.Click += (_, _) => EmptyTrashRequested?.Invoke();
+        // everything back at once (a folder or a selection deleted by mistake), each note to where it was
+        var all = SmallButton(UrbeTheme.Icons.Restore, "Restaurar tudo", UrbeTheme.Text);
+        all.Margin = new Thickness(0, 0, 6, 0);
+        all.Click += (_, _) => RestoreAllRequested?.Invoke();
+        Avalonia.Automation.AutomationProperties.SetName(all, "Restaurar tudo");
+        Avalonia.Automation.AutomationProperties.SetName(empty, "Esvaziar a lixeira");
         var head = new DockPanel { Margin = new Thickness(12, 6, 12, 10) };
         DockPanel.SetDock(empty, Dock.Right);
+        DockPanel.SetDock(all, Dock.Right);
         head.Children.Add(empty);
+        head.Children.Add(all);
         head.Children.Add(new TextBlock { Text = items.Count + " item(ns) · restaure ou exclua de vez", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
         _list.Children.Add(head);
-        foreach (var item in items)
+        // many items (UC-78, observation of 15/11/2026: the trash was slow): only the rows near the screen are made
+        var rows = new List<Func<Control>>(items.Count);
+        foreach (var item in items) { var entry = item; rows.Add(() => TrashRow(entry)); }
+        if (rows.Count <= VirtualFrom) foreach (var make in rows) _list.Children.Add(make());
+        else
         {
-            var entry = item;
+            _rows = rows;
+            _rowsAt = _list.Children.Count;
+            _realized = (-1, -1);
+            Realize();
+        }
+    }
+
+    private Control TrashRow(TrashEntry entry)
+    {
+        {
             var restore = SmallButton(UrbeTheme.Icons.Restore, "Restaurar", UrbeTheme.Text);
             restore.Click += (_, _) => RestoreRequested?.Invoke(entry.Id);
             var purge = new Button
@@ -940,13 +1068,13 @@ public sealed class NotesExplorer : Border
             ToolTip.SetTip(purge, "Excluir de vez");
             purge.Click += (_, _) => PurgeRequested?.Invoke(entry.Id);
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { restore, purge } };
-            _list.Children.Add(new Border
+            return new Border
             {
                 MinHeight = 48,
                 Padding = RowPadding(0),
                 CornerRadius = new CornerRadius(12),
                 Child = RowFrame(UrbeTheme.Icons.File, entry.Title, entry.OriginalPath, false, false, actions)
-            });
+            };
         }
     }
 
@@ -1166,13 +1294,22 @@ public sealed class NotesExplorer : Border
     /// the compositions.</summary>
     private Control SelectionBar()
     {
-        Button Act(string icon, string tip, string? action, string color)
+        Button Act(string icon, string tip, string? action, string color, string? label = null)
         {
             var b = new Button
             {
-                Content = UrbeTheme.Icon(icon, 20, color, 1.8),
-                Width = 38,
-                MinHeight = 44,
+                Content = label is null ? UrbeTheme.Icon(icon, 20, color, 1.8) : new StackPanel
+                {
+                    Spacing = 3, HorizontalAlignment = HorizontalAlignment.Center,
+                    Children =
+                    {
+                        UrbeTheme.Icon(icon, 20, color, 1.8),
+                        new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(color), HorizontalAlignment = HorizontalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis }
+                    }
+                },
+                Width = label is null ? 38 : double.NaN,
+                HorizontalAlignment = label is null ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
+                MinHeight = label is null ? 44 : 56,
                 Padding = new Thickness(0),
                 CornerRadius = new CornerRadius(8),
                 Background = Brushes.Transparent,
@@ -1183,47 +1320,68 @@ public sealed class NotesExplorer : Border
             b.Resources["ButtonBackgroundDisabled"] = Brushes.Transparent;
             b.PropertyChanged += (_, e) => { if (e.Property == IsEnabledProperty) b.Opacity = b.IsEnabled ? 1 : .3; };
             ToolTip.SetTip(b, tip);
+            // CST-105: the screen reader says what each action does, not only "botão"
+            Avalonia.Automation.AutomationProperties.SetName(b, tip);
             if (action is null) return b;
             b.Click += (_, _) => { if (_selected.Count > 0) SelectionAction?.Invoke(action, _selected.ToList()); };
             // renderBar: the actions that only apply to notes are disabled when only folders are selected
-            if (action != "delete") _noteActions.Add(b);
+            if (action == "move") _moveAction = b;
+            else if (action != "delete") _noteActions.Add(b);
             return b;
         }
         var clear = Act(UrbeTheme.Icons.CloseUi, "Limpar seleção", null, UrbeTheme.Text2);
         // UC-83: one item selected is renamed right there, in its row
-        _renameAction = Act(UrbeTheme.Icons.Pencil, "Renomear", null, UrbeTheme.Text2);
+        _renameAction = Act(UrbeTheme.Icons.Pencil, "Renomear", null, UrbeTheme.Text2, "Renomear");
         Avalonia.Automation.AutomationProperties.SetName(_renameAction, "Renomear");
         _renameAction.Click += (_, _) => { if (_selected.Count == 1) BeginRename(_selected.First()); };
         clear.Click += (_, _) => ClearSelection();
-        _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
+        _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        _count.FontSize = 15;
+        _count.FontWeight = FontWeight.SemiBold;
         _count.Margin = new Thickness(6, 0);
-        var actions = new StackPanel
+        _count.VerticalAlignment = VerticalAlignment.Center;
+        // every action in sight, with its name (observation of 15/11/2026: organizing was hard; on the phone the
+        // actions were icons only, scrolled off the bar or under the floating button): two rows of four
+        var actions = new Avalonia.Controls.Primitives.UniformGrid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 2,
+            Columns = 4, Margin = new Thickness(0, 4, 0, 0),
             Children =
             {
-                Act(UrbeTheme.Icons.Open, "Abrir", "open", UrbeTheme.Text2),
+                Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2, "Mover"),
+                Act(UrbeTheme.Icons.Folder, "Agrupar em nova pasta", "group", UrbeTheme.Text2, "Nova pasta"),
+                Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2, "Duplicar"),
+                Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger, "Lixeira"),
+                Act(UrbeTheme.Icons.Open, "Abrir", "open", UrbeTheme.Text2, "Abrir"),
                 _renameAction,
-                Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Folder, "Agrupar em nova pasta", "group", UrbeTheme.Text2),
+                Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2, "Favoritar"),
                 // CST-135: a publication of the selected notes, in the order they were chosen (references, not copies)
-                Act(UrbeTheme.Icons.Page, "Criar publicação com estas notas", "publication", UrbeTheme.Text2),
-                Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger)
+                Act(UrbeTheme.Icons.Page, "Criar publicação com estas notas", "publication", UrbeTheme.Text2, "Publicação")
             }
         };
-        var row = new DockPanel { LastChildFill = false };
-        DockPanel.SetDock(clear, Dock.Left);
-        DockPanel.SetDock(_count, Dock.Left);
-        DockPanel.SetDock(actions, Dock.Right);
-        row.Children.Add(clear);
-        row.Children.Add(_count);
-        row.Children.Add(actions);
-        clear.Margin = new Thickness(0, 0, 2, 0);
+        // every note shown (the open folders of the tree, or every result of a search) in one tap: a big vault is
+        // organized in one move, not note by note (observation of 15/11/2026)
+        var all = new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 6,
+                Children = { UrbeTheme.Icon(UrbeTheme.Icons.Check, 17, UrbeTheme.Accent, 2), new TextBlock { Text = "Selecionar tudo", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center } }
+            },
+            MinHeight = 44, Padding = new Thickness(10, 0), CornerRadius = new CornerRadius(10), Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0), VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right
+        };
+        ToolTip.SetTip(all, "Selecionar tudo");
+        Avalonia.Automation.AutomationProperties.SetName(all, "Selecionar tudo");
+        all.Click += (_, _) => SelectAllShown();
+        var head = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
+        Grid.SetColumn(_count, 1);
+        Grid.SetColumn(all, 2);
+        head.Children.Add(clear);
+        head.Children.Add(_count);
+        head.Children.Add(all);
+        var row = new StackPanel { Children = { head, actions } };
         _bar.Child = row;
-        _bar.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .97);
+        _bar.Background = UrbeTheme.Brush(UrbeTheme.Surface2);
         _bar.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
         _bar.BorderThickness = new Thickness(1);
         _bar.CornerRadius = new CornerRadius(16);
@@ -1237,14 +1395,31 @@ public sealed class NotesExplorer : Border
     }
 
     /// <summary>renderBar: shown while something is selected (never in the Lixeira); "1 pasta · 2 notas".</summary>
+    /// <summary>Whether the selection bar is up (the floating menu steps aside so it covers none of its actions).</summary>
+    public bool Selecting => _bar.IsVisible;
+
+    /// <summary>The selection bar came up or went away.</summary>
+    public event Action? SelectingChanged;
+
     private void RenderBar()
     {
+        bool was = _bar.IsVisible;
         _bar.IsVisible = _selected.Count > 0 && _view != "trash";
-        int f = _selected.Count(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal)), d = _selected.Count - f;
+        // the last rows can always be scrolled above the bar
+        _list.Margin = new Thickness(8, 0, 8, _bar.IsVisible ? 170 : 88);
+        if (was != _bar.IsVisible) SelectingChanged?.Invoke();
+        int f = _selected.Count(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal));
+        int k = _selected.Count(x => !x.StartsWith(FolderPrefix, StringComparison.Ordinal) && _files.Contains(x));
+        int d = _selected.Count - f - k;
         static string Plural(int n, string one, string many) => n + " " + (n == 1 ? one : many);
-        _count.Text = string.Join(" · ", new[] { f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "" }.Where(x => x.Length > 0));
+        _count.Text = string.Join(" · ", new[]
+        {
+            f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "", k > 0 ? Plural(k, "arquivo", "arquivos") : ""
+        }.Where(x => x.Length > 0));
+        // the actions of notes need a note; moving takes notes and files; a file is renamed from its own menu
         foreach (var b in _noteActions) b.IsEnabled = d > 0;
-        _renameAction.IsEnabled = _selected.Count == 1;
+        if (_moveAction is not null) _moveAction.IsEnabled = d + k > 0;
+        _renameAction.IsEnabled = _selected.Count == 1 && k == 0;
     }
 
     private static string Dir(string path) => path.Contains('/') ? path[..path.LastIndexOf('/')] : "";

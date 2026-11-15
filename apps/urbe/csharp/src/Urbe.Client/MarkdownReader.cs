@@ -738,7 +738,7 @@ public sealed partial class MarkdownReader
 /// </summary>
 public sealed class FormulaFit : Decorator
 {
-    public const double MinScale = .6;
+    public const double MinScale = .85;
     private readonly LayoutTransformControl _scaled;
     private readonly double _natural;
 
