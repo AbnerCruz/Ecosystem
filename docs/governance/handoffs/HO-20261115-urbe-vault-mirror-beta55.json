@@ -12,8 +12,8 @@
   "state": "review",
   "branch": "ccr-c717cbe5-9x21rb",
   "base_commit": "802c195e314a7b61b33c2dd0a943a6d9ac67ee55",
-  "commit": "56da072",
-  "pr": "pending",
+  "commit": "2c14f30",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/949",
   "files_changed": [
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
