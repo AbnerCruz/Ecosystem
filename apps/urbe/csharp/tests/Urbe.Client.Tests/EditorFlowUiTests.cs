@@ -725,4 +725,28 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task AFingerOnTheBlockBeingWrittenAsksForTheKeyboard() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var before = PlatformInput.ShowKeyboard;
+            int asked = 0;
+            PlatformInput.ShowKeyboard = () => { asked++; return true; };
+            try
+            {
+                var (editor, window) = Open("Um parágrafo.\n");
+                var box = Edit(editor, 0);
+                asked = 0;
+                // the keyboard was closed with Back; the finger taps the same line again
+                var touch = new Pointer(Pointer.GetNextFreeId(), PointerType.Touch, true);
+                var args = new TappedEventArgs(InputElement.TappedEvent,
+                    new PointerEventArgs(InputElement.PointerReleasedEvent, box, touch, window, new Point(5, 5), 0, new PointerPointProperties(), KeyModifiers.None));
+                box.RaiseEvent(args);
+                Assert.Equal(1, asked);
+                window.Close();
+            }
+            finally { PlatformInput.ShowKeyboard = before; }
+            return true;
+        }, TestContext.Current.CancellationToken));
 }

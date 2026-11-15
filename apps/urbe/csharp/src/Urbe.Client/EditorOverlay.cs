@@ -218,6 +218,11 @@ public sealed class EditorOverlay : Grid
             _acceptedSourceText = normalized;
         };
         Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
+        // a finger on the text: the keyboard is asked for (explicitly: after Back closed it, Android ignores implicit asks)
+        Editor.AddHandler(TappedEvent, (object? _, TappedEventArgs e) =>
+        {
+            if (e.Pointer.Type == PointerType.Touch && !Editor.IsReadOnly) PlatformInput.ShowKeyboard?.Invoke();
+        }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.CaretIndexProperty) UpdateWiki(); // A click/selection must not scroll the page.

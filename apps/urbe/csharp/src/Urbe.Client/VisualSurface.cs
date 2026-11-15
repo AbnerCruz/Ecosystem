@@ -918,6 +918,11 @@ public sealed class VisualSurface : StackPanel
             e.Handled = true;
             Ui.PlatformHaptics.Tick();
         };
+        // a finger on the box being written (the keyboard closed with Back meanwhile): the keyboard is asked for again
+        _box.AddHandler(TappedEvent, (object? _, TappedEventArgs e) =>
+        {
+            if (e.Pointer.Type == PointerType.Touch && !_readOnly) PlatformInput.ShowKeyboard?.Invoke();
+        }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         _box.KeyDown += OnBoxKey;
         _box.AddHandler(KeyDownEvent, OnBoxKey, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _box.AddHandler(TextInputEvent, OnBoxTextInput, Avalonia.Interactivity.RoutingStrategies.Tunnel);
