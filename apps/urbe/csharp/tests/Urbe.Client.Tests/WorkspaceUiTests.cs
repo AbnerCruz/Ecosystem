@@ -769,6 +769,15 @@ public sealed partial class HeadlessUiTests
                 ClickButtonWithText(w, "Ver todos os 14 soltos");
                 Dispatcher.UIThread.RunJobs();
                 Assert.Equal(14, Cards("Solta "));
+                // the vault refreshed meanwhile (a save, the second phase of opening): the full list stays, not the preview
+                w.Render();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(14, Cards("Solta "));
+                // a new filter leaves that list
+                w.TagFilter = null;
+                w.TagFilter = "estudo";
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(12, Cards("Solta "));
                 window.Close();
                 return true;
             }

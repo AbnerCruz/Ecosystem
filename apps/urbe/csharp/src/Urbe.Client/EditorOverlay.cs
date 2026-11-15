@@ -218,6 +218,11 @@ public sealed class EditorOverlay : Grid
             _acceptedSourceText = normalized;
         };
         Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
+        // a finger on the text: the keyboard is asked for (explicitly: after Back closed it, Android ignores implicit asks)
+        Editor.AddHandler(TappedEvent, (object? _, TappedEventArgs e) =>
+        {
+            if (e.Pointer.Type == PointerType.Touch && !Editor.IsReadOnly) PlatformInput.ShowKeyboard?.Invoke();
+        }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.CaretIndexProperty) UpdateWiki(); // A click/selection must not scroll the page.
@@ -275,11 +280,12 @@ public sealed class EditorOverlay : Grid
         _wiki.Chosen += CommitWiki;
 
         _visual.UserNavigating = () => UserScrolling;
+        _visual.UndoRequested += undo => { if (undo) Undo(); else Redo(); };
         _visual.TextEdited += md =>
         {
             // the Visual box never shows seals and composes them with AiAuthorship; this only catches a route that did not
             var current = Editor.Text ?? "";
-            if (!NoteMarks.AllowsUserAuthorshipEdit(current, md) && md != AiAuthorship.Attribute(current, md, null))
+            if (!_visual.Composing && !NoteMarks.AllowsUserAuthorshipEdit(current, md) && md != AiAuthorship.Attribute(current, md, null))
             {
                 _visual.SetText(current);
                 _toast.Show("A marca de autoria da IA não pode ser editada ou removida.", TimeSpan.FromSeconds(3));
@@ -288,6 +294,7 @@ public sealed class EditorOverlay : Grid
             _fromVisual = true;
             if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) ReplaceSourceText(md);
             _fromVisual = false;
+            if (!_restoringHistory) _history.Record(md, Environment.TickCount64);
         };
         _visual.WebLinkTapped += url => OpenWeb?.Invoke(url);
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
@@ -631,6 +638,23 @@ public sealed class EditorOverlay : Grid
         {
             // A stale list/search snapshot of the same file must not overwrite a draft.
             if (current.Path == note.Path && HasChanges) return;
+            // the same note with the same text (a list, a search, a refresh after a write elsewhere): the person keeps
+            // writing where they are; nothing is drawn again, the box and the keyboard stay
+            if (current.Path == note.Path && string.Equals(note.Content.Replace("\r\n", "\n"), (Editor.Text ?? "").Replace("\r\n", "\n"), StringComparison.Ordinal)) return;
+            // the same note changed elsewhere (the Assistente wrote it, links were renamed): shown again, with the block
+            // being written still written and the Fonte caret where it was, when their text is still there
+            if (current.Path == note.Path && IsVisible)
+            {
+                var resume = _visual.Snapshot();
+                var caret = Editor.CaretIndex;
+                var wasFonte = Mode == EditorMode.Fonte && Editor.IsFocused;
+                var offset = (Mode == EditorMode.Visual ? _visualScroll : _sourceScroll).Offset;
+                Show(note);
+                (Mode == EditorMode.Visual ? _visualScroll : _sourceScroll).Offset = offset;
+                if (Mode == EditorMode.Visual && resume is not null) _visual.Resume(resume);
+                else if (wasFonte) { Editor.CaretIndex = Math.Clamp(caret, 0, (Editor.Text ?? "").Length); Editor.Focus(); }
+                return;
+            }
             _ = LeaveCurrentAsync();
         }
         _trail.Clear();
@@ -709,15 +733,38 @@ public sealed class EditorOverlay : Grid
     public void Undo()
     {
         if (Mode == EditorMode.Fonte) Editor.Undo();
-        else if (_visual.IsEditing) _visual.Undo();
-        else { Editor.Undo(); _visual.SetText(Editor.Text ?? ""); }
+        else HistoryStep(undo: true);
     }
 
     public void Redo()
     {
         if (Mode == EditorMode.Fonte) Editor.Redo();
-        else if (_visual.IsEditing) _visual.Redo();
-        else { Editor.Redo(); _visual.SetText(Editor.Text ?? ""); }
+        else HistoryStep(undo: false);
+    }
+
+    // Visual's undo is the note's, across blocks (a block's box only knew its own edits since it opened)
+    private readonly EditHistory _history = new();
+    private bool _restoringHistory;
+
+    /// <summary>Whether Visual has something to undo / redo (tests, the bar).</summary>
+    public bool CanUndoVisual => _history.CanUndo;
+    public bool CanRedoVisual => _history.CanRedo;
+
+    private void HistoryStep(bool undo)
+    {
+        if (ReadOnly || _note is null) return;
+        // the note may have changed outside Visual (Fonte, a form): that is a step of its own first
+        _history.Record((Editor.Text ?? "").Replace("\r\n", "\n"), Environment.TickCount64, group: false);
+        if ((undo ? _history.Undo() : _history.Redo()) is not { } step) return;
+        _restoringHistory = true;
+        try
+        {
+            _fromVisual = true;
+            ReplaceSourceText(step.Text);
+            _fromVisual = false;
+            _visual.Restore(step.Text, step.Caret);
+        }
+        finally { _fromVisual = false; _restoringHistory = false; }
     }
 
     private void Go(CityNote target)
@@ -844,6 +891,7 @@ public sealed class EditorOverlay : Grid
         TouchTab(note.Path);
         Shown?.Invoke(note.Path);
         Editor.Text = note.Content;
+        _history.Reset(note.Content.Replace("\r\n", "\n"));
         _opening = false;
         RebuildIndex();
         var canVisual = CanVisual(note.Path);
@@ -2056,8 +2104,34 @@ public sealed class EditorOverlay : Grid
 
     private Task? _saveRun;
 
+    /// <summary>
+    /// The seals of <paramref name="content"/> as the save accepts them after <paramref name="previous"/> (the last saved
+    /// text). Visual composes seals block by block as the person writes; across several blocks and saves they can come
+    /// out different from what the save's guard reads from the last saved text, which then refused the save. Only the
+    /// seals are read again from the saved text (by the same AiAuthorship rule); the person's text never changes and no
+    /// seal can be made up (AiAuthorship only carries seals that were already there).
+    /// </summary>
+    public static string SealsForSave(string previous, string content)
+    {
+        if (!content.Contains("{ia:", StringComparison.Ordinal) && !previous.Contains("{ia:", StringComparison.Ordinal)) return content;
+        if (NoteMarks.PreservesAiAuthorship(previous, content) || content == AiAuthorship.Attribute(previous, content, null)) return content;
+        return AiAuthorship.Attribute(previous, content, null);
+    }
+
     private async Task<bool> SaveNowAsync(CityNote note)
     {
+        if (note.Path == _note?.Path && IsMarkdown && SealsForSave(_savedContent, note.Content) is var sealed_ && !string.Equals(sealed_, note.Content, StringComparison.Ordinal))
+        {
+            note = note with { Content = sealed_ };
+            // the open text takes the same seals now, unless a block is being written (it takes them when it is left)
+            if (Mode == EditorMode.Fonte || !_visual.IsEditing)
+            {
+                _fromVisual = true;
+                try { ReplaceSourceText(sealed_); }
+                finally { _fromVisual = false; }
+                if (Mode == EditorMode.Visual) _visual.SetText(sealed_);
+            }
+        }
         if (SaveRequested is null)
         {
             UpdateSaveDot();
@@ -2215,8 +2289,12 @@ public sealed class EditorOverlay : Grid
         if (tool.Id is "bold" or "italic" or "code" && LegacyEditorTools.EnclosingMark(text, s, e, tool.Id) is not null)
         { ApplyEdit(LegacyVisualEdit.ToggleMark(text, s, e, tool.Id)); return; }
         if (tool.Id == "code") { ApplyEdit(LegacyVisualEdit.InlineCode(text, s, e)); return; }
-        if (tool.Id is "h1" or "h2" or "h3" or "list" or "task" or "quote" && LegacyEditorTools.ActiveTools(text, s, e).Contains(tool.Id))
-        { ApplyEdit(LegacyVisualEdit.ToggleBlock(text, s, tool.Md!)); return; }
+        // bold and italic as in Visual: marks hugging the text (spaces outside), one pair per line, * inside a word
+        if (tool.Id is "bold" or "italic") { ApplyEdit(LegacyVisualEdit.ToggleMark(text, s, e, tool.Id)); return; }
+        // a heading, list, task or quote mark goes at the start of the line (never in the middle of a word), and comes
+        // off when it is there: as in Visual
+        if (tool.Id is "h1" or "h2" or "h3" or "list" or "task" or "quote" && tool.Md is { } mark)
+        { ApplyEdit(LegacyVisualEdit.ToggleBlock(text, s, mark)); return; }
         if (LegacyEditorTools.ApplySource(tool, text, a, b) is { } edit) ApplyEdit(edit);
     }
 

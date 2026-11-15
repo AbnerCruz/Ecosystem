@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.52 — 08/11/2026
+- Popup do Assistente sobre o editor mostra a conversa completa, com rolagem própria e campo de escrita sempre acessível.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.52
+
 ## 2.0.0-beta.51 — 08/11/2026
 - IA mantém a conversa ao fechar/reabrir a aba, abre histórico com menos latência, oferece esforço Instantâneo/Médio/Alto quando suportado e popup sobre o editor.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.51
