@@ -1105,6 +1105,8 @@ public sealed partial class AssistantPanel : Border
         // Provider was explicitly checked before the async run; the analyzer can lose the refinement after awaits.
         var availableTools = web is null ? ToolsFor(p!).Select(AssistantTools.EfficientRead).ToList()
             : ToolsFor(p!).Select(AssistantTools.EfficientRead).Concat(AssistantWebTools.All).ToList();
+        // DEC-0061: the MCP tools the person allowed, under the same policies and approvals
+        availableTools.AddRange(AssistantMcp.Tools(_cfg));
         PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try

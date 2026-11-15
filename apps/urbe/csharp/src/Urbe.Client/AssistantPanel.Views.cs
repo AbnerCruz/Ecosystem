@@ -1040,6 +1040,10 @@ public sealed partial class AssistantPanel
                 Hint(_cfg.Web.Enabled ? "Disponível para todos os agentes · " + (_cfg.Web.Provider == "brave" ? "Brave (opcional)" : "sem chave") : "Desativada pela preferência de privacidade"),
                 TextButton("Privacidade e pesquisa", ShowWebSettings),
                 Hint("Peça para pesquisar no chat. Sem configurar provedor nem permissão individual.")));
+            body.Children.Add(Section("Servidores MCP",
+                Hint(_cfg.McpServers.Count == 0 ? "Nenhum. Um servidor MCP dá ao Assistente ferramentas de outro serviço; cada ferramenta começa desligada."
+                    : string.Join(" · ", _cfg.McpServers.Select(m => m.Name + " (" + m.Tools.Count(t => t.Value is "read" or "write") + " liberadas)"))),
+                TextButton("Servidores MCP", () => _ = McpServersAsync())));
         }
         if (addPreset is not null) EditProvider(null, addPreset);
     }
@@ -1210,6 +1214,52 @@ public sealed partial class AssistantPanel
             ShowMemoryManager();
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Não foi possível memorizar", ex.Message); }
+    }
+
+    /// <summary>
+    /// DEC-0061: the MCP servers — add one by its address, see the tools it offers and allow each as reading (runs like a
+    /// web search) or writing (asks every time), or leave it off; remove a server.
+    /// </summary>
+    private async Task McpServersAsync()
+    {
+        var items = _cfg.McpServers.Select(m => new DialogItem(m.Name, Detail: m.Url)).Append(new DialogItem("Adicionar servidor", UrbeTheme.Icons.Plus)).ToList();
+        if (await _app.Dialogs.ChooseAsync("Servidores MCP", items, "As ferramentas de um servidor só chegam ao Assistente depois que você libera cada uma.") is not int pick) return;
+        AiMcpServer server;
+        if (pick == _cfg.McpServers.Count)
+        {
+            var url = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Endereço", Placeholder: "https://…/mcp", Confirm: "Continuar",
+                Validate: v => Uri.TryCreate(v.Trim(), UriKind.Absolute, out var u) && u.Scheme is "https" or "http" ? null : "Use um endereço https://"));
+            if (url is null) return;
+            var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Nome", Value: new Uri(url.Trim()).Host, Confirm: "Continuar"));
+            if (name is null) return;
+            var token = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Chave (se o servidor pedir)", Confirm: "Conectar", Required: false));
+            server = new AiMcpServer { Id = AssistantAgent.NewId("mcp"), Name = name.Trim(), Url = url.Trim(), Token = string.IsNullOrWhiteSpace(token) ? null : token.Trim() };
+        }
+        else
+        {
+            server = _cfg.McpServers[pick];
+            var what = await _app.Dialogs.ChooseAsync(server.Name, [new DialogItem("Ferramentas"), new DialogItem("Remover servidor", Danger: true)]);
+            if (what == 1) { _cfg.McpServers.Remove(server); SaveConfig(); ShowSettings(); return; }
+            if (what != 0) return;
+        }
+        try { await AssistantMcp.DiscoverAsync(server); }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        { await _app.Dialogs.AlertAsync("Não foi possível conectar", server.Url + "\n\n" + e.Message); return; }
+        if (!_cfg.McpServers.Contains(server)) _cfg.McpServers.Add(server);
+        SaveConfig();
+        while (true)
+        {
+            string State(string tool) => server.Tools.GetValueOrDefault(tool) switch { "read" => "Leitura", "write" => "Escrita (pede aprovação)", _ => "Desligada" };
+            var names = server.Known.Keys.Order(StringComparer.Ordinal).ToList();
+            if (names.Count == 0) { await _app.Dialogs.AlertAsync(server.Name, "O servidor não oferece ferramentas."); break; }
+            if (await _app.Dialogs.ChooseAsync(server.Name, names.Select(n => new DialogItem(n + " · " + State(n), Detail: server.Known[n].Description)).ToList(),
+                    "Toque numa ferramenta para mudar o que ela pode fazer.") is not int t) break;
+            var grant = await _app.Dialogs.ChooseAsync(names[t], [new DialogItem("Desligada"), new DialogItem("Leitura", Detail: "Usa sem perguntar, como uma pesquisa na web."), new DialogItem("Escrita", Detail: "Pergunta antes de cada uso.")]);
+            if (grant is not int g) continue;
+            if (g == 0) server.Tools.Remove(names[t]); else server.Tools[names[t]] = g == 1 ? "read" : "write";
+            SaveConfig();
+        }
+        ShowSettings();
     }
 
     /// <summary>CST-086: the memories an answer used, each with Editar and Esquecer; the chat stays where it was.</summary>

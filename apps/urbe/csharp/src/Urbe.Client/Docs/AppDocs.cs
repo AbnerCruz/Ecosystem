@@ -491,6 +491,10 @@ public static partial class AppDocs
         A parte **Geral** vale sempre; uma parte com nome vale quando todas as palavras do nome estão no modelo em uso. Títulos `## Claude 5` também funcionam.
 
         **Quando instruções divergem**, vale a mais específica: o que você pede agora; depois o papel e os blocos do agente; depois o `AGENTS.md` (a parte do modelo antes da Geral); por último as orientações do Urbe. Segurança, permissões, aprovações e selos de autoria valem sempre, mesmo que uma instrução peça o contrário.
+
+        ## Servidores MCP
+
+        Em **Configurações → Pesquisa → Servidores MCP**, adicione um servidor pelo endereço (e a chave, se ele pedir). O Urbe mostra as ferramentas que o servidor oferece; cada uma começa **desligada**. Libere como **Leitura** (o Assistente usa sem perguntar, como uma pesquisa na web) ou **Escrita** (pergunta antes de cada uso). O que o servidor responde é tratado como dado de terceiros, não como ordem.
         """;
 
     private const string Plugins = """

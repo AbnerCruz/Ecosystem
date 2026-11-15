@@ -153,9 +153,29 @@ public sealed record AiModelChoice(string ProviderId, string Model);
 public sealed record AiInstructionBlock(string Title, string Content);
 
 /// <summary>Assistant configuration, with backward-compatible independent image and agent preferences.</summary>
+/// <summary>DEC-0061: an MCP server the person added, and what each of its tools may do ("read", "write"; missing = off).</summary>
+public sealed class AiMcpServer
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Url { get; set; } = "";
+    /// <summary>A bearer token for the server, when it asks for one (kept with the providers' keys).</summary>
+    public string? Token { get; set; }
+    public Dictionary<string, string> Tools { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>The tools the server offered when last asked: name → (description, input schema as JSON).</summary>
+    public Dictionary<string, AiMcpToolInfo> Known { get; set; } = new(StringComparer.Ordinal);
+}
+
+public sealed class AiMcpToolInfo
+{
+    public string Description { get; set; } = "";
+    public string Schema { get; set; } = "{\"type\":\"object\"}";
+}
+
 public sealed class AiConfig
 {
     public int Version { get; set; } = 1;
+    public List<AiMcpServer> McpServers { get; set; } = [];
     public int AgentWorkspaceVersion { get; set; }
     public Dictionary<string, string> AgentPolicies { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Explicit capability scope per agent. Missing values preserve the agent's legacy Tools ceiling.</summary>
@@ -521,10 +541,17 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ["timeoutSeconds"] = c.Web.TimeoutSeconds, ["maxDownloadBytes"] = c.Web.MaxDownloadBytes,
             ["agentAccess"] = webAgents
         };
+        // DEC-0061: the MCP servers, their permissions per tool and the tools they offered
+        var mcp = new JsonArray(c.McpServers.Select(m => (JsonNode)new JsonObject
+        {
+            ["id"] = m.Id, ["name"] = m.Name, ["url"] = m.Url, ["token"] = m.Token ?? "",
+            ["tools"] = new JsonObject(m.Tools.OrderBy(t => t.Key, StringComparer.Ordinal).Select(t => KeyValuePair.Create(t.Key, (JsonNode?)t.Value))),
+            ["known"] = new JsonObject(m.Known.OrderBy(t => t.Key, StringComparer.Ordinal).Select(t => KeyValuePair.Create(t.Key, (JsonNode?)new JsonObject { ["description"] = t.Value.Description, ["schema"] = t.Value.Schema })))
+        }).ToArray());
         return new JsonObject
         {
             ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
-            ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
+            ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
             ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["language"] = c.Language, ["measureRuns"] = c.MeasureRuns, ["memory"] = memory,
@@ -562,6 +589,14 @@ public sealed class AssistantStore(IAssistantStorage storage)
         if (o["agentImages"] is JsonObject images)
             foreach (var (id, value) in images)
                 if (value is JsonObject image) c.AgentImages[id] = new AiModelChoice(Str(image["providerId"]), Str(image["model"]));
+        if (o["mcpServers"] is JsonArray servers)
+            foreach (var m in servers.OfType<JsonObject>())
+                c.McpServers.Add(new AiMcpServer
+                {
+                    Id = Str(m["id"]), Name = Str(m["name"]), Url = Str(m["url"]), Token = Str(m["token"]) is { Length: > 0 } t ? t : null,
+                    Tools = (m["tools"] as JsonObject ?? []).Where(x => Str(x.Value) is "read" or "write").ToDictionary(x => x.Key, x => Str(x.Value), StringComparer.Ordinal),
+                    Known = (m["known"] as JsonObject ?? []).Where(x => x.Value is JsonObject).ToDictionary(x => x.Key, x => new AiMcpToolInfo { Description = Str(x.Value!["description"]), Schema = Str(x.Value!["schema"], "{\"type\":\"object\"}") }, StringComparer.Ordinal)
+                });
         if (o["web"] is JsonObject w)
         {
             // Preserve an explicit old offline preference instead of silently restoring network access.
