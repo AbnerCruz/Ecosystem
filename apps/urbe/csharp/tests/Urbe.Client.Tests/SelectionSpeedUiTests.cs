@@ -53,6 +53,8 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(before, after);
             Assert.Equal(["Nota 00.md", "Nota 01.md"], view.Explorer.SelectedPaths);
             Assert.True(view.Explorer.IsRowSelected("Nota 01.md"));
+            Assert.Equal("selecionada", view.Explorer.RowStatus("Nota 01.md"));
+            Assert.Null(view.Explorer.RowStatus("Nota 02.md"));
             Assert.False(view.Explorer.IsRowSelected("Nota 02.md"));
             Assert.False(view.Editor.IsVisible);
 

@@ -574,7 +574,11 @@ public sealed class NotesExplorer : Border
 
     private Control Registered(string key, Control row)
     {
-        if ((row as Button ?? (row as Panel)?.Children.OfType<Button>().FirstOrDefault()) is { } b) _rowButtons[key] = b;
+        if ((row as Button ?? (row as Panel)?.Children.OfType<Button>().FirstOrDefault()) is { } b)
+        {
+            _rowButtons[key] = b;
+            if (_selected.Contains(key)) Avalonia.Automation.AutomationProperties.SetItemStatus(b, "selecionada");
+        }
         return row;
     }
 
@@ -582,7 +586,12 @@ public sealed class NotesExplorer : Border
     {
         button.Background = selected ? UrbeTheme.AccentSoft : Brushes.Transparent;
         button.BorderBrush = selected ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
+        // CST-105: the screen reader says the row is chosen, not only the colour shows it
+        Avalonia.Automation.AutomationProperties.SetItemStatus(button, selected ? "selecionada" : null);
     }
+
+    /// <summary>What the screen reader says of the row's state ("selecionada" or null; tests).</summary>
+    public string? RowStatus(string key) => _rowButtons.TryGetValue(key, out var b) ? Avalonia.Automation.AutomationProperties.GetItemStatus(b) : null;
 
     /// <summary>Whether the row of this item is drawn selected now (tests).</summary>
     public bool IsRowSelected(string key) => _rowButtons.TryGetValue(key, out var b) && b.Background is { } bg && !ReferenceEquals(bg, Brushes.Transparent);
