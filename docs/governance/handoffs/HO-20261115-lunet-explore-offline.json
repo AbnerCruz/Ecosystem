@@ -36,7 +36,7 @@
   "verification": [
     {
       "check": "Investigação UX offline",
-      "kind": "manual",
+      "kind": "human",
       "result": "passed",
       "evidence": "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md; Android Developers offline-first."
     },
