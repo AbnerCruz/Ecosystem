@@ -461,11 +461,12 @@ public sealed class NotesExplorer : Border
         return true;
     }
 
-    /// <summary>Selects every note shown now (with what was selected already); the rows and the bar change, not the tree.</summary>
+    /// <summary>Selects every note and file shown now (with what was selected already); the rows and the bar change, not the tree.</summary>
     public void SelectAllShown()
     {
         Fresh();
-        foreach (var path in _visibleNotes)
+        // the files shown (images, PDFs, audio) too: a folder of pictures moves in one tap
+        foreach (var path in _visibleNotes.Concat(_visibleFiles))
         {
             if (_selected.Contains(path)) continue;
             _selected.Add(path);

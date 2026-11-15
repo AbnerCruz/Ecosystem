@@ -17,7 +17,7 @@
 - **Multi-seleção para organizar o vault:**
   - cada toque marca ou desmarca a nota na hora, sem redesenhar a lista inteira;
   - a seleção não se perde quando o app salva ou relê a pasta;
-  - o novo botão **Selecionar tudo** marca todas as notas mostradas (as pastas abertas ou todos os resultados de uma busca), para mover, agrupar ou excluir de uma vez;
+  - o novo botão **Selecionar tudo** marca todas as notas e arquivos mostrados (as pastas abertas ou todos os resultados de uma busca), para mover, agrupar ou excluir de uma vez;
   - a barra de seleção ficou mais clara: a contagem e **Selecionar tudo** em cima e, embaixo, todas as ações visíveis com nome (Mover, Nova pasta, Duplicar, Lixeira, Abrir, Renomear, Favoritar, Publicação). Antes eram só ícones, que ficavam cortados ou escondidos atrás do botão redondo flutuante;
   - enquanto você seleciona, o botão flutuante sai da frente;
   - cada pasta da árvore mostra quantas notas tem, contando as subpastas, para você ver onde o vault está crescendo;

@@ -52,6 +52,14 @@ public sealed partial class HeadlessUiTests
             Assert.True(File.Exists(Path.Combine(vault, "Fotos", "mapa.pdf")));
             Assert.False(File.Exists(Path.Combine(vault, "praia.png")));
 
+            // Selecionar tudo takes the files shown too
+            view.ShowNotes();
+            await Settled();
+            Assert.True(view.Explorer.SelectFile("lixo1.png"));
+            view.Explorer.SelectAllShown();
+            Assert.Contains("lixo2.png", view.Explorer.SelectedPaths);
+            view.Explorer.ClearSelection();
+
             // two files deleted together: the question says they do not go to the Lixeira
             view.ShowNotes();
             await Settled();
