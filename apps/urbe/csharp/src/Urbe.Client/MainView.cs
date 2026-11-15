@@ -1408,8 +1408,11 @@ public sealed partial class MainView : Grid
             .Select(x => x[NotesExplorer.FolderPrefix.Length..]).Where(f => f.Length > 0).ToList();
         folders = folders.Where(f => !folders.Any(g => g != f && f.StartsWith(g + "/", StringComparison.Ordinal))).ToList();
         bool Within(string path) => folders.Any(f => path.StartsWith(f + "/", StringComparison.Ordinal));
-        var notes = selection.Where(x => !x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal) && !Within(x)).ToList();
-        if (notes.Count == 0 && folders.Count == 0) return;
+        var chosen = selection.Where(x => !x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal) && !Within(x)).ToList();
+        // the vault's other files chosen with them have no Lixeira: they are deleted for good, and the question says so
+        var files = chosen.Where(x => _attachments.Contains(x)).ToList();
+        var notes = chosen.Where(x => !_attachments.Contains(x)).ToList();
+        if (notes.Count == 0 && folders.Count == 0 && files.Count == 0) return;
         static string Plural(int n, string one, string many) => n.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + (n == 1 ? one : many);
         string title, message;
         if (folders.Count > 0)
@@ -1423,27 +1426,36 @@ public sealed partial class MainView : Grid
                 ? Plural(total, "nota vai", "notas vão") + " para a Lixeira e " + (total == 1 ? "pode" : "podem") + " ser restaurada" + (total == 1 ? "" : "s") + ". Outros arquivos da pasta ficam no vault."
                 : "A pasta está vazia.";
         }
-        else
+        else if (notes.Count > 0)
         {
             title = "Mover para a lixeira?";
             message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
         }
+        else
+        {
+            title = files.Count == 1 ? "Excluir “" + files[0][(files[0].LastIndexOf('/') + 1)..] + "”?" : "Excluir " + files.Count + " arquivos?";
+            message = "";
+        }
+        if (files.Count > 0)
+            message = (message.Length > 0 ? message + "\n\n" : "") + (files.Count == 1 ? "1 arquivo (imagem, PDF, áudio…) será apagado do vault de vez: arquivos não vão para a Lixeira."
+                : files.Count + " arquivos (imagens, PDFs, áudio…) serão apagados do vault de vez: arquivos não vão para a Lixeira.");
         // CST-226: what depends on the notes is said before they go (nothing dependent is changed)
         if (_store is { } usageStore)
         {
             // one pass over the vault for every note chosen (each one read the whole vault before)
-            var chosen = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>().ToList();
-            var usage = NoteUsage.OfMany(usageStore, chosen);
-            var impact = chosen.Select(d => NoteUsage.Summary(usage[d.Id])).OfType<string>().ToList();
+            var docs = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>().ToList();
+            var usage = NoteUsage.OfMany(usageStore, docs);
+            var impact = docs.Select(d => NoteUsage.Summary(usage[d.Id])).OfType<string>().ToList();
             if (impact.Count > 0) message += "\n\n" + string.Join("\n", impact.Take(3)) + "\nEsses itens vão mostrar a fonte como indisponível até você restaurar a nota.";
         }
-        if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
+        if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 || files.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
         await InBatchAsync(notes.Count + folders.Sum(f => NoteLibrary.FolderDocuments(_store!, f).Count), async () =>
         {
             foreach (var f in folders)
                 if (!await DeleteFolderAsync(f)) break;
             var picked = notes.Select(p => _store?.Get(p)).OfType<UrbeDocument>().ToList();
             if (picked.Count > 0) await TrashNotesAsync(picked);
+            foreach (var file in files) await DeleteAttachmentAsync(file, confirmed: true);
             return true;
         });
         Explorer.ClearSelection();
@@ -1615,7 +1627,21 @@ public sealed partial class MainView : Grid
             return;
         }
         if (await ChooseFolderAsync(current: SharedFolder(paths)) is not { } folder) return;
-        await MoveNotesToAsync(paths, folder);
+        await MoveNotesAndFilesToAsync(paths, folder);
+    }
+
+    /// <summary>Notes and the vault's other files (images, PDFs, audio) chosen together go to one folder: the notes as
+    /// notes (ids, dates, links), each file with the links to it updated.</summary>
+    private async Task MoveNotesAndFilesToAsync(IReadOnlyList<string> paths, string folder)
+    {
+        var files = paths.Where(p => _attachments.Contains(p)).ToList();
+        var notes = paths.Where(p => !_attachments.Contains(p)).ToList();
+        if (notes.Count > 0) await MoveNotesToAsync(notes, folder);
+        foreach (var file in files)
+        {
+            var to = (folder.Length > 0 ? folder + "/" : "") + file[(file.LastIndexOf('/') + 1)..];
+            if (to != file) await MoveAttachmentToAsync(file, to, files.Count == 1 ? "Arquivo movido." : "Arquivos movidos.");
+        }
     }
 
     /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled. A folder

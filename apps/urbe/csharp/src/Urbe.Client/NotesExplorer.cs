@@ -44,6 +44,7 @@ public sealed class NotesExplorer : Border
     private readonly TextBlock _newLabel = new() { Text = "Nova", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly List<Button> _noteActions = [];
+    private Button? _moveAction;
     private Button _renameAction = new();
     private readonly List<CityNote> _notes = [];
     private readonly List<string> _files = [];
@@ -398,7 +399,18 @@ public sealed class NotesExplorer : Border
     {
         Fresh();
         if (!_visibleFiles.Contains(path)) return false;
+        // while selecting, a file is chosen like a note (images, PDFs and audio are organized with them)
+        if (_selected.Count > 0) { Toggle(path); return true; }
         FileRequested?.Invoke(path);
+        return true;
+    }
+
+    /// <summary>A visible file joins the selection (or starts it): "Selecionar" in its menu, a hold while selecting.</summary>
+    public bool SelectFile(string path)
+    {
+        Fresh();
+        if (!_visibleFiles.Contains(path)) return false;
+        if (!_selected.Contains(path)) Toggle(path);
         return true;
     }
 
@@ -870,8 +882,8 @@ public sealed class NotesExplorer : Border
     private void AddFileRow(string path, int depth, bool withPath)
     {
         _visibleFiles.Add(path);
-        Emit(() => Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
-            () => TryOpenFile(path), () => ArmDrag(path)));
+        Emit(() => Registered(path, Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, _selected.Contains(path),
+            () => TryOpenFile(path), () => { if (_selected.Count > 0) Toggle(path); else ArmDrag(path); })));
     }
 
     /// <summary>A folder row: the caret and a "⋯" with the folder's options (the 1.8.4 showed none, DEC-0045).</summary>
@@ -1291,7 +1303,8 @@ public sealed class NotesExplorer : Border
             if (action is null) return b;
             b.Click += (_, _) => { if (_selected.Count > 0) SelectionAction?.Invoke(action, _selected.ToList()); };
             // renderBar: the actions that only apply to notes are disabled when only folders are selected
-            if (action != "delete") _noteActions.Add(b);
+            if (action == "move") _moveAction = b;
+            else if (action != "delete") _noteActions.Add(b);
             return b;
         }
         var clear = Act(UrbeTheme.Icons.CloseUi, "Limpar seleção", null, UrbeTheme.Text2);
@@ -1373,11 +1386,18 @@ public sealed class NotesExplorer : Border
         // the last rows can always be scrolled above the bar
         _list.Margin = new Thickness(8, 0, 8, _bar.IsVisible ? 170 : 88);
         if (was != _bar.IsVisible) SelectingChanged?.Invoke();
-        int f = _selected.Count(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal)), d = _selected.Count - f;
+        int f = _selected.Count(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal));
+        int k = _selected.Count(x => !x.StartsWith(FolderPrefix, StringComparison.Ordinal) && _files.Contains(x));
+        int d = _selected.Count - f - k;
         static string Plural(int n, string one, string many) => n + " " + (n == 1 ? one : many);
-        _count.Text = string.Join(" · ", new[] { f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "" }.Where(x => x.Length > 0));
+        _count.Text = string.Join(" · ", new[]
+        {
+            f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "", k > 0 ? Plural(k, "arquivo", "arquivos") : ""
+        }.Where(x => x.Length > 0));
+        // the actions of notes need a note; moving takes notes and files; a file is renamed from its own menu
         foreach (var b in _noteActions) b.IsEnabled = d > 0;
-        _renameAction.IsEnabled = _selected.Count == 1;
+        if (_moveAction is not null) _moveAction.IsEnabled = d + k > 0;
+        _renameAction.IsEnabled = _selected.Count == 1 && k == 0;
     }
 
     private static string Dir(string path) => path.Contains('/') ? path[..path.LastIndexOf('/')] : "";
