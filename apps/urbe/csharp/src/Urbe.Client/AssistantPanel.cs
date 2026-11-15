@@ -1120,8 +1120,12 @@ public sealed partial class AssistantPanel : Border
                 ReasoningEffort = AssistantProviders.SupportsEffort(p!, choice.Model) ? _effortMode : null,
                 Instructions = WithUserAgents(_cfg.Instructions, documents, choice.Model),
                 // The agent budgets the complete *actual* request first; recall uses only its remaining space.
-                RecallMemory = availableChars => AssistantMemoryEngine.ForPromptWithin(_cfg, VaultKey, agent.Id,
-                    AssistantMemoryEngine.ContinuityQuery(conv.Messages), availableChars),
+                RecallMemory = availableChars =>
+                {
+                    var recalled = AssistantMemoryEngine.ForPromptWithin(_cfg, VaultKey, agent.Id, AssistantMemoryEngine.ContinuityQuery(conv.Messages), availableChars);
+                    foreach (var id in AssistantMemoryEngine.IdsIn(recalled)) if (!run.MemoryUsed.Contains(id)) run.MemoryUsed.Add(id);
+                    return recalled;
+                },
                 VaultName = _app.VaultName,
                 Stream = StreamForUiAsync, Approve = (req, token) => ApproveAsync(conv, req, token),
                 OnUpdate = e => OnUpdateFor(conv, e), Journal = journal,

@@ -111,6 +111,10 @@ public static class AssistantMemoryEngine
         return false;
     }
 
+    /// <summary>The ids of the memories in prompt lines made by <see cref="ForPrompt"/> and its kin ("…; id: X]").</summary>
+    public static IReadOnlyList<string> IdsIn(IEnumerable<string> lines) =>
+        lines.Select(l => System.Text.RegularExpressions.Regex.Match(l, @"\bid: ([^\]\s;]+)\]")).Where(m => m.Success).Select(m => m.Groups[1].Value).Distinct().ToList();
+
     public static long Now() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
     public static string Normalize(string? text)

@@ -515,6 +515,10 @@ public sealed partial class AssistantPanel
             foreach (var f in files) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
+        // CST-086: what the answer drew on from memory, open to correct or forget right here
+        var used = r.MemoryUsed.Select(id => AssistantMemoryEngine.ResolveForEdit(_cfg, id)).Where(m => m is not null).Select(m => m!).ToList();
+        if (used.Count > 0)
+            tail.Children.Add(LinkButton("Usou " + (used.Count == 1 ? "1 lembrança" : used.Count + " lembranças"), () => _ = ShowUsedMemoriesAsync(used.Select(m => m.Id).ToList())));
         if (_conv.WebSources.Count > 0)
         {
             var read = _conv.WebSources.Count(s => s.Status == "página acessada");
@@ -1208,7 +1212,22 @@ public sealed partial class AssistantPanel
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Não foi possível memorizar", ex.Message); }
     }
 
-    private async Task EditMemoryAsync(string id)
+    /// <summary>CST-086: the memories an answer used, each with Editar and Esquecer; the chat stays where it was.</summary>
+    private async Task ShowUsedMemoriesAsync(IReadOnlyList<string> ids)
+    {
+        var memories = ids.Select(id => AssistantMemoryEngine.ResolveForEdit(_cfg, id)).Where(m => m is not null).Select(m => m!).ToList();
+        if (memories.Count == 0) return;
+        var pick = await _app.Dialogs.ChooseAsync("Lembranças usadas nesta resposta",
+            memories.Select(m => new DialogItem(m.Text.Length > 120 ? m.Text[..119] + "…" : m.Text, Detail: MemoryKindName(m.Kind) + " · " + MemoryWho(m))).ToList(),
+            "São o que o agente sabia de conversas anteriores. Escolha uma para corrigir ou esquecer.");
+        if (pick is not int i) return;
+        var what = await _app.Dialogs.ChooseAsync(memories[i].Text.Length > 60 ? memories[i].Text[..59] + "…" : memories[i].Text,
+            [new DialogItem("Editar"), new DialogItem("Esquecer", Danger: true)]);
+        if (what == 0) await EditMemoryAsync(memories[i].Id, stay: true);
+        else if (what == 1) await DeleteMemoryAsync(memories[i].Id, stay: true);
+    }
+
+    private async Task EditMemoryAsync(string id, bool stay = false)
     {
         var m = AssistantMemoryEngine.ResolveForEdit(_cfg, id);
         if (m is null) { ShowMemoryManager(); return; }
@@ -1220,12 +1239,12 @@ public sealed partial class AssistantPanel
         {
             if (!AssistantMemoryEngine.Edit(_cfg, m.Id, changed)) return;
             SaveMemoryConfig();
-            ShowMemoryManager();
+            if (stay) RenderLog(); else ShowMemoryManager();
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro na edição", ex.Message); }
     }
 
-    private async Task DeleteMemoryAsync(string id)
+    private async Task DeleteMemoryAsync(string id, bool stay = false)
     {
         if (!await _app.Dialogs.ConfirmAsync("Esquecer esta lembrança?",
                 "Ela será removida da memória local. As notas do vault não serão alteradas.",
@@ -1243,7 +1262,7 @@ public sealed partial class AssistantPanel
             }
             else AssistantMemoryEngine.Forget(_cfg, id);
             SaveMemoryConfig();
-            ShowMemoryManager();
+            if (stay) RenderLog(); else ShowMemoryManager();
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro ao esquecer", ex.Message); }
     }

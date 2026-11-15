@@ -111,6 +111,8 @@ public sealed class AiRunRecord
     public string? Error { get; set; }
     public AiExecutionMetrics Efficiency { get; set; } = new();
     public bool Reverted { get; set; }
+    /// <summary>CST-086: the memories sent to the model in this run (their ids), so the answer shows what it drew on.</summary>
+    public List<string> MemoryUsed { get; set; } = [];
 }
 
 /// <summary>A conversation: its messages, its agent, model and permissions, and its last runs.</summary>
