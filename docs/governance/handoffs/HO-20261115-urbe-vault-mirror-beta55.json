@@ -32,7 +32,11 @@
     "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
     "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
     "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/NoteLibrary.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ParagraphIndentTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs",
+    "apps/urbe/csharp/tools/editor-oracle.mjs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContinuityUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/BlockTimesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/DiskMirrorUiTests.cs",
@@ -47,6 +51,8 @@
     "Causa 3: cada toque na seleção reconstruía a árvore; SetNotes limpava a seleção em toda atualização. Correção: repintura da linha, seleção mantida quando a árvore não mudou, Selecionar tudo, barra de ações rolável, Lixeira virtualizada.",
     "Causa 4: Nova conversa ignorada com execução ativa; Personalização aplicava só depois de gravar e falha era silenciosa. Correção: nova conversa sempre (execuções pertencem ao id da conversa), fecha a vista aberta; personalização aplica na hora, reverte e avisa falha.",
     "Causa 5 (confirmada pelo print do proprietário): com o horário dos blocos ligado, a coluna dos horários (Grid *,Auto) tirava um terço da largura de cada bloco no celular; o horário agora fica sobreposto no alto à direita, sem ocupar largura, e o teste de horários confere a largura. Também: popup do Assistente com 13/11 px em texto simples. Correção: 15 px com Markdown, popup mais alto; fórmulas largas não reduzem abaixo de 85 %.",
+    "Parágrafos: espaços e tabs antes do texto não aparecem mais como recuo (CommonMark); o oráculo da 1.8.4 (editor-oracle.mjs markdownFlanking) registra a mesma melhoria (DEC-0059).",
+    "Teste AgentWorkspaces: corrida corrigida (o histórico é lido fora da thread de UI; o teste agora espera a lista, com limite), falhava em cerca de metade das execuções completas.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [
@@ -54,7 +60,7 @@
       "check": "Urbe.Client.Tests local",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Suíte completa local; testes novos DiskMirrorUiTests (pastas removidas/criadas fora do app, registro reescrito sem pastas fantasmas, gravação após retorno) e SelectionSpeedUiTests (toque não reconstrói a árvore, seleção sobrevive a atualização, Selecionar tudo e mover 12 notas)."
+      "evidence": "624/624 em duas execuções completas seguidas; Urbe.Core.Tests 1614/1614; suíte completa local; testes novos DiskMirrorUiTests (pastas removidas/criadas fora do app, registro reescrito sem pastas fantasmas, gravação após retorno) e SelectionSpeedUiTests (toque não reconstrói a árvore, seleção sobrevive a atualização, Selecionar tudo e mover 12 notas)."
     },
     {
       "check": "Build Android (net10.0-android) local",

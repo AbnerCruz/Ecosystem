@@ -18,6 +18,7 @@
 - **Nova conversa (Assistente)** sempre responde: funciona mesmo com uma execução em andamento, que continua na conversa dela, e fecha a tela de Conversas ou de Configurações se ela estiver aberta.
 - **Personalização**: tema, cor de destaque e os outros botões aplicam na hora e gravam logo depois. Se a gravação falhar, a aparência anterior volta e o motivo aparece. Antes, o botão esperava a gravação e, se ela falhasse, nada acontecia.
 - **Texto da nota na largura inteira da tela.** Com o horário dos blocos ligado, cada bloco perdia um terço da largura para a coluna dos horários e o texto ficava espremido. Agora o horário fica pequeno no canto de cima de cada bloco, sem ocupar largura, e o texto usa a tela toda. Ao tocar para escrever, o bloco também não muda mais de largura.
+- **Parágrafos sem recuo indevido.** Espaços digitados antes do texto de um parágrafo apareciam como recuo; agora ficam fora do desenho, como no Obsidian. O arquivo continua com o que você escreveu.
 - **Texto maior no Assistente sobre a nota**: a conversa no popup usa 15 px, com a mesma formatação da conversa completa (antes eram 13 px, em texto simples), e o popup ficou mais alto.
 - **Fórmulas largas** só diminuem até 85 % para caber; as maiores que isso rolam para o lado e continuam legíveis (antes podiam diminuir até 60 %).
 
