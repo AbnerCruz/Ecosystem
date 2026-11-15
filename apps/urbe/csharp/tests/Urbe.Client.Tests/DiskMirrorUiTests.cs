@@ -43,6 +43,12 @@ public sealed partial class HeadlessUiTests
             var record = File.ReadAllText(Path.Combine(vault, ".urbe", "notas.json"));
             Assert.DoesNotContain("Fantasma", record);
 
+            // each folder of the tree tells how many notes it holds, its subfolders included
+            view.ShowNotes();
+            Assert.Equal(1, view.Explorer.NoteCountOf("Velha"));
+            Assert.Equal(1, view.Explorer.NoteCountOf("Fica"));
+            Assert.Equal(0, view.Explorer.NoteCountOf("Vazia"));
+
             // nothing changed: coming back does not rebuild the vault
             Assert.False(await view.RefreshFromDiskAsync());
 

@@ -624,6 +624,10 @@ public sealed class NotesExplorer : Border
             list.Add(item);
         }
         foreach (var f in folders) Put(Dir(f), (0, f, Base(f)));
+        // how many notes each folder holds, its subfolders included: where the vault grows shows in the tree
+        _noteCounts.Clear();
+        foreach (var n in _notes)
+            for (var f = Dir(n.Path); f.Length > 0; f = Dir(f)) _noteCounts[f] = _noteCounts.GetValueOrDefault(f) + 1;
         var notesByPath = new Dictionary<string, CityNote>(StringComparer.Ordinal);
         foreach (var n in _notes) { notesByPath.TryAdd(n.Path, n); Put(Dir(n.Path), (1, n.Path, Base(n.Path))); }
         foreach (var f in _files) Put(Dir(f), (2, f, Base(f)));
@@ -855,6 +859,11 @@ public sealed class NotesExplorer : Border
     }
 
     /// <summary>A folder row: the caret and a "⋯" with the folder's options (the 1.8.4 showed none, DEC-0045).</summary>
+    private readonly Dictionary<string, int> _noteCounts = new(StringComparer.Ordinal);
+
+    /// <summary>How many notes a folder of the tree holds, its subfolders included (tests).</summary>
+    public int NoteCountOf(string folder) => _noteCounts.GetValueOrDefault(folder);
+
     private Control FolderRow(string folder, string name, int depth, bool open)
     {
         var more = new Button
@@ -870,6 +879,16 @@ public sealed class NotesExplorer : Border
         caret.VerticalAlignment = VerticalAlignment.Center;
         caret.RenderTransform = open ? new RotateTransform(90) : null;
         var trailing = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { more, caret } };
+        if (_noteCounts.GetValueOrDefault(folder) is > 0 and var count)
+        {
+            var counter = new TextBlock
+            {
+                Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 13,
+                Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 2, 0)
+            };
+            counter.Classes.Add("urbe-folder-count");
+            trailing.Children.Insert(0, counter);
+        }
         return Registered(FolderPrefix + folder, PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
             () => TapFolder(folder), () => { if (HoldFolder(folder)) ArmDrag(); }, () => HoldDelay));
     }

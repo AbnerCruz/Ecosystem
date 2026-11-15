@@ -15,7 +15,8 @@
   - a seleção não se perde quando o app salva ou relê a pasta;
   - o novo botão **Selecionar tudo** marca todas as notas mostradas (as pastas abertas ou todos os resultados de uma busca), para mover, agrupar ou excluir de uma vez;
   - a barra de seleção ficou mais clara: a contagem e **Selecionar tudo** em cima e, embaixo, todas as ações visíveis com nome (Mover, Nova pasta, Duplicar, Lixeira, Abrir, Renomear, Favoritar, Publicação). Antes eram só ícones, que ficavam cortados ou escondidos atrás do botão redondo flutuante;
-  - enquanto você seleciona, o botão flutuante sai da frente.
+  - enquanto você seleciona, o botão flutuante sai da frente;
+  - cada pasta da árvore mostra quantas notas tem, contando as subpastas, para você ver onde o vault está crescendo.
 - **Nova conversa (Assistente)** sempre responde: funciona mesmo com uma execução em andamento, que continua na conversa dela, e fecha a tela de Conversas ou de Configurações se ela estiver aberta.
 - **Personalização**: tema, cor de destaque e os outros botões aplicam na hora e gravam logo depois. Se a gravação falhar, a aparência anterior volta e o motivo aparece. Antes, o botão esperava a gravação e, se ela falhasse, nada acontecia.
 - **Texto da nota na largura inteira da tela.** Com o horário dos blocos ligado, cada bloco perdia um terço da largura para a coluna dos horários e o texto ficava espremido. Agora o horário fica pequeno no canto de cima de cada bloco, sem ocupar largura, e o texto usa a tela toda. Ao tocar para escrever, o bloco também não muda mais de largura.
