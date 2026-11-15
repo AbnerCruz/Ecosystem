@@ -11,7 +11,7 @@
   "component": "urbe",
   "state": "review",
   "branch": "ccr-c717cbe5-9x21rb",
-  "base_commit": "802c195e314a7b61b33c2dd0a943a6d9ac67ee55",
+  "base_commit": "9c7822b4d8e102981145830391b79e903398a8fa",
   "commit": "2c14f30",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/949",
   "files_changed": [
@@ -31,8 +31,10 @@
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
     "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
     "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/src/Urbe.Core/NoteLibrary.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContinuityUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/BlockTimesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/DiskMirrorUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SelectionSpeedUiTests.cs",
     "apps/urbe/docs/csharp/ROADMAP.md",
@@ -44,7 +46,7 @@
     "Causa 2: no Android cada gravação percorria e lia o vault inteiro antes e depois (IPC por pasta) e qualquer mudança externa em qualquer arquivo recusava todas as gravações. Correção: cada gravação confere só os arquivos tocados contra o que foi lido e relê do disco o que escreveu; a base em memória é atualizada sem nova varredura.",
     "Causa 3: cada toque na seleção reconstruía a árvore; SetNotes limpava a seleção em toda atualização. Correção: repintura da linha, seleção mantida quando a árvore não mudou, Selecionar tudo, barra de ações rolável, Lixeira virtualizada.",
     "Causa 4: Nova conversa ignorada com execução ativa; Personalização aplicava só depois de gravar e falha era silenciosa. Correção: nova conversa sempre (execuções pertencem ao id da conversa), fecha a vista aberta; personalização aplica na hora, reverte e avisa falha.",
-    "Causa 5 (provável): popup do Assistente com 13/11 px em texto simples. Correção: 15 px com Markdown, popup mais alto; fórmulas largas não reduzem abaixo de 85 %.",
+    "Causa 5 (confirmada pelo print do proprietário): com o horário dos blocos ligado, a coluna dos horários (Grid *,Auto) tirava um terço da largura de cada bloco no celular; o horário agora fica sobreposto no alto à direita, sem ocupar largura, e o teste de horários confere a largura. Também: popup do Assistente com 13/11 px em texto simples. Correção: 15 px com Markdown, popup mais alto; fórmulas largas não reduzem abaixo de 85 %.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [

@@ -623,18 +623,21 @@ public sealed class VisualSurface : StackPanel
         if (!_showBlockTimes || stamp is not { } at || kind == "frontmatter") return drawn;
         // a day alone (the note's creation date) is a calendar date, not a moment: no time zone shift
         var when = at.DayOnly ? DateTimeOffset.FromUnixTimeMilliseconds(at.Ms).UtcDateTime : DateTimeOffset.FromUnixTimeMilliseconds(at.Ms).LocalDateTime;
+        // the time takes no width from the text (observation of 15/11/2026: on the phone a column of times squeezed every
+        // block into two thirds of the screen): it sits small at the block's top right, in the space above its first line
+        double size = Math.Max(10, TextSize * .6);
         var label = new TextBlock
         {
-            Text = Urbe.Core.BlockTimes.Label(when, DateTime.Now, at.DayOnly), FontSize = Math.Max(10, TextSize * .6), FontFamily = UrbeTheme.UiFont,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Opacity = .8, VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(8, TextSize * 1.05, 0, 0), IsHitTestVisible = false   // level with the first line of text
+            Text = Urbe.Core.BlockTimes.Label(when, DateTime.Now, at.DayOnly), FontSize = size, FontFamily = UrbeTheme.UiFont,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Opacity = .7, VerticalAlignment = VerticalAlignment.Top,
+            HorizontalAlignment = HorizontalAlignment.Right, IsHitTestVisible = false,
+            RenderTransform = new TranslateTransform(0, -size * .9)
         };
         label.Classes.Add("urbe-block-time");
         ToolTip.SetTip(drawn, at.DayOnly ? "Desde a criação da nota, " + when.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)
             : "Editado " + when.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture));
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var grid = new Grid { ClipToBounds = false };
         grid.Children.Add(drawn);
-        Grid.SetColumn(label, 1);
         grid.Children.Add(label);
         return grid;
     }

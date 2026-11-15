@@ -496,5 +496,6 @@ Issue [#948](https://github.com/AbnerCruz/Ecosystem/issues/948); branch `ccr-c71
 - [~] Pastas vêm do disco (`ListFolderPathsAsync`), não de `.urbe/notas.json`; voltar ao app relê a pasta e mostra o que mudou fora dele (`RefreshFromDiskAsync`).
 - [~] Android: cada gravação confere e relê só os arquivos tocados (sem duas leituras do vault inteiro); mudança fora do app em outro arquivo não recusa mais as gravações.
 - [~] Explorer: toque durante a seleção repinta só a linha; seleção sobrevive a atualizações sem mudança; Selecionar tudo; ações rolam no celular; Lixeira virtualizada.
+- [~] Horário dos blocos sem coluna própria: o texto do editor volta à largura inteira no celular (print do proprietário de 15/11/2026).
 - [~] Nova conversa com execução em andamento; Personalização aplica na hora e avisa falha; popup da IA a 15 px; fórmulas largas não abaixo de 85 %.
 - [ ] Validação no aparelho (NN-017): pasta apagada pelo gerenciador de arquivos, excluir várias notas, Lixeira e multi-seleção com o dedo.
