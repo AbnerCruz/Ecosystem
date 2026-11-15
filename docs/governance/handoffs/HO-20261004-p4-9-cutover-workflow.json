@@ -62,7 +62,7 @@
     "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
     "docs/distribution/direct-releases.md",
     ".github/workflows/urbe-release.yml",
-    ".github/origin-sync/sync-from-ecosystem.sh",
+    "docs/migration/archive-origin-sync-legacy-2026-10-04.md",
     "docs/migration/import-plan.md",
     "docs/governance/integration-policy.json"
   ],

@@ -35,6 +35,10 @@
 
 **P2 — Rede e portabilidade:** multiplayer em dois Android reais sob interrupção/reconexão; completar desktop com publicação real antes de apostar em web/iOS.
 
+## Solicitação posterior do proprietário — Home, Studios e Explorar
+
+O estudo específico de 15/11 está em [`lunet-home-studios-explorar-2026-11-15.md`](lunet-home-studios-explorar-2026-11-15.md), com diagnóstico do acoplamento `MainActivity.ShowProjects`/`MainActivity.Studio`, pesquisa externa, arquitetura de biblioteca reutilizável e catálogo de referências offline. Itens propostos LUNET-510, 511 e 512 no ROADMAP; não declarar implementação antes de código, CI e DEVICE. Trata-se de uma direção paralela à necessidade P0 de estabilidade e integridade da IA.
+
 ## Protocolo para o próximo agente
 
 - **NUNCA trabalhar no espelho**. Só `AbnerCruz/Ecosystem`; DEC-0064/ADD-0035/ADR-0050 prevalecem sobre o plano histórico de importação. O repositório externo pode permanecer arquivado até decisão administrativa; não é um fluxo de desenvolvimento.

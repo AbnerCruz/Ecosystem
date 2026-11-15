@@ -32,13 +32,20 @@
     ".github/origin-sync/sync-from-ecosystem.sh",
     ".github/origin-sync/sync-from-ecosystem.workflow.yml",
     "apps/lunet2d/.github/workflows/ci.yml",
-    "docs/governance/handoffs/HO-20261115-lunet-canal-unico-e-auditoria.json"
+    "docs/governance/handoffs/HO-20261115-lunet-canal-unico-e-auditoria.json",
+    "docs/adr/README.md",
+    "docs/migration/archive-origin-sync-legacy-2026-10-04.md",
+    "docs/governance/handoffs/HO-20261004-p4-9-cutover-workflow.json",
+    "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md",
+    "apps/lunet2d/AgentsChat.md"
   ],
   "work_completed": [
     "Desativada sincronização agendada do repositório Lunet2D antigo: commit 56f0beb1",
     "Registradas DEC-0064, ADD-0035, ADR-0050 e exclusividade do Ecosystem em manifesto/perfis/docs",
     "Remoção proposta de origin-sync e workflow CI legado inerte; pipelines oficiais preservados",
-    "Auditoria atualizada de framework, IDE, Studio, IA, builds, riscos e próximos passos, sem alterar código funcional"
+    "Auditoria atualizada de framework, IDE, Studio, IA, builds, riscos e próximos passos, sem alterar código funcional",
+    "Estudo adicional LUNET-510–512 sobre Home/área de trabalho, Studios independentes e biblioteca reutilizável e explorador offline de referências; registro e critérios, sem implementação funcional.",
+    "Ajustes de consistência: ADR-0050 com seções obrigatórias e índice; migração arquivou o script removido para preservar a fonte histórica de handoff."
   ],
   "verification": [
     {
@@ -58,6 +65,12 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Sem dotnet local: ver CI da branch/PR no Ecosystem e integrador."
+    },
+    {
+      "check": "CHK-ADR e CHK-HANDOFFS reavaliados após falha inicial do CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Correções motivadas pelo log da execução 43753413760 (ADR-0050 faltava seções/índice; handoff histórico apontava script removido); aguardando novo CI."
     }
   ],
   "known_issues": [
@@ -69,6 +82,7 @@
     "Alterações estruturais e governança requerem review do proprietário vinculado ao head do PR (ADD-0034); não contornar."
   ],
   "next_actions": [
+    "Ler docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md, com planejamento LUNET-510–512; não confundir estudo com implementação.",
     "Conferir main e PRs/CI no Ecosystem; nunca usar o repositório Lunet2D separado.",
     "Ler docs/architecture/audits/lunet-estado-atual-2026-11-15.md e registrar próximas tarefas no ROADMAP.",
     "Testar jornada real no Android e integridade de desfazer IA sob cancelamento/concorrência/reinício.",
