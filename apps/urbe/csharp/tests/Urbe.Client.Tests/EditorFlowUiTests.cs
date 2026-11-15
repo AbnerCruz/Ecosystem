@@ -44,7 +44,7 @@ public sealed class EditorFlowUiTests
             var r = tb.TextLayout.HitTestTextPosition(i + offset);
             return tb.TranslatePoint(new Point(r.X + 1, r.Y + r.Height / 2), window)!.Value;
         }
-        throw new InvalidOperationException(word);
+        throw new InvalidOperationException(word + " in [" + string.Join("|", holder.GetVisualDescendants().OfType<TextBlock>().Select(VisualSurfaceText)) + "]");
     }
 
     private static string VisualSurfaceText(TextBlock tb)
@@ -340,8 +340,16 @@ public sealed class EditorFlowUiTests
     [InlineData("Código `inline` aqui.", "inline", 2)]
     [InlineData("1. primeiro item", "item", 2)]
     [InlineData("Texto ~~riscado~~ fim.", "fim", 1)]
+    // the source of a formula or a word comment is longer than its drawing: the text after it may wrap one line lower
+    [InlineData("Antes da fórmula $x^2 + y^2$ e depois dela.", "depois", 2, false)]
+    [InlineData("Texto com #tag e #outra/sub no meio.", "meio", 1)]
+    [InlineData("Visível %%escondido%% e o resto.", "resto", 2)]
+    [InlineData("- pai\n  - filho aninhado", "aninhado", 2)]
+    [InlineData("Palavra{\"um comentário\"} comentada e fim.", "fim", 1, false)]
+    [InlineData("Texto escrito pela IA aqui {ia:\"modelo\"}", "aqui", 2)]
+    [InlineData("Link [[Nota]] e **negrito *aninhado* aqui** fim.", "fim", 1)]
     [InlineData("Um parágrafo bem comprido que quebra em várias linhas na tela estreita do celular, para que o toque caia numa linha do meio e depois noutra mais abaixo, onde está a palavra escondida.", "escondida", 4)]
-    public async Task ATapPutsTheCaretOnTheLetterTappedWithoutMovingTheLine(string line, string word, int offset) =>
+    public async Task ATapPutsTheCaretOnTheLetterTappedWithoutMovingTheLine(string line, string word, int offset, bool stable = true) =>
         Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
         {
             var (editor, window) = Open("Antes.\n\n" + line + "\n\nDepois.\n", width: 360);
@@ -360,7 +368,7 @@ public sealed class EditorFlowUiTests
             var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().First();
             var r = presenter.TextLayout.HitTestTextPosition(box.CaretIndex);
             var at = presenter.TranslatePoint(new Point(r.X, r.Y + r.Height / 2), window)!.Value;
-            Assert.True(Math.Abs(at.Y - p.Y) < r.Height * .75, $"line moved {at.Y - p.Y:0.0}px (line {r.Height:0.0})");
+            Assert.True(Math.Abs(at.Y - p.Y) < r.Height * (stable ? .75 : 1.75), $"line moved {at.Y - p.Y:0.0}px (line {r.Height:0.0})");
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
@@ -660,6 +668,60 @@ public sealed class EditorFlowUiTests
             Assert.Empty(gaps);
             // the boxes left behind are gone from the tree
             Assert.Single(editor.Surface.GetVisualDescendants().OfType<TextBox>());
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+
+    [Fact]
+    public async Task TheCaretStaysInSightWhileTypingNewLinesAtTheBottom() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            // a phone with the keyboard open: little room for the text
+            var (editor, window) = Open(LongNote(12), width: 360, height: 420);
+            var surface = editor.Surface;
+            var scroll = surface.FindAncestorOfType<ScrollViewer>()!;
+            // a block near the bottom of what is visible
+            var index = surface.BlockStarts.Select((s, i) => (s, i)).First(t =>
+                surface.BlockView(t.s) is { } v && v.TranslatePoint(new Point(0, 0), scroll) is { } q && q.Y > scroll.Viewport.Height * .6).i;
+            var box = Edit(editor, index);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            for (int i = 0; i < 8; i++)
+            {
+                window.KeyPress(Avalonia.Input.Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+                window.KeyRelease(Avalonia.Input.Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+                window.KeyTextInput("linha " + i);
+                Dispatcher.UIThread.RunJobs();
+                window.UpdateLayout();
+                Dispatcher.UIThread.RunJobs();
+                var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().First();
+                var r = presenter.TextLayout.HitTestTextPosition(box.CaretIndex);
+                var y = presenter.TranslatePoint(new Point(0, r.Bottom), scroll)!.Value.Y;
+                Assert.True(y <= scroll.Viewport.Height + 1 && y - r.Height >= -1, $"line {i}: caret at {y:0} outside 0..{scroll.Viewport.Height:0}");
+            }
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task WhenTheKeyboardOpensTheTappedLineStaysInSight() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(async () =>
+        {
+            var (editor, window) = Open(LongNote(12), width: 360, height: 800);
+            var surface = editor.Surface;
+            var scroll = surface.FindAncestorOfType<ScrollViewer>()!;
+            var index = surface.BlockStarts.Select((s, i) => (s, i)).Last(t =>
+                surface.BlockView(t.s) is { } v && v.TranslatePoint(new Point(0, 0), scroll) is { } q && q.Y < scroll.Viewport.Height - 60).i;
+            var box = Edit(editor, index);
+            box.Focus();
+            // the soft keyboard takes the bottom half
+            window.Height = 420;
+            for (int i = 0; i < 5; i++) { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); await Task.Delay(20); }
+            var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().First();
+            var r = presenter.TextLayout.HitTestTextPosition(box.CaretIndex);
+            var y = presenter.TranslatePoint(new Point(0, r.Bottom), scroll)!.Value.Y;
+            Assert.True(y <= scroll.Viewport.Height + 1 && y - r.Height >= -1, $"caret at {y:0} outside 0..{scroll.Viewport.Height:0}");
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
