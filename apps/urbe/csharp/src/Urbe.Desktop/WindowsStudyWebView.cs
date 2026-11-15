@@ -163,6 +163,13 @@ internal sealed class WindowsStudyWebView(string content, bool local, Action<str
         catch (Exception ex) when (ex is InvalidOperationException or COMException or JsonException) { return ""; }
     }
     public void Reload(string html) { if (local) { _content = html; _web?.Navigate("https://urbe.reader.invalid/content"); } }
+    public async Task<string> PageHtmlAsync()
+    {
+        if (_web is null) return "";
+        try { return JsonSerializer.Deserialize<string>(await _web.ExecuteScriptAsync(StudyPageScripts.Html)) ?? ""; }
+        catch (Exception ex) when (ex is COMException or JsonException or InvalidOperationException) { return ""; }
+    }
+
     public async Task<double?> ReadMediaSecondAsync()
     {
         if(_web is null)return null;

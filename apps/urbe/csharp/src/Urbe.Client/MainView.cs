@@ -61,6 +61,7 @@ public sealed partial class MainView : Grid
         Editor.OpenWeb = url => { if (Editor.Pinned.IsVisible) _ = Editor.Pinned.OpenWebAsync(url); else StudyBrowser.Open(url); };
         Editor.Pinned.Web.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
         Editor.Pinned.Web.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
+        Editor.Pinned.Web.SavePageRequested += (url, page) => _ = SaveWebPageAsync(url, page);
         Editor.Pinned.Storage = _vault;
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
@@ -178,6 +179,7 @@ public sealed partial class MainView : Grid
         Dialogs.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
         StudyBrowser.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
         StudyBrowser.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
+        StudyBrowser.SavePageRequested += (url, page) => _ = SaveWebPageAsync(url, page);
         _stage.Children.Add(_notice);
         _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the Explorer and the editor (ADD-0021)
         InstallAssistantLauncher();          // contextual AI lives over the editor, not in a second destination
@@ -1329,13 +1331,23 @@ public sealed partial class MainView : Grid
     /// extension becomes .md, a name already taken there is refused; the empty file is written to the vault first, then
     /// its document is created (explorer.create) and it opens.
     /// </summary>
-    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, Task<string?>>? contentFor = null)
+    /// <summary>CST-235 "Salvar página como nota": a new note with the page's text, its address and the day; the page stays open.</summary>
+    public async Task SaveWebPageAsync(string url, WebClip.Page page)
     {
-        if (_library is not { } library || _store is null) return;
+        var content = WebClip.Note(url, page, DateTime.Now);
+        var name = CleanNoteName(page.Title);
+        var path = await CreateNoteInNotesAsync(name.Length > 0 && _store?.Get((Explorer.CurrentFolder.Length > 0 ? Explorer.CurrentFolder + "/" : "") + name + ".md") is null ? name : null,
+            contentFor: _ => Task.FromResult<string?>(content), open: false);
+        if (path is not null) _notice.Show("Página salva em " + path + ".", TimeSpan.FromSeconds(8), "Abrir", () => { CloseNotesOverEditor(); Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, content))); });
+    }
+
+    public async Task<string?> CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, Task<string?>>? contentFor = null, bool open = true)
+    {
+        if (_library is not { } library || _store is null) return null;
         if (!VaultWritable)
         {
             await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
-            return;
+            return null;
         }
         folder ??= Explorer.CurrentFolder;
         string PathOf(string name)
@@ -1347,23 +1359,27 @@ public sealed partial class MainView : Grid
             Hint: NotesWhere(folder) + " Sem extensão, será salva como .md.", Confirm: "Criar nota",
             Validate: v => CleanNoteName(v) is not { Length: > 0 } n ? "Use um nome válido." : _store.Get(PathOf(n)) is not null ? "Já existe uma nota com esse nome aqui." : null));
         var name = CleanNoteName(raw);
-        if (name.Length == 0) return;
+        if (name.Length == 0) return null;
         var path = PathOf(name);
-        if (_store.Get(path) is not null || _contents.ContainsKey(path)) return;
+        if (_store.Get(path) is not null || _contents.ContainsKey(path)) return null;
         // UC-44: a note made from a template starts with its filled-in content (null: the person gave up)
         var content = contentFor is null ? "" : await contentFor(name);
-        if (content is null) return;
+        if (content is null) return null;
         // a template's filled-in form is not lost to a failed write: it can be tried again
         if (!await WriteOrAskAsync("Não foi possível criar a nota", () => _vault!.CreateTextFileAsync(path, content),
                 async () => await OnDiskAsync(path) == content))
-            return;
+            return null;
         library.AddNote(path, content, Now);
         _contents[path] = content;
         NotesChanged();
         RefreshNotes();
         // document.open: touchRecent is not called by createNote; the editor opens
-        CloseNotesOverEditor();
-        Editor.Open(new CityNote(path, content));
+        if (open)
+        {
+            CloseNotesOverEditor();
+            Editor.Open(new CityNote(path, content));
+        }
+        return path;
     }
 
     /// <summary>

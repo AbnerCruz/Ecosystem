@@ -181,6 +181,18 @@ public static partial class AppDocs
 
         A barra nunca marca uma tarefa por conta própria. O Assistente, ao ler a nota, recebe os mesmos números que você vê.
 
+        ## Estudar com uma fonte ao lado
+
+        **Estudo** (no menu radial ou no **+**) abre uma fonte e a nota juntas: em cima e embaixo no celular, lado a lado no computador. A divisória entre as duas se arrasta. A fonte pode ser um site, um vídeo do YouTube ou um arquivo do vault (PDF, livro, slides, áudio, vídeo).
+
+        No navegador:
+
+        - Digite um endereço ou uma pesquisa. **Voltar**, **Avançar** e **Recarregar** ficam no alto.
+        - **Adicionar seleção à nota** cita o trecho selecionado com o endereço; **Perguntar à IA** leva o trecho ao Assistente.
+        - Em **⋯**: **Modo leitura** mostra só o texto principal da página, no tema do Urbe (sem menus, anúncios nem a tela branca à noite); **Salvar página como nota** cria uma nota com esse texto, o endereço (`source`) e o dia (`captured`), sem sair da página. Também **Salvar referência na nota**, **Copiar endereço** e **Abrir no navegador do sistema**.
+        - Num vídeo do YouTube, que toca no player oficial, **Anotar instante** cria na nota um link para o momento em que o vídeo está, como “Vídeo em 3:25”. O campo do instante serve para ajustar à mão.
+        - Nada da página é guardado sem você pedir, e a página não tem acesso às suas notas.
+
         ## Fórmulas
 
         Escreva LaTeX entre `$…$` no texto ou `$$…$$` em destaque, por exemplo $E = mc^2$. O botão **∑** (ou **Ctrl+M**) abre o editor de fórmulas, com **No texto** / **Destaque**, prévia, símbolos e modelos. Toque numa fórmula pronta para editar.

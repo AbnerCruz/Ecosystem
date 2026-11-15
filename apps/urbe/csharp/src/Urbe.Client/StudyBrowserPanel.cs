@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Urbe.Core;
 
@@ -21,6 +22,10 @@ public sealed class StudyBrowserPanel : Grid
     private string? _videoId;
     public event Action<WebReaderQuote>? QuoteRequested;
     public event Action<string, string>? QuestionRequested;
+    /// <summary>"Salvar página como nota": the address and the page's main text, asked by the person.</summary>
+    public event Action<string, WebClip.Page>? SavePageRequested;
+    private readonly ScrollViewer _readerView = new() { IsVisible = false, Padding = new Thickness(16, 8) };
+    private readonly Grid _page = new();
     private readonly Control _closeButton = null!;
 
     /// <summary>Inside the Estudo source pane: the pane's own header closes it, so the browser shows no second ✕.</summary>
@@ -48,6 +53,13 @@ public sealed class StudyBrowserPanel : Grid
         {
             if (_browser is not { } browser) return null;
             string address = Address;
+            // in Modo leitura the selection is the one made in the native text
+            if (_readerView.IsVisible)
+            {
+                var chosen = _readerView.GetLogicalDescendants().OfType<SelectableTextBlock>().Select(t => t.SelectedText).FirstOrDefault(t => !string.IsNullOrWhiteSpace(t));
+                if (chosen is null) { Say("Selecione um trecho do texto primeiro."); return null; }
+                return chosen;
+            }
             try
             {
                 var selected = await browser.SelectedTextAsync();
@@ -68,10 +80,12 @@ public sealed class StudyBrowserPanel : Grid
         {
             var items = new List<MenuItem>();
             void Item(string header, Action run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run(); items.Add(i); }
+            Item(_readerView.IsVisible ? "Ver a página" : "Modo leitura", () => _ = ToggleReaderAsync());
+            Item("Salvar página como nota", () => _ = SavePageAsync());
             Item("Salvar referência na nota", () => { if (ReaderUris.Web(Address) is not null) QuoteRequested?.Invoke(new(Address, "Referência web")); });
             Item("Copiar endereço", () => _ = Ui.TextActions.CopyAsync(this, Address));
             Item("Abrir no navegador do sistema", () => _ = OpenExternallyAsync());
-            new ContextMenu { ItemsSource = items }.Open(more);
+            (more.ContextMenu = new ContextMenu { ItemsSource = items }).Open(more);
         };
         var header = new DockPanel { Margin = new Thickness(4, 6, 4, 2), LastChildFill = true };
         var left = new StackPanel { Orientation = Orientation.Horizontal, Children = { close, _back, _forward } };
@@ -96,7 +110,9 @@ public sealed class StudyBrowserPanel : Grid
             QuoteRequested?.Invoke(new("https://www.youtube.com/watch?v=" + id + "&t=" + second, "Vídeo em " + Clock(second), id, second));
         };
         _video.Children.Add(mark);
-        SetRow(_content, 2); Children.Add(_content);
+        _page.Children.Add(_content);
+        _page.Children.Add(_readerView);
+        SetRow(_page, 2); Children.Add(_page);
         var chips = new DockPanel { Margin = new Thickness(4, 0, 4, 4) };
         DockPanel.SetDock(more, Dock.Right);
         chips.Children.Add(more);
@@ -108,6 +124,44 @@ public sealed class StudyBrowserPanel : Grid
         });
         var bottom = new StackPanel { Children = { _status, chips }, Background = UrbeTheme.Brush(UrbeTheme.Surface) };
         SetRow(bottom, 3); Children.Add(bottom);
+    }
+
+    private async Task<WebClip.Page?> ReadPageAsync()
+    {
+        if (_browser is not { } browser || ReaderUris.Web(Address) is null) return null;
+        var address = Address;
+        var html = await browser.PageHtmlAsync();
+        if (!ReferenceEquals(browser, _browser) || Address != address) return null;
+        if (string.IsNullOrWhiteSpace(html)) { Say("A página ainda não terminou de carregar."); return null; }
+        var page = WebClip.Read(address, html);
+        if (page.Markdown.Length == 0) { Say("Esta página não tem um texto principal para ler."); return null; }
+        return page;
+    }
+
+    private void Say(string text) { _status.Text = text; _status.IsVisible = true; }
+
+    /// <summary>Modo leitura: the page's main text drawn natively, in the app's theme (no white flash at night); links go on in the browser.</summary>
+    private async Task ToggleReaderAsync()
+    {
+        if (_readerView.IsVisible) { ShowPage(); return; }
+        if (await ReadPageAsync() is not { } page) return;
+        _readerView.Content = new MarkdownReader { Size = UrbeTheme.EditorSize, LineFactor = 1.55, Selectable = true, WebLinkTapped = url => { ShowPage(); Navigate(url); } }
+            .BuildMarkdown(page.Markdown.StartsWith('#') ? page.Markdown : "# " + page.Title + "\n\n" + page.Markdown);
+        _readerView.Offset = default;
+        _readerView.IsVisible = true;
+        if (_content.Content is Control native) native.IsVisible = false;
+    }
+
+    private void ShowPage()
+    {
+        _readerView.IsVisible = false;
+        _readerView.Content = null;
+        if (_content.Content is Control native) native.IsVisible = true;
+    }
+
+    private async Task SavePageAsync()
+    {
+        if (await ReadPageAsync() is { } page) SavePageRequested?.Invoke(Address, page);
     }
 
     /// <summary>A second as a person reads it in a player: 3:25, 1:02:07.</summary>

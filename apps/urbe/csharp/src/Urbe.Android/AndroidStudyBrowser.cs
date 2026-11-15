@@ -66,6 +66,13 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
         return done.Task.WaitAsync(TimeSpan.FromSeconds(3));
     }
 
+    public async Task<string> PageHtmlAsync()
+    {
+        if (_web is null) return "";
+        try { return await ReadStringAsync(_web, StudyPageScripts.Html); }
+        catch (TimeoutException) { return ""; }
+    }
+
     /// <summary>The second the page's player is at (the official YouTube player included), or null without one.</summary>
     public async Task<double?> ReadMediaSecondAsync()
     {
