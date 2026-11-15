@@ -48,13 +48,15 @@
     "docs/governance/handoffs/HO-20261115-autonomia-integracao-releases.json",
     "docs/governance/integration-policy.json",
     "docs/governance/multi-agent.md",
-    "tests/consistency/Check.cs"
+    "tests/consistency/Check.cs",
+    "apps/hub/tests/Hub.Tests/TimelineTests.cs"
   ],
   "work_completed": [
     "Registrada a decisão explícita DEC-0063/ADD-0034 e ADR-0049; Claude máximo no Urbe, governança/estágio reservados ao proprietário.",
     "Integração automática por escopo com CI do estado combinado e checks adicionais do PR; labels não autorizam.",
     "Incremento canônico antes dos testes e fila persistente de release por Product, com source_sha imutável, retries e estágio preservado.",
-    "Distribuição dos sete Products por pipelines existentes ou pacotes de bibliotecas/HTML offline reais."
+    "Distribuição dos sete Products por pipelines existentes ou pacotes de bibliotecas/HTML offline reais.",
+    "Corrigida premissa obsoleta do teste real do Hub: Next pode estar vazio quando o roadmap só declara itens concluídos/verificados; comparação exata dos abertos e fixture negativa preservam fiscalização sem inventar roadmap."
   ],
   "verification": [
     {
@@ -78,8 +80,14 @@
     {
       "check": "Self-test completo",
       "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs -- --self-test: todos os checks provaram detectar suas violações (log local final)."
+    },
+    {
+      "check": "CI GitHub do PR #950",
+      "kind": "automated",
       "result": "pending",
-      "evidence": "Em execução; será exigido também no CI do PR."
+      "evidence": "Lunet CI e Ecosystem AI release aprovados; teste obsoleto do Hub corrigido para nova execução. https://github.com/AbnerCruz/Ecosystem/pull/950"
     }
   ],
   "known_issues": [
