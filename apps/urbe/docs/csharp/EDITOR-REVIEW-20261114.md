@@ -91,3 +91,16 @@ links e chip Abrir (6), Desfazer/Refazer (8), Backspace/setas com teclado físic
 (10), aparência do bloco formatado e IME com palavra em composição (11), matrizes e fórmulas largas (12, 13),
 teclado que não fecha ao trocar de bloco (14), teclado que volta ao tocar depois de fechado com Voltar (15),
 formatação pela barra nos dois modos (16).
+
+## 6. Seleção, cópia e colagem no celular, em todo o app (beta.54, 15/11/2026)
+
+Pedido do proprietário: seleção, selecionar tudo, copiar e colar funcionando no celular em todo o app.
+
+| # | Achado (causa confirmada no código do Avalonia 12.1.3) | Correção | Prova |
+|---|---|---|---|
+| 17 | No toque, o `TextBox` abre o `ContextFlyout` ao lado das alças (`TextSelectionCanvas.ShowFlyout`); o do tema Fluent está em inglês e não tem "Selecionar tudo". O `ContextMenu` em português que `TextActions` punha nunca aparecia (o flyout tem prioridade). | `TextActions` põe em cada campo um `MenuFlyout` em português (Recortar, Copiar, Colar, Selecionar tudo; horizontal e transitório no celular) e traduz as strings do tema. | `EveryTextFieldOfTheAppHasThePortugueseMenuWithSelectAll` |
+| 18 | No Visual, segurar o dedo selecionava a palavra mas não mostrava as alças, e a bolha só tinha formatação. | Alças exibidas; a bolha começa com Copiar, Recortar, Colar e Tudo (bloco, depois nota); segurar sem seleção abre Colar/Tudo (o pedido de menu da caixa abre a bolha). | `AFingerHeldOnAWordInVisual…`, `SelectAllInTheBubble…` |
+| 19 | As alças de um `TextBox` param na borda da caixa: não havia como estender a seleção a outro bloco pelo toque. | A alça solta acima ou abaixo da caixa estende a seleção até o bloco sob o dedo (a outra ponta fica). | `ASelectionHandleLetGoBelowTheBlock…`, `DraggingTheSelectionHandle…` |
+| 20 | `SelectableTextBlock` não trata o toque prolongado; nota em leitura, painel fixado e tutorial nem eram selecionáveis. | Toque prolongado em qualquer texto só de leitura seleciona a palavra e abre Copiar/Selecionar tudo; esses três passam a ser selecionáveis. | `AFingerHeldOnAReadOnlyText…`, `ANoteInReadingMode…` |
+
+Pendente (NN-017): conferir no aparelho o gesto de segurar, as alças, o arrastar entre blocos e a colagem com o teclado do Android.
