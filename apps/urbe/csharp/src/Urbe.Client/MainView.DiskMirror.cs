@@ -31,7 +31,12 @@ public sealed partial class MainView
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return false; }
             if (!DiffersFromShown(snapshot, files, folders)) { _snapshot = snapshot; return false; }
+            // the note open in the editor, as it was known before the folder is shown again
+            var openPath = Editor.IsVisible ? Editor.Current?.Path : null;
+            var openText = openPath is null ? null : _contents.GetValueOrDefault(openPath);
+            var known = new HashSet<string>(_contents.Keys, StringComparer.Ordinal);
             await ShowVaultAsync(snapshot, listedFiles: files, listedFolders: folders);
+            if (openPath is not null && _store?.Get(openPath) is null) FollowOpenNote(openPath, openText, known);
             return true;
         }
         finally { _refreshingFromDisk = false; }
@@ -53,5 +58,40 @@ public sealed partial class MainView
             if (!onDisk.SetEquals(library.Folders)) return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// CST-101: the note open in the editor is not in the folder any more. Moved outside the Urbe (the same text, under
+    /// a name that was not there), the editor goes with it; deleted, the person is told at once, the text stays in the
+    /// editor and saving it creates the note again (nothing written is lost).
+    /// </summary>
+    private void FollowOpenNote(string path, string? text, HashSet<string> known)
+    {
+        var name = System.IO.Path.GetFileNameWithoutExtension(path);
+        var moved = text is null ? [] : _contents.Where(p => !known.Contains(p.Key) && string.Equals(p.Value, text, StringComparison.Ordinal)).Select(p => p.Key).ToList();
+        if (moved.Count == 1)
+        {
+            Editor.Renamed(moved[0]);
+            Editor.Notify("“" + name + "” foi movida fora do Urbe para “" + moved[0] + "”. O editor acompanhou.");
+            return;
+        }
+        Editor.Notify("“" + name + "” foi apagada fora do Urbe. O texto continua aqui; se você salvar, a nota é criada de novo.");
+    }
+
+    /// <summary>The open note is not in the vault any more (deleted outside): saving it creates it again, with the
+    /// person's text, in its folder (created again too when needed).</summary>
+    private async Task<bool> RecreateIfGoneAsync(CityNote note)
+    {
+        if (_store is null || _library is null || _vault is null || _store.Get(note.Path) is not null) return false;
+        if (await OnDiskAsync(note.Path) is not null) return false;
+        await EnsureFolderAsync(DirOf(note.Path));
+        await _vault.CreateTextFileAsync(note.Path, note.Content);
+        _library.AddNote(note.Path, note.Content, Now, "editor.recreate");
+        _contents[note.Path] = note.Content;
+        NotesChanged();
+        RefreshNotes();
+        await SaveHistoryAsync();
+        Editor.Notify("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” tinha sido apagada fora do Urbe e foi criada de novo com o seu texto.");
+        return true;
     }
 }

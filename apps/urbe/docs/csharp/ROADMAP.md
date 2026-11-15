@@ -498,4 +498,6 @@ Issue [#948](https://github.com/AbnerCruz/Ecosystem/issues/948); branch `ccr-c71
 - [~] Explorer: toque durante a seleção repinta só a linha; seleção sobrevive a atualizações sem mudança; Selecionar tudo; barra de seleção com todas as ações nomeadas em duas linhas e menu flutuante fora da frente enquanto se seleciona; Lixeira virtualizada.
 - [~] Horário dos blocos sem coluna própria: o texto do editor volta à largura inteira no celular (print do proprietário de 15/11/2026).
 - [~] Nova conversa com execução em andamento; Personalização aplica na hora e avisa falha; popup da IA a 15 px; fórmulas largas não abaixo de 85 %.
+- [~] CST-101 (parte): nota aberta movida fora do app é acompanhada pelo editor; apagada, avisa e salvar a cria de novo com o texto.
+- [~] CST-099 (parte): medição repetível de abrir, selecionar, mover, excluir e reler com 200 e 2.000 notas (`Bench_VaultOperationsAtScale`, headless).
 - [ ] Validação no aparelho (NN-017): pasta apagada pelo gerenciador de arquivos, excluir várias notas, Lixeira e multi-seleção com o dedo.

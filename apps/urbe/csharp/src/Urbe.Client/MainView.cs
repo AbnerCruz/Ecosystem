@@ -657,6 +657,8 @@ public sealed partial class MainView : Grid
             // This cannot authorize a generic replacement or stale restoration.
             !string.Equals(previous, expectedUndoContent, StringComparison.Ordinal))
             throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Urbe. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
+        // CST-101: the open note was deleted outside the Urbe: it is created again, never lost
+        if (await RecreateIfGoneAsync(note)) return;
         try { await _vault.SaveExistingTextFileAsync(note.Path, note.Content); }
         catch (Exception error) when (error is not VaultChangedOutsideException)
         {
