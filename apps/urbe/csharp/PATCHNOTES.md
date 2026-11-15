@@ -11,9 +11,10 @@
 - **Checklist de uma seção.** Ao inserir um progresso (botão **%**), dá para contar só as tarefas sob um título da nota, não a nota inteira.
 - **Ver pendentes.** A barra de uma checklist mostra quantas tarefas faltam e lista quais são; tocar numa leva até ela.
 - **O Assistente vê os mesmos números.** Ao ler uma nota, ele recebe o progresso calculado pelo app, em vez de contar as caixas por conta própria.
+- **Anotar instante do YouTube sem digitar o segundo.** No navegador de estudo, **Anotar instante** agora lê o tempo do player oficial e cria a ligação para aquele momento (o rótulo aparece como "Vídeo em 3:25"). O campo do instante continua lá para ajustar à mão, e é usado quando o player ainda não carregou o vídeo.
 - **Blocos de código dentro de blocos de código.** Um exemplo entre `~~~` com crases dentro, ou um bloco de quatro crases, aparecia quebrado no editor e na página; agora segue a regra do Markdown (só a mesma marca, do mesmo tamanho ou maior, fecha o bloco).
 
 ## O que continua pendente
 
 - **Plano de consolidação 2.6:** os demais itens seguem para as próximas versões.
-- **No aparelho:** conferir os botões − / + e Ver pendentes com o dedo, no celular e no computador.
+- **No aparelho:** conferir os botões − / + e Ver pendentes com o dedo, e o Anotar instante num vídeo do YouTube, no celular e no computador.

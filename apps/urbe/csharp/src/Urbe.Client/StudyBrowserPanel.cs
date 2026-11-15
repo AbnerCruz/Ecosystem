@@ -86,10 +86,14 @@ public sealed class StudyBrowserPanel : Grid
         _video.Children.Add(new TextBlock { Text = "Instante (s)", VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
         _video.Children.Add(_timestamp);
         var mark = new Ui.UrbeButton("Anotar instante", Ui.ButtonKind.Ghost, UrbeTheme.Icons.Clock) { MinHeight = 40, Padding = new Thickness(10, 0) };
-        mark.Click += (_, _) =>
+        mark.Click += async (_, _) =>
         {
-            if (_videoId is not { } id || !int.TryParse(_timestamp.Text, out int second) || second < 0) return;
-            QuoteRequested?.Invoke(new("https://www.youtube.com/watch?v=" + id + "&t=" + second, "Vídeo no instante " + second + " s", id, second));
+            if (_videoId is not { } id) return;
+            // the player's own second when it can be read (the person does not type it); the field otherwise
+            if (_browser is IReaderMediaPosition player && await player.ReadMediaSecondAsync() is { } now && double.IsFinite(now) && now >= 0 && _videoId == id)
+                _timestamp.Text = ((int)now).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (!int.TryParse(_timestamp.Text, out int second) || second < 0) { _status.Text = "Informe o instante em segundos."; _status.IsVisible = true; return; }
+            QuoteRequested?.Invoke(new("https://www.youtube.com/watch?v=" + id + "&t=" + second, "Vídeo em " + Clock(second), id, second));
         };
         _video.Children.Add(mark);
         SetRow(_content, 2); Children.Add(_content);
@@ -105,6 +109,10 @@ public sealed class StudyBrowserPanel : Grid
         var bottom = new StackPanel { Children = { _status, chips }, Background = UrbeTheme.Brush(UrbeTheme.Surface) };
         SetRow(bottom, 3); Children.Add(bottom);
     }
+
+    /// <summary>A second as a person reads it in a player: 3:25, 1:02:07.</summary>
+    public static string Clock(int second) =>
+        second >= 3600 ? $"{second / 3600}:{second / 60 % 60:00}:{second % 60:00}" : $"{second / 60}:{second % 60:00}";
 
     private async Task OpenExternallyAsync()
     {

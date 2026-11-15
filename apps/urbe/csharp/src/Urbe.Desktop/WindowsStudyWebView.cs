@@ -166,13 +166,13 @@ internal sealed class WindowsStudyWebView(string content, bool local, Action<str
     public async Task<double?> ReadMediaSecondAsync()
     {
         if(_web is null)return null;
-        try{return JsonSerializer.Deserialize<double?>(await _web.ExecuteScriptAsync("(()=>{let m=document.querySelector('audio,video');return m&&m.readyState>0?m.currentTime:null})()"));}
+        try{return JsonSerializer.Deserialize<double?>(await _web.ExecuteScriptAsync(MediaPositionScripts.Read));}
         catch(Exception ex)when(ex is COMException or JsonException or InvalidOperationException){return null;}
     }
     public Task SeekMediaAsync(double seconds)
     {
         if(_web is null||!double.IsFinite(seconds)||seconds<0)return Task.CompletedTask;
-        return _web.ExecuteScriptAsync("(()=>{let m=document.querySelector('audio,video');if(m){let seek=()=>{m.currentTime="+seconds.ToString(System.Globalization.CultureInfo.InvariantCulture)+"};if(m.readyState>0)seek();else m.addEventListener('loadedmetadata',seek,{once:true})}})()");
+        return _web.ExecuteScriptAsync(MediaPositionScripts.Seek(seconds));
     }
     public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow)
     {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow);return _web is { } web?web.ExecuteScriptAsync(_readerAppearance):Task.CompletedTask;}
