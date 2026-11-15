@@ -34,6 +34,8 @@
     "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/NoteLibrary.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteUsage.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteUsageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/ParagraphIndentTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs",
     "apps/urbe/csharp/tools/editor-oracle.mjs",
@@ -54,6 +56,7 @@
     "Parágrafos: espaços e tabs antes do texto não aparecem mais como recuo (CommonMark); o oráculo da 1.8.4 (editor-oracle.mjs markdownFlanking) registra a mesma melhoria (DEC-0059).",
     "Teste AgentWorkspaces: corrida corrigida (o histórico é lido fora da thread de UI; o teste agora espera a lista, com limite), falhava em cerca de metade das execuções completas.",
     "Barra de seleção refeita a partir de captura em tamanho de celular: as ações ficavam cortadas ou sob o menu flutuante; agora contagem e Selecionar tudo em cima, oito ações nomeadas em grade 4×2, barra opaca, lista com folga embaixo, menu flutuante oculto durante a seleção.",
+    "Excluir seleção: o aviso CST-226 lia o vault inteiro uma vez por nota escolhida antes da confirmação (na thread de UI); NoteUsage.OfMany responde por todas numa única passagem.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [

@@ -1423,8 +1423,10 @@ public sealed partial class MainView : Grid
         // CST-226: what depends on the notes is said before they go (nothing dependent is changed)
         if (_store is { } usageStore)
         {
-            var impact = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>()
-                .Select(d => NoteUsage.Summary(NoteUsage.Of(usageStore, d))).OfType<string>().ToList();
+            // one pass over the vault for every note chosen (each one read the whole vault before)
+            var chosen = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>().ToList();
+            var usage = NoteUsage.OfMany(usageStore, chosen);
+            var impact = chosen.Select(d => NoteUsage.Summary(usage[d.Id])).OfType<string>().ToList();
             if (impact.Count > 0) message += "\n\n" + string.Join("\n", impact.Take(3)) + "\nEsses itens vão mostrar a fonte como indisponível até você restaurar a nota.";
         }
         if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
