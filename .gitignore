@@ -7,3 +7,6 @@ apps/hub/**/bin/
 apps/hub/**/obj/
 apps/ecosystem-ai/**/bin/
 apps/ecosystem-ai/**/obj/
+
+__pycache__/
+*.pyc

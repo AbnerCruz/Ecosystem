@@ -144,6 +144,28 @@ public class TimelineTests
     }
 
     [Fact]
+    public void CompletedOrWaitingRoadmapDoesNotInventNextEvenWithPendingDecisions()
+    {
+        const string roadmap = """
+        ## Fase 1 — Base
+        - [x] P1-1 — Feito.
+        **Gate:** aprovado.
+        *Estado do gate:* **aprovado**
+        ## Fase 2 — Validação
+        - [~] P2-1 — Aguarda validação.
+        **Gate:** aguarda.
+        *Estado do gate:* **aguardando**
+        ## Fase 3 — Futuro sem tarefas
+        **Gate:** futuro.
+        """;
+        var result = TimelineBuilder.Build(roadmap, Decisions, []);
+        Assert.Empty(result.Next);
+        Assert.Contains(result.Now, e => e.Id == "P2-1");
+        Assert.Contains(result.Now, e => e.Id == "DEC-0002");
+        Assert.Contains(result.Past, e => e.Id == "P1-1");
+    }
+
+    [Fact]
     public void RealRepositoryNextOnlyContainsWhatTheRoadmapDeclares()
     {
         string? root = null;
@@ -159,7 +181,9 @@ public class TimelineTests
         var open = RoadmapReader.ReadItems(roadmap).Where(i => i.State == ItemState.Open).Select(i => i.Id).ToHashSet();
         var gates = RoadmapReader.ReadGates(roadmap).Select(g => $"gate-fase-{g.Phase}").ToHashSet();
         Assert.NotEmpty(r.Past);
-        Assert.NotEmpty(r.Next);
+        // The live roadmap may contain only completed/verified items and waiting gates.
+        // Compare every open task, rather than requiring the Hub to invent a non-empty Next.
+        Assert.Equal(open.Order(), r.Next.Where(e => e.Kind == EntryKind.RoadmapItem).Select(e => e.Id).Order());
 
         // Faixas do ROADMAP real ("P3-4..P3-6") são expandidas: P3-7 depende de P3-5, que está no meio da faixa.
         var p37 = RoadmapReader.ReadItems(roadmap).Single(i => i.Id == "P3-7");

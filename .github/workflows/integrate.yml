@@ -4,8 +4,8 @@ name: integrate
 # Para um PR pronto por execução (não rascunho, da própria base, com handoff), monta o estado combinado com a main ATUAL, classifica
 # a mudança com a política e as regras DA MAIN (rotina × crítico; docs/governance/integration-policy.json), roda nele os checks da main
 # (checker confiável) e os do próprio candidato + o CI de cada Product tocado (workflows reutilizáveis). Rotina verde: integra sozinha,
-# empurrando para a main exatamente o commit testado, sem force. Crítico verde: explica a consequência no PR e espera a label de
-# autorização posta pelo proprietário (o autor do evento é conferido). Conflito ou check vermelho: volta ao agente autor.
+# empurrando para a main exatamente o commit testado, sem force. Escopo autorizado verde integra sem label;
+# governança aguarda review do proprietário vinculada ao head (ADD-0034). Conflito ou check vermelho: volta ao agente autor.
 # Antes de integrar, confere de novo: head do PR, ref de integração == commit testado, main == main testada.
 # Segurança: pull_request_target roda a definição da main; o código do PR só roda nos jobs de checks, com permissão de leitura;
 # PRs de fork e do Dependabot são ignorados; texto do PR só entra em script via variável de ambiente.
@@ -15,6 +15,11 @@ on:
     branches: [main]
   pull_request_target:
     types: [opened, reopened, synchronize, ready_for_review, labeled]
+  pull_request_review:
+    types: [submitted, dismissed]
+  workflow_run:
+    workflows: [consistency, urbe-checks, lunet2d-ci, hub-ci, ecosystem-ai-ci, tabletop-rpg-ci, math-authoring-ci, atlas-forge-ci, lunet2d-release, ecosystem-ai-release]
+    types: [completed]
   schedule:
     - cron: '41 * * * *'
   workflow_dispatch:
@@ -172,6 +177,7 @@ jobs:
     permissions:
       contents: write
       statuses: write
+      checks: read
       pull-requests: write
       issues: write
       actions: write
@@ -196,6 +202,7 @@ jobs:
       TRUSTED: ${{ needs.plan.outputs.trusted }}
       TRUSTED_FAILURES: ${{ needs.plan.outputs.trusted_failures }}
       GATE_REASON: ${{ needs.plan.outputs.gate_reason }}
+      PRODUCTS: ${{ needs.plan.outputs.products }}
       R_CONSISTENCY: ${{ needs.consistency.result }}
       R_URBE: ${{ needs.urbe.result }}
       R_LUNET2D: ${{ needs.lunet2d.result }}

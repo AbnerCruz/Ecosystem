@@ -1,4 +1,5 @@
 name: urbe-csharp-mobile-release
+run-name: urbe-csharp-mobile-release ${{ inputs.source_sha || github.sha }}
 # ART-1: re-run beta.7 after C# expression compile fix; no prior tag was published.
 
 # UC-25/UC-27 — Urbe 2 native Android beta releases only; desktop is later.
@@ -13,6 +14,11 @@ on:
       - '.github/workflows/urbe-csharp-mobile-release.yml'
       - 'apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj'
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Immutable tested commit to publish
+        type: string
+        required: false
 
 concurrency:
   group: urbe-csharp-mobile-release-${{ github.ref }}
@@ -36,6 +42,18 @@ jobs:
         working-directory: apps/urbe/csharp
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -59,7 +77,7 @@ jobs:
           assert beta.findtext('ApplicationId') == 'app.urbe.csharp', 'Identidade Android alterada'
           version = root.findtext('.//UrbeBetaVersion')
           code = int(root.findtext('.//UrbeBetaVersionCode'))
-          assert re.fullmatch(r'\d+\.\d+\.\d+-beta\.\d+', version), version
+          assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z][A-Za-z0-9-]*(?:\.\d+)?)?', version), version
           assert code >= 2000001, code
           tag = 'urbe-csharp-v' + version
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
@@ -109,7 +127,7 @@ jobs:
         if: steps.version.outputs.skip != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ inputs.source_sha || github.sha }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -169,7 +187,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
           VERSION: ${{ steps.version.outputs.version }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ inputs.source_sha || github.sha }}
         run: |
           set -euo pipefail
           cat > artifacts/mobile-release/release-notes.md <<'EOF'
@@ -202,7 +220,7 @@ jobs:
             "artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk" \
             "artifacts/mobile-release/SHA256SUMS.txt" \
             --repo "$GITHUB_REPOSITORY" --target "$SHA" \
-            --prerelease --latest=false --title "Urbe Beta 2.0 — nativo ($VERSION)" \
+            $(python3 ../../../.github/integrator/release-metadata.py flags "$VERSION") --title "Urbe $VERSION — nativo" \
             --notes-file artifacts/mobile-release/release-notes.md
 
   # Owner (15/10/2026): "Cadê o Urbe beta 2.0 desktop". The same native client for Windows (Urbe.Desktop,
@@ -220,6 +238,18 @@ jobs:
         working-directory: apps/urbe/csharp
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - name: Require an immutable source already integrated in main
+        if: github.event_name != 'pull_request'
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'

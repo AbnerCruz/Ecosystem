@@ -1,5 +1,10 @@
 # ADR-0015 — Integrador automático: estado combinado, fila serial, criticidade e autorização
 
+## Diretriz vigente de autonomia e entrega (DEC-0063 / ADD-0034)
+
+[ADD-0034](../governance/addenda/ADD-0034-autonomia-integracao-releases.md) prevalece sobre a exigência anterior de label: PR pronto, escopo autorizado e todos os checks verdes integram automaticamente. Cada app cujo código mudou recebe release própria; estágio alfa/beta/dev/estável pertence exclusivamente ao usuário, agente apenas incrementa número. Claude tem máxima no Urbe, sem autoridade sobre governança do Ecosystem, própria concessão ou estágio. Pendência bloqueia só a ação dependente; registrar proposta de mudança da regra e avançar trabalho independente autorizado. Governança não é contornada; review do proprietário vinculada ao head substitui label quando necessária. CI não significa DEVICE.
+
+
 ## Status
 
 Aceito. Os requisitos são do proprietário:

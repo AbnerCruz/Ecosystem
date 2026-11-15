@@ -1137,7 +1137,7 @@ static class Checks
             c.R.Fail(id, $"{script}: guard_combined precisa exigir ref de integração == commit testado (não basta ter os mesmos pais)");
         if (!(Fn("guard_main").Contains("FETCH_HEAD)\" = \"$MAIN\"") && Fn("guard_main").Contains("^1") && Fn("guard_main").Contains("^2")))
             c.R.Fail(id, $"{script}: guard_main precisa exigir main atual == main testada e os pais do commit testado");
-        if (!(Fn("guard_authorization").Contains("--integration-authorization") && Fn("guard_authorization").Contains("issues/${PR}/events")))
+        if (!(Fn("guard_authorization").Contains("lifecycle.py authorize") && Fn("guard_authorization").Contains("pulls/${PR}/reviews")))
             c.R.Fail(id, $"{script}: guard_authorization precisa conferir o autor do evento da label (--integration-authorization)");
 
         // GITHUB_TOKEN merges suppress on:push. The signed native beta needs a
@@ -2247,7 +2247,16 @@ static class IntegrationQueue
         { reviewErrors = [$"revisão da mudança não pôde ser analisada ({e.GetType().Name}; falha fechada)"]; }
         if (reviewErrors.Count > 0) { ok = false; reason = string.Join("; ", reviewErrors); }
         var criticality = findings.Count > 0 ? "critical" : "routine";
-        var requiresOwner = criticality == "critical" || routinePolicy != "automatic";
+        // ADD-0034: criticality remains visible; product changes no longer require a label.
+        // Only the trusted main may grant this. Governance/control-plane changes never inherit product autonomy.
+        var productAutomatic = policy is not null && policy.RootElement.TryGetProperty("automaticProductChanges", out var automatic)
+            && automatic.ValueKind == JsonValueKind.True
+            && !changed.Any(f => f is "MANIFEST.md" or "AGENTS.md" or "ecosystem.json" || f.EndsWith("/AGENTS.md", StringComparison.Ordinal)
+                || f.StartsWith(".github/", StringComparison.Ordinal) || f.StartsWith("docs/contracts/", StringComparison.Ordinal)
+                || f.StartsWith("tests/consistency/", StringComparison.Ordinal)
+                || (f.StartsWith("docs/governance/", StringComparison.Ordinal) && !f.StartsWith("docs/governance/handoffs/", StringComparison.Ordinal)))
+            ;
+        var requiresOwner = (criticality == "critical" && !productAutomatic) || routinePolicy != "automatic";
         return new GateResult(ok, reason, [.. touched], products, criticality, requiresOwner, [.. findings], [.. handoffs]);
     }
 
@@ -3596,7 +3605,7 @@ static class SelfTest
             string R(string c, string rel) => File.ReadAllText(Path.Combine(c, rel));
             void W(string c, string rel, string content) => Put(c, rel, content);
             bool Routine(IntegrationQueue.GateResult g) => g.Ok && g.Criticality == "routine" && !g.RequiresOwner;
-            bool Critical(IntegrationQueue.GateResult g, string cls, string? detail = null) => g.Criticality == "critical" && g.RequiresOwner
+            bool Critical(IntegrationQueue.GateResult g, string cls, string? detail = null) => g.Criticality == "critical"
                 && g.Findings.Any(f => f.Class == cls && (detail is null || f.Detail.Contains(detail)));
 
             var g = Case(c => { W(c, "ROADMAP.md", "x"); W(c, "ARCHITECTURE.md", "y"); W(c, "site/app.js", "z"); }, "ROADMAP.md", "ARCHITECTURE.md", "site/app.js").G;

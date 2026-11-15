@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "ecosystem/contracts/integration-policy/1",
   "title": "Política de integração — schemaVersion 1",
-  "description": "Autoridade única da política de integração (ADD-0012, ADR-0015): o que é rotina (integra sozinho) e o que é crítico (espera o proprietário). Lida sempre da main pelo integrador; um PR que muda este arquivo é crítico pela política anterior.",
+  "description": "Autoridade única da política de integração (ADD-0012, ADR-0015): risco observável e autorização por escopo (ADD-0034); Products autorizados verdes integram sem label. Lida sempre da main pelo integrador; um PR que muda este arquivo é crítico pela política anterior.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "decision", "mechanism", "routine", "critical", "authorization", "classes"],
@@ -13,12 +13,28 @@
     "mechanism": { "description": "ADR do mecanismo.", "type": "string", "minLength": 1 },
     "routine": { "description": "O que acontece com uma mudança rotineira verde.", "enum": ["automatic", "owner-authorization"] },
     "critical": { "description": "O que acontece com uma mudança crítica verde.", "enum": ["owner-authorization"] },
+    "automaticProductChanges": { "type": "boolean", "description": "Automatiza mudanças no escopo autorizado; não concede governança nem mudança de estágio." },
+    "grants": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["agent", "component", "level", "grantedBy", "record"],
+        "properties": {
+          "agent": { "type": "string", "minLength": 1 },
+          "component": { "type": "string", "minLength": 1 },
+          "level": { "enum": ["read", "implementation", "product-autonomy", "maximum"] },
+          "grantedBy": { "type": "string", "minLength": 1 },
+          "record": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "authorization": {
       "type": "object",
       "additionalProperties": false,
       "required": ["label", "authorizers"],
       "properties": {
-        "label": { "type": "string", "minLength": 1 },
+        "method": { "enum": ["owner-review"] },
+        "label": { "type": "string", "minLength": 1, "description": "Marcador interno legado da fila; a coleta elimina labels reais e só injeta este marcador após validar review do proprietário no head." },
         "authorizers": {
           "description": "Quem pode autorizar uma mudança crítica: '@repository-owner' ou logins explicitamente autorizados pelo proprietário. O integrador confere o autor do evento que pôs a label.",
           "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }

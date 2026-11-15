@@ -2255,6 +2255,36 @@
       "decidedAt": "2026-11-14",
       "record": "docs/governance/responses/DEC-0062.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0063",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Integração automática sem label, releases e autonomia por componente",
+      "context": "Ordem expressa do proprietário em 15/11/2026: label integrar e aprovações repetitivas estão impedindo produção.",
+      "question": "Como integrar e publicar sem exigir confirmação rotineira e sem autoelevação de governança?",
+      "alternatives": [
+        {
+          "option": "A — Automação por escopo autorizado",
+          "consequences": "PR pronto e CI verde integram; código alterado gera release; estágio pertence ao usuário; governança continua protegida."
+        },
+        {
+          "option": "B — Manter a label",
+          "consequences": "Mantém o bloqueio que o proprietário rejeitou."
+        }
+      ],
+      "consequences": "Claude recebe máxima no Urbe, nunca no Ecosystem. Pendências bloqueiam somente ações dependentes.",
+      "manifestCompatibility": "NN-001/008/009/011/014/016/017/018/020/021 preservados; altera explicitamente aprovação repetitiva por label.",
+      "raisedBy": "codex",
+      "raisedAt": "2026-11-15",
+      "decision": "A, conforme ordem direta do proprietário; concessão máxima ao Claude no Urbe e reserva de governança ao usuário.",
+      "decidedAt": "2026-11-15",
+      "record": "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+      "related": [
+        "docs/adr/0049-autonomia-por-escopo-e-releases-automaticas.md"
+      ],
+      "consequencesApplied": false
     }
   ]
 }
