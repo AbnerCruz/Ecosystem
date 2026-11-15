@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-photo-picker",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T19:45:00Z",
+  "agent": {
+    "id": "claude-lunet-photo-picker",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-508",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-photopuzzle-gallery-picker",
+  "base_commit": "0dc7c759",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/944",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/fotos-no-jogo.md",
+    "apps/lunet2d/runtime-template/Lunet.Game.Android.csproj",
+    "apps/lunet2d/runtime-template/StandaloneGameActivity.cs",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Android/AndroidGameImagePicker.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Framework/Content/IGameImagePicker.cs",
+    "apps/lunet2d/src/Lunet.Framework/Content/ImageOrientation.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GameImagePickerTests.cs",
+    "docs/governance/handoffs/HO-20261114-lunet-photo-picker.json"
+  ],
+  "work_completed": [
+    "Contrato portátil IGameImagePicker/PickedGameImage e seletor Android por SAF com redução a 1024 px (trabalho anterior do outro agente, preservado).",
+    "Orientação EXIF aplicada (ImageOrientation, 8 casos): fotos da câmera chegam em pé.",
+    "ID corrigido de LUNET-502 (já usado pelo servidor dedicado) para LUNET-508.",
+    "Testes, guia com exemplo compilado e referência para a IA."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1063 testes; GameImagePickerTests 13"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Escolher fotos (retrato, paisagem, grande, cancelar) no Preview rápido e no APK do jogo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/fotos-no-jogo.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Preview isolado e lunet-server não oferecem o seletor (TryGet retorna falso).",
+    "Se o Android encerrar o processo com o seletor aberto, a escolha se perde."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI, integração e release; DEVICE pelo guia."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Sem permissão de armazenamento; o jogo recebe só pixels, nunca a URI."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "ID duplicado LUNET-502 trocado por LUNET-508."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-game-image-picker",
+      "status": "product-specific",
+      "rationale": "Serviço de host para jogos Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

@@ -1,5 +1,6 @@
 using System.Numerics;
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.Opengl;
 using Android.OS;
@@ -19,6 +20,7 @@ public sealed class StandaloneGameActivity : Activity
 {
     private GLSurfaceView? _surface;
     private PreviewRenderer? _renderer;
+    private AndroidGameImagePicker? _imagePicker;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -29,13 +31,15 @@ public sealed class StandaloneGameActivity : Activity
             using var buffer = new MemoryStream();
             assemblyStream.CopyTo(buffer);
 
+            _imagePicker = new AndroidGameImagePicker(this);
             _renderer = new PreviewRenderer(
                 buffer.ToArray(), null, new PackagedContentSource(Assets),
                 () => new AndroidAudioBackend(Path.Combine(CacheDir!.AbsolutePath, "audio"),
                     message => global::Android.Util.Log.Error("LunetGame", message)),
                 new DirectorySaveStore(Path.Combine(FilesDir!.AbsolutePath, "saves")),
                 new AndroidHaptics(this),
-                (level, message) => global::Android.Util.Log.Info("LunetGame", level + ": " + message));
+                (level, message) => global::Android.Util.Log.Info("LunetGame", level + ": " + message),
+                _imagePicker);
 
             _surface = new GLSurfaceView(this);
             _surface.SetEGLContextClientVersion(3);
@@ -73,6 +77,13 @@ public sealed class StandaloneGameActivity : Activity
         }
         _renderer.SetTouches(touches);
         args.Handled = true;
+    }
+
+    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
+    {
+        base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode == AndroidGameImagePicker.RequestCode)
+            _imagePicker?.Complete(resultCode == Result.Ok ? data?.Data : null);
     }
 
     protected override void OnPause()

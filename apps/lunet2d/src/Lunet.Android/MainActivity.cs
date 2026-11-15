@@ -67,6 +67,7 @@ public sealed partial class MainActivity : Activity
     private string? _pendingGameApkName;
 
     private PreviewHost? _preview;
+    private AndroidGameImagePicker? _gameImagePicker;
     private FrameLayout? _workspaceFrame;
     private bool _isolatedRunning;
 
@@ -1275,12 +1276,14 @@ public sealed partial class MainActivity : Activity
             return;
         }
 
+        _gameImagePicker = new AndroidGameImagePicker(this);
         var renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
             new ProjectContentSource(_project!.Directory),
             () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio"),
                 message => RunOnUiThread(() => AppendConsole(LogLevel.Error, message))),
             new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")),
-            new AndroidHaptics(this), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
+            new AndroidHaptics(this), (level, message) => RunOnUiThread(() => AppendConsole(level, message)),
+            _gameImagePicker);
         _preview = new PreviewHost(this, renderer, () => _project?.ListFiles() ?? [], StopPreview, _settings.HighRefreshRate);
         SetContentView(_preview);
     }
@@ -1325,6 +1328,7 @@ public sealed partial class MainActivity : Activity
         _lastProfilerReport = _preview.CaptureProfilerReport();
         _preview.Shutdown();
         _preview = null;
+        _gameImagePicker = null;
     }
 
     // ---------- Export ----------
@@ -1423,6 +1427,11 @@ public sealed partial class MainActivity : Activity
     {
         base.OnActivityResult(requestCode, resultCode, data);
         if (HandleAttachmentResult(requestCode, resultCode, data)) return;
+        if (requestCode == AndroidGameImagePicker.RequestCode)
+        {
+            _gameImagePicker?.Complete(resultCode == Result.Ok ? data?.Data : null);
+            return;
+        }
         if (requestCode == ImportProjectRequestCode)
         {
             if (resultCode == Result.Ok && data?.Data is AndroidUri projectUri) CompleteProjectImport(projectUri);
