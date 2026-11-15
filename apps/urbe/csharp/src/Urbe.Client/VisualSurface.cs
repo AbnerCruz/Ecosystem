@@ -656,6 +656,8 @@ public sealed class VisualSurface : StackPanel
             ProgressNoteResolver = ProgressNoteResolver,
             DataReader = DataReader,
             ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(r.Block, body),
+            ProgressStepRequested = _readOnly ? null : delta => StepProgress(r.Block, delta),
+            ProgressPendingRequested = ProgressPending,
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             WebLinkTapped = url => WebLinkTapped?.Invoke(url),
             // while a block is being written, a link of the note is a place for the caret like any other text
@@ -704,6 +706,17 @@ public sealed class VisualSurface : StackPanel
     public Func<string, string?>? ProgressNoteResolver { get; set; }
     public Func<string, Task<string?>>? DataReader { get; set; }
     public Func<string, Task<string?>>? AskProgress { get; set; }
+
+    /// <summary>CST-228: the pending tasks a checklist summary counted (their lines in the note).</summary>
+    public Action<NoteProgressResult>? ProgressPending { get; set; }
+
+    private void StepProgress(MarkdownBlock block, decimal delta)
+    {
+        if (_readOnly || NoteProgress.Step(_text, block.Start, block.End, delta) is not { } changed) return;
+        _text = changed;
+        TextEdited?.Invoke(_text);
+        Rebuild();
+    }
 
     private async Task EditProgressAsync(MarkdownBlock block, string body)
     {

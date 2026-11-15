@@ -589,7 +589,9 @@ public static partial class AssistantTools
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
                 var r = ReadSlice(Readable(host, d), Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host), inherited: host.Knowledge.Inherited(d.Id));
-                return Task.FromResult(new AiToolOutput(r.Text, Reads: [(d.Path, r.Partial)], Seen: [r.Seen]));
+                // CST-228: the progress the person sees, computed by the app (the agent does not count the boxes again)
+                var progress = string.Join("\n", NoteProgress.Summaries(d.Content, id => host.Documents.Get(id) is { } n && n.Id == id ? n.Content : null).Select(p => "- " + p));
+                return Task.FromResult(new AiToolOutput(progress.Length == 0 ? r.Text : r.Text + "\n\nProgresso calculado pelo app:\n" + progress, Reads: [(d.Path, r.Partial)], Seen: [r.Seen]));
             }
         },
         new()

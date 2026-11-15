@@ -150,6 +150,7 @@ public sealed class EditorOverlay : Grid
     public EditorOverlay()
     {
         _visual.AskProgress = ConfigureProgressGuardedAsync;
+        _visual.ProgressPending = result => _ = ShowPendingTasksAsync(result);
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         // top bar, find, toolbar (wide), text, footer, toolbar (narrow: on the last row, right above the soft keyboard)
         RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,Auto,Auto");
@@ -2210,11 +2211,30 @@ public sealed class EditorOverlay : Grid
         _visual.FinishEdit();
         var note = _note;
         var baseline = Editor.Text;
-        var kind = await Dialogs.ChooseAsync("Inserir progresso", [new DialogItem("Meta numérica", Detail: "Valor atual, meta e quantidade restante"), new DialogItem("Checklist desta nota", Detail: "Contagem automática de todas as tarefas")]);
-        var insert = kind == 0 ? await ConfigureProgressAsync("label: Progresso\nvalue: 0\ntotal: 100")
-            : kind == 1 ? "```progress\nlabel: Tarefas\nsource: tasks\n```" : null;
+        var headings = MarkdownEngine.SplitFrontmatter(baseline).Body.Split('\n')
+            .Select(l => System.Text.RegularExpressions.Regex.Match(l, @"^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$"))
+            .Where(m => m.Success).Select(m => m.Groups[1].Value).ToList();
+        var unique = headings.Where(h => headings.Count(x => x == h) == 1).ToList();
+        var options = new List<DialogItem> { new("Meta numérica", Detail: "Valor atual, meta e quantidade restante"), new("Checklist desta nota", Detail: "Contagem automática de todas as tarefas") };
+        if (unique.Count > 0) options.Add(new("Checklist de uma seção", Detail: "Só as tarefas sob um título"));
+        var kind = await Dialogs.ChooseAsync("Inserir progresso", options);
+        string? insert = null;
+        if (kind == 0) insert = await ConfigureProgressAsync("label: Progresso\nvalue: 0\ntotal: 100");
+        else if (kind == 1) insert = "```progress\nlabel: Tarefas\nsource: tasks\n```";
+        else if (kind == 2 && await Dialogs.ChooseAsync("Seção", unique.Select(h => new DialogItem(h)).ToList()) is int pick)
+            insert = "```progress\nlabel: " + unique[pick] + "\nsource: tasks\nsection: " + unique[pick] + "\n```";
         if (insert is null || !ReferenceEquals(note, _note) || Editor.Text != baseline) return;
         InsertText("\n\n" + insert + "\n");
+    }
+
+    /// <summary>CST-228: the pending tasks a summary counted; choosing one takes the caret (and the screen) to it.</summary>
+    private async Task ShowPendingTasksAsync(NoteProgressResult result)
+    {
+        if (Dialogs is null) return;
+        var note = _note;
+        var baseline = Editor.Text;
+        var pick = await Dialogs.ChooseAsync(result.Label + " — pendentes", result.Pending.Select(p => new DialogItem(p.Text.Length > 0 ? p.Text : "(tarefa sem texto)", Detail: "Linha " + (p.Line + 1))).ToList());
+        if (pick is int i && ReferenceEquals(note, _note) && Editor.Text == baseline) GoToLine(result.Pending[i].Line + 1);
     }
 
     private async Task<string?> ConfigureProgressAsync(string body)
