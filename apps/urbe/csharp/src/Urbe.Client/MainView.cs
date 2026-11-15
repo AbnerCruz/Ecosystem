@@ -1162,7 +1162,9 @@ public sealed partial class MainView : Grid
         var shown = NotesFingerprint();
         if (shown == _notesShown) return;
         _notesShown = shown;
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), _library?.Folders);
+        Explorer.SetNotes(_contents.Select(n => _store?.Get(n.Key) is { } d
+            ? new CityNote(n.Key, n.Value) { Title = d.Title, Modified = d.Modified ?? d.Created, Created = d.Created }
+            : new CityNote(n.Key, n.Value)), _library?.Folders);
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
@@ -1477,6 +1479,8 @@ public sealed partial class MainView : Grid
             new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
+            new DialogItem("Ordenar notas", UrbeTheme.Icons.Layers, ExplorerState.Sort switch { "modificadas" => "Modificadas por último primeiro", "criadas" => "Criadas por último primeiro", _ => "Por nome" },
+                Run: () => ChooseSortAsync()),
             new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: () => ShowConstellationAsync()),
             new DialogItem("Grafos", UrbeTheme.Icons.Layers, "Criar e navegar em grafos livres", Run: () => ShowGraphsHomeAsync()),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
@@ -1486,6 +1490,20 @@ public sealed partial class MainView : Grid
             .. (_vault is null ? Array.Empty<DialogItem>() :
                 [new DialogItem("Pasta do Urbe no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
         ]);
+    }
+
+    /// <summary>How the notes of each folder are ordered in the tree (kept on this device); folders stay first.</summary>
+    public async Task ChooseSortAsync()
+    {
+        var options = new (string Id, DialogItem Item)[]
+        {
+            ("nome", new DialogItem("Por nome", UrbeTheme.Icons.Notes, "De A a Z")),
+            ("modificadas", new DialogItem("Modificadas por último", UrbeTheme.Icons.Clock, "As que você mexeu por último primeiro")),
+            ("criadas", new DialogItem("Criadas por último", UrbeTheme.Icons.Plus, "As mais novas primeiro"))
+        };
+        if (await Dialogs.ChooseAsync("Ordenar notas", options.Select(o => o.Item).ToList()) is not { } chosen) return;
+        ExplorerState.Sort = options[chosen].Id;
+        Explorer.Resort();
     }
 
     /// <summary>Where the .zip goes (a save dialog); the tests replace it. Null = cancelled.</summary>

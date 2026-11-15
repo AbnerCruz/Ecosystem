@@ -49,6 +49,9 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerBackUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SelectFilesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SilentFailureUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerSortUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ExplorerState.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Notes.cs",
     "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
@@ -79,6 +82,7 @@
     "CST-148 (investigação, parte): medido o tempo da thread de UI ao abrir 2.000 notas (headless): OpeningIds 20–220 ms e NoteLibrary.Open 36–61 ms passam para fora da thread de UI; RefreshNotes ~25 ms, renderização e layout da Área de trabalho ~115 ms (3.179 visuais), restauração da sessão 57–142 ms ficam nela. Congelamento máximo medido ao abrir frio caiu de ~1,1 s para ~0,8 s; o restante medido neste contêiner mistura disputa de CPU com a leitura em segundo plano; sem afirmação sobre o aparelho.",
     "CST-037/038 (parte): arquivos na multisseleção (Selecionar no menu do arquivo; toque marca durante a seleção); mover notas e arquivos juntos; excluir arquivos com aviso explícito (SelectFilesUiTests).",
     "Botões que falhavam em silêncio: o CrashLog marcava como tratados os erros que chegavam à interface (o app não fechava, mas nada era dito). CrashLog.Report agora avisa na tela com StorageProblems.Explain (SilentFailureUiTests). Sondagem automática de todos os botões da Personalização: tema, cor de destaque, cor/ícone de tag e numeração de linhas mudam o que prometem.",
+    "Ordenar notas no Explorer (nome, modificadas, criadas; pastas primeiro; guardado no aparelho em ExplorerState) — ExplorerSortUiTests.",
     "Versão 2.0.0-beta.55 / 2000055 (mesma identidade e certificado), PATCHNOTES, histórico e ROADMAP."
   ],
   "verification": [
@@ -110,6 +114,7 @@
     }
   ],
   "known_issues": [
+    "android-runtime-smoke falhou em be90002 no urbe-checks pelo mesmo motivo do adb: startup-logcat cortado no meio de linha em 450.560 bytes, app com 41 de 3.220 linhas e sem falha; o run seguinte (f3e683e, mesmo código do app) passou inteiro, incluindo o smoke.",
     "CI do integrador: android-runtime-smoke falhou uma vez em 4a1f14f porque o adb caiu durante o despejo do logcat (logcat.txt cortado às 13:53:31, gravado às 13:53:51; pidof não chegou a rodar); o mesmo teste passou no urbe-checks do mesmo commit. Infraestrutura do emulador, não queda do app.",
     "Teste Source_DraggingAFingerScrolls (gesto de arremesso por tempo) falhou uma vez no CI em Release: com a máquina carregada o gesto vira arrasto lento, que corretamente não desliza; o teste agora mede o gesto e o refaz quando a máquina travou (até 3 vezes), sem mudar a asserção.",
     "A releitura ao voltar ao app lê a pasta inteira em segundo plano (com o cache por tamanho/data do Android), sem segurar a trava: num vault muito grande ela leva o tempo de uma abertura, sem bloquear a tela nem as gravações.",

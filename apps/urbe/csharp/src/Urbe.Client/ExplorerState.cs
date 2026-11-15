@@ -15,6 +15,7 @@ public sealed class ExplorerState
     private readonly List<string> _expanded = [""];
     private double? _sidebarWidth;
     private bool _sidebarCollapsed;
+    private string _sort = "nome";
 
     public ExplorerState(string? path)
     {
@@ -35,6 +36,7 @@ public sealed class ExplorerState
             }
             if (json.RootElement.ValueKind == JsonValueKind.Object && json.RootElement.TryGetProperty("sidebarWidth", out var w) && w.ValueKind == JsonValueKind.Number) _sidebarWidth = w.GetDouble();
             if (json.RootElement.ValueKind == JsonValueKind.Object && json.RootElement.TryGetProperty("sidebarCollapsed", out var c) && c.ValueKind is JsonValueKind.True) _sidebarCollapsed = true;
+            if (json.RootElement.ValueKind == JsonValueKind.Object && json.RootElement.TryGetProperty("sort", out var o) && o.GetString() is "modificadas" or "criadas") _sort = o.GetString()!;
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -69,6 +71,14 @@ public sealed class ExplorerState
     }
 
     /// <summary>UC-83: the sidebar folded away on a wide window.</summary>
+    /// <summary>How the notes of each folder are ordered in the tree: "nome" (default), "modificadas" or "criadas"
+    /// (newest first). Folders always come first, by name. Kept on this device.</summary>
+    public string Sort
+    {
+        get => _sort;
+        set { _sort = value is "modificadas" or "criadas" ? value : "nome"; Persist(); }
+    }
+
     public bool SidebarCollapsed
     {
         get => _sidebarCollapsed;
@@ -107,7 +117,7 @@ public sealed class ExplorerState
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_path))!);
-            File.WriteAllText(_path, JsonSerializer.Serialize(new { favorites = _favorites, recent = _recent, expanded = _expanded, sidebarWidth = _sidebarWidth, sidebarCollapsed = _sidebarCollapsed }));
+            File.WriteAllText(_path, JsonSerializer.Serialize(new { favorites = _favorites, recent = _recent, expanded = _expanded, sidebarWidth = _sidebarWidth, sidebarCollapsed = _sidebarCollapsed, sort = _sort }));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

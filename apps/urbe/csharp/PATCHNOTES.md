@@ -21,6 +21,7 @@
   - a barra de seleção ficou mais clara: a contagem e **Selecionar tudo** em cima e, embaixo, todas as ações visíveis com nome (Mover, Nova pasta, Duplicar, Lixeira, Abrir, Renomear, Favoritar, Publicação). Antes eram só ícones, que ficavam cortados ou escondidos atrás do botão redondo flutuante;
   - enquanto você seleciona, o botão flutuante sai da frente;
   - cada pasta da árvore mostra quantas notas tem, contando as subpastas, para você ver onde o vault está crescendo;
+  - **Ordenar notas** (no ⋯ do Explorer): por nome, modificadas por último ou criadas por último, dentro de cada pasta. As pastas ficam sempre primeiro, e a escolha fica guardada no aparelho;
   - **imagens, PDFs e áudios entram na seleção junto com as notas**: "Selecionar" no menu do arquivo começa a seleção, e os toques seguintes marcam outros arquivos e notas. Mover leva tudo para a pasta, atualizando os links. Excluir apaga os arquivos de vez, e a pergunta avisa que arquivos não vão para a Lixeira.
 - **Nova conversa (Assistente)** sempre responde: funciona mesmo com uma execução em andamento, que continua na conversa dela, e fecha a tela de Conversas ou de Configurações se ela estiver aberta.
 - **Nenhum botão falha em silêncio.** Quando uma ação dava erro (gravar no vault, por exemplo), o app não fechava, mas também não avisava nada, e parecia que o botão não funcionava. Agora aparece um aviso dizendo o que não deu certo.

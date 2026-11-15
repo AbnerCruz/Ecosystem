@@ -487,6 +487,9 @@ public sealed class NotesExplorer : Border
         return false;
     }
 
+    /// <summary>The tree ordered again (Ordenar, in the Explorer's ⋯).</summary>
+    public void Resort() => Render(force: true);
+
     /// <summary>model.clear().</summary>
     public void ClearSelection()
     {
@@ -663,7 +666,12 @@ public sealed class NotesExplorer : Border
         {
             if (!inside.TryGetValue(parent, out var here)) return;
             // folders first, then every file by its name with the extension (notes and attachments together)
-            var kids = here.OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
+            // folders first, by name; then the notes and files by name, or the notes newest first (then the files)
+            var sort = State?.Sort ?? "nome";
+            string When(string path) => notesByPath.TryGetValue(path, out var n) ? (sort == "criadas" ? n.Created : n.Modified) ?? "" : "";
+            var kids = sort == "nome"
+                ? here.OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList()
+                : here.OrderBy(k => k.Kind).ThenByDescending(k => k.Kind == 1 ? When(k.Path) : "", StringComparer.Ordinal).ThenBy(k => k.Name, Locale).ToList();
             foreach (var k in kids)
             {
                 if (k.Kind == 0)
