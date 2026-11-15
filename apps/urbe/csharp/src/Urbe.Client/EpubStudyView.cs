@@ -49,6 +49,8 @@ public sealed class EpubStudyView : Grid, IDisposable
     public double MarginPreference { get; private set; }=5;
     public double LineHeightPreference { get; private set; } = 1.6;
     public double FontSizePreference { get; private set; } = 18;
+    /// <summary>CST-234: read by pages (turned with ‹ ›) instead of scrolling.</summary>
+    public bool PagedPreference { get; private set; }
     public event Action<BookReaderQuote>? QuoteRequested;
     public event Action<BookReaderQuote>? AskRequested;
     public event Action<int>? PositionChanged;
@@ -68,8 +70,8 @@ public sealed class EpubStudyView : Grid, IDisposable
         RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,Auto");
         _chapters.ItemsSource = book.Chapters.Select(c => c.Title).ToArray();
         _chapters.SelectionChanged += async (_, _) => { if (!_updating && _chapters.SelectedIndex >= 0) await GoToChapterAsync(_chapters.SelectedIndex); };
-        _previous.Click += async (_, _) => await GoToChapterAsync(CurrentChapter - 1);
-        _next.Click += async (_, _) => await GoToChapterAsync(CurrentChapter + 1);
+        _previous.Click += async (_, _) => await TurnAsync(-1);
+        _next.Click += async (_, _) => await TurnAsync(1);
         // one row: ‹ chapter › · Aa (type, spacing, theme, margins, text view) · search
         var type = new Ui.UrbeIconButton(UrbeTheme.Icons.TextLayer, "Aparência da leitura", 20);
         type.Click += (_, _) =>
@@ -84,6 +86,7 @@ public sealed class EpubStudyView : Grid, IDisposable
                 async () => { await CaptureLocationAsync(); ThemePreference = ThemePreference switch { "system" => "light", "light" => "sepia", "sepia" => "dark", _ => "system" }; await ShowChapterAsync(); });
             Item(MarginPreference >= 10 ? "Sem margens" : "Margens maiores",
                 async () => { await CaptureLocationAsync(); MarginPreference = MarginPreference >= 10 ? 0 : MarginPreference + 2.5; await ShowChapterAsync(); });
+            Item(PagedPreference ? "Ler rolando" : "Ler por páginas", () => SetPagedAsync(!PagedPreference));
             Item(_textMode ? "Ver com a formatação do livro" : "Ver só o texto", async () => { _textMode = !_textMode; await ShowChapterAsync(); });
             new ContextMenu { ItemsSource = items }.Open(type);
         };
@@ -148,6 +151,32 @@ public sealed class EpubStudyView : Grid, IDisposable
         DetachedFromVisualTree += (_, _) => Dispose();
     }
 
+    /// <summary>"Ler por páginas" / "Ler rolando", keeping the place read.</summary>
+    public async Task SetPagedAsync(bool paged)
+    {
+        await CaptureLocationAsync();
+        PagedPreference = paged;
+        UpdateTurns();
+        await ShowChapterAsync();
+    }
+
+    // by pages, the first and last chapters still have pages to turn
+    private void UpdateTurns()
+    {
+        _previous.IsEnabled = PagedPreference || CurrentChapter > 0;
+        _next.IsEnabled = PagedPreference || CurrentChapter < _book.Chapters.Count - 1;
+    }
+
+    /// <summary>‹ ›: by pages, a page (and at the chapter's edge the next chapter, or the previous one at its last page); otherwise a chapter.</summary>
+    public async Task TurnAsync(int direction)
+    {
+        if (PagedPreference && !_textMode && _body.Content is IReaderTextLocation pages && await pages.TurnPageAsync(direction)) return;
+        int to = CurrentChapter + direction;
+        if (to < 0 || to >= _book.Chapters.Count) return;
+        if (PagedPreference && direction < 0) await GoToChapterAsync(to, int.MaxValue, 0, 1);
+        else await GoToChapterAsync(to);
+    }
+
     public async Task GoToChapterAsync(int index, int offset = 0, int length = 0, double scroll = 0)
     {
         if (_closed) return;
@@ -155,7 +184,7 @@ public sealed class EpubStudyView : Grid, IDisposable
         CurrentOffset = Math.Max(0, offset); _highlightLength = Math.Max(0, length); CurrentScroll = Math.Clamp(scroll, 0, 1);
         CurrentChapter = Math.Clamp(index, 0, _book.Chapters.Count - 1);
         _updating = true; _chapters.SelectedIndex = CurrentChapter; _updating = false;
-        _previous.IsEnabled = CurrentChapter > 0; _next.IsEnabled = CurrentChapter < _book.Chapters.Count - 1;
+        UpdateTurns();
         _progress.Value = CurrentChapter + 1;
         await ShowChapterAsync();
         if (!_closed) PositionChanged?.Invoke(CurrentChapter);
@@ -241,7 +270,7 @@ public sealed class EpubStudyView : Grid, IDisposable
                 }
             }
             else { _selection = null; if (_body.Content is NativeControlHost native) native.IsVisible = false; _body.Content = _text; }
-            if (_body.Content is IReaderTextLocation location) { await location.ApplyReaderAppearanceAsync(ThemePreference,MarginPreference,!loaded.FixedLayout);await location.RestoreTextPositionAsync(CurrentOffset, _highlightLength, CurrentScroll); }
+            if (_body.Content is IReaderTextLocation location) { await location.ApplyReaderAppearanceAsync(ThemePreference,MarginPreference,!loaded.FixedLayout,PagedPreference);await location.RestoreTextPositionAsync(CurrentOffset, _highlightLength, CurrentScroll); }
             else if (_body.Content == _text && _highlightLength > 0) { _text.SelectionStart = Math.Min(CurrentOffset, _text.Text?.Length ?? 0); _text.SelectionEnd = (int)Math.Min((long)CurrentOffset + _highlightLength, _text.Text?.Length ?? 0); }
             _status.Text = $"{_book.PartLabel} {chapter + 1} / {_book.Chapters.Count}" + (loaded.FixedLayout ? " · layout fixo; tipografia original preservada" : " · texto refluível") + (_book.FidelityWarning is { } warning ? " · " + warning : "");
         }
@@ -302,7 +331,7 @@ public sealed class EpubStudyView : Grid, IDisposable
         catch (Exception ex) when (ex is TimeoutException or InvalidOperationException or ObjectDisposedException) { }
         finally { _capturing = false; }
     }
-    public void RestoreAppearance(string theme,double margin) {ThemePreference=theme;MarginPreference=Math.Clamp(margin,0,25);}
+    public void RestoreAppearance(string theme,double margin,bool paged=false) {ThemePreference=theme;MarginPreference=Math.Clamp(margin,0,25);PagedPreference=paged;UpdateTurns();}
     public void RestoreLineHeight(double height) => LineHeightPreference = Math.Clamp(height, 1, 3);
     private sealed record SearchHit(int Part, int Offset, int Length, string Context)
     { public override string ToString() => $"Parte {Part + 1} · {Context}"; }

@@ -743,7 +743,7 @@ public sealed class FilePreviewPanel : Grid
                 epub.PositionChanged += chapter => RememberReadingPosition(chapter + 1, fontSize: epub.FontSizePreference);
                 _body.Content = epub; Shown = "viewer";
                 epub.RestoreLineHeight(_readingSession?.Preferences.LineHeight ?? 1.6);
-                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
+                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin,saved.Preferences.Paged); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
                 await epub.GoToChapterAsync((_requestedPart ?? 1) - 1, _requestedTextOffset ?? _readingSession?.Location.Offset ?? 0, _requestedTextLength ?? 0, _readingSession?.Location.Scroll ?? 0);
                 _requestedTextOffset = _requestedTextLength = null;
                 _requestedPart = null;
@@ -1073,7 +1073,7 @@ public sealed class FilePreviewPanel : Grid
         int? total = _epubView?.PartCount ?? _pptxView?.SlideCount ?? (_pdfView is { PageCount: > 0 } pages ? pages.PageCount : _pdfTextView is { PageCount: > 0 } text ? text.PageCount : null);
         var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0, total is { } t && part <= t ? t : null);
         double zoom = _pdfView is { } pdf && _pdfZoomReady ? pdf.Zoom : session.Preferences.Zoom;
-        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
+        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin, Paged=_epubView?.PagedPreference??session.Preferences.Paged };
         if (session.Location == location && session.Preferences == preferences) return;
         // a look changed here becomes the start of the next new source in the same kind of reader
         if (_epubView is not null && preferences with { Zoom = 0 } != session.Preferences with { Zoom = 0 }) ReadingState.RememberDefault(ReaderKinds.Book, preferences with { Zoom = 1 });

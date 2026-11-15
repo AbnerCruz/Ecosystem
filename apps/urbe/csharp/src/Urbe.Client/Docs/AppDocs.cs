@@ -193,7 +193,7 @@ public static partial class AppDocs
         - Num vídeo do YouTube, que toca no player oficial, **Anotar instante** cria na nota um link para o momento em que o vídeo está, como “Vídeo em 3:25”. O campo do instante serve para ajustar à mão.
         - Nada da página é guardado sem você pedir, e a página não tem acesso às suas notas.
 
-        Num livro (EPUB), tocar no número de uma nota de rodapé mostra a nota embaixo da página, sem sair do capítulo; **Ir até a nota** leva até ela.
+        Num livro (EPUB), tocar no número de uma nota de rodapé mostra a nota embaixo da página, sem sair do capítulo; **Ir até a nota** leva até ela. Em **Aa**, **Ler por páginas** troca a rolagem por páginas do tamanho da tela: as setas viram a página e, no fim do capítulo, passam ao seguinte.
 
         ## Fórmulas
 

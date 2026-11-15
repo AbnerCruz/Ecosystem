@@ -181,8 +181,14 @@ internal sealed class WindowsStudyWebView(string content, bool local, Action<str
         if(_web is null||!double.IsFinite(seconds)||seconds<0)return Task.CompletedTask;
         return _web.ExecuteScriptAsync(MediaPositionScripts.Seek(seconds));
     }
-    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow)
-    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow);return _web is { } web?web.ExecuteScriptAsync(_readerAppearance):Task.CompletedTask;}
+    public async Task<bool> TurnPageAsync(int direction)
+    {
+        if (_web is null) return false;
+        try { return JsonSerializer.Deserialize<string>(await _web.ExecuteScriptAsync(ReaderTextLocator.PageScript(direction))) == "true"; }
+        catch (Exception ex) when (ex is COMException or JsonException or InvalidOperationException) { return false; }
+    }
+    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow,bool paged=false)
+    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow,paged);return _web is { } web?web.ExecuteScriptAsync(_readerAppearance):Task.CompletedTask;}
     public Task GoToReaderAnchorAsync(string id)
     {
         _readerAnchor=id;

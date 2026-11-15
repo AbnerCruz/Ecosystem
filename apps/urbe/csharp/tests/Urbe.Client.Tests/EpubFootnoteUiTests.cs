@@ -44,4 +44,53 @@ public sealed partial class HeadlessUiTests
         Assert.Equal(1, reader.CurrentChapter);
         return true;
     }, CancellationToken.None));
+
+    private sealed class FakePages : Border, IReaderTextLocation
+    {
+        public int Page, Pages = 3;
+        public bool Paged;
+        public (int Offset, double Scroll)? Restored;
+        public Task<ReaderTextPosition?> ReadTextPositionAsync(bool selection) => Task.FromResult<ReaderTextPosition?>(null);
+        public Task RestoreTextPositionAsync(int offset, int length, double scroll) { Restored = (offset, scroll); Page = scroll >= 1 ? Pages - 1 : 0; return Task.CompletedTask; }
+        public Task GoToReaderAnchorAsync(string id) => Task.CompletedTask;
+        public Task ApplyReaderAppearanceAsync(string theme, double margin, bool reflow, bool paged = false) { Paged = paged; return Task.CompletedTask; }
+        public Task<bool> TurnPageAsync(int direction)
+        {
+            int to = direction == int.MaxValue ? Pages - 1 : Page + direction;
+            if (!Paged || to < 0 || to >= Pages || to == Page) return Task.FromResult(false);
+            Page = to;
+            return Task.FromResult(true);
+        }
+    }
+
+    [Fact]
+    public async Task Book_ByPagesTheArrowsTurnPagesThenChaptersAndBackOpensTheLastPage() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var factory = ContentViewers.Factory;
+        try
+        {
+            var views = new List<FakePages>();
+            ContentViewers.Factory = (_, _) => { var v = new FakePages(); views.Add(v); return Task.FromResult<Control?>(v); };
+            using var source = new EpubReadingDocument(FootnoteBook());
+            using var reader = new EpubStudyView("notas.epub", source);
+            await reader.GoToChapterAsync(0);
+            // scrolling (the default): the arrows go by chapters
+            await reader.TurnAsync(1);
+            Assert.Equal(1, reader.CurrentChapter);
+            await reader.GoToChapterAsync(0);
+            await reader.SetPagedAsync(true);
+            var view = views[^1];
+            Assert.True(view.Paged);
+            await reader.TurnAsync(1); await reader.TurnAsync(1);
+            Assert.Equal((0, 2), (reader.CurrentChapter, view.Page));
+            await reader.TurnAsync(1);   // the chapter's last page: the next chapter
+            Assert.Equal(1, reader.CurrentChapter);
+            await reader.TurnAsync(-1);  // its first page: the previous chapter, at its last page
+            Assert.Equal(0, reader.CurrentChapter);
+            Assert.Equal(1d, views[^1].Restored!.Value.Scroll);
+            Assert.Equal(2, views[^1].Page);
+            return true;
+        }
+        finally { ContentViewers.Factory = factory; }
+    }, CancellationToken.None));
 }
