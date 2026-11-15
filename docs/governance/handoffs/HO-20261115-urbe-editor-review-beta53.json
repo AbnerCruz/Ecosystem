@@ -13,7 +13,7 @@
   "branch": "ccr-c717cbe5-9x21rb",
   "base_commit": "0dc7c759965063156a5ecf8847fca4944f641bbc",
   "commit": "fda0c6c1b78df8da5d38ddddd7fb52c8f4840f7c",
-  "pr": "pending",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/946",
   "files_changed": [
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
