@@ -45,6 +45,16 @@ Branch `ccr-c717cbe5-9x21rb`, base `0dc7c75` (main com a beta.52). Autoridade de
 | 12 | CSharpMath mede uma linha de matriz a partir da primeira célula desenhada (`CollectionWidth` = direita − esquerda dos filhos), não do início da linha. | Em `\begin{pmatrix}10 & 2\\3 & 40\end{pmatrix}` o parêntese direito (ou o que vem depois) era desenhado sobre a última coluna (CST-142). | Depois da composição, cada linha passa para onde está sua primeira célula e as células voltam o mesmo tanto (nada muda na página); larguras ficam corretas e delimitadores e o resto da linha são reposicionados (`MathRenderer.TableWidths`). | `TheClosingDelimiterOfAMatrixIsDrawnAfterItsLastColumn` (vermelho antes), `WhatFollowsAMatrixIsNotDrawnOverIt` |
 | 13 | Fórmula em destaque mais larga que a coluna. | Cortada à direita (só rolando de lado). | Reduzida para caber (até 60%, legível); só o que ainda não cabe rola (`FormulaFit`). | `FormulasOnANarrowScreenAreDrawnWhole` |
 
+| 14 | Ao trocar de bloco, a caixa velha saía da árvore antes da nova receber o foco. O Avalonia limpa o foco do elemento removido (`FocusManager.ClearFocusOnElementRemoved`) e o gerenciador de texto fica sem cliente: no Android, `AndroidInputMethod.SetClient(null)` chama `HideSoftInputFromWindow`, e a caixa nova chama `ShowSoftInput` de novo. | **Teclado fechando e abrindo sozinho** a cada troca de bloco (toque, setas, Backspace/Delete, Desfazer), e às vezes não reabrindo. | A caixa velha fica na árvore, invisível, até a nova tomar o foco diretamente dela (`HandOver`/`Retire`); os painéis movem filhos no lugar (`Move`) em vez de tirar e recolocar. Mantida uma caixa nova por bloco: o IME recebe estado limpo (o `TextEditBuffer` do Avalonia guardaria a região de composição da caixa anterior). | `MovingBetweenBlocksNeverLeavesTheKeyboardWithoutATextField` |
+| 15 | O app pedia o teclado com `SHOW_IMPLICIT`, que o Android ignora depois que a pessoa fechou o teclado (Voltar). Tocar no bloco já em edição só passava pelo pedido implícito do Avalonia. | **Teclado não abrindo** ao tocar numa linha depois de fechá-lo. | Toque direto é pedido explícito (flags 0, como o `EditText`), também no bloco em edição e na Fonte. | `AFingerOnTheBlockBeingWrittenAsksForTheKeyboard` (headless; o efeito no Android depende de DEVICE) |
+| 16 | Formatação: `**palavra **` (espaço da seleção dentro das marcas) não é lido como negrito; seleção de várias linhas quebrava as marcas; `_` dentro de palavra não é itálico; `*x*` não era reconhecido como itálico (o botão embrulhava de novo); na Fonte, Título inseria `## ` no meio da palavra (comportamento da 1.8.4). | **Formatação errada**, asteriscos/sublinhados crus na nota. | Espaços ficam fora das marcas, um par por linha (marcas de lista fora), `*` dentro de palavra, `*x*` e `__x__` reconhecidos, e Fonte usa as mesmas ações do Visual (título/lista/tarefa/citação no início da linha). | `EditorFormattingTests`, `Fonte_ToolbarFormatsTheLineAndTheSelection` |
+
+Cursor: além dos 12 casos, o toque cai na letra certa com fórmula inline, tags, comentário escondido, lista aninhada,
+comentário de palavra, selo de IA e ênfase aninhada (20 casos); o cursor continua visível digitando novas linhas no
+fim da tela e quando o teclado abre (`TheCaretStaysInSight…`, `WhenTheKeyboardOpens…`). Com fórmula inline ou
+comentário de palavra antes do ponto tocado, o texto depois pode descer uma linha ao virar caixa (a fonte é maior que
+o desenho); o cursor fica na letra certa.
+
 Precisão do toque (sem mudança de código, agora coberta): tocar numa letra de negrito, link wiki com apelido, link
 Markdown, título, item de lista, tarefa, citação, código inline, riscado ou parágrafo quebrado põe o cursor naquela
 letra, e a linha não se move ao virar caixa (`ATapPutsTheCaretOnTheLetterTapped…`, 12 casos).
@@ -78,4 +88,6 @@ letra, e a linha não se move ao virar caixa (`ATapPutsTheCaretOnTheLetterTapped
 Nada disto foi tocado num celular. Conferir no Android (moto g32) e no Windows: toque após digitar (achado 1),
 escrita em nota com texto da IA (2, 3), marcar tarefa escrevendo (4), fluidez ao trocar de bloco em nota longa (5),
 links e chip Abrir (6), Desfazer/Refazer (8), Backspace/setas com teclado físico e Gboard (9), seleção entre blocos
-(10), aparência do bloco formatado e IME com palavra em composição (11), matrizes e fórmulas largas (12, 13).
+(10), aparência do bloco formatado e IME com palavra em composição (11), matrizes e fórmulas largas (12, 13),
+teclado que não fecha ao trocar de bloco (14), teclado que volta ao tocar depois de fechado com Voltar (15),
+formatação pela barra nos dois modos (16).
