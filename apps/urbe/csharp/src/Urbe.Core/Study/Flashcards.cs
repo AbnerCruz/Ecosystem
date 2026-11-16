@@ -15,7 +15,7 @@ public enum Recall { Errei, Dificil, Bom, Facil }
 
 /// <summary>
 /// #956: flashcards in the notes, reviewed with spaced repetition (SM-2, the scheduler behind Anki). The cards are the
-/// note's text; the student's state lives apart (<c>.urbe/estudo.json</c>), never in the agents' memory nor in the
+/// note's text; the student's state lives apart (an app-private file, per vault and card), never in the agents' memory nor in the
 /// notes' checklists. A card's id comes from its note and its front: fixing the answer keeps its history.
 /// </summary>
 public static class Flashcards

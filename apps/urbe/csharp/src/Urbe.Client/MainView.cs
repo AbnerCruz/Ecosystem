@@ -894,6 +894,11 @@ public sealed partial class MainView : Grid
                     new DialogItem("Exportar legendas", UrbeTheme.Icons.Download,
                         "SRT ou WebVTT feitos desta transcrição revisada.", Run: () => ExportSubtitlesAsync(note.Path, editor.Editor.Text ?? ""))
                 }),
+            .. (DueCards(note) is { Count: > 0 } cards ? new[]
+                {
+                    new DialogItem("Revisar cartões (" + cards.Count + ")", UrbeTheme.Icons.Book,
+                        "Os cartões pergunta::resposta desta nota que vencem hoje.", Run: () => ReviewCardsAsync(new CityNote(note.Path, editor.Editor.Text ?? note.Content)))
+                } : []),
             new DialogItem("Onde esta nota é usada", UrbeTheme.Icons.Connections,
                 "Publicações, dados, progresso e notas que dependem dela.", Run: () => ShowNoteUsageAsync(note.Path)),
             new DialogItem("Criar publicação de um trecho", UrbeTheme.Icons.Page,

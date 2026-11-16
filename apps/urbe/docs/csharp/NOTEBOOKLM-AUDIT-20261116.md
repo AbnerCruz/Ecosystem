@@ -26,7 +26,7 @@ evidência de estudo, não aceite.
 | Video Overview (IA gera vídeo) | **Adaptar**: motion graphics editável é o principal; vídeo generativo só opcional e rotulado (CST-173) | Decisão normativa já aprovada |
 | Audio Overview | **Reutilizar motor** de áudio do vídeo; roteiro em nota editorial | Sem segundo subsistema |
 | Mind map | **Adaptar**: mapa de estudo próprio, reaproveitando o desenho dos grafos; nunca misturado com memória do agente | Domínios diferentes |
-| Flashcards | **Implementar**: sintaxe `pergunta::resposta` na nota (a do plugin Spaced Repetition do Obsidian, conhecida pela comunidade); estado do aluno separado | Lacuna real |
+| Flashcards | **Implementar**: sintaxe `pergunta::resposta` na nota (a do plugin Spaced Repetition do Obsidian, conhecida pela comunidade); estado do aluno separado (arquivo privado do app) | Lacuna real — **entregue** |
 | Quiz | **Reutilizar** `QuizBlock` | Já existe |
 | Study guide/FAQ/resumo | **Reutilizar** Adaptar (nota editorial) | Já existe |
 | Slides/infográficos | **Reutilizar** Publicações; infográfico vetorial a implementar depois | — |
@@ -34,7 +34,7 @@ evidência de estudo, não aceite.
 
 ## 3. Plano incremental
 
-1. Flashcards: núcleo (leitura de cartões, agenda de revisão estilo SM-2/Anki, estado em `.urbe/estudo.json` por cartão) → bloco na nota com "Revisar" → tela de revisão (Mostrar resposta; Errei/Difícil/Bom/Fácil).
+1. Flashcards: núcleo (leitura de cartões, agenda de revisão estilo SM-2/Anki, estado do aluno em arquivo privado do app, por vault e cartão, como as posições de leitura) → **Mais ações → Revisar cartões** (Mostrar resposta; Errei/Difícil/Bom/Fácil com quando volta). **Entregue (16/11/2026).**
 2. Sessão de estudo: arquivo de metadados com referências por id do vault, objetivos e progresso; abrir/retomar.
 3. Mapa de estudo derivado de títulos e links das fontes da sessão.
 4. Podcast: roteiro de dois turnos em nota editorial → faixas no motor de áudio existente.
