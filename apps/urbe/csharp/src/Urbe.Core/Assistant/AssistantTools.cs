@@ -934,7 +934,10 @@ public static partial class AssistantTools
                 {
                     if (p["minimum"] is { } mi && n < mi.GetValue<double>()) n = mi.GetValue<double>();
                     if (p["maximum"] is { } ma && n > ma.GetValue<double>()) n = ma.GetValue<double>();
-                    input[k] = n;   // a double, as JSON.parse would give it
+                    // an integer stays an integer: tools read it as (int?) / (long?), and a double there threw
+                    // NodeUnableToConvert (recall_memory max_chars, list_conversations limit — owner's report)
+                    // a JSON number (as the provider sends it) converts to int, long or double alike
+                    input[k] = JsonNode.Parse(((long)n).ToString(CultureInfo.InvariantCulture));
                 }
             }
             if (t == "array" && v is not JsonArray)

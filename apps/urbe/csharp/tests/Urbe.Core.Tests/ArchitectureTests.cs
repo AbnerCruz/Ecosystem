@@ -49,7 +49,9 @@ public sealed class ArchitectureTests
                 // PdfPig is a managed, Apache-2.0 PDF text/layout dependency (no native OCR runtime).
                 new { Name = "PdfPig", Version = "0.1.16" },
                 // ADR-0047: managed, read-only EPUB parser; no UI/native host in Core.
-                new { Name = "VersOne.Epub", Version = "3.3.6" }
+                new { Name = "VersOne.Epub", Version = "3.3.6" },
+                // ADR-0048 / DEC-0061: official MCP client (Apache-2.0), client side only, no UI/native host.
+                new { Name = "ModelContextProtocol.Core", Version = "2.4.0" }
             },
             packages);
         Assert.Empty(project.Descendants("FrameworkReference"));
