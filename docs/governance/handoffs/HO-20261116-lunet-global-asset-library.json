@@ -33,7 +33,8 @@
     "Criada interface Android para escolher projeto de origem, publicar asset, revisar e importar versão.",
     "Criados seis testes de regressão contra perdas, colisões e corrupção de dados.",
     "Biblioteca conectada à Home e à seção Studios sem necessidade de abrir jogo, preservando a UI instalada pelo PR #961.",
-    "Manifestos persistidos com campos nulos (ID, Files, Path, Sha256) agora são recusados com InvalidDataException sem tocar no jogo nem no arquivo original; quatro casos xUnit adicionados."
+    "Manifestos persistidos com campos nulos (ID, Files, Path, Sha256) agora são recusados com InvalidDataException sem tocar no jogo nem no arquivo original; quatro casos xUnit adicionados.",
+    "Leitura de manifestos agora valida título, licença, autor, atribuição, tags e hash SHA-256 hexadecimal antes de renderizar ou importar; sete casos parametrizados adicionais preservam dados originais e projetos."
   ],
   "verification": [
     {
@@ -60,12 +61,19 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Quatro casos parametrizados em ReusableAssetLibraryTests; CI do novo head pendente."
+    },
+    {
+      "check": "Regressão de metadados e hash de manifesto",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sete casos xUnit em ReusableAssetLibraryTests; commit 707d607; aguardando CI do head atualizado."
     }
   ],
   "known_issues": [
     "Edição de assets na Library diretamente pelo Studio ainda não implementada.",
     "Entrada de Home implementada após reconciliação; testes Android e DEVICE pendentes.",
-    "Export/import de ZIP da própria biblioteca e DEVICE pendentes."
+    "Export/import de ZIP da própria biblioteca e DEVICE pendentes.",
+    "CI verde do commit 4e2bef3 foi confirmado; os novos commits de metadados ainda precisam de verificação independente."
   ],
   "blockers": [],
   "next_actions": [
