@@ -96,6 +96,31 @@ public sealed partial class MainView
     }
 
     /// <summary>Open an existing project by path, preserving the current unsaved note first.</summary>
+    /// <summary>
+    /// CST-160: a publication made from a tag, folder or search shows the notes that match it now and it does not use
+    /// yet; the person adds them or leaves them out (remembered), and the file is saved before the studio opens.
+    /// </summary>
+    private async Task<PublicationProject> ReviewQueryMatchesAsync(string path, PublicationProject project)
+    {
+        if (project.Query is not { } query || _store is null || !VaultWritable) return project;
+        using var index = new KnowledgeIndex(_store);
+        var found = query.NewMatches(project, _store.List(), q => index.Search(q));
+        if (found.Count == 0) return project;
+        var what = query.Kind switch { "tag" => "com a tag #" + query.Value.TrimStart('#'), "folder" => "na pasta " + query.Value, _ => "para “" + query.Value + "”" };
+        var add = await Dialogs.ConfirmAsync(found.Count + (found.Count == 1 ? " nota nova " : " notas novas ") + what,
+            string.Join("\n", found.Take(12).Select(d => "• " + d.Title)) + (found.Count > 12 ? "\n… e mais " + (found.Count - 12) : "") +
+            "\n\nAcrescentar à publicação? Se não, elas não serão oferecidas de novo.", "Acrescentar", cancel: "Deixar de fora");
+        var next = add ? found.Aggregate(project, (p, d) => p.AddSource(d.Id))
+            : project with { Query = query with { Declined = [.. query.Declined, .. found.Select(d => d.Id)] } };
+        try { await ((IAssistantApp)this).SaveNoteAsync(_store.Get(path)!, PublicationProjectCodec.Serialize(next)); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            await Dialogs.AlertAsync("Publicações", StorageProblems.Explain(ex));
+            return project;
+        }
+        return next;
+    }
+
     public async Task OpenPublicationAsync(string path)
     {
         // Reopening during an outstanding write must not reload its stale on-disk state.
@@ -109,6 +134,7 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Não foi possível abrir a publicação", e.Message);
             return;
         }
+        project = await ReviewQueryMatchesAsync(path, project);
         if (Editor.IsVisible)
         {
             Editor.FinishEditing();
@@ -146,7 +172,7 @@ public sealed partial class MainView
     /// copy (CST-135).
     /// </summary>
     public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
-        string? tag = null, string? fragment = null)
+        string? tag = null, string? fragment = null, PublicationQuery? query = null)
     {
         if (!VaultWritable || _store is null)
         {
@@ -185,6 +211,8 @@ public sealed partial class MainView
                 .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
                 project = project.AddSource(note.Id);
         }
+        query ??= tag is { Length: > 0 } ? new PublicationQuery("tag", tag.TrimStart('#')) : folder is { Length: > 0 } ? new PublicationQuery("folder", folder) : null;
+        if (query is not null) project = project with { Query = query };
         if (project.Sections.Count == 0 && (sourcePaths is { Count: > 0 } || tag is { Length: > 0 }))
         {
             await Dialogs.AlertAsync("Publicações", tag is { Length: > 0 } ? "Nenhuma nota tem a tag #" + tag.TrimStart('#') + "." : "Nenhuma das escolhidas é uma nota.");
@@ -270,7 +298,7 @@ public sealed partial class MainView
         if (found.Count == 0) { await Dialogs.AlertAsync("Publicações", "Nenhuma nota encontrada para “" + query.Trim() + "”."); return; }
         var shown = string.Join("\n", found.Take(12).Select(d => "• " + d.Title)) + (found.Count > 12 ? "\n… e mais " + (found.Count - 12) : "");
         if (!await Dialogs.ConfirmAsync(found.Count + (found.Count == 1 ? " nota" : " notas") + " para “" + query.Trim() + "”", shown, "Criar publicação")) return;
-        await CreatePublicationAsync(sourcePaths: found.Select(d => d.Path).ToList());
+        await CreatePublicationAsync(sourcePaths: found.Select(d => d.Path).ToList(), query: new PublicationQuery("search", query.Trim()));
     }
 
     public async Task CreatePublicationFromSectionAsync(string notePath)

@@ -87,4 +87,44 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    /// <summary>CST-160: a publication from a tag offers the notes that get the tag later.</summary>
+    [Fact]
+    public async Task Publication_FromATagOffersNewNotesWithIt() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-pubquery-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Bolo.md"), "# Bolo\n\n#receita\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        async Task Wait(Func<bool> ready) { for (int i = 0; i < 300 && !ready(); i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); } }
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var create = view.CreatePublicationAsync(tag: "receita");
+            await Wait(() => view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any());
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "Receitas";
+            ClickButtonWithText(view.Dialogs, "Criar");
+            await create;
+            await Settle(window, view);
+            await view.FlushPendingAsync();
+            File.WriteAllText(Path.Combine(vault, "Pão.md"), "# Pão\n\n#receita\n");
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var open = view.OpenPublicationAsync("Publicações/Receitas.publication.json");
+            await Wait(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Acrescentar"));
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Pão") == true);
+            ClickButtonWithText(view.Dialogs, "Acrescentar");
+            await open;
+            await Settle(window, view);
+            var json = File.ReadAllText(Path.Combine(vault, "Publicações", "Receitas.publication.json"));
+            Assert.Contains(view.Documents!.Get("Pão.md")!.Id, json);
+            Assert.Contains("\"kind\": \"tag\"", json);
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

@@ -9,6 +9,7 @@ Regras:
 
 | ID | Entrega | Evidência | Pendente |
 |---|---|---|---|
+| CST-160 (parte) | Consulta dinâmica: publicação de tag, pasta ou busca guarda a consulta; ao abrir, oferece as notas novas que combinam, para acrescentar ou deixar de fora (lembrado) | `PublicationQueryTests`, `Publication_FromATagOffersNewNotesWithIt` | Ordenar, reagrupar e propagar revisões; DEVICE |
 | CST-153 (parte) | Salvar uma nota fonte diz, uma vez por sessão, quais publicações ela alimenta, e avisa a cada salvamento quando um trecho usado (título ou `^id`) foi removido; lê só os arquivos de publicação | `Publication_SavingASourceNamesTheAffectedPublication`, `PublicationAssetsTests.RemovedPassagesAreFound` | Invalidação por tipo de mudança, versão/hash dos produtos; DEVICE |
 | CST-162 (parte) | Defeito achado: `![[foto.png]]` saía como texto "!foto.png" em todas as publicações, e o HTML exportado (política só `data:`) bloqueava até `![](foto.png)`. Agora toda saída leva a imagem; o HTML a embute (portável e offline); o nome é achado em qualquer pasta | `PublicationAssetsTests`, `Publication_HtmlExportEmbedsVaultImages` | Prévia igual ao exportável; DEVICE |
 | CST-135 | Publicação de uma busca e de um parágrafo selecionado: o parágrafo recebe `^id` e a publicação referencia só ele (nota, seção, pasta, tag e seleção múltipla já existiam) | `AnchorBlockTests`, `Publication_FromTheSelectedParagraph`, `Publication_FromASearch` | DEVICE |

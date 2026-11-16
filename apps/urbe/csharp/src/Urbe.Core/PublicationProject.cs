@@ -20,6 +20,32 @@ public sealed record PublicationDesign
 }
 
 /// <summary>
+/// CST-160: a dynamic source query. Kind is "tag", "folder" or "search"; notes that match later are offered for review,
+/// never added by themselves, and a note the person declined stays out (Declined, by id).
+/// </summary>
+public sealed record PublicationQuery(string Kind, string Value)
+{
+    public List<string> Declined { get; init; } = [];
+
+    private bool Matches(UrbeDocument note) => Kind switch
+    {
+        "tag" => note.Tags.Any(t => string.Equals(t.TrimStart('#'), Value.TrimStart('#'), StringComparison.OrdinalIgnoreCase)),
+        "folder" => Value.Trim('/').Length == 0 || note.Path.StartsWith(Value.Trim('/') + "/", StringComparison.Ordinal),
+        _ => false
+    };
+
+    /// <summary>The notes that match now and the publication does not use yet (nor were declined).</summary>
+    public IReadOnlyList<UrbeDocument> NewMatches(PublicationProject project, IEnumerable<UrbeDocument> notes, Func<string, IReadOnlyList<UrbeDocument>> search)
+    {
+        var used = project.Sources.Select(s => s.DocumentId).ToHashSet(StringComparer.Ordinal);
+        var found = Kind == "search" ? search(Value).Select(d => d.Id).ToHashSet(StringComparer.Ordinal) : null;
+        return notes.Where(n => ArtifactModel.IsNote(n.Path) && !used.Contains(n.Id) && !Declined.Contains(n.Id) &&
+                (found?.Contains(n.Id) ?? Matches(n)))
+            .OrderBy(n => n.Path, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+}
+
+/// <summary>
 /// CST-150: versioned composition with stable source identity, presentation metadata and
 /// no authored content. The same notes stay the only source for editor, agents and publications.
 /// </summary>
@@ -36,6 +62,8 @@ public sealed record PublicationProject
     public List<string> Formats { get; init; } = ["html"];
     /// <summary>CST-170: the timeline of a "video" layout (scenes, objects, keyframes, audio). Null for other layouts.</summary>
     public VideoComposition? Video { get; init; }
+    /// <summary>CST-160: the query that chose the sources (a tag, folder or search), kept to offer the notes that match later.</summary>
+    public PublicationQuery? Query { get; init; }
 
     // Do not drop future non-authoring metadata on a load/edit/save round trip.
     [JsonExtensionData]
