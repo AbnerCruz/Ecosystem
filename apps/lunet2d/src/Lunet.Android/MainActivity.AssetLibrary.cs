@@ -157,13 +157,16 @@ public sealed partial class MainActivity
         var author = Field("Autor", "Nome ou autoria própria", "");
         var license = Field("Licença", "Ex.: CC0, CC-BY ou uso privado", "Uso privado");
         var attribution = Field("Atribuição / origem", "Fonte original e condições de uso", "");
+        var tags = Field("Tags para pesquisa (separadas por vírgula)", "Ex.: personagem, voo, pixel art", "");
         AlertDialog? dialog = null;
         panel.AddView(LunetUi.Button(this, existingId is null ? "Publicar na biblioteca" : "Publicar nova versão", () =>
         {
             try
             {
+                var parsedTags = (tags.Text ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries |
+                    StringSplitOptions.TrimEntries);
                 AssetLibrary.Publish(project, source, title.Text ?? "", author.Text ?? "",
-                    license.Text ?? "", attribution.Text ?? "", existingAssetId: existingId);
+                    license.Text ?? "", attribution.Text ?? "", tags: parsedTags, existingAssetId: existingId);
                 dialog?.Dismiss();
                 ShowReusableAssetLibrary();
             }
