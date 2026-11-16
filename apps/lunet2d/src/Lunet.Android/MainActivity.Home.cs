@@ -116,7 +116,7 @@ public sealed partial class MainActivity
         var details = LunetUi.Column(this, 2);
         var title = LunetUi.Label(this, name, LunetUi.TextBody, LunetUi.Text, bold: true);
         title.SetSingleLine(true);
-        title.Ellipsize = Android.Text.TextUtils.TruncateAt.End;
+        title.Ellipsize = global::Android.Text.TextUtils.TruncateAt.End;
         details.AddView(title);
         details.AddView(LunetUi.Label(this, DescribeProject(name), LunetUi.TextCaption, LunetUi.TextMuted));
         card.AddView(details, LunetUi.Weight());
