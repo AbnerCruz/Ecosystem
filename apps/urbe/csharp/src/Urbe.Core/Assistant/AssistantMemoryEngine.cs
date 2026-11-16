@@ -127,6 +127,8 @@ public static class AssistantMemoryEngine
         return b.ToString().Normalize(NormalizationForm.FormC);
     }
 
+    private static readonly HashSet<string> Negations = new(StringComparer.Ordinal) { "nao", "não", "nunca", "jamais", "nem", "never", "not" };
+
     private static string[] Tokens(string? s) =>
         Words.Matches(Normalize(s)).Select(m => m.Value)
             .Where(w => w.Length > 2 && w is not ("que" or "para" or "com" or "uma" or "dos" or "das" or "por" or "sobre" or "the" or "and" or "qual" or "quais" or "meu" or "minha" or "como" or "quem" or "onde" or "quando"))
@@ -564,12 +566,18 @@ public static class AssistantMemoryEngine
         for (var j = i + 1; j < records.Length; j++)
         {
             var a = records[i]; var b = records[j];
-            // Candidate only: similar subjects with changed assertions.
+            if (Normalize(a.Text) == Normalize(b.Text)) continue;
+            // the subject apart from negation: "não gosta de X" talks about the same thing as "gosta de X"
             var ta = Tokens(a.Text); var tb = Tokens(b.Text);
-            if (ta.Length < 3 || tb.Length < 3) continue;
-            var overlap = ta.Intersect(tb, StringComparer.Ordinal).Count();
-            if (overlap >= 3 && overlap >= Math.Min(ta.Length, tb.Length) * .65 &&
-                Normalize(a.Text) != Normalize(b.Text))
+            var ca = ta.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
+            var cb = tb.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
+            if (ca.Count < 2 || cb.Count < 2) continue;
+            // one says more about the same subject (strogonoff → strogonoff de frango): a refinement, not a conflict
+            if (ca.IsProperSubsetOf(cb) || cb.IsProperSubsetOf(ca)) continue;
+            bool opposite = ta.Any(Negations.Contains) != tb.Any(Negations.Contains);
+            var overlap = ca.Intersect(cb).Count();
+            // the same subject said both ways, or (the old heuristic) a close subject with a changed assertion
+            if (ca.SetEquals(cb) && opposite || overlap >= 3 && overlap >= Math.Min(ca.Count, cb.Count) * .65)
                 candidates.Add((a, b));
             if (candidates.Count >= 25) return candidates;
         }
