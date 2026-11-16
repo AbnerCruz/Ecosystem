@@ -52,7 +52,7 @@ public sealed partial class MainView
         var (present, missing) = session.Resolve(PathOfSource);
         var message = (session.Objectives.Count > 0 ? "Objetivo: " + string.Join("; ", session.Objectives) : "") +
             (missing.Count > 0 ? (session.Objectives.Count > 0 ? "\n" : "") + "Não estão mais no vault: " + string.Join(", ", missing.Select(m => Path.GetFileName(m.PathHint))) : "");
-        var items = present.Select(p => new DialogItem(Path.GetFileName(p.Path), Detail: p.Path)).Append(new DialogItem("Adicionar fontes")).Append(new DialogItem("Mapa da sessão")).ToList();
+        var items = present.Select(p => new DialogItem(Path.GetFileName(p.Path), Detail: p.Path)).Append(new DialogItem("Adicionar fontes")).Append(new DialogItem("Mapa da sessão")).Append(new DialogItem("Podcast da sessão")).ToList();
         var pick = await Dialogs.ChooseAsync(session.Title, items, message.Length > 0 ? message : null);
         if (pick is not int i) return;
         if (i == present.Count)
@@ -69,6 +69,7 @@ public sealed partial class MainView
             await OpenGraphAsync(mapPath);
             return;
         }
+        if (i == present.Count + 2) { await CreatePodcastScriptAsync(path, session, present.Select(p => p.Path)); return; }
         await StartStudyAsync();
         var source = present[i].Path;
         if (ArtifactModel.IsNote(source) && _contents.ContainsKey(source)) Editor.Pinned.Pin(_contents[source], source);

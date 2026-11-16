@@ -104,6 +104,7 @@ public sealed class MainActivity : AvaloniaMainActivity
         PlatformVoice.Backlog = VoiceNotes.Backlog(ApplicationContext ?? this);
         // CST-058: an audio file of the vault into a note (decoded and transcribed on the device, Android 13+)
         AudioDecoder.Install(ApplicationContext ?? this);
+        SpeechSynth.Install(ApplicationContext ?? this);
         // CST-209: a video publication exported as an H.264 MP4 (MediaCodec + MediaMuxer)
         AndroidVideoEncoder.Install();
         VoiceNoteWidget.Refresh(this, VoiceNoteService.IsRecording);

@@ -59,6 +59,12 @@ public sealed partial class HeadlessUiTests
             Assert.True(File.Exists(Path.Combine(vault, "Estudos", "Física.grafo.json")));
             Assert.True(view.GraphOpen);
             Assert.Contains(view.OpenGraph!.Nodes, n => n.Target == "Newton.md");
+            var podcast = view.OpenStudySessionAsync(path!);
+            await Click("Podcast da sessão");
+            await podcast;
+            await Settle(window, view);
+            Assert.Contains("[[Newton]]", File.ReadAllText(Path.Combine(vault, "Estudos", "Física.podcast.md")));
+            Assert.Equal("Estudos/Física.podcast.md", view.Editor.Current?.Path);
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
