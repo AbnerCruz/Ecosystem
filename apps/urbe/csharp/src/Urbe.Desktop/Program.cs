@@ -30,9 +30,8 @@ public static class Program
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true });
             return Task.CompletedTask;
         };
-        // the AI that answers without the internet: its model lives in the app's own data, never in the vault
-        Urbe.Core.Assistant.LocalAi.Text = new Urbe.LocalAi.LlamaTextRuntime(
-            Path.Combine(Path.GetDirectoryName(selection)!, "local-ai"), GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
+        // the offline AI was removed (16/11/2026): the models it downloaded into the app's own data go, to free the space
+        try { Directory.Delete(Path.Combine(Path.GetDirectoryName(selection)!, "local-ai"), true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         UrbeApp.DesktopWindowReady = DesktopQuickNote.Install;
         WindowsSpeech.Install();
         if (OperatingSystem.IsWindows())

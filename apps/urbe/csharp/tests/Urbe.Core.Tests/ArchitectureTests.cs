@@ -65,9 +65,8 @@ public sealed class ArchitectureTests
     // Urbe.Readers.Assets: the readers' bundled engines (slides, OCR) only, loaded when such a reader opens
     [InlineData("Urbe.Client", "Urbe.Core,Urbe.Readers.Assets")]
     [InlineData("Urbe.Readers.Assets", "")]
-    [InlineData("Urbe.LocalAi", "Urbe.Core")]
-    [InlineData("Urbe.Desktop", "Urbe.Client,Urbe.LocalAi")]
-    [InlineData("Urbe.Android", "Urbe.Client,Urbe.LocalAi")]
+    [InlineData("Urbe.Desktop", "Urbe.Client")]
+    [InlineData("Urbe.Android", "Urbe.Client")]
     public void ReferencesRespectApprovedBoundaries(string name, string dependency)
     {
         var directory = Path.Combine(Root, "src", name);

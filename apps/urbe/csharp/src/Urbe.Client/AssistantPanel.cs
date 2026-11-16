@@ -327,15 +327,7 @@ public sealed partial class AssistantPanel : Border
         AssistantGuideTools.Create(() => AppDocs.Load().Select(a => (a.Path, a.Content)).ToList())];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
-    public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
-        provider.Preset == "device" ? Tools.Where(t => LocalToolNames.Contains(t.Name)).ToList() : Tools;
-
-    /// <summary>
-    /// The tools the model on the device is given: reading, searching, writing and opening notes. Every tool is declared in
-    /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
-    /// waiting than they give; the bigger models in the cloud keep all of them.
-    /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "inventory_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name, AssistantCalcTools.Name, AssistantDataTools.Name, "edit_note_structure", AgentSkills.LoadName, AgentSkills.ReadFileName, AssistantEvidenceTools.FindName, AssistantEvidenceTools.CheckName];
+    public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) => Tools;
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -389,7 +381,7 @@ public sealed partial class AssistantPanel : Border
     private void Load()
     {
         if (_loaded) return;
-        try { _cfg = _store.InitializeAgentWorkspaces(LocalAi.Text); }
+        try { _cfg = _store.InitializeAgentWorkspaces(); }
         catch (IOException e) { _app.Notify(e.Message); return; }
         _loaded = true;
         if (!AgentNames.All(_cfg).Any(a => a.Id == _cfg.AgentId)) _cfg.AgentId = "geral";
@@ -625,7 +617,7 @@ public sealed partial class AssistantPanel : Border
     {
         if (!_loaded) return;
         CloseView();
-        if (_cfg.Providers.Count == 0) { if (HasDeviceAi) ShowDevice(); else ShowSettings("openrouter"); return; }
+        if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
         if (ModelId().Length == 0) { _ = PickModelAsync(); return; }
         var e = EditorInfo();
         var msg = new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(text)], Meta = new AiChatMeta() };

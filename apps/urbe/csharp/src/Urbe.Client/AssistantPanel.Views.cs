@@ -531,22 +531,20 @@ public sealed partial class AssistantPanel
 
     private static readonly string[] OnlinePresets = ["openrouter", "anthropic", "openai", "gemini", "ollama", "custom"];
 
-    /// <summary>The providers one can add; the model on the device first, where the device has one.</summary>
-    private static string[] PresetOrder => HasDeviceAi ? ["device", .. OnlinePresets] : OnlinePresets;
+    /// <summary>The providers one can add.</summary>
+    private static string[] PresetOrder => OnlinePresets;
 
     private static readonly Dictionary<string, string> PresetDetail = new()
     {
         ["openrouter"] = "Recomendado · Claude, GPT, Gemini, Llama e outros com uma chave", ["anthropic"] = "Claude direto da Anthropic", ["openai"] = "GPT direto da OpenAI",
-        ["device"] = "Grátis e sem internet · baixa uma vez e funciona sempre, até no modo avião", ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
+        ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
     };
 
     private Control Onboarding()
     {
         var box = new StackPanel { Spacing = 10, Margin = new Thickness(4, 24, 4, 0) };
         box.Children.Add(Wrap("Conecte um modelo", 20, UrbeTheme.Text, FontWeight.Bold));
-        box.Children.Add(Wrap(HasDeviceAi
-            ? "Use a IA que mora no seu aparelho (grátis, sem internet) ou conecte um provedor com a sua chave. A chave fica salva só neste aparelho."
-            : "O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
+        box.Children.Add(Wrap("O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
         foreach (var k in PresetOrder)
         {
             var pre = AssistantProviders.Presets[k];
@@ -559,7 +557,7 @@ public sealed partial class AssistantPanel
                 Content = new StackPanel { Spacing = 2, Children = { Label(pre.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), Wrap(PresetDetail[k], 12, UrbeTheme.Text3) } }
             };
             Avalonia.Automation.AutomationProperties.SetName(b, pre.Name);
-            b.Click += (_, _) => { if (k == "device") ShowDevice(); else ShowSettings(k); };
+            b.Click += (_, _) => ShowSettings(k);
             box.Children.Add(b);
         }
         return box;
@@ -901,8 +899,7 @@ public sealed partial class AssistantPanel
         var c = _cfg;
         var v = VaultKey;
         var body = OpenView("Configurações");
-        body.Children.Add(Wrap("O Assistente padrão usa um modelo básico. Configure agentes com modelos melhores conforme suas necessidades. A IA no aparelho requer download prévio do modelo e suporte neste dispositivo.", 14, UrbeTheme.Text2));
-        if (HasDeviceAi) body.Children.Add(TextButton("IA no aparelho", ShowDevice));
+        body.Children.Add(Wrap("Cada agente usa o modelo que você escolher, de qualquer provedor conectado. Um agente sem modelo próprio usa o do Assistente.", 14, UrbeTheme.Text2));
         var choices = new (string Id, string Title, string Description)[]
         {
             ("models", "Modelos", "Provedores e imagens"),
@@ -1344,7 +1341,7 @@ public sealed partial class AssistantPanel
     private async Task AddProviderAsync()
     {
         var i = await _app.Dialogs.ChooseAsync("Qual provedor?", PresetOrder.Select(k => new DialogItem(AssistantProviders.Presets[k].Name, UrbeTheme.Icons.Storage)).ToList());
-        if (i is { } k) { if (PresetOrder[k] == "device") ShowDevice(); else EditProvider(null, PresetOrder[k]); }
+        if (i is { } k) EditProvider(null, PresetOrder[k]);
     }
 
     private async Task TestProviderAsync(AiProviderConfig p, TextBlock output)
@@ -1377,7 +1374,6 @@ public sealed partial class AssistantPanel
     /// <summary>editProvider(): name, API address and key; saved after the models list answers (a 401/403 stops it), then the model picker.</summary>
     private void EditProvider(AiProviderConfig? p, string preset)
     {
-        if (preset == "device") { ShowDevice(); return; }
         var pre = AssistantProviders.Presets.GetValueOrDefault(preset) ?? AssistantProviders.Presets["custom"];
         bool isNew = p is null;
         p ??= new AiProviderConfig(AssistantAgent.NewId("p"), preset, pre.Name, "", "");
@@ -1563,19 +1559,14 @@ public sealed partial class AssistantPanel
         body.Children.Add(Hint(image
             ? "O modelo de imagem não altera o chat. Preços em US$ com unidade de cobrança e fonte; valores variáveis não são estimados como zero."
             : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
-        var auto = TextButton(image ? "Sem modelo de imagem" : agentId == "geral" ? "Usar modelo básico do aparelho" : "Herdar modelo do Assistente", () =>
-        {
-            if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
-            else if (agentId == "geral" && LocalAi.Text is { } runtime)
+        // the Assistente has no model to fall back to; a specialist inherits the Assistente's
+        if (image || agentId != "geral")
+            body.Children.Add(TextButton(image ? "Sem modelo de imagem" : "Herdar modelo do Assistente", () =>
             {
-                var device = _cfg.Providers.FirstOrDefault(p => p.Preset == "device") ?? new AiProviderConfig("device", "device", "IA no aparelho", "", "");
-                if (!_cfg.Providers.Any(p => p.Id == device.Id)) _cfg.Providers.Add(device);
-                _cfg.AgentModels[agentId] = new AiModelChoice(device.Id, runtime.Recommended.Id);
-            }
-            else _cfg.AgentModels.Remove(agentId!);
-            SaveConfig(); Back(); RenderAll();
-        });
-        body.Children.Add(auto);
+                if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
+                else _cfg.AgentModels.Remove(agentId!);
+                SaveConfig(); Back(); RenderAll();
+            }));
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo" };
         var manual = new TextBox { PlaceholderText = "Ou informe o ID exato do modelo" };

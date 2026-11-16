@@ -332,7 +332,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
     }
 
     /// <summary>Initialize agent workspaces once. Never rewrites conversations or infers write grants.</summary>
-    public AiConfig InitializeAgentWorkspaces(ILocalTextRuntime? runtime)
+    public AiConfig InitializeAgentWorkspaces()
     {
         var original = storage.Read(ConfigFile);
         if (original is not null)
@@ -357,16 +357,6 @@ public sealed class AssistantStore(IAssistantStorage storage)
             if (config.CustomAgents.Any(a => a.Id == id)) continue;
             var template = AssistantAgent.Agents.FirstOrDefault(a => a.Id == id);
             config.CustomAgents.Add(template ?? new AiAgentDef(id, "Agente preservado " + id, "sparkle", "", "read", false, ""));
-        }
-        // Preserve explicit choices, including the model in an older conversation. An unconfigured
-        // Assistant gets the local default even when another preference already created config.json.
-        if (runtime is not null && !config.AgentModels.ContainsKey("geral") && config.Model.Length == 0 &&
-            !conversations.Any(c => c.AgentId == "geral" && c.Model.Length > 0))
-        {
-            var provider = config.Providers.FirstOrDefault(p => p.Preset == "device") ??
-                new AiProviderConfig(config.Providers.Any(p => p.Id == "device") ? AssistantAgent.NewId("p") : "device", "device", "IA no aparelho", "", "");
-            if (!config.Providers.Any(p => p.Id == provider.Id)) config.Providers.Add(provider);
-            config.AgentModels["geral"] = new AiModelChoice(provider.Id, runtime.Recommended.Id);
         }
         if (original is not null && !string.IsNullOrWhiteSpace(config.ImageProviderId) && config.ImageModel.Length > 0)
             foreach (var id in retained.Append("geral"))
@@ -653,7 +643,22 @@ public sealed class AssistantStore(IAssistantStorage storage)
         if (o["modelCache"] is JsonObject mc)
             foreach (var (k, v) in mc)
                 if (v is JsonObject e) c.ModelCache[k] = new AiModelCache(Num(e["at"]), (e["list"] as JsonArray ?? []).OfType<JsonObject>().Select(ModelFromJson).ToList());
+        DropOfflineAi(c);
         return c;
+    }
+
+    /// <summary>
+    /// The offline AI was removed (16/11/2026): its provider leaves a saved configuration, and an agent that used it has no
+    /// model until the person picks one (never silently another provider). The rest of the configuration stays as it was.
+    /// </summary>
+    private static void DropOfflineAi(AiConfig c)
+    {
+        var gone = c.Providers.Where(p => p.Preset == "device" || p.Kind == "local").Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
+        if (gone.Count == 0) return;
+        c.Providers.RemoveAll(p => gone.Contains(p.Id));
+        foreach (var id in c.AgentModels.Where(kv => gone.Contains(kv.Value.ProviderId)).Select(kv => kv.Key).ToList()) c.AgentModels.Remove(id);
+        foreach (var id in gone) c.ModelCache.Remove(id);
+        if (c.ProviderId is { } chosen && gone.Contains(chosen)) { c.ProviderId = null; c.Model = ""; }
     }
 
     private static JsonNode? SnapToJson(AiNoteSnap? s) => s is null ? null : new JsonObject { ["path"] = s.Path, ["content"] = s.Content };

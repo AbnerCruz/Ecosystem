@@ -42,15 +42,9 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
         CrashLog.FilePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "erros.log");
         AndroidEnvironment.UnhandledExceptionRaiser += (_, e) => { CrashLog.Write(e.Exception, "android"); e.Handled = true; };
         UrbeApp.AssistantFolder = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "assistant");
-        // the AI that answers without the internet: the model in the app's private files, the engine in its native library folder
-        try
-        {
-            var context = Android.App.Application.Context;
-            if (context.ApplicationInfo?.NativeLibraryDir is { } nativeDir) Urbe.LocalAi.LlamaTextRuntime.UseNativeFolder(nativeDir);
-            Urbe.Core.Assistant.LocalAi.Text = new Urbe.LocalAi.LlamaTextRuntime(
-                System.IO.Path.Combine(context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "local-ai"), GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
-        }
-        catch (Exception) { /* without the engine the Assistente keeps to the providers on the internet */ }
+        // the offline AI was removed (16/11/2026): the models it downloaded into the app's private files go, to free the space
+        try { System.IO.Directory.Delete(System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? "", "local-ai"), true); }
+        catch (System.IO.IOException) { } catch (UnauthorizedAccessException) { }
         // Configurações → Verificar atualização: the APK of the newest direct release, over the installed one
         UrbeApp.UpdateAsset = Urbe.Core.AppUpdate.AndroidAsset;
         try

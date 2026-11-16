@@ -14,7 +14,7 @@
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
-    <!-- só arm64: o motor da IA no aparelho pesa ~60 MB por arquitetura, e x86_64 é emulador -->
+    <!-- só arm64: os celulares de hoje; x86_64 é emulador -->
     <!-- O RID do emulador deve ser definido apenas neste host: -p:RuntimeIdentifiers global
          impunha android-x64 também ao Urbe.Core net10.0 e falhava ao copiar Urbe.Core.dll. -->
     <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' != 'true'">android-arm64</RuntimeIdentifiers>
@@ -57,11 +57,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
-    <!-- a IA que responde sem internet: o motor (llama.cpp) para CPU de celular, só arm64-v8a (os celulares de hoje) -->
-    <PackageReference Include="LLamaSharp.Backend.Cpu.Android" Version="0.30.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Urbe.Client/Urbe.Client.csproj" />
-    <ProjectReference Include="../Urbe.LocalAi/Urbe.LocalAi.csproj" />
   </ItemGroup>
 </Project>

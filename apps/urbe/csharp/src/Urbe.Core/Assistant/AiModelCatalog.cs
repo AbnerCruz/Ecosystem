@@ -15,8 +15,8 @@ public enum AiModalities
     Video = 16
 }
 
-/// <summary>Where a model runs: in the app on this device, on a server the person keeps (Ollama, a LAN), or at a provider on the internet.</summary>
-public enum AiModelPlace { Device, OwnServer, Remote }
+/// <summary>Where a model runs: on a server the person keeps (Ollama, a LAN), or at a provider on the internet.</summary>
+public enum AiModelPlace { OwnServer, Remote }
 
 /// <summary>Price per 1M tokens (US$). <see cref="CachedInput"/> is the cache-read rate when known.</summary>
 public sealed record AiModelPrice(double Input, double Output, double? CachedInput, string Source);
@@ -36,13 +36,12 @@ public sealed record AiModelCapabilities(
     /// <summary>Reading text in pictures and scans comes with seeing them.</summary>
     public bool? Ocr => Reads(AiModalities.Image);
     public bool Voice => Reads(AiModalities.Audio) == true || Makes(AiModalities.Audio) == true;
-    public bool LeavesDevice => Place != AiModelPlace.Device;
     public string Label => Name + " · " + ProviderName;
 }
 
 /// <summary>
 /// CST-220: the ONE typed catalog of models. It is built from what the providers report (<see cref="AiModelInfo"/>,
-/// cached in <see cref="AiConfig.ModelCache"/>), the on-device models (<see cref="LocalAi"/>), the image defaults of the
+/// cached in <see cref="AiConfig.ModelCache"/>), the image defaults of the
 /// presets (<see cref="AssistantProviders.ImageModel"/>, <see cref="AssistantImagePricing"/>) and a short curated table
 /// of documented facts; reported data wins over the table. It never invents a modality: the on-device model reads text
 /// only because that is all the app gives it, whatever the weights could do.
@@ -108,7 +107,6 @@ public static class AiModelCatalog
     public static AiModelPlace PlaceOf(AiProviderConfig provider)
     {
         var p = AssistantProviders.Resolve(provider);
-        if (p.Kind == "local") return AiModelPlace.Device;
         if (!Uri.TryCreate(p.BaseUrl, UriKind.Absolute, out var uri)) return AiModelPlace.Remote;
         var host = uri.Host.ToLowerInvariant();
         return host is "localhost" or "::1" or "[::1]" || host.StartsWith("127.", StringComparison.Ordinal) ||
@@ -118,26 +116,20 @@ public static class AiModelCatalog
     }
 
     /// <summary>The capabilities of <paramref name="modelId"/> at <paramref name="provider"/>, from what is reported and known.</summary>
-    public static AiModelCapabilities Describe(AiProviderConfig provider, string modelId, AiModelInfo? reported = null, LocalModel? local = null)
+    public static AiModelCapabilities Describe(AiProviderConfig provider, string modelId, AiModelInfo? reported = null)
     {
         var p = AssistantProviders.Resolve(provider);
         var place = PlaceOf(provider);
-        var name = reported?.Name is { Length: > 0 } n ? n : local?.Name ?? modelId;
+        var name = reported?.Name is { Length: > 0 } n ? n : modelId;
         string? host = place switch
         {
-            AiModelPlace.Device => null,
             AiModelPlace.OwnServer => "o servidor em " + (Uri.TryCreate(p.BaseUrl, UriKind.Absolute, out var u) ? u.Authority : p.BaseUrl) + " ligado",
             _ => "internet e a conta em " + p.Name
         };
-        bool streaming = p.Kind is "openai" or "anthropic" or "local";
+        bool streaming = p.Kind is "openai" or "anthropic";
         // provider-level facts: prompt caching and batch APIs the provider offers (the Urbe does not send batches)
-        bool? cache = p.Preset switch { "anthropic" or "openai" or "gemini" => true, "device" => false, _ => null };
-        bool? batch = p.Preset switch { "anthropic" or "openai" or "gemini" => true, "device" => false, _ => null };
-
-        if (place == AiModelPlace.Device)
-            return new(provider.Id, p.Name, p.Preset, modelId, name, AiModalities.Text, AiModalities.Text,
-                local?.Tools ?? reported?.Tools, local?.Context ?? reported?.Context, new AiModelPrice(0, 0, 0, "no aparelho, sem cobrança"), null,
-                false, false, streaming, place, null, "IA no aparelho (o app só lhe entrega texto)");
+        bool? cache = p.Preset switch { "anthropic" or "openai" or "gemini" => true, _ => null };
+        bool? batch = p.Preset switch { "anthropic" or "openai" or "gemini" => true, _ => null };
 
         // image generators: the app sends them a text prompt and gets a picture back
         bool image = IsImageModelId(modelId) || AssistantProviders.ImageModel(p.Preset) is { Length: > 0 } d && d == modelId ||
@@ -163,27 +155,20 @@ public static class AiModelCatalog
         !AssistantProviders.Presets.TryGetValue(p.Preset, out var pre) || !pre.NeedsKey || !string.IsNullOrWhiteSpace(p.ApiKey);
 
     /// <summary>
-    /// Every model the app can use now: each usable provider's listed models (the cached catalog), the on-device models that
-    /// are installed, the image defaults, and the models chosen in the settings even when the list was never loaded.
+    /// Every model the app can use now: each usable provider's listed models (the cached catalog), the image defaults,
+    /// and the models chosen in the settings even when the list was never loaded.
     /// </summary>
-    public static IReadOnlyList<AiModelCapabilities> Configured(AiConfig cfg, ILocalTextRuntime? local = null)
+    public static IReadOnlyList<AiModelCapabilities> Configured(AiConfig cfg)
     {
-        local ??= LocalAi.Text;
         var all = new List<AiModelCapabilities>();
         var seen = new HashSet<(string, string)>();
-        void Add(AiProviderConfig p, string id, AiModelInfo? info, LocalModel? lm = null)
+        void Add(AiProviderConfig p, string id, AiModelInfo? info)
         {
             if (id.Length == 0 || !seen.Add((p.Id, id))) return;
-            all.Add(Describe(p, id, info, lm));
+            all.Add(Describe(p, id, info));
         }
         foreach (var p in cfg.Providers.Where(HasCredentials))
         {
-            var r = AssistantProviders.Resolve(p);
-            if (r.Kind == "local")
-            {
-                foreach (var m in local?.Models.Where(local.IsInstalled) ?? []) Add(p, m.Id, null, m);
-                continue;
-            }
             var list = cfg.ModelCache.TryGetValue(p.Id, out var cache) ? cache.List : [];
             foreach (var m in list) Add(p, m.Id, m);
             if (list.Count == 0 && AssistantProviders.Presets.TryGetValue(p.Preset, out var pre) && pre.Models is { } models)
@@ -193,19 +178,16 @@ public static class AiModelCatalog
         IEnumerable<AiModelChoice> chosen = cfg.AgentModels.Values.Concat(cfg.AgentImages.Values)
             .Append(new AiModelChoice(cfg.ProviderId ?? cfg.Providers.FirstOrDefault()?.Id ?? "", cfg.Model));
         foreach (var c in chosen)
-            if (cfg.Providers.FirstOrDefault(p => p.Id == c.ProviderId) is { } p && HasCredentials(p) && AssistantProviders.Resolve(p).Kind != "local")
+            if (cfg.Providers.FirstOrDefault(p => p.Id == c.ProviderId) is { } p && HasCredentials(p))
                 Add(p, c.Model, cfg.ModelCache.TryGetValue(p.Id, out var cache) ? cache.List.FirstOrDefault(m => m.Id == c.Model) : null);
         return all;
     }
 
     /// <summary>One model's capabilities from the catalog, or described from scratch when it is not listed.</summary>
-    public static AiModelCapabilities? Find(AiConfig cfg, AiModelChoice choice, ILocalTextRuntime? local = null)
+    public static AiModelCapabilities? Find(AiConfig cfg, AiModelChoice choice)
     {
-        local ??= LocalAi.Text;
         var p = cfg.Providers.FirstOrDefault(x => x.Id == choice.ProviderId);
         if (p is null || choice.Model.Length == 0) return null;
-        if (AssistantProviders.Resolve(p).Kind == "local")
-            return Describe(p, choice.Model, null, local?.Models.FirstOrDefault(m => m.Id == choice.Model) ?? local?.Recommended);
         return Describe(p, choice.Model, cfg.ModelCache.TryGetValue(p.Id, out var cache) ? cache.List.FirstOrDefault(m => m.Id == choice.Model) : null);
     }
 
@@ -228,8 +210,7 @@ public static class AiModelCatalog
     public static string Usd(double v) => "US$ " + v.ToString("0.######", CultureInfo.InvariantCulture);
 
     public static string PriceText(AiModelCapabilities m) =>
-        m.Place == AiModelPlace.Device ? "Sem cobrança: roda no aparelho"
-        : m.ImageRate is { } rate ? rate
+        m.ImageRate is { } rate ? rate
         : m.Price is { } p ? Usd(p.Input) + " entrada · " + Usd(p.Output) + " saída" + (p.CachedInput is { } c ? " · " + Usd(c) + " entrada em cache" : "") + " / 1M tokens"
         : m.Place == AiModelPlace.OwnServer ? "Servidor seu: sem tarifa informada"
         : "Preço não informado · não significa gratuito";
@@ -253,7 +234,6 @@ public static class AiModelCatalog
                 " · streaming: " + (m.Streaming ? "sim" : "não"),
             m.Place switch
             {
-                AiModelPlace.Device => "Onde roda: neste aparelho; nada sai dele",
                 AiModelPlace.OwnServer => "Onde roda: no seu servidor; precisa de " + m.HostRequirement,
                 _ => "Onde roda: no provedor; o que for enviado sai do aparelho e precisa de " + m.HostRequirement
             },

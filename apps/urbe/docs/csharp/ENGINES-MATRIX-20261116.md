@@ -9,7 +9,6 @@ A matriz lista o que o cliente C# **incorpora hoje**. Licenças e tamanhos foram
 | CSharpMath 1.0.0-pre.2 (+ Rendering) | Fórmulas | MIT | sim | sim | sim | 3 MB |
 | PdfPig 0.1.16 (+ Rendering.Skia 0.1.16.6) | Leitura e páginas de PDF | Apache-2.0 | sim | sim | sim | 72 MB |
 | VersOne.Epub 3.3.6 | Leitura de EPUB | Unlicense | sim | sim | sim | 2,5 MB |
-| LLamaSharp 0.30.0 + backends CPU | IA local (modelo no aparelho) | MIT | sim (arm64: 62 MB nativos) | sim | sim | 150–156 MB por backend |
 | ModelContextProtocol.Core 2.4.0 | Cliente MCP (ADR-0048) | Apache-2.0 | sim (servidores remotos) | sim | não (servidores externos) | 12 MB |
 | Microsoft.Web.WebView2 1.0.4314.35 | Navegador de estudo no Windows (ADR-0047) | Licença Microsoft no estilo BSD (redistribuição permitida) | não usa | sim | depende da página | 58 MB |
 
@@ -17,6 +16,10 @@ A matriz lista o que o cliente C# **incorpora hoje**. Licenças e tamanhos foram
 - **Android:** TextToSpeech (podcast e narração), MediaCodec (vídeo e decodificação de áudio) e reconhecimento de fala.
 - **Windows:** SAPI (voz).
 - **FFmpeg:** usado no computador só se a pessoa o tiver instalado; não é distribuído pelo Urbe. Fica fora do pacote do app justamente por causa das licenças LGPL/GPL das compilações usuais.
+
+## Removidos
+
+- **LLamaSharp (IA no aparelho):** retirado em 16/11/2026, a pedido do proprietário, porque não deu certo. O app apaga os modelos que tinha baixado (`local-ai` nos arquivos privados). O Assistente usa só provedores conectados pela pessoa, incluindo um servidor próprio como o Ollama.
 
 ## Avaliados e não incorporados
 

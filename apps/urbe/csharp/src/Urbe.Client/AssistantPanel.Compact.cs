@@ -275,7 +275,7 @@ public sealed partial class AssistantPanel
                 Open();
                 if (_cfg.Providers.Count == 0)
                 {
-                    if (HasDeviceAi) ShowDevice(); else ShowSettings("openrouter");
+                    ShowSettings("openrouter");
                 }
                 else _ = PickModelAsync();
                 return;
