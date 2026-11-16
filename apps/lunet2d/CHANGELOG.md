@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (integridade, CI/DEVICE pendentes): exportação ZIP agora calcula SHA-256 e tamanho dos bytes efetivamente gravados no arquivo compactado, fechando a janela entre a checagem prévia e a cópia; em caso de alteração concorrente a exportação falha e remove o ZIP temporário. Teste xUnit verifica os hashes e tamanhos das entradas exportadas contra o manifesto imutável.
+
 - LUNET-511 (CI pendente): removida anotação xUnit `[Fact]` duplicada no teste de exportação ZIP de versões, que impedia compilar toda a suíte (CS0579). O teste de versões e atribuição permanece ativo; DEVICE ainda pendente.
 
 - LUNET-511 (correção de CI): callback SAF agora usa `global::Android.Net.Uri` para evitar resolução incorreta de namespace; teste de exportação ZIP compara atribuição após desserializar JSON (Unicode escapado), preservando a verificação semântica. Ainda aguardando novo CI/DEVICE.
