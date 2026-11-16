@@ -20,11 +20,11 @@ public sealed partial class MainActivity
     private ReusableAssetLibrary AssetLibrary => _reusableLibrary ??= new ReusableAssetLibrary(
         System.IO.Path.Combine(FilesDir!.AbsolutePath, "Library"));
 
-    private void ShowReusableAssetLibrary()
+    private void ShowReusableAssetLibrary(string query = "")
     {
         SaveCurrent();
         IReadOnlyList<LibraryAssetVersion> entries;
-        try { entries = AssetLibrary.List(); }
+        try { entries = AssetLibrary.Search(query); }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             new AlertDialog.Builder(this)!.SetTitle("Biblioteca indisponível")!
@@ -39,6 +39,20 @@ public sealed partial class MainActivity
             "Assets pessoais, reutilizáveis entre jogos. Cada importação copia os arquivos e preserva a versão usada.",
             LunetUi.TextBody, LunetUi.TextMuted));
         AlertDialog? dialog = null;
+        panel.AddView(LunetUi.Button(this, string.IsNullOrWhiteSpace(query) ? "Pesquisar assets" : "Busca: " + query,
+            () =>
+            {
+                var input = LunetUi.Input(this, "Título, autor, licença ou tag", query);
+                new AlertDialog.Builder(this)!.SetTitle("Pesquisar na biblioteca")!
+                    .SetView(input)!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!
+                    .SetNeutralButton("Limpar", (_, _) => { dialog?.Dismiss(); ShowReusableAssetLibrary(); })!
+                    .SetPositiveButton("Buscar", (_, _) =>
+                    {
+                        dialog?.Dismiss();
+                        ShowReusableAssetLibrary(input.Text ?? "");
+                    })!.Show();
+            }, ButtonStyle.Secondary), LunetUi.FillWidth(Dp(48)));
         panel.AddView(LunetUi.Button(this, "＋ Publicar asset de um projeto", () =>
         {
             dialog?.Dismiss();
@@ -46,7 +60,7 @@ public sealed partial class MainActivity
         }, ButtonStyle.Primary), LunetUi.FillWidth(Dp(52)));
 
         if (entries.Count == 0)
-            panel.AddView(LunetUi.Label(this, "Biblioteca vazia. Publique um sprite, tilemap, áudio ou outro asset de um projeto.",
+            panel.AddView(LunetUi.Label(this, string.IsNullOrWhiteSpace(query) ? "Biblioteca vazia. Publique um sprite, tilemap, áudio ou outro asset de um projeto." : "Nenhum asset corresponde à busca. Limpe o filtro para ver todos.",
                 LunetUi.TextBody, LunetUi.TextMuted));
 
         foreach (var asset in entries)
