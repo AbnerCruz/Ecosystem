@@ -129,7 +129,7 @@ public sealed partial class HeadlessUiTests
             await view.OpenPublicationAsync("Publicações/Livro.publication.json");
             await Settle(window, view);
             Assert.StartsWith("Desde a última exportação (HTML, ", view.NoticeText);
-            Assert.EndsWith("), mudou Fonte. Exporte de novo para atualizar o arquivo.", view.NoticeText);
+            Assert.EndsWith("), mudou Fonte (texto). Exporte de novo para atualizar o arquivo.", view.NoticeText);
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }

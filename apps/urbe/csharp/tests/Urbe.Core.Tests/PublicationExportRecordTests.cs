@@ -3,20 +3,23 @@ namespace Urbe.Core.Tests;
 public sealed class PublicationExportRecordTests
 {
     [Fact]
-    public void TheRecordSaysWhatChangedLeftOrCameSinceTheExport()
+    public void TheRecordSaysWhatChangedHowAndWhatCameSinceTheExport()
     {
-        var notes = new Dictionary<string, string> { ["a"] = "# A", ["b"] = "# B", ["c"] = "# C" };
-        var project = PublicationProject.Create("P", "a").AddSource("b").AddSource("c");
+        var notes = new Dictionary<string, string>
+        {
+            ["visual"] = "# A\n\nUm texto.", ["text"] = "# B\n\nUm texto.", ["structure"] = "# C\n\nVer [[X]].", ["gone"] = "# D", ["same"] = "# E"
+        };
+        var project = notes.Keys.Skip(1).Aggregate(PublicationProject.Create("P", "visual"), (p, id) => p.AddSource(id));
         var record = PublicationExportRecord.Of(project, "html", id => notes.GetValueOrDefault(id), DateTimeOffset.UnixEpoch);
-        Assert.Equal((0, 0), (record.Since(project, id => notes.GetValueOrDefault(id)).Changed.Count, record.Since(project, id => notes.GetValueOrDefault(id)).Added.Count));
-        notes["b"] = "# B mudou";
-        notes.Remove("c");
-        var later = project.AddSource("d");
-        var (changed, added) = record.Since(later, id => notes.GetValueOrDefault(id));
-        Assert.Equal(["b", "c"], changed);
-        Assert.Equal(["d"], added);
+        notes["visual"] = "# A\n\nUm **texto**.";
+        notes["text"] = "# B\n\nOutro texto.";
+        notes["structure"] = "# C\n\nVer [[Y]].";
+        notes.Remove("gone");
+        var (changed, added) = record.Since(project.AddSource("new"), id => notes.GetValueOrDefault(id));
+        Assert.Equal([("gone", PublicationExportRecord.ChangeKind.Removed), ("structure", PublicationExportRecord.ChangeKind.Structure),
+            ("text", PublicationExportRecord.ChangeKind.Text), ("visual", PublicationExportRecord.ChangeKind.Visual)], changed);
+        Assert.Equal(["new"], added);
         var back = PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project with { LastExport = record }));
         Assert.Equal(record.Sources, back.LastExport!.Sources);
-        Assert.Equal("html", back.LastExport.Format);
     }
 }

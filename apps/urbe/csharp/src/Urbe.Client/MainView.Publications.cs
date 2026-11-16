@@ -641,9 +641,17 @@ public sealed partial class MainView
         if (project.LastExport is not { } last || _store is null) return;
         var (changed, added) = last.Since(project, id => _store.Get(id)?.Content);
         if (changed.Count == 0 && added.Count == 0) return;
-        string Name(string id) => _store.Get(id)?.Title ?? "uma nota que saiu do vault";
+        string Kind(PublicationExportRecord.ChangeKind k) => k switch
+        {
+            PublicationExportRecord.ChangeKind.Removed => "saiu do vault",
+            PublicationExportRecord.ChangeKind.Structure => "títulos ou ligações",
+            PublicationExportRecord.ChangeKind.Text => "texto",
+            _ => "só formatação"
+        };
+        string Name(string id) => _store.Get(id)?.Title ?? "uma nota";
         var parts = new List<string>();
-        if (changed.Count > 0) parts.Add((changed.Count == 1 ? "mudou " : changed.Count + " fontes mudaram: ") + string.Join(", ", changed.Take(3).Select(Name)) + (changed.Count > 3 ? "…" : ""));
+        if (changed.Count > 0) parts.Add((changed.Count == 1 ? "mudou " : changed.Count + " fontes mudaram: ") +
+            string.Join(", ", changed.Take(3).Select(c => Name(c.Id) + " (" + Kind(c.Kind) + ")")) + (changed.Count > 3 ? "…" : ""));
         if (added.Count > 0) parts.Add(added.Count == 1 ? "entrou 1 fonte nova" : "entraram " + added.Count + " fontes novas");
         ShowLifeNotice("Desde a última exportação (" + last.Format.ToUpperInvariant() + ", " + last.At.ToLocalTime().ToString("dd/MM HH:mm", System.Globalization.CultureInfo.InvariantCulture) + "), " +
             string.Join("; ", parts) + ". Exporte de novo para atualizar o arquivo.");

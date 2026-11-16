@@ -51,19 +51,39 @@ public sealed record PublicationQuery(string Kind, string Value)
 /// </summary>
 public sealed record PublicationExportRecord(string Format, DateTimeOffset At, Dictionary<string, string> Sources)
 {
+    /// <summary>What kind of change a source had since the export, the most serious first.</summary>
+    public enum ChangeKind { Removed, Structure, Text, Visual }
+
     public static string Hash(string markdown) =>
         Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(markdown.Replace("\r\n", "\n"))))[..16].ToLowerInvariant();
 
+    /// <summary>"full:plain:structure" — the whole text, the words without formatting, and the headings and links.</summary>
+    public static string Version(string markdown)
+    {
+        var body = markdown.Replace("\r\n", "\n");
+        var plain = System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(body, @"[*_`~=>#\[\]()!|-]+", ""), @"\s+", " ").Trim();
+        var structure = string.Join("\n", EmbedFragments.Headings(body).Concat(System.Text.RegularExpressions.Regex.Matches(body, @"\[\[[^\]]+\]\]|\]\([^)]+\)").Select(m => m.Value)));
+        return Hash(body) + ":" + Hash(plain) + ":" + Hash(structure);
+    }
+
     public static PublicationExportRecord Of(PublicationProject project, string format, Func<string, string?> markdown, DateTimeOffset at) =>
         new(format, at, project.Sources.Select(s => s.DocumentId).Distinct(StringComparer.Ordinal)
-            .ToDictionary(id => id, id => markdown(id) is { } md ? Hash(md) : "", StringComparer.Ordinal));
+            .ToDictionary(id => id, id => markdown(id) is { } md ? Version(md) : "", StringComparer.Ordinal));
 
-    /// <summary>The sources whose text is not the exported one any more (changed, removed), and the ones added since.</summary>
-    public (IReadOnlyList<string> Changed, IReadOnlyList<string> Added) Since(PublicationProject project, Func<string, string?> markdown)
+    /// <summary>The sources that changed since (with the kind of change) and the ones added since.</summary>
+    public (IReadOnlyList<(string Id, ChangeKind Kind)> Changed, IReadOnlyList<string> Added) Since(PublicationProject project, Func<string, string?> markdown)
     {
-        var changed = Sources.Where(kv => (markdown(kv.Key) is { } md ? Hash(md) : "") != kv.Value).Select(kv => kv.Key).ToList();
+        var changed = new List<(string, ChangeKind)>();
+        foreach (var (id, then) in Sources)
+        {
+            if (markdown(id) is not { } md) { changed.Add((id, ChangeKind.Removed)); continue; }
+            var now = Version(md);
+            if (now == then) continue;
+            var a = then.Split(':'); var b = now.Split(':');
+            changed.Add((id, a.Length < 3 ? ChangeKind.Text : a[2] != b[2] ? ChangeKind.Structure : a[1] != b[1] ? ChangeKind.Text : ChangeKind.Visual));
+        }
         var added = project.Sources.Select(s => s.DocumentId).Distinct(StringComparer.Ordinal).Where(id => !Sources.ContainsKey(id)).ToList();
-        return (changed, added);
+        return (changed.OrderBy(c => c.Item2).ToList(), added);
     }
 }
 
