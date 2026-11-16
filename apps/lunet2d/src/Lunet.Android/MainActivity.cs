@@ -80,6 +80,8 @@ public sealed partial class MainActivity : Activity
         Window?.SetNavigationBarColor(LunetUi.Background);
         _store = new ProjectStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "Projects"));
         _pendingExport = savedInstanceState?.GetString("pendingExport");
+        _pendingLibraryAssetId = savedInstanceState?.GetString("pendingLibraryAssetId");
+        _pendingLibraryAssetVersion = savedInstanceState?.GetInt("pendingLibraryAssetVersion") ?? 0;
         _pendingGameApkPath = savedInstanceState?.GetString("pendingGameApkPath");
         _pendingGameApkName = savedInstanceState?.GetString("pendingGameApkName");
         LoadSettings();
@@ -1419,6 +1421,11 @@ public sealed partial class MainActivity : Activity
             if (resultCode == Result.Ok && data?.Data is AndroidUri audioUri) CompleteAudioImport(audioUri);
             return;
         }
+        if (requestCode == AssetLibraryExportRequestCode)
+        {
+            CompleteLibraryAssetExport(resultCode, data?.Data);
+            return;
+        }
         if (requestCode == GameApkExportRequestCode)
         {
             CompleteApkExport(resultCode, data?.Data);
@@ -1445,6 +1452,8 @@ public sealed partial class MainActivity : Activity
     protected override void OnSaveInstanceState(Bundle outState)
     {
         outState.PutString("pendingExport", _pendingExport);
+        outState.PutString("pendingLibraryAssetId", _pendingLibraryAssetId);
+        outState.PutInt("pendingLibraryAssetVersion", _pendingLibraryAssetVersion);
         outState.PutString("pendingGameApkPath", _pendingGameApkPath);
         outState.PutString("pendingGameApkName", _pendingGameApkName);
         base.OnSaveInstanceState(outState);
