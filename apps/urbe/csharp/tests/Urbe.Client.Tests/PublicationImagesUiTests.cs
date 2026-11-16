@@ -93,4 +93,45 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    /// <summary>CST-153: the export records each source's version; reopening after a change says which source moved on.</summary>
+    [Fact]
+    public async Task Publication_ReopeningSaysWhatChangedSinceTheExport() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-pubversion-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Fonte.md"), "# Fonte\n\nTexto.\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var create = view.CreatePublicationAsync("Fonte.md");
+            Dispatcher.UIThread.RunJobs();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "Livro";
+            ClickButtonWithText(view.Dialogs, "Criar");
+            await create;
+            await Settle(window, view);
+            view.SavePageFile = (_, _) => Task.FromResult<bool?>(true);
+            await view.ExportPublicationHtmlAsync();
+            string Saved() { try { return File.ReadAllText(Path.Combine(vault, "Publicações", "Livro.publication.json")); } catch (IOException) { return ""; } }
+            for (int i = 0; i < 200 && !Saved().Contains("lastExport"); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains("lastExport", Saved());
+            view.PublicationsStudio.Close();
+            view.OpenNoteByPath("Fonte.md");
+            await Settle(window, view);
+            view.Editor.SetMode(EditorMode.Fonte);
+            view.Editor.Editor.Text = "# Fonte\n\nTexto revisto.\n";
+            Assert.True(await view.Editor.SaveAsync());
+            await view.OpenPublicationAsync("Publicações/Livro.publication.json");
+            await Settle(window, view);
+            Assert.StartsWith("Desde a última exportação (HTML, ", view.NoticeText);
+            Assert.EndsWith("), mudou Fonte. Exporte de novo para atualizar o arquivo.", view.NoticeText);
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

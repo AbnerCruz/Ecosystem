@@ -46,6 +46,28 @@ public sealed record PublicationQuery(string Kind, string Value)
 }
 
 /// <summary>
+/// CST-153: an export's version: when, in which format, and a short hash of each source's text then. Comparing it with
+/// the notes now says which sources changed or left since, without keeping any copy of their text.
+/// </summary>
+public sealed record PublicationExportRecord(string Format, DateTimeOffset At, Dictionary<string, string> Sources)
+{
+    public static string Hash(string markdown) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(markdown.Replace("\r\n", "\n"))))[..16].ToLowerInvariant();
+
+    public static PublicationExportRecord Of(PublicationProject project, string format, Func<string, string?> markdown, DateTimeOffset at) =>
+        new(format, at, project.Sources.Select(s => s.DocumentId).Distinct(StringComparer.Ordinal)
+            .ToDictionary(id => id, id => markdown(id) is { } md ? Hash(md) : "", StringComparer.Ordinal));
+
+    /// <summary>The sources whose text is not the exported one any more (changed, removed), and the ones added since.</summary>
+    public (IReadOnlyList<string> Changed, IReadOnlyList<string> Added) Since(PublicationProject project, Func<string, string?> markdown)
+    {
+        var changed = Sources.Where(kv => (markdown(kv.Key) is { } md ? Hash(md) : "") != kv.Value).Select(kv => kv.Key).ToList();
+        var added = project.Sources.Select(s => s.DocumentId).Distinct(StringComparer.Ordinal).Where(id => !Sources.ContainsKey(id)).ToList();
+        return (changed, added);
+    }
+}
+
+/// <summary>
 /// CST-150: versioned composition with stable source identity, presentation metadata and
 /// no authored content. The same notes stay the only source for editor, agents and publications.
 /// </summary>
@@ -64,6 +86,8 @@ public sealed record PublicationProject
     public VideoComposition? Video { get; init; }
     /// <summary>CST-160: the query that chose the sources (a tag, folder or search), kept to offer the notes that match later.</summary>
     public PublicationQuery? Query { get; init; }
+    /// <summary>CST-153: the version of each source the last export was made from (by format), to say what changed since.</summary>
+    public PublicationExportRecord? LastExport { get; init; }
 
     // Do not drop future non-authoring metadata on a load/edit/save round trip.
     [JsonExtensionData]

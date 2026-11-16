@@ -161,6 +161,7 @@ public sealed partial class MainView
         }
         _publicationDraft = draft;
         PublicationsStudio.Open(path, draft.Project, _publicationsCatalog!);
+        TellChangesSinceExport(draft.Project);
         PublicationsStudio.SetSaveState(draft.Dirty, draft.Error);
         UpdateFloatingNav();
         await LoadPublicationVideoFilesAsync();
@@ -576,6 +577,7 @@ public sealed partial class MainView
             LastEpubWarnings = result.Warnings;
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, "epub", "application/epub+zip");
             if (saved != true) return;
+            RecordPublicationExport("epub");
             // CST-183: what keeps the book from being fully accessible is said, with how to fix it in the note
             if (result.Warnings.Count > 0)
                 await Dialogs.AlertAsync("Livro EPUB salvo", "Acessibilidade: " + result.Warnings.Count + (result.Warnings.Count == 1 ? " imagem está" : " imagens estão") +
@@ -616,6 +618,7 @@ public sealed partial class MainView
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
             if (saved != true) return;
+            RecordPublicationExport(extension);
             LastOfficeLimitations = result.Limitations;
             if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva." : " salvo."));
             else await Dialogs.AlertAsync(kind + (extension == "pptx" ? " salva" : " salvo"),
@@ -623,6 +626,27 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
+    }
+
+    /// <summary>CST-153: the version of each source this export used goes into the publication (by hash, never the text).</summary>
+    private void RecordPublicationExport(string format)
+    {
+        if (_publicationsStudio?.Project is not { } project) return;
+        _publicationsStudio.UpdateProject(project with { LastExport = PublicationExportRecord.Of(project, format, id => _store?.Get(id)?.Content, DateTimeOffset.Now) });
+    }
+
+    /// <summary>CST-153: on opening, what changed in the sources since the last export (the products made then are behind).</summary>
+    private void TellChangesSinceExport(PublicationProject project)
+    {
+        if (project.LastExport is not { } last || _store is null) return;
+        var (changed, added) = last.Since(project, id => _store.Get(id)?.Content);
+        if (changed.Count == 0 && added.Count == 0) return;
+        string Name(string id) => _store.Get(id)?.Title ?? "uma nota que saiu do vault";
+        var parts = new List<string>();
+        if (changed.Count > 0) parts.Add((changed.Count == 1 ? "mudou " : changed.Count + " fontes mudaram: ") + string.Join(", ", changed.Take(3).Select(Name)) + (changed.Count > 3 ? "…" : ""));
+        if (added.Count > 0) parts.Add(added.Count == 1 ? "entrou 1 fonte nova" : "entraram " + added.Count + " fontes novas");
+        ShowLifeNotice("Desde a última exportação (" + last.Format.ToUpperInvariant() + ", " + last.At.ToLocalTime().ToString("dd/MM HH:mm", System.Globalization.CultureInfo.InvariantCulture) + "), " +
+            string.Join("; ", parts) + ". Exporte de novo para atualizar o arquivo.");
     }
 
     /// <summary>The issues of the last review (read by tests).</summary>
@@ -688,7 +712,7 @@ public sealed partial class MainView
         try
         {
             var resultSaved = await (SavePageFile ?? SaveHtmlFileAsync)(filename, System.Text.Encoding.UTF8.GetBytes(result.Html));
-            if (resultSaved == true) ShowLifeNotice("Publicação HTML salva.");
+            if (resultSaved == true) { RecordPublicationExport("html"); ShowLifeNotice("Publicação HTML salva."); }
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         {
