@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261116-lunet-home-workspace",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-16T12:38:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-home-20261116",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-510",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-510-home-workspace-20261116",
+  "base_commit": "95143cb283e00dfdacf18a08d821c9a3510adeab",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/LauncherPreferences.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LauncherPreferencesTests.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/guides/home-workspace.md",
+    "docs/governance/handoffs/HO-20261116-lunet-home-workspace.json"
+  ],
+  "work_completed": [
+    "Home sem projeto com quatro destinos e restauração da seção escolhida, nunca reabre jogo automaticamente.",
+    "Pesquisa de projetos, fixados e último aberto persistidos com gravação atômica fora dos projetos.",
+    "Studios existentes acessíveis por escolha de projeto, documentação offline e configurações na Home.",
+    "Proteção de JSON corrompido e seis testes portáteis de integridade e persistência."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test apps/lunet2d/tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Ambiente atual sem dotnet; verificar workflow canônico."
+    },
+    {
+      "check": "Android IDE CI + consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Acompanhar PR e corrigir o que falhar."
+    },
+    {
+      "check": "Validação DEVICE em Android 13 da Home, navegação e Studios",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/home-workspace.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Biblioteca global e Studios sem projeto fazem parte de LUNET-511.",
+    "Personalização global de temas e fontes ainda aberta.",
+    "Sem testes no dispositivo e screenshots ainda."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI, corrigir eventuais falhas e manter PR fora de draft quando código pronto.",
+    "Validar UX em moto g32 Android 13 com prints reais.",
+    "Continuar implementação LUNET-511 de forma independente, sem depender do PR."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ProjectStore é a autoridade dos jogos; Home guarda só referências e preferências."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Experiência local não exige Hub ou conexão."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE ainda pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Launcher específico do Lunet; sem abstração shared."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "launcher-preferences",
+      "status": "product-specific",
+      "rationale": "Dados locais da Home do Lunet, sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

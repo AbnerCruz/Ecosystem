@@ -758,9 +758,22 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: Código publicado no GitHub para CI canônico e compilação Android; DEVICE pendente. Não afirmar conclusão da Fase 5/UX do Lunet nem alteração de estágio.
 - Próximos passos: corrigir eventuais erros do CI, conferir navegação real/IME no Android 13 e continuar Home, biblioteca global, coesão entre Studios e engine.
 
+### 20261116-chatgpt-lunet510-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → integrador / próximos agentes — pronto para revisão
+- Item: LUNET-510, Home funcional; base main 95143cb, branch feat/lunet-510-home-workspace-20261116 no repositório canônico Ecosystem.
+- Auditoria: MainActivity.ShowProjects iniciava sempre, sem fixados, busca ou navegação global; Explorar LUNET-512 já integrado; Studios ainda dependem de projeto. PRs #959 e #960 mantidos intactos.
+- Implementação: Home sem abrir jogo, navegação em quatro destinos com alvos de toque de 48dp, fixados/último jogo em arquivo privado fora dos projetos, lista com busca, documentação offline e configurações. Studios permitem escolher projeto real. Não cria projetos temporários nem altera código Game.cs.
+- Testes: LauncherPreferencesTests (seis cenários), compilação/testes Android e consistency dependem do CI. DEVICE e prints pendentes; não declarar gate LUNET-510 fechado.
+- Próximo: corrigir CI/Build se necessário, validar moto g32 Android 13 e avançar Library/Studios autônomos LUNET-511. Sem merge manual nem mudança do estágio.
+
 ### 20261116-chatgpt-lunet511-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → próximos agentes — em andamento
 - Escopo: LUNET-511, biblioteca global versionada, branch feat/lunet-511-versioned-asset-library-20261116 baseada em main 95143cb. Exclusivamente AbnerCruz/Ecosystem.
 - Investigação: LunetProject.WriteText e Import escrevem arquivos dentro do jogo, ProjectAssetCatalog lê seus assets; não ligar projetos a arquivo global mutável. Pesquisa Android offline-first e ativos/licenças da auditoria LUNET-510–512.
 - Trabalho de código: ReusableAssetLibrary publica versões por diretório com fontes e derivados, registra origem/licença/hashes, protege links e traversal; ImportToProject copia arquivos após preflight, recusa colisões e conteúdo corrompido e tenta rollback seguro. MainActivity.AssetLibrary adiciona interface para publicar assets e copiar versões para projetos sem substituição silenciosa.
 - Verificação: seis testes ReusableAssetLibraryTests adicionados, CI e DEVICE pendentes. Biblioteca precisa ser ligada à Home para acesso fora de projetos e Studios precisam aceitar workspace de Library; não declarar item terminado.
 - Próximo: reconciliar com PR #961 quando integrar, ligar Home → Biblioteca, conferir build Android e testes, implementar edição independente no Studio, export ZIP e validar no aparelho.
+
+### 20261116-chatgpt-lunet511-reconcile — 2026-11-16 (America/Sao_Paulo) — ChatGPT → agente do Lunet — em desenvolvimento
+- Item: LUNET-511 / PR #962; reconciliação semântica com a main 54cdca1 (Home PR #961), preservando alterações dos outros agentes.
+- Implementação: Biblioteca de assets acessível da Home e da seção Studios mesmo sem projeto aberto. Preservados ReusableAssetLibrary e testes; ainda falta edição dos próprios assets pelo Studio fora de projeto, ZIP e DEVICE.
+- Verificação: CI da branch anterior passou; aguardar novo CI combinado e validação em Android 13. PR mantido em draft até escopo realmente completo.
+- Próximo: implementar IAssetWorkspace sem criar cópias dos Studios, export/import ZIP, provas de integridade e teste físico.

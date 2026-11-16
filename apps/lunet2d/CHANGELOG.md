@@ -1,6 +1,8 @@
 # Changelog
 
-- LUNET-511 (biblioteca em desenvolvimento, CI/DEVICE pendentes): biblioteca local de assets versionados, com publicação de fontes e derivados, hashes SHA-256 e metadados de origem/licença; importação por cópia para outros jogos, preflight de colisões, recusa de dados corrompidos e rollback sem apagar mudanças concorrentes. Interface de publicação e uso entre projetos ainda precisa ser conectada à Home e testada.
+- LUNET-511 (biblioteca em desenvolvimento, CI/DEVICE pendentes): biblioteca local de assets versionados, com publicação de fontes e derivados, hashes SHA-256 e metadados de origem/licença; importação por cópia para outros jogos, preflight de colisões, recusa de dados corrompidos e rollback sem apagar mudanças concorrentes. Interface de publicação e uso entre projetos conectada à Home e à seção Studios, ainda sem teste físico.
+
+- LUNET-510 (PR em andamento, DEVICE pendente): Home mobile-first sem abrir projeto, quatro destinos (Início, Projetos, Studios e Explorar), pesquisa de jogos, fixados, último projeto aberto, documentação offline e acesso a configurações; preferências locais persistidas fora dos jogos com gravação atômica. Studios ainda vinculados a projetos até LUNET-511.
 
 - LUNET-512 (implementação em PR, CI/DEVICE pendentes): Explorar diretamente do launcher — catálogo offline de jogos e gêneros para inspiração, filtros combinados por mecânica/perspectiva/estilo, busca por texto, notas, favoritos, criação/edição/exclusão de referências pessoais e associação opcional a projetos. Sem capturar arte protegida, sem loja e sem internet obrigatória.
 

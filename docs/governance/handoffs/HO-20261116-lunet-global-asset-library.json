@@ -12,7 +12,7 @@
   "component": "lunet2d",
   "state": "working",
   "branch": "feat/lunet-511-versioned-asset-library-20261116",
-  "base_commit": "95143cb283e00dfdacf18a08d821c9a3510adeab",
+  "base_commit": "54cdca1d21143a2509da523b552121af429bf44e",
   "commit": null,
   "pr": null,
   "files_changed": [
@@ -24,13 +24,15 @@
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/docs/guides/biblioteca-global.md",
     "docs/governance/handoffs/HO-20261116-lunet-global-asset-library.json",
-    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs"
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs"
   ],
   "work_completed": [
     "Implementado armazenamento de versões imutáveis da Library, SHA-256 e metadados de licença/proveniência.",
     "Implementada importação por cópia com preflight completo, staging e rollback seguro.",
     "Criada interface Android para escolher projeto de origem, publicar asset, revisar e importar versão.",
-    "Criados seis testes de regressão contra perdas, colisões e corrupção de dados."
+    "Criados seis testes de regressão contra perdas, colisões e corrupção de dados.",
+    "Biblioteca conectada à Home e à seção Studios sem necessidade de abrir jogo, preservando a UI instalada pelo PR #961."
   ],
   "verification": [
     {
@@ -55,14 +57,15 @@
   ],
   "known_issues": [
     "Edição de assets na Library diretamente pelo Studio ainda não implementada.",
-    "Entrada de Home ainda depende do PR #961, não declarar funcionalidade completa sem acesso UI.",
+    "Entrada de Home implementada após reconciliação; testes Android e DEVICE pendentes.",
     "Export/import de ZIP da própria biblioteca e DEVICE pendentes."
   ],
   "blockers": [],
   "next_actions": [
-    "Reconciliar branch com a main após integração do PR #961, habilitar acesso na Home.",
     "Abrir PR com CI real e corrigir falhas sem merge forçado.",
-    "Evoluir editor de Studios para workspace Library e fechar export ZIP/DEVICE."
+    "Evoluir editor de Studios para workspace Library e fechar export ZIP/DEVICE.",
+    "Executar CI do novo merge de reconciliação, testes de navegação da Biblioteca e validação DEVICE.",
+    "Completar Studio independente usando IAssetWorkspace e export/import ZIP antes de retirar o draft."
   ],
   "decisions_required": [],
   "normative_sources": [
