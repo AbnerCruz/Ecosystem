@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (CI pendente): removida anotação xUnit `[Fact]` duplicada no teste de exportação ZIP de versões, que impedia compilar toda a suíte (CS0579). O teste de versões e atribuição permanece ativo; DEVICE ainda pendente.
+
 - LUNET-511 (correção de CI): callback SAF agora usa `global::Android.Net.Uri` para evitar resolução incorreta de namespace; teste de exportação ZIP compara atribuição após desserializar JSON (Unicode escapado), preservando a verificação semântica. Ainda aguardando novo CI/DEVICE.
 
 - LUNET-511 (incremento Android, CI/DEVICE pendentes): Biblioteca global oferece Exportar ZIP para cada versão imutável usando o seletor de documentos do Android (SAF); o ZIP é verificado em cache antes de abrir o destino, o estado da seleção sobrevive à recriação da Activity e o temporário é limpo. Regressão verifica que revisões antigas/novas mantêm bytes e metadados de licença distintos.
