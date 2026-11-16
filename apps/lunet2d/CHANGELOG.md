@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-512 (correção de estabilidade, CI anterior verde; DEVICE pendente): abertura de links externos do Explorar trata ausência de navegador e bloqueio de Activity no Android, informando o problema sem encerrar o aplicativo. PR #959; não altera dados, estágio ou versão.
+
 - LUNET-512 (implementação em PR, CI/DEVICE pendentes): Explorar diretamente do launcher — catálogo offline de jogos e gêneros para inspiração, filtros combinados por mecânica/perspectiva/estilo, busca por texto, notas, favoritos, criação/edição/exclusão de referências pessoais e associação opcional a projetos. Sem capturar arte protegida, sem loja e sem internet obrigatória.
 
 - LUNET-513 (em revisão, DEVICE pendente): o desfazer da IA agora compara cada arquivo com os bytes realmente escritos pela execução. Quando algum arquivo foi alterado depois (inclusive fonte e PNG de sprite), a reversão inteira é bloqueada antes de tocar no projeto; checkpoints persistem hashes para sobreviver ao reinício e checkpoints antigos sem estado final confiável não sobrescrevem trabalho mais recente.
