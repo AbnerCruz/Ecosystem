@@ -305,6 +305,19 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void PublishedTagsRemainSearchableAfterLibraryRestart()
+    {
+        var project = CreateSpriteProject("TaggedSource");
+        var published = Library.Publish(project, "Content/Art/wing.sprite.json",
+            "Asas", "Ana", "CC0", tags: ["Montaria", "Voo livre"]);
+        var reopened = new ReusableAssetLibrary(LibraryRoot);
+        var match = Assert.Single(reopened.Search("montaria voo"));
+        Assert.Equal(published.Id, match.Id);
+        Assert.Contains("Voo livre", match.Tags);
+        Assert.Empty(reopened.Search("montaria submarino"));
+    }
+
+    [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
         var source = CreateSpriteProject("Origin");
