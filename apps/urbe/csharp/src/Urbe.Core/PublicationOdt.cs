@@ -73,7 +73,7 @@ public static class PublicationOdt
         var content = new XElement(Office + "document-content", Namespaces(), new XAttribute(Office + "version", "1.3"),
             new XElement(Office + "automatic-styles", AutomaticStyles(doc)),
             new XElement(Office + "body", text));
-        var styles = new XElement(Office + "document-styles", Namespaces(), new XAttribute(Office + "version", "1.3"), CommonStyles(), PageLayout());
+        var styles = new XElement(Office + "document-styles", Namespaces(), new XAttribute(Office + "version", "1.3"), CommonStyles(doc.Accent), PageLayout());
         var meta = new XElement(Office + "document-meta", Namespaces(), new XAttribute(Office + "version", "1.3"),
             new XElement(Office + "meta", new XElement(DC + "title", Safe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(Meta + "generator", "Urbe")));
         var manifest = new XElement(Manifest + "manifest", new XAttribute(XNamespace.Xmlns + "manifest", Manifest), new XAttribute(Manifest + "version", "1.3"),
@@ -262,7 +262,8 @@ public static class PublicationOdt
         new XElement(Style + "list-level-label-alignment", new XAttribute(Text + "label-followed-by", "listtab"),
             new XAttribute(Fo + "text-indent", "-0.6cm"), new XAttribute(Fo + "margin-left", Cm(0.6 * level + 0.4))));
 
-    private static XElement CommonStyles()
+    /// <summary>The common styles, the headings and box titles in the publication's accent (CST-161).</summary>
+    private static XElement CommonStyles(string accent)
     {
         XElement Para(string name, string display, string? parent = "Standard", XElement? paragraph = null, XElement? textProps = null, int? outline = null) =>
             new(Style + "style", new XAttribute(Style + "name", name), new XAttribute(Style + "display-name", display), new XAttribute(Style + "family", "paragraph"),
@@ -274,14 +275,14 @@ public static class PublicationOdt
                 new XElement(Style + "text-properties", new XAttribute(Style + "font-name", "Liberation Serif"), new XAttribute(Fo + "font-size", "11pt"), new XAttribute(Fo + "language", "pt"), new XAttribute(Fo + "country", "BR"))),
             Para("Standard", "Standard", null),
             Para("Text_20_body", "Text body", paragraph: new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.25cm"), new XAttribute(Fo + "line-height", "130%"))),
-            Para("Title", "Title", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", "26pt"), new XAttribute(Fo + "color", "#6b4f2a")),
+            Para("Title", "Title", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", "26pt"), new XAttribute(Fo + "color", accent)),
                 paragraph: new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.5cm"))),
             Para("Quotations", "Quotations", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-left", "1cm"), new XAttribute(Fo + "border-left", "1.5pt solid #999999"), new XAttribute(Fo + "padding-left", "0.3cm")),
                 new XElement(Style + "text-properties", new XAttribute(Fo + "font-style", "italic"), new XAttribute(Fo + "color", "#555555"))),
             Para("Preformatted_20_Text", "Preformatted Text", "Standard", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "background-color", "#f3f1ec"), new XAttribute(Fo + "margin-bottom", "0.25cm"), new XAttribute(Fo + "padding", "0.15cm")),
                 new XElement(Style + "text-properties", new XAttribute(Style + "font-name", "Liberation Mono"), new XAttribute(Fo + "font-family", "'Liberation Mono'"), new XAttribute(Fo + "font-size", "9.5pt"))),
             Para("Box", "Box", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "background-color", "#f6f3ee"), new XAttribute(Fo + "border-left", "3pt solid #9c7b45"), new XAttribute(Fo + "padding-left", "0.3cm"), new XAttribute(Fo + "margin-left", "0.3cm"), new XAttribute(Fo + "margin-bottom", "0.1cm"))),
-            Para("Box_20_Title", "Box Title", "Box", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", "#6b4f2a"))),
+            Para("Box_20_Title", "Box Title", "Box", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", accent))),
             Para("Formula", "Formula", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "text-align", "center"))),
             Para("Figure", "Figure", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "text-align", "center"))),
             Para("List_20_Contents", "List Contents", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.1cm"))),
@@ -292,7 +293,7 @@ public static class PublicationOdt
         for (int level = 1; level <= 6; level++)
             styles.Add(Para("Heading_20_" + level, "Heading " + level, "Standard",
                 new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-top", "0.4cm"), new XAttribute(Fo + "margin-bottom", "0.15cm"), new XAttribute(Fo + "keep-with-next", "always")),
-                new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", sizes[level - 1].ToString(CultureInfo.InvariantCulture) + "pt"), new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", "#6b4f2a")), level));
+                new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", sizes[level - 1].ToString(CultureInfo.InvariantCulture) + "pt"), new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", accent)), level));
         return styles;
     }
 
