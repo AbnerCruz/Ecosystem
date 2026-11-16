@@ -142,4 +142,38 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    /// <summary>CST-175: an e-mail in the publication is shown before it is shared; Voltar saves nothing.</summary>
+    [Fact]
+    public async Task Publication_PrivateDataIsShownBeforeSharing() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-pubprivacy-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Contato.md"), "# Contato\n\nEscreva para ana@exemplo.com.\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var create = view.CreatePublicationAsync("Contato.md");
+            Dispatcher.UIThread.RunJobs();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "Folheto";
+            ClickButtonWithText(view.Dialogs, "Criar");
+            await create;
+            await Settle(window, view);
+            var saved = false;
+            view.SavePageFile = (_, _) => { saved = true; return Task.FromResult<bool?>(true); };
+            var export = view.ExportPublicationHtmlAsync();
+            for (int i = 0; i < 200 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Voltar"); i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("e-mail: ana@exemplo.com") == true);
+            ClickButtonWithText(view.Dialogs, "Voltar");
+            await export;
+            Assert.False(saved);
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

@@ -628,11 +628,22 @@ public sealed partial class MainView
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
     }
 
+    /// <summary>CST-175: what looks private in a publication about to leave the device, shown before; true to go on.</summary>
+    private async Task<bool> ConfirmPrivacyAsync(string html)
+    {
+        var found = PublicationPrivacy.Scan(html);
+        if (found.Count == 0) return true;
+        var lines = found.Take(10).Select(f => "• " + f.Kind + ": " + f.Sample);
+        return await Dialogs.ConfirmAsync("Antes de compartilhar", "A publicação mostra dados que parecem pessoais:\n\n" + string.Join("\n", lines) +
+            (found.Count > 10 ? "\n… e mais " + (found.Count - 10) : "") + "\n\nSe não devem sair, tire-os das notas e exporte de novo.", "Exportar mesmo assim", cancel: "Voltar");
+    }
+
     /// <summary>CST-163: the publication and a manifest (type, size, SHA-256 of each file, source versions) in one ZIP.</summary>
     public async Task ExportPublicationPackageAsync()
     {
         if (await PreparePublicationOutputAsync() is not { } output) return;
         var (project, result) = output;
+        if (!await ConfirmPrivacyAsync(result.Html)) return;
         var versions = PublicationExportRecord.Of(project, "zip", id => _store?.Get(id)?.Content, DateTimeOffset.Now).Sources
             .Where(kv => _store?.Get(kv.Key) is not null)
             .ToDictionary(kv => kv.Key, kv => new PublicationPackage.Source(_store!.Get(kv.Key)!.Path, kv.Value, _store.Get(kv.Key)!.Content), StringComparer.Ordinal);
@@ -747,6 +758,7 @@ public sealed partial class MainView
     {
         if (await PreparePublicationOutputAsync() is not { } output) return;
         var (project, result) = output;
+        if (!await ConfirmPrivacyAsync(result.Html)) return;
         var filename = ArtifactModel.SafeName(project.Title) + ".html";
         try
         {
