@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (integridade, CI/DEVICE pendentes): leitura de versões da Library rejeita metadados persistidos ausentes/inválidos (título, licença, autor, atribuição e tags), além de hashes SHA-256 com caracteres não hexadecimais. Testes xUnit parametrizados verificam falha controlada, preservação do manifesto e ausência de escrita no jogo de destino.
+
 - LUNET-511 (integridade, CI/DEVICE pendentes): importação de assets recusa manifestos locais com ID, lista de arquivos, caminho ou hash nulos, emitindo erro de dados inválidos em vez de exceção inesperada. Regressões verificam preservação do projeto de destino e do manifesto original.
 
 - LUNET-511 (biblioteca em desenvolvimento, CI/DEVICE pendentes): biblioteca local de assets versionados, com publicação de fontes e derivados, hashes SHA-256 e metadados de origem/licença; importação por cópia para outros jogos, preflight de colisões, recusa de dados corrompidos e rollback sem apagar mudanças concorrentes. Interface de publicação e uso entre projetos conectada à Home e à seção Studios, ainda sem teste físico.
