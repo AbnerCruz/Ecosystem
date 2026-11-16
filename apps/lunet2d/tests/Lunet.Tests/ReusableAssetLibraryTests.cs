@@ -206,6 +206,29 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void ExportZip_ArchivedBytesMatchManifestHashesAndLengths()
+    {
+        var source = CreateSpriteProject("Source");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Asas", "Autor", "CC-BY");
+        var zip = Path.Combine(_root, "verified.zip");
+        Library.ExportZip(asset.Id, 1, zip);
+
+        using var archive = ZipFile.OpenRead(zip);
+        foreach (var file in asset.Files)
+        {
+            var entry = archive.GetEntry("files/" + file.Path);
+            Assert.NotNull(entry);
+            using var input = entry!.Open();
+            using var bytes = new MemoryStream();
+            input.CopyTo(bytes);
+            Assert.Equal(file.Length, bytes.Length);
+            Assert.Equal(file.Sha256, Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(bytes.ToArray())));
+        }
+    }
+
+    [Fact]
     public void ExportZip_RejectsCorruptedBytesWithoutCreatingDestination()
     {
         var source = CreateSpriteProject("Source");
