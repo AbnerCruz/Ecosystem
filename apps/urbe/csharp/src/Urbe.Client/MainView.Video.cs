@@ -24,6 +24,8 @@ public sealed partial class MainView
         studio.SubtitlesRequested += format => _ = ExportPublicationSubtitlesAsync(format);
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
+        studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
+        studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
     }
 
@@ -121,6 +123,54 @@ public sealed partial class MainView
         };
         _publicationsStudio.UpdateProject(project with { Video = project.Video! with { Audio = [.. project.Video.Audio, clip] } });
         ShowLifeNotice("Áudio adicionado à trilha do vídeo: " + System.IO.Path.GetFileName(clip.Path));
+    }
+
+    /// <summary>
+    /// CST-172: the narration made by the device's voice (offline, no provider, nothing paid): each scene's script, as
+    /// written in its note, becomes a WAV in Narração/&lt;publicação&gt;/ placed at the scene's start as a voice track. Narrating
+    /// again replaces those tracks (the old files stay in the vault).
+    /// </summary>
+    public async Task NarratePublicationVideoAsync()
+    {
+        var draft = _publicationDraft;
+        if (PlatformAudio.SynthesizeToWav is not { } speak || draft is null || await PrepareVideoAsync(draft) is not { } prepared) return;
+        var (project, timeline) = prepared;
+        var scenes = timeline.Scenes.Where(s => s.Script.Trim().Length > 0).ToList();
+        if (scenes.Count == 0) { await Dialogs.AlertAsync("Narrar o roteiro", "As notas das cenas ainda não têm texto para narrar."); return; }
+        var folder = "Narração/" + ArtifactModel.SafeName(project.Title) + "/";
+        var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "urbe-narration-" + Guid.NewGuid().ToString("N"));
+        var clips = new List<VideoAudioClip>();
+        using var cancel = new CancellationTokenSource();
+        try
+        {
+            Directory.CreateDirectory(temp);
+            for (int i = 0; i < scenes.Count; i++)
+            {
+                _notice.Show("Narrando a cena " + (i + 1) + " de " + scenes.Count, TimeSpan.FromHours(1), "Cancelar", cancel.Cancel);
+                var wav = System.IO.Path.Combine(temp, i + ".wav");
+                if (!await speak(scenes[i].Script.Trim(), 0, wav, cancel.Token))
+                {
+                    _notice.Hide();
+                    await Dialogs.AlertAsync("Narrar o roteiro", "A voz do aparelho não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
+                    return;
+                }
+                var path = folder + "Cena " + (i + 1) + ".wav";
+                for (int n = 2; _attachments.Contains(path); n++) path = folder + "Cena " + (i + 1) + " (" + n + ").wav";
+                await ((IAssistantApp)this).CreateBinaryFileAsync(path, await File.ReadAllBytesAsync(wav, cancel.Token));
+                clips.Add(new VideoAudioClip { Kind = "voice", Path = path, Start = scenes[i].Start });
+            }
+            if (!SameVideoDraft(draft) || _publicationsStudio?.Project is not { Video: { } video } current) return;
+            var kept = video.Audio.Where(a => !(a.Kind == "voice" && a.Path.StartsWith(folder, StringComparison.Ordinal))).ToList();
+            _publicationsStudio.UpdateProject(current with { Video = video with { Audio = [.. kept, .. clips] } });
+            _notice.Show("Narração pronta: " + clips.Count + (clips.Count == 1 ? " cena." : " cenas."), TimeSpan.FromSeconds(6), kind: Ui.ToastKind.Success);
+        }
+        catch (OperationCanceledException) { _notice.Show("Narração parada; o vídeo não mudou."); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            _notice.Hide();
+            await Dialogs.AlertAsync("Narrar o roteiro", StorageProblems.Explain(ex));
+        }
+        finally { try { Directory.Delete(temp, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
     }
 
     /// <summary>The track's shape (VideoAudio.Waveform), or "" when the file cannot be read or decoded here.</summary>
@@ -248,7 +298,8 @@ public sealed partial class MainView
                     {
                         var read = vault is null ? null : await vault.ReadFileAsync(clip.Path, 1L << 30, cancel.Token);
                         if (read?.Bytes is not { } bytes) { skipped.Add(clip.Path); continue; }
-                        var source = System.IO.Path.Combine(temp, "a" + n + System.IO.Path.GetExtension(clip.Path));
+                        // the original and its WAV never share a name (a .wav track was copied onto itself and the export failed)
+                        var source = System.IO.Path.Combine(temp, "origem" + n + System.IO.Path.GetExtension(clip.Path));
                         var wav = System.IO.Path.Combine(temp, "a" + n++ + ".wav");
                         await File.WriteAllBytesAsync(source, bytes, cancel.Token);
                         if (await PlatformVideo.ToWavAsync(source, wav, cancel.Token)) decoded.Add((clip, File.OpenRead(wav)));

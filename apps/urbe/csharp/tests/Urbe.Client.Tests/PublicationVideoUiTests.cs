@@ -84,6 +84,17 @@ public sealed partial class HeadlessUiTests
             await Choose("Tirar do vídeo");
             await remove;
             Assert.Empty(studio.Project!.Video!.Audio);
+            // CST-172: the device's voice narrates each scene's script, placed at the scene's start
+            var voice = PlatformAudio.SynthesizeToWav;
+            var spoken = new List<string>();
+            PlatformAudio.SynthesizeToWav = (text, _, target, _) => { spoken.Add(text); File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
+            try { await view.NarratePublicationVideoAsync(); }
+            finally { PlatformAudio.SynthesizeToWav = voice; }
+            await Pump();
+            Assert.Contains(spoken, t => t.Contains("Uma frase do roteiro."));
+            var narration = Assert.Single(studio.Project!.Video!.Audio, a => a.Kind == "voice");
+            Assert.Equal(("Narração/Filme/Cena 1.wav", 0.0), (narration.Path, narration.Start));
+            Assert.True(File.Exists(Path.Combine(vault, "Narração", "Filme", "Cena 1.wav")));
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is covered where ffmpeg exists
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Resolution = 144 } });
             await Pump();
@@ -91,10 +102,11 @@ public sealed partial class HeadlessUiTests
             view.SavePageFile = (name, bytes) => { saved = (name, bytes); return Task.FromResult<bool?>(true); };
             Click(Named("Exportar vídeo MP4"));
             for (int j = 0; j < 600 && saved is null; j++) await Pump();
-            Assert.NotNull(saved);
+            Assert.True(saved is not null, "dialog: " + string.Join(" | ", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).Where(t => !string.IsNullOrEmpty(t)).Take(6)) + " / " + view.NoticeText);
             Assert.Equal("Filme.mp4", saved!.Value.Name);
             var info = Mp4Inspection.Read(new MemoryStream(saved.Value.Bytes))!;
             Assert.Equal("avc1", info.Video!.Codec);
+            Assert.NotNull(info.Audio);   // the narration (a WAV track) is in the file: a .wav track used to fail the export
             Assert.Equal((int)Math.Ceiling((scene.Duration + 0.5) * 30 - 1e-6), info.Video.SampleCount);
             Assert.Equal((256, 144), (info.Video.Width, info.Video.Height));
             return true;

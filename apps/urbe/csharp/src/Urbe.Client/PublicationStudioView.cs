@@ -72,6 +72,7 @@ public sealed class PublicationStudioView : Border
                 Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
                 if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
+                if (CanNarrate) Item("Narrar o roteiro com a voz do aparelho", () => NarrateRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
             Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
@@ -160,6 +161,9 @@ public sealed class PublicationStudioView : Border
     public event Action? AddAudioRequested;
     /// <summary>CST-172: volume, fade in and out of a track, or take it out.</summary>
     public event Action? AdjustAudioRequested;
+    /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
+    public event Action? NarrateRequested;
+    public bool CanNarrate { get; set; }
     public event Action<string>? AddVideoElementRequested;
 
     /// <summary>CST-170: a publication laid out as a video (one note per scene).</summary>
