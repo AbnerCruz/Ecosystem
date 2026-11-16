@@ -218,7 +218,6 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
-    [Fact]
     public void ExportZip_UsesRequestedVersionAndPreservesLicenseMetadata()
     {
         var source = CreateSpriteProject("Source", "primeira");
