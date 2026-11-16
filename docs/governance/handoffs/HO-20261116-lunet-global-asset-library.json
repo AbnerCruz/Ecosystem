@@ -32,7 +32,8 @@
     "Implementada importação por cópia com preflight completo, staging e rollback seguro.",
     "Criada interface Android para escolher projeto de origem, publicar asset, revisar e importar versão.",
     "Criados seis testes de regressão contra perdas, colisões e corrupção de dados.",
-    "Biblioteca conectada à Home e à seção Studios sem necessidade de abrir jogo, preservando a UI instalada pelo PR #961."
+    "Biblioteca conectada à Home e à seção Studios sem necessidade de abrir jogo, preservando a UI instalada pelo PR #961.",
+    "Manifestos persistidos com campos nulos (ID, Files, Path, Sha256) agora são recusados com InvalidDataException sem tocar no jogo nem no arquivo original; quatro casos xUnit adicionados."
   ],
   "verification": [
     {
@@ -53,6 +54,12 @@
       "result": "pending",
       "object": "apps/lunet2d/docs/guides/biblioteca-global.md",
       "critical": false
+    },
+    {
+      "check": "Regressões para campos nulos no manifesto",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Quatro casos parametrizados em ReusableAssetLibraryTests; CI do novo head pendente."
     }
   ],
   "known_issues": [
