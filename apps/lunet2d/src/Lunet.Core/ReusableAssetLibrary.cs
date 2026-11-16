@@ -219,10 +219,25 @@ public sealed class ReusableAssetLibrary
                     writer.Write(JsonSerializer.Serialize(manifest, JsonOptions));
                 foreach (var file in verified)
                 {
-                    // Recheck immediately before copying; never export stale or tampered bytes.
-                    if (HashFile(file.Source) != manifest.Files.Single(f => f.Path == file.Path).Sha256)
+                    // Hash the actual bytes written into the archive, not a separate pre-copy read:
+                    // a source can change between preflight and compression.
+                    var expected = manifest.Files.Single(f => f.Path == file.Path);
+                    var entry = archive.CreateEntry("files/" + file.Path, CompressionLevel.Optimal);
+                    using var input = File.OpenRead(file.Source);
+                    using var output = entry.Open();
+                    using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+                    var buffer = new byte[81920];
+                    long copied = 0;
+                    int count;
+                    while ((count = input.Read(buffer, 0, buffer.Length)) != 0)
+                    {
+                        hash.AppendData(buffer, 0, count);
+                        output.Write(buffer, 0, count);
+                        copied += count;
+                    }
+                    if (copied != expected.Length ||
+                        !Convert.ToHexString(hash.GetHashAndReset()).Equals(expected.Sha256, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("Asset alterado durante a exportação: " + file.Path);
-                    archive.CreateEntryFromFile(file.Source, "files/" + file.Path, CompressionLevel.Optimal);
                 }
             }
             File.Move(temporary, destination, overwrite: false);
