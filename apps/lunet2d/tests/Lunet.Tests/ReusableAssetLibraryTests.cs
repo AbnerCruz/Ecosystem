@@ -243,7 +243,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Equal("primeira", Read(oldArchive, "files/Content/Art/wing.sprite.json"));
         Assert.Equal("segunda", Read(newArchive, "files/Content/Art/wing.sprite.json"));
         Assert.Contains("CC-BY", Read(oldArchive, "asset.json"));
-        Assert.Contains("Crédito obrigatório", Read(newArchive, "asset.json"));
+        Assert.Equal("Crédito obrigatório", System.Text.Json.JsonDocument.Parse(Read(newArchive, "asset.json")).RootElement.GetProperty("Attribution").GetString());
     }
 
     [Fact]
