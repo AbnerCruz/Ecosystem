@@ -199,10 +199,29 @@ public sealed class ReusableAssetLibrary
             item.Files.Any(f => f is null || f.Path is null || f.Sha256 is null) ||
             item.Files.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
             throw new InvalidDataException("Manifesto de asset inconsistente, mantido sem alteração.");
+        // The manifest is local persisted input, not trusted code. Reject malformed metadata
+        // before Android renders it or the import workflow reads it.
+        if (item.Title is null || item.License is null || item.Author is null ||
+            item.Attribution is null || item.Tags is null || item.Tags.Any(t => t is null))
+            throw new InvalidDataException("Metadados incompletos no manifesto de asset; dados preservados.");
+        try
+        {
+            Bounded(item.Title, 160, "Título");
+            Bounded(item.Author, 120, "Autor", true);
+            Bounded(item.License, 120, "Licença");
+            Bounded(item.Attribution, 500, "Atribuição", true);
+            if (item.Tags.Length > 30)
+                throw new ArgumentException("Até 30 tags por asset.");
+            foreach (var tag in item.Tags) Bounded(tag, 60, "Tag", true);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidDataException("Metadados inválidos no manifesto de asset; dados preservados.", ex);
+        }
         foreach (var file in item.Files)
         {
             ValidatePath(file.Path);
-            if (file.Sha256.Length != 64 || file.Length < 0)
+            if (file.Sha256.Length != 64 || !file.Sha256.All(Uri.IsHexDigit) || file.Length < 0)
                 throw new InvalidDataException("Hash ou tamanho inválido na biblioteca.");
         }
         return item;
