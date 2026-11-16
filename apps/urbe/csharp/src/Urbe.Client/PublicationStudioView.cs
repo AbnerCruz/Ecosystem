@@ -75,6 +75,7 @@ public sealed class PublicationStudioView : Border
             Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
             Item("Exportar documento OpenDocument (ODT)", () => OfficeRequested?.Invoke("odt"));
             Item("Exportar apresentação PowerPoint (PPTX)", () => OfficeRequested?.Invoke("pptx"));
+            Item("Exportar pacote para distribuir (ZIP)", () => PackageRequested?.Invoke());
             if (_print.IsVisible) Item("Imprimir ou salvar como PDF", () => PrintRequested?.Invoke());
             new ContextMenu { ItemsSource = items }.Open(more);
         };
@@ -134,6 +135,8 @@ public sealed class PublicationStudioView : Border
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? EpubRequested;
+    /// <summary>CST-163: the publication with a manifest of sizes and checksums, to hand to someone else.</summary>
+    public event Action? PackageRequested;
     /// <summary>CST-166/168: an office file of the publication ("docx", "odt" or "pptx").</summary>
     public event Action<string>? OfficeRequested;
     public event Action? PrintRequested;

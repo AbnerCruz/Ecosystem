@@ -115,7 +115,13 @@ public sealed partial class HeadlessUiTests
             ClickButtonWithText(view.Dialogs, "Criar");
             await create;
             await Settle(window, view);
-            view.SavePageFile = (_, _) => Task.FromResult<bool?>(true);
+            byte[]? package = null;
+            view.SavePageFile = (name, bytes) => { if (name.EndsWith(".zip", StringComparison.Ordinal)) package = bytes; return Task.FromResult<bool?>(true); };
+            // CST-163: the package holds the publication and its manifest, and the notice says the size
+            await view.ExportPublicationPackageAsync();
+            using (var zip = new System.IO.Compression.ZipArchive(new MemoryStream(package!)))
+                Assert.Equal(["index.html", "manifest.json"], zip.Entries.Select(e => e.FullName));
+            Assert.StartsWith("Pacote salvo (", view.NoticeText);
             await view.ExportPublicationHtmlAsync();
             string Saved() { try { return File.ReadAllText(Path.Combine(vault, "Publicações", "Livro.publication.json")); } catch (IOException) { return ""; } }
             for (int i = 0; i < 200 && !Saved().Contains("lastExport"); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }

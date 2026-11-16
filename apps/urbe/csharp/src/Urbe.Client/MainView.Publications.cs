@@ -45,6 +45,7 @@ public sealed partial class MainView
         studio.AdaptationReviewed += (adaptation, origin) => _ = MarkAdaptationReviewedAsync(adaptation, origin);
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
+        studio.PackageRequested += () => _ = ExportPublicationPackageAsync();
         studio.OfficeRequested += format => _ = ExportPublicationOfficeAsync(format);
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
@@ -628,6 +629,25 @@ public sealed partial class MainView
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
     }
 
+    /// <summary>CST-163: the publication and a manifest (type, size, SHA-256 of each file, source versions) in one ZIP.</summary>
+    public async Task ExportPublicationPackageAsync()
+    {
+        if (await PreparePublicationOutputAsync() is not { } output) return;
+        var (project, result) = output;
+        var versions = PublicationExportRecord.Of(project, "zip", id => _store?.Get(id)?.Content, DateTimeOffset.Now).Sources;
+        var bytes = PublicationPackage.Build(project, result.Html, versions, DateTimeOffset.Now);
+        var name = ArtifactModel.SafeName(project.Title) + ".zip";
+        try
+        {
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "zip", "application/zip");
+            if (saved != true) return;
+            RecordPublicationExport("zip");
+            ShowLifeNotice("Pacote salvo (" + PublicationPackage.Size(bytes.Length) + "): a publicação e o manifesto que confere cada arquivo.");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível exportar o pacote", StorageProblems.Explain(ex)); }
+    }
+
     /// <summary>CST-153: the version of each source this export used goes into the publication (by hash, never the text).</summary>
     private void RecordPublicationExport(string format)
     {
@@ -720,7 +740,7 @@ public sealed partial class MainView
         try
         {
             var resultSaved = await (SavePageFile ?? SaveHtmlFileAsync)(filename, System.Text.Encoding.UTF8.GetBytes(result.Html));
-            if (resultSaved == true) { RecordPublicationExport("html"); ShowLifeNotice("Publicação HTML salva."); }
+            if (resultSaved == true) { RecordPublicationExport("html"); ShowLifeNotice("Publicação HTML salva (" + PublicationPackage.Size(System.Text.Encoding.UTF8.GetByteCount(result.Html)) + ")."); }
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         {
