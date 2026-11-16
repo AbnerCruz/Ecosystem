@@ -24,6 +24,8 @@ public interface IAssistantApp
     (string? Path, string? Selection) EditorNote();
     /// <summary>CST-243: the source open in a reader now (PDF, book, slides, media): path, revision, format and place; null when none.</summary>
     ReaderSession? VisibleSource() => null;
+    /// <summary>Shows a graph made from app data (an agent's memory), never saved in the vault.</summary>
+    Task ShowGraphProjectionAsync(GraphDocument graph) => Task.CompletedTask;
     Task<UrbeDocument> CreateNoteAsync(string path, string content);
     Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content);
     Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string newPath);
@@ -455,7 +457,7 @@ public sealed partial class AssistantPanel : Border
         catch (IOException e) { throw new AiToolException("A memória não pôde ser salva: " + e.Message); }
     }
 
-    private string VaultKey => _app.VaultName.Length > 0 ? _app.VaultName : "Urbe";
+    public string VaultKey => _app.VaultName.Length > 0 ? _app.VaultName : "Urbe";
 
     /// <summary>UC-81: the agent's call name on this device; the problem, or null when done.</summary>
     public string? RenameAgent(string agentId, string name)
@@ -1152,6 +1154,11 @@ public sealed partial class AssistantPanel : Border
                     var captured = AssistantMemoryEngine.CaptureUserStatements(_cfg, VaultKey, agent.Id,
                         userRequest, "conversation:" + conv.Id);
                     learned |= captured.Count > 0;
+                    // what was learned is said, never silent: the person can correct it in Memórias
+                    if (captured.Count > 0)
+                        _app.Notify("Aprendi: " + string.Join("; ", captured.Select(m => "“" + m.Text + "”")) +
+                            (captured.Any(m => m.RelatedMemoryIds.Any(id => _cfg.MemoryRecords.Any(o => o.Id == id && o.State == "superseded")))
+                                ? " (substitui o que você tinha dito antes)" : ""));
                     if (_cfg.AutoCaptureEpisodes && run.Changes.Count > 0)
                     {
                         AssistantMemoryEngine.ObserveFinishedRun(_cfg, VaultKey, agent.Id, run.Id,

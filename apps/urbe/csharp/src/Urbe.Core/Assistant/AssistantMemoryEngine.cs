@@ -267,7 +267,9 @@ public static class AssistantMemoryEngine
                 !m.Pinned && m.Kind != "preference") continue;
             if (terms.Length > 0 && score <= 0 && !m.Pinned) continue;
             if (m.Pinned) score += 5;
-            if (m.Kind is "preference" or "decision" && score > 0) score += 1.5;
+            if (m.Kind is "preference" or "decision" or "procedure" && score > 0) score += 1.5;
+            // a log of what a run did is evidence, not learned knowledge: it never outranks what the person said
+            if (m.Kind == "episode") score *= .6;
             if (m.State == "disputed") score *= .25;
             if (m.Origin == "run" && !m.Verified) score *= .8;
             if (m.Confidence < 60) score *= .8;
@@ -394,8 +396,8 @@ public static class AssistantMemoryEngine
         PackPrompt(cfg, vault, agentId, Search(cfg, vault, agentId, query, int.MaxValue), budgetChars);
 
     /// <summary>
-    /// Capture only unambiguous first-person preferences, goals and decisions from a successful
-    /// user turn. No extra model calls, no invisible capture of arbitrary dialogue or attachments.
+    /// Capture only unambiguous first-person preferences, goals, decisions and procedures from a successful
+    /// user turn, returning what was learned or reinforced. No extra model calls, no invisible capture of arbitrary dialogue or attachments.
     /// Inferred memories are agent-local; explicitly shared memories still use "lembre que".
     /// </summary>
     public static IReadOnlyList<AiMemoryRecord> CaptureUserStatements(
@@ -416,20 +418,32 @@ public static class AssistantMemoryEngine
                 sentence.StartsWith('-') || sentence.StartsWith('"')) continue;
 
             var normalized = Normalize(sentence);
-            var kind = Regex.IsMatch(normalized, @"^(?:prefiro|minha preferencia e)\s+\S", RegexOptions.CultureInvariant)
-                ? "preference"
-                : Regex.IsMatch(normalized, @"^(?:meu objetivo e|minha meta e)\s+\S", RegexOptions.CultureInvariant)
-                    ? "goal"
-                    : Regex.IsMatch(normalized, @"^(?:decidi|a decisao e)\s+\S", RegexOptions.CultureInvariant)
-                        ? "decision" : "";
-            if (kind.Length == 0) continue;
+            var kind = StatementKind(normalized);
+            if (kind is null) continue;
 
-            // Preserve the user's exact wording and durable source, without duplicate writes.
-            if (cfg.MemoryRecords.Any(m => m.State == "active" && m.Scope == "agent" &&
-                m.Vault == vault && m.AgentId == agentId && Normalize(m.Text) == normalized))
+            // Said again (in this or another conversation): the same memory, reinforced, with the new source kept.
+            if (cfg.MemoryRecords.FirstOrDefault(m => m.State == "active" && m.Scope == "agent" &&
+                m.Vault == vault && m.AgentId == agentId && Normalize(m.Text) == normalized) is { } known)
+            {
+                if (known.SourceReference.Contains(source, StringComparison.Ordinal)) continue; // the same turn again
+                known.Confidence = Math.Min(100, known.Confidence + 5);
+                known.UpdatedAt = Now();
+                var sources = known.SourceReference + "; " + source;
+                known.SourceReference = sources.Length > 200 ? sources[^200..] : sources;
+                learned.Add(known);
                 continue;
-            learned.Add(Remember(cfg, sentence, vault, agentId, kind, "agent",
-                "user", source, confidence: 85, verified: true));
+            }
+            var record = Remember(cfg, sentence, vault, agentId, kind, "agent", "user", source, confidence: 85, verified: true);
+            // Learning, not only logging: the person's newer word replaces what it contradicts (kept, dated, linked),
+            // and a more specific statement is linked to the general one it refines, both still true.
+            foreach (var other in cfg.MemoryRecords.Where(m => m.State == "active" && m.Id != record.Id && m.Scope == "agent" &&
+                m.Vault == vault && m.AgentId == agentId && m.Kind is not ("episode" or "observation")).ToList())
+                switch (Relate(other.Text, record.Text))
+                {
+                    case MemoryRelation.Contradicts: Supersede(cfg, other.Id, record.Id); break;
+                    case MemoryRelation.Refines: Link(cfg, record.Id, other.Id); break;
+                }
+            learned.Add(record);
         }
         return learned;
     }
@@ -566,23 +580,39 @@ public static class AssistantMemoryEngine
         for (var j = i + 1; j < records.Length; j++)
         {
             var a = records[i]; var b = records[j];
-            if (Normalize(a.Text) == Normalize(b.Text)) continue;
-            // the subject apart from negation: "não gosta de X" talks about the same thing as "gosta de X"
-            var ta = Tokens(a.Text); var tb = Tokens(b.Text);
-            var ca = ta.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
-            var cb = tb.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
-            if (ca.Count < 2 || cb.Count < 2) continue;
-            // one says more about the same subject (strogonoff → strogonoff de frango): a refinement, not a conflict
-            if (ca.IsProperSubsetOf(cb) || cb.IsProperSubsetOf(ca)) continue;
-            bool opposite = ta.Any(Negations.Contains) != tb.Any(Negations.Contains);
-            var overlap = ca.Intersect(cb).Count();
-            // the same subject said both ways, or (the old heuristic) a close subject with a changed assertion
-            if (ca.SetEquals(cb) && opposite || overlap >= 3 && overlap >= Math.Min(ca.Count, cb.Count) * .65)
-                candidates.Add((a, b));
+            if (Relate(a.Text, b.Text) == MemoryRelation.Contradicts) candidates.Add((a, b));
             if (candidates.Count >= 25) return candidates;
         }
         return candidates;
     }
+
+    public enum MemoryRelation { None, Refines, Contradicts }
+
+    /// <summary>
+    /// How two statements relate. The subject is read apart from negation ("não gosta de X" talks about what
+    /// "gosta de X" does); one saying more about the same subject refines it (strogonoff → strogonoff de frango).
+    /// </summary>
+    public static MemoryRelation Relate(string a, string b)
+    {
+        if (Normalize(a) == Normalize(b)) return MemoryRelation.None;
+        var ta = Tokens(a); var tb = Tokens(b);
+        var ca = ta.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
+        var cb = tb.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
+        if (ca.Count < 2 || cb.Count < 2) return MemoryRelation.None;
+        if (ca.IsProperSubsetOf(cb) || cb.IsProperSubsetOf(ca)) return MemoryRelation.Refines;
+        bool opposite = ta.Any(Negations.Contains) != tb.Any(Negations.Contains);
+        var overlap = ca.Intersect(cb).Count();
+        return ca.SetEquals(cb) && opposite || overlap >= 3 && overlap >= Math.Min(ca.Count, cb.Count) * .65
+            ? MemoryRelation.Contradicts : MemoryRelation.None;
+    }
+
+    /// <summary>The kind of a first-person statement worth learning, or null.</summary>
+    private static string? StatementKind(string normalized) =>
+        Regex.IsMatch(normalized, @"^(?:prefiro|minha preferencia e|(?:nao |nunca )?(?:gosto|curto|adoro|odeio)\s+(?:de|do|da|dos|das|quando|que|\S))\s*\S", RegexOptions.CultureInvariant) ? "preference"
+        : Regex.IsMatch(normalized, @"^(?:meu objetivo e|minha meta e|quero aprender)\s+\S", RegexOptions.CultureInvariant) ? "goal"
+        : Regex.IsMatch(normalized, @"^(?:decidi|decidimos|a decisao e|vou usar|vamos usar)\s+\S", RegexOptions.CultureInvariant) ? "decision"
+        : Regex.IsMatch(normalized, @"^(?:sempre que|toda vez que|quando eu pedir)\s+\S", RegexOptions.CultureInvariant) ? "procedure"
+        : null;
 
     /// <summary>Navigation-only source relations using the already maintained Urbe knowledge index.</summary>
     public static IReadOnlyList<string> NearbyDocumentPaths(AiMemoryRecord memory, KnowledgeIndex index)

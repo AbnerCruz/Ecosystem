@@ -40,7 +40,7 @@ internal sealed class SpeechSynth : UtteranceProgressListener
 
     private void ChooseVoices()
     {
-        _tts.SetLanguage(new Java.Util.Locale("pt", "BR"));
+        _tts.SetLanguage(Java.Util.Locale.ForLanguageTag("pt-BR"));
         var pt = _tts.Voices?.Where(v => v.Locale?.Language == "pt" && !v.IsNetworkConnectionRequired)
             .OrderBy(v => v.Locale?.Country == "BR" ? 0 : 1).ThenBy(v => v.Name).ToList() ?? [];
         _voices = [pt.FirstOrDefault(), pt.Skip(1).FirstOrDefault()];

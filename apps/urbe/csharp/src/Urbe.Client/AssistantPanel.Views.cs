@@ -1049,6 +1049,18 @@ public sealed partial class AssistantPanel
     }
 
 
+    /// <summary>UC-87: the open agent's memories as a graph (a view of the store, nothing is copied to the vault).</summary>
+    public async Task ShowMemoryGraphAsync()
+    {
+        var agent = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        var name = agent is null ? _conv.AgentId : AgentNames.CallName(agent, _cfg);
+        var records = MemoryGraph.Records(_cfg, VaultKey, _conv.AgentId);
+        if (records.Count == 0) { await _app.Dialogs.AlertAsync("Memória", name + " ainda não tem lembranças neste vault."); return; }
+        Close();
+        await _app.ShowGraphProjectionAsync(MemoryGraph.Build("Memória de " + name, records,
+            AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, _conv.AgentId)));
+    }
+
     /// <summary>Separate memory workspace: no giant list in provider settings or implicit keyboard focus.</summary>
     private void ShowMemoryManager()
     {
@@ -1057,8 +1069,9 @@ public sealed partial class AssistantPanel
         var head = new StackPanel { Spacing = 6 };
         var state = Hint("As notas continuam sendo a fonte de verdade. Lembranças não são instruções provenientes de arquivos.");
         head.Children.Add(state);
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        var actions = new WrapPanel { ItemSpacing = 6, LineSpacing = 6 };
         actions.Children.Add(TextButton("+ Lembrança", () => _ = AddMemoryByHandAsync()));
+        actions.Children.Add(TextButton("Ver como grafo", () => _ = ShowMemoryGraphAsync()));
         actions.Children.Add(TextButton("Exportar memória", () => _ = ExportAgentMemoryAsync()));
         actions.Children.Add(TextButton("Conflitos", () =>
         {
