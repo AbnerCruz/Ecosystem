@@ -123,4 +123,11 @@ for line in sys.stdin:
         }
         finally { File.Delete(script); }
     }
+
+    [Fact]
+    public void TheStepsOpenPreferenceIsKept()
+    {
+        Assert.False(new AiConfig().StepsOpen);
+        Assert.True(AssistantStore.ConfigFromJson(AssistantStore.ConfigToJson(new AiConfig { StepsOpen = true })).StepsOpen);
+    }
 }

@@ -205,6 +205,8 @@ public sealed class AiConfig
     public string Language { get; set; } = "";
     /// <summary>CST-094: record each run's times and counts (on this device, in the conversation); off keeps only the old counters.</summary>
     public bool MeasureRuns { get; set; } = true;
+    /// <summary>The agent's steps open by default under each request (the most asked-for option in the community).</summary>
+    public bool StepsOpen { get; set; }
     /// <summary>Facts to remember, by vault name ('*' for every vault).</summary>
     public Dictionary<string, List<string>> Memory { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Versioned structured memories. Old entries in Memory are migrated on first write.</summary>
@@ -558,7 +560,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
-            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["language"] = c.Language, ["measureRuns"] = c.MeasureRuns, ["memory"] = memory,
+            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["language"] = c.Language, ["measureRuns"] = c.MeasureRuns, ["stepsOpen"] = c.StepsOpen, ["memory"] = memory,
             ["memorySchemaVersion"] = 2,
             ["memoryRecords"] = JsonSerializer.SerializeToNode(c.MemoryRecords, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
             ["autoCaptureEpisodes"] = c.AutoCaptureEpisodes,
@@ -577,6 +579,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             Model = Str(o["model"]),
             ImageProviderId = o["imageProviderId"] is JsonValue iv && iv.TryGetValue<string>(out var imageId) ? imageId : null,
             ImageModel = Str(o["imageModel"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]), Language = Str(o["language"]), MeasureRuns = o["measureRuns"] is not JsonValue measure || !measure.TryGetValue<bool>(out var measured) || measured,
+            StepsOpen = o["stepsOpen"] is JsonValue open && open.TryGetValue<bool>(out var opened) && opened,
             CustomAgents = (o["customAgents"] as JsonArray ?? []).OfType<JsonObject>().Select(AgentFromJson).ToList(),
             MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"]),
             AutoCaptureEpisodes = o["autoCaptureEpisodes"] is null || (bool?)o["autoCaptureEpisodes"] == true,

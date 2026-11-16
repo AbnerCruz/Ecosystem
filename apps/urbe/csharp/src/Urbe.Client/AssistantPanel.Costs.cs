@@ -72,9 +72,12 @@ public sealed partial class AssistantPanel
             rows.Add(Wrap(name + ": " + stats.Describe(), 12, UrbeTheme.Text2));
         }
         if (rows.Count == 0) rows.Add(Wrap("Sem execuções medidas ainda.", 12, UrbeTheme.Text3));
+        var stepsOpen = new CheckBox { Content = "Mostrar as etapas abertas", IsChecked = _cfg.StepsOpen, MinHeight = UrbeTokens.MinTouch };
+        stepsOpen.IsCheckedChanged += (_, _) => { _cfg.StepsOpen = stepsOpen.IsChecked == true; SaveConfig(); };
         var measure = new CheckBox { Content = "Medir execuções", IsChecked = _cfg.MeasureRuns, MinHeight = UrbeTokens.MinTouch };
         measure.IsCheckedChanged += (_, _) => { _cfg.MeasureRuns = measure.IsChecked == true; SaveConfig(); };
         rows.Add(measure);
+        rows.Add(stepsOpen);
         rows.Add(Hint("Guarda só tempos e contagens de cada execução (modelo, ferramentas, espera pela sua aprovação, chamadas, falhas, edições e conferências), nunca o conteúdo das notas ou dos pedidos. Fica neste aparelho, dentro de cada conversa, e some quando a conversa é apagada."));
         body.Children.Add(Section("Desempenho por agente", [.. rows]));
     }

@@ -79,7 +79,7 @@ public sealed partial class AssistantPanel
             Timeline? made = null;
             var fold = Lazy(head, () => SyncTimeline(made!));
             made = timeline = new Timeline { Root = new StackPanel { Spacing = 9 }, Head = head, Fold = fold };
-            fold.IsExpanded = _activityExpanded.GetValueOrDefault(request.Id);
+            fold.IsExpanded = _activityExpanded.TryGetValue(request.Id, out var chosen) ? chosen : _cfg.StepsOpen;
             fold.PropertyChanged += (_, e) =>
             {
                 if (e.Property == Expander.IsExpandedProperty) _activityExpanded[request.Id] = fold.IsExpanded;
@@ -110,7 +110,7 @@ public sealed partial class AssistantPanel
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*") };
             var sign = Label(mark, 12, result is { IsError: true } ? UrbeTheme.Danger : UrbeTheme.Text3);
             sign.HorizontalAlignment = HorizontalAlignment.Center;
-            var what = Wrap(Step(block), 12, UrbeTheme.Text2);
+            var what = Wrap(result is { IsError: false } ? StepWords.Past(Step(block)) : Step(block), 12, UrbeTheme.Text2);
             Grid.SetColumn(what, 1);
             row.Children.Add(sign);
             row.Children.Add(what);
