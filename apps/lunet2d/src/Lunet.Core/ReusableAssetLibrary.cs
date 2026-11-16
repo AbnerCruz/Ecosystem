@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -180,6 +181,55 @@ public sealed class ReusableAssetLibrary
         finally
         {
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Exports a self-contained immutable version with its manifest and source/derived files.
+    /// The destination is never overwritten; a failed export leaves no partial ZIP behind.
+    /// </summary>
+    public void ExportZip(string assetId, int version, string destinationZip)
+    {
+        var manifest = Find(assetId, version);
+        var sourceRoot = Path.Combine(VersionDirectory(assetId, version), "files");
+        var verified = new List<(string Path, string Source)>();
+        foreach (var file in manifest.Files)
+        {
+            ValidatePath(file.Path);
+            EnsureNoLinks(sourceRoot, file.Path);
+            var source = FilePath(sourceRoot, file.Path);
+            if (!File.Exists(source) || new FileInfo(source).Length != file.Length ||
+                HashFile(source) != file.Sha256)
+                throw new InvalidDataException("Asset da biblioteca corrompido: " + file.Path);
+            verified.Add((file.Path, source));
+        }
+
+        var destination = Path.GetFullPath(destinationZip);
+        if (File.Exists(destination) || Directory.Exists(destination))
+            throw new IOException("O ZIP de destino já existe.");
+        var parent = Path.GetDirectoryName(destination)!;
+        Directory.CreateDirectory(parent);
+        var temporary = Path.Combine(parent, ".lunet-export-" + Guid.NewGuid().ToString("N") + ".zip");
+        try
+        {
+            using (var archive = ZipFile.Open(temporary, ZipArchiveMode.Create))
+            {
+                var metadata = archive.CreateEntry("asset.json", CompressionLevel.Optimal);
+                using (var writer = new StreamWriter(metadata.Open()))
+                    writer.Write(JsonSerializer.Serialize(manifest, JsonOptions));
+                foreach (var file in verified)
+                {
+                    // Recheck immediately before copying; never export stale or tampered bytes.
+                    if (HashFile(file.Source) != manifest.Files.Single(f => f.Path == file.Path).Sha256)
+                        throw new InvalidDataException("Asset alterado durante a exportação: " + file.Path);
+                    archive.CreateEntryFromFile(file.Source, "files/" + file.Path, CompressionLevel.Optimal);
+                }
+            }
+            File.Move(temporary, destination, overwrite: false);
+        }
+        finally
+        {
+            if (File.Exists(temporary)) File.Delete(temporary);
         }
     }
 
