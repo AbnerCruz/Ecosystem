@@ -554,7 +554,7 @@ public interface IUrbeVaultStorage
 
     static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
     };
 
     static IReadOnlySet<string> WritableExtensions => VaultTextFiles.Extensions;

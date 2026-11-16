@@ -402,6 +402,7 @@ public sealed class SearchFeature
         Register("study.newSession", "Nova sessão de estudo", "Estudo", () => _ = view.CreateStudySessionAsync());
         Register("study.sessions", "Abrir sessão de estudo", "Estudo", () => _ = view.ShowStudySessionsAsync());
         Register("study.podcastAudio", "Gerar áudio do podcast", "Estudo", () => { if (view.Editor.Current is { } n) _ = view.SpeakPodcastAsync(n.Path); }, () => view.CanSpeakPodcast(view.Editor.Current?.Path));
+        Register("study.infographic", "Gerar infográfico da nota", "Estudo", () => { if (view.Editor.Current is { } n) _ = view.MakeInfographicAsync(n.Path); }, () => view.CanMakeInfographic(view.Editor.Current?.Path));
         Register("publications.fromTag", "Nova publicação de uma tag", "Publicações", () => _ = view.CreatePublicationFromTagAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
