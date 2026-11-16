@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (incremento Android, CI/DEVICE pendentes): Biblioteca global oferece Exportar ZIP para cada versão imutável usando o seletor de documentos do Android (SAF); o ZIP é verificado em cache antes de abrir o destino, o estado da seleção sobrevive à recriação da Activity e o temporário é limpo. Regressão verifica que revisões antigas/novas mantêm bytes e metadados de licença distintos.
+
 - LUNET-511 (incremento, CI/DEVICE pendentes): exportação ZIP autocontida de uma versão imutável da Library, com manifesto, fontes e derivados; validação SHA-256, rejeição de destino existente e limpeza de arquivo temporário em falhas. Regressões xUnit cobrem conteúdo, colisão e corrupção. Exposição pelo Android/SAF ainda pendente.
 
 - LUNET-511 (integridade, CI/DEVICE pendentes): leitura de versões da Library rejeita metadados persistidos ausentes/inválidos (título, licença, autor, atribuição e tags), além de hashes SHA-256 com caracteres não hexadecimais. Testes xUnit parametrizados verificam falha controlada, preservação do manifesto e ausência de escrita no jogo de destino.
