@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.IO.Compression;
+using System.Text;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -42,13 +44,26 @@ public sealed class ReusableAssetLibrary
     {
         var entries = List();
         if (string.IsNullOrWhiteSpace(query)) return entries;
-        var terms = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var terms = NormalizeSearch(query).Split((char[]?)null,
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return entries.Where(asset =>
         {
-            var searchable = string.Join(" ", new[] { asset.Title, asset.Kind.ToString(),
-                asset.Author, asset.License, asset.Attribution }.Concat(asset.Tags));
-            return terms.All(term => searchable.Contains(term, StringComparison.OrdinalIgnoreCase));
+            var searchable = NormalizeSearch(string.Join(" ", new[] { asset.Title, asset.Kind.ToString(),
+                asset.Author, asset.License, asset.Attribution }.Concat(asset.Tags)));
+            return terms.All(term => searchable.Contains(term, StringComparison.Ordinal));
         }).ToArray();
+    }
+
+    // Keep the original metadata untouched; normalize only the search index and query.
+    // This also matches canonically decomposed Unicode typed by some mobile keyboards.
+    private static string NormalizeSearch(string text)
+    {
+        var decomposed = text.Normalize(NormalizationForm.FormD);
+        var result = new StringBuilder(decomposed.Length);
+        foreach (var character in decomposed)
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                result.Append(char.ToLowerInvariant(character));
+        return result.ToString().Normalize(NormalizationForm.FormC);
     }
 
     public LibraryAssetVersion Find(string id, int version)
