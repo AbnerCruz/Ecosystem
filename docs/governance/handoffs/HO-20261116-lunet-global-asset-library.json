@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261116-lunet-global-asset-library",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-16T12:47:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-library-20261116",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-511",
+  "component": "lunet2d",
+  "state": "in_progress",
+  "branch": "feat/lunet-511-versioned-asset-library-20261116",
+  "base_commit": "95143cb283e00dfdacf18a08d821c9a3510adeab",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ReusableAssetLibraryTests.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AssetLibrary.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/guides/biblioteca-global.md",
+    "docs/governance/handoffs/HO-20261116-lunet-global-asset-library.json"
+  ],
+  "work_completed": [
+    "Implementado armazenamento de versões imutáveis da Library, SHA-256 e metadados de licença/proveniência.",
+    "Implementada importação por cópia com preflight completo, staging e rollback seguro.",
+    "Criada interface Android para escolher projeto de origem, publicar asset, revisar e importar versão.",
+    "Criados seis testes de regressão contra perdas, colisões e corrupção de dados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test apps/lunet2d/tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Esta branch ainda não tem PR/CI; sem SDK .NET local."
+    },
+    {
+      "check": "Build Android",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar ligação à Home e novo PR para CI."
+    },
+    {
+      "check": "DEVICE: publicar, editar, copiar, reabrir e confirmar independência",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/biblioteca-global.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Edição de assets na Library diretamente pelo Studio ainda não implementada.",
+    "Entrada de Home ainda depende do PR #961, não declarar funcionalidade completa sem acesso UI.",
+    "Export/import de ZIP da própria biblioteca e DEVICE pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Reconciliar branch com a main após integração do PR #961, habilitar acesso na Home.",
+    "Abrir PR com CI real e corrigir falhas sem merge forçado.",
+    "Evoluir editor de Studios para workspace Library e fechar export ZIP/DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Library apenas armazena versões; arquivos do projeto continuam únicos e proprietários."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Offline, sem rede e sem dependência de outros Products."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código em Lunet.Core, sem extração para shared."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "versioned-game-assets",
+      "status": "product-specific",
+      "rationale": "Arquivos de jogo com formato e fluxo próprios do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

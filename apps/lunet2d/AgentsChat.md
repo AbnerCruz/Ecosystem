@@ -757,3 +757,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação: catálogo textual incorporado, filtro cruzado em vários eixos, pesquisa normalizada com acentos, referências pessoais, favoritos/notas armazenados atomicamente, associação opcional a projetos. Sem imagens protegidas.
 - Verificação: Código publicado no GitHub para CI canônico e compilação Android; DEVICE pendente. Não afirmar conclusão da Fase 5/UX do Lunet nem alteração de estágio.
 - Próximos passos: corrigir eventuais erros do CI, conferir navegação real/IME no Android 13 e continuar Home, biblioteca global, coesão entre Studios e engine.
+
+### 20261116-chatgpt-lunet511-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → próximos agentes — em andamento
+- Escopo: LUNET-511, biblioteca global versionada, branch feat/lunet-511-versioned-asset-library-20261116 baseada em main 95143cb. Exclusivamente AbnerCruz/Ecosystem.
+- Investigação: LunetProject.WriteText e Import escrevem arquivos dentro do jogo, ProjectAssetCatalog lê seus assets; não ligar projetos a arquivo global mutável. Pesquisa Android offline-first e ativos/licenças da auditoria LUNET-510–512.
+- Trabalho de código: ReusableAssetLibrary publica versões por diretório com fontes e derivados, registra origem/licença/hashes, protege links e traversal; ImportToProject copia arquivos após preflight, recusa colisões e conteúdo corrompido e tenta rollback seguro. MainActivity.AssetLibrary adiciona interface para publicar assets e copiar versões para projetos sem substituição silenciosa.
+- Verificação: seis testes ReusableAssetLibraryTests adicionados, CI e DEVICE pendentes. Biblioteca precisa ser ligada à Home para acesso fora de projetos e Studios precisam aceitar workspace de Library; não declarar item terminado.
+- Próximo: reconciliar com PR #961 quando integrar, ligar Home → Biblioteca, conferir build Android e testes, implementar edição independente no Studio, export ZIP e validar no aparelho.
