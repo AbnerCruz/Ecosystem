@@ -68,4 +68,37 @@ public sealed class FormRulesTests
         s.Values["f"] = "do tamanho certo";
         Assert.Empty(s.Validate());
     }
+
+    public static TheoryData<string, JsonNode?, JsonNode?> Kinds => new()
+    {
+        { "text", null, "Ana" },
+        { "long_text", null, "Um\nb" },
+        { "integer", 1.5, 3 },
+        { "number", "abc", 2.5 },
+        { "date", "31/12/2026", "2026-12-31" },
+        { "time", "25:00", "14:30" },
+        { "select", "talvez", "sim" },
+        { "multi_select", new JsonArray("talvez"), new JsonArray("sim", "não") },
+        { "scale", 9, 3 },
+        { "list", null, new JsonArray("a", "b") },
+        { "note", "Inexistente", "Nota" },
+        { "folder", "Nada", "Pasta" },
+        { "color", "azul", "#3366cc" },
+    };
+
+    /// <summary>Every kind of field: required and empty is an error, a wrong value is an error, the corrected value clears it.</summary>
+    [Theory]
+    [MemberData(nameof(Kinds))]
+    public void EveryKindGoesFromEmptyAndWrongToCorrected(string type, JsonNode? wrong, JsonNode? right)
+    {
+        var s = Session(new FormField { Id = "f", Label = "F", Type = type, Required = true, Options = ["sim", "não"], Min = 1, Max = 5 });
+        Assert.Equal("Preencha este campo.", s.Validate(["Nota"], ["Pasta"])["f"]);
+        if (wrong is not null)
+        {
+            s.Values["f"] = wrong.DeepClone();
+            Assert.True(s.Validate(["Nota"], ["Pasta"]).ContainsKey("f"), type + " aceitou " + wrong.ToJsonString());
+        }
+        s.Values["f"] = right!.DeepClone();
+        Assert.Empty(s.Validate(["Nota"], ["Pasta"]));
+    }
 }
