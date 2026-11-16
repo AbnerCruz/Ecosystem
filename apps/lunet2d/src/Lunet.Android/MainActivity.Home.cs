@@ -171,7 +171,7 @@ public sealed partial class MainActivity
         labels.AddView(LunetUi.Label(this, title, 16, LunetUi.Text, bold: true));
         labels.AddView(LunetUi.Label(this, description, LunetUi.TextLabel, LunetUi.TextMuted));
         card.AddView(labels, LunetUi.Weight());
-        card.AddView(LunetUi.IconImage(this, "arrow-right", 20));
+        card.AddView(LunetUi.Label(this, "›", 24, LunetUi.TextMuted));
         list.AddView(card, LunetUi.FillWidth());
     }
 
