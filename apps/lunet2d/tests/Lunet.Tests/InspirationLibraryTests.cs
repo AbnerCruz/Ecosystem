@@ -91,6 +91,34 @@ public sealed class InspirationLibraryTests : IDisposable
     }
 
     [Fact]
+    public void RetiredCuratedReference_PreservesPersonalNotesAcrossCatalogUpgradeAndSave()
+    {
+        // Simulate a reference removed from a newer built-in catalog.
+        var retired = new InspirationReference("ref.retired", "Retired game", "Puzzle",
+            "Top-down", "Pixel art", ["Lógica"], "Estudar regras.", Notes: "Nota insubstituível",
+            Favorite: true, Curated: true);
+        Directory.CreateDirectory(_root);
+        var saved = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            Version = 1,
+            Entries = new[] { retired }
+        });
+        File.WriteAllText(CatalogPath, saved);
+
+        var library = new InspirationLibrary(CatalogPath);
+        var preserved = Assert.Single(library.All, r => r.Id == "ref.retired");
+        Assert.Equal("Nota insubstituível", preserved.Notes);
+        Assert.True(preserved.Favorite);
+        Assert.True(preserved.Curated);
+
+        library.SetPersonalDetails("ref.retired", true, "Nota atualizada", "JogoNovo");
+        var reopened = new InspirationLibrary(CatalogPath);
+        Assert.Equal("Nota atualizada", reopened.All.Single(r => r.Id == "ref.retired").Notes);
+        Assert.Equal("JogoNovo", reopened.All.Single(r => r.Id == "ref.retired").ProjectName);
+        Assert.Contains(reopened.All, r => r.Id == "ref.celeste");
+    }
+
+    [Fact]
     public void SaveRejectsInvalidDetailsWithoutChangingExistingState()
     {
         var catalog = new InspirationLibrary(CatalogPath);
