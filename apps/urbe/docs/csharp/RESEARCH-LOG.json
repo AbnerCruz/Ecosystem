@@ -1,0 +1,164 @@
+{
+  "sobre": "CST-188: pesquisa técnica e feedbacks de comunidades como insumos auditáveis. Cada entrada diz hipótese, alternativas, suporte, licença, custo, maturidade, o que foi a favor e contra (com a natureza de cada item: relato, documentação, inferência ou ausência), a decisão e a prova no código. Opinião individual não é consenso. ResearchLogTests confere o formato e que cada prova existe.",
+  "entradas": [
+    {
+      "id": "R-001",
+      "tema": "Imagens dentro das publicações exportadas",
+      "cst": ["CST-162", "CST-163"],
+      "data": "2026-11-16",
+      "hipotese": "Embutir as imagens no arquivo exportado evita a publicação quebrada fora do app.",
+      "alternativas": ["Referência relativa à pasta do vault", "Pasta de imagens ao lado do HTML", "Pacote ZIP com mídia"],
+      "suporte": { "android": "sim", "windows": "sim", "offline": "sim" },
+      "licenca": "Código próprio (sem dependência nova)",
+      "custo": "HTML maior: cada imagem cresce cerca de 33% em base64",
+      "maturidade": "data: URI é padrão da web e funciona em todos os navegadores",
+      "fontes": [
+        { "url": "https://forum.obsidian.md/t/html-export-isnt-embedding-images-i-just-a-relative-reference-instead-of-an-image/50500", "tipo": "fórum" },
+        { "url": "https://forum.obsidian.md/t/why-does-images-and-other-stuff-dont-get-exported-to-pdf/81976", "tipo": "fórum" },
+        { "url": "https://community.obsidian.md/plugins/export-img-to-base", "tipo": "plugin" }
+      ],
+      "favoravel": [
+        { "texto": "Usuários relatam imagem trocada por caminho relativo no HTML exportado e imagens faltando no PDF.", "natureza": "relato" },
+        { "texto": "Existe plugin dedicado só a embutir imagens em base64, sinal de demanda.", "natureza": "relato" }
+      ],
+      "desfavoravel": [
+        { "texto": "Base64 aumenta o arquivo; vídeo e áudio ficariam pesados demais para embutir.", "natureza": "inferência" }
+      ],
+      "decisao": "Imagens vão dentro do HTML, EPUB, DOCX, ODT, PPTX e PDF; áudio e vídeo vão no pacote ZIP em media/ com manifesto; imagem ausente é dita no lugar.",
+      "prova": ["src/Urbe.Core/PublicationAssets.cs", "src/Urbe.Core/PublicationPackage.cs", "tests/Urbe.Core.Tests/PublicationAssetsTests.cs", "tests/Urbe.Core.Tests/PublicationPackageTests.cs"],
+      "riscoAndroid": "Memória ao montar HTML com muitas imagens grandes; o pacote estima o tamanho e pergunta acima de 50 MB."
+    },
+    {
+      "id": "R-002",
+      "tema": "Entrada e saída suaves da música do vídeo",
+      "cst": ["CST-172"],
+      "data": "2026-11-16",
+      "hipotese": "Um fade curto padrão na música evita corte seco sem obrigar a pessoa a editar.",
+      "alternativas": ["Sem fade (volume cheio)", "Fade longo de 5 s", "Fade obrigatório sem ajuste"],
+      "suporte": { "android": "sim", "windows": "sim", "offline": "sim" },
+      "licenca": "Código próprio",
+      "custo": "Uma multiplicação de ganho por amostra na mixagem",
+      "maturidade": "Prática comum em editores de vídeo",
+      "fontes": [
+        { "url": "https://help-studio.invideo.io/en/articles/9405105-how-to-fade-music", "tipo": "ajuda" },
+        { "url": "https://help.vocalvideo.com/article/24-understanding-vocal-video-audio-settings", "tipo": "ajuda" },
+        { "url": "https://www.narakeet.com/news/2020/05/18/video-background-music-effects.html", "tipo": "documentação" },
+        { "url": "https://community.adobe.com/t5/premiere-elements/default-fade-settings/m-p/10053439", "tipo": "fórum" },
+        { "url": "https://forum.kde.org/viewtopic.php%3Ff=270&t=126170.html", "tipo": "fórum" }
+      ],
+      "favoravel": [
+        { "texto": "invideo aplica 2 s de saída por padrão; Vocal Video, 5 s.", "natureza": "documentação" },
+        { "texto": "Narakeet deixa a música cheia e sugere suavizar as pontas.", "natureza": "documentação" }
+      ],
+      "desfavoravel": [
+        { "texto": "Usuários do Premiere Elements e do Kdenlive pedem para mudar o padrão de fade: um valor fixo não serve a todos.", "natureza": "relato" }
+      ],
+      "decisao": "Música entra em 1 s e sai em 2 s; voz e efeitos sem fade; Ajustar áudios do vídeo muda volume, entrada e saída de cada trilha.",
+      "prova": ["src/Urbe.Core/VideoEncoding.cs", "src/Urbe.Client/MainView.Video.cs"],
+      "riscoAndroid": "Nenhum além da mixagem já existente."
+    },
+    {
+      "id": "R-003",
+      "tema": "Motor das exportações de documento (DOCX, ODT, PPTX, EPUB)",
+      "cst": ["CST-166", "CST-190"],
+      "data": "2026-11-16",
+      "hipotese": "Escrever os formatos em C# no próprio Urbe evita levar um runtime externo para o celular.",
+      "alternativas": ["Pandoc", "Quarto", "LibreOffice em modo servidor"],
+      "suporte": { "android": "sim", "windows": "sim", "offline": "sim" },
+      "licenca": "Código próprio; Pandoc é GPL-2.0-or-later e Quarto depende de Pandoc e Deno",
+      "custo": "Manter o mapeamento de cada formato; cada um declara o que não guarda",
+      "maturidade": "Formatos abertos documentados (OOXML ECMA-376, ODF OASIS, EPUB 3)",
+      "fontes": [
+        { "url": "https://pandoc.org/MANUAL.html", "tipo": "documentação" },
+        { "url": "https://github.com/jgm/pandoc/blob/main/COPYRIGHT", "tipo": "código" },
+        { "url": "https://quarto.org/docs/get-started/", "tipo": "documentação" }
+      ],
+      "favoravel": [
+        { "texto": "Pandoc cobre muito mais formatos e casos de borda que um escritor próprio.", "natureza": "documentação" }
+      ],
+      "desfavoravel": [
+        { "texto": "Pandoc é um binário Haskell GPL sem distribuição para Android; levá-lo ao APK muda a licença do app e o tamanho.", "natureza": "documentação" }
+      ],
+      "decisao": "Escritores próprios em C#, conferidos ao abrir no LibreOffice e no poppler e, antes de salvar, por PublicationOutputCheck.",
+      "prova": ["src/Urbe.Core/PublicationDocx.cs", "src/Urbe.Core/PublicationOdt.cs", "src/Urbe.Core/PublicationPptx.cs", "src/Urbe.Core/PublicationOutputCheck.cs", "tests/Urbe.Core.Tests/PublicationOutputCheckTests.cs", "tests/Urbe.Client.Tests/ExportFidelityTests.cs"],
+      "riscoAndroid": "Baixo: só System.IO.Compression e XML do .NET."
+    },
+    {
+      "id": "R-004",
+      "tema": "Motor de vídeo (motion graphics)",
+      "cst": ["CST-170", "CST-171", "CST-190"],
+      "data": "2026-11-16",
+      "hipotese": "Desenhar os quadros com o mesmo renderizador do app e codificar com o codificador do aparelho dispensa navegador e Node.",
+      "alternativas": ["Remotion", "Motion Canvas", "FFmpeg embutido"],
+      "suporte": { "android": "sim (MediaCodec)", "windows": "sim, com FFmpeg instalado pela pessoa", "offline": "sim" },
+      "licenca": "Código próprio; Remotion tem licença própria que exige licença paga para empresas acima de um porte; FFmpeg usual é LGPL/GPL",
+      "custo": "Menos efeitos prontos do que um framework de vídeo",
+      "maturidade": "MediaCodec é API do Android desde a versão 4.1",
+      "fontes": [
+        { "url": "https://www.remotion.dev/docs/license", "tipo": "documentação" },
+        { "url": "https://motioncanvas.io/docs/", "tipo": "documentação" },
+        { "url": "https://developer.android.com/reference/android/media/MediaCodec", "tipo": "documentação" },
+        { "url": "https://ffmpeg.org/legal.html", "tipo": "documentação" }
+      ],
+      "favoravel": [
+        { "texto": "Remotion e Motion Canvas compõem vídeo com código e têm muitos exemplos.", "natureza": "documentação" }
+      ],
+      "desfavoravel": [
+        { "texto": "Ambos renderizam num navegador com Node, que não existe no celular; Remotion cobra de empresas.", "natureza": "documentação" }
+      ],
+      "decisao": "Quadros desenhados por SkiaSharp; MediaCodec no Android e FFmpeg só se instalado no computador; sem codificador, o app diz e não finge.",
+      "prova": ["src/Urbe.Core/VideoProject.cs", "src/Urbe.Core/VideoEncoding.cs", "src/Urbe.Client/VideoExport.cs"],
+      "riscoAndroid": "Vídeo longo consome memória e bateria; o moto g32 é a referência."
+    },
+    {
+      "id": "R-005",
+      "tema": "IA no aparelho (LLamaSharp)",
+      "cst": ["CST-190"],
+      "data": "2026-11-16",
+      "hipotese": "Um modelo local daria um Assistente sem conexão.",
+      "alternativas": ["Provedores conectados pela pessoa", "Servidor próprio (Ollama)"],
+      "suporte": { "android": "removido", "windows": "removido", "offline": "não" },
+      "licenca": "LLamaSharp MIT (já fora do app)",
+      "custo": "Pacote nativo grande, download do modelo e travamento do host de testes (exit 139)",
+      "maturidade": "Não deu certo no uso real",
+      "fontes": [
+        { "url": "https://github.com/SciSharp/LLamaSharp", "tipo": "código" }
+      ],
+      "favoravel": [
+        { "texto": "Funcionaria sem internet.", "natureza": "inferência" }
+      ],
+      "desfavoravel": [
+        { "texto": "O proprietário relatou que não deu certo e pediu a remoção (16/11/2026).", "natureza": "relato" },
+        { "texto": "O CI do cliente parou de cair com exit 139 depois da remoção.", "natureza": "documentação" }
+      ],
+      "decisao": "Removido; o app apaga os modelos baixados na pasta local-ai.",
+      "prova": ["tests/Urbe.Core.Tests/OfflineAiRemovalTests.cs"],
+      "riscoAndroid": "Nenhum: retirado."
+    },
+    {
+      "id": "R-006",
+      "tema": "Conferir a saída antes de salvar",
+      "cst": ["CST-191"],
+      "data": "2026-11-16",
+      "hipotese": "Abrir o arquivo gerado antes de entregá-lo pega uma exportação quebrada antes da pessoa.",
+      "alternativas": ["Confiar no escritor", "Validar só nos testes"],
+      "suporte": { "android": "sim", "windows": "sim", "offline": "sim" },
+      "licenca": "Código próprio",
+      "custo": "Uma leitura do ZIP e do XML em memória por exportação",
+      "maturidade": "As partes obrigatórias vêm das especificações OOXML, ODF e EPUB",
+      "fontes": [
+        { "url": "https://www.w3.org/TR/epub-33/#sec-zip-container-mime", "tipo": "documentação" },
+        { "url": "https://docs.oasis-open.org/office/OpenDocument/v1.3/os/part2-packages/OpenDocument-v1.3-os-part2-packages.html", "tipo": "documentação" }
+      ],
+      "favoravel": [
+        { "texto": "EPUB e ODF exigem o mimetype como primeiro item do ZIP; um leitor recusa o arquivo se não for.", "natureza": "documentação" }
+      ],
+      "desfavoravel": [
+        { "texto": "A conferência estrutural não prova que o conteúdo aparece igual no Word ou no PowerPoint.", "natureza": "inferência" }
+      ],
+      "decisao": "PublicationOutputCheck roda em toda exportação de documento e de pacote; falha não salva e mostra o motivo.",
+      "prova": ["src/Urbe.Core/PublicationOutputCheck.cs", "tests/Urbe.Core.Tests/PublicationOutputCheckTests.cs"],
+      "riscoAndroid": "Baixo."
+    }
+  ]
+}
