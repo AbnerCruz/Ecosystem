@@ -68,6 +68,12 @@ public sealed class InspirationLibrary
         {
             throw new InvalidDataException("Não foi possível ler a biblioteca de inspiração. O arquivo original foi preservado.", ex);
         }
+        catch (ArgumentException ex)
+        {
+            // Saved user data is untrusted input, even when the JSON itself is syntactically valid.
+            // Convert validation failures to the documented recovery path instead of crashing Android.
+            throw new InvalidDataException("A biblioteca contém campos inválidos. O arquivo original foi preservado.", ex);
+        }
     }
 
     public IReadOnlyList<InspirationReference> All => _entries.OrderByDescending(e => e.Favorite)
