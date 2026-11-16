@@ -103,7 +103,7 @@ public sealed class ReusableAssetLibrary
                 EnsureNoLinks(project.Directory, path);
                 if (!File.Exists(original)) throw new FileNotFoundException("Arquivo de origem não encontrado.", path);
                 var before = HashFile(original);
-                var copy = FilePath(staging, path);
+                var copy = FilePath(Path.Combine(staging, "files"), path);
                 Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
                 File.Copy(original, copy, overwrite: false);
                 var after = HashFile(copy);
@@ -147,6 +147,7 @@ public sealed class ReusableAssetLibrary
             checkedFiles.Add((item.Path, source, target, item.Sha256));
         }
 
+        EnsureNoLinks(destination.Directory, ".lunet");
         var staging = Path.Combine(destination.Directory, ".lunet", "import-" + Guid.NewGuid().ToString("N"));
         var created = new List<(string Path, string Hash)>();
         Directory.CreateDirectory(staging);
