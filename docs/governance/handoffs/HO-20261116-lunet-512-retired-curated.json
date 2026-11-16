@@ -14,7 +14,7 @@
   "branch": "fix/lunet-inspiration-retired-curated-20261116",
   "base_commit": "54cdca1d21143a2509da523b552121af429bf44e",
   "commit": null,
-  "pr": 960,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/960",
   "files_changed": [
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/ROADMAP.md",
