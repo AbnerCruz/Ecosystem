@@ -191,7 +191,7 @@
     {
       "check": "Core 1679/1679, Client 655/655, consistency 22/22",
       "kind": "automated",
-      "result": "pass"
+      "result": "passed"
     },
     {
       "check": "Podcast: vozes do Android geram o áudio e soam distintas",
