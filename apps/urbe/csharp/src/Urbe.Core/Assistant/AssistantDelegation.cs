@@ -111,6 +111,7 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public KnowledgeIndex Knowledge => inner.Knowledge;
     public (string? Path, string? Selection) EditorContext() => inner.EditorContext();
     public int ReadChars => inner.ReadChars;
+    public IReadOnlyCollection<string> OtherFiles => inner.OtherFiles;
     public string Readable(string text) => inner.Readable(text);
     public Task<UrbeDocument> CreateNoteAsync(string path, string content) { Check(path); return inner.CreateNoteAsync(path, content); }
     public Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content) { Check(doc.Path); return inner.SaveNoteAsync(doc, content); }

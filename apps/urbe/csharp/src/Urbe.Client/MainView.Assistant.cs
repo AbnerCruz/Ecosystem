@@ -323,14 +323,32 @@ public sealed partial class MainView : IAssistantApp
 
     Task<string?> IAssistantApp.ReadDataTextAsync(string path) => ReadDataSourceAsync(path);
 
+    /// <summary>
+    /// #963 (exports of 16/11/2026): every reason a document cannot be read is said for what it is — no vault, a path that
+    /// is not in the vault (with the file of the same name when there is one, and how to bring in a chat attachment),
+    /// a file above the limit with its size — instead of one "não encontrado ou acima do limite" the agent kept retrying.
+    /// </summary>
     async Task<byte[]?> IAssistantApp.ReadDocumentBytesAsync(string path, CancellationToken cancellationToken)
     {
-        if (_vault is not { IsConnected: true } vault || !_attachments.Contains(path)) return null;
+        if (_vault is not { IsConnected: true } vault) throw new Urbe.Core.Assistant.AiToolException("Nenhum vault aberto: abra a pasta de notas para ler documentos.");
+        if (!_attachments.Contains(path))
+        {
+            var name = System.IO.Path.GetFileNameWithoutExtension(path);
+            var same = _attachments.Where(a => string.Equals(System.IO.Path.GetExtension(a), System.IO.Path.GetExtension(path), StringComparison.OrdinalIgnoreCase) &&
+                    System.IO.Path.GetFileNameWithoutExtension(a).StartsWith(System.Text.RegularExpressions.Regex.Replace(name, @"\s*\(\d+\)$", ""), StringComparison.OrdinalIgnoreCase))
+                .Take(3).ToList();
+            throw new Urbe.Core.Assistant.AiToolException("Não há arquivo em \"" + path + "\" no vault." +
+                (same.Count > 0 ? " Arquivos com nome parecido: " + string.Join(", ", same) + "." : "") +
+                " Um arquivo anexado ao chat de fora do vault (Downloads, por exemplo) precisa ser trazido para o vault com extract_attachment antes de ser lido." +
+                " Para procurar documentos, list_notes não serve: ele lista só notas.");
+        }
         var isPdf = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
-        if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) return null;
+        if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) throw new Urbe.Core.Assistant.AiToolException("Este tipo de arquivo não é lido por esta ferramenta: " + path + ".");
         var limit = isPdf ? AssistantDocumentTools.MaxFileBytes : AssistantDocumentImageTools.MaxImageBytes;
-        var read = await vault.ReadFileAsync(path, limit, cancellationToken);
-        return read?.Bytes;
+        var read = await vault.ReadFileAsync(path, limit, cancellationToken)
+            ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " está no registro do vault mas não pôde ser aberto agora (foi movido ou apagado fora do Urbe?).");
+        return read.Bytes ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " tem " + PublicationPackage.Size(read.Size) +
+            ", acima do limite de " + PublicationPackage.Size(limit) + " que esta ferramenta lê de uma vez.");
     }
 
     async Task<byte[]?> IAssistantApp.ReadGeneratedImageAsync(string path)
@@ -373,6 +391,8 @@ public sealed partial class MainView : IAssistantApp
         }
         catch (Exception ex) when (ex is not OperationCanceledException) { await Dialogs.AlertAsync("Exportar imagens", StorageProblems.Explain(ex)); }
     }
+
+    IReadOnlyCollection<string> IAssistantApp.OtherFiles => _attachments.ToList();
 
     bool IAssistantApp.FileExists(string path) =>
         _contents.Keys.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase)) ||

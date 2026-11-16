@@ -151,6 +151,8 @@ public interface IAssistantHost
     (string? Path, string? Selection) EditorContext();
     /// <summary>How much of a note one read may bring (proportional to the model's context).</summary>
     int ReadChars { get; }
+    /// <summary>#963: the vault's files that are not notes (PDFs, images, audio…), so that "no note here" is never read as "no file here".</summary>
+    IReadOnlyCollection<string> OtherFiles => [];
     /// <summary>A note's text as the agent reads it: without the authorship seals when the Urbe manages them (UC-51).</summary>
     string Readable(string text) => text;
     Task<UrbeDocument> CreateNoteAsync(string path, string content);
@@ -558,9 +560,16 @@ public static partial class AssistantTools
                     if (!d.Path.ToLowerInvariant().StartsWith(f.ToLowerInvariant() + "/", StringComparison.Ordinal)) return false;
                     return rec || !d.Path[(f.Length + 1)..].Contains('/');
                 }).OrderBy(d => d.Path, Comparer<string>.Create(JsText.LocaleCompare)).ToList();
-                if (hits.Count == 0) return Task.FromResult(new AiToolOutput(f.Length > 0 ? "Nenhuma nota em \"" + f + "\"." : "O vault está vazio."));
-                return Task.FromResult(new AiToolOutput(string.Join("\n", hits.Take(lim).Select(d => "- " + d.Path + " · " + Words(d.Content) + " palavras" + (string.IsNullOrEmpty(d.Modified) ? "" : " · " + d.Modified))) +
-                                                        (hits.Count > lim ? "\n… e mais " + (hits.Count - lim) : "")));
+                // #963: the PDFs and other files of the same folder, listed apart: a folder without notes may hold the book
+                var files = host.OtherFiles.Where(p =>
+                    f.Length == 0 ? rec || !p.Contains('/') : p.StartsWith(f + "/", StringComparison.OrdinalIgnoreCase) && (rec || !p[(f.Length + 1)..].Contains('/')))
+                    .Order(Comparer<string>.Create(JsText.LocaleCompare)).ToList();
+                var notes = hits.Count == 0 ? (f.Length > 0 ? "Nenhuma nota em \"" + f + "\"." : "Nenhuma nota no vault.")
+                    : string.Join("\n", hits.Take(lim).Select(d => "- " + d.Path + " · " + Words(d.Content) + " palavras" + (string.IsNullOrEmpty(d.Modified) ? "" : " · " + d.Modified))) +
+                      (hits.Count > lim ? "\n… e mais " + (hits.Count - lim) : "");
+                return Task.FromResult(new AiToolOutput(notes + (files.Count == 0 ? "" :
+                    "\n\nOutros arquivos (não são notas; PDFs se leem com inspect_document e read_document):\n" +
+                    string.Join("\n", files.Take(lim).Select(p => "- " + p)) + (files.Count > lim ? "\n… e mais " + (files.Count - lim) : ""))));
             }
         },
         new()
