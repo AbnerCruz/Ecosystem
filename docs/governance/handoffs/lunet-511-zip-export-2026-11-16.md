@@ -12,3 +12,8 @@
 - Regressão adicional `ExportZip_UsesRequestedVersionAndPreservesLicenseMetadata` cobre versões distintas, fonte imutável e metadados de licença/atribuição.
 - Commits: `7d2e05d`, `f9998e6`, `fde717c`. CI/DEVICE do novo head pendentes; o destino SAF pode ficar parcialmente escrito se o provedor falhar durante a cópia, e a interface avisa para verificar o arquivo. Sem alegar transação atômica em provedores externos.
 - Próximo incremento: Studio global de edição real e importação para múltiplos projetos; verificar Android 13 e controles de acessibilidade.
+
+## CI — 16/11/2026, compilação xUnit
+- O run [lunet2d-ci #43935337968](https://github.com/AbnerCruz/Ecosystem/actions/runs/43935337968) falhou em `ReusableAssetLibraryTests.cs:221` com `CS0579: Duplicate 'Fact' attribute`; release #43935337967 falhou na mesma etapa de teste, antes de gerar APK.
+- Corrigido no commit `64e374bc`: removida somente a anotação `[Fact]` redundante; o teste `ExportZip_UsesRequestedVersionAndPreservesLicenseMetadata` continua exercitando ambas as versões.
+- CI do head atualizado, DEVICE e publicação de release ainda aguardam confirmação; não liberar integração apenas com a alteração textual.
