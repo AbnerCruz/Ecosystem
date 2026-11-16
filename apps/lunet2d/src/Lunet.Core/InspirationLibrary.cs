@@ -214,5 +214,7 @@ public sealed class InspirationLibrary
         yield return Seed("ftl", "FTL: Faster Than Light", "Estratégia", "Vista de sistemas", "2D estilizado",
             "Analise gestão de tripulação, sistemas interdependentes e decisões em tempo real pausável.",
             "Gerenciamento", "Roguelite", "Combate tático");
+        foreach (var reference in InspirationCatalogExpansion.Entries())
+            yield return reference;
     }
 }
