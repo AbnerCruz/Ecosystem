@@ -1,0 +1,23 @@
+# Urbe beta.56 — análise dos 8 exports (16/11/2026)
+
+**Origem:** oito exports `urbe.assistant.export/1` fornecidos pelo proprietário e revisados manualmente. **Privacidade:** este repositório é público. **Os originais NÃO estão aqui**: contêm transcrições pessoais, notas do vault, metadados e resultados extensos das ferramentas. Os 8 arquivos JSON neste diretório são **fixtures diagnósticas derivadas e sanitizadas, não exports integrais nem replays executáveis**. Se a análise exigir os JSONs brutos, obtê-los exclusivamente por canal privado autorizado pelo proprietário; não subir logs, dados do vault, tokens nem anexos pessoais ao GitHub.
+ 
+## Métricas observadas nas exportações (sem conclusões causais prematuras)
+- 8 conversas, 23 runs, 79 chamadas de ferramenta, 13 falhas de ferramenta (todas no caso 01), 72 chamadas de modelo.
+- Somatório reportado: 1.210.176 tokens de entrada e 24.416 de saída, incluindo repetições/contexto/cache conforme export; **não** interpretar como tokens únicos ou como consumo não cacheado.
+- App exportado `appVersion: 0.1.0`; usuário diz que testou uma prévia da beta.56. **Verificar** divergência de versionamento: não presumir que seja a versão distribuída sem inspeção.
+- Modelo do teste: `deepseek/deepseek-v4.1-flash-1017`; política `readonly` no agente `geral`.
+
+## Priorização e correções exigidas
+1. **P0 PDF/anexos (#954):** testar importação de Downloads/SAF vs vault físico. Corrigir resolução de handles e paths, distinção entre ausência, permissão, limite e parser. Eliminar retry idêntico após erro irreversível. Não confundir `list_notes` com inventário universal de arquivos. Validar PDF real de 450 páginas (~17 MB), OCR/figuras e citação por página; não confundir este erro de resolução com OOM do #954 (podem coexistir). Android real e logs.
+2. **P1 memória/contradição:** investigar extração assíncrona, `recall_memory`, `review_memory`, estado readonly, histórico e preferências conflitantes. Não concluir que apenas uma preferência foi persistida sem consultar armazenamento. Ordem temporal e origem verificáveis; memória de cada agente isolada. Reversões ambíguas não são automaticamente mudança definitiva.
+3. **P1 planejamento e economia:** avaliar por que pedidos casuais geram buscas do vault irrelevantes, retornam homônimos de outros domínios e repetem falhas. Criar testes de intent routing, filtro de relevância, política de tentativas, orçamento de contexto e condição para invocar ferramentas; não limitar arbitrariamente capacidades.
+4. **P1 confiabilidade factual:** distinguir o que foi observado, hipótese, limitação, instrução efetivamente persistida ou apenas sugerida. Não prometer gravação sem sinal de sucesso. Não alegar que um arquivo não existe porque listagem de notas está vazia.
+5. **P2 UX e consulta de versão:** citar fontes reais, ocultar complexidade interna em perguntas simples, mostrar detalhes expandíveis quando úteis. Revisar relato de `appVersion:0.1.0` e beta.56 com os provedores de versão.
+
+## Protocolo obrigatório ao agente Urbe
+- Primeiro `main`, `MANIFEST.md`, `AGENTS.md`, `apps/urbe/AGENTS.md`, ROADMAP C#, PRs, CI, handoffs, decisões pertinentes, especialmente ADD-0034, #954, #955, #956 e PR #952. Não sobrescrever trabalho de outro agente.
+- Executar protocolo existente: auditoria interna → pesquisa de código/documentações oficiais → evidência comunitária → confronto → consolidação de tarefas → TDD → implementação → testes/DEVICE → handoff.
+- Reproduzir **cada** caso sanitizado com fixtures controladas e assertivas objetivas; investigar causas distintas, não declarar resolvido só por editar prompt.
+- Requisitos de aceite: PDF de device e vault acessível, sem crash e sem falsos negativos; zero loop de chamadas idênticas após falha; memória corretamente separada de histórico/vault e readonly; reversões tratadas com origem e temporalidade; consultas triviais sem varredura irrelevante; logs/metrics e regressões automatizadas; validação no moto g32/Android 13 quando houver acesso físico.
+- **Branch temporária apenas para evidência:** `diagnostics/urbe-beta56-conversation-exports-20261116`. Não fazer merge desta branch diagnóstica em `main`. Abrir branch própria de correção a partir da main atual, vincular issue e testes, seguir integrador governado. Depois da correção validada e evidência incorporada nos testes/documentação permanentes, **excluir a branch temporária**, fechar issue e **retomar o próximo incremento de Urbe sem parar por esta tarefa**. Se bloqueado aguardando DEVICE, seguir tarefas independentes e documentar bloqueio; não inventar validação ou exclusão.
