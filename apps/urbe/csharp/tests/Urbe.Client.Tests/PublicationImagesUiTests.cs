@@ -101,7 +101,9 @@ public sealed partial class HeadlessUiTests
         var dir = Path.Combine(Path.GetTempPath(), "urbe-pubversion-" + Guid.NewGuid().ToString("N"));
         var vault = Path.Combine(dir, "vault");
         Directory.CreateDirectory(vault);
-        File.WriteAllText(Path.Combine(vault, "Fonte.md"), "# Fonte\n\nTexto.\n");
+        File.WriteAllText(Path.Combine(vault, "Fonte.md"), "# Fonte\n\nTexto.\n\n![[som.mp3]]\n");
+        Directory.CreateDirectory(Path.Combine(vault, "Áudios"));
+        File.WriteAllBytes(Path.Combine(vault, "Áudios", "som.mp3"), [0x49, 0x44, 0x33, 4, 0]);
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
         var window = new Window { Width = 412, Height = 860, Content = view };
         window.Show();
@@ -120,7 +122,7 @@ public sealed partial class HeadlessUiTests
             // CST-163: the package holds the publication and its manifest, and the notice says the size
             await view.ExportPublicationPackageAsync();
             using (var zip = new System.IO.Compression.ZipArchive(new MemoryStream(package!)))
-                Assert.Equal(["index.html", "manifest.json"], zip.Entries.Select(e => e.FullName));
+                Assert.Equal(["index.html", "media/1-som.mp3", "manifest.json"], zip.Entries.Select(e => e.FullName));
             Assert.StartsWith("Pacote salvo (", view.NoticeText);
             await view.ExportPublicationHtmlAsync();
             string Saved() { try { return File.ReadAllText(Path.Combine(vault, "Publicações", "Livro.publication.json")); } catch (IOException) { return ""; } }
@@ -130,7 +132,7 @@ public sealed partial class HeadlessUiTests
             view.OpenNoteByPath("Fonte.md");
             await Settle(window, view);
             view.Editor.SetMode(EditorMode.Fonte);
-            view.Editor.Editor.Text = "# Fonte\n\nTexto revisto.\n";
+            view.Editor.Editor.Text = "# Fonte\n\nTexto revisto.\n\n![[som.mp3]]\n";
             Assert.True(await view.Editor.SaveAsync());
             await view.OpenPublicationAsync("Publicações/Livro.publication.json");
             await Settle(window, view);

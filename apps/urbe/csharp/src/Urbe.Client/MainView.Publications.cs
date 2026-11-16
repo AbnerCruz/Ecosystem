@@ -525,13 +525,12 @@ public sealed partial class MainView
         return (project, result with { Html = await EmbedVaultImagesAsync(result.Html) });
     }
 
-    /// <summary>An image a note names: the exact vault path, else the one file with that name (as ![[foto.png]] finds it).</summary>
-    private async Task<byte[]?> ReadVaultImageAsync(string reference)
-    {
-        var path = _attachments.Contains(reference) ? reference
-            : _attachments.FirstOrDefault(a => string.Equals(System.IO.Path.GetFileName(a), System.IO.Path.GetFileName(reference), StringComparison.OrdinalIgnoreCase));
-        return path is not null && _vault is { } vault ? (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes : null;
-    }
+    /// <summary>A file a note names (image, audio, video): the exact vault path, else the one file with that name (as ![[foto.png]] finds it).</summary>
+    private async Task<byte[]?> ReadVaultImageAsync(string reference) =>
+        VaultFileNamed(reference) is { } path && _vault is { } vault ? (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes : null;
+
+    private string? VaultFileNamed(string reference) => _attachments.Contains(reference) ? reference
+        : _attachments.FirstOrDefault(a => string.Equals(System.IO.Path.GetFileName(a), System.IO.Path.GetFileName(reference), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>CST-162: the publication's images read from the vault and carried inside the HTML (works offline, anywhere).</summary>
     private async Task<string> EmbedVaultImagesAsync(string html)
@@ -635,7 +634,17 @@ public sealed partial class MainView
         if (await PreparePublicationOutputAsync() is not { } output) return;
         var (project, result) = output;
         var versions = PublicationExportRecord.Of(project, "zip", id => _store?.Get(id)?.Content, DateTimeOffset.Now).Sources;
-        var bytes = PublicationPackage.Build(project, result.Html, versions, DateTimeOffset.Now);
+        // the audio and video it embeds go in the package, read from the vault by the name the note uses; a large
+        // package says its size first (sizes come without reading the files)
+        var references = PublicationPackage.MediaReferences(result.Html);
+        long estimate = System.Text.Encoding.UTF8.GetByteCount(result.Html);
+        foreach (var reference in references)
+            if (VaultFileNamed(reference) is { } path && _vault is { } vault) estimate += (await vault.ReadFileAsync(path, 0))?.Size ?? 0;
+        if (estimate > 50L << 20 && !await Dialogs.ConfirmAsync("Pacote grande", "O pacote terá cerca de " + PublicationPackage.Size(estimate) +
+                " (" + references.Count + (references.Count == 1 ? " áudio ou vídeo" : " áudios e vídeos") + "). Continuar?", "Exportar")) return;
+        var media = new Dictionary<string, byte[]?>(StringComparer.Ordinal);
+        foreach (var reference in references) media[reference] = await ReadVaultImageAsync(reference);
+        var bytes = PublicationPackage.Build(project, result.Html, versions, DateTimeOffset.Now, media);
         var name = ArtifactModel.SafeName(project.Title) + ".zip";
         try
         {
