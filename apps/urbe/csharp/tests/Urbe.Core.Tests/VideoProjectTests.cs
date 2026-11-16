@@ -199,4 +199,13 @@ public sealed class VideoProjectTests
         Assert.InRange(At(1.75), 9700, 10300);      // halfway down
         Assert.InRange(At(1.999), 0, 200);          // silence at the end
     }
+
+    [Fact]
+    public void TheWaveformShowsLoudAndQuietParts()
+    {
+        var wav = new MemoryStream();
+        VideoAudio.WriteWavHeader(wav, 1, 8000, 8000L * 2 * 2);
+        for (int i = 0; i < 8000 * 2; i++) wav.Write(BitConverter.GetBytes((short)(i < 8000 ? 32000 : 0))); // a loud second, then silence
+        Assert.Equal("████▁▁▁▁", VideoAudio.Waveform(wav, 8));
+    }
 }

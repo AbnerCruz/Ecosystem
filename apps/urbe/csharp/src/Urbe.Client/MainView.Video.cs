@@ -123,6 +123,26 @@ public sealed partial class MainView
         ShowLifeNotice("Áudio adicionado à trilha do vídeo: " + System.IO.Path.GetFileName(clip.Path));
     }
 
+    /// <summary>The track's shape (VideoAudio.Waveform), or "" when the file cannot be read or decoded here.</summary>
+    private async Task<string> AudioShapeAsync(string path)
+    {
+        if (_vault is not { } vault) return "";
+        var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "urbe-shape-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            if ((await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes is not { } bytes) return "";
+            Directory.CreateDirectory(temp);
+            var source = System.IO.Path.Combine(temp, "fonte" + System.IO.Path.GetExtension(path));
+            var wav = System.IO.Path.Combine(temp, "som.wav");
+            await File.WriteAllBytesAsync(source, bytes);
+            if (!await PlatformVideo.ToWavAsync(source, wav, CancellationToken.None)) return "";
+            await using var stream = File.OpenRead(wav);
+            return VideoAudio.Waveform(stream);
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException) { return ""; }
+        finally { try { Directory.Delete(temp, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+    }
+
     /// <summary>CST-172: one track of the video's sound: its volume (0–400 %), how it comes in and leaves, or out.</summary>
     public async Task AdjustPublicationAudioAsync()
     {
@@ -134,8 +154,10 @@ public sealed partial class MainView
             Detail: Kind(a.Kind) + " · começa em " + N(a.Start) + " s · volume " + N(a.Volume * 100) + " % · entra em " + N(a.FadeIn) + " s, sai em " + N(a.FadeOut) + " s")).ToList());
         if (pick is not { } i || !SameVideoDraft(draft)) return;
         var clip = video.Audio[i];
+        var shape = await AudioShapeAsync(clip.Path);
         var action = await Dialogs.ChooseAsync(System.IO.Path.GetFileName(clip.Path),
-            [new DialogItem("Volume"), new DialogItem("Entrada suave"), new DialogItem("Saída suave"), new DialogItem("Tirar do vídeo")]);
+            [new DialogItem("Volume"), new DialogItem("Entrada suave"), new DialogItem("Saída suave"), new DialogItem("Tirar do vídeo")],
+            shape.Length > 0 ? shape : null);
         if (action is not { } a || !SameVideoDraft(draft)) return;
         VideoAudioClip? changed = clip;
         if (a == 3) changed = null;

@@ -84,6 +84,36 @@ public static class VideoAudio
     }
 
     /// <summary>
+    /// CST-172: the shape of a sound as one line of blocks (▁▂▃▄▅▆▇█), the loudest moment of each slice: enough to see
+    /// where the voice speaks and where the music is quiet, read a slice at a time from a PCM16 WAV.
+    /// </summary>
+    public static string Waveform(Stream wav, int slices = 40)
+    {
+        if (ReadWavInfo(wav) is not { } info || info.Frames == 0 || slices <= 0) return "";
+        const string Levels = "▁▂▃▄▅▆▇█";
+        var peaks = new int[slices];
+        long per = Math.Max(1, info.Frames / slices);
+        var buffer = new byte[64 * 1024 - 64 * 1024 % (info.Channels * 2)];
+        wav.Position = info.DataOffset;
+        int bytesPerFrame = info.Channels * 2;
+        long frame = 0;
+        int read;
+        while (frame < info.Frames && (read = wav.Read(buffer, 0, (int)Math.Min(buffer.Length, (info.Frames - frame) * bytesPerFrame))) > 0)
+        {
+            for (int i = 0; i + 1 < read; i += 2)
+            {
+                int slice = (int)Math.Min(slices - 1, (frame + i / bytesPerFrame) / per);
+                peaks[slice] = Math.Max(peaks[slice], Math.Abs((int)BinaryPrimitives.ReadInt16LittleEndian(buffer.AsSpan(i))));
+            }
+            frame += read / bytesPerFrame;
+        }
+        return Shape(peaks, Levels);
+    }
+
+    private static string Shape(int[] peaks, string levels) =>
+        string.Concat(peaks.Select(p => levels[Math.Min(levels.Length - 1, p * levels.Length / 32768)]));
+
+    /// <summary>
     /// The soundtrack: every clip (a PCM16 WAV of any rate and channels) placed at its start, trimmed, scaled by its
     /// volume and summed into a 44.1 kHz stereo WAV as long as the video. Streamed a second at a time; a sum that
     /// passes full scale is limited, never wrapped around.

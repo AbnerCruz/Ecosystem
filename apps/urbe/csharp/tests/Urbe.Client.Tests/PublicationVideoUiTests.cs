@@ -17,6 +17,11 @@ public sealed partial class HeadlessUiTests
         var dir = Path.Combine(Path.GetTempPath(), "urbe-pubvideo-" + Guid.NewGuid().ToString("N"));
         var vault = Path.Combine(dir, "vault");
         Directory.CreateDirectory(vault);
+        using (var wav = File.Create(Path.Combine(vault, "trilha.wav")))
+        {
+            VideoAudio.WriteWavHeader(wav, 1, 8000, 8000L * 2);
+            for (int k = 0; k < 8000; k++) wav.Write(BitConverter.GetBytes((short)(k < 4000 ? 30000 : 0)));
+        }
         File.WriteAllText(Path.Combine(vault, "Cena.md"), "# Abertura\n\nUma frase do roteiro.\n");
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
         var window = new Window { Width = 412, Height = 860, Content = view };
@@ -66,6 +71,8 @@ public sealed partial class HeadlessUiTests
             async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
             var adjust = view.AdjustPublicationAudioAsync();
             await Choose("trilha.wav");
+            for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains('█') == true); j++) await Pump();
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("█▁") == true); // loud, then quiet
             await Choose("Volume");
             for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any(); j++) await Pump();
             view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "50";
