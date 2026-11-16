@@ -159,7 +159,8 @@
     "CI: teste de arquitetura passou a incluir ModelContextProtocol.Core (ADR-0048). decisions.json não é alterado por este PR (governança).",
     "#956: mapa da sessão de estudo (StudyMap, grafo derivado das fontes), podcast de duas vozes (roteiro em nota editorial pelo agente; áudio pela voz do Android, WAV juntado no Core) e infográfico vetorial da nota (SVG + PNG do mesmo layout).",
     "Memória P1: captura de preferências/decisões/procedimentos ampliada; contradição nova do usuário substitui a antiga (mantida, datada e ligada); refinamento ligado sem conflito; repetição em outra conversa reforça; episódios de execução abaixo do que o usuário disse na busca; aviso \"Aprendi\".",
-    "UC-87: grafo da memória do agente como projeção do AssistantStore (nada gravado no vault), com substitui/refina/conflito/fonte; cartões de grafo quebram o texto em vez de cortar em 29 letras; grafo somente leitura sem ferramentas de edição."
+    "UC-87: grafo da memória do agente como projeção do AssistantStore (nada gravado no vault), com substitui/refina/conflito/fonte; cartões de grafo quebram o texto em vez de cortar em 29 letras; grafo somente leitura sem ferramentas de edição.",
+    "CST-135 completo (parágrafo selecionado com ^id, busca); podcast também no Windows (SAPI); ADR-0051 proposto para CST-201 (execução de código isolada), sem código."
   ],
   "verification": [
     {
@@ -211,7 +212,9 @@
   "known_issues": [
     "Ver pendentes só para tarefas da própria nota; para note: (outra nota) a lista não aparece."
   ],
-  "blockers": [],
+  "blockers": [
+    "ADR-0051 (CST-201): escolher A (Wasm, com prova de conceito), A+C, B+C, C ou D. Registro em decisions.json fica para quem tem autoridade de governança (ADD-0034)."
+  ],
   "next_actions": [
     "Editor de fonte virtualizado por blocos (gate do editor, desempenho do Fonte em notas longas).",
     "CST-205: transações multiarquivo de agentes.",
