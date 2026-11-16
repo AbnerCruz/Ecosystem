@@ -83,7 +83,8 @@ public sealed partial class MainActivity : Activity
         _pendingGameApkPath = savedInstanceState?.GetString("pendingGameApkPath");
         _pendingGameApkName = savedInstanceState?.GetString("pendingGameApkName");
         LoadSettings();
-        ShowProjects();
+        LoadLauncherPreferences();
+        RestoreLauncherSection();
 #if LUNET_UI_DEMO
         RunDemo(Intent);
 #endif
@@ -118,24 +119,7 @@ public sealed partial class MainActivity : Activity
 
     private void ShowProjects()
     {
-        _inspirationOpen = false;
-        SaveCurrent();
-        DisposePreview();
-        _session.Unload();
-        _project = null;
-        _openFile = null;
-        _editor = null;
-        _body = null;
-        _editorColumn = null;
-        _panelColumn = null;
-        _splitter = null;
-        _minimap = null;
-        _drawer = null;
-        _drawerScrim = null;
-        if (_overlay is not null) CloseOverlay();
-        _workspaceFrame = null;
-        _aiPanel = null;
-        _workbenchNavButtons.Clear();
+        EnterLauncherSurface("projects");
 
         var root = Vertical();
         root.SetPadding(Dp(20), Dp(22), Dp(20), Dp(10));
@@ -166,45 +150,18 @@ public sealed partial class MainActivity : Activity
             ButtonStyle.Secondary), LunetUi.FillWidth(Dp(48)));
 
         var names = _store.List();
-        var section = LunetUi.Label(this, names.Count == 0 ? "" : $"RECENTES · {names.Count}", LunetUi.TextCaption, LunetUi.TextFaint, bold: true);
-        section.LetterSpacing = 0.08f;
-        section.SetPadding(Dp(2), 0, 0, Dp(8));
+        var section = LunetUi.Label(this, $"PROJETOS · {names.Count}", LunetUi.TextCaption, LunetUi.TextFaint, bold: true);
+        section.SetPadding(Dp(2), Dp(2), 0, Dp(8));
         root.AddView(section);
-
+        var search = LunetUi.Input(this, "Pesquisar meus projetos", _projectFilter);
+        root.AddView(search, LunetUi.FillWidth(Dp(48)));
         var list = LunetUi.Column(this, 8);
-        foreach (var name in names.OrderByDescending(n => ProjectTouched(n)))
+        FillLauncherProjects(list, _projectFilter);
+        search.TextChanged += (_, _) =>
         {
-            var captured = name;
-            var card = LunetUi.Row(this, 14);
-            card.SetPadding(Dp(14), Dp(12), Dp(8), Dp(12));
-            card.Background = LunetUi.Pressable(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
-            card.Clickable = true;
-            card.ContentDescription = "Abrir " + captured + ". Toque longo para opções.";
-            card.Click += (_, _) => OpenProject(captured);
-            card.LongClick += (_, e) => { ShowProjectMenu(captured); e.Handled = true; };
-            var badge = LunetUi.Label(this, captured.Length > 0 ? captured[..1].ToUpperInvariant() : "?", 18, LunetUi.AccentText, bold: true);
-            badge.Gravity = GravityFlags.Center;
-            badge.Background = LunetUi.Shape(this, LunetUi.AccentSoft, LunetUi.Radius);
-            card.AddView(badge, new LinearLayout.LayoutParams(Dp(44), Dp(44)));
-            var text = LunetUi.Column(this, 2);
-            var nameLabel = LunetUi.Label(this, captured, 16, LunetUi.Text, bold: true);
-            nameLabel.SetSingleLine(true);
-            nameLabel.Ellipsize = TextUtils.TruncateAt.End;
-            text.AddView(nameLabel);
-            text.AddView(LunetUi.Label(this, DescribeProject(captured), LunetUi.TextCaption, LunetUi.TextMuted));
-            card.AddView(text, LunetUi.Weight());
-            card.AddView(LunetUi.Icon(this, "⋮", "Opções de " + captured, () => ShowProjectMenu(captured)), new LinearLayout.LayoutParams(Dp(40), Dp(44)));
-            list.AddView(card, LunetUi.FillWidth());
-        }
-        if (names.Count == 0)
-        {
-            var empty = LunetUi.Column(this, 6);
-            empty.SetPadding(Dp(18), Dp(22), Dp(18), Dp(22));
-            empty.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
-            empty.AddView(LunetUi.Label(this, "Comece seu primeiro jogo", LunetUi.TextBody, LunetUi.Text, bold: true));
-            empty.AddView(LunetUi.Label(this, "Toque em “Novo jogo” e configure seu projeto. O Game.cs começa estruturado e sem objetos de demonstração.", LunetUi.TextLabel, LunetUi.TextMuted));
-            list.AddView(empty, LunetUi.FillWidth());
-        }
+            _projectFilter = search.Text ?? "";
+            FillLauncherProjects(list, _projectFilter);
+        };
         var scroll = new ScrollView(this);
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
@@ -214,6 +171,7 @@ public sealed partial class MainActivity : Activity
         footer.AddView(LunetUi.Label(this, $"v{BuildInfo.Version} · projetos neste aparelho · exporte ZIP para backup", LunetUi.TextCaption, LunetUi.TextFaint), LunetUi.Weight());
         footer.AddView(LunetUi.Button(this, "Conexões", ShowEcosystemConnection, ButtonStyle.Quiet), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(36)));
         root.AddView(footer);
+        root.AddView(BuildLauncherNavigation("projects"));
         SetContentView(root);
     }
 
@@ -243,10 +201,17 @@ public sealed partial class MainActivity : Activity
 
     private void ShowProjectMenu(string name)
     {
-        var items = new[] { "Exportar ZIP", "Excluir projeto" };
+        var pinned = _launcherPreferences?.IsPinned(name) == true;
+        var items = new[] { pinned ? "Desafixar do início" : "Fixar no início", "Exportar ZIP", "Excluir projeto" };
         new AlertDialog.Builder(this)!.SetTitle(name)!.SetItems(items, (_, args) =>
         {
-            if (args.Which == 0) ExportProject(name);
+            if (args.Which == 0)
+            {
+                PersistLauncher(p => p.SetPinned(name, !p.IsPinned(name)));
+                if (_launcherSection == "home") ShowHome();
+                else ShowProjects();
+            }
+            else if (args.Which == 1) ExportProject(name);
             else ConfirmDeleteProject(name);
         })!.Show();
     }
@@ -262,6 +227,7 @@ public sealed partial class MainActivity : Activity
                 try
                 {
                     _store.Delete(name);
+                    PersistLauncher(p => p.ForgetProject(name));
                     ShowProjects();
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
@@ -392,6 +358,7 @@ public sealed partial class MainActivity : Activity
         try
         {
             _project = _store.Open(name);
+            PersistLauncher(p => p.MarkOpened(name));
         }
         catch (ProjectException ex)
         {
@@ -1516,8 +1483,8 @@ public sealed partial class MainActivity : Activity
         else if (OverlayOpen) CloseOverlay();
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
-        else if (_project is not null) ShowProjects();
-        else if (_inspirationOpen) ShowProjects();
+        else if (_project is not null) ShowHome();
+        else if (_inspirationOpen || _launcherSection != "home") ShowHome();
         else base.OnBackPressed();
     }
 }
