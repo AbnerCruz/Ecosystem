@@ -8,6 +8,25 @@ namespace Urbe.Client;
 
 public sealed partial class AssistantPanel
 {
+    /// <summary>
+    /// #955: a link that is one of the conversation's sources shows what it is first (title, site, date, whether the page
+    /// was read), as Perplexity's citations do; any other link opens as before.
+    /// </summary>
+    public async Task FollowWebLinkAsync(string url)
+    {
+        var source = _conv.WebSources.FirstOrDefault(s => SourceUrl(s.Id) == url);
+        if (source is null || _app.Dialogs is null)
+        {
+            if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher) await launcher.LaunchUriAsync(new Uri(url));
+            return;
+        }
+        var detail = source.Domain + (source.Published is { Length: > 0 } published ? " · " + published : "") + " · " + source.Status;
+        var choice = await _app.Dialogs.ChooseAsync("[" + source.Id + "] " + source.Title,
+            [new DialogItem("Abrir", Detail: url), new DialogItem("Copiar endereço")], detail);
+        if (choice == 0 && TopLevel.GetTopLevel(this)?.Launcher is { } open) await open.LaunchUriAsync(new Uri(url));
+        else if (choice == 1) await Ui.TextActions.CopyAsync(this, url);
+    }
+
     private string? SourceUrl(string id)
     {
         var source = _conv.WebSources.FirstOrDefault(s => s.Id == id);

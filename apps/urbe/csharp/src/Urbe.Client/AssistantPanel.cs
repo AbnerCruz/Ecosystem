@@ -2089,7 +2089,7 @@ public sealed partial class AssistantPanel : Border
     };
 
     private Control Markdown(string text) =>
-        new MarkdownReader { Selectable = true, Size = 15, LineFactor = 1.6, CitationFor = SourceUrl, WikiLinkTapped = name => OpenRef(name) }.Build(NoteMarks.Parse(text));
+        new MarkdownReader { Selectable = true, Size = 15, LineFactor = 1.6, CitationFor = SourceUrl, WebLinkTapped = url => _ = FollowWebLinkAsync(url), WikiLinkTapped = name => OpenRef(name) }.Build(NoteMarks.Parse(text));
 
     private void OpenRef(string reference)
     {
