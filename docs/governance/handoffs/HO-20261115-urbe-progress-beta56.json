@@ -156,7 +156,10 @@
     "DEC-0061/ADR-0048 (alternativa C) — primeiro incremento: cliente MCP remoto (SDK oficial ModelContextProtocol.Core 2.4.0, Apache-2.0) no Android e Windows; ferramentas desligadas até liberadas como leitura (network) ou escrita (aprovação); resposta marcada como dado de terceiros; configuração persistida; ADR-0048 Aceito. Falta: servidores locais (stdio) no computador.",
     "P0 do proprietário (memória): AiTool.Validate gravava inteiros como double; recall_memory/list_conversations liam (int?) e falhavam com NodeUnableToConvert. Agora o inteiro validado é um número JSON (converte para int/long/double); IntegerArgumentsTests percorre todos os parâmetros integer do catálogo (incl. recall_memory, list_conversations).",
     "#955 (chat): estudo inicial registrado em CHAT-UX-STUDY-20261115.md; etapas do agente em palavras no cabeçalho da atividade. Pop-up contextual rejeitado pelo proprietário: redesenho pendente, com estudo e protótipos antes do código.",
-    "CI: teste de arquitetura passou a incluir ModelContextProtocol.Core (ADR-0048). decisions.json não é alterado por este PR (governança)."
+    "CI: teste de arquitetura passou a incluir ModelContextProtocol.Core (ADR-0048). decisions.json não é alterado por este PR (governança).",
+    "#956: mapa da sessão de estudo (StudyMap, grafo derivado das fontes), podcast de duas vozes (roteiro em nota editorial pelo agente; áudio pela voz do Android, WAV juntado no Core) e infográfico vetorial da nota (SVG + PNG do mesmo layout).",
+    "Memória P1: captura de preferências/decisões/procedimentos ampliada; contradição nova do usuário substitui a antiga (mantida, datada e ligada); refinamento ligado sem conflito; repetição em outra conversa reforça; episódios de execução abaixo do que o usuário disse na busca; aviso \"Aprendi\".",
+    "UC-87: grafo da memória do agente como projeção do AssistantStore (nada gravado no vault), com substitui/refina/conflito/fonte; cartões de grafo quebram o texto em vez de cortar em 29 letras; grafo somente leitura sem ferramentas de edição."
   ],
   "verification": [
     {
@@ -183,6 +186,25 @@
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "critical": true
+    },
+    {
+      "check": "Core 1679/1679, Client 655/655, consistency 22/22",
+      "kind": "automated",
+      "result": "pass"
+    },
+    {
+      "check": "Podcast: vozes do Android geram o áudio e soam distintas",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Android/SpeechSynth.cs",
+      "critical": false
+    },
+    {
+      "check": "Memória aprende entre conversas reais no Android (preferência, decisão, procedimento, substituição)",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
       "critical": true
     }
   ],
