@@ -48,9 +48,18 @@ public sealed class InspirationLibrary
                 }
                 else
                 {
-                    if (entry.Curated || !Guid.TryParse(entry.Id, out _))
-                        throw new InvalidDataException("Referência salva sem identificação válida; o arquivo foi preservado.");
-                    byId.Add(entry.Id, Validate(entry with { Curated = false }));
+                    if (entry.Curated && entry.Id.StartsWith("ref.", StringComparison.Ordinal))
+                    {
+                        // Keep retired curated entries as read-only snapshots so upgrades cannot erase
+                        // user notes/favorites. If the ID returns to the catalog, installed metadata wins.
+                        byId.Add(entry.Id, Validate(entry));
+                    }
+                    else
+                    {
+                        if (entry.Curated || !Guid.TryParse(entry.Id, out _))
+                            throw new InvalidDataException("Referência salva sem identificação válida; o arquivo foi preservado.");
+                        byId.Add(entry.Id, Validate(entry with { Curated = false }));
+                    }
                 }
             }
             _entries = byId.Values.ToList();
