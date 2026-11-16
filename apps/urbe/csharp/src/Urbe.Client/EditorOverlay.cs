@@ -2295,9 +2295,10 @@ public sealed class EditorOverlay : Grid
     private void ApplyEdit(LegacyEditorTools.TextEdit edit)
     {
         ReplaceSourceText(edit.Text);
+        // the caret first: set after the selection, it collapsed it (CST-020)
+        Editor.CaretIndex = edit.SelectionEnd;
         Editor.SelectionStart = edit.SelectionStart;
         Editor.SelectionEnd = edit.SelectionEnd;
-        Editor.CaretIndex = edit.SelectionEnd;
         if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Editor.Focus();
     }
 

@@ -1535,9 +1535,10 @@ public sealed class VisualSurface : StackPanel
     {
         if (edit is null || _box is null) return;
         EditorInput.Replace(_box, edit.Text);
+        // the caret first: moving it after the selection collapsed a word just turned into `código` (CST-020)
+        _box.CaretIndex = edit.SelectionEnd;
         _box.SelectionStart = edit.SelectionStart;
         _box.SelectionEnd = edit.SelectionEnd;
-        _box.CaretIndex = edit.SelectionEnd;
         UpdateTools();
     }
 
