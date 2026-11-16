@@ -757,3 +757,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação: catálogo textual incorporado, filtro cruzado em vários eixos, pesquisa normalizada com acentos, referências pessoais, favoritos/notas armazenados atomicamente, associação opcional a projetos. Sem imagens protegidas.
 - Verificação: Código publicado no GitHub para CI canônico e compilação Android; DEVICE pendente. Não afirmar conclusão da Fase 5/UX do Lunet nem alteração de estágio.
 - Próximos passos: corrigir eventuais erros do CI, conferir navegação real/IME no Android 13 e continuar Home, biblioteca global, coesão entre Studios e engine.
+
+### 20261116-chatgpt-lunet510-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → integrador / próximos agentes — pronto para revisão
+- Item: LUNET-510, Home funcional; base main 95143cb, branch feat/lunet-510-home-workspace-20261116 no repositório canônico Ecosystem.
+- Auditoria: MainActivity.ShowProjects iniciava sempre, sem fixados, busca ou navegação global; Explorar LUNET-512 já integrado; Studios ainda dependem de projeto. PRs #959 e #960 mantidos intactos.
+- Implementação: Home sem abrir jogo, navegação em quatro destinos com alvos de toque de 48dp, fixados/último jogo em arquivo privado fora dos projetos, lista com busca, documentação offline e configurações. Studios permitem escolher projeto real. Não cria projetos temporários nem altera código Game.cs.
+- Testes: LauncherPreferencesTests (seis cenários), compilação/testes Android e consistency dependem do CI. DEVICE e prints pendentes; não declarar gate LUNET-510 fechado.
+- Próximo: corrigir CI/Build se necessário, validar moto g32 Android 13 e avançar Library/Studios autônomos LUNET-511. Sem merge manual nem mudança do estágio.

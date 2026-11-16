@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261116-lunet-512-link-handler",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-16T14:20:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-pr-reconciliation-20261116",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-512",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-512-reference-link-handler-20261116",
+  "base_commit": "54cdca1d21143a2509da523b552121af429bf44e",
+  "commit": null,
+  "pr": 959,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
+    "apps/lunet2d/CHANGELOG.md",
+    "docs/governance/handoffs/lunet-512-link-handler-2026-11-16.md",
+    "docs/governance/handoffs/HO-20261116-lunet-512-link-handler.json"
+  ],
+  "work_completed": [
+    "Tratamento de ActivityNotFoundException e SecurityException na abertura de URLs sem deixar o app cair.",
+    "Reconciliadas as mudanças de navegação de Explorar da Home PR #961 e o tratamento do PR #959 sem sobrescrever nenhum dos dois.",
+    "Adicionado handoff JSON estruturado exigido pelo integrador (NN-008)."
+  ],
+  "verification": [
+    {
+      "check": "lunet2d-ci, consistency, release e UI screens no head original a9901042",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43801989562"
+    },
+    {
+      "check": "CI da reconciliação com main 54cdca1",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Validar execução do integrador do novo merge commit."
+    },
+    {
+      "check": "DEVICE Android 13 — abrir URL com/sem handler e retorno ao app",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/inspiracao.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem confirmação de comportamento no aparelho físico; CI não substitui DEVICE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar checks no estado combinado e permitir integrador automático aplicar merge sem force.",
+    "Testar ausência de navegador e restrição de Activity no Android 13."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff JSON sob docs/governance/handoffs conforme schema."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente e não declarado como aprovado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "inspiration-external-link",
+      "status": "product-specific",
+      "rationale": "Tratamento nativo da Activity de Inspiração no Lunet Android."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

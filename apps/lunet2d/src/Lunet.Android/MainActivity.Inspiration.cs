@@ -35,6 +35,7 @@ public sealed partial class MainActivity
             return;
         }
 
+        EnterLauncherSurface("explore");
         _inspirationOpen = true;
         var library = _inspirationLibrary!;
         var root = Vertical();
@@ -42,7 +43,7 @@ public sealed partial class MainActivity
         root.SetPadding(Dp(16), Dp(16), Dp(16), Dp(12));
 
         var top = LunetUi.Row(this, 8);
-        top.AddView(LunetUi.Button(this, "← Voltar", ShowProjects, ButtonStyle.Quiet),
+        top.AddView(LunetUi.Button(this, "← Início", ShowHome, ButtonStyle.Quiet),
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(48)));
         top.AddView(LunetUi.Label(this, "Explorar", LunetUi.TextTitle, LunetUi.Text, bold: true),
             LunetUi.Weight());
@@ -202,6 +203,7 @@ public sealed partial class MainActivity
         favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; Refresh(); };
         search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; Refresh(); };
         Refresh();
+        root.AddView(BuildLauncherNavigation("explore"));
         SetContentView(root);
     }
 
