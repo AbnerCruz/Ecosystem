@@ -1,0 +1,27 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "01-document-import-and-tool-resolution.json",
+  "title": "PDF anexado do dispositivo vs importado no vault",
+  "original_export_index": 1,
+  "severity": "P0",
+  "observations": [
+    "Um PDF de 450 paginas e 17 MB foi referenciado na conversa; inspect_document e inventory_document falharam com mensagem indistinta de arquivo ausente/limite.",
+    "Ferramentas foram chamadas repetidamente com argumentos que já haviam falhado; 13 falhas de ferramenta nos 6 runs desta conversa.",
+    "Assistente inferiu ausência do PDF porque list_notes não listava a pasta; list_notes lista notas, não comprova ausência de PDFs.",
+    "Após importar ao vault e selecionar o nome correto, inspect_document/inventory_document/read_document funcionaram."
+  ],
+  "repro": [
+    "No Android, anexar um PDF de livro pelo seletor de Downloads e solicitar inspeção.",
+    "Repetir usando um PDF importado no vault e comparar URI SAF, handle, autorização e resolução de caminho.",
+    "Repetir variantes de nome com sufixos (1), (2), e observar se o modelo recebe referência canônica.",
+    "Conferir se ferramentas param de repetir falhas idênticas."
+  ],
+  "expected": [
+    "Leitura autorizada de anexo externo ou erro preciso com orientação de importação; sem crash nem falsa alegação de arquivo ausente.",
+    "Path/capability canônicos estáveis para inspect/read/search/inventory; citar páginas consultadas."
+  ],
+  "related_issue": 954
+}
