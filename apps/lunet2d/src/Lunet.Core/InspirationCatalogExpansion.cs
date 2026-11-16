@@ -9,11 +9,15 @@ namespace Lunet.Core;
 /// </summary>
 internal static class InspirationCatalogExpansion
 {
+    internal static string GameplaySearchUrl(string title) =>
+        "https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(title + " gameplay");
+
     internal static IEnumerable<InspirationReference> Entries()
     {
         static InspirationReference Seed(string id, string title, string genre, string perspective,
             string style, string idea, params string[] mechanics) =>
-            new("ref." + id, title, genre, perspective, style, mechanics, idea, Curated: true);
+            new("ref." + id, title, genre, perspective, style, mechanics, idea,
+                GameplaySearchUrl(title), Curated: true);
 
         yield return Seed("starbound", "Starbound", "Sandbox", "Lateral", "Pixel art", "Observe a exploração entre planetas, a progressão por equipamento e a edição do mundo sem perder a orientação do jogador.", "Exploração", "Construção", "Crafting", "Progressão");
         yield return Seed("necesse", "Necesse", "Sandbox", "Top-down", "Pixel art", "Analise a alternância entre expedições, chefes e gestão de uma vila; compare comandos individuais e ordens de colonos.", "Exploração", "Construção", "IA de agentes", "Combate");
