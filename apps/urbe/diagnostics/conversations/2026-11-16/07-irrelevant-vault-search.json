@@ -1,0 +1,23 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "07-irrelevant-vault-search.json",
+  "title": "Buscas extensas e baixo valor em pedido simples",
+  "original_export_index": 7,
+  "severity": "P1",
+  "observations": [
+    "Pergunta genérica sobre comida desencadeou busca por termo polissêmico no vault e retornou notas de design de jogos (receitas de crafting).",
+    "Foram 10 chamadas de ferramentas em 2 runs, com busca e leitura de notas antes de responder.",
+    "O assistente tratou ausência de receitas alimentares no vault como etapa obrigatória, sem avaliar utilidade."
+  ],
+  "repro": [
+    "Pedir sugestão simples sem referenciar notas; possuir vault com termo homônimo em outro domínio.",
+    "Medir chamadas, tempo, tokens e relevância dos resultados; comparar baseline sem ferramentas."
+  ],
+  "expected": [
+    "Gating por intenção/relevância; responder diretamente quando busca não adiciona valor.",
+    "Evitar pesquisar notas de outros domínios e evitar custo repetitivo."
+  ]
+}
