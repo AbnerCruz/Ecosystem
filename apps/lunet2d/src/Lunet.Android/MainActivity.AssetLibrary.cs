@@ -1,4 +1,5 @@
 using Android.App;
+using Android.Content;
 using Android.Views;
 using Android.Widget;
 using Lunet.Core;
@@ -11,6 +12,9 @@ namespace Lunet.Android;
 /// </summary>
 public sealed partial class MainActivity
 {
+    private const int AssetLibraryExportRequestCode = 4115;
+    private string? _pendingLibraryAssetId;
+    private int _pendingLibraryAssetVersion;
     private ReusableAssetLibrary? _reusableLibrary;
 
     private ReusableAssetLibrary AssetLibrary => _reusableLibrary ??= new ReusableAssetLibrary(
@@ -68,6 +72,11 @@ public sealed partial class MainActivity
                 dialog?.Dismiss();
                 ChooseAssetDestination(version);
             }, ButtonStyle.Secondary));
+            actions.AddView(LunetUi.Button(this, "Exportar ZIP", () =>
+            {
+                dialog?.Dismiss();
+                RequestLibraryAssetExport(version);
+            }, ButtonStyle.Quiet));
             actions.AddView(LunetUi.Button(this, "Nova versão", () =>
             {
                 dialog?.Dismiss();
@@ -152,6 +161,53 @@ public sealed partial class MainActivity
         dialog = new AlertDialog.Builder(this)!.SetTitle(existingId is null ? "Publicar asset" : "Nova versão")!
             .SetView(scroll)!.SetNegativeButton("Cancelar", (_, _) => { })!.Create();
         dialog.Show();
+    }
+
+
+    private void RequestLibraryAssetExport(LibraryAssetVersion version)
+    {
+        _pendingLibraryAssetId = version.Id;
+        _pendingLibraryAssetVersion = version.Version;
+        var intent = new Intent(Intent.ActionCreateDocument);
+        intent.AddCategory(Intent.CategoryOpenable);
+        intent.SetType("application/zip");
+        intent.PutExtra(Intent.ExtraTitle, "lunet-asset-" + version.Id + "-v" + version.Version + ".zip");
+        StartActivityForResult(intent, AssetLibraryExportRequestCode);
+    }
+
+    private void CompleteLibraryAssetExport(Result resultCode, Android.Net.Uri? uri)
+    {
+        var assetId = _pendingLibraryAssetId;
+        var version = _pendingLibraryAssetVersion;
+        _pendingLibraryAssetId = null;
+        _pendingLibraryAssetVersion = 0;
+        if (resultCode != Result.Ok || uri is null || assetId is null) return;
+
+        // ExportZip validates the complete immutable version before touching the SAF destination.
+        // SAF may overwrite an existing document selected by the user, so do not open its stream
+        // until the archive has been assembled and verified locally.
+        var temp = System.IO.Path.Combine(CacheDir!.AbsolutePath, Guid.NewGuid().ToString("N") + ".zip");
+        try
+        {
+            AssetLibrary.ExportZip(assetId, version, temp);
+            using var source = System.IO.File.OpenRead(temp);
+            using var target = ContentResolver?.OpenOutputStream(uri) ??
+                throw new IOException("Não foi possível abrir o destino.");
+            source.CopyTo(target);
+            target.Flush();
+            Toast.MakeText(this, "Versão exportada em ZIP", ToastLength.Short)?.Show();
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException)
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Exportação não concluída")!
+                .SetMessage(ex.Message + "\nVerifique o destino antes de reutilizar o arquivo.")!
+                .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }
+            catch (IOException) { /* A falha na limpeza não deve mascarar o erro original. */ }
+        }
     }
 
     private void ChooseAssetDestination(LibraryAssetVersion version)
