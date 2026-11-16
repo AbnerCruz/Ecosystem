@@ -143,7 +143,7 @@ public sealed class PinnedPanel : Border
         var close = new Button
         {
             Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 16, UrbeTheme.Text2, 1.8),
-            Width = 32, Height = 32, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Width = UrbeTokens.MinTouch, Height = UrbeTokens.MinTouch, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
@@ -159,7 +159,7 @@ public sealed class PinnedPanel : Border
         var choose = new Button
         {
             Content = UrbeTheme.Icon(UrbeTheme.Icons.File, 16, UrbeTheme.Text2, 1.8),
-            Width = 32, Height = 32, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Width = UrbeTokens.MinTouch, Height = UrbeTokens.MinTouch, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
