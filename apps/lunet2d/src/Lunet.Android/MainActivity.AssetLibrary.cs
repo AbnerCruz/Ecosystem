@@ -20,7 +20,9 @@ public sealed partial class MainActivity
     private ReusableAssetLibrary AssetLibrary => _reusableLibrary ??= new ReusableAssetLibrary(
         System.IO.Path.Combine(FilesDir!.AbsolutePath, "Library"));
 
-    private void ShowReusableAssetLibrary(string query = "")
+    private void ShowReusableAssetLibrary() => ShowReusableAssetLibrary("");
+
+    private void ShowReusableAssetLibrary(string query)
     {
         SaveCurrent();
         IReadOnlyList<LibraryAssetVersion> entries;
