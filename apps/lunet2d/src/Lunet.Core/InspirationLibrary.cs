@@ -193,7 +193,7 @@ public sealed class InspirationLibrary
         yield return Seed("stardew", "Stardew Valley", "Simulação", "Top-down", "Pixel art",
             "Estude como ciclos de dias, estações e rotinas dos personagens se combinam.", "Agricultura", "Calendário", "NPCs", "Progressão");
         yield return Seed("terraria", "Terraria", "Sandbox", "Lateral", "Pixel art",
-            "Observe como exploração, criação de itens e progressão se conectam num mundo editável.", "Construção", "Crafting", "Exploração");
+            "Observe como exploração, crafting, montarias voadoras e progressão se conectam num mundo editável.", "Construção", "Crafting", "Exploração", "Montarias", "Voo");
         yield return Seed("celeste", "Celeste", "Plataforma", "Lateral", "Pixel art",
             "Analise precisão de movimento, leitura da fase e retomada rápida após erros.", "Dash", "Plataforma de precisão", "Respawn");
         yield return Seed("survivors", "Vampire Survivors", "Roguelite", "Top-down", "Pixel art",
