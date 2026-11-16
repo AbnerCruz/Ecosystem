@@ -1,3 +1,8 @@
+# Arquivo histórico: script de sincronização legado (desativado em 15/11/2026)
+
+O código abaixo é um registro do script histórico que viveu em `.github/origin-sync/sync-from-ecosystem.sh` na revisão 5e2a8fa. Ele **não** é um workflow ativo e **não deve ser executado nem reinstalado**. Preservado apenas para rastrear a migração e as fontes citadas em handoffs históricos (NN-012). A regra atual de canal único é DEC-0064 / ADD-0035.
+
+```bash
 #!/usr/bin/env bash
 # Sincroniza o repositório de ORIGEM de um produto com apps/<id> do Ecosystem (plano de importação §7, DEC-0014-A).
 #
@@ -120,3 +125,4 @@ if [ "$pushed" = "1" ] && [ "${REQUEST_PAGES_BUILD:-0}" = "1" ]; then
   run gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" >/dev/null 2>&1 || say "aviso: não foi possível pedir a construção do Pages"
 fi
 say "concluído"
+```

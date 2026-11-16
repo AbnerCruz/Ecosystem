@@ -1,5 +1,9 @@
 # Changelog
 
+- LUNET-512 (implementação em PR, CI/DEVICE pendentes): Explorar diretamente do launcher — catálogo offline de jogos e gêneros para inspiração, filtros combinados por mecânica/perspectiva/estilo, busca por texto, notas, favoritos, criação/edição/exclusão de referências pessoais e associação opcional a projetos. Sem capturar arte protegida, sem loja e sem internet obrigatória.
+
+- LUNET-513 (em revisão, DEVICE pendente): o desfazer da IA agora compara cada arquivo com os bytes realmente escritos pela execução. Quando algum arquivo foi alterado depois (inclusive fonte e PNG de sprite), a reversão inteira é bloqueada antes de tocar no projeto; checkpoints persistem hashes para sobreviver ao reinício e checkpoints antigos sem estado final confiável não sobrescrevem trabalho mais recente.
+
 - LUNET-508: jogos podem pedir uma foto da galeria durante a partida (`IGameImagePicker`), pelo seletor do Android, sem permissão de armazenamento; a foto chega em pé e reduzida a no máximo 1024 px. Funciona no Preview rápido e no APK do jogo. Guia `docs/guides/fotos-no-jogo.md`.
 
 - LUNET-507: a IA edita só os trechos necessários e não consegue mais apagar um arquivo inteiro (regravações que removem a maior parte do código ou usam "..." são recusadas); toda resposta mostra o que mudou com *Desfazer tudo*, também depois de cancelar, de uma falha ou de reabrir o app; a IA recebe o código real do arquivo aberto e precisa lê-lo antes de falar dele; o editor acompanha as mudanças da IA e nunca grava por cima delas sem perguntar.

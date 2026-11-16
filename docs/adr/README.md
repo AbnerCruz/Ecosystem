@@ -79,3 +79,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 - [ADR-0049 — Autonomia por escopo e releases automáticas](0049-autonomia-por-escopo-e-releases-automaticas.md) — Aceito (DEC-0063).
 
 | [0049](0049-autonomia-por-escopo-e-releases-automaticas.md) | Autonomia por escopo e releases automáticas | Aceito |
+| [0050](0050-lunet-canal-exclusivo-ecosystem.md) | Lunet com autoridade e distribuição exclusivas no Ecosystem | Aceito (DEC-0064) |

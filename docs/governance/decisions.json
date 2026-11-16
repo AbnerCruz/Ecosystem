@@ -2285,6 +2285,37 @@
         "docs/adr/0049-autonomia-por-escopo-e-releases-automaticas.md"
       ],
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0064",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Aposentar o espelho do Lunet: somente Ecosystem é operacional",
+      "context": "Ordem direta do proprietário após a auditoria em 15/11/2026: 'Foda-se o espelho. Só o ecosystem importa agora, não deveria nem ter mais esse negócio. Arruma isso e já aproveita pra registrar sua análise atual, ela deve orientar o próximo agente em seu desenvolvimento.' O APK e o código oficiais já estão no Ecosystem, mas havia sincronização agendada e canal alternativo obsoleto.",
+      "question": "Onde passam a ocorrer desenvolvimento, PR, CI, releases e continuidade do Lunet?",
+      "alternatives": [
+        {
+          "option": "A — Somente Ecosystem (escolhida pelo proprietário)",
+          "consequences": "Remover sincronização e canais alternativos, manter apenas a proveniência histórica dos commits migrados."
+        },
+        {
+          "option": "B — Manter espelho",
+          "consequences": "CI duplicado, falhas fora do monorepo e ambiguidade operacional."
+        }
+      ],
+      "consequences": "Lunet2D operacional apenas em apps/lunet2d e workflows raiz do Ecosystem; releases lunet2d-v*. Antigo repositório GitHub deixa de operar, podendo ser arquivado/apagado administrativamente de forma separada.",
+      "manifestCompatibility": "NN-001/011/012/014/017/018/021/023: direção expressa, preservação do histórico, releases independentes, CI e DEVICE separados, Hub não obrigatório.",
+      "raisedBy": "chatgpt-lunet-audit",
+      "raisedAt": "2026-11-15",
+      "decision": "A, conforme instrução direta do proprietário no chat.",
+      "decidedAt": "2026-11-15",
+      "record": "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md",
+      "related": [
+        "docs/adr/0050-lunet-canal-exclusivo-ecosystem.md",
+        "docs/architecture/audits/lunet-estado-atual-2026-11-15.md"
+      ],
+      "consequencesApplied": false
     }
   ]
 }

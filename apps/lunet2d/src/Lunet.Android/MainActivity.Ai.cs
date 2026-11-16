@@ -347,8 +347,9 @@ public sealed partial class MainActivity
             }
             new AlertDialog.Builder(this)!
                 .SetTitle("Desfazer as alterações da IA?")!
-                .SetMessage($"{changes.Count} arquivo(s) voltam exatamente ao que eram antes deste pedido " +
-                            "(arquivos criados pela IA são apagados). Edições feitas depois nesses arquivos também são desfeitas.")!
+                .SetMessage($"{changes.Count} arquivo(s) voltarão ao estado anterior ao pedido, " +
+                            "mas somente se nenhum deles tiver sido modificado depois pela pessoa ou por outra tarefa. " +
+                            "Se houver conflito, nenhum arquivo será alterado.")!
                 .SetPositiveButton("Desfazer tudo", (_, _) =>
                 {
                     try

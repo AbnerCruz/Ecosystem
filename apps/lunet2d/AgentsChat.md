@@ -734,3 +734,26 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Revisão: código do seletor correto (SAF, redução, thread fora da UI/GL, request code sem colisão), mas fotos da câmera chegavam deitadas (EXIF ignorado), o item reutilizava o ID LUNET-502 (servidor dedicado; NN-019), faltavam handoff, testes e guia, e o PR estava em rascunho (o integrador não roda).
 - Correções: `ImageOrientation` (8 orientações EXIF) aplicada no `AndroidGameImagePicker`; ID novo LUNET-508; `GameImagePickerTests` (orientação, contrato, exemplo do guia compila); `docs/guides/fotos-no-jogo.md`; `capacidades.md` para a IA; handoff `HO-20261114-lunet-photo-picker.json`.
 - Verificação local: 1063 testes; build Android Debug sem erros; template standalone compila o C# (empacotamento exige jogo compilado, coberto pelo CI). DEVICE pendente.
+
+### HO-20261115-lunet-canal-unico-e-auditoria — 15/11/2026 — ChatGPT → próximo agente — estudo/review
+- Ecosystem é a única autoridade do Lunet (DEC-0064); não procurar espelho.
+- Estudo geral: `docs/architecture/audits/lunet-estado-atual-2026-11-15.md`. Nova direção: `docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md`.
+- LUNET-510: Home de trabalho sem projeto; LUNET-511: biblioteca global e Studios autônomos sem depender de `_project`; LUNET-512: explorador offline de gêneros/mecânicas/referências, IA opcional. **Somente estudo registrado, não implementado**.
+- Cuidado: fonte editável do asset e derivado do runtime via importação por cópia; não quebrar projetos existentes; imagens de referências comerciais não são assets gratuitos. UI mobile-first, prints e DEVICE.
+- PR Ecosystem #953, base `5e2a8fa`; CI de consistência e validação Android separados. Primeiro resolver riscos P0 de compilação/IA, depois executar slices de Home/Library/Explorar em paralelo quando seguros.
+
+### 20261115-chatgpt-lunet513-01 — 2026-11-15 (America/Sao_Paulo) — ChatGPT → próximos agentes — pronto para revisão
+- Item: LUNET-513, integridade de desfazer da IA; continuação solicitada pelo proprietário.
+- Base: `AbnerCruz/Ecosystem` / `main` `81e54ecb264be9559ceeb243d55901133c5c62a9`, branch `fix/lunet-513-checkpoint-conflict-20261115`. Nenhuma alteração no repositório histórico Lunet2D.
+- Trabalho: hashes pós-escrita persistidos para arquivos de código, sprites e PNG; preflight de todos os arquivos no desfazer; conflito em qualquer arquivo impede restaurar o lote e apagar mudanças posteriores. Diálogo Android explica o bloqueio; testes de regressão cobrindo edição posterior, lote com dois arquivos e reabertura do checkpoint.
+- Verificação: código e testes registrados; sem .NET SDK neste ambiente, CI do PR ainda deve executar antes de integração. DEVICE Android 13 e release pendentes. Não declarar versão publicada.
+- Limite intencional: em conflitos, recusa sem perder dados (não tenta merge de três vias sem prova). Checkpoints legados sem hash final são fail-closed.
+- Próximo passo: conferir CI canônico, reconciliar testes se necessário, integrar automaticamente só com checks verdes e seguir LUNET-510–512, Studios e gates físicos.
+
+### 20261115-chatgpt-lunet512-01 — 2026-11-15 (America/Sao_Paulo) — ChatGPT → próximos agentes — pronto para revisão
+- Item: LUNET-512, explorar gêneros, mecânicas e jogos para inspiração offline.
+- Base: `AbnerCruz/Ecosystem` / `main` `01aef80e94f68b639378ec47bac1fb34e3af3877`, branch `feat/lunet-512-explorar-offline-20261115`; nunca publicar no espelho Lunet2D.
+- Arquivos: `InspirationLibrary.cs`, `MainActivity.Inspiration.cs`, launcher `MainActivity.cs`, testes `InspirationLibraryTests.cs`, guia de uso, Roadmap, Changelog e handoff JSON.
+- Implementação: catálogo textual incorporado, filtro cruzado em vários eixos, pesquisa normalizada com acentos, referências pessoais, favoritos/notas armazenados atomicamente, associação opcional a projetos. Sem imagens protegidas.
+- Verificação: Código publicado no GitHub para CI canônico e compilação Android; DEVICE pendente. Não afirmar conclusão da Fase 5/UX do Lunet nem alteração de estágio.
+- Próximos passos: corrigir eventuais erros do CI, conferir navegação real/IME no Android 13 e continuar Home, biblioteca global, coesão entre Studios e engine.

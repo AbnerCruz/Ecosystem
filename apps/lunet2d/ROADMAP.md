@@ -12,6 +12,22 @@ Fonte de verdade do que existe e do que falta. A especificação completa está 
 
 Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
 
+## Auditoria incremental e canal único (15/11/2026)
+
+- [ ] **LUNET-509 — Eliminar espelho e registrar a auditoria atual (implementação documental proposta; CI/integrador pendentes):** DEC-0064/ADD-0035 determinam apenas Ecosystem para código, CI e releases. O próximo agente deve ler `../../docs/architecture/audits/lunet-estado-atual-2026-11-15.md`, verificar a main e priorizar E2E no Android, segurança de edições da IA, fluxo completo dos Studios, desempenho e multiplayer real; não fechar gates sem DEVICE. Não mexer na maturidade alfa/beta/dev/estável por iniciativa própria.
+
+## Nova direção de UX e criação independente — solicitação do proprietário em 15/11/2026
+
+Estudo e critérios propostos em `../../docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md`. Nenhuma função abaixo foi implementada nem validada no aparelho: devem ser realizadas por incrementos com TDD, prints do Android e gates do produto.
+
+- [ ] **LUNET-510 — Home como área de trabalho (estudo concluído; implementação pendente):** abrir sem projeto, projetos recentes/fixados, novo projeto completo, navegação mobile-first para Studios, Explorar, Biblioteca, documentação e configurações globais (temas, fonte, IA, preferências). Back, acessibilidade, persistência e continuidade de IA/editor. Sem menu sobrecarregado.
+- [ ] **LUNET-511 — Studios autônomos e biblioteca de assets multi-projeto (estudo concluído; implementação pendente):** Studio abre sem `_project`, salva na Library local versionada; dentro do jogo é o mesmo Studio com contexto do projeto. Importação segura por cópia da fonte e derivados para um ou vários projetos, licença/proveniência, conflitos explícitos e export ZIP/APK intactos. Não criar dependência global silenciosa entre jogos.
+- [ ] **LUNET-512 — Explorar gêneros, mecânicas e jogos de referência offline (primeira entrega funcional, CI/DEVICE pendentes):** catálogo curado local, busca por título, gênero, mecânica, perspectiva, estética e outros filtros combináveis; fichas educativas, favoritos e notas, vínculos opcionais a projetos. IA/online opcionais, sem misturar com o futuro catálogo de jogos publicados no Lunet e sem embutir screenshots não licenciadas. Implementação proposta: catálogo curado e pessoal em `InspirationLibrary`, busca por múltiplos filtros/acentos, favoritos, notas e associação a projeto, CRUD e tela Android acessível do launcher (`MainActivity.Inspiration.cs`), com testes `InspirationLibraryTests` e guia `docs/guides/inspiracao.md`. Integrações externas/mídia licenciada seguem fora desta entrega; não fechar gate até DEVICE.
+
+## Proteção da integridade dos projetos (15/11/2026)
+
+- [ ] **LUNET-513 — Desfazer IA sem destruir edições posteriores (código proposto, CI/DEVICE pendentes):** registrar hash dos bytes após cada escrita bem-sucedida (incluindo sprites), persistir no checkpoint, fazer preflight de **todos** os caminhos antes de desfazer e bloquear a operação inteira quando algum arquivo foi editado depois ou veio de checkpoint legado sem estado final confiável. Não fazer merge automático de mudanças conflitantes; avisar a pessoa sem perder arquivos. Regressões de edição manual, arquivos criados e reinício em `LunetAiCoworkTests`; completar validação Android 13, conflitos com edição concorrente e recuperação dirigida na UI.
+
 ## Prioridade de execução — ordem do proprietário em 25/10/2026
 
 O proprietário solicitou explicitamente framework, editores, UI e build APK utilizáveis,

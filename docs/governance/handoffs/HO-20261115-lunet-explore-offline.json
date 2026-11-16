@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261115-lunet-explore-offline",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-15T22:50:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-explore-20261115",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-512",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-512-explorar-offline-20261115",
+  "base_commit": "81e54ecb264be9559ceeb243d55901133c5c62a9",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/InspirationLibrary.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/InspirationLibraryTests.cs",
+    "apps/lunet2d/docs/guides/inspiracao.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261115-lunet-explore-offline.json"
+  ],
+  "work_completed": [
+    "Catálogo offline curado de títulos para pesquisa de mecânicas/estilos sem imagens protegidas.",
+    "Persistência atômica de referências pessoais, notas e favoritos; leitura de JSON corrupto falha sem sobrescrita.",
+    "Busca sem acentos, quatro filtros combinados, favoritos e links de projeto opcionais.",
+    "Android launcher abre Explorar sem projeto, navegação Back, criação/edição/exclusão de referências pessoais, notas e favoritos.",
+    "Novos testes de persistência, filtros, links e integridade em arquivo corrupto; documentação de uso/limites."
+  ],
+  "verification": [
+    {
+      "check": "Investigação UX offline",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md; Android Developers offline-first."
+    },
+    {
+      "check": "dotnet test tests/Lunet.Tests e build Android canônico",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem dotnet local, CI executará."
+    },
+    {
+      "check": "Android 13 - buscar, filtrar, salvar, reabrir e voltar",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/inspiracao.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem validação em aparelho; interface precisa de screenshots de tela compacta.",
+    "Sem mídia licenciada, ranking vivo, nuvem ou catálogo de publicação de jogos; exigem escopo próprio."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar e corrigir CI do PR e integrar somente com checks verdes.",
+    "Validar Android 13 e telas pequenas com IME e Back.",
+    "Continuar LUNET-510 Home e LUNET-511 Studios globais em PRs separados."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Somente Ecosystem é fonte canônica."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em dispositivo ainda pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código local específico do Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "offline-inspiration-catalog",
+      "status": "product-specific",
+      "rationale": "Catálogo direcionado à criação de jogos do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
