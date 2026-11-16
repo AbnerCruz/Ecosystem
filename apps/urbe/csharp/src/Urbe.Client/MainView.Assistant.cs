@@ -59,13 +59,14 @@ public sealed partial class MainView : IAssistantApp
         _assistantMini.BorderThickness = new Thickness(1);
         _assistantMini.CornerRadius = new CornerRadius(UrbeTokens.Radius.L);
         _assistantMini.BoxShadow = UrbeTokens.Elevation.Low;
-        _assistantMini.Padding = new Thickness(UrbeTokens.Space.M);
-        // An upper-right, bounded companion avoids the keyboard and the note's writing area.
-        _assistantMini.Margin = new Thickness(12, 64, 12, 0);
-        _assistantMini.MaxWidth = 440;
+        _assistantMini.Padding = new Thickness(14, 10, 14, 10);
+        // #955 (owner): the companion sits right above where the person types — over the editor's footer and, with
+        // the keyboard up, over the keyboard (the app shrinks with it) — never over the note's top
+        _assistantMini.Margin = new Thickness(8, 0, 8, 8);
+        _assistantMini.MaxWidth = 560;
         _assistantMini.ZIndex = 19; // Explorer drawer uses ZIndex=1; contextual UI must be above it.
-        _assistantMini.HorizontalAlignment = HorizontalAlignment.Right;
-        _assistantMini.VerticalAlignment = VerticalAlignment.Top;
+        _assistantMini.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _assistantMini.VerticalAlignment = VerticalAlignment.Bottom;
         Avalonia.Automation.AutomationProperties.SetName(_assistantMini, "Assistente contextual");
         _stage.Children.Add(_assistantMini);
         _stage.Children.Add(Ui.UrbeMotion.Pressable(_assistantLauncher));
@@ -97,8 +98,7 @@ public sealed partial class MainView : IAssistantApp
         // a wide window (a tablet, a phone on its side) has the launcher in the same corner: it floats above the
         // footer's Leitura/Edição switch too, and the contextual card above the launcher
         _assistantLauncher.Margin = new Thickness(0, 0, 16, 16 + lift);
-        // Do not lower the companion with the keyboard: its safe anchor is at the top.
-        _assistantMini.Margin = new Thickness(12, 64, 12, 0);
+        _assistantMini.Margin = new Thickness(8, 0, 8, 8 + lift);
         if (_radial is null) return;
         _radial.Lift = lift;
     }
@@ -115,7 +115,8 @@ public sealed partial class MainView : IAssistantApp
         _assistantLauncher.IsVisible = free && !phone;
         if (_radial is null) return;
         // while writing (keyboard up) the menu would float over the text: it comes back when the block closes
-        _radial.IsVisible = free && phone && !Editor.Writing;
+        // nor while the contextual panel is open: it has its own close, and the button would cover its send
+        _radial.IsVisible = free && phone && !Editor.Writing && !_assistantMini.IsVisible;
         if (!_radial.IsVisible) _radial.Close();
     }
 
@@ -144,13 +145,8 @@ public sealed partial class MainView : IAssistantApp
         _assistantMiniRenderedKey = key;
 
         // Keep the editor alive under this non-modal, bounded surface. Never move keyboard focus.
-        _assistantMini.Child = new ScrollViewer
-        {
-            MaxHeight = 300,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = panel!.CompactContent()
-        };
+        // one scroll only (the conversation inside), the composer always in sight; about half the screen
+        _assistantMini.Child = panel!.CompactContent(Math.Clamp((Bounds.Height > 0 ? Bounds.Height : 760) * .5, 260, 520));
 
     }
 

@@ -25,3 +25,24 @@ Pedido do proprietário: estudar os apps de IA (forma da conversa, formatação,
 3. ~~Opção "manter etapas abertas"~~ — entregue (Custos e consumo → Mostrar as etapas abertas).
 4. Citação [S1] com prévia ao tocar (estilo Perplexity).
 5. Escala da fórmula inline igual à altura do texto — com validação no aparelho (CST-142).
+
+## Pop-up contextual (rejeitado pelo proprietário em 15/11/2026) — diagnóstico e redesenho
+
+Captura real antes (`PopupLook_Capture`, 360 px), problemas observados e causas no código:
+
+| Problema | Causa |
+|---|---|
+| Cobria o título e o texto da nota | Ancorado no topo (`Margin` 64 em cima) |
+| Campo de pergunta e Enviar cortados | `ScrollViewer` externo com `MaxHeight` 300 envolvendo um corpo de altura fixa 380 |
+| Rolagem dentro de rolagem; título da resposta sumia | O mesmo aninhamento |
+| Cartão dentro de cartão | Resposta do agente num balão com fundo dentro do cartão |
+| Sem etapas, sem fechar/expandir visíveis | Ações numa linha de links no rodapé, cortada |
+| O botão do menu radial cobria o envio | Os dois no mesmo canto |
+
+Desenhos avaliados:
+- **A — painel ancorado acima da área de digitação** (escolhido): o pedido do proprietário; o padrão de assistentes contextuais no celular (Notion AI, Apple Writing Tools) — o polegar alcança tudo e a nota fica à vista.
+- **B — cartão no topo corrigido**: continua cobrindo o que se edita e longe do polegar.
+
+Entregue (A): metade da altura da tela (260–520 px), uma única rolagem (a conversa), cabeçalho com estado, agente, **Abrir conversa** e **Fechar** sempre visíveis, etapas em palavras, resposta sem balão (só a mensagem da pessoa tem balão), envio redondo igual ao do chat completo, menu radial escondido enquanto o painel está aberto; até 560 px de largura no computador. Capturas depois: 360 e 900 px.
+
+Pendente: validação no aparelho (teclado aberto, rotação, TalkBack) e aprovação do proprietário.
