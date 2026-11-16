@@ -1080,7 +1080,7 @@ public sealed partial class AssistantPanel : Border
     {
         var conv = target ?? _conv;
         if (_activeRuns.ContainsKey(conv.Id)) return;
-        var choice = _cfg.ModelFor(conv);
+        var choice = _cfg.UseModelFor(conv);
         var p = _cfg.Providers.FirstOrDefault(x => x.Id == choice.ProviderId);
         if (p is null) { ShowSettings(); return; }
         if (_app.Documents is not { } documents) { await _app.Dialogs.AlertAsync("Assistente", "Abra um vault para conversar com o Assistente sobre as suas notas."); return; }

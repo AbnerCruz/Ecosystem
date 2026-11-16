@@ -231,6 +231,19 @@ public sealed class AiConfig
         return new AiModelChoice(id, conversation.Model.Length > 0 ? conversation.Model : Model);
     }
 
+    /// <summary>
+    /// The model a turn runs on, written into the conversation as it starts: the agent's choice wins over the one the
+    /// conversation recorded earlier (owner's audit of the Alice export, 15/11/2026: the conversation said
+    /// gpt-6-luna-pro while the calls went to the agent's deepseek). The record never names a model that was not used.
+    /// </summary>
+    public AiModelChoice UseModelFor(AiConversation conversation)
+    {
+        var choice = ModelFor(conversation);
+        conversation.ProviderId = choice.ProviderId.Length > 0 ? choice.ProviderId : conversation.ProviderId;
+        conversation.Model = choice.Model;
+        return choice;
+    }
+
     public AiAgentDef AgentWithInstructions(AiAgentDef agent)
     {
         agent = agent with { Tools = ToolScopeFor(agent) };
