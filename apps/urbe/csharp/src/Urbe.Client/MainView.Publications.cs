@@ -633,7 +633,9 @@ public sealed partial class MainView
     {
         if (await PreparePublicationOutputAsync() is not { } output) return;
         var (project, result) = output;
-        var versions = PublicationExportRecord.Of(project, "zip", id => _store?.Get(id)?.Content, DateTimeOffset.Now).Sources;
+        var versions = PublicationExportRecord.Of(project, "zip", id => _store?.Get(id)?.Content, DateTimeOffset.Now).Sources
+            .Where(kv => _store?.Get(kv.Key) is not null)
+            .ToDictionary(kv => kv.Key, kv => new PublicationPackage.Source(_store!.Get(kv.Key)!.Path, kv.Value, _store.Get(kv.Key)!.Content), StringComparer.Ordinal);
         // the audio and video it embeds go in the package, read from the vault by the name the note uses; a large
         // package says its size first (sizes come without reading the files)
         var references = PublicationPackage.MediaReferences(result.Html);

@@ -22,7 +22,10 @@ public static partial class PublicationPackage
         MediaEmbed().Matches(html).Select(m => System.Net.WebUtility.HtmlDecode(m.Groups[1].Value))
             .Where(r => MediaTypes.ContainsKey(Path.GetExtension(r))).Distinct(StringComparer.Ordinal).ToList();
 
-    public static byte[] Build(PublicationProject project, string html, IReadOnlyDictionary<string, string> sourceVersions, DateTimeOffset at,
+    /// <summary>A source as the package records it: where it was, its version, and its text (read for authorship, never copied).</summary>
+    public sealed record Source(string Path, string Version, string Markdown);
+
+    public static byte[] Build(PublicationProject project, string html, IReadOnlyDictionary<string, Source> sources, DateTimeOffset at,
         IReadOnlyDictionary<string, byte[]?>? media = null)
     {
         // each embedded audio/video goes to media/ and plays from there; one missing from the vault says so in place
@@ -59,8 +62,18 @@ public static partial class PublicationPackage
                 ["path"] = f.Path, ["mime"] = f.Mime, ["bytes"] = f.Bytes.Length,
                 ["sha256"] = Convert.ToHexString(SHA256.HashData(f.Bytes)).ToLowerInvariant()
             }).ToArray()),
-            ["sources"] = new JsonObject(sourceVersions.OrderBy(kv => kv.Key, StringComparer.Ordinal)
-                .Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)JsonValue.Create(kv.Value))))
+            // CST-184: what each source is — its version, and how much of it a model wrote (from the note's {ia:"…"} seals)
+            ["sources"] = new JsonObject(sources.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv =>
+            {
+                var blocks = AiAuthorship.Blocks(kv.Value.Markdown);
+                var models = blocks.Select(b => b.Model).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+                return KeyValuePair.Create(kv.Key, (JsonNode?)new JsonObject
+                {
+                    ["path"] = kv.Value.Path, ["version"] = kv.Value.Version, ["blocks"] = blocks.Count,
+                    ["blocksByAi"] = blocks.Count(b => b.Model is not null),
+                    ["aiModels"] = new JsonArray(models.Select(m => (JsonNode?)JsonValue.Create(m)).ToArray())
+                });
+            }))
         };
         using var output = new MemoryStream();
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))

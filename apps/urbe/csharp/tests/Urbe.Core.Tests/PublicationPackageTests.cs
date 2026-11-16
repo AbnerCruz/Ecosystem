@@ -10,7 +10,10 @@ public sealed class PublicationPackageTests
     public void ThePackageHasThePublicationAndAManifestThatChecksIt()
     {
         var project = PublicationProject.Create("Livro", "d1");
-        var zipBytes = PublicationPackage.Build(project, "<html>oi</html>", new Dictionary<string, string> { ["d1"] = "abc" }, DateTimeOffset.UnixEpoch);
+        var zipBytes = PublicationPackage.Build(project, "<html>oi</html>", new Dictionary<string, PublicationPackage.Source>
+        {
+            ["d1"] = new("Livro.md", "abc", "Escrito pela pessoa.\n\nResumo da IA. {ia:\"modelo-b\"}\n")
+        }, DateTimeOffset.UnixEpoch);
         using var zip = new ZipArchive(new MemoryStream(zipBytes));
         var index = new MemoryStream();
         zip.GetEntry("index.html")!.Open().CopyTo(index);
@@ -19,7 +22,9 @@ public sealed class PublicationPackageTests
         var file = manifest["files"]![0]!;
         Assert.Equal(index.Length, (long)file["bytes"]!);
         Assert.Equal(Convert.ToHexString(SHA256.HashData(index.ToArray())).ToLowerInvariant(), (string?)file["sha256"]);
-        Assert.Equal("abc", (string?)manifest["sources"]!["d1"]);
+        var source = manifest["sources"]!["d1"]!;
+        Assert.Equal(("Livro.md", "abc", 2, 1), ((string?)source["path"], (string?)source["version"], (int)source["blocks"]!, (int)source["blocksByAi"]!));
+        Assert.Equal("modelo-b", (string?)source["aiModels"]![0]);
     }
 
     [Fact]
@@ -33,7 +38,7 @@ public sealed class PublicationPackageTests
             MarkdownEngine.Render("![[aula.mp3]]\n\n![[Pasta/clipe.mp4]]\n\n![[sumiu.wav]]\n\n![[aula.mp3]]", (_, _) => "");
         var refs = PublicationPackage.MediaReferences(html);
         Assert.Equal(["aula.mp3", "Pasta/clipe.mp4", "sumiu.wav"], refs);
-        var zipBytes = PublicationPackage.Build(PublicationProject.Create("P"), html, new Dictionary<string, string>(), DateTimeOffset.UnixEpoch,
+        var zipBytes = PublicationPackage.Build(PublicationProject.Create("P"), html, new Dictionary<string, PublicationPackage.Source>(), DateTimeOffset.UnixEpoch,
             new Dictionary<string, byte[]?> { ["aula.mp3"] = [1, 2], ["Pasta/clipe.mp4"] = [3], ["sumiu.wav"] = null });
         using var zip = new ZipArchive(new MemoryStream(zipBytes));
         Assert.Equal(["index.html", "media/1-aula.mp3", "media/2-clipe.mp4", "manifest.json"], zip.Entries.Select(e => e.FullName));
