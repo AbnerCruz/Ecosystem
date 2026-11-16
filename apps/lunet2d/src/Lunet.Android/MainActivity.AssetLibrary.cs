@@ -175,7 +175,7 @@ public sealed partial class MainActivity
         StartActivityForResult(intent, AssetLibraryExportRequestCode);
     }
 
-    private void CompleteLibraryAssetExport(Result resultCode, Android.Net.Uri? uri)
+    private void CompleteLibraryAssetExport(Result resultCode, global::Android.Net.Uri? uri)
     {
         var assetId = _pendingLibraryAssetId;
         var version = _pendingLibraryAssetVersion;
