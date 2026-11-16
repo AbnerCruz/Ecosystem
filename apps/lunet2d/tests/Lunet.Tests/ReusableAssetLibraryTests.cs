@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Lunet.Core;
 
 namespace Lunet.Tests;
@@ -186,6 +187,34 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Equal(originalGame, target.ReadText("Game.cs"));
         Assert.False(File.Exists(Path.Combine(target.Directory, "Content/Art/wing.sprite.json")));
         Assert.Equal(original, File.ReadAllText(manifestPath));
+    }
+
+    [Fact]
+    public void ExportZip_ContainsManifestAndImmutableSourceAndDerivedFiles()
+    {
+        var source = CreateSpriteProject("Source");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json", "Asas", "Eu", "CC0");
+        var zip = Path.Combine(_root, "export.zip");
+        Library.ExportZip(asset.Id, asset.Version, zip);
+        using var archive = ZipFile.OpenRead(zip);
+        Assert.NotNull(archive.GetEntry("asset.json"));
+        Assert.NotNull(archive.GetEntry("files/Content/Art/wing.sprite.json"));
+        Assert.NotNull(archive.GetEntry("files/Content/Art/wing.png"));
+        using var reader = new StreamReader(archive.GetEntry("files/Content/Art/wing.sprite.json")!.Open());
+        Assert.Equal(source.ReadText("Content/Art/wing.sprite.json"), reader.ReadToEnd());
+        Assert.Throws<IOException>(() => Library.ExportZip(asset.Id, asset.Version, zip));
+    }
+
+    [Fact]
+    public void ExportZip_RejectsCorruptedBytesWithoutCreatingDestination()
+    {
+        var source = CreateSpriteProject("Source");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json", "Asas", "Eu", "CC0");
+        File.WriteAllText(Path.Combine(LibraryRoot, asset.Id, "v1", "files", "Content", "Art",
+            "wing.sprite.json"), "tampered");
+        var zip = Path.Combine(_root, "export.zip");
+        Assert.Throws<InvalidDataException>(() => Library.ExportZip(asset.Id, 1, zip));
+        Assert.False(File.Exists(zip));
     }
 
     [Fact]
