@@ -34,6 +34,7 @@ public static class Program
         Urbe.Core.Assistant.LocalAi.Text = new Urbe.LocalAi.LlamaTextRuntime(
             Path.Combine(Path.GetDirectoryName(selection)!, "local-ai"), GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
         UrbeApp.DesktopWindowReady = DesktopQuickNote.Install;
+        WindowsSpeech.Install();
         if (OperatingSystem.IsWindows())
         {
             // Configurações → Verificar atualização: the zip of the newest direct release (extracted over this one)
