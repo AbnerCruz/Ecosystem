@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (integridade, CI/DEVICE pendentes): importação de assets recusa manifestos locais com ID, lista de arquivos, caminho ou hash nulos, emitindo erro de dados inválidos em vez de exceção inesperada. Regressões verificam preservação do projeto de destino e do manifesto original.
+
 - LUNET-511 (biblioteca em desenvolvimento, CI/DEVICE pendentes): biblioteca local de assets versionados, com publicação de fontes e derivados, hashes SHA-256 e metadados de origem/licença; importação por cópia para outros jogos, preflight de colisões, recusa de dados corrompidos e rollback sem apagar mudanças concorrentes. Interface de publicação e uso entre projetos conectada à Home e à seção Studios, ainda sem teste físico.
 
 - LUNET-510 (PR em andamento, DEVICE pendente): Home mobile-first sem abrir projeto, quatro destinos (Início, Projetos, Studios e Explorar), pesquisa de jogos, fixados, último projeto aberto, documentação offline e acesso a configurações; preferências locais persistidas fora dos jogos com gravação atômica. Studios ainda vinculados a projetos até LUNET-511.
