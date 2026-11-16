@@ -20,4 +20,15 @@ public sealed class PublicationAssetsTests
     public void WikiImageEmbedsBecomeMarkdownImagesOutsideCode() =>
         Assert.Equal("![mapa velho](Pasta/mapa%20velho.png) e ![[Nota]]\n```\n![[x.png]]\n```\n![b](b.jpg)",
             PublicationAssets.WikiImagesToMarkdown("![[Pasta/mapa velho.png|300]] e ![[Nota]]\n```\n![[x.png]]\n```\n![[b.jpg]]"));
+
+    [Fact]
+    public void RemovedPassagesAreFound()
+    {
+        var project = PublicationProject.Create("P")
+            .AddSource(new PublicationSourceReference("d1", "Capítulo 2"))
+            .AddSource(new PublicationSourceReference("d1", "^pub-1"))
+            .AddSource(new PublicationSourceReference("d1", "Fim"))
+            .AddSource(new PublicationSourceReference("d2", "Outro"));
+        Assert.Equal(["^pub-1", "Fim"], PublicationAssets.MissingFragments(project, "d1", "# Livro\n\n## capitulo 2\n\nTexto ^pub-2\n"));
+    }
 }

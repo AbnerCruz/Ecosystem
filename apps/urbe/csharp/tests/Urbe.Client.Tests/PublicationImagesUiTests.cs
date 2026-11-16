@@ -56,7 +56,7 @@ public sealed partial class HeadlessUiTests
         var dir = Path.Combine(Path.GetTempPath(), "urbe-pubaffected-" + Guid.NewGuid().ToString("N"));
         var vault = Path.Combine(dir, "vault");
         Directory.CreateDirectory(vault);
-        File.WriteAllText(Path.Combine(vault, "Fonte.md"), "# Fonte\n\nTexto.\n");
+        File.WriteAllText(Path.Combine(vault, "Fonte.md"), "# Fonte\n\nTexto.\n\n## Parte dois\n\nMais.\n");
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
         var window = new Window { Width = 412, Height = 860, Content = view };
         window.Show();
@@ -76,6 +76,19 @@ public sealed partial class HeadlessUiTests
             view.Editor.Editor.Text = "# Fonte\n\nTexto novo.\n";
             Assert.True(await view.Editor.SaveAsync());
             Assert.Equal("Esta nota alimenta a publicação Livro. A mudança entra na próxima exportação.", view.Editor.NoticeText);
+            // a passage the publication takes is removed: a warning, at once
+            await view.FlushPendingAsync(); // the notes' ids are on disk before the vault is read again
+            File.WriteAllText(Path.Combine(vault, "Publicações", "Trecho.publication.json"),
+                Urbe.Core.PublicationProjectCodec.Serialize(Urbe.Core.PublicationProject.Create("Trecho")
+                    .AddSource(new Urbe.Core.PublicationSourceReference(view.Documents!.Get("Fonte.md")!.Id, "Parte dois"))));
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            view.OpenNoteByPath("Fonte.md");
+            await Settle(window, view);
+            view.Editor.SetMode(EditorMode.Fonte);
+            view.Editor.Editor.Text = "# Fonte\n\nSem a parte dois.\n";
+            Assert.True(await view.Editor.SaveAsync());
+            Assert.Equal("A publicação Trecho usa o trecho “Parte dois”, que não existe mais nesta nota. Restaure o título ou escolha outro trecho na publicação.", view.NoticeText);
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }

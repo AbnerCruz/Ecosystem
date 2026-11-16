@@ -67,6 +67,20 @@ public static partial class PublicationAssets
     [GeneratedRegex(@"!\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]")]
     private static partial Regex WikiEmbed();
 
+    /// <summary>
+    /// CST-153: the passages (<c>Título</c> or <c>^id</c>) this publication takes from the note that the note no longer
+    /// has: the reference was removed, and the publication would lose that part silently.
+    /// </summary>
+    public static IReadOnlyList<string> MissingFragments(PublicationProject project, string documentId, string markdown)
+    {
+        var headings = EmbedFragments.Headings(markdown).Select(h => Assistant.AssistantTools.Fold(h)).ToHashSet(StringComparer.Ordinal);
+        var blocks = EmbedFragments.BlockIds(markdown).ToHashSet(StringComparer.Ordinal);
+        return project.Sources.Where(s => s.DocumentId == documentId && !string.IsNullOrWhiteSpace(s.Fragment))
+            .Select(s => s.Fragment!.Trim().TrimStart('#'))
+            .Where(f => f.StartsWith('^') ? !blocks.Contains(f[1..]) : !headings.Contains(Assistant.AssistantTools.Fold(f)))
+            .Distinct(StringComparer.Ordinal).ToList();
+    }
+
     private static bool Local(string src) => !src.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && !src.Contains("://", StringComparison.Ordinal);
 
     [GeneratedRegex("!<span class=\"wikilink\" data-note-name=\"([^\"]+)\">[^<]*</span>")]

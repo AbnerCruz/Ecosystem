@@ -612,11 +612,26 @@ public sealed partial class MainView : Grid
     /// </summary>
     private void TellAffectedPublications(string path)
     {
-        if (_toldAffected.Contains(path) || _store?.Get(path) is not { } note) return;
-        var titles = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase) && d.Content.Contains("\"" + note.Id + "\"", StringComparison.Ordinal))
-            .Select(d => System.IO.Path.GetFileName(d.Path)[..^".publication.json".Length]).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
-        if (titles.Count == 0) return;
-        _toldAffected.Add(path);
+        if (_store?.Get(path) is not { } note) return;
+        var using_ = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase) && d.Content.Contains("\"" + note.Id + "\"", StringComparison.Ordinal)).ToList();
+        if (using_.Count == 0) return;
+        static string Title(UrbeDocument d) => System.IO.Path.GetFileName(d.Path)[..^".publication.json".Length];
+        // a passage a publication takes from this note was removed: said at every save while it lasts
+        foreach (var publication in using_)
+        {
+            PublicationProject project;
+            try { project = PublicationProjectCodec.Parse(publication.Content); }
+            catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or NotSupportedException) { continue; }
+            if (PublicationAssets.MissingFragments(project, note.Id, note.Content) is { Count: > 0 } missing)
+            {
+                ShowLifeNotice("A publicação " + Title(publication) + " usa " + (missing.Count == 1 ? "o trecho “" + missing[0] + "”, que" : "os trechos " +
+                    string.Join(", ", missing.Select(m => "“" + m + "”")) + ", que") + " não " + (missing.Count == 1 ? "existe" : "existem") +
+                    " mais nesta nota. Restaure o título ou escolha outro trecho na publicação.", Ui.ToastKind.Warning);
+                return;
+            }
+        }
+        if (!_toldAffected.Add(path)) return;
+        var titles = using_.Select(Title).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
         Editor.Notify("Esta nota alimenta " + (titles.Count == 1 ? "a publicação " : titles.Count + " publicações: ") + string.Join(", ", titles.Take(3)) +
             (titles.Count > 3 ? " e outras" : "") + ". A mudança entra na próxima exportação.");
     }
