@@ -95,6 +95,24 @@ public sealed partial class HeadlessUiTests
             var narration = Assert.Single(studio.Project!.Video!.Audio, a => a.Kind == "voice");
             Assert.Equal(("Narração/Filme/Cena 1.wav", 0.0), (narration.Path, narration.Start));
             Assert.True(File.Exists(Path.Combine(vault, "Narração", "Filme", "Cena 1.wav")));
+            // CST-186: too little space is said before any frame is drawn, and nothing is saved
+            var (encoder, free) = (PlatformVideo.CreateEncoder, MainView.FreeSpace);
+            var started = false;
+            PlatformVideo.CreateEncoder = () => new NeverStarted(() => started = true);
+            MainView.FreeSpace = _ => 1000;
+            (string, byte[])? none = null;
+            view.SavePageFile = (name, bytes) => { none = (name, bytes); return Task.FromResult<bool?>(true); };
+            try
+            {
+                var tight = view.ExportPublicationVideoAsync();
+                for (int j = 0; j < 100 && !view.Dialogs.IsOpen; j++) await Pump();
+                Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Libere espaço ou encurte o vídeo") == true);
+                ClickButtonWithText(view.Dialogs, "Ok");
+                await tight;
+            }
+            finally { (PlatformVideo.CreateEncoder, MainView.FreeSpace) = (encoder, free); }
+            Assert.False(started);
+            Assert.Null(none);
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is covered where ffmpeg exists
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Resolution = 144 } });
             await Pump();
@@ -113,4 +131,13 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    private sealed class NeverStarted(Action started) : IVideoEncoder
+    {
+        public string Name => "teste";
+        public Task StartAsync(VideoEncodeSettings settings, string outputPath, CancellationToken cancel) { started(); return Task.CompletedTask; }
+        public Task WriteFrameAsync(ReadOnlyMemory<byte> rgba, CancellationToken cancel) => Task.CompletedTask;
+        public Task FinishAsync(CancellationToken cancel) => Task.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 }

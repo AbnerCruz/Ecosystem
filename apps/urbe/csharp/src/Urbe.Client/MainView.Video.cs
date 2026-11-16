@@ -275,6 +275,17 @@ public sealed partial class MainView
         }
         var vault = _vault;
         var temp = Directory.CreateTempSubdirectory("urbe-video-").FullName;
+        // CST-186: the space it needs is checked before any work, never discovered full halfway
+        long sources = 0;
+        foreach (var clip in timeline.Audio) sources += vault is null ? 0 : (await vault.ReadFileAsync(clip.Path, 0))?.Size ?? 0;
+        var needed = VideoBudget.DiskNeeded(timeline.Width, timeline.Height, timeline.Fps, timeline.Duration, timeline.Audio.Count, sources);
+        if (FreeSpace(temp) is { } free && free < needed)
+        {
+            try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            await Dialogs.AlertAsync("Exportar MP4", "Este vídeo precisa de até " + PublicationPackage.Size(needed) + " livres enquanto é gerado, e o aparelho tem " +
+                PublicationPackage.Size(free) + ". Libere espaço ou encurte o vídeo.");
+            return;
+        }
         using var cancel = new CancellationTokenSource();
         _videoExport = cancel;
         var panel = studio.VideoPanel;
@@ -345,7 +356,14 @@ public sealed partial class MainView
         }
     }
 
-    private async Task<bool?> SaveVideoFileAsync(string path)
+    /// <summary>Free bytes where the export writes, or null when the platform does not say.</summary>
+    public static Func<string, long?> FreeSpace { get; set; } = path =>
+    {
+        try { return new DriveInfo(path).AvailableFreeSpace; }
+        catch (Exception e) when (e is IOException or ArgumentException or UnauthorizedAccessException) { return null; }
+    };
+
+        private async Task<bool?> SaveVideoFileAsync(string path)
     {
         if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage)
             throw new NotSupportedException("Este aparelho não permite salvar arquivos.");
