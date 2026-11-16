@@ -121,6 +121,35 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Contains("../../Game.cs", File.ReadAllText(manifest));
     }
 
+    [Theory]
+    [InlineData("Id")]
+    [InlineData("Files")]
+    [InlineData("FilePath")]
+    [InlineData("FileHash")]
+    public void NullManifestFields_FailClosedWithoutChangingProjects(string field)
+    {
+        var source = CreateSpriteProject("Source");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json", "Asas", "Eu", "CC0");
+        var manifestPath = Path.Combine(LibraryRoot, asset.Id, "v1", "asset.json");
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        switch (field)
+        {
+            case "Id": document["Id"] = null; break;
+            case "Files": document["Files"] = null; break;
+            case "FilePath": document["Files"]![0]!["Path"] = null; break;
+            case "FileHash": document["Files"]![0]!["Sha256"] = null; break;
+        }
+        var malformed = document.ToJsonString();
+        File.WriteAllText(manifestPath, malformed);
+        var destination = Projects.Create("Destination");
+        var originalGame = destination.ReadText("Game.cs");
+
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, destination));
+        Assert.Equal(originalGame, destination.ReadText("Game.cs"));
+        Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
+        Assert.Equal(malformed, File.ReadAllText(manifestPath));
+    }
+
     [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
