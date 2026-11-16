@@ -902,7 +902,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Onde esta nota é usada", UrbeTheme.Icons.Connections,
                 "Publicações, dados, progresso e notas que dependem dela.", Run: () => ShowNoteUsageAsync(note.Path)),
             new DialogItem("Criar publicação de um trecho", UrbeTheme.Icons.Page,
-                "Só um título da nota e o que vem embaixo dele.", Run: () => CreatePublicationFromSectionAsync(note.Path)),
+                "Um título da nota e o que vem embaixo dele, ou o parágrafo selecionado.", Run: () => CreatePublicationFromSectionAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
                 {
                     new DialogItem("Voltar à publicação", UrbeTheme.Icons.Back,

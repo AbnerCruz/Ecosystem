@@ -261,13 +261,30 @@ public sealed partial class MainView
     /// <summary>CST-135: a publication of one section of a note (a heading and what is under it), still the note's text.</summary>
     public async Task CreatePublicationFromSectionAsync(string notePath)
     {
+        if (Editor.Current?.Path == notePath && Editor.HasChanges && !await Editor.SaveAsync()) return;
         if (_store?.Get(notePath) is not { } note) return;
         var headings = Urbe.Core.MarkdownEngine.SplitFrontmatter(note.Content).Body.Replace("\r", "").Split('\n')
             .Where(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^#{1,6}\s+\S")).Select(l => l.TrimStart('#').Trim()).Distinct().ToList();
-        if (headings.Count == 0) { await Dialogs.AlertAsync("Publicações", "Esta nota não tem títulos para escolher um trecho."); return; }
-        var choice = await Dialogs.ChooseAsync("Publicação de um trecho", headings.Select(h => new DialogItem(h)).ToList(), "O trecho é o título escolhido e o que vem embaixo dele; continua sendo o texto da nota.");
+        // CST-135: what is selected in the editor is the passage, when it is one paragraph of the note
+        var selected = ((IAssistantApp)this).EditorNote() is { Path: var open, Selection: { Length: > 0 } text } && open == notePath
+            && note.Content.Replace("\r\n", "\n").IndexOf(text.Trim(), StringComparison.Ordinal) is >= 0 and var at ? at : -1;
+        var items = headings.Select(h => new DialogItem(h)).ToList();
+        if (selected >= 0) items.Insert(0, new DialogItem("O parágrafo selecionado", UrbeTheme.Icons.Page, "Marcado na nota com um ^id, como os links de bloco."));
+        if (items.Count == 0) { await Dialogs.AlertAsync("Publicações", "Esta nota não tem títulos. Selecione um parágrafo no editor e escolha de novo."); return; }
+        var choice = await Dialogs.ChooseAsync("Publicação de um trecho", items, "O trecho continua sendo o texto da nota: um título e o que vem embaixo dele, ou o parágrafo selecionado.");
         if (choice is not { } k) return;
-        await CreatePublicationAsync(sourcePath: notePath, fragment: headings[k]);
+        if (selected < 0 || k > 0) { await CreatePublicationAsync(sourcePath: notePath, fragment: headings[k - (selected >= 0 ? 1 : 0)]); return; }
+        if (Urbe.Core.EmbedFragments.AnchorBlock(note.Content, selected, () => "pub-" + Guid.NewGuid().ToString("N")[..6]) is not { } anchored)
+        {
+            await Dialogs.AlertAsync("Publicações", "A seleção não está num parágrafo (é um título, código ou linha vazia).");
+            return;
+        }
+        if (anchored.Markdown != note.Content.Replace("\r\n", "\n"))
+        {
+            await ((IAssistantApp)this).SaveNoteAsync(_store.Get(notePath)!, anchored.Markdown);
+            if (Editor.Current?.Path == notePath) Editor.Open(new CityNote(notePath, anchored.Markdown));
+        }
+        await CreatePublicationAsync(sourcePath: notePath, fragment: "^" + anchored.Id);
     }
 
     /// <summary>The user chooses a project by title, not by raw JSON path.</summary>

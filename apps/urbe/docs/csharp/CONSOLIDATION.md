@@ -9,6 +9,9 @@ Regras:
 
 | ID | Entrega | Evidência | Pendente |
 |---|---|---|---|
+| CST-135 (parte) | Publicação de um parágrafo selecionado: o parágrafo recebe `^id` e a publicação referencia só ele (nota, seção, pasta, tag e seleção múltipla já existiam) | `AnchorBlockTests`, `Publication_FromTheSelectedParagraph` | Resultados de busca como origem; DEVICE |
+| CST-086/133/134 (parte), UC-87 | Memória aprende: novas formas de preferência, decisão e procedimento; contradição substitui (mantida e datada); refinamento ligado; repetição reforça; episódios abaixo do que a pessoa disse. Grafo da memória como projeção do AssistantStore | `MemoryLearningTests`, `MemoryGraphTests`, `MemoryGraph_OpensAsAProjectionAndWritesNothing` | DEVICE em conversas reais |
+| #956 (parte) | Mapa da sessão, podcast de duas vozes (Android), infográfico SVG/PNG | `StudyMapTests`, `PodcastTests`, `InfographicTests` e testes de UI | Áudio no Windows; DEVICE |
 | CST-027–033, 035 | Selos `{ia:"modelo"}` administrados pelo Urbe: um por bloco, correção mantém o autor, sem loop ([contrato](AI-AUTHORSHIP-SEALS.md)) | PR #846; `AiAuthorshipTests`, `AssistantAuthorshipSealTests`, `EditorAuthorshipProtectionTests` | DEVICE |
 | CST-034 (parte) | Aprovação editada: o texto da pessoa fica sem selo; nota alterada durante a aprovação não é sobrescrita | PR #846; `ThePersonsEditOfTheProposalKeepsAuthorshipHonest`, `ANoteChangedDuringTheApprovalIsNotOverwritten` | DEVICE |
 | Nota 25/10 | A pasta Personalização não aparece como projeto na Área de trabalho (continua no Explorador) | `WorkspaceIndexTests.TheAppsOwnFolderIsNotAProject` | DEVICE |
