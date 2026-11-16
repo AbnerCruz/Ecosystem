@@ -1,0 +1,22 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "06-recommendation-after-reversal.json",
+  "title": "Recomendação ignora sinais contraditórios sobre alimento",
+  "original_export_index": 6,
+  "severity": "P1",
+  "observations": [
+    "Usuário propôs refeição com alimento recém-rejeitado em outra conversa; assistente pesquisou o vault e sugeriu ajustes de dieta.",
+    "Depois usuário voltou a expressar preferência positiva; assistente reforçou essa preferência sem esclarecer a inversão anterior.",
+    "Respostas trazem raciocínio dietético detalhado sem necessariamente resolver a intenção da conversa."
+  ],
+  "repro": [
+    "Alternar duas preferências contraditórias em conversas; pedir sugestão de refeição contendo o alimento.",
+    "Verificar se agente distingue hipótese/teste/piada de preferência definitiva e oferece clarificação enxuta apenas quando impacta resposta."
+  ],
+  "expected": [
+    "Conciliação temporal entre memória, histórico e fala atual; não usar dados pessoais para recomendação sem contexto pertinente."
+  ]
+}
