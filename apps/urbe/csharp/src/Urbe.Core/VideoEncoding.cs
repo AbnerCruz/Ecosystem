@@ -136,14 +136,20 @@ public static class VideoAudio
             return BinaryPrimitives.ReadInt16LittleEndian(raw.AsSpan((int)(k * info.Channels + c) * 2)) / 32768f;
         }
         var volume = (float)clip.Volume;
+        // where the clip really ends (its length, or the file's end), for the fade out
+        long audibleEnd = Math.Min(clipEnd, clipStart + (long)Math.Floor((info.Frames - trim) / ratio));
+        double fadeIn = clip.FadeIn * Rate, fadeOut = clip.FadeOut * Rate;
         for (long o = from; o < to; o++)
         {
+            float gain = volume;
+            if (fadeIn > 0 && o - clipStart < fadeIn) gain *= (float)((o - clipStart) / fadeIn);
+            if (fadeOut > 0 && audibleEnd - o < fadeOut) gain *= (float)Math.Max(0, (audibleEnd - o) / fadeOut);
             double s = trim + (o - clipStart) * ratio;
             long i0 = (long)Math.Floor(s);
             float f = (float)(s - i0);
             int index = (int)(o - at) * Channels;
             for (int c = 0; c < Channels; c++)
-                mix[index + c] += volume * (Sample(i0, c) * (1 - f) + Sample(i0 + 1, c) * f);
+                mix[index + c] += gain * (Sample(i0, c) * (1 - f) + Sample(i0 + 1, c) * f);
         }
     }
 }

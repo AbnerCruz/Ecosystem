@@ -178,4 +178,25 @@ public sealed class VideoProjectTests
         Assert.Equal(32767, At(1.0));                    // voice + music: limited, not wrapped
         Assert.Equal(0, At(2.5));                        // music ended (3 s − 1 s trimmed)
     }
+
+    [Fact]
+    public void AudioFadesRiseFromAndFallToSilence()
+    {
+        var tone = new MemoryStream();
+        VideoAudio.WriteWavHeader(tone, 1, 44100, 44100L * 2 * 2);
+        for (int i = 0; i < 44100 * 2; i++) tone.Write(BitConverter.GetBytes((short)20000));
+        var output = new MemoryStream();
+        VideoAudio.Mix([(new VideoAudioClip { Path = "m.wav", FadeIn = 1, FadeOut = 0.5 }, tone)], 2, output, TestContext.Current.CancellationToken);
+        var info = VideoAudio.ReadWavInfo(output)!;
+        short At(double seconds)
+        {
+            output.Position = info.DataOffset + (long)(seconds * 44100) * 4;
+            var b = new byte[2]; output.ReadExactly(b); return BitConverter.ToInt16(b);
+        }
+        Assert.InRange(At(0.0), 0, 50);              // silence at the start
+        Assert.InRange(At(0.5), 9700, 10300);       // halfway up
+        Assert.InRange(At(1.2), 19900, 20100);      // full
+        Assert.InRange(At(1.75), 9700, 10300);      // halfway down
+        Assert.InRange(At(1.999), 0, 200);          // silence at the end
+    }
 }

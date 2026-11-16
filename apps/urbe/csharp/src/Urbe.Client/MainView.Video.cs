@@ -114,6 +114,8 @@ public sealed partial class MainView
         var clip = new VideoAudioClip
         {
             Kind = VideoAudioClip.Kinds[k], Path = sounds[c], Volume = k == 1 ? 0.6 : 1,
+            // music comes in and leaves softly (1 s in, 2 s out); a voice or an effect starts and stops as recorded
+            FadeIn = k == 1 ? 1 : 0, FadeOut = k == 1 ? 2 : 0,
             Start = double.Parse(start.Replace(',', '.'), CultureInfo.InvariantCulture)
         };
         _publicationsStudio.UpdateProject(project with { Video = project.Video! with { Audio = [.. project.Video.Audio, clip] } });
