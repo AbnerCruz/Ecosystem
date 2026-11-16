@@ -269,6 +269,25 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void Search_FiltersAcrossMetadataAndTagsWithoutChangingSavedVersions()
+    {
+        var project = CreateSpriteProject("SearchSource");
+        var library = Library;
+        var first = library.Publish(project, "Content/Art/wing.sprite.json",
+            "Asas", "Ana", "CC-BY", "Crédito obrigatório", tags: ["voo", "pixel"]);
+        project.WriteText("Content/Art/wing.sprite.json", "versão nova");
+        library.Publish(project, "Content/Art/wing.sprite.json",
+            "Asas", "Ana", "CC-BY", "Crédito obrigatório", tags: ["voo", "pixel"],
+            existingAssetId: first.Id);
+
+        Assert.Equal(2, library.Search("voo ana").Count);
+        Assert.Equal(2, library.Search("CC-BY pixel").Count);
+        Assert.Empty(library.Search("voo licença-inexistente"));
+        Assert.Equal(2, library.Search(null).Count);
+        Assert.Equal(2, new ReusableAssetLibrary(LibraryRoot).Search("asas").Count);
+    }
+
+    [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
         var source = CreateSpriteProject("Origin");
