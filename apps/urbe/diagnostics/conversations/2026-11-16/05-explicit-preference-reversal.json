@@ -1,0 +1,25 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "05-explicit-preference-reversal.json",
+  "title": "Preferência negativa e intenção de editar notas",
+  "original_export_index": 5,
+  "severity": "P1",
+  "observations": [
+    "Após preferência positiva na conversa anterior, usuário expressou aversão ao mesmo alimento em outra conversa.",
+    "Assistente buscou notas do vault mesmo sem pedido inicial de edição.",
+    "Ao receber instrução explícita para remover referências, informou limitação readonly e enumerou alterações possíveis.",
+    "Há risco de tratar inversões e linguagem intensa como atualização irrevogável de memória sem confirmar intenção ou contexto."
+  ],
+  "repro": [
+    "Enunciar preferência positiva; abrir chat novo; enunciar negação da mesma preferência.",
+    "Verificar reação antes e após pedido explícito de edição, respeitando readonly.",
+    "Testar revisão de memória sem sobrescrever notas do usuário."
+  ],
+  "expected": [
+    "Distinguir conversa informal, solicitação de salvamento e edição de dados.",
+    "Contradição registrada com proveniência/temporalidade; alterações proibidas em readonly."
+  ]
+}
