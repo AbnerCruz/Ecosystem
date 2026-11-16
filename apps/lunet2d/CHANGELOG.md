@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (incremento, CI/DEVICE pendentes): exportação ZIP autocontida de uma versão imutável da Library, com manifesto, fontes e derivados; validação SHA-256, rejeição de destino existente e limpeza de arquivo temporário em falhas. Regressões xUnit cobrem conteúdo, colisão e corrupção. Exposição pelo Android/SAF ainda pendente.
+
 - LUNET-511 (integridade, CI/DEVICE pendentes): leitura de versões da Library rejeita metadados persistidos ausentes/inválidos (título, licença, autor, atribuição e tags), além de hashes SHA-256 com caracteres não hexadecimais. Testes xUnit parametrizados verificam falha controlada, preservação do manifesto e ausência de escrita no jogo de destino.
 
 - LUNET-511 (integridade, CI/DEVICE pendentes): importação de assets recusa manifestos locais com ID, lista de arquivos, caminho ou hash nulos, emitindo erro de dados inválidos em vez de exceção inesperada. Regressões verificam preservação do projeto de destino e do manifesto original.
