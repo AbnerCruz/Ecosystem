@@ -112,6 +112,10 @@ public sealed partial class HeadlessUiTests
                 var edited = original.Replace("- uma", "- primeira {ia:\"modelo-b\"}");
                 Assert.Equal(edited, File.ReadAllText(Path.Combine(vault, "Comece.md")));
                 Assert.Equal(edited, view.Documents!.Get("Comece.md")!.Content);
+                // CST-154: the replaced text is in "Versões anteriores", named after the agent that changed it
+                var history = File.ReadAllText(Path.Combine(vault, ".urbe", "history.v2.json"));
+                Assert.Contains("\"by\":", history);
+                Assert.Contains(original.Replace("\r\n", "\n").Split('\n')[0], history);
                 var run = panel.Conversation.Runs.Last();
                 Assert.Equal(("end", 1), (run.Stopped, run.Changes.Count));
                 texts = panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();

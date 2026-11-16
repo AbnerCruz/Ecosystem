@@ -28,6 +28,8 @@ public interface IAssistantApp
     Task ShowGraphProjectionAsync(GraphDocument graph) => Task.CompletedTask;
     Task<UrbeDocument> CreateNoteAsync(string path, string content);
     Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content);
+    /// <summary>CST-154: an agent's write, with its name, so "Versões anteriores" says who changed the note.</summary>
+    Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content, string by) => SaveNoteAsync(doc, content);
     Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string newPath);
     Task TrashNoteAsync(UrbeDocument doc);
     Task CreateFolderAsync(string path);
@@ -1628,7 +1630,8 @@ public sealed partial class AssistantPanel : Border
                 if (documents.Get(doc.Path) is not { } current || expected != FormSession.Hash(current.Content))
                     throw new AiToolException("A nota mudou desde o formulário. Nenhuma alteração foi gravada; gere um novo formulário sobre a versão atual.");
             }
-            var saved = await panel._app.SaveNoteAsync(doc, content);
+            var who = AssistantAgent.AgentById(agentId, panel._cfg.CustomAgents) is { } agent ? AgentNames.CallName(agent, panel._cfg) : "Assistente";
+            var saved = await panel._app.SaveNoteAsync(doc, content, who);
             if (form is not null) _formWriteVersions[doc.Path] = FormSession.Hash(saved.Content);
             return saved;
         }

@@ -431,7 +431,26 @@ public sealed partial class MainView : IAssistantApp
         return doc;
     }
 
-    async Task<UrbeDocument> IAssistantApp.SaveNoteAsync(UrbeDocument doc, string content)
+    Task<UrbeDocument> IAssistantApp.SaveNoteAsync(UrbeDocument doc, string content) => SaveNoteForAssistantAsync(doc, content, null);
+
+    Task<UrbeDocument> IAssistantApp.SaveNoteAsync(UrbeDocument doc, string content, string by) => SaveNoteForAssistantAsync(doc, content, by);
+
+    /// <summary>
+    /// CST-154: an agent's write keeps the text it replaced in "Versões anteriores", named after the agent (before,
+    /// only typing in the editor was kept: an agent's edit had no version to go back to but the run's Desfazer).
+    /// </summary>
+    private async Task<UrbeDocument> SaveNoteForAssistantAsync(UrbeDocument doc, string content, string? by)
+    {
+        if (by is not null && !_historyReadOnly && _store?.Get(doc.Id) is { } before &&
+            _history.Capture(doc.Id, before.Path, before.Content, content, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), by))
+            _historyDirty = true;
+        if (_historyNote == doc.Path) _historyText = content; // the editor's next change starts from the agent's text
+        var saved = await SaveNoteBodyForAssistantAsync(doc, content);
+        await SaveHistoryAsync();
+        return saved;
+    }
+
+    private async Task<UrbeDocument> SaveNoteBodyForAssistantAsync(UrbeDocument doc, string content)
     {
         RequireWritable();
         bool editing = Editor.IsVisible && Editor.Current?.Path == doc.Path;
