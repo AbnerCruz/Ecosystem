@@ -399,6 +399,8 @@ public sealed class SearchFeature
         Register("editor.find", "Localizar no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("editor.replace", "Substituir no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("publications.new", "Nova publicação", "Publicações", () => _ = view.CreatePublicationAsync());
+        Register("study.newSession", "Nova sessão de estudo", "Estudo", () => _ = view.CreateStudySessionAsync());
+        Register("study.sessions", "Abrir sessão de estudo", "Estudo", () => _ = view.ShowStudySessionsAsync());
         Register("publications.fromTag", "Nova publicação de uma tag", "Publicações", () => _ = view.CreatePublicationFromTagAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());

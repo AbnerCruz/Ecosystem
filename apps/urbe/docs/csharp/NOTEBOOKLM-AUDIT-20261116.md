@@ -35,7 +35,7 @@ evidência de estudo, não aceite.
 ## 3. Plano incremental
 
 1. Flashcards: núcleo (leitura de cartões, agenda de revisão estilo SM-2/Anki, estado do aluno em arquivo privado do app, por vault e cartão, como as posições de leitura) → **Mais ações → Revisar cartões** (Mostrar resposta; Errei/Difícil/Bom/Fácil com quando volta). **Entregue (16/11/2026).**
-2. Sessão de estudo: arquivo de metadados com referências por id do vault, objetivos e progresso; abrir/retomar.
+2. Sessão de estudo: `Estudos/*.estudo.json` com referências por id, objetivos; abrir lista as fontes atuais e abre a escolhida no Estudo. **Entregue (16/11/2026).**
 3. Mapa de estudo derivado de títulos e links das fontes da sessão.
 4. Podcast: roteiro de dois turnos em nota editorial → faixas no motor de áudio existente.
 5. Infográfico vetorial em Publicações.
