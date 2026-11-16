@@ -55,6 +55,10 @@
     <ApplicationVersion>$(UrbeBetaVersionCode)</ApplicationVersion>
     <DefineConstants>$(DefineConstants);URBE_BETA</DefineConstants>
   </PropertyGroup>
+  <!-- #963: a preview build (the CI's APK) says the version it comes from, never a fixed 0.1.0 in exports and diagnosis -->
+  <PropertyGroup Condition="'$(UrbeChannel)' != 'beta'">
+    <ApplicationDisplayVersion>$(UrbeBetaVersion)-previa</ApplicationDisplayVersion>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
   </ItemGroup>
