@@ -14,7 +14,7 @@
   "branch": "fix/lunet-512-reference-link-handler-20261116",
   "base_commit": "54cdca1d21143a2509da523b552121af429bf44e",
   "commit": null,
-  "pr": 959,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/959",
   "files_changed": [
     "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
     "apps/lunet2d/CHANGELOG.md",
