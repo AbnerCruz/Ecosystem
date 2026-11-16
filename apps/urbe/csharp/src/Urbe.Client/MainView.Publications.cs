@@ -176,7 +176,7 @@ public sealed partial class MainView
     /// copy (CST-135).
     /// </summary>
     public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
-        string? tag = null, string? fragment = null, PublicationQuery? query = null)
+        string? tag = null, string? fragment = null, PublicationQuery? query = null, PublicationProject? style = null)
     {
         if (!VaultWritable || _store is null)
         {
@@ -196,9 +196,9 @@ public sealed partial class MainView
             ShowLifeNotice("O vault mudou. Abra a criação novamente no vault desejado.", Ui.ToastKind.Warning);
             return;
         }
-        var project = fragment is { Length: > 0 } && source is not null
-            ? PublicationProject.Create(title.Trim()).AddSource(new PublicationSourceReference(source.Id, fragment))
-            : PublicationProject.Create(title.Trim(), source?.Id);
+        var project = style?.StyleFor(title.Trim()) ?? PublicationProject.Create(title.Trim());
+        if (fragment is { Length: > 0 } && source is not null) project = project.AddSource(new PublicationSourceReference(source.Id, fragment));
+        else if (source is not null) project = project.AddSource(source.Id);
         foreach (var p in sourcePaths ?? [])
             if (_store.Get(p) is { } chosen && ArtifactModel.IsNote(chosen.Path)) project = project.AddSource(chosen.Id);
         if (tag is { Length: > 0 })
@@ -291,6 +291,21 @@ public sealed partial class MainView
     }
 
     /// <summary>CST-135: a publication of one section of a note (a heading and what is under it), still the note's text.</summary>
+    /// <summary>CST-161: a new publication in the style of an existing one (its look and audience, none of its notes).</summary>
+    public async Task CreatePublicationInStyleAsync()
+    {
+        if (_store is null) { await Dialogs.AlertAsync("Publicações", NoVaultMessage); return; }
+        var existing = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase)).OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        if (existing.Count == 0) { await Dialogs.AlertAsync("Publicações", "Ainda não há publicações para servir de modelo."); return; }
+        if (await Dialogs.ChooseAsync("No estilo de qual publicação?", existing.Select(d => new DialogItem(System.IO.Path.GetFileName(d.Path)[..^".publication.json".Length], Detail: d.Path)).ToList(),
+                "A nova leva o layout, o tema, a cor, a letra e o público; nenhuma nota.") is not { } i) return;
+        PublicationProject model;
+        try { model = PublicationProjectCodec.Parse(existing[i].Content); }
+        catch (Exception e) when (e is InvalidDataException or NotSupportedException or ArgumentException or System.Text.Json.JsonException)
+        { await Dialogs.AlertAsync("Publicações", "Não foi possível ler essa publicação: " + e.Message); return; }
+        await CreatePublicationAsync(style: model);
+    }
+
     /// <summary>CST-135: a publication from a search: the notes that match, after the person sees and confirms them.</summary>
     public async Task CreatePublicationFromSearchAsync()
     {
@@ -587,6 +602,7 @@ public sealed partial class MainView
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
             LastEpubWarnings = result.Warnings;
+            EnsureOpens("epub", result.Bytes);
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, "epub", "application/epub+zip");
             if (saved != true) return;
             RecordPublicationExport("epub");
@@ -628,6 +644,7 @@ public sealed partial class MainView
             };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
+            EnsureOpens(extension, result.Bytes);
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
             if (saved != true) return;
             RecordPublicationExport(extension);
@@ -682,11 +699,13 @@ public sealed partial class MainView
         var name = ArtifactModel.SafeName(project.Title) + ".zip";
         try
         {
+            EnsureOpens("zip", bytes);
             var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "zip", "application/zip");
             if (saved != true) return;
             RecordPublicationExport("zip");
             ShowLifeNotice("Pacote salvo (" + PublicationPackage.Size(bytes.Length) + "): a publicação e o manifesto que confere cada arquivo.");
         }
+        catch (InvalidDataException ex) { await Dialogs.AlertAsync("Não foi possível exportar o pacote", ex.Message); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar o pacote", StorageProblems.Explain(ex)); }
     }
@@ -757,6 +776,13 @@ public sealed partial class MainView
 
     /// <summary>What the last office export could not keep (shown to the person; read by tests).</summary>
     public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
+
+    /// <summary>CST-191: a file that does not open as its format is never saved as if it were done.</summary>
+    private static void EnsureOpens(string extension, byte[] bytes)
+    {
+        if (PublicationOutputCheck.Problem(extension, bytes) is { } problem)
+            throw new InvalidDataException("O arquivo gerado não passou na conferência e não foi salvo. " + problem);
+    }
 
     private async Task<bool?> SavePublicationFileAsync(string name, byte[] bytes, string extension, string mime)
     {

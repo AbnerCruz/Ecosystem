@@ -149,6 +149,16 @@ public sealed record PublicationProject
         return string.IsNullOrEmpty(documentId) ? result : result.AddSource(documentId);
     }
 
+    /// <summary>
+    /// CST-161: a new publication in the style of this one — layout, theme, accent, type, audience, objective and the
+    /// video's format — with none of its notes, scenes or exports (a model, never a copy of the content).
+    /// </summary>
+    public PublicationProject StyleFor(string title) => new()
+    {
+        Title = title, Design = Design, Audience = Audience, Objective = Objective, Formats = [.. Formats],
+        Video = Video is { } v ? v with { Scenes = [], Audio = [] } : null
+    };
+
     /// <summary>Idempotent source insertion and a corresponding ordered layout placement.</summary>
     public PublicationProject AddSource(string documentId)
         => AddSource(new PublicationSourceReference(documentId));
