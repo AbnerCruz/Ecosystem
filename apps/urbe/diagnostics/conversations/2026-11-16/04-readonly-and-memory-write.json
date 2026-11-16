@@ -1,0 +1,24 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "04-readonly-and-memory-write.json",
+  "title": "Confusão entre somente leitura de notas e persistência de memória",
+  "original_export_index": 4,
+  "severity": "P1",
+  "observations": [
+    "recall_memory com wildcard retornou uma única preferência.",
+    "Ao declarar nova preferência alimentar, o assistente afirmou não poder salvá-la porque o chat estava readonly, e sugeriu nota no vault.",
+    "O modo readonly de edição de notas não demonstra, por si só, se a extração assíncrona de memória de agente está habilitada ou não."
+  ],
+  "repro": [
+    "Em chat readonly, enunciar preferência de teste e consultar memória em nova conversa.",
+    "Inspecionar política separada para notas, memória automática e memória explícita.",
+    "Comparar afirmação do agente sobre salvamento com estado real persistido."
+  ],
+  "expected": [
+    "Permissões de memória e de edição independentes e explícitas.",
+    "O assistente não promete nem descarta persistência sem evidência do estado real."
+  ]
+}
