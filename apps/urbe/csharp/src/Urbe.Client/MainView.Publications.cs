@@ -46,6 +46,7 @@ public sealed partial class MainView
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
         studio.PackageRequested += () => _ = ExportPublicationPackageAsync();
+        studio.AskAssistantRequested += AskAssistantAboutPublication;
         studio.OfficeRequested += format => _ = ExportPublicationOfficeAsync(format);
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
@@ -627,6 +628,15 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
+    }
+
+    /// <summary>CST-158: the Assistente opens with the publication named in what the person types (they finish and send).</summary>
+    public void AskAssistantAboutPublication()
+    {
+        if (_publicationsStudio?.Project is not { } project || _publicationDraft is not { } draft || _store?.Get(draft.DocumentId) is not { } file) return;
+        if (!AssistantOpen) ToggleAssistant();
+        Assistant.Input.Text = "Na publicação “" + project.Title + "” (" + file.Path + "): ";
+        Assistant.Input.CaretIndex = Assistant.Input.Text.Length;
     }
 
     /// <summary>CST-175: what looks private in a publication about to leave the device, shown before; true to go on.</summary>

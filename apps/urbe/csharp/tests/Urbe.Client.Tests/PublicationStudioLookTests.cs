@@ -42,6 +42,9 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(1, names.Count(n => n == "Mover fonte para baixo"));
             Assert.Equal(1, names.Count(n => n == "Mover fonte para cima"));
             Assert.DoesNotContain(studio.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Capítulo 1" && t.FontSize == 12 && t.IsVisible);
+            // the Assistente from the studio, with the publication already named in the message being typed
+            view.AskAssistantAboutPublication();
+            Assert.Equal("Na publicação “Livro” (Publicações/Livro.publication.json): ", view.Assistant.Input.Text);
             if (Environment.GetEnvironmentVariable("URBE_CAPTURE") is { Length: > 0 } capture)
                 window.CaptureRenderedFrame()!.Save(capture, Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
             return true;

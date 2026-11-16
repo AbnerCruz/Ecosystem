@@ -64,6 +64,7 @@ public sealed class PublicationStudioView : Border
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
             Item("Verificar publicação", () => ReviewRequested?.Invoke());
+            Item("Pedir ao Assistente", () => AskAssistantRequested?.Invoke());
             Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             if (IsVideo)
             {
@@ -138,6 +139,8 @@ public sealed class PublicationStudioView : Border
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? EpubRequested;
+    /// <summary>CST-158: the Assistente from here, with this publication already named (nothing is sent by itself).</summary>
+    public event Action? AskAssistantRequested;
     /// <summary>CST-163: the publication with a manifest of sizes and checksums, to hand to someone else.</summary>
     public event Action? PackageRequested;
     /// <summary>CST-166/168: an office file of the publication ("docx", "odt" or "pptx").</summary>
