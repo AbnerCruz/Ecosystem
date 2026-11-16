@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (busca global, CI/DEVICE pendentes): busca de assets agora aceita termos sem acentos, letras maiúsculas e Unicode decomposto, preservando intactos nomes e metadados originais. Regressão xUnit para título, autor, atribuição e tags.
+
 - LUNET-511 (CI/DEVICE pendentes): Biblioteca pessoal ganhou pesquisa offline combinando termos de título, tipo, autoria, licença, atribuição e tags; interface Android permite buscar e limpar filtros sem modificar versões imutáveis. Regressão xUnit verifica múltiplas versões e persistência.
 
 - LUNET-511 (integridade, CI/DEVICE pendentes): exportação ZIP agora calcula SHA-256 e tamanho dos bytes efetivamente gravados no arquivo compactado, fechando a janela entre a checagem prévia e a cópia; em caso de alteração concorrente a exportação falha e remove o ZIP temporário. Teste xUnit verifica os hashes e tamanhos das entradas exportadas contra o manifesto imutável.
