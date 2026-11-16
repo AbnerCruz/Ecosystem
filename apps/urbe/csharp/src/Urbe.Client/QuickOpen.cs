@@ -404,6 +404,7 @@ public sealed class SearchFeature
         Register("study.podcastAudio", "Gerar áudio do podcast", "Estudo", () => { if (view.Editor.Current is { } n) _ = view.SpeakPodcastAsync(n.Path); }, () => view.CanSpeakPodcast(view.Editor.Current?.Path));
         Register("study.infographic", "Gerar infográfico da nota", "Estudo", () => { if (view.Editor.Current is { } n) _ = view.MakeInfographicAsync(n.Path); }, () => view.CanMakeInfographic(view.Editor.Current?.Path));
         Register("publications.fromTag", "Nova publicação de uma tag", "Publicações", () => _ = view.CreatePublicationFromTagAsync());
+        Register("publications.fromSearch", "Nova publicação de uma busca", "Publicações", () => _ = view.CreatePublicationFromSearchAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
         Register("workspace.diagnostics", "Diagnóstico do workspace", "Workspace", () => _ = view.ShowDiagnosticsAsync());

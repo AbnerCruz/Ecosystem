@@ -259,6 +259,20 @@ public sealed partial class MainView
     }
 
     /// <summary>CST-135: a publication of one section of a note (a heading and what is under it), still the note's text.</summary>
+    /// <summary>CST-135: a publication from a search: the notes that match, after the person sees and confirms them.</summary>
+    public async Task CreatePublicationFromSearchAsync()
+    {
+        if (_store is null) { await Dialogs.AlertAsync("Publicações", NoVaultMessage); return; }
+        var query = await Dialogs.PromptAsync(new PromptOptions("Publicação de uma busca", Label: "Buscar", Placeholder: "Ex.: fotossíntese", Confirm: "Buscar"));
+        if (string.IsNullOrWhiteSpace(query)) return;
+        using var index = new KnowledgeIndex(_store);
+        var found = index.Search(query).Where(d => ArtifactModel.IsNote(d.Path)).ToList();
+        if (found.Count == 0) { await Dialogs.AlertAsync("Publicações", "Nenhuma nota encontrada para “" + query.Trim() + "”."); return; }
+        var shown = string.Join("\n", found.Take(12).Select(d => "• " + d.Title)) + (found.Count > 12 ? "\n… e mais " + (found.Count - 12) : "");
+        if (!await Dialogs.ConfirmAsync(found.Count + (found.Count == 1 ? " nota" : " notas") + " para “" + query.Trim() + "”", shown, "Criar publicação")) return;
+        await CreatePublicationAsync(sourcePaths: found.Select(d => d.Path).ToList());
+    }
+
     public async Task CreatePublicationFromSectionAsync(string notePath)
     {
         if (Editor.Current?.Path == notePath && Editor.HasChanges && !await Editor.SaveAsync()) return;

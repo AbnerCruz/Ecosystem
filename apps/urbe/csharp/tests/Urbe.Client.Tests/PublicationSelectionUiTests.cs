@@ -46,4 +46,45 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    /// <summary>CST-135: a search's notes, shown and confirmed, become a publication's sources.</summary>
+    [Fact]
+    public async Task Publication_FromASearch() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-pubsearch-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Folhas.md"), "# Folhas\n\nA fotossíntese acontece nas folhas.\n");
+        File.WriteAllText(Path.Combine(vault, "Luz.md"), "# Luz\n\nFotossíntese precisa de luz.\n");
+        File.WriteAllText(Path.Combine(vault, "Pedras.md"), "# Pedras\n\nNada a ver.\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        async Task Wait(Func<bool> ready) { for (int i = 0; i < 300 && !ready(); i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); } }
+        async Task Type(string text, string confirm)
+        {
+            await Wait(() => view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any());
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = text;
+            ClickButtonWithText(view.Dialogs, confirm);
+            for (int i = 0; i < 5; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+        }
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var run = view.CreatePublicationFromSearchAsync();
+            await Type("fotossíntese", "Buscar");
+            await Wait(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Criar publicação"));
+            ClickButtonWithText(view.Dialogs, "Criar publicação");
+            await Type("Fotossíntese", "Criar");
+            await run;
+            await Settle(window, view);
+            var json = File.ReadAllText(Path.Combine(vault, "Publicações", "Fotossíntese.publication.json"));
+            Assert.Contains(view.Documents!.Get("Folhas.md")!.Id, json);
+            Assert.Contains(view.Documents!.Get("Luz.md")!.Id, json);
+            Assert.DoesNotContain(view.Documents!.Get("Pedras.md")!.Id, json);
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

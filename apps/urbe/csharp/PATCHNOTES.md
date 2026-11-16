@@ -38,6 +38,7 @@
 - **Memória como grafo.** Em Assistente → Memória, **Ver como grafo** mostra as lembranças do agente aberto numa coluna por tipo (preferências, decisões, procedimentos, objetivos, fatos, execuções), cada uma com a sua procedência. Uma ligação "substitui" leva à versão antiga, "refina" liga a lembrança específica à geral, "conflito" marca as contradições em aberto e "fonte" leva às notas de onde veio a lembrança. É uma visão da memória, não uma cópia: nada vai para o vault, e mover os cartões não grava nada.
 - **Cartões de grafo mostram o texto inteiro.** O texto de um cartão quebra em linhas até o tamanho do cartão, em vez de ser cortado em 29 letras, e cartões de texto não mostram mais o rótulo "TEXTO".
 - **Publicação de um parágrafo.** Selecione um parágrafo no editor e use **Mais ações → Criar publicação de um trecho → O parágrafo selecionado**. O parágrafo recebe um marcador `^id` no fim, como nos links de bloco, e a publicação passa a usar só aquele trecho. O texto continua na nota: o que você mudar nela aparece na publicação.
+- **Publicação de uma busca.** Em **Buscar notas e comandos → Nova publicação de uma busca**, digite o que procura: o Urbe mostra as notas encontradas e, se você confirmar, cria a publicação com elas como fontes.
 - **Blocos de código dentro de blocos de código.** Um exemplo entre `~~~` com crases dentro, ou um bloco de quatro crases, aparecia quebrado no editor e na página; agora segue a regra do Markdown (só a mesma marca, do mesmo tamanho ou maior, fecha o bloco).
 
 ## O que continua pendente
