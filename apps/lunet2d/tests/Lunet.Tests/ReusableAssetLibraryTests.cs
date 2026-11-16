@@ -218,6 +218,34 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void ExportZip_UsesRequestedVersionAndPreservesLicenseMetadata()
+    {
+        var source = CreateSpriteProject("Source", "primeira");
+        var first = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Asas", "Artista", "CC-BY", attribution: "Crédito obrigatório");
+        source.WriteText("Content/Art/wing.sprite.json", "segunda");
+        var second = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Asas", "Artista", "CC-BY", attribution: "Crédito obrigatório",
+            existingAssetId: first.Id);
+
+        var oldZip = Path.Combine(_root, "old.zip");
+        var newZip = Path.Combine(_root, "new.zip");
+        Library.ExportZip(first.Id, first.Version, oldZip);
+        Library.ExportZip(second.Id, second.Version, newZip);
+        using var oldArchive = ZipFile.OpenRead(oldZip);
+        using var newArchive = ZipFile.OpenRead(newZip);
+        static string Read(System.IO.Compression.ZipArchive archive, string path)
+        {
+            using var reader = new StreamReader(archive.GetEntry(path)!.Open());
+            return reader.ReadToEnd();
+        }
+        Assert.Equal("primeira", Read(oldArchive, "files/Content/Art/wing.sprite.json"));
+        Assert.Equal("segunda", Read(newArchive, "files/Content/Art/wing.sprite.json"));
+        Assert.Contains("CC-BY", Read(oldArchive, "asset.json"));
+        Assert.Contains("Crédito obrigatório", Read(newArchive, "asset.json"));
+    }
+
+    [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
         var source = CreateSpriteProject("Origin");
