@@ -21,7 +21,7 @@ public sealed partial class MainView
     {
         studio.VideoExportRequested += () => _ = ExportPublicationVideoAsync();
         studio.VideoCancelRequested += () => _videoExport?.Cancel();
-        studio.SubtitlesRequested += () => _ = ExportPublicationSubtitlesAsync();
+        studio.SubtitlesRequested += format => _ = ExportPublicationSubtitlesAsync(format);
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
     }
@@ -135,15 +135,17 @@ public sealed partial class MainView
         return (draft.Project, timeline);
     }
 
-    public async Task ExportPublicationSubtitlesAsync()
+    /// <summary>CST-172: the captions as SRT (players, editors) or WebVTT (the web's &lt;track&gt;), from the same cues.</summary>
+    public async Task ExportPublicationSubtitlesAsync(string format = "srt")
     {
         if (_publicationDraft is not { } draft || await PrepareVideoAsync(draft) is not { } prepared) return;
-        var bytes = System.Text.Encoding.UTF8.GetBytes(prepared.Timeline.Srt());
-        var name = ArtifactModel.SafeName(prepared.Project.Title) + ".srt";
+        bool vtt = format == "vtt";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(vtt ? prepared.Timeline.Vtt() : prepared.Timeline.Srt());
+        var name = ArtifactModel.SafeName(prepared.Project.Title) + (vtt ? ".vtt" : ".srt");
         try
         {
-            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "srt", "application/x-subrip");
-            if (saved == true) ShowLifeNotice("Legendas SRT salvas.");
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, vtt ? "vtt" : "srt", vtt ? "text/vtt" : "application/x-subrip");
+            if (saved == true) ShowLifeNotice(vtt ? "Legendas VTT salvas." : "Legendas SRT salvas.");
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não consegui salvar as legendas", StorageProblems.Explain(e)); }

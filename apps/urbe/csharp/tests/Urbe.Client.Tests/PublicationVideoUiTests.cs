@@ -52,6 +52,14 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("# Abertura\n\nUma frase do roteiro.\n", File.ReadAllText(Path.Combine(vault, "Cena.md")));
             Assert.Equal(scene.Duration + 0.5, studio.VideoPanel.Timeline!.Duration, 6);
 
+            // CST-172: the same captions as SRT and as WebVTT
+            var captions = new Dictionary<string, string>();
+            view.SavePageFile = (name, bytes) => { captions[name] = System.Text.Encoding.UTF8.GetString(bytes); return Task.FromResult<bool?>(true); };
+            await view.ExportPublicationSubtitlesAsync("srt");
+            await view.ExportPublicationSubtitlesAsync("vtt");
+            Assert.StartsWith("1\n00:00:", captions["Filme.srt"]);
+            Assert.StartsWith("WEBVTT\n\n00:00:", captions["Filme.vtt"]);
+            Assert.Contains(" --> ", captions["Filme.vtt"]);
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is covered where ffmpeg exists
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Resolution = 144 } });
             await Pump();

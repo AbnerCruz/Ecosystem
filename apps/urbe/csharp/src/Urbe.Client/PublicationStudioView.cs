@@ -68,7 +68,8 @@ public sealed class PublicationStudioView : Border
             if (IsVideo)
             {
                 Item("Exportar vídeo MP4", () => VideoExportRequested?.Invoke());
-                Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke());
+                Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke("srt"));
+                Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
@@ -154,7 +155,7 @@ public sealed class PublicationStudioView : Border
     public event Action<string, string>? AdaptationReviewed;
     public event Action? VideoExportRequested;
     public event Action? VideoCancelRequested;
-    public event Action? SubtitlesRequested;
+    public event Action<string>? SubtitlesRequested;
     public event Action? AddAudioRequested;
     public event Action<string>? AddVideoElementRequested;
 
