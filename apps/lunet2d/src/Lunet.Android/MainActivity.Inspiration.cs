@@ -156,7 +156,7 @@ public sealed partial class MainActivity
                 }
                 card.AddView(actions);
                 if (!string.IsNullOrWhiteSpace(item.Url))
-                    card.AddView(LunetUi.Button(this, "Abrir página da referência", () =>
+                    card.AddView(LunetUi.Button(this, item.Curated ? "Pesquisar gameplay" : "Abrir página da referência", () =>
                     {
                         StartActivity(new Intent(Intent.ActionView, global::Android.Net.Uri.Parse(item.Url)));
                     }, ButtonStyle.Quiet));
