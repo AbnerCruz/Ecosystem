@@ -1,0 +1,22 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "08-contradiction-and-stale-recall.json",
+  "title": "Mudança de preferência e memória antiga",
+  "original_export_index": 8,
+  "severity": "P1",
+  "observations": [
+    "Usuário criticou a transparência depois de elogios registrados.",
+    "Assistente anterior questionou se era ironia ou mudança, mas consulta posterior recuperou apenas a preferência antiga e citou elogios sem destacar contradição recente.",
+    "review_memory não encontrou candidatos heurísticos; isso não comprova ausência de contradição."
+  ],
+  "repro": [
+    "Registrar preferência A, posteriormente negá-la, perguntar em conversa nova qual é a preferência atual.",
+    "Confrontar recall_memory, review_memory e evidência temporal no histórico."
+  ],
+  "expected": [
+    "Detectar conflito ou qualificar memória como desatualizada; distinguir certeza da preferência histórica e preferência atual."
+  ]
+}
