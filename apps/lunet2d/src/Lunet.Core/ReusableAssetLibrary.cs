@@ -192,9 +192,11 @@ public sealed class ReusableAssetLibrary
                 ?? throw new InvalidDataException("Manifesto de asset vazio.");
         }
         catch (JsonException ex) { throw new InvalidDataException("Manifesto de asset inválido; dados preservados.", ex); }
-        ValidateId(item.Id);
+        if (item.Id is null || !Guid.TryParseExact(item.Id, "D", out _))
+            throw new InvalidDataException("ID inválido no manifesto de asset; dados preservados.");
         if (item.Version < 1 || VersionDirectory(item.Id, item.Version) != dir ||
             item.Files is null || item.Files.Length == 0 ||
+            item.Files.Any(f => f is null || f.Path is null || f.Sha256 is null) ||
             item.Files.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
             throw new InvalidDataException("Manifesto de asset inconsistente, mantido sem alteração.");
         foreach (var file in item.Files)
