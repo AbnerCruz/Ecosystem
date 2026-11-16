@@ -21,7 +21,7 @@ Pedido do proprietário: estudar os apps de IA (forma da conversa, formatação,
 ## Próximos incrementos propostos
 
 1. ~~Rótulo no passado quando a etapa termina~~ — entregue ("✓ Leu Fotossíntese", `StepWords`).
-2. Tipografia de leitura: largura de coluna ~70 caracteres no computador, entrelinha e espaçamento entre parágrafos e títulos no padrão do ChatGPT.
+2. ~~Tipografia de leitura~~ — entregue: respostas a 16 px com entrelinha 1,7 (referência ChatGPT); a coluna já fica em ~440 px no painel.
 3. ~~Opção "manter etapas abertas"~~ — entregue (Custos e consumo → Mostrar as etapas abertas).
 4. ~~Citação [S1] com prévia ao tocar~~ — entregue (título, site, data, estado; Abrir, Copiar endereço).
 5. Escala da fórmula inline igual à altura do texto — com validação no aparelho (CST-142).
