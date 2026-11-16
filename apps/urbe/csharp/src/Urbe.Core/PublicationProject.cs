@@ -239,7 +239,7 @@ public static class PublicationHtml
                 sb.Append("<section class=\"missing\" role=\"status\">Fonte indisponível para esta publicação.</section>");
                 continue;
             }
-            var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
+            var body = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
             var rendered = QuizBlock.RenderHtml(Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(body, md => MarkdownEngine.Render(md, RenderMath)))), data ?? (_ => null)), interactive: false);
             sb.Append("<article id=\"").Append(MarkdownEngine.EscapeHtml(placement.Id)).Append("\" tabindex=\"0\">").Append(NoteProgress.RenderHtml(rendered, source.Markdown,
                 id => catalog.Read(new PublicationSourceReference(id))?.Markdown)).Append("</article>");

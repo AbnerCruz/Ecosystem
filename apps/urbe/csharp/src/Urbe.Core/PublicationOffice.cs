@@ -57,7 +57,7 @@ public static class PublicationOffice
             cancellationToken.ThrowIfCancellationRequested();
             var source = catalog.Read(piece.Source) ?? throw new InvalidDataException("Nota de origem indisponível: " + piece.Source.DocumentId);
             sources.Add(source);
-            var content = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
+            var content = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
             var blocks = new List<OfficeBlock>();
             foreach (var node in NoteContainers.ParseRich(content)) await Block(node, blocks, source);
             chapters.Add(new OfficeChapter(Path.GetFileNameWithoutExtension(source.Path), source.DocumentId, blocks));

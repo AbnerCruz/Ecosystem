@@ -9,6 +9,7 @@ Regras:
 
 | ID | Entrega | Evidência | Pendente |
 |---|---|---|---|
+| CST-162 (parte) | Defeito achado: `![[foto.png]]` saía como texto "!foto.png" em todas as publicações, e o HTML exportado (política só `data:`) bloqueava até `![](foto.png)`. Agora toda saída leva a imagem; o HTML a embute (portável e offline); o nome é achado em qualquer pasta | `PublicationAssetsTests`, `Publication_HtmlExportEmbedsVaultImages` | Prévia igual ao exportável; DEVICE |
 | CST-135 | Publicação de uma busca e de um parágrafo selecionado: o parágrafo recebe `^id` e a publicação referencia só ele (nota, seção, pasta, tag e seleção múltipla já existiam) | `AnchorBlockTests`, `Publication_FromTheSelectedParagraph`, `Publication_FromASearch` | DEVICE |
 | CST-086/133/134 (parte), UC-87 | Memória aprende: novas formas de preferência, decisão e procedimento; contradição substitui (mantida e datada); refinamento ligado; repetição reforça; episódios abaixo do que a pessoa disse. Grafo da memória como projeção do AssistantStore | `MemoryLearningTests`, `MemoryGraphTests`, `MemoryGraph_OpensAsAProjectionAndWritesNothing` | DEVICE em conversas reais |
 | #956 (parte) | Mapa da sessão, podcast de duas vozes (Android), infográfico SVG/PNG | `StudyMapTests`, `PodcastTests`, `InfographicTests` e testes de UI | DEVICE (Android e Windows) |

@@ -492,7 +492,26 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Fontes indisponíveis", "Resolva as notas ausentes antes de exportar: " + result.MissingDocumentIds.Count + " referência(s).");
             return null;
         }
-        return (project, result);
+        return (project, result with { Html = await EmbedVaultImagesAsync(result.Html) });
+    }
+
+    /// <summary>An image a note names: the exact vault path, else the one file with that name (as ![[foto.png]] finds it).</summary>
+    private async Task<byte[]?> ReadVaultImageAsync(string reference)
+    {
+        var path = _attachments.Contains(reference) ? reference
+            : _attachments.FirstOrDefault(a => string.Equals(System.IO.Path.GetFileName(a), System.IO.Path.GetFileName(reference), StringComparison.OrdinalIgnoreCase));
+        return path is not null && _vault is { } vault ? (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes : null;
+    }
+
+    /// <summary>CST-162: the publication's images read from the vault and carried inside the HTML (works offline, anywhere).</summary>
+    private async Task<string> EmbedVaultImagesAsync(string html)
+    {
+        var read = new Dictionary<string, byte[]?>(StringComparer.Ordinal);
+        foreach (var reference in PublicationAssets.References(html))
+        {
+            read[reference] = await ReadVaultImageAsync(Uri.UnescapeDataString(reference));
+        }
+        return PublicationAssets.Embed(html, r => read.GetValueOrDefault(r));
     }
 
     /// <summary>Uses the platform's print service; opening its dialog is not proof that a PDF was saved.</summary>
@@ -518,13 +537,12 @@ public sealed partial class MainView
     public async Task ExportPublicationEpubAsync()
     {
         if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
-        var vault = _vault;
         var project = draft.Project;
         try
         {
             var data = await PublicationDataAsync(project, catalog);
             var result = await PublicationEpub.ExportWithReportAsync(project, catalog,
-                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes, data: data);
+                ReadVaultImageAsync, data: data);
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
             LastEpubWarnings = result.Warnings;
@@ -547,7 +565,6 @@ public sealed partial class MainView
     public async Task ExportPublicationOfficeAsync(string format)
     {
         if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
-        var vault = _vault;
         var project = draft.Project;
         var (extension, mime, kind) = format switch
         {
@@ -558,7 +575,7 @@ public sealed partial class MainView
         };
         try
         {
-            Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
+            Func<string, Task<byte[]?>> asset = ReadVaultImageAsync;
             var data = await PublicationDataAsync(project, catalog);
             var result = extension switch
             {
@@ -635,7 +652,7 @@ public sealed partial class MainView
         return true;
     }
 
-    private async Task ExportPublicationHtmlAsync()
+    public async Task ExportPublicationHtmlAsync()
     {
         if (await PreparePublicationOutputAsync() is not { } output) return;
         var (project, result) = output;

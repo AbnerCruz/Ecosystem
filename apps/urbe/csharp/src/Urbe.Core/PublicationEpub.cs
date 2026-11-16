@@ -39,7 +39,7 @@ public static class PublicationEpub
             cancellationToken.ThrowIfCancellationRequested();
             var source = catalog.Read(piece.Source) ?? throw new InvalidDataException("Nota de origem indisponível: " + piece.Source.DocumentId);
             sources.Add(source);
-            var content = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
+            var content = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
             var section = new XElement(Xhtml + "section", new XAttribute(Epub + "type", "chapter"), new XAttribute("role", "doc-chapter"));
             var roots = NoteContainers.ParseRich(content);
             foreach (var node in roots) section.Add(await ConvertNode(node, source));

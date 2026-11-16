@@ -83,7 +83,7 @@ public static partial class PublicationSlides
                 slides.Add(("<p class=\"missing\" role=\"status\">Fonte indisponível para esta publicação.</p>", "", ""));
                 continue;
             }
-            var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
+            var body = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
             string Render(string md) => NoteProgress.RenderHtml(QuizBlock.RenderHtml(Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(md, m => MarkdownEngine.Render(m, renderMath)))), data ?? (_ => null)), interactive: true), source.Markdown,
                 id => catalog.Read(new PublicationSourceReference(id))?.Markdown);
             foreach (var segment in Split(body))
