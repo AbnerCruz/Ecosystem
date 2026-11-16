@@ -1,0 +1,25 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "02-history-vs-semantic-memory.json",
+  "title": "Histórico de conversas não é memória do agente",
+  "original_export_index": 2,
+  "severity": "P1",
+  "observations": [
+    "Pergunta sobre solução anterior de anexos gerou 19 chamadas de ferramentas em 6 runs; recuperação útil veio do histórico.",
+    "recall_memory não encontrou evidência; list_conversations/read_conversation finalmente permitiram reconstruir o que ocorreu.",
+    "Agente inicialmente disse memória vazia; uma preferência enunciada depois foi extraída automaticamente em outro contexto.",
+    "Em consultas ao guia o agente buscou informação do produto e não conseguiu verificar versão/release."
+  ],
+  "repro": [
+    "Pedir o que foi feito em conversa anterior sem que exista memória estruturada.",
+    "Comparar busca no histórico, consulta a notas e recall_memory; confirmar fontes e citações.",
+    "Pedir quais são novidades da versão instalada; consultar fonte de versão canônica, sem inventar."
+  ],
+  "expected": [
+    "Roteamento de consultas por fonte, memory != history != vault.",
+    "Recuperação eficiente e fundamentada; disponibilidade da versão do app quando autorizada."
+  ]
+}
