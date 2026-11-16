@@ -52,6 +52,13 @@ public sealed partial class HeadlessUiTests
             await open;
             await Settle(window, view);
             Assert.True(view.StudyOpen);
+            var mapped = view.OpenStudySessionAsync(path!);
+            await Click("Mapa da sessão");
+            await mapped;
+            await Settle(window, view);
+            Assert.True(File.Exists(Path.Combine(vault, "Estudos", "Física.grafo.json")));
+            Assert.True(view.GraphOpen);
+            Assert.Contains(view.OpenGraph!.Nodes, n => n.Target == "Newton.md");
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
