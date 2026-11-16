@@ -37,6 +37,20 @@ public sealed class ReusableAssetLibrary
             .ThenByDescending(v => v.Version).ToArray();
     }
 
+    /// <summary>Busca offline por título, tipo, autoria, licença, atribuição e tags; termos combinados.</summary>
+    public IReadOnlyList<LibraryAssetVersion> Search(string? query)
+    {
+        var entries = List();
+        if (string.IsNullOrWhiteSpace(query)) return entries;
+        var terms = query.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return entries.Where(asset =>
+        {
+            var searchable = string.Join(" ", new[] { asset.Title, asset.Kind.ToString(),
+                asset.Author, asset.License, asset.Attribution }.Concat(asset.Tags));
+            return terms.All(term => searchable.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }).ToArray();
+    }
+
     public LibraryAssetVersion Find(string id, int version)
     {
         ValidateId(id);
