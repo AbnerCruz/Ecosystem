@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-511",
   "component": "lunet2d",
-  "state": "in_progress",
+  "state": "working",
   "branch": "feat/lunet-511-versioned-asset-library-20261116",
   "base_commit": "95143cb283e00dfdacf18a08d821c9a3510adeab",
   "commit": null,
@@ -23,7 +23,8 @@
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/docs/guides/biblioteca-global.md",
-    "docs/governance/handoffs/HO-20261116-lunet-global-asset-library.json"
+    "docs/governance/handoffs/HO-20261116-lunet-global-asset-library.json",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs"
   ],
   "work_completed": [
     "Implementado armazenamento de versões imutáveis da Library, SHA-256 e metadados de licença/proveniência.",
