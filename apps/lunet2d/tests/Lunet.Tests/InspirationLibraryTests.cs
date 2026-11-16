@@ -81,6 +81,26 @@ public sealed class InspirationLibraryTests : IDisposable
         Assert.False(File.Exists(CatalogPath));
     }
 
+    [Theory]
+    [InlineData("Notes", 6001)]
+    [InlineData("ProjectName", 81)]
+    public void InvalidSavedFields_AreReportedWithoutOverwritingPersonalData(string field, int length)
+    {
+        Directory.CreateDirectory(_root);
+        var catalog = new InspirationLibrary(CatalogPath);
+        catalog.SetPersonalDetails("ref.celeste", true, "Minha nota", "MeuJogo");
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(CatalogPath))!;
+        var entry = document["Entries"]!.AsArray()
+            .Single(e => e!["Id"]!.GetValue<string>() == "ref.celeste")!;
+        entry[field] = new string('x', length);
+        var original = document.ToJsonString();
+        File.WriteAllText(CatalogPath, original);
+
+        var error = Assert.Throws<InvalidDataException>(() => new InspirationLibrary(CatalogPath));
+        Assert.IsType<ArgumentException>(error.InnerException);
+        Assert.Equal(original, File.ReadAllText(CatalogPath));
+    }
+
     [Fact]
     public void InvalidJson_DoesNotGetReplacedOrSilentlyReinitialized()
     {
