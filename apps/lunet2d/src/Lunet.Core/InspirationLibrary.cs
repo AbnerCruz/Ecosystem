@@ -188,7 +188,8 @@ public sealed class InspirationLibrary
     {
         static InspirationReference Seed(string id, string title, string genre, string perspective,
             string style, string idea, params string[] mechanics) =>
-            new("ref." + id, title, genre, perspective, style, mechanics, idea, Curated: true);
+            new("ref." + id, title, genre, perspective, style, mechanics, idea,
+                InspirationCatalogExpansion.GameplaySearchUrl(title), Curated: true);
         yield return Seed("stardew", "Stardew Valley", "Simulação", "Top-down", "Pixel art",
             "Estude como ciclos de dias, estações e rotinas dos personagens se combinam.", "Agricultura", "Calendário", "NPCs", "Progressão");
         yield return Seed("terraria", "Terraria", "Sandbox", "Lateral", "Pixel art",
