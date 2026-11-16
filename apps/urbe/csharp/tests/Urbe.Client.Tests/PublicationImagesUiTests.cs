@@ -48,4 +48,36 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    /// <summary>CST-153: saving a note that feeds a publication names it, once per session.</summary>
+    [Fact]
+    public async Task Publication_SavingASourceNamesTheAffectedPublication() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-pubaffected-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Fonte.md"), "# Fonte\n\nTexto.\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var create = view.CreatePublicationAsync("Fonte.md");
+            Dispatcher.UIThread.RunJobs();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "Livro";
+            ClickButtonWithText(view.Dialogs, "Criar");
+            await create;
+            await Settle(window, view);
+            view.OpenNoteByPath("Fonte.md");
+            await Settle(window, view);
+            view.Editor.SetMode(EditorMode.Fonte);
+            view.Editor.Editor.Text = "# Fonte\n\nTexto novo.\n";
+            Assert.True(await view.Editor.SaveAsync());
+            Assert.Equal("Esta nota alimenta a publicação Livro. A mudança entra na próxima exportação.", view.Editor.NoticeText);
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

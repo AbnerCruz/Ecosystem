@@ -601,6 +601,24 @@ public sealed partial class MainView : Grid
     {
         try { await SaveNoteAsync(note, expectedUndoContent: null); }
         catch (VaultChangedOutsideException) { await SaveAfterOutsideChangeAsync(note); }
+        TellAffectedPublications(note.Path);
+    }
+
+    private readonly HashSet<string> _toldAffected = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// CST-153: the first time a note is saved, the publications made from it are named, so a change never reaches a
+    /// product silently. Only the publication files are read (they name their sources by id), never the whole vault.
+    /// </summary>
+    private void TellAffectedPublications(string path)
+    {
+        if (_toldAffected.Contains(path) || _store?.Get(path) is not { } note) return;
+        var titles = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase) && d.Content.Contains("\"" + note.Id + "\"", StringComparison.Ordinal))
+            .Select(d => System.IO.Path.GetFileName(d.Path)[..^".publication.json".Length]).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
+        if (titles.Count == 0) return;
+        _toldAffected.Add(path);
+        Editor.Notify("Esta nota alimenta " + (titles.Count == 1 ? "a publicação " : titles.Count + " publicações: ") + string.Join(", ", titles.Take(3)) +
+            (titles.Count > 3 ? " e outras" : "") + ". A mudança entra na próxima exportação.");
     }
 
     /// <summary>
