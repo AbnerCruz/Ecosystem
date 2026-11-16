@@ -17,6 +17,36 @@ public sealed record PublicationDesign
 {
     public string Theme { get; init; } = "paper";
     public string Layout { get; init; } = "article";
+    /// <summary>CST-161: the person's own accent ("#RRGGBB") over the theme's; null keeps the theme's.</summary>
+    public string? Accent { get; init; }
+    /// <summary>CST-161: "sans", "serif" or "mono"; null = the layout's (a book is serif, the rest sans).</summary>
+    public string? Font { get; init; }
+}
+
+/// <summary>
+/// CST-161: the identity tokens every output reads (HTML, slides, course, PDF): one place for the colours and the type,
+/// instead of each exporter keeping its own copy of the theme.
+/// </summary>
+public static partial class PublicationTheme
+{
+    public sealed record Tokens(string Accent, string Ink, string Paper, string Font, string CssFont, double LineHeight);
+
+    public static readonly IReadOnlyList<(string Id, string Name, string Accent)> Themes =
+        [("paper", "Papel", "#6b4f2a"), ("ocean", "Oceano", "#075985"), ("ink", "Tinta", "#312e81")];
+
+    public static Tokens Of(PublicationDesign design)
+    {
+        var accent = design.Accent is { } own && Hex().IsMatch(own) ? own.ToLowerInvariant()
+            : Themes.FirstOrDefault(t => t.Id == design.Theme).Accent ?? Themes[0].Accent;
+        var font = design.Font is "sans" or "serif" or "mono" ? design.Font : design.Layout == "book" ? "serif" : "sans";
+        var css = font switch { "serif" => "Georgia,'Times New Roman',serif", "mono" => "ui-monospace,Menlo,Consolas,monospace", _ => "system-ui,sans-serif" };
+        return new(accent, "#25272c", "#ffffff", font, css, font == "serif" ? 1.7 : 1.65);
+    }
+
+    public static bool ValidAccent(string? value) => value is not null && Hex().IsMatch(value);
+
+    [System.Text.RegularExpressions.GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
+    private static partial System.Text.RegularExpressions.Regex Hex();
 }
 
 /// <summary>
@@ -267,13 +297,14 @@ public static class PublicationHtml
         var title = MarkdownEngine.EscapeHtml(project.Title);
         var slides = false;
         var book = project.Design.Layout == "book";
-        var accent = project.Design.Theme switch { "ocean" => "#075985", "ink" => "#312e81", _ => "#6b4f2a" };
+        var tokens = PublicationTheme.Of(project.Design);
+        var accent = tokens.Accent;
         var sb = new StringBuilder();
         sb.Append("<!doctype html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\">")
           .Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
           .Append("<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\">")
           .Append("<title>").Append(title).Append("</title><style>")
-          .Append(":root{color-scheme:light}*{box-sizing:border-box}body{margin:0;color:#25272c;background:#fff;font-family:system-ui,sans-serif;line-height:1.65}")
+          .Append(":root{color-scheme:light}*{box-sizing:border-box}body{margin:0;color:").Append(tokens.Ink).Append(";background:").Append(tokens.Paper).Append(";font-family:").Append(tokens.CssFont).Append(";line-height:").Append(tokens.LineHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append("}")
           .Append("main{max-width:760px;padding:clamp(20px,5vw,64px);margin:auto}h1,h2,h3{line-height:1.24}article{margin:2.5rem 0}")
           .Append("img,video,svg{max-width:100%;height:auto}pre{overflow:auto}code{white-space:pre-wrap;overflow-wrap:anywhere}")
           .Append("blockquote{border-left:3px solid #999;padding-left:1rem}table{display:block;overflow-x:auto}")
@@ -286,7 +317,7 @@ public static class PublicationHtml
           .Append(".missing{border:1px dashed #a35;padding:1rem}@page{size:A4;margin:18mm}")
           .Append("@media print{main{max-width:none;padding:0}article{break-before:page}article:first-of-type{break-before:auto}h1,h2,h3{break-after:avoid}p{widows:3;orphans:3}pre,table,img{break-inside:avoid}}")
           .Append("h1,h2,h3,a{color:").Append(accent).Append("}nav a{display:block;padding:.35em 0}progress{width:100%;accent-color:").Append(accent).Append("}");
-        if (book) sb.Append("body{font-family:Georgia,serif}p{text-align:start}article{counter-increment:chapter}nav{margin:2rem 0}");
+        if (book) sb.Append("p{text-align:start}article{counter-increment:chapter}nav{margin:2rem 0}");
         if (slides) sb.Append("main{max-width:none}article{min-height:80vh;scroll-snap-align:start;padding:clamp(16px,4vw,64px);border:1px solid #ddd;border-radius:12px}html{scroll-snap-type:y proximity}@media print{@page{size:320mm 180mm;margin:12mm}header,nav{display:none}article{min-height:0;border:0;padding:0;break-before:page}article:first-of-type{break-before:auto}}");
         sb.Append("</style></head><body><main><header><h1>").Append(title).Append("</h1></header>");
         if (book || slides)

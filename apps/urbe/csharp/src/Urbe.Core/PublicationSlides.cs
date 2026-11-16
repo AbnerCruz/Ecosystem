@@ -69,7 +69,7 @@ public static partial class PublicationSlides
         // formulas are drawn at 18 px; on a slide they follow its text size (em), at any scale of the slide
         string renderMath(string tex, bool display) => SvgSize().Replace(render(tex, display), m =>
             $"{m.Groups[1].Value}width='{Em(m.Groups[2].Value)}em' height='{Em(m.Groups[3].Value)}em'", 1);
-        var accent = project.Design.Theme switch { "ocean" => "#075985", "ink" => "#312e81", _ => "#6b4f2a" };
+        var accent = PublicationTheme.Of(project.Design).Accent;
         var title = MarkdownEngine.EscapeHtml(project.Title);
         var missing = new List<string>();
         var slides = new List<(string Html, string Notes, string Source)>();

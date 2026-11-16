@@ -429,8 +429,18 @@ public sealed partial class MainView
         }
         else if (option == 1)
         {
-            var theme = await Dialogs.ChooseAsync("Tema", [new DialogItem("Papel"), new DialogItem("Oceano"), new DialogItem("Tinta")]);
-            if (theme is >= 0 and <= 2) next = project with { Design = project.Design with { Theme = new[] { "paper", "ocean", "ink" }[theme.Value] } };
+            // CST-161: a theme, the person's own accent, and the type; every output reads them (PublicationTheme)
+            var tokens = PublicationTheme.Of(project.Design);
+            var theme = await Dialogs.ChooseAsync("Tema", [
+                .. PublicationTheme.Themes.Select(t => new DialogItem(t.Name, Detail: t.Accent)),
+                new DialogItem("Cor própria", Detail: project.Design.Accent ?? "a do tema: " + tokens.Accent),
+                new DialogItem("Letra sem serifa"), new DialogItem("Letra serifada", Detail: "como nos livros"), new DialogItem("Letra monoespaçada")]);
+            int themes = PublicationTheme.Themes.Count;
+            if (theme is { } t && t < themes) next = project with { Design = project.Design with { Theme = PublicationTheme.Themes[t].Id, Accent = null } };
+            else if (theme == themes && await Dialogs.PromptAsync(new PromptOptions("Cor própria", Label: "Cor em hexadecimal", Value: tokens.Accent, Placeholder: "#0b6e4f", Confirm: "Usar",
+                         Validate: v => PublicationTheme.ValidAccent(v.Trim()) ? null : "Escreva # e seis dígitos, como #0b6e4f.")) is { } own)
+                next = project with { Design = project.Design with { Accent = own.Trim().ToLowerInvariant() } };
+            else if (theme is { } f && f > themes) next = project with { Design = project.Design with { Font = new[] { "sans", "serif", "mono" }[f - themes - 1] } };
         }
         else if (option is 2 or 3)
         {

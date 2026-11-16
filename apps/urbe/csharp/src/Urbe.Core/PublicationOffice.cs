@@ -29,7 +29,7 @@ public sealed record OfficeChapter(string Title, string DocumentId, IReadOnlyLis
 /// The publication read once for the office adapters (CST-166/168): chapters of semantic blocks, and the honest
 /// list of what a format could not keep (an office file is not the HTML; nothing is flattened without saying so).
 /// </summary>
-public sealed record OfficeDocument(string Title, string Layout, IReadOnlyList<OfficeChapter> Chapters, IReadOnlyList<string> Limitations);
+public sealed record OfficeDocument(string Title, string Layout, IReadOnlyList<OfficeChapter> Chapters, IReadOnlyList<string> Limitations, string Accent = "#6b4f2a");
 
 /// <summary>An exported office file and what it could not represent natively.</summary>
 public sealed record PublicationExport(byte[] Bytes, IReadOnlyList<string> Limitations);
@@ -68,7 +68,7 @@ public static class PublicationOffice
             if (current is null || current.Revision != source.Revision || current.Markdown != source.Markdown)
                 throw new InvalidOperationException("Uma fonte mudou durante a exportação. Exporte novamente para usar a revisão atual.");
         }
-        return new OfficeDocument(project.Title, project.Design.Layout, chapters, limits.ToArray());
+        return new OfficeDocument(project.Title, project.Design.Layout, chapters, limits.ToArray(), PublicationTheme.Of(project.Design).Accent);
 
         async Task Block(RichNode node, List<OfficeBlock> into, PublicationSourceView source)
         {
