@@ -298,7 +298,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
 
         Assert.Equal(asset.Id, Assert.Single(library.Search("DRAGAO joao")).Id);
         Assert.Equal(asset.Id, Assert.Single(library.Search("credito animacao")).Id);
-        Assert.Equal(asset.Id, Assert.Single(library.Search("dra\\u0067a\\u0303o voO")).Id);
+        Assert.Equal(asset.Id, Assert.Single(library.Search("draga\u0303o voO")).Id);
         Assert.Empty(library.Search("dragao inexistente"));
         Assert.Equal("Dragão Ágil", library.Find(asset.Id, 1).Title);
         Assert.Equal("Crédito obrigatório", library.Find(asset.Id, 1).Attribution);
