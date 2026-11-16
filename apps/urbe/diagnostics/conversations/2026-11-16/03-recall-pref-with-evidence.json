@@ -1,0 +1,22 @@
+{
+  "schema": "urbe.diagnostic.fixture/1",
+  "source": "sanitized human-readable derivation from owner-provided exports",
+  "not_full_export": true,
+  "policy": "do not commit raw user conversations or vault content into public repo",
+  "file": "03-recall-pref-with-evidence.json",
+  "title": "Lembrança recuperada com origem e confiança",
+  "original_export_index": 3,
+  "severity": "P2",
+  "observations": [
+    "recall_memory recuperou uma preferência registrada em conversa anterior, com ID, confiança 85% e origem.",
+    "Também retornou uma decisão de configuração não pertinente à pergunta.",
+    "Resposta usou preferência relevante, mas precisa evitar confundir memória com fato definitivo quando houver contradições recentes."
+  ],
+  "repro": [
+    "Salvar preferência de teste; abrir outra conversa; perguntar por ela.",
+    "Inserir uma segunda decisão distinta; confirmar que a resposta filtra por intenção e mantém proveniência."
+  ],
+  "expected": [
+    "Recuperação correta com fonte e qualificação, sem informação lateral desnecessária."
+  ]
+}
