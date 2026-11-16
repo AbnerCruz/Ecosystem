@@ -161,6 +161,7 @@ public sealed partial class MainView
             _publicationDrafts[key] = draft;
         }
         _publicationDraft = draft;
+        HideExplorerTip();
         PublicationsStudio.Open(path, draft.Project, _publicationsCatalog!);
         TellChangesSinceExport(draft.Project);
         PublicationsStudio.SetSaveState(draft.Dirty, draft.Error);

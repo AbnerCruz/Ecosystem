@@ -366,10 +366,20 @@ public sealed class PublicationStudioView : Border
             remove.Click += (_, _) => { if (_project is { } p) UpdateProject(p.RemovePlacement(piece.Id)); };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
-            var up = ActionButton(UrbeTheme.Icons.ArrowUp, "Mover fonte para cima");
-            up.Click += (_, _) => { if (_project is { } p) UpdateProject(p.MovePlacement(piece.Id, Math.Max(0, p.Sections.FindIndex(s => s.Id == piece.Id) - 1))); };
-            DockPanel.SetDock(up, Dock.Right);
-            item.Children.Add(up);
+            // one way where it can move: the first goes down, the others up (a button that does nothing is not shown)
+            if (project.Sections.Count > 1)
+            {
+                bool first = i == 0;
+                var move = ActionButton(first ? UrbeTheme.Icons.ArrowDown : UrbeTheme.Icons.ArrowUp, first ? "Mover fonte para baixo" : "Mover fonte para cima");
+                move.Click += (_, _) =>
+                {
+                    if (_project is not { } p) return;
+                    var at = p.Sections.FindIndex(s => s.Id == piece.Id);
+                    UpdateProject(p.MovePlacement(piece.Id, first ? Math.Min(p.Sections.Count - 1, at + 1) : Math.Max(0, at - 1)));
+                };
+                DockPanel.SetDock(move, Dock.Right);
+                item.Children.Add(move);
+            }
             var adapt = ActionButton(UrbeTheme.Icons.Edit, "Adaptar: resumo, roteiro, fala ou tradução");
             adapt.IsEnabled = source is not null;
             adapt.Click += (_, _) => AdaptRequested?.Invoke(piece);
@@ -405,7 +415,9 @@ public sealed class PublicationStudioView : Border
                     {
                         Children =
                         {
-                            new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) },
+                            // the note's name, only when its first heading does not already say it
+                            new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                                IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(), label, StringComparison.CurrentCultureIgnoreCase) },
                             new MarkdownReader { Selectable = true, ProgressContextMarkdown = source.Markdown,
                                 ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown }.BuildMarkdown(text)
                         }

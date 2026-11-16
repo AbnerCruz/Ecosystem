@@ -214,6 +214,7 @@ public sealed partial class MainView
             _openGraph = graph;
             _openGraphPath = path;
             _graphDirty = false;
+            HideExplorerTip();
             GraphsPanel.Show(graph);
             GraphsPanel.IsVisible = true;
             UpdateNav();
