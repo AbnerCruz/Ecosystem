@@ -71,6 +71,7 @@ public sealed class PublicationStudioView : Border
                 Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke("srt"));
                 Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
+                if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
             Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
@@ -157,6 +158,8 @@ public sealed class PublicationStudioView : Border
     public event Action? VideoCancelRequested;
     public event Action<string>? SubtitlesRequested;
     public event Action? AddAudioRequested;
+    /// <summary>CST-172: volume, fade in and out of a track, or take it out.</summary>
+    public event Action? AdjustAudioRequested;
     public event Action<string>? AddVideoElementRequested;
 
     /// <summary>CST-170: a publication laid out as a video (one note per scene).</summary>

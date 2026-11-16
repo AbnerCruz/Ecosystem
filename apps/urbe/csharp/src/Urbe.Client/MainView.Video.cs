@@ -23,6 +23,7 @@ public sealed partial class MainView
         studio.VideoCancelRequested += () => _videoExport?.Cancel();
         studio.SubtitlesRequested += format => _ = ExportPublicationSubtitlesAsync(format);
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
+        studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
     }
 
@@ -120,6 +121,42 @@ public sealed partial class MainView
         };
         _publicationsStudio.UpdateProject(project with { Video = project.Video! with { Audio = [.. project.Video.Audio, clip] } });
         ShowLifeNotice("Áudio adicionado à trilha do vídeo: " + System.IO.Path.GetFileName(clip.Path));
+    }
+
+    /// <summary>CST-172: one track of the video's sound: its volume (0–400 %), how it comes in and leaves, or out.</summary>
+    public async Task AdjustPublicationAudioAsync()
+    {
+        var draft = _publicationDraft;
+        if (_publicationsStudio?.Project is not { Video: { Audio.Count: > 0 } video } project) return;
+        static string Kind(string k) => k switch { "voice" => "Voz", "music" => "Música", _ => "Efeito" };
+        static string N(double v) => v.ToString("0.##", CultureInfo.GetCultureInfo("pt-BR"));
+        var pick = await Dialogs.ChooseAsync("Áudios do vídeo", video.Audio.Select(a => new DialogItem(System.IO.Path.GetFileName(a.Path),
+            Detail: Kind(a.Kind) + " · começa em " + N(a.Start) + " s · volume " + N(a.Volume * 100) + " % · entra em " + N(a.FadeIn) + " s, sai em " + N(a.FadeOut) + " s")).ToList());
+        if (pick is not { } i || !SameVideoDraft(draft)) return;
+        var clip = video.Audio[i];
+        var action = await Dialogs.ChooseAsync(System.IO.Path.GetFileName(clip.Path),
+            [new DialogItem("Volume"), new DialogItem("Entrada suave"), new DialogItem("Saída suave"), new DialogItem("Tirar do vídeo")]);
+        if (action is not { } a || !SameVideoDraft(draft)) return;
+        VideoAudioClip? changed = clip;
+        if (a == 3) changed = null;
+        else
+        {
+            var (title, label, value, max) = a switch
+            {
+                0 => ("Volume", "Porcentagem (100 = como foi gravado)", clip.Volume * 100, 400.0),
+                1 => ("Entrada suave", "Segundos subindo do silêncio (0 = começa direto)", clip.FadeIn, 60.0),
+                _ => ("Saída suave", "Segundos descendo até o silêncio (0 = termina direto)", clip.FadeOut, 60.0)
+            };
+            var typed = await Dialogs.PromptAsync(new PromptOptions(title, Label: label, Value: N(value), Confirm: "Aplicar",
+                Validate: v => double.TryParse(v.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) && x >= 0 && x <= max ? null : "Escreva um número de 0 a " + N(max) + "."));
+            if (typed is null || !SameVideoDraft(draft)) return;
+            var x = double.Parse(typed.Replace(',', '.'), CultureInfo.InvariantCulture);
+            changed = a switch { 0 => clip with { Volume = x / 100 }, 1 => clip with { FadeIn = x }, _ => clip with { FadeOut = x } };
+        }
+        var audio = video.Audio.ToList();
+        if (changed is null) audio.RemoveAt(i); else audio[i] = changed;
+        _publicationsStudio.UpdateProject(project with { Video = video with { Audio = audio } });
+        ShowLifeNotice(changed is null ? "Áudio tirado do vídeo." : "Áudio ajustado.");
     }
 
     private async Task<(PublicationProject Project, VideoTimeline Timeline)?> PrepareVideoAsync(PublicationDraft draft)

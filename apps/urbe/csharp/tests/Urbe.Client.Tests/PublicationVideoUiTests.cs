@@ -60,6 +60,23 @@ public sealed partial class HeadlessUiTests
             Assert.StartsWith("1\n00:00:", captions["Filme.srt"]);
             Assert.StartsWith("WEBVTT\n\n00:00:", captions["Filme.vtt"]);
             Assert.Contains(" --> ", captions["Filme.vtt"]);
+            // CST-172: a track's volume is adjusted on screen, and it can be taken out
+            studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Audio = [new VideoAudioClip { Path = "trilha.wav", Kind = "music" }] } });
+            await Pump();
+            async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
+            var adjust = view.AdjustPublicationAudioAsync();
+            await Choose("trilha.wav");
+            await Choose("Volume");
+            for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any(); j++) await Pump();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "50";
+            ClickButtonWithText(view.Dialogs, "Aplicar");
+            await adjust;
+            Assert.Equal(0.5, studio.Project!.Video!.Audio.Single().Volume);
+            var remove = view.AdjustPublicationAudioAsync();
+            await Choose("trilha.wav");
+            await Choose("Tirar do vídeo");
+            await remove;
+            Assert.Empty(studio.Project!.Video!.Audio);
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is covered where ffmpeg exists
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Resolution = 144 } });
             await Pump();
