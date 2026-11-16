@@ -288,6 +288,23 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void Search_MatchesAccentsCaseAndDecomposedUnicodeAcrossFields()
+    {
+        var source = CreateSpriteProject("SearchUnicode");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Dragão Ágil", "João", "CC-BY", "Crédito obrigatório",
+            tags: ["Animação", "Vôo"]);
+        var library = new ReusableAssetLibrary(LibraryRoot);
+
+        Assert.Equal(asset.Id, Assert.Single(library.Search("DRAGAO joao")).Id);
+        Assert.Equal(asset.Id, Assert.Single(library.Search("credito animacao")).Id);
+        Assert.Equal(asset.Id, Assert.Single(library.Search("dra\\u0067a\\u0303o voO")).Id);
+        Assert.Empty(library.Search("dragao inexistente"));
+        Assert.Equal("Dragão Ágil", library.Find(asset.Id, 1).Title);
+        Assert.Equal("Crédito obrigatório", library.Find(asset.Id, 1).Attribution);
+    }
+
+    [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
         var source = CreateSpriteProject("Origin");
