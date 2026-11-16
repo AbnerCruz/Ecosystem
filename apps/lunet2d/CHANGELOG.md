@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-512 (integridade de dados, CI/DEVICE pendentes): referências curadas retiradas do catálogo embutido continuam acessíveis como snapshots locais, preservando favoritos, notas e associação a projetos após atualizar o aplicativo e salvar novamente. Identificadores pessoais inválidos continuam rejeitados; referências curadas que retornarem recebem metadados oficiais com dados pessoais preservados.
+
 - LUNET-512 (implementação em PR, CI/DEVICE pendentes): Explorar diretamente do launcher — catálogo offline de jogos e gêneros para inspiração, filtros combinados por mecânica/perspectiva/estilo, busca por texto, notas, favoritos, criação/edição/exclusão de referências pessoais e associação opcional a projetos. Sem capturar arte protegida, sem loja e sem internet obrigatória.
 
 - LUNET-513 (em revisão, DEVICE pendente): o desfazer da IA agora compara cada arquivo com os bytes realmente escritos pela execução. Quando algum arquivo foi alterado depois (inclusive fonte e PNG de sprite), a reversão inteira é bloqueada antes de tocar no projeto; checkpoints persistem hashes para sobreviver ao reinício e checkpoints antigos sem estado final confiável não sobrescrevem trabalho mais recente.
