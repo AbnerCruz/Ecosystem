@@ -744,6 +744,7 @@ public sealed partial class MainView : Grid
         _rail.IsVisible = wide;
         UpdateFloatingNav();
         PlaceAssistant(_assistant, e.NewSize.Width);
+        if (e.HeightChanged) ResizeAssistantMini();
     }
 
     // ---------------- the Explorer's header ----------------

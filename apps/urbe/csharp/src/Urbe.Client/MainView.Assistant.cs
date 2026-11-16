@@ -99,6 +99,7 @@ public sealed partial class MainView : IAssistantApp
         // footer's Leitura/Edição switch too, and the contextual card above the launcher
         _assistantLauncher.Margin = new Thickness(0, 0, 16, 16 + lift);
         _assistantMini.Margin = new Thickness(8, 0, 8, 8 + lift);
+        ResizeAssistantMini();
         if (_radial is null) return;
         _radial.Lift = lift;
     }
@@ -112,7 +113,8 @@ public sealed partial class MainView : IAssistantApp
             && !FilePreview.IsVisible && !StudyBrowser.IsVisible
             // the Explorer's selection bar has every action at the bottom: nothing floats over it
             && !(Explorer.IsVisible && Explorer.Selecting);
-        _assistantLauncher.IsVisible = free && !phone;
+        // nor beside the contextual panel: it has its own Fechar and Abrir conversa
+        _assistantLauncher.IsVisible = free && !phone && !_assistantMini.IsVisible;
         if (_radial is null) return;
         // while writing (keyboard up) the menu would float over the text: it comes back when the block closes
         // nor while the contextual panel is open: it has its own close, and the button would cover its send
@@ -145,8 +147,24 @@ public sealed partial class MainView : IAssistantApp
         _assistantMiniRenderedKey = key;
 
         // Keep the editor alive under this non-modal, bounded surface. Never move keyboard focus.
-        // one scroll only (the conversation inside), the composer always in sight; about half the screen
-        _assistantMini.Child = panel!.CompactContent(Math.Clamp((Bounds.Height > 0 ? Bounds.Height : 760) * .5, 260, 520));
+        _assistantMini.Child = panel!.CompactContent(AssistantMiniHeight());
+    }
+
+    /// <summary>
+    /// One scroll only (the conversation inside), the composer always in sight; about half the screen, and never taller
+    /// than the room above the editor's footer (a phone on its side has 360 px: the header stays visible).
+    /// </summary>
+    private double AssistantMiniHeight()
+    {
+        var screen = Bounds.Height > 0 ? Bounds.Height : 760;
+        var room = screen - (Editor.IsVisible ? Editor.BottomChrome : 0) - 24;
+        return Math.Round(Math.Min(Math.Clamp(screen * .5, 260, 520), Math.Max(160, room)));
+    }
+
+    /// <summary>Turning the phone or opening the keyboard resizes the open panel in place: what is typed stays.</summary>
+    private void ResizeAssistantMini()
+    {
+        if (_assistantMini is { IsVisible: true, Child: Grid body }) body.Height = AssistantMiniHeight();
 
     }
 

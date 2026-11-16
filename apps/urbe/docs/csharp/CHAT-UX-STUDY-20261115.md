@@ -45,4 +45,9 @@ Desenhos avaliados:
 
 Entregue (A): metade da altura da tela (260–520 px), uma única rolagem (a conversa), cabeçalho com estado, agente, **Abrir conversa** e **Fechar** sempre visíveis, etapas em palavras, resposta sem balão (só a mensagem da pessoa tem balão), envio redondo igual ao do chat completo, menu radial escondido enquanto o painel está aberto; até 560 px de largura no computador. Capturas depois: 360 e 900 px.
 
-Pendente: validação no aparelho (teclado aberto, rotação, TalkBack) e aprovação do proprietário.
+Celular deitado (captura `popup-landscape`, 760 × 360, 16/11/2026), defeitos achados e corrigidos:
+- o cabeçalho (estado, Abrir conversa, Fechar) saía pela parte de cima: a altura mínima de 260 px não cabia acima do rodapé do editor. Agora a altura nunca passa do espaço acima do rodapé;
+- a altura era calculada uma vez: girar o aparelho ou abrir o teclado não a refazia. Agora o painel muda de altura no lugar, sem refazer o conteúdo (o que está digitado fica);
+- o lançador do Assistente (janela larga) aparecia por cima do painel. Agora some enquanto o painel está aberto.
+
+Pendente: validação no aparelho (teclado aberto, TalkBack, resposta chegando) e aprovação do proprietário. O teclado não se simula no teste sem tela.

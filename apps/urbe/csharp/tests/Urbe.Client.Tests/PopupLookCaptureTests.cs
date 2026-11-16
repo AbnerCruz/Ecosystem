@@ -43,6 +43,10 @@ public sealed partial class HeadlessUiTests
             window.Width = 900;
             for (int i = 0; i < 20; i++) { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); await Task.Delay(5); }
             window.CaptureRenderedFrame()!.Save(Path.Combine(outDir, "popup-900.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+            // the phone turned sideways: little height, the composer must stay whole and the conversation still scroll
+            window.Width = 760; window.Height = 360;
+            for (int i = 0; i < 20; i++) { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); await Task.Delay(5); }
+            window.CaptureRenderedFrame()!.Save(Path.Combine(outDir, "popup-landscape.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
             return true;
         }
         finally { window.Close(); }
