@@ -150,6 +150,10 @@ public static class AssistantDocumentTools
         if (data is null) throw new AiToolException("PDF não encontrado no contexto autorizado ou acima do limite.");
         try { return execute(data); }
         catch (AiToolException) { throw; }
+        catch (UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException)
+        {
+            throw new AiToolException("Este PDF está protegido por senha e o Urbe ainda não lê PDFs com senha. Diga isso à pessoa; não tente adivinhar o conteúdo.");
+        }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             throw new AiToolException("Falha ao ler PDF (" + e.GetType().Name + "); arquivo preservado.");

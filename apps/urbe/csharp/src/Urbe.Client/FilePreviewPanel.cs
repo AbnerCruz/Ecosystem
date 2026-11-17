@@ -791,6 +791,13 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         // HTML as a page, PDF, audio and video: the content viewer of the platform, inside the panel (ADD-0023)
+        // CST-233: a PDF locked by a password says so, instead of looking like a broken or empty file
+        if (kind == VaultFileKinds.Pdf && bytes is not null && await Task.Run(() => Urbe.Core.Assistant.PdfLock.IsLocked(bytes)))
+        {
+            if (version != _version) return;
+            ShowInfo(name, read.Size, kind, signature, "Este PDF está protegido por senha. O Urbe ainda não abre PDFs com senha; use Abrir em outro app. O arquivo continua como está.");
+            return;
+        }
         if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
         {
             Control? viewer = null;
