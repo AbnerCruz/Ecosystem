@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511: manifestos da biblioteca que declaram um arquivo como ancestral de outro (inclusive diferenças de caixa) são recusados antes de importar/exportar; regressão xUnit preserva Game.cs, ZIP ausente e manifesto original. CI e DEVICE ainda pendentes.
+
 - LUNET-511 (incremento em PR #962, CI/DEVICE pendentes): a busca offline da biblioteca também encontra assets pelos nomes e caminhos dos arquivos-fonte e derivados (por exemplo `.sprite.json` e `.png`), preservando metadados e versões.
 - LUNET-511 (PR #962, CI/DEVICE pendentes): prévia e importação agora rejeitam colisões de nomes que diferem apenas por maiúsculas/minúsculas, inclusive em diretórios ancestrais, protegendo a portabilidade dos assets entre Android e desktops; duas regressões xUnit adicionadas.
 - LUNET-511 (PR #962, CI/DEVICE pendentes): importação de manifestos SHA-256 minúsculos também compara hashes sem diferenciar caixa durante staging e rollback; regressão existente reforçada para verificar os bytes realmente importados.
