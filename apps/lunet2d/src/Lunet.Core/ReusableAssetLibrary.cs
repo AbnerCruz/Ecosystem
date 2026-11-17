@@ -213,7 +213,7 @@ public sealed class ReusableAssetLibrary
                 throw new IOException("Conflito de importação: " + item.Path + " já existe ou está bloqueado por um arquivo ancestral. Nenhum arquivo foi alterado.");
             var source = FilePath(Path.Combine(root, "files"), item.Path);
             EnsureNoLinks(Path.Combine(root, "files"), item.Path);
-            if (!File.Exists(source) || new FileInfo(source).Length != item.Length || HashFile(source) != item.Sha256)
+            if (!File.Exists(source) || new FileInfo(source).Length != item.Length || !HashFile(source).Equals(item.Sha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Asset da biblioteca corrompido: " + item.Path);
             checkedFiles.Add((item.Path, source, target, item.Sha256));
         }
@@ -288,7 +288,7 @@ public sealed class ReusableAssetLibrary
             EnsureNoLinks(sourceRoot, file.Path);
             var source = FilePath(sourceRoot, file.Path);
             if (!File.Exists(source) || new FileInfo(source).Length != file.Length ||
-                HashFile(source) != file.Sha256)
+                !HashFile(source).Equals(file.Sha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Asset da biblioteca corrompido: " + file.Path);
             verified.Add((file.Path, source));
         }
