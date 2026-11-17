@@ -36,14 +36,22 @@ public static class PublicationOdt
         var pictures = new List<(string Path, string Mime, byte[] Bytes)>();
         int tables = 0;
         var text = new XElement(Office + "text");
-        text.Add(new XElement(Text + "p", new XAttribute(Text + "style-name", "Title"), Safe(doc.Title)));
         var book = doc.Layout == "book";
+        var cover = doc.Chapters.Count > 0 && doc.Chapters[0].Cover;
+        if (!cover) text.Add(new XElement(Text + "p", new XAttribute(Text + "style-name", "Title"), Safe(doc.Title)));
+        // CST-159: the cover note first, then a page break (the empty paragraph starts a page), then the contents
+        if (cover)
+        {
+            Chapter(0, false);
+            text.Add(new XElement(Text + "p", new XAttribute(Text + "style-name", PageBreakStyle(null))));
+        }
         if (book)
             text.Add(new XElement(Text + "table-of-content", new XAttribute(Text + "name", "Sumário"),
                 new XElement(Text + "table-of-content-source", new XAttribute(Text + "outline-level", 3),
                     new XElement(Text + "index-title-template", "Sumário")),
                 new XElement(Text + "index-body", new XElement(Text + "p", "Atualize o sumário: Ferramentas → Atualizar → Tudo."))));
-        for (int c = 0; c < doc.Chapters.Count; c++)
+        for (int c = cover ? 1 : 0; c < doc.Chapters.Count; c++) Chapter(c, book);
+        void Chapter(int c, bool newPage)
         {
             var blocks = PublicationOffice.Flatten(doc.Chapters[c].Blocks).ToList();
             var first = true;
@@ -56,13 +64,13 @@ public static class PublicationOdt
                     while (end < blocks.Count && blocks[end] is OfficeListItem) end++;
                     element = Lists(blocks.Skip(i).Take(end - i).Cast<OfficeListItem>().ToList(), text);
                     i = end - 1;
-                    if (first && c > 0 && book) element.AddFirst(new XAttribute(Text + "continue-numbering", "false"));
+                    if (first && newPage) element.AddFirst(new XAttribute(Text + "continue-numbering", "false"));
                 }
                 else
                 {
                     element = Block(blocks[i]);
                     // a chapter starts on a new page in a book
-                    if (first && c > 0 && book && element.Name.Namespace == Text && element.Name.LocalName is "p" or "h")
+                    if (first && newPage && element.Name.Namespace == Text && element.Name.LocalName is "p" or "h")
                         element.SetAttributeValue(Text + "style-name", PageBreakStyle(element.Attribute(Text + "style-name")?.Value));
                     text.Add(element);
                 }

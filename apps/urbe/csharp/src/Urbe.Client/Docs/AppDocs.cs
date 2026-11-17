@@ -388,6 +388,7 @@ public static partial class AppDocs
         ## Criar
 
         - **Criar publicação desta nota** (no **Mais ações** do editor ou no menu de um cartão), **Criar publicação de um trecho** (só um título da nota e o que vem embaixo dele, ou o parágrafo selecionado) ou, na busca de comandos, **Nova publicação de uma tag** e **Nova publicação de uma busca** (você vê as notas encontradas antes de criar).
+        - **Capa:** num artigo ou livro, o botão de livro ao lado de uma nota a torna a capa. Ela vai para o início, fica numa página só dela e sai do sumário; no EPUB, a primeira imagem dela é a capa que a estante mostra. O texto da capa é o da nota: título, subtítulo e autoria você escreve nela.
         - **Nova publicação no estilo de outra** (na busca de comandos) leva o layout, o tema, a cor, a letra, o público e os formatos de uma publicação que já existe; nenhuma nota vem junto.
         - O projeto fica em `Publicações/Nome.publication.json`, com a ordem das notas, o layout e o tema. O texto continua nas notas.
 

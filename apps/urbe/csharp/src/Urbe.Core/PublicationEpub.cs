@@ -34,13 +34,16 @@ public static class PublicationEpub
         var files = new Dictionary<string, (string Mime, byte[] Bytes)>(StringComparer.Ordinal);
         var sources = new List<PublicationSourceView>();
         var chapters = new List<(string File, string Title, XDocument Document)>();
+        string? coverImage = null;
         foreach (var piece in project.Sections)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var source = catalog.Read(piece.Source) ?? throw new InvalidDataException("Nota de origem indisponível: " + piece.Source.DocumentId);
             sources.Add(source);
             var content = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
-            var section = new XElement(Xhtml + "section", new XAttribute(Epub + "type", "chapter"), new XAttribute("role", "doc-chapter"));
+            // CST-159: the cover note is the book's cover page (EPUB 3 "cover" landmark, outside the contents)
+            var section = piece.IsCover ? new XElement(Xhtml + "section", new XAttribute(Epub + "type", "cover"))
+                : new XElement(Xhtml + "section", new XAttribute(Epub + "type", "chapter"), new XAttribute("role", "doc-chapter"));
             var roots = NoteContainers.ParseRich(content);
             foreach (var node in roots) section.Add(await ConvertNode(node, source));
             // a chapter is named by its first heading (what a reader announces), else by its note
@@ -52,7 +55,14 @@ public static class PublicationEpub
                 section.SetAttributeValue("aria-labelledby", (string?)first.Attribute("id"));
             }
             else section.SetAttributeValue("aria-label", title);
-            chapters.Add(($"chapter-{chapters.Count + 1}.xhtml", title, Document(title, new XElement(Xhtml + "body", section))));
+            if (piece.IsCover)
+            {
+                // its first picture is the image readers show on the shelf (manifest cover-image), described for screen readers
+                if (section.Descendants(Xhtml + "img").FirstOrDefault() is { } image && files.ContainsKey((string?)image.Attribute("src") ?? "")) { coverImage = (string)image.Attribute("src")!; image.SetAttributeValue("role", "doc-cover"); }
+                chapters.Add(("cover.xhtml", title, Document(title, new XElement(Xhtml + "body", section))));
+                continue;
+            }
+            chapters.Add(($"chapter-{chapters.Count(c => c.File != "cover.xhtml") + 1}.xhtml", title, Document(title, new XElement(Xhtml + "body", section))));
         }
 
         // Asset reads can suspend. Never combine chapters from an obsolete revision with newly saved sources.
@@ -63,12 +73,13 @@ public static class PublicationEpub
                 throw new InvalidOperationException("Uma fonte mudou durante a exportação. Exporte novamente para usar a revisão atual.");
         }
         var nav = new XElement(Xhtml + "nav", new XAttribute(Epub + "type", "toc"), new XAttribute("id", "toc"),
-            new XElement(Xhtml + "h1", "Sumário"), new XElement(Xhtml + "ol", chapters.Select(c =>
+            new XElement(Xhtml + "h1", "Sumário"), new XElement(Xhtml + "ol", chapters.Where(c => c.File != "cover.xhtml").Select(c =>
                 new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute("href", c.File), c.Title)))));
         var landmarks = new XElement(Xhtml + "nav", new XAttribute(Epub + "type", "landmarks"), new XAttribute("hidden", "hidden"),
             new XElement(Xhtml + "h2", "Marcos"), new XElement(Xhtml + "ol",
                 new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute(Epub + "type", "toc"), new XAttribute("href", "nav.xhtml#toc"), "Sumário")),
-                new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute(Epub + "type", "bodymatter"), new XAttribute("href", chapters[0].File), "Início do texto"))));
+                chapters[0].File == "cover.xhtml" ? new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute(Epub + "type", "cover"), new XAttribute("href", "cover.xhtml"), "Capa")) : null,
+                new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute(Epub + "type", "bodymatter"), new XAttribute("href", (chapters.FirstOrDefault(c => c.File != "cover.xhtml").File ?? chapters[0].File)), "Início do texto"))));
         bool described = undescribed.Count == 0;
         var features = new List<string> { "structuralNavigation", "tableOfContents", "readingOrder", "displayTransformability" };
         if (pictures > 0 && described) features.Add("alternativeText");
@@ -89,12 +100,13 @@ public static class PublicationEpub
         var spine = new XElement(Opf + "spine");
         for (int i = 0; i < chapters.Count; i++)
         {
-            var id = "chapter-" + (i + 1);
+            var id = Path.GetFileNameWithoutExtension(chapters[i].File);
             manifest.Add(new XElement(Opf + "item", new XAttribute("id", id), new XAttribute("href", chapters[i].File), new XAttribute("media-type", "application/xhtml+xml")));
             spine.Add(new XElement(Opf + "itemref", new XAttribute("idref", id)));
         }
         foreach (var (path, asset) in files)
-            manifest.Add(new XElement(Opf + "item", new XAttribute("id", "asset-" + manifest.Elements().Count()), new XAttribute("href", path), new XAttribute("media-type", asset.Mime)));
+            manifest.Add(new XElement(Opf + "item", new XAttribute("id", "asset-" + manifest.Elements().Count()), new XAttribute("href", path), new XAttribute("media-type", asset.Mime),
+                path == coverImage ? new XAttribute("properties", "cover-image") : null));
         var package = new XDocument(new XElement(Opf + "package", new XAttribute("version", "3.0"), new XAttribute("unique-identifier", "pub-id"), new XAttribute(XNamespace.Xml + "lang", "pt-BR"),
             new XElement(Opf + "metadata", new XAttribute(XNamespace.Xmlns + "dc", Dc),
                 new XElement(Dc + "identifier", new XAttribute("id", "pub-id"), project.PublicationId),

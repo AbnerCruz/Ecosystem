@@ -45,8 +45,16 @@ public static class PublicationDocx
         var lists = new Dictionary<int, (int NumId, bool Ordered)>();
         var body = new XElement(W + "body");
         int drawing = 0;
-        body.Add(Para("Title", new XElement(W + "r", Text(doc.Title))));
         var book = doc.Layout == "book";
+        var cover = doc.Chapters.Count > 0 && doc.Chapters[0].Cover;
+        var pageBreak = () => new XElement(W + "p", new XElement(W + "r", new XElement(W + "br", new XAttribute(W + "type", "page"))));
+        // CST-159: the cover note on a page of its own, in place of the plain title line
+        if (cover)
+        {
+            foreach (var block in PublicationOffice.Flatten(doc.Chapters[0].Blocks)) body.Add(Block(block));
+            body.Add(pageBreak());
+        }
+        else body.Add(Para("Title", new XElement(W + "r", Text(doc.Title))));
         if (book)
         {
             body.Add(Para("TOCHeading", new XElement(W + "r", Text("Sumário"))));
@@ -57,10 +65,11 @@ public static class PublicationDocx
                 new XElement(W + "r", Text("Atualize o sumário (F9 no Word; Ferramentas → Atualizar no LibreOffice).")),
                 new XElement(W + "r", new XElement(W + "fldChar", new XAttribute(W + "fldCharType", "end")))));
         }
-        for (int c = 0; c < doc.Chapters.Count; c++)
+        for (int c = cover ? 1 : 0; c < doc.Chapters.Count; c++)
         {
             var chapter = doc.Chapters[c];
-            if (c > 0 && book) body.Add(new XElement(W + "p", new XElement(W + "r", new XElement(W + "br", new XAttribute(W + "type", "page")))));
+            // in a book every chapter starts a page, the first one too (the contents page comes before it)
+            if (book) body.Add(pageBreak());
             foreach (var block in PublicationOffice.Flatten(chapter.Blocks)) body.Add(Block(block));
         }
         body.Add(new XElement(W + "sectPr",

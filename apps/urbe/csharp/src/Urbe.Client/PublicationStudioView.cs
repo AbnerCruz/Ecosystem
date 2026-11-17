@@ -273,11 +273,11 @@ public sealed class PublicationStudioView : Border
         Dispatcher.UIThread.Post(() => { if (IsVisible) Refresh(); }, DispatcherPriority.Background);
     }
 
-    private static Button ActionButton(string icon, string label)
+    private static Button ActionButton(string icon, string label, bool on = false)
     {
         var b = new Button
         {
-            Content = UrbeTheme.Icon(icon, 19, UrbeTheme.Text2),
+            Content = UrbeTheme.Icon(icon, 19, on ? UrbeTheme.Accent : UrbeTheme.Text2),
             MinWidth = 44, MinHeight = 44, Padding = new Thickness(10),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(12)
@@ -328,11 +328,13 @@ public sealed class PublicationStudioView : Border
         _redoButton.IsEnabled = CanRedo;
         _sources.Children.Clear();
         _preview.Children.Clear();
-        _preview.Children.Add(new TextBlock
-        {
-            Text = project.Title, FontSize = 26, FontWeight = FontWeight.Bold,
-            TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
-        });
+        // with a cover, the cover says the title (as in the exports)
+        if (project.Cover is null)
+            _preview.Children.Add(new TextBlock
+            {
+                Text = project.Title, FontSize = 26, FontWeight = FontWeight.Bold,
+                TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
+            });
         var missing = 0;
         var video = IsVideo;
         if (video)
@@ -362,17 +364,19 @@ public sealed class PublicationStudioView : Border
             catch (NotSupportedException) { source = null; }
             if (source is null) missing++;
             var documentId = piece.Source.DocumentId;
-            var label = source is { } found ? System.IO.Path.GetFileNameWithoutExtension(found.Path) +
-                (piece.Source.Fragment is { Length: > 0 } fragment ? " #" + fragment.TrimStart('#') : "") : "Fonte indisponível";
+            var label = (piece.IsCover ? "Capa · " : "") + (source is { } found ? System.IO.Path.GetFileNameWithoutExtension(found.Path) +
+                (piece.Source.Fragment is { Length: > 0 } fragment ? " #" + fragment.TrimStart('#') : "") : "Fonte indisponível");
             var item = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 3) };
             var remove = ActionButton(UrbeTheme.Icons.Trash, "Remover fonte da composição");
             remove.Click += (_, _) => { if (_project is { } p) UpdateProject(p.RemovePlacement(piece.Id)); };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
-            // one way where it can move: the first goes down, the others up (a button that does nothing is not shown)
-            if (project.Sections.Count > 1)
+            // one way where it can move: the first goes down, the others up (a button that does nothing is not shown);
+            // the cover stays at the start, so it has none and the piece after it counts as the first
+            int head = project.Cover is null ? 0 : 1;
+            if (project.Sections.Count - head > 1 && !piece.IsCover)
             {
-                bool first = i == 0;
+                bool first = i == head;
                 var move = ActionButton(first ? UrbeTheme.Icons.ArrowDown : UrbeTheme.Icons.ArrowUp, first ? "Mover fonte para baixo" : "Mover fonte para cima");
                 move.Click += (_, _) =>
                 {
@@ -382,6 +386,14 @@ public sealed class PublicationStudioView : Border
                 };
                 DockPanel.SetDock(move, Dock.Right);
                 item.Children.Add(move);
+            }
+            // CST-159: a note as the cover of a text publication (article, book); a presentation's first slide already is one
+            if (project.Design.Layout is "article" or "book" && (piece.IsCover || project.Sections.Count > 1))
+            {
+                var cover = ActionButton(UrbeTheme.Icons.Book, piece.IsCover ? "Deixar de ser a capa" : "Usar como capa", on: piece.IsCover);
+                cover.Click += (_, _) => { if (_project is { } p) UpdateProject(p.WithCover(piece.IsCover ? null : piece.Id)); };
+                DockPanel.SetDock(cover, Dock.Right);
+                item.Children.Add(cover);
             }
             var adapt = ActionButton(UrbeTheme.Icons.Edit, "Adaptar: resumo, roteiro, fala ou tradução");
             adapt.IsEnabled = source is not null;
@@ -412,7 +424,8 @@ public sealed class PublicationStudioView : Border
                 if (origin is not null) _preview.Children.Add(origin);
                 _preview.Children.Add(new Border
                 {
-                    Padding = new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
+                    // the cover stands apart: its own block, taller, as its page in the book
+                    Padding = piece.IsCover ? new Thickness(14, 48) : new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
                     BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
                     Child = new StackPanel
                     {

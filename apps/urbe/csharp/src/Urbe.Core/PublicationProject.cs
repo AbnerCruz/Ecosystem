@@ -9,7 +9,11 @@ public sealed record PublicationPlacement
 {
     public string Id { get; init; } = "piece_" + Guid.NewGuid().ToString("N");
     public PublicationSourceReference Source { get; init; } = new("");
+    /// <summary>"section", or "cover" (CST-159): the note shown as the publication's cover, first and out of the contents.</summary>
     public string Role { get; init; } = "section";
+
+    public const string CoverRole = "cover";
+    public bool IsCover => Role == CoverRole;
 }
 
 /// <summary>Editorial styling stays separate from authored notes.</summary>
@@ -192,6 +196,22 @@ public sealed record PublicationProject
         return this with { Sections = sections, Sources = Sources.Where(s => sections.Any(p => p.Source == s)).ToList() };
     }
 
+    /// <summary>CST-159: the piece shown as the cover, if any.</summary>
+    [JsonIgnore]
+    public PublicationPlacement? Cover => Sections.FirstOrDefault(s => s.IsCover);
+
+    /// <summary>
+    /// CST-159: this piece becomes the cover (the only one, moved to the start); null takes the cover away and the piece
+    /// stays where it is as an ordinary section.
+    /// </summary>
+    public PublicationProject WithCover(string? placementId)
+    {
+        if (placementId is not null && Sections.All(s => s.Id != placementId)) throw new InvalidOperationException("Peça inexistente.");
+        var sections = Sections.Select(s => s with { Role = s.Id == placementId ? PublicationPlacement.CoverRole : s.IsCover ? "section" : s.Role }).ToList();
+        if (placementId is not null) sections = [.. sections.Where(s => s.Id == placementId), .. sections.Where(s => s.Id != placementId)];
+        return this with { Sections = sections };
+    }
+
     /// <summary>CST-155: a piece now shows another real note (an adaptation of its source); its place and role stay.</summary>
     public PublicationProject ReplacePlacementSource(string placementId, PublicationSourceReference source)
     {
@@ -207,8 +227,12 @@ public sealed record PublicationProject
         var piece = sections.FirstOrDefault(s => s.Id == placementId) ?? throw new InvalidOperationException("Peça inexistente.");
         sections.Remove(piece);
         sections.Insert(Math.Clamp(index, 0, sections.Count), piece);
-        return this with { Sections = sections };
+        return this with { Sections = CoverFirst(sections) };
     }
+
+    // the cover never leaves the start: moving another piece before it, or moving it, keeps it there
+    private static List<PublicationPlacement> CoverFirst(List<PublicationPlacement> sections) =>
+        sections.FindIndex(s => s.IsCover) is > 0 and var at ? [sections[at], .. sections.Where((_, i) => i != at)] : sections;
 
     /// <summary>Reorder the visible composition without modifying the note or its revisions.</summary>
     public PublicationProject MoveSource(string documentId, int index)
@@ -226,7 +250,7 @@ public sealed record PublicationProject
             sections.Remove(piece);
             sections.Insert(Math.Clamp(index, 0, sections.Count), piece);
         }
-        return this with { Sources = sources, Sections = sections };
+        return this with { Sources = sources, Sections = CoverFirst(sections) };
     }
 }
 
@@ -282,6 +306,8 @@ public static class PublicationProjectCodec
             s.Source is null || !refs.Contains((s.Source.DocumentId, s.Source.Fragment))) ||
             project.Sections.GroupBy(s => s.Id).Any(g => g.Count() != 1))
             throw new InvalidDataException("Seções sem identidade ou fonte cadastrada.");
+        if (project.Sections.Count(s => s.IsCover) > 1 || project.Sections.Skip(1).Any(s => s.IsCover))
+            throw new InvalidDataException("A capa é uma só e vem antes das outras peças.");
         if (project.Formats.Count == 0 || project.Formats.Any(s => string.IsNullOrWhiteSpace(s)))
             throw new InvalidDataException("A publicação precisa declarar os formatos de destino.");
         if (project.Video is { } video) VideoCompositionRules.Validate(video);
@@ -334,11 +360,14 @@ public static class PublicationHtml
           .Append("h1,h2,h3,a{color:").Append(accent).Append("}nav a{display:block;padding:.35em 0}progress{width:100%;accent-color:").Append(accent).Append("}");
         if (book) sb.Append("p{text-align:start}article{counter-increment:chapter}nav{margin:2rem 0}");
         if (slides) sb.Append("main{max-width:none}article{min-height:80vh;scroll-snap-align:start;padding:clamp(16px,4vw,64px);border:1px solid #ddd;border-radius:12px}html{scroll-snap-type:y proximity}@media print{@page{size:320mm 180mm;margin:12mm}header,nav{display:none}article{min-height:0;border:0;padding:0;break-before:page}article:first-of-type{break-before:auto}}");
-        sb.Append("</style></head><body><main><header><h1>").Append(title).Append("</h1></header>");
+        // CST-159: a cover is a page of its own, centred, with the publication's title in its note (not repeated above it)
+        sb.Append(".cover{min-height:85vh;display:flex;flex-direction:column;justify-content:center;text-align:center}.cover img{max-height:55vh;margin:1rem auto;display:block}@media print{.cover{min-height:250mm;break-after:page}}");
+        sb.Append("</style></head><body><main>");
+        if (project.Cover is null) sb.Append("<header><h1>").Append(title).Append("</h1></header>");
         if (book || slides)
         {
             sb.Append("<nav aria-label=\"Sumário\">");
-            foreach (var piece in project.Sections)
+            foreach (var piece in project.Sections.Where(p => !p.IsCover))
             {
                 var source = catalog.Read(piece.Source);
                 var label = source is null ? "Fonte indisponível" : System.IO.Path.GetFileNameWithoutExtension(source.Path);
@@ -359,8 +388,9 @@ public static class PublicationHtml
             }
             var body = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
             var rendered = QuizBlock.RenderHtml(Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(body, md => MarkdownEngine.Render(md, RenderMath)))), data ?? (_ => null)), interactive: false);
-            sb.Append("<article id=\"").Append(MarkdownEngine.EscapeHtml(placement.Id)).Append("\" tabindex=\"0\">").Append(NoteProgress.RenderHtml(rendered, source.Markdown,
-                id => catalog.Read(new PublicationSourceReference(id))?.Markdown)).Append("</article>");
+            var element = placement.IsCover ? "section" : "article";
+            sb.Append('<').Append(element).Append(" id=\"").Append(MarkdownEngine.EscapeHtml(placement.Id)).Append(placement.IsCover ? "\" class=\"cover\" aria-label=\"Capa\">" : "\" tabindex=\"0\">")
+              .Append(NoteProgress.RenderHtml(rendered, source.Markdown, id => catalog.Read(new PublicationSourceReference(id))?.Markdown)).Append("</").Append(element).Append('>');
         }
         sb.Append("</main></body></html>");
         return new PublicationHtmlResult(sb.ToString(), missing.AsReadOnly());
