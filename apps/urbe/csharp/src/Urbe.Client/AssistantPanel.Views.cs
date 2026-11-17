@@ -1044,6 +1044,9 @@ public sealed partial class AssistantPanel
                 SaveConfig();
                 ShowSettings();
             });
+            body.Children.Add(Section("Vídeo generativo",
+                Hint("Clipes curtos feitos por um modelo externo (OpenAI Sora), pagos por segundo ao provedor; só a descrição é enviada. O vídeo explicativo editável das Publicações não depende disto."),
+                TextButton("Vídeo generativo: " + (_cfg.GenerativeVideo ? "ligado" : "desligado"), () => { _cfg.GenerativeVideo = !_cfg.GenerativeVideo; SaveConfig(); ShowSettings(); })));
             body.Children.Add(Section("Aparelho",
                 Hint("O que os agentes podem fazer no aparelho. Cada ação que muda algo pede sua aprovação; a agenda e o e-mail abrem no app deles para você confirmar ou enviar."),
                 DeviceSwitch(AssistantDeviceTools.Alarm, "Despertador (marcar e ver o próximo)"),

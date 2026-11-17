@@ -187,6 +187,8 @@ public sealed class AiConfig
     public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
     /// <summary>The device capabilities the person allowed the agents (alarme, agenda, email); none by default (NN-016).</summary>
     public HashSet<string> DeviceAccess { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>CST-173: external generative video (paid per second) is off until the person turns it on.</summary>
+    public bool GenerativeVideo { get; set; }
     /// <summary>
     /// CST-132: the keys and tokens the person registered (providers, web search, MCP servers), for taking them out of
     /// anything that leaves the app. Shorter than 8 characters is not told apart from ordinary words and is skipped.
@@ -570,6 +572,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         return new JsonObject
         {
             ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
+            ["generativeVideo"] = c.GenerativeVideo,
             ["deviceAccess"] = new JsonArray(c.DeviceAccess.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()),
             ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
@@ -602,6 +605,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["agentPolicies"] is JsonObject policies)
             foreach (var (id, policy) in policies) c.AgentPolicies[id] = Str(policy, "readonly");
+        c.GenerativeVideo = o["generativeVideo"] is JsonValue gv && gv.TryGetValue<bool>(out var on) && on;
         if (o["deviceAccess"] is JsonArray device)
             foreach (var item in device)
                 if (item is JsonValue v && v.TryGetValue<string>(out var name) && name is AssistantDeviceTools.Alarm or AssistantDeviceTools.Calendar or AssistantDeviceTools.Email)

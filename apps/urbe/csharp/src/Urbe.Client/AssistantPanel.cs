@@ -322,7 +322,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
         AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate, AssistantDataTools.Query, AssistantTools.StructureTool,
         .. AgentSkills.Tools(host => SkillsOf(host.Documents)),
         .. AssistantEvidenceTools.All,
@@ -1524,7 +1524,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor, IAssistantDocumentFiles, IAssistantDocumentVision, IAssistantConversations
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantVideos, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor, IAssistantDocumentFiles, IAssistantDocumentVision, IAssistantConversations
     {
         // CST-089: this agent's own earlier conversations in this vault; never another agent's, never this one
         public IAssistantConversations? Conversations => this;
@@ -1653,6 +1653,18 @@ public sealed partial class AssistantPanel : Border
         public IAssistantForms? Forms => this;
         public FormSession Request(FormDefinition definition) => panel.RequestForm(conversationId, agentId, definition);
         public IAssistantImages? Images => this;
+        // CST-173: an external generative video model, only when the person turned it on and an OpenAI provider is configured
+        public IAssistantVideos? Videos => this;
+        private AiProviderConfig? VideoProvider => panel._cfg.Providers.FirstOrDefault(p => AssistantProviders.VideoModel(p.Preset) is not null && !string.IsNullOrWhiteSpace(p.ApiKey));
+        public bool CanGenerate => panel._cfg.GenerativeVideo && VideoProvider is not null;
+        string IAssistantVideos.Unavailable => !panel._cfg.GenerativeVideo
+            ? "O vídeo generativo está desligado. A pessoa liga em Assistente → Conexões → Vídeo generativo (pago por segundo); para vídeo editável, use uma Publicação no layout vídeo."
+            : "Nenhum provedor de vídeo configurado: adicione uma chave OpenAI nas configurações do Assistente.";
+        public string Model => VideoProvider is { } vp ? AssistantProviders.VideoModel(vp.Preset) + " (" + (vp.Name ?? vp.Preset) + ")" : "modelo de vídeo";
+        public Task<byte[]> GenerateAsync(string prompt, int seconds, string size, CancellationToken token) =>
+            panel.Providers.GenerateVideoAsync(VideoProvider ?? throw new AiProviderException("Configure um provedor de vídeo."), prompt, null, seconds, size, null, token.CanBeCanceled ? token : cancel);
+        Task IAssistantVideos.SaveAsync(string path, byte[] bytes) => panel._app.CreateBinaryFileAsync(path, bytes);
+        bool IAssistantVideos.Exists(string path) => panel._app.FileExists(path);
         // the alarm clock, calendar and e-mail app, with what the person allowed (Assistente → Conexões → Aparelho)
         public IAssistantDevice? Device => new AllowedDevice(PlatformDevice.Current ?? new LauncherDevice(() => Avalonia.Controls.TopLevel.GetTopLevel(panel)?.Launcher), panel._cfg.DeviceAccess);
         public IAssistantDelegation? Delegation => this;

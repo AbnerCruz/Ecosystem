@@ -55,7 +55,7 @@ public static class AssistantImageTools
     /// Where the picture goes: the path asked (its extension replaced by the picture's), else Imagens/ and a name
     /// from the description; a name taken gets " 2", " 3"…
     /// </summary>
-    public static string PlanPath(string? asked, string prompt, string extension, Func<string, bool> exists)
+    public static string PlanPath(string? asked, string prompt, string extension, Func<string, bool> exists, string defaultFolder = Folder)
     {
         var p = AssistantTools.Norm(asked);
         string folder, name;
@@ -68,12 +68,12 @@ public static class AssistantImageTools
         }
         else
         {
-            folder = Folder;
+            folder = defaultFolder;
             var words = Regex.Matches(prompt, @"[\p{L}\p{N}]+").Select(m => m.Value).Take(6);
             name = string.Join(" ", words);
             if (name.Length > 48) name = name[..48].TrimEnd();
         }
-        if (name.Length == 0) name = "Imagem";
+        if (name.Length == 0) name = defaultFolder == Folder ? "Imagem" : "Vídeo";
         string At(int n) => (folder.Length > 0 ? folder + "/" : "") + name + (n > 1 ? " " + n : "") + extension;
         int k = 1;
         while (exists(At(k))) k++;
