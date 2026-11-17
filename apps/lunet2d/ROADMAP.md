@@ -527,3 +527,5 @@ Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar
 - [ ] Memória contextual indexada, orçamento de tokens real e custo de API medido por provider; não confundir histórico simples com memória semântica.
 - [ ] Agentes especialistas, planejamento em camadas, revisão independente e recuperação persistente entre runs.
 - [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o editor de notas está fora do escopo de edição.
+
+- LUNET-511 (17/11, PR #962, validação pendente): preflight de importação também detecta colisões case-insensitive em arquivos e diretórios, com testes para ambos; CI e DEVICE ainda necessários.
