@@ -1360,12 +1360,17 @@ public sealed partial class AssistantPanel : Border
         return (child, target, lastExchangeStart, runsBefore);
     }
 
+    /// <summary>
+    /// CST-148: the request (the whole conversation as JSON, megabytes in a long chat) is written and sent off the UI
+    /// thread; only each streamed piece comes back to it. It used to be serialized on the UI thread at every step.
+    /// </summary>
     private Task<AiResult> StreamForUiAsync(AiProviderConfig provider, AiRequest request, Action<AiStreamEvent> update, CancellationToken cancel) =>
-        Providers.StreamAsync(provider, request, e =>
+        Task.Run(() => Providers.StreamAsync(provider, request, e =>
         {
             if (Dispatcher.UIThread.CheckAccess()) update(e);
-            else Dispatcher.UIThread.Invoke(() => update(e));
-        }, cancel);
+            // below input: a touch is never kept waiting behind the text still arriving
+            else Dispatcher.UIThread.Invoke(() => update(e), DispatcherPriority.Background);
+        }, cancel), cancel);
 
     private void OnUpdateFor(AiConversation conversation, AiAgentEvent e)
     {
