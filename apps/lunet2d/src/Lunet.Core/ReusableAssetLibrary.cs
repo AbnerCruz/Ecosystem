@@ -168,7 +168,16 @@ public sealed class ReusableAssetLibrary
             EnsureNoLinks(destination.Directory, file.Path);
             var target = Path.Combine(destination.Directory,
                 file.Path.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(target) || Directory.Exists(target))
+            // A file in an ancestor directory also prevents import.
+            var parent = Path.GetDirectoryName(target);
+            var blockedByParent = false;
+            while (parent is not null && parent.Length >= destination.Directory.Length)
+            {
+                if (File.Exists(parent)) { blockedByParent = true; break; }
+                if (string.Equals(parent, destination.Directory, StringComparison.Ordinal)) break;
+                parent = Path.GetDirectoryName(parent);
+            }
+            if (blockedByParent || File.Exists(target) || Directory.Exists(target))
                 conflicts.Add(file.Path);
         }
         return conflicts;
