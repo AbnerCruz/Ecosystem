@@ -332,6 +332,30 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Equal(asset.Id, Library.Find(asset.Id, asset.Version).Id);
     }
 
+    [Theory]
+    [InlineData("Kind", "99999")]
+    [InlineData("CreatedUtc", "0001-01-01T00:00:00")]
+    public void InvalidManifestIdentityMetadata_RejectsWithoutChangingLibraryOrProject(string field, string value)
+    {
+        var source = CreateSpriteProject("MetadataSource");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json", "Asas", "Eu", "CC0");
+        var manifestPath = Path.Combine(LibraryRoot, asset.Id, "v1", "asset.json");
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        if (field == "Kind")
+            document[field] = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+        else
+            document[field] = value;
+        var malformed = document.ToJsonString();
+        File.WriteAllText(manifestPath, malformed);
+        var target = Projects.Create("MetadataTarget");
+        var gameBefore = target.ReadText("Game.cs");
+
+        Assert.Throws<InvalidDataException>(() => Library.Find(asset.Id, asset.Version));
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, asset.Version, target));
+        Assert.Equal(gameBefore, target.ReadText("Game.cs"));
+        Assert.Equal(malformed, File.ReadAllText(manifestPath));
+    }
+
     [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
