@@ -112,7 +112,7 @@ public sealed class VideoProjectTests
         using var _c = catalog;
         project = project with { Video = project.Video! with { Scenes = project.Video.Scenes.Select(s => s with { Duration = 2, Transition = new VideoTransition { Kind = "cut" } }).ToList() } };
         var renders = 0;
-        using var cache = new VideoFrameCache<string>(1 << 20, _ => 10);
+        using var cache = new BoundedCache<string>(1 << 20, _ => 10);
         void RenderAll(VideoTimeline t)
         {
             for (int i = 0; i < t.FrameCount; i++)
