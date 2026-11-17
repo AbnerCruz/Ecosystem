@@ -445,6 +445,34 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.sprite.json")));
     }
 
+    [Theory]
+    [InlineData("Content/Art")]
+    [InlineData("content/art")]
+    public void ManifestWithFileAsAncestor_IsRejectedBeforeImportOrExport(string ancestor)
+    {
+        var source = CreateSpriteProject("AncestorManifestSource");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Wings", "Author", "CC0");
+        var manifestPath = Path.Combine(LibraryRoot, asset.Id, "v1", "asset.json");
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        var files = document["Files"]!.AsArray();
+        var existing = files[0]!.DeepClone();
+        existing["Path"] = ancestor;
+        files.Add(existing);
+        var malformed = document.ToJsonString();
+        File.WriteAllText(manifestPath, malformed);
+        var target = Projects.Create("AncestorManifestTarget");
+        var originalGame = target.ReadText("Game.cs");
+        var zip = Path.Combine(_root, "invalid-ancestor.zip");
+
+        Assert.Throws<InvalidDataException>(() => Library.Find(asset.Id, 1));
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, target));
+        Assert.Throws<InvalidDataException>(() => Library.ExportZip(asset.Id, 1, zip));
+        Assert.Equal(originalGame, target.ReadText("Game.cs"));
+        Assert.False(File.Exists(zip));
+        Assert.Equal(malformed, File.ReadAllText(manifestPath));
+    }
+
     [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
