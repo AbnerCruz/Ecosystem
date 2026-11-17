@@ -153,7 +153,6 @@ public sealed partial class MainView
             _publicationsCatalogStore = _store;
         }
         _pagesPanel?.Close();
-        if (_studio?.IsVisible == true) await _studio.CloseAsync();
         ReleaseSavedPublicationDraft(_publicationDraft);
         var key = (_store!, file.Id);
         if (!_publicationDrafts.TryGetValue(key, out var draft) || !draft.Dirty)

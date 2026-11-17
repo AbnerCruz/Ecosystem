@@ -94,4 +94,17 @@ public sealed class ArchitectureTests
         Assert.DoesNotContain(types, t => simulation.Any(s => t.StartsWith(s, StringComparison.Ordinal)));
         Assert.False(Directory.Exists(Path.Combine(Root, "src", "Urbe.Client", "World")), "src/Urbe.Client/World voltou");
     }
+
+    /// <summary>
+    /// CST-061 (owner, 31/10/2026): the old page editor left the app. Old .page.json files are shown, exported and
+    /// converted into Publications; new work is a Publication. Neither its studio nor its page-making tools come back.
+    /// </summary>
+    [Fact]
+    public void TheOldPageEditorIsNotInTheProduct()
+    {
+        var types = typeof(ProductIdentity).Assembly.GetTypes().Select(t => t.Name).ToList();
+        Assert.DoesNotContain(types, t => t is "PageStudio" or "AssistantPageTools" or "PageTemplates");
+        foreach (var file in new[] { "PageStudioView.cs", "MainView.Studio.cs" })
+            Assert.False(File.Exists(Path.Combine(Root, "src", "Urbe.Client", file)), "src/Urbe.Client/" + file + " voltou");
+    }
 }

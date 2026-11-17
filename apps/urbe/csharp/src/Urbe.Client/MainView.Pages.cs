@@ -9,7 +9,8 @@ namespace Urbe.Client;
 /// <summary>
 /// Páginas (pages.home, studio.js): the vault's .page.json files listed in their own panel and each shown inside the
 /// Urbe as the 1.8.4's page engine writes it (PageEngine, ported and proved byte for byte); "⋯" has Ver página, Abrir
-/// como texto (JSON) and Mover para a lixeira. A card opens the page in the studio (MainView.Studio.cs).
+/// como texto (JSON), Converter em publicação and Mover para a lixeira. CST-061: the old page studio is gone; a page is
+/// shown, exported or converted, never edited in its own editor (new work is a Publication).
 /// </summary>
 public sealed partial class MainView
 {
@@ -279,5 +280,30 @@ public sealed partial class MainView
                 if (Pages.IsVisible) Pages.Show(PageCards(), CompositionPlan()?.Creates.Count ?? 0);
             })
         ]);
+    }
+
+    /// <summary>pages.open from the palette: the page chosen among the vault's pages is shown.</summary>
+    public async Task ChoosePageAsync()
+    {
+        var pages = PageCards();
+        if (pages.Count == 0) { ShowPages(); return; }
+        var pick = await Dialogs.ChooseAsync("Ver página antiga", pages.Select(p => new DialogItem(p.Icon + "  " + p.Title, Detail: p.Path)).ToList());
+        if (pick is not null) await ShowPageAsync(pages[pick.Value].Path);
+    }
+
+    /// <summary>printPdf(): the page's export HTML to the system's print ("Salvar como PDF" saves the file).</summary>
+    public async Task PrintPageAsync(string path)
+    {
+        if (_store?.Get(path) is not { } page || await PageHtmlAsync(path) is not { } html) return;
+        var layout = (JsonObject)_pageEngine.Normalize(page.Content).Spec["layout"]!;
+        var settings = PagePrintSettings.FromLayout(layout);
+        if (ContentViewers.Printer is not { } print) { ShowLifeNotice("Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
+        try
+        {
+            ShowLifeNotice("Preparando o PDF…");
+            await print(PageFileBase(path), html, settings);
+            ShowLifeNotice("Escolha “Salvar como PDF” para gerar o arquivo.");
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ShowLifeNotice("Não consegui gerar o PDF: " + ex.Message); }
     }
 }

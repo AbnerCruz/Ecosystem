@@ -30,7 +30,6 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(new[] { "Bairro/Sub/Dois.md", "Bairro/Um.md" },
                 project.Sources.Select(s => view.Documents!.Get(s.DocumentId)!.Path));
             Assert.DoesNotContain("Fonte aninhada", File.ReadAllText(Path.Combine(vault, "Publicações", "Do bairro.publication.json")));
-            Assert.False(view.Studio.IsVisible);
             view.PublicationsStudio.Close();
 
             // Existing shortcut ID stays valid but cannot resurrect the retired editor.
@@ -40,7 +39,6 @@ public sealed partial class HeadlessUiTests
             Assert.True(view.Dialogs.IsOpen);
             Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
             view.Dialogs.Cancel();
-            Assert.False(view.Studio.IsVisible);
 
             view.ShowPages();
             var create = view.Pages.GetLogicalDescendants().OfType<Button>()
