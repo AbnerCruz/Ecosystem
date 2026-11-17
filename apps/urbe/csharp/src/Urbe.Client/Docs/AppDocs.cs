@@ -387,7 +387,8 @@ public static partial class AppDocs
 
         ## Criar
 
-        - **Criar publicação desta nota** (no **Mais ações** do editor ou no menu de um cartão), **Criar publicação de um trecho** (só um título da nota e o que vem embaixo dele) ou **Nova publicação de uma tag** (na busca de comandos).
+        - **Criar publicação desta nota** (no **Mais ações** do editor ou no menu de um cartão), **Criar publicação de um trecho** (só um título da nota e o que vem embaixo dele, ou o parágrafo selecionado) ou, na busca de comandos, **Nova publicação de uma tag** e **Nova publicação de uma busca** (você vê as notas encontradas antes de criar).
+        - **Nova publicação no estilo de outra** (na busca de comandos) leva o layout, o tema, a cor, a letra, o público e os formatos de uma publicação que já existe; nenhuma nota vem junto.
         - O projeto fica em `Publicações/Nome.publication.json`, com a ordem das notas, o layout e o tema. O texto continua nas notas.
 
         ## O estúdio
@@ -401,7 +402,19 @@ public static partial class AppDocs
 
         ## Exportar
 
-        Em **⋯** do estúdio: HTML, **PDF**, livro **EPUB**, documento **Word (DOCX)** e **OpenDocument (ODT)**, apresentação **PowerPoint (PPTX)**, **vídeo MP4** com legendas (SRT) e **Imprimir ou salvar como PDF**. Cada exportação é feita na hora, a partir das notas como estão.
+        Em **⋯** do estúdio: HTML, **PDF**, livro **EPUB**, documento **Word (DOCX)** e **OpenDocument (ODT)**, apresentação **PowerPoint (PPTX)**, **pacote ZIP**, **vídeo MP4** com legendas (SRT e WebVTT) e **Imprimir ou salvar como PDF**. Cada exportação é feita na hora, a partir das notas como estão.
+
+        - As imagens das notas (inclusive `![[foto.png]]`) vão **dentro** do arquivo, que abre sozinho, sem internet. Uma imagem que falta é dita no lugar dela.
+        - O **pacote ZIP** leva a publicação, os áudios e vídeos em `media/` e um manifesto que confere cada arquivo.
+        - Antes de salvar, o Urbe **abre o arquivo gerado e confere** se ele está inteiro; se não estiver, nada é salvo e você vê o motivo.
+        - O que um formato não guarda como no Urbe (uma fórmula que vira texto, um gráfico que vira imagem) é dito ao salvar. Dados que parecem pessoais são mostrados antes de compartilhar, para você decidir.
+        - O estúdio diz o que mudou nas notas desde a última exportação.
+
+        ## Vídeo
+
+        - **Narrar o roteiro** usa a voz do aparelho para ler o texto de cada cena e põe a fala no começo dela.
+        - **Ajustar áudios do vídeo** muda o volume, a entrada e a saída de cada trilha (a música entra em 1 s e sai em 2 s por padrão).
+        - Antes de gerar o MP4, o Urbe confere se há espaço livre suficiente e, se não houver, diz quanto falta e não começa. Durante a exportação ele mostra quanto tempo ainda falta, e **Cancelar** não deixa arquivo pela metade.
 
         ## Páginas antigas
 
@@ -472,6 +485,9 @@ public static partial class AppDocs
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.
         - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
         - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
+        - **A conversa continua**: ao voltar ao Assistente ou a um agente pouco depois (até duas horas) ou com algo pendente (uma mensagem esperando, um formulário não enviado), a conversa em andamento reaparece. Parada há mais tempo, começa uma nova, e a anterior fica em **Conversas**. **Nova conversa** recomeça na hora.
+        - **Fontes de uma pesquisa**: o painel de fontes diz se o agente leu a página inteira, só uma parte (**Leitura parcial**) ou só viu o resultado da busca.
+        - **Exportar conversa ou memória**: uma chave sua que tenha ido parar no chat sai como “[chave removida]”.
         - **Conversas anteriores**: cada agente consulta as próprias conversas deste vault (o pedido, a resposta, os arquivos alterados e, se precisar, a conversa inteira), por exemplo quando você diz "continue aquilo de ontem". Ele nunca vê as conversas de outro agente nem o que ficou oculto.
         - **Permissões do agente** (somente leitura, com aprovação, automático): mudar para uma mais restrita enquanto ele trabalha já vale a partir da próxima ação; mudar para uma mais livre vale a partir da próxima resposta. O Urbe avisa qual dos dois aconteceu.
         - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa. Numa consulta, o especialista nunca tem menos aprovações que o agente que pediu: se ele está em automático e o que pediu não, as mudanças dele pedem a sua aprovação na conversa que pediu.
@@ -509,6 +525,7 @@ public static partial class AppDocs
         - Se o arquivo mudar, o plugin desliga até você revisar (**Revisei, ligar**).
         - Os plugins `.js` da versão 1.8.4 não rodam no app nativo; aqui você só os vê e aprova.
         - **Modo seguro** desliga todos os plugins e estilos sem apagar nada.
+        - Com a permissão **agentes**, um plugin pode pedir trabalho a um dos seus agentes, só nas notas ou pastas que indicar. A cada pedido você vê o plugin, o agente, o pedido e onde ele pode gravar, e confirma; fora desse lugar o agente não grava nada.
 
         Plugins são programas: só ligue o que você entende ou que veio de alguém de confiança.
         """;
@@ -549,6 +566,10 @@ public static partial class AppDocs
         ## Quando a pasta muda fora do Urbe
 
         Outro aplicativo ou uma sincronização pode mudar os arquivos enquanto o Urbe está aberto. O Urbe nunca grava por cima do que mudou lá: ao salvar, ele lê a pasta de novo, e as mudanças de fora aparecem. Se a própria nota que você está escrevendo foi mudada lá fora, as duas versões ficam: a de fora continua na nota, e a sua é salva ao lado como **Nome (conflito data hora)**, que segue aberta no editor para você juntar o que quiser.
+
+        ## Texto não salvo
+
+        O Urbe salva sozinho logo depois de uma pausa na escrita. Se o app for fechado de repente antes disso (o sistema encerrou o app, a bateria acabou), o que você digitou fica guardado à parte, só neste aparelho. Ao abrir a nota de novo, o Urbe pergunta: **Recuperar** põe o texto de volta (e dá para desfazer), **Descartar** fica com a nota como estava. Ele avisa se a nota também mudou nesse meio-tempo.
 
         ## Versões e lixeira
 
