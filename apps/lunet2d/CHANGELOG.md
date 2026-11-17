@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (PR #962, CI/DEVICE pendentes): publicação de revisões rejeita diretórios de IDs da biblioteca que sejam links simbólicos antes de enumerar manifestos ou criar staging; regressão xUnit protege arquivos externos.
+
 - LUNET-511: manifestos da biblioteca que declaram um arquivo como ancestral de outro (inclusive diferenças de caixa) são recusados antes de importar/exportar; regressão xUnit preserva Game.cs, ZIP ausente e manifesto original. CI e DEVICE ainda pendentes.
 
 - LUNET-511 (incremento em PR #962, CI/DEVICE pendentes): a busca offline da biblioteca também encontra assets pelos nomes e caminhos dos arquivos-fonte e derivados (por exemplo `.sprite.json` e `.png`), preservando metadados e versões.
