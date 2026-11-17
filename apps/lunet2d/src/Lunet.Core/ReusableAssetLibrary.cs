@@ -374,6 +374,20 @@ public sealed class ReusableAssetLibrary
             item.Files.Any(f => f is null || f.Path is null || f.Sha256 is null) ||
             item.Files.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
             throw new InvalidDataException("Manifesto de asset inconsistente, mantido sem alteração.");
+        // A manifest must not describe a file and a child of that same file as separate
+        // entries. Such a package can never be imported or extracted safely.
+        var paths = new HashSet<string>(item.Files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
+        if (item.Files.Any(f =>
+        {
+            var ancestor = f.Path.LastIndexOf('/');
+            while (ancestor > 0)
+            {
+                if (paths.Contains(f.Path[..ancestor])) return true;
+                ancestor = f.Path.LastIndexOf('/', ancestor - 1);
+            }
+            return false;
+        }))
+            throw new InvalidDataException("Manifesto contém colisão entre arquivo e diretório; dados preservados.");
         // The manifest is local persisted input, not trusted code. Reject malformed metadata
         // before Android renders it or the import workflow reads it.
         if (item.Title is null || item.License is null || item.Author is null ||
