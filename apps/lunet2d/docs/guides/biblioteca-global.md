@@ -17,3 +17,7 @@ ReusableAssetLibraryTests cobre publicação de fonte e derivado, importação p
 Build Android/CI da reconciliação, execução em dispositivo, uso dos mesmos Studios fora de projetos com IAssetWorkspace, fluxo de importação/exportação ZIP da biblioteca e validação real de projetos variados. A Biblioteca já possui acesso na Home e na seção Studios, sem projeto aberto; os Studios em si ainda dependem de projeto. Não declarar LUNET-511 completo até resolver estas pendências.
 
 Referências técnicas e licenças: auditoria docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md, arquitetura offline-first do Android https://developer.android.com/topic/architecture/data-layer/offline-first e fontes licenciadas no OpenGameArt https://opengameart.org/content/faq.
+
+## Conflitos de importação
+
+Ao selecionar **Usar em…**, a biblioteca verifica se os caminhos do asset já existem no projeto escolhido. Se houver colisões, mostra os caminhos e não inicia a importação. Resolva os conflitos no projeto antes de tentar novamente. A verificação é apenas uma prévia: o núcleo repete os controles ao importar, pois os arquivos podem mudar entre a confirmação e a cópia. Validação em Android físico ainda pendente.
