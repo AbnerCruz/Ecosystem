@@ -191,7 +191,26 @@ public sealed partial class MainActivity
         intent.AddCategory(Intent.CategoryOpenable);
         intent.SetType("application/zip");
         intent.PutExtra(Intent.ExtraTitle, "lunet-asset-" + version.Id + "-v" + version.Version + ".zip");
-        StartActivityForResult(intent, AssetLibraryExportRequestCode);
+        try
+        {
+            StartActivityForResult(intent, AssetLibraryExportRequestCode);
+        }
+        catch (global::Android.Content.ActivityNotFoundException)
+        {
+            _pendingLibraryAssetId = null;
+            _pendingLibraryAssetVersion = 0;
+            new AlertDialog.Builder(this)!.SetTitle("Exportação indisponível")!
+                .SetMessage("Nenhum seletor de documentos compatível foi encontrado neste aparelho. O asset permanece na biblioteca.")!
+                .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+        }
+        catch (Java.Lang.SecurityException)
+        {
+            _pendingLibraryAssetId = null;
+            _pendingLibraryAssetVersion = 0;
+            new AlertDialog.Builder(this)!.SetTitle("Exportação bloqueada")!
+                .SetMessage("O sistema impediu a abertura do seletor de documentos. O asset permanece na biblioteca.")!
+                .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+        }
     }
 
     private void CompleteLibraryAssetExport(Result resultCode, global::Android.Net.Uri? uri)
