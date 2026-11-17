@@ -60,6 +60,25 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void ImportToProject_AncestorFileConflictFailsBeforeCreatingStaging()
+    {
+        var source = CreateSpriteProject("BlockedSource");
+        var destination = Projects.Create("BlockedTarget");
+        destination.WriteText("Content/Art", "manual content");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Wings", "Author", "CC0");
+        var before = destination.ReadText("Game.cs");
+
+        var conflicts = Library.FindImportConflicts(asset.Id, asset.Version, destination);
+        Assert.Equal(2, conflicts.Count);
+        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, asset.Version, destination));
+        Assert.Equal("manual content", destination.ReadText("Content/Art"));
+        Assert.Equal(before, destination.ReadText("Game.cs"));
+        Assert.False(Directory.Exists(Path.Combine(destination.Directory, ".lunet", "import-")));
+        Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
+    }
+
+    [Fact]
     public void PublishAndImport_CopyBothEditableSourceAndDerivedSpriteWithoutSharedDependency()
     {
         var source = CreateSpriteProject("One");
