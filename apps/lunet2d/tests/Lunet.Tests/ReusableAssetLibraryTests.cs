@@ -79,6 +79,38 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void PublishRevision_RejectsSymlinkedAssetDirectoryWithoutTouchingExternalFiles()
+    {
+        var source = CreateSpriteProject("SymlinkSource");
+        var library = Library;
+        var first = library.Publish(source, "Content/Art/wing.sprite.json", "Wings", "Author", "CC0");
+        var external = Path.Combine(_root, "external-assets");
+        Directory.CreateDirectory(external);
+        var original = Path.Combine(LibraryRoot, first.Id);
+        var backup = Path.Combine(_root, "original-assets");
+        Directory.Move(original, backup);
+        try
+        {
+            try { Directory.CreateSymbolicLink(original, external); }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or PlatformNotSupportedException or IOException)
+            {
+                // Filesystems without symlink support cannot exercise this platform-specific guard.
+                return;
+            }
+            source.WriteText("Content/Art/wing.sprite.json", "revision");
+            Assert.Throws<InvalidDataException>(() =>
+                library.Publish(source, "Content/Art/wing.sprite.json", "Wings", "Author", "CC0",
+                    existingAssetId: first.Id));
+            Assert.Empty(Directory.EnumerateFileSystemEntries(external));
+        }
+        finally
+        {
+            if (Directory.Exists(original)) Directory.Delete(original);
+            Directory.Move(backup, original);
+        }
+    }
+
+    [Fact]
     public void PublishAndImport_CopyBothEditableSourceAndDerivedSpriteWithoutSharedDependency()
     {
         var source = CreateSpriteProject("One");
