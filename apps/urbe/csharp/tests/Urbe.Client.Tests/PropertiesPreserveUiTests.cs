@@ -76,4 +76,38 @@ public sealed partial class HeadlessUiTests
             }
             finally { window.Close(); }
         }, CancellationToken.None));
+
+    /// <summary>CST-026: nested boxes survive mode switches and entering and leaving their block without a byte changed.</summary>
+    [Fact]
+    public async Task Containers_NestedBoxesSurviveModesAndEditingUntouched() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            const string note = "# Personagens\n\n:::ficha Frodo\nUm hobbit.\n\n:::atributos Valores\nForça: 3 %%anotação%%\n:::\n\nDepois.\n:::\n\nFim.\n";
+            var editor = new EditorOverlay();
+            var window = new Window { Width = 412, Height = 900, Content = editor };
+            window.Show();
+            try
+            {
+                editor.Open(new CityNote("Notas/Fichas.md", note));
+                Dispatcher.UIThread.RunJobs();
+                window.UpdateLayout();
+                foreach (var start in editor.Surface.BlockStarts.ToList())
+                {
+                    if (editor.Surface.BlockView(start) is not { } view) continue;
+                    editor.Surface.TapBlock(start, view, null, new Avalonia.Point(5, 5), select: false);
+                    Dispatcher.UIThread.RunJobs();
+                    editor.FinishWriting();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Assert.Equal(note, editor.Current!.Content);
+                editor.SetMode(EditorMode.Fonte); Dispatcher.UIThread.RunJobs();
+                Assert.Equal(note, editor.Editor.Text);
+                editor.SetMode(EditorMode.Visual); Dispatcher.UIThread.RunJobs();
+                Assert.Equal(note, editor.Current!.Content);
+                Assert.False(editor.HasChanges);
+                await Task.CompletedTask;
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
 }
