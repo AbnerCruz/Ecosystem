@@ -229,7 +229,7 @@ public sealed class ReusableAssetLibrary
                 var temporary = FilePath(staging, item.Relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(temporary)!);
                 File.Copy(item.Source, temporary, overwrite: false);
-                if (HashFile(temporary) != item.Hash)
+                if (!HashFile(temporary).Equals(item.Hash, StringComparison.OrdinalIgnoreCase))
                     throw new IOException("Erro de integridade durante o preparo da importação.");
             }
             foreach (var item in checkedFiles)
