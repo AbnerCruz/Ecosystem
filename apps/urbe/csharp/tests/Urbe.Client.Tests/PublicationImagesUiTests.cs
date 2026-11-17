@@ -125,9 +125,12 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(["index.html", "media/1-som.mp3", "manifest.json"], zip.Entries.Select(e => e.FullName));
             Assert.StartsWith("Pacote salvo (", view.NoticeText);
             await view.ExportPublicationHtmlAsync();
+            // the vault writes in place (with a recovery copy beside it): a read during a save waits for the save to end
             string Saved() { try { return File.ReadAllText(Path.Combine(vault, "Publicações", "Livro.publication.json")); } catch (IOException) { return ""; } }
-            for (int i = 0; i < 200 && !Saved().Contains("lastExport"); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-            Assert.Contains("lastExport", Saved());
+            string last = "";
+            bool HtmlRecorded(string json) => System.Text.RegularExpressions.Regex.IsMatch(json, "\"lastExport\":\\s*\\{\\s*\"format\":\\s*\"html\"");
+            for (int i = 0; i < 300 && !HtmlRecorded(last = Saved()); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains("lastExport", last);   // the HTML export's own record, the last save, not the package's before it
             view.PublicationsStudio.Close();
             view.OpenNoteByPath("Fonte.md");
             await Settle(window, view);

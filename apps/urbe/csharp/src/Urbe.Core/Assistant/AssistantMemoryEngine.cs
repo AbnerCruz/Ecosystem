@@ -219,7 +219,7 @@ public static class AssistantMemoryEngine
             Origin = origin, SourceReference = source.Length > 200 ? source[..200] : source,
             Confidence = effectiveConfidence, Verified = verified,
             CreatedAt = timestamp ?? Now(), UpdatedAt = timestamp ?? Now(),
-            RelatedPaths = (paths ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.Ordinal).Take(16).ToList()
+            RelatedPaths = (paths ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.Ordinal).ToList()
         };
         cfg.MemoryRecords.Add(record);
         return record;
@@ -310,13 +310,17 @@ public static class AssistantMemoryEngine
         IReadOnlyList<AiMemoryMatch> matches, int maxChars)
     {
         maxChars = Math.Max(0, maxChars);
-        var results = matches.ToList();
-        // Stable preferences and pinned decisions remain useful even without exact query terms.
+        // What the person told: the matches that are not run logs first; then the standing preferences, procedures
+        // ("sempre que eu pedir…") and pinned memories, useful even without the question's words; the run logs last.
+        // Before, many run logs matching the question filled the room and the person's own preferences never arrived
+        // (owner's audit, beta.54: "only episodic memories in context").
+        var results = matches.Where(x => x.Memory.Kind != "episode").ToList();
         foreach (var item in Visible(cfg, vault, agentId)
-                     .Where(m => (m.Pinned || m.Kind == "preference") && !PotentialSecret.IsMatch(m.Text))
+                     .Where(m => (m.Pinned || m.Kind is "preference" or "procedure") && !PotentialSecret.IsMatch(m.Text))
                      .OrderByDescending(m => m.UpdatedAt))
             if (!results.Any(x => x.Memory.Id == item.Id))
                 results.Add(new AiMemoryMatch(item, 0));
+        results.AddRange(matches.Where(x => x.Memory.Kind == "episode"));
         var output = new List<string>();
         var used = 0;
         var seenText = new HashSet<string>(StringComparer.Ordinal);
@@ -479,14 +483,12 @@ public static class AssistantMemoryEngine
     public static AiMemoryRecord? ObserveFinishedRun(AiConfig cfg, string vault, string agentId,
         string runId, IReadOnlyList<string> paths, string? request, long? timestamp = null)
     {
-        var names = paths.Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => p.Length > 100 ? p[..100] + "…" : p)
-            .Distinct(StringComparer.Ordinal).Take(8).ToArray();
+        // owner's audit (beta.54): episodes kept a cut request and cut paths; they keep them whole now (DEC-0059)
+        var names = paths.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.Ordinal).ToArray();
         if (names.Length == 0 || string.IsNullOrWhiteSpace(runId)) return null;
         // If the user's request contains credentials, do not retain it even as an excerpt.
         var description = PotentialSecret.IsMatch(request ?? "") ? "[pedido privado]" :
-            (request ?? "").Trim().Replace('\n', ' ').Replace('\r', ' ');
-        if (description.Length > 180) description = description[..180] + "…";
+            System.Text.RegularExpressions.Regex.Replace((request ?? "").Trim(), @"\s*[\r\n]+\s*", " ");
         return Remember(cfg, "Execução alterou " + string.Join(", ", names) +
             (description.Length > 0 ? ". Pedido: " + description : "") +
             ". Resultado não verificado independentemente.", vault, agentId, "episode", "agent",
@@ -627,9 +629,40 @@ public static class AssistantMemoryEngine
     /// How two statements relate. The subject is read apart from negation ("não gosta de X" talks about what
     /// "gosta de X" does); one saying more about the same subject refines it (strogonoff → strogonoff de frango).
     /// </summary>
+    // How people open a statement: "Eu…", "Na verdade, …", "Mudei de ideia: …" (owner's audit, beta.54).
+    private static readonly Regex Lead = new(@"^(?:(?:eu|ah|ok|olha|bom|entao|sinceramente|na verdade|pensando bem|agora|hoje em dia|mudei de ideia|corrigindo)\s*[,:;—-]?\s+)+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex Liking = new(
+        @"^(?<neg>(?:nao|nunca|ja nao|nem)\s+)?(?<verb>voltei a gostar|passei a gostar|deixei de gostar|parei de gostar|gosto|curto|adoro|amo|odeio|detesto|suporto|aguento|gostei|curti|adorei|amei|odiei|detestei)(?:\s+mais)?\s+(?:(?:de|do|da|dos|das|que|quando|o|a|os|as)\s+)?(?<obj>\S.*)$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly HashSet<string> Disliking = new(StringComparer.Ordinal) { "odeio", "detesto", "odiei", "detestei", "deixei de gostar", "parei de gostar" };
+    private static readonly HashSet<string> Fillers = new(StringComparer.Ordinal) { "mais", "muito", "muita", "bastante", "demais", "tambem", "ainda", "agora", "ontem", "hoje", "sim", "realmente" };
+
+    /// <summary>
+    /// A first-person liking or disliking: whether it is for or against, and what it is about (the words after the verb,
+    /// up to a "mas" that adds something else). "Odeio X" and "gosto de X" are opposite even without a "não".
+    /// </summary>
+    internal static (bool Positive, HashSet<string> About)? PreferenceOf(string sentence)
+    {
+        var m = Liking.Match(Lead.Replace(Normalize(sentence).Trim(), ""));
+        if (!m.Success) return null;
+        var about = Regex.Split(m.Groups["obj"].Value, @",?\s+mas\s+|;|,\s+porem\s+")[0];
+        var words = Tokens(about).Where(w => !Fillers.Contains(w) && !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
+        if (words.Count == 0) return null;
+        return (Disliking.Contains(m.Groups["verb"].Value) == m.Groups["neg"].Success, words);
+    }
+
     public static MemoryRelation Relate(string a, string b)
     {
         if (Normalize(a) == Normalize(b)) return MemoryRelation.None;
+        if (PreferenceOf(a) is { } pa && PreferenceOf(b) is { } pb)
+        {
+            if (pa.About.SetEquals(pb.About)) return pa.Positive != pb.Positive ? MemoryRelation.Contradicts : MemoryRelation.None;
+            if (pa.Positive == pb.Positive && (pa.About.IsProperSubsetOf(pb.About) || pb.About.IsProperSubsetOf(pa.About))) return MemoryRelation.Refines;
+            return MemoryRelation.None;   // a different thing, or a specific case of the opposite: neither replaces the other
+        }
         var ta = Tokens(a); var tb = Tokens(b);
         var ca = ta.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
         var cb = tb.Where(w => !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
@@ -642,8 +675,10 @@ public static class AssistantMemoryEngine
     }
 
     /// <summary>The kind of a first-person statement worth learning, or null.</summary>
-    private static string? StatementKind(string normalized) =>
-        Regex.IsMatch(normalized, @"^(?:prefiro|minha preferencia e|(?:nao |nunca )?(?:gosto|curto|adoro|odeio)\s+(?:de|do|da|dos|das|quando|que|\S))\s*\S", RegexOptions.CultureInvariant) ? "preference"
+    private static string? StatementKind(string normalized) => StatementKindOf(Lead.Replace(normalized.Trim(), ""));
+
+    private static string? StatementKindOf(string normalized) =>
+        Regex.IsMatch(normalized, @"^(?:prefiro|minha preferencia e)\s*\S", RegexOptions.CultureInvariant) || PreferenceOf(normalized) is not null ? "preference"
         : Regex.IsMatch(normalized, @"^(?:meu objetivo e|minha meta e|quero aprender)\s+\S", RegexOptions.CultureInvariant) ? "goal"
         : Regex.IsMatch(normalized, @"^(?:decidi|decidimos|a decisao e|vou usar|vamos usar)\s+\S", RegexOptions.CultureInvariant) ? "decision"
         : Regex.IsMatch(normalized, @"^(?:sempre que|toda vez que|quando eu pedir)\s+\S", RegexOptions.CultureInvariant) ? "procedure"
