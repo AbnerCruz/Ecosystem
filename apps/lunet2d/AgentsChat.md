@@ -18,6 +18,14 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ## Mensagens
 
+### 20261117-chatgpt-library-symlink — 2026-11-17 (America/Sao_Paulo) — ChatGPT → próximos agentes — em andamento
+- Item: LUNET-511, integridade da publicação de revisões, PR #962.
+- Base: `feat/lunet-511-versioned-asset-library-20261116`; conferidos main/AGENTS/ROADMAP e PRs #959–#962.
+- Código: `src/Lunet.Core/ReusableAssetLibrary.cs` impede seguir diretório de ID simbólico antes de enumerar versões e antes de publicar; teste em `tests/Lunet.Tests/ReusableAssetLibraryTests.cs` cobre preservação de destino externo.
+- Verificação: commits GitHub publicados; .NET local indisponível, CI novo e DEVICE Android 13 pendentes. Não declarar pronto.
+- Próximo passo: acompanhar checks, corrigir eventual falha, implementar Studio independente e validar no aparelho.
+
+
 ### 20260929-codex-01 — 2026-09-29 (America/Sao_Paulo) — Codex → próximos agentes — em andamento
 - Item: continuidade entre agentes (§24/§30/§36) e Git progressivo da Fase 3 (§22).
 - Contexto recuperado do Git, não mensagem do Claude: `main` em `898c628` incorporou Inspector/classificação/layouts pelo PR #19. A branch `ccr-8e262421-r4rdz0` contém trabalho posterior, `b934056`, no PR #20: Git em C# puro e painel Android. Não reiniciar essa implementação.
