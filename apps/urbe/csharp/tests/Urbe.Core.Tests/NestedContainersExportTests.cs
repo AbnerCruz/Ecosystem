@@ -4,7 +4,7 @@ using Urbe.Core;
 
 namespace Urbe.Core.Tests;
 
-/// <summary>CST-026: a box inside a box keeps both titles and the inner text in every output; comments stay out.</summary>
+/// <summary>What every output keeps and leaves out: nested boxes (CST-026) and AI authorship (CST-035).</summary>
 public sealed class NestedContainersExportTests
 {
     private const string Note = "# Personagens\n\n:::ficha Frodo\nUm hobbit.\n\n:::atributos Valores\nForça: 3 %%anotação oculta%%\n:::\n\nDepois da caixa interna.\n:::\n\nFim.\n";
@@ -40,5 +40,32 @@ public sealed class NestedContainersExportTests
                 Assert.True(text.Contains(kept, StringComparison.Ordinal), format + " perdeu “" + kept + "”");
             Assert.False(text.Contains("anotação oculta", StringComparison.Ordinal), format + " mostrou o comentário");
         }
+    }
+
+    /// <summary>CST-035: an AI-written block shows its model discreetly ("IA: modelo") in every output, never the raw seal.</summary>
+    [Fact]
+    public async Task EveryOutputShowsAuthorshipDiscreetlyWithoutTheRawSeal()
+    {
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "Resumo.md", Content = "# Resumo\n\nEscrito pela pessoa.\n\nParágrafo da IA. {ia:\"modelo-x\"}\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = PublicationProject.Create("Resumo", note.Id);
+        var cancel = TestContext.Current.CancellationToken;
+        var outputs = new Dictionary<string, string>
+        {
+            ["html"] = PublicationHtml.Export(project, catalog).Html,
+            ["slides"] = PublicationHtml.Export(project with { Design = project.Design with { Layout = "slides" } }, catalog).Html,
+            ["epub"] = ZipText(await PublicationEpub.ExportAsync(project, catalog, NoAsset, cancel)),
+            ["docx"] = ZipText((await PublicationDocx.ExportAsync(project, catalog, NoAsset, cancel)).Bytes),
+            ["odt"] = ZipText((await PublicationOdt.ExportAsync(project, catalog, NoAsset, cancel)).Bytes),
+            ["pptx"] = ZipText((await PublicationPptx.ExportAsync(project, catalog, NoAsset, cancel)).Bytes),
+        };
+        foreach (var (format, text) in outputs)
+        {
+            Assert.True(text.Contains("IA: modelo-x", StringComparison.Ordinal), format + " não mostra a autoria");
+            Assert.False(text.Contains("{ia:", StringComparison.Ordinal), format + " mostra o selo cru");
+            Assert.True(text.Contains("Escrito pela pessoa.", StringComparison.Ordinal), format);
+        }
+        Assert.Equal("Escrito pela pessoa.\n\nParágrafo da IA. {ia:\"modelo-x\"}\n", store.Get(note.Id)!.Content.Split("# Resumo\n\n")[1]);   // the note keeps its seal
     }
 }
