@@ -177,10 +177,30 @@ public sealed class ReusableAssetLibrary
                 if (string.Equals(parent, destination.Directory, StringComparison.Ordinal)) break;
                 parent = Path.GetDirectoryName(parent);
             }
-            if (blockedByParent || File.Exists(target) || Directory.Exists(target))
+            if (blockedByParent || File.Exists(target) || Directory.Exists(target) || HasCaseInsensitiveCollision(destination.Directory, file.Path))
                 conflicts.Add(file.Path);
         }
         return conflicts;
+    }
+
+    // Android filesystems may be case-sensitive, but assets are also exported to
+    // case-insensitive desktops. Reject paths whose spelling collides at any level.
+    private static bool HasCaseInsensitiveCollision(string projectRoot, string relativePath)
+    {
+        var current = projectRoot;
+        foreach (var component in relativePath.Split('/'))
+        {
+            if (!Directory.Exists(current)) return false;
+            var entries = Directory.EnumerateFileSystemEntries(current);
+            foreach (var entry in entries)
+            {
+                var name = Path.GetFileName(entry);
+                if (!name.Equals(component, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!name.Equals(component, StringComparison.Ordinal)) return true;
+            }
+            current = Path.Combine(current, component);
+        }
+        return false;
     }
 
     /// <summary>
@@ -209,7 +229,7 @@ public sealed class ReusableAssetLibrary
                 if (string.Equals(parent, destination.Directory, StringComparison.Ordinal)) break;
                 parent = Path.GetDirectoryName(parent);
             }
-            if (blockedByParent || File.Exists(target) || Directory.Exists(target))
+            if (blockedByParent || File.Exists(target) || Directory.Exists(target) || HasCaseInsensitiveCollision(destination.Directory, item.Path))
                 throw new IOException("Conflito de importação: " + item.Path + " já existe ou está bloqueado por um arquivo ancestral. Nenhum arquivo foi alterado.");
             var source = FilePath(Path.Combine(root, "files"), item.Path);
             EnsureNoLinks(Path.Combine(root, "files"), item.Path);
