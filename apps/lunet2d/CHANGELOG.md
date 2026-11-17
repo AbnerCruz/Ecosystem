@@ -1,5 +1,9 @@
 # Changelog
 
+- LUNET-511 (integridade de manifestos, CI/DEVICE pendentes): leitura da biblioteca rejeita tipo de asset desconhecido e data de criação ausente, sem alterar o manifesto ou o projeto importador; regressões xUnit cobrem ambos os campos.
+
+
+
 - LUNET-511 (PR #962, CI/DEVICE pendentes): verificação de integridade sob demanda na Biblioteca Android, conferindo SHA-256 e tamanho dos arquivos da versão sem apagar dados danificados; regressão xUnit adicionada.
 
 - LUNET-511 (SAF, DEVICE pendente): a exportação ZIP da biblioteca trata ausência ou bloqueio do seletor de documentos Android sem encerrar a Activity e sem deixar exportação pendente; conteúdo da Library permanece intacto. Validação Android 13 necessária.
