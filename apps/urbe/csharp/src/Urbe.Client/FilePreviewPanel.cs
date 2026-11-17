@@ -743,7 +743,7 @@ public sealed class FilePreviewPanel : Grid
                 epub.PositionChanged += chapter => RememberReadingPosition(chapter + 1, fontSize: epub.FontSizePreference);
                 _body.Content = epub; Shown = "viewer";
                 epub.RestoreLineHeight(_readingSession?.Preferences.LineHeight ?? 1.6);
-                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
+                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin,saved.Preferences.Paged); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
                 await epub.GoToChapterAsync((_requestedPart ?? 1) - 1, _requestedTextOffset ?? _readingSession?.Location.Offset ?? 0, _requestedTextLength ?? 0, _readingSession?.Location.Scroll ?? 0);
                 _requestedTextOffset = _requestedTextLength = null;
                 _requestedPart = null;
@@ -760,6 +760,14 @@ public sealed class FilePreviewPanel : Grid
         if (picture && bytes is not null && Image(bytes) is { } image)
         {
             if (kind == VaultFileKinds.Other) _meta.Text += " · conteúdo: " + FileSignatures.Describe(signature);
+            // CST-082: what made a generated picture, read from the file itself; its description is the alternative text
+            if (ImageProvenance.Read(bytes) is { } made)
+            {
+                _meta.Text += " · gerada por IA (" + (made.Model.Length > 0 ? made.Model : "modelo não informado") +
+                              (made.Created != default ? ", " + made.Created.ToLocalTime().ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture) : "") + ")";
+                Avalonia.Automation.AutomationProperties.SetName(image, made.Prompt);
+                ToolTip.SetTip(image, made.Prompt);
+            }
             if(_requestedRegion is { } region)
             {
                 var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight(),ShowsBack=!Phone};
@@ -783,6 +791,13 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         // HTML as a page, PDF, audio and video: the content viewer of the platform, inside the panel (ADD-0023)
+        // CST-233: a PDF locked by a password says so, instead of looking like a broken or empty file
+        if (kind == VaultFileKinds.Pdf && bytes is not null && await Task.Run(() => Urbe.Core.Assistant.PdfLock.IsLocked(bytes)))
+        {
+            if (version != _version) return;
+            ShowInfo(name, read.Size, kind, signature, "Este PDF está protegido por senha. O Urbe ainda não abre PDFs com senha; use Abrir em outro app. O arquivo continua como está.");
+            return;
+        }
         if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
         {
             Control? viewer = null;
@@ -1073,7 +1088,7 @@ public sealed class FilePreviewPanel : Grid
         int? total = _epubView?.PartCount ?? _pptxView?.SlideCount ?? (_pdfView is { PageCount: > 0 } pages ? pages.PageCount : _pdfTextView is { PageCount: > 0 } text ? text.PageCount : null);
         var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0, total is { } t && part <= t ? t : null);
         double zoom = _pdfView is { } pdf && _pdfZoomReady ? pdf.Zoom : session.Preferences.Zoom;
-        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
+        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin, Paged=_epubView?.PagedPreference??session.Preferences.Paged };
         if (session.Location == location && session.Preferences == preferences) return;
         // a look changed here becomes the start of the next new source in the same kind of reader
         if (_epubView is not null && preferences with { Zoom = 0 } != session.Preferences with { Zoom = 0 }) ReadingState.RememberDefault(ReaderKinds.Book, preferences with { Zoom = 1 });

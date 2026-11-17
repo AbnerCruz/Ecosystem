@@ -79,7 +79,7 @@ public sealed partial class AssistantPanel
             Timeline? made = null;
             var fold = Lazy(head, () => SyncTimeline(made!));
             made = timeline = new Timeline { Root = new StackPanel { Spacing = 9 }, Head = head, Fold = fold };
-            fold.IsExpanded = _activityExpanded.GetValueOrDefault(request.Id);
+            fold.IsExpanded = _activityExpanded.TryGetValue(request.Id, out var chosen) ? chosen : _cfg.StepsOpen;
             fold.PropertyChanged += (_, e) =>
             {
                 if (e.Property == Expander.IsExpandedProperty) _activityExpanded[request.Id] = fold.IsExpanded;
@@ -97,15 +97,37 @@ public sealed partial class AssistantPanel
         line.Children.Add(heading);
         header.Children.Add(line);
 
+        // the steps in words, the latest three in sight even folded (the way Claude and Cursor show what the agent does)
+        string Step(AiChatBlock b)
+        {
+            try { return ToolByName(b.Name)?.Label(b.Input as JsonObject ?? new JsonObject()) ?? b.Name; }
+            catch (Exception e) when (e is not OutOfMemoryException) { return b.Name; }
+        }
+        foreach (var (block, _) in calls.Where(x => x.Block.Name is not ("update_plan" or "ask_user")).TakeLast(3))
+        {
+            var result = ResultFor(block.Id);
+            var mark = result is null ? "⋯" : result.IsError ? "✗" : "✓";
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*") };
+            var sign = Label(mark, 12, result is { IsError: true } ? UrbeTheme.Danger : UrbeTheme.Text3);
+            sign.HorizontalAlignment = HorizontalAlignment.Center;
+            var what = Wrap(result is { IsError: false } ? StepWords.Past(Step(block)) : Step(block), 12, UrbeTheme.Text2);
+            Grid.SetColumn(what, 1);
+            row.Children.Add(sign);
+            row.Children.Add(what);
+            header.Children.Add(row);
+        }
         var failures = calls.Count(x => ResultFor(x.Block.Id) is { IsError: true });
         var reads = calls.Count(x => x.Block.Name is "read_note" or "read_notes" or "web_fetch" && ResultFor(x.Block.Id) is { IsError: false });
         var writes = calls.Count(x => ToolByName(x.Block.Name)?.Access == "write" && ResultFor(x.Block.Id) is { IsError: false });
-        var outcomes = (reads > 0 ? " · " + reads + " leituras" : "") + (writes > 0 ? " · " + writes + " alterações" : "") +
-            (failures > 0 ? " · " + failures + " alertas" : "");
-        var detail = calls.Count == 0 ? (running ? "Preparando as próximas etapas" : "Processamento concluído")
-            : calls.Count == 1 ? "1 operação · tocar para ver os detalhes"
-            : calls.Count + " operações · tocar para explorar as etapas";
-        header.Children.Add(Wrap(calls.Count > 0 ? calls.Count + (calls.Count == 1 ? " operação" : " operações") + outcomes + " · Detalhes" : detail, 11, UrbeTheme.Text2));
+        static string Count(int n, string one, string many) => n + " " + (n == 1 ? one : many);
+        var parts = new List<string>();
+        if (reads > 0) parts.Add("leu " + Count(reads, "fonte", "fontes"));
+        if (writes > 0) parts.Add("alterou " + Count(writes, "nota", "notas"));
+        if (failures > 0) parts.Add(Count(failures, "alerta", "alertas"));
+        if (calls.Count > 0) parts.Add(Count(calls.Count, "etapa", "etapas") + " · tocar para ver tudo");
+        var detail = calls.Count == 0 ? (running ? "Preparando as próximas etapas" : "Processamento concluído") : string.Join(" · ", parts);
+        if (detail.Length > 0) detail = char.ToUpper(detail[0]) + detail[1..];
+        header.Children.Add(Wrap(detail, 11, UrbeTheme.Text3));
         if (running && !UrbeTokens.Motion.Reduced)
             header.Children.Add(new ProgressBar
             {
@@ -220,7 +242,8 @@ public sealed partial class AssistantPanel
         "ask_user" => "Preparando uma pergunta",
         "create_note" or "edit_note" or "write_note" or "append_to_note" => "Escrevendo no vault",
         "generate_image" => "Criando uma imagem",
-        "write_page" or "page_schema" or "write_publication" or "publication_schema" => "Preparando uma publicação",
+        "write_publication" or "publication_schema" => "Preparando uma publicação",
+        "review_publication" => "Revisando a publicação",
         "delegate_research" => "Pesquisando com outro agente",
         "consult_agent" => "Consultando especialista",
         "delegate_to_agent" => "Delegando a um especialista",

@@ -50,7 +50,7 @@ public sealed class ReaderEngineTests
         if (Environment.GetEnvironmentVariable("URBE_READER_ENGINE_TEST_DIR") is { } output && path == "reflow.epub")
         {
             Directory.CreateDirectory(output); File.WriteAllText(Path.Combine(output,"book.html"),chapter.Html);
-            File.WriteAllText(Path.Combine(output,"locator.json"),System.Text.Json.JsonSerializer.Serialize(new { read = ReaderTextLocator.ReadScript(true), restore = ReaderTextLocator.RestoreScript(0,0,0) }));
+            File.WriteAllText(Path.Combine(output,"locator.json"),System.Text.Json.JsonSerializer.Serialize(new { read = ReaderTextLocator.ReadScript(true), restore = ReaderTextLocator.RestoreScript(0,0,0), readTop = ReaderTextLocator.ReadScript(false), paged = ReaderTextLocator.AppearanceScript("dark",5,true,true), scrolled = ReaderTextLocator.AppearanceScript("dark",5,true,false), next = ReaderTextLocator.PageScript(1), previous = ReaderTextLocator.PageScript(-1), last = ReaderTextLocator.PageScript(int.MaxValue), end = ReaderTextLocator.RestoreScript(int.MaxValue,0,1) }));
         }
     }
     [Theory]

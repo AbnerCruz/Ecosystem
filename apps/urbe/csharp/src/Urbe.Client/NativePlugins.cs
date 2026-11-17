@@ -19,6 +19,7 @@ public static class PluginPermissions
     public const string Events = "eventos";
     public const string Panels = "paineis";
     public const string Data = "dados";
+    public const string Agents = "agentes";
 
     /// <summary>What each permission lets the plugin do, as the Personalização shows it.</summary>
     public static IReadOnlyDictionary<string, string> Labels { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -31,6 +32,7 @@ public static class PluginPermissions
         [Events] = "Saber quando notas abrem e são salvas",
         [Panels] = "Abrir painéis sobre as notas e o editor",
         [Data] = "Guardar dados próprios neste aparelho",
+        [Agents] = "Pedir trabalho aos seus agentes, só nas notas que o plugin indicar (você confirma cada pedido)",
     };
 }
 
@@ -91,6 +93,9 @@ public interface IPluginApi
 
     /// <summary>The note open in the editor, or null.</summary>
     string? OpenNotePath { get; }
+
+    /// <summary><see cref="PluginPermissions.Agents"/>: an agent works on the delimited notes or folders (CST-146).</summary>
+    Task AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope);
 }
 
 /// <summary>A plugin's floating panel.</summary>

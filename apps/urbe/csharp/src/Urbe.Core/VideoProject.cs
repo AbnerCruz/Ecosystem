@@ -24,6 +24,8 @@ public sealed record VideoComposition
     public bool Subtitles { get; init; } = true;
     public List<VideoScene> Scenes { get; init; } = [];
     public List<VideoAudioClip> Audio { get; init; } = [];
+    /// <summary>#956: what each scene showed in the last MP4 saved (scene ID → <see cref="VideoTimelineScene.ContentKey"/>).</summary>
+    public Dictionary<string, string>? Rendered { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -179,6 +181,9 @@ public sealed record VideoAudioClip
     /// <summary>How long it plays; null = to its end (or the video's).</summary>
     public double? Length { get; init; }
     public double Volume { get; init; } = 1;
+    /// <summary>CST-172: seconds the clip takes to rise from silence at its start and to fall to silence at its end.</summary>
+    public double FadeIn { get; init; }
+    public double FadeOut { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -233,7 +238,7 @@ public static class VideoCompositionRules
             Id(clip.Id);
             if (!VideoAudioClip.Kinds.Contains(clip.Kind) || !VideoScript.IsVaultPath(clip.Path)) throw Bad("áudio " + clip.Path);
             if (!Finite(clip.Start) || !Finite(clip.TrimStart) || !Finite(clip.Volume) || clip.Start < 0 || clip.TrimStart < 0 ||
-                clip.Volume is < 0 or > 4 || clip.Length is { } length && (!Finite(length) || length <= 0)) throw Bad("tempo do áudio");
+                clip.Volume is < 0 or > 4 || !Finite(clip.FadeIn) || !Finite(clip.FadeOut) || clip.FadeIn < 0 || clip.FadeOut < 0 || clip.Length is { } length && (!Finite(length) || length <= 0)) throw Bad("tempo do áudio");
         }
     }
 }

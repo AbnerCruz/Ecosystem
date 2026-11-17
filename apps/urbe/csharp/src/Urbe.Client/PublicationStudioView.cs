@@ -64,17 +64,22 @@ public sealed class PublicationStudioView : Border
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
             Item("Verificar publicação", () => ReviewRequested?.Invoke());
+            Item("Pedir ao Assistente", () => AskAssistantRequested?.Invoke());
             Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             if (IsVideo)
             {
                 Item("Exportar vídeo MP4", () => VideoExportRequested?.Invoke());
-                Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke());
+                Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke("srt"));
+                Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
+                if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
+                if (CanNarrate) Item("Narrar o roteiro com a voz do aparelho", () => NarrateRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
             Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
             Item("Exportar documento OpenDocument (ODT)", () => OfficeRequested?.Invoke("odt"));
             Item("Exportar apresentação PowerPoint (PPTX)", () => OfficeRequested?.Invoke("pptx"));
+            Item("Exportar pacote para distribuir (ZIP)", () => PackageRequested?.Invoke());
             if (_print.IsVisible) Item("Imprimir ou salvar como PDF", () => PrintRequested?.Invoke());
             new ContextMenu { ItemsSource = items }.Open(more);
         };
@@ -134,6 +139,10 @@ public sealed class PublicationStudioView : Border
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? EpubRequested;
+    /// <summary>CST-158: the Assistente from here, with this publication already named (nothing is sent by itself).</summary>
+    public event Action? AskAssistantRequested;
+    /// <summary>CST-163: the publication with a manifest of sizes and checksums, to hand to someone else.</summary>
+    public event Action? PackageRequested;
     /// <summary>CST-166/168: an office file of the publication ("docx", "odt" or "pptx").</summary>
     public event Action<string>? OfficeRequested;
     public event Action? PrintRequested;
@@ -145,10 +154,19 @@ public sealed class PublicationStudioView : Border
     public event Action<string>? EditSourceRequested;
     public event Action<PublicationSourceReference>? EditReferenceRequested;
     public event Action<PublicationProject>? ProjectChanged;
+    /// <summary>CST-155: "Adaptar" on a piece — a real note adapted from its source takes its place.</summary>
+    public event Action<PublicationPlacement>? AdaptRequested;
+    /// <summary>CST-155: the adaptation (its id) was checked against its source as it is now (the source's id).</summary>
+    public event Action<string, string>? AdaptationReviewed;
     public event Action? VideoExportRequested;
     public event Action? VideoCancelRequested;
-    public event Action? SubtitlesRequested;
+    public event Action<string>? SubtitlesRequested;
     public event Action? AddAudioRequested;
+    /// <summary>CST-172: volume, fade in and out of a track, or take it out.</summary>
+    public event Action? AdjustAudioRequested;
+    /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
+    public event Action? NarrateRequested;
+    public bool CanNarrate { get; set; }
     public event Action<string>? AddVideoElementRequested;
 
     /// <summary>CST-170: a publication laid out as a video (one note per scene).</summary>
@@ -255,11 +273,11 @@ public sealed class PublicationStudioView : Border
         Dispatcher.UIThread.Post(() => { if (IsVisible) Refresh(); }, DispatcherPriority.Background);
     }
 
-    private static Button ActionButton(string icon, string label)
+    private static Button ActionButton(string icon, string label, bool on = false)
     {
         var b = new Button
         {
-            Content = UrbeTheme.Icon(icon, 19, UrbeTheme.Text2),
+            Content = UrbeTheme.Icon(icon, 19, on ? UrbeTheme.Accent : UrbeTheme.Text2),
             MinWidth = 44, MinHeight = 44, Padding = new Thickness(10),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(12)
@@ -273,6 +291,35 @@ public sealed class PublicationStudioView : Border
         return b;
     }
 
+    /// <summary>
+    /// CST-155: an adaptation shows what it adapts, and says so when the source's text changed since it was made or last
+    /// checked, with the source a tap away; nothing is updated by itself.
+    /// </summary>
+    private Control? Provenance(PublicationSourceView adaptation, PublicationSourceCatalog catalog)
+    {
+        if (EditorialNotes.Read(adaptation.Markdown) is not { } link) return null;
+        PublicationSourceView? origin;
+        try { origin = catalog.Read(new PublicationSourceReference(link.OriginId)); }
+        catch (NotSupportedException) { origin = null; }
+        var panel = new StackPanel { Spacing = 4, Margin = new Thickness(14, 8, 14, 0) };
+        var name = origin is null ? "uma nota que não existe mais" : System.IO.Path.GetFileNameWithoutExtension(origin.Path);
+        panel.Children.Add(new TextBlock { Text = link.Kind + " de " + name, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+        if (origin is null) return panel;
+        var actions = new WrapPanel();
+        var open = new Ui.UrbeButton("Abrir a origem", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
+        open.Click += (_, _) => EditSourceRequested?.Invoke(link.OriginId);
+        actions.Children.Add(open);
+        if (EditorialNotes.IsBehind(link, origin.Markdown))
+        {
+            panel.Children.Add(new TextBlock { Text = "A origem mudou desde esta adaptação. Confira e marque como revisada.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            var reviewed = new Ui.UrbeButton("Marcar como revisada", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
+            reviewed.Click += (_, _) => AdaptationReviewed?.Invoke(adaptation.DocumentId, link.OriginId);
+            actions.Children.Add(reviewed);
+        }
+        panel.Children.Add(actions);
+        return panel;
+    }
+
     public void Refresh()
     {
         if (_project is not { } project || _catalog is not { } catalog) return;
@@ -281,11 +328,13 @@ public sealed class PublicationStudioView : Border
         _redoButton.IsEnabled = CanRedo;
         _sources.Children.Clear();
         _preview.Children.Clear();
-        _preview.Children.Add(new TextBlock
-        {
-            Text = project.Title, FontSize = 26, FontWeight = FontWeight.Bold,
-            TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
-        });
+        // with a cover, the cover says the title (as in the exports)
+        if (project.Cover is null)
+            _preview.Children.Add(new TextBlock
+            {
+                Text = project.Title, FontSize = 26, FontWeight = FontWeight.Bold,
+                TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
+            });
         var missing = 0;
         var video = IsVideo;
         if (video)
@@ -315,17 +364,42 @@ public sealed class PublicationStudioView : Border
             catch (NotSupportedException) { source = null; }
             if (source is null) missing++;
             var documentId = piece.Source.DocumentId;
-            var label = source is { } found ? System.IO.Path.GetFileNameWithoutExtension(found.Path) +
-                (piece.Source.Fragment is { Length: > 0 } fragment ? " #" + fragment.TrimStart('#') : "") : "Fonte indisponível";
+            var label = (piece.IsCover ? "Capa · " : "") + (source is { } found ? System.IO.Path.GetFileNameWithoutExtension(found.Path) +
+                (piece.Source.Fragment is { Length: > 0 } fragment ? " #" + fragment.TrimStart('#') : "") : "Fonte indisponível");
             var item = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 3) };
             var remove = ActionButton(UrbeTheme.Icons.Trash, "Remover fonte da composição");
             remove.Click += (_, _) => { if (_project is { } p) UpdateProject(p.RemovePlacement(piece.Id)); };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
-            var up = ActionButton(UrbeTheme.Icons.ArrowUp, "Mover fonte para cima");
-            up.Click += (_, _) => { if (_project is { } p) UpdateProject(p.MovePlacement(piece.Id, Math.Max(0, p.Sections.FindIndex(s => s.Id == piece.Id) - 1))); };
-            DockPanel.SetDock(up, Dock.Right);
-            item.Children.Add(up);
+            // one way where it can move: the first goes down, the others up (a button that does nothing is not shown);
+            // the cover stays at the start, so it has none and the piece after it counts as the first
+            int head = project.Cover is null ? 0 : 1;
+            if (project.Sections.Count - head > 1 && !piece.IsCover)
+            {
+                bool first = i == head;
+                var move = ActionButton(first ? UrbeTheme.Icons.ArrowDown : UrbeTheme.Icons.ArrowUp, first ? "Mover fonte para baixo" : "Mover fonte para cima");
+                move.Click += (_, _) =>
+                {
+                    if (_project is not { } p) return;
+                    var at = p.Sections.FindIndex(s => s.Id == piece.Id);
+                    UpdateProject(p.MovePlacement(piece.Id, first ? Math.Min(p.Sections.Count - 1, at + 1) : Math.Max(0, at - 1)));
+                };
+                DockPanel.SetDock(move, Dock.Right);
+                item.Children.Add(move);
+            }
+            // CST-159: a note as the cover of a text publication (article, book); a presentation's first slide already is one
+            if (project.Design.Layout is "article" or "book" && (piece.IsCover || project.Sections.Count > 1))
+            {
+                var cover = ActionButton(UrbeTheme.Icons.Book, piece.IsCover ? "Deixar de ser a capa" : "Usar como capa", on: piece.IsCover);
+                cover.Click += (_, _) => { if (_project is { } p) UpdateProject(p.WithCover(piece.IsCover ? null : piece.Id)); };
+                DockPanel.SetDock(cover, Dock.Right);
+                item.Children.Add(cover);
+            }
+            var adapt = ActionButton(UrbeTheme.Icons.Edit, "Adaptar: resumo, roteiro, fala ou tradução");
+            adapt.IsEnabled = source is not null;
+            adapt.Click += (_, _) => AdaptRequested?.Invoke(piece);
+            DockPanel.SetDock(adapt, Dock.Right);
+            item.Children.Add(adapt);
             var edit = new Button
             {
                 Content = label, MinHeight = 44, Padding = new Thickness(10, 4),
@@ -346,15 +420,20 @@ public sealed class PublicationStudioView : Border
             if (source is not null)
             {
                 var text = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;
+                var origin = Provenance(source, catalog);
+                if (origin is not null) _preview.Children.Add(origin);
                 _preview.Children.Add(new Border
                 {
-                    Padding = new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
+                    // the cover stands apart: its own block, taller, as its page in the book
+                    Padding = piece.IsCover ? new Thickness(14, 48) : new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
                     BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
                     Child = new StackPanel
                     {
                         Children =
                         {
-                            new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) },
+                            // the note's name, only when its first heading does not already say it
+                            new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                                IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(), label, StringComparison.CurrentCultureIgnoreCase) },
                             new MarkdownReader { Selectable = true, ProgressContextMarkdown = source.Markdown,
                                 ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown }.BuildMarkdown(text)
                         }

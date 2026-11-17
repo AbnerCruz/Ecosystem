@@ -115,7 +115,7 @@ internal sealed class WindowsStudyWebView(string content, bool local, Action<str
                     finally { stream?.Dispose(); pending.Complete(); }
                     return;
                 }
-                if (!local && ReaderUris.YouTube(e.Request.Uri) is not null && new Uri(e.Request.Uri).AbsolutePath.StartsWith("/embed/", StringComparison.Ordinal))
+                if (!local && ReaderUris.IsYouTubeEmbed(e.Request.Uri))
                     e.Request.Headers.SetHeader("Referer", "https://urbe.desktop/");
                 if (local && e.Request.Uri == "https://urbe.reader.invalid/content")
                 {
@@ -163,19 +163,32 @@ internal sealed class WindowsStudyWebView(string content, bool local, Action<str
         catch (Exception ex) when (ex is InvalidOperationException or COMException or JsonException) { return ""; }
     }
     public void Reload(string html) { if (local) { _content = html; _web?.Navigate("https://urbe.reader.invalid/content"); } }
+    public async Task<string> PageHtmlAsync()
+    {
+        if (_web is null) return "";
+        try { return JsonSerializer.Deserialize<string>(await _web.ExecuteScriptAsync(StudyPageScripts.Html)) ?? ""; }
+        catch (Exception ex) when (ex is COMException or JsonException or InvalidOperationException) { return ""; }
+    }
+
     public async Task<double?> ReadMediaSecondAsync()
     {
         if(_web is null)return null;
-        try{return JsonSerializer.Deserialize<double?>(await _web.ExecuteScriptAsync("(()=>{let m=document.querySelector('audio,video');return m&&m.readyState>0?m.currentTime:null})()"));}
+        try{return JsonSerializer.Deserialize<double?>(await _web.ExecuteScriptAsync(MediaPositionScripts.Read));}
         catch(Exception ex)when(ex is COMException or JsonException or InvalidOperationException){return null;}
     }
     public Task SeekMediaAsync(double seconds)
     {
         if(_web is null||!double.IsFinite(seconds)||seconds<0)return Task.CompletedTask;
-        return _web.ExecuteScriptAsync("(()=>{let m=document.querySelector('audio,video');if(m){let seek=()=>{m.currentTime="+seconds.ToString(System.Globalization.CultureInfo.InvariantCulture)+"};if(m.readyState>0)seek();else m.addEventListener('loadedmetadata',seek,{once:true})}})()");
+        return _web.ExecuteScriptAsync(MediaPositionScripts.Seek(seconds));
     }
-    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow)
-    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow);return _web is { } web?web.ExecuteScriptAsync(_readerAppearance):Task.CompletedTask;}
+    public async Task<bool> TurnPageAsync(int direction)
+    {
+        if (_web is null) return false;
+        try { return JsonSerializer.Deserialize<string>(await _web.ExecuteScriptAsync(ReaderTextLocator.PageScript(direction))) == "true"; }
+        catch (Exception ex) when (ex is COMException or JsonException or InvalidOperationException) { return false; }
+    }
+    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow,bool paged=false)
+    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow,paged);return _web is { } web?web.ExecuteScriptAsync(_readerAppearance):Task.CompletedTask;}
     public Task GoToReaderAnchorAsync(string id)
     {
         _readerAnchor=id;

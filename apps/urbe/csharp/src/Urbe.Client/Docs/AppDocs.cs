@@ -17,7 +17,7 @@ public static partial class AppDocs
         new("Tutorial/Escrever/Explorer.md", Explorer),
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
-        new("Tutorial/Ferramentas/Páginas.md", Paginas),
+        new("Tutorial/Ferramentas/Publicações.md", Paginas),
         new("Tutorial/Ferramentas/Código e prévia ao vivo.md", Codigo),
         new("Tutorial/Ferramentas/Assistente.md", Assistente),
         new("Tutorial/Ferramentas/Plugins.md", Plugins),
@@ -142,7 +142,7 @@ public static partial class AppDocs
         ## Visual e Fonte
 
         - **Visual** mostra a nota formatada; toque num trecho para editar aquele bloco.
-        - **Fonte** mostra o Markdown puro.
+        - **Fonte** mostra o Markdown puro. Numa nota longa (mais de 8.000 caracteres), o Fonte edita um bloco por vez, para a digitação continuar rápida; a busca na nota volta ao texto inteiro.
         - O modo inicial fica em **Personalização → Editor**.
         - **Horário de cada bloco** (Personalização → Editor) mostra, à direita de cada bloco, quando ele mudou pela última vez. Vem das **Versões anteriores**: um bloco só movido mantém o horário, um bloco dividido, juntado, colado ou desfeito ganha o da mudança, e um bloco mais antigo que as versões guardadas mostra o dia em que a nota foi criada, quando o Urbe o conhece.
 
@@ -169,6 +169,31 @@ public static partial class AppDocs
         `![[Nome]]` mostra no lugar o conteúdo, num cartão: a nota (`![[Plano]]`), uma imagem (`![[Imagens/capa.png]]`), PDF, áudio, vídeo, HTML, código ou texto, e um grafo (`![[Mapa.grafo.json]]`), que dá para navegar. Tocar no alto do cartão abre o original; tocar no corpo edita a linha.
 
         Para mostrar só uma parte da nota: `![[Plano#Orçamento]]` traz a seção desse título (até o próximo título do mesmo nível; `#Título#Subtítulo` desce mais um nível), `![[Plano#^meta]]` traz o parágrafo ou o item de lista que termina com ` ^meta`, e `![[Plano#L3-L8]]` traz as linhas 3 a 8. Os marcadores ` ^meta` não aparecem nos cartões. Um nome que não existe mostra “Não encontrei … no vault”.
+
+        ## Progresso
+
+        O botão **%** da barra insere uma barra de progresso na nota. Ela é um bloco de texto, legível em qualquer editor:
+
+        - **Meta numérica**: `value: 54` e `total: 224` mostram 54/224 · 24,1% · faltam 170. Os botões **−** e **+** mudam o valor na própria nota (Desfazer volta). `value: $lidas` usa a propriedade `lidas` da nota, e os botões mudam a propriedade.
+        - **Checklist desta nota** (`source: tasks`) conta as tarefas `- [ ]` e `- [x]` sozinho: marcar, desmarcar, acrescentar ou apagar uma tarefa atualiza a barra. Cada caixa conta uma vez, subtarefa também; tarefas dentro de código ou de comentários não contam. Sem tarefas, diz “Sem tarefas”, nunca 100%.
+        - **Checklist de uma seção** (`section: Hoje`) conta só as tarefas sob esse título. `note:` com o id de outra nota conta as dela, mesmo se ela for renomeada ou movida.
+        - **Ver pendentes** lista as tarefas que faltam; tocar numa leva até ela.
+
+        A barra nunca marca uma tarefa por conta própria. O Assistente, ao ler a nota, recebe os mesmos números que você vê.
+
+        ## Estudar com uma fonte ao lado
+
+        **Estudo** (no menu radial ou no **+**) abre uma fonte e a nota juntas: em cima e embaixo no celular, lado a lado no computador. A divisória entre as duas se arrasta. A fonte pode ser um site, um vídeo do YouTube ou um arquivo do vault (PDF, livro, slides, áudio, vídeo).
+
+        No navegador:
+
+        - Digite um endereço ou uma pesquisa. **Voltar**, **Avançar** e **Recarregar** ficam no alto.
+        - **Adicionar seleção à nota** cita o trecho selecionado com o endereço; **Perguntar à IA** leva o trecho ao Assistente.
+        - Em **⋯**: **Modo leitura** mostra só o texto principal da página, no tema do Urbe (sem menus, anúncios nem a tela branca à noite); **Salvar página como nota** cria uma nota com esse texto, o endereço (`source`) e o dia (`captured`), sem sair da página. Também **Salvar referência na nota**, **Copiar endereço** e **Abrir no navegador do sistema**.
+        - Num vídeo do YouTube, que toca no player oficial, **Anotar instante** cria na nota um link para o momento em que o vídeo está, como “Vídeo em 3:25”. O campo do instante serve para ajustar à mão.
+        - Nada da página é guardado sem você pedir, e a página não tem acesso às suas notas.
+
+        Num livro (EPUB), tocar no número de uma nota de rodapé mostra a nota embaixo da página, sem sair do capítulo; **Ir até a nota** leva até ela. Em **Aa**, **Ler por páginas** troca a rolagem por páginas do tamanho da tela: as setas viram a página e, no fim do capítulo, passam ao seguinte.
 
         ## Fórmulas
 
@@ -256,7 +281,7 @@ public static partial class AppDocs
         ```
 
         - `%%…%%` aparece separado no editor e fica fora das páginas e do HTML exportado.
-        - `palavra{"…"}` mostra um 💬 sobre a palavra; toque nele para ler e escrever comentários.
+        - `palavra{"…"}` mostra um 💬 sobre a palavra; toque nele para ler, escrever, **Editar** ou **Excluir** comentários.
         - `#Tag:` no começo do parágrafo dá a ele a cor da tag (Todo, Ideia, Feito, Aviso, Dúvida, Nota ou as suas, em **Personalização → Tags**).
 
         ## Caixas
@@ -304,8 +329,6 @@ public static partial class AppDocs
         ## Usar
 
         No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta. Prefere escrever direto na nota? **Preencher no editor** cria a nota com o que você já respondeu e deixa o resto em branco para completar no editor.
-
-        Páginas têm modelos próprios, no estúdio (veja [[Páginas]]).
         """;
 
     private const string Codigo = """
@@ -358,34 +381,45 @@ public static partial class AppDocs
         """;
 
     private const string Paginas = """
-        # Páginas
+        # Publicações
 
-        **Páginas** transforma notas em sites e páginas HTML: portfólios, currículos, livros… Abra em **Configurações → Páginas**.
+        **Publicações** transforma notas em produtos para outras pessoas: artigo, livro com sumário, apresentação, curso ou vídeo. A publicação não copia o texto: ela aponta para as notas. Editar a nota muda a publicação, e editar pelo estúdio é editar a própria nota.
+
+        ## Criar
+
+        - **Criar publicação desta nota** (no **Mais ações** do editor ou no menu de um cartão), **Criar publicação de um trecho** (só um título da nota e o que vem embaixo dele, ou o parágrafo selecionado) ou, na busca de comandos, **Nova publicação de uma tag** e **Nova publicação de uma busca** (você vê as notas encontradas antes de criar).
+        - **Capa:** num artigo ou livro, o botão de livro ao lado de uma nota a torna a capa. Ela vai para o início, fica numa página só dela e sai do sumário; no EPUB, a primeira imagem dela é a capa que a estante mostra. O texto da capa é o da nota: título, subtítulo e autoria você escreve nela.
+        - **Nova publicação no estilo de outra** (na busca de comandos) leva o layout, o tema, a cor, a letra, o público e os formatos de uma publicação que já existe; nenhuma nota vem junto.
+        - O projeto fica em `Publicações/Nome.publication.json`, com a ordem das notas, o layout e o tema. O texto continua nas notas.
 
         ## O estúdio
 
-        - **Nova página** cria uma e abre o estúdio.
-        - A página é feita de **blocos**: toque em **Adicionar bloco**, arraste para reordenar e use o menu de cada bloco para **Mover para cima / baixo**, **Duplicar**, **Salvar como bloco reutilizável**, **Trocar tipo de bloco** ou **Remover**.
-        - Em **＋ → Modelos** há modelos prontos; aplicar um pode **substituir a página**, **adicionar as seções ao fim** ou trocar **só o visual**.
-        - O estúdio salva sozinho e mostra **Salvo**.
-        - **Criar página daqui**, no ⋯ de uma pasta, de um cartão de nota ou no **Mais ações** do editor: de uma pasta, uma capa e as notas dela; de uma nota, a própria nota.
-        - Na prévia, títulos, rótulos e itens de uma linha se escrevem **no lugar**: toque, escreva e saia (Enter também termina). Tocar numa imagem abre a escolha de imagem. Textos com Markdown continuam no painel **Editar**.
-        - O bloco **Notas** lista notas do seu vault e acompanha as mudanças: de uma **pasta** (com ou sem as subpastas), de uma **tag**, as **escolhidas**, as **recentes**, as que **ligam a uma nota**, as **ligadas por uma nota** ou as de uma **busca**.
-
-        ## Prévia e comentários
-
-        **Ver página** mostra a página dentro do Urbe, como ela será publicada. Os comentários das notas (`%%…%%` e `{"…"}`) não aparecem na página. Na prévia, o 💬 de uma palavra permite **comentar**, e o comentário é salvo no texto.
+        - **Adicionar nota** põe mais uma nota na composição; as setas mudam a ordem e a lixeira tira a nota da publicação (a nota fica no vault).
+        - Tocar no nome de uma nota abre a nota para editar.
+        - **Adaptar** (o lápis em cada nota) cria um **resumo, roteiro, fala, tradução ou adaptação** como nota de verdade, ao lado da original, começando com o texto dela. A publicação passa a mostrar a adaptação e a original não muda. Se a original mudar depois, o estúdio avisa, com **Abrir a origem** e **Marcar como revisada**.
+        - **Configurar composição**: layout (artigo, livro com sumário, apresentação com uma nota por slide, curso, vídeo com uma nota por cena), tema, objetivo e público.
+        - **Desfazer** e **Refazer** valem para a composição. O estúdio salva sozinho.
+        - **Verificar publicação** lista o que corrigir antes de exportar, como notas que não existem mais.
 
         ## Exportar
 
-        No botão **Exportar** ou no **⋯** da página:
+        Em **⋯** do estúdio: HTML, **PDF**, livro **EPUB**, documento **Word (DOCX)** e **OpenDocument (ODT)**, apresentação **PowerPoint (PPTX)**, **pacote ZIP**, **vídeo MP4** com legendas (SRT e WebVTT) e **Imprimir ou salvar como PDF**. Cada exportação é feita na hora, a partir das notas como estão.
 
-        - **Imprimir ou salvar PDF**
-        - **Baixar HTML**: um arquivo único, que funciona em qualquer hospedagem
-        - **Salvar HTML no vault**, ao lado da página
-        - **Copiar HTML**
+        - As imagens das notas (inclusive `![[foto.png]]`) vão **dentro** do arquivo, que abre sozinho, sem internet. Uma imagem que falta é dita no lugar dela.
+        - O **pacote ZIP** leva a publicação, os áudios e vídeos em `media/` e um manifesto que confere cada arquivo.
+        - Antes de salvar, o Urbe **abre o arquivo gerado e confere** se ele está inteiro; se não estiver, nada é salvo e você vê o motivo.
+        - O que um formato não guarda como no Urbe (uma fórmula que vira texto, um gráfico que vira imagem) é dito ao salvar. Dados que parecem pessoais são mostrados antes de compartilhar, para você decidir.
+        - O estúdio diz o que mudou nas notas desde a última exportação.
 
-        No menu do estúdio também estão **Salvar como modelo** (com os textos ou só a estrutura), **Duplicar página** e **Editar JSON**. O arquivo da página é um `.page.json` na sua pasta.
+        ## Vídeo
+
+        - **Narrar o roteiro** usa a voz do aparelho para ler o texto de cada cena e põe a fala no começo dela.
+        - **Ajustar áudios do vídeo** muda o volume, a entrada e a saída de cada trilha (a música entra em 1 s e sai em 2 s por padrão).
+        - Antes de gerar o MP4, o Urbe confere se há espaço livre suficiente e, se não houver, diz quanto falta e não começa. Durante a exportação ele mostra quanto tempo ainda falta, e **Cancelar** não deixa arquivo pela metade.
+
+        ## Páginas antigas
+
+        Os arquivos `.page.json` do antigo editor de Páginas continuam no vault, sem mudança: dá para vê-los e exportá-los, mas eles não são mais editados. No menu de uma página, **Converter em publicação** leva os textos dela para notas de verdade, aponta para as notas que ela mostrava e diz o que não tem equivalente; a página antiga fica como está.
         """;
 
     private const string Assistente = """
@@ -396,10 +430,6 @@ public static partial class AppDocs
         ## Conectar um modelo
 
         Nas configurações do Assistente, **+ Adicionar provedor**: OpenRouter, Anthropic, OpenAI, Google Gemini, Ollama (local) ou um servidor compatível com OpenAI. Cole a chave, toque em **Testar** e escolha o modelo. As chaves ficam salvas só neste aparelho e vão direto para o provedor.
-
-        ### IA no aparelho (sem internet)
-
-        Em **Assistente → Configurações → IA no aparelho** você baixa uma vez um modelo (Gemma 4: o menor, ~3,3 GB, ou o maior, ~5,2 GB, que o Urbe recomenda conforme a memória do aparelho). Depois disso ele responde **sem internet e sem chave**, lendo e escrevendo as notas com as mesmas permissões. O download só começa quando você toca em **Baixar**, pode ser pausado e continuado, e o arquivo é conferido antes de ser usado; ele fica fora da sua pasta de notas. No celular, a primeira resposta demora mais (ele lê o contexto); as seguintes são mais rápidas. Imagens offline ainda não existem.
 
         ## Pedir
 
@@ -431,7 +461,11 @@ public static partial class AppDocs
 
         **Preços de imagens:** a lista de modelos mostra valores em dólares **por imagem, por megapixel ou por 1 milhão de tokens**, com fonte consultável. Para OpenRouter, a consulta utiliza o endpoint de preços do modelo escolhido; para modelos específicos OpenAI e Gemini, são exibidas referências públicas com data de verificação. Preço ausente aparece como **não informado**, nunca como gratuito. Os valores são referências ou mínimos, não previsão exata de cobrança: entrada, qualidade, resolução e rota podem alterar a fatura.
 
+        **Despertador, agenda e e-mail:** em Assistente → Conexões → Aparelho você liga, um por um, o que os agentes podem fazer no aparelho. Tudo começa desligado. Com o despertador ligado, peça “me acorde às 6h45 de segunda a sexta” e o relógio do aparelho abre com o alarme pronto; dá para perguntar qual é o próximo despertador. Com a agenda ligada, o agente cria eventos (o app de agenda abre para você salvar) e consulta os da semana; no Android, o sistema pergunta uma vez se o Urbe pode ler a agenda. Com o e-mail ligado, o agente prepara a mensagem no seu app de e-mail e quem envia é você; o Urbe não lê sua caixa de entrada. Cada ação que muda algo pede sua aprovação antes. No computador, o e-mail e o evento abrem nos apps do sistema; despertador e consulta da agenda só existem no celular.
+
         **Prévia de imagem no chat:** quando `generate_image` termina, a imagem salva no vault aparece diretamente no cartão da conversa, com o botão **Abrir** para a visualização nativa em tamanho maior. Não é uma nova cópia nem uma URL externa. Nas conversas anteriores, imagens concluídas continuam à vista mesmo com os passos do agente recolhidos.
+
+        **De onde veio a imagem:** a imagem gerada guarda dentro do próprio arquivo (PNG ou JPEG) que foi feita por IA, com o modelo, a descrição usada e a data, no padrão de metadados IPTC que outros programas também leem. Ao abrir a imagem, o Urbe mostra “gerada por IA” e o modelo; a descrição vira o texto alternativo. Isso vai junto quando você move a imagem ou a usa numa publicação.
 
         ## Skills
 
@@ -456,6 +490,9 @@ public static partial class AppDocs
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.
         - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
         - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
+        - **A conversa continua**: ao voltar ao Assistente ou a um agente pouco depois (até duas horas) ou com algo pendente (uma mensagem esperando, um formulário não enviado), a conversa em andamento reaparece. Parada há mais tempo, começa uma nova, e a anterior fica em **Conversas**. **Nova conversa** recomeça na hora.
+        - **Fontes de uma pesquisa**: o painel de fontes diz se o agente leu a página inteira, só uma parte (**Leitura parcial**) ou só viu o resultado da busca.
+        - **Exportar conversa ou memória**: uma chave sua que tenha ido parar no chat sai como “[chave removida]”.
         - **Conversas anteriores**: cada agente consulta as próprias conversas deste vault (o pedido, a resposta, os arquivos alterados e, se precisar, a conversa inteira), por exemplo quando você diz "continue aquilo de ontem". Ele nunca vê as conversas de outro agente nem o que ficou oculto.
         - **Permissões do agente** (somente leitura, com aprovação, automático): mudar para uma mais restrita enquanto ele trabalha já vale a partir da próxima ação; mudar para uma mais livre vale a partir da próxima resposta. O Urbe avisa qual dos dois aconteceu.
         - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa. Numa consulta, o especialista nunca tem menos aprovações que o agente que pediu: se ele está em automático e o que pediu não, as mudanças dele pedem a sua aprovação na conversa que pediu.
@@ -471,6 +508,10 @@ public static partial class AppDocs
         A parte **Geral** vale sempre; uma parte com nome vale quando todas as palavras do nome estão no modelo em uso. Títulos `## Claude 5` também funcionam.
 
         **Quando instruções divergem**, vale a mais específica: o que você pede agora; depois o papel e os blocos do agente; depois o `AGENTS.md` (a parte do modelo antes da Geral); por último as orientações do Urbe. Segurança, permissões, aprovações e selos de autoria valem sempre, mesmo que uma instrução peça o contrário.
+
+        ## Servidores MCP
+
+        Em **Configurações → Pesquisa → Servidores MCP**, adicione um servidor pelo endereço (e a chave, se ele pedir). O Urbe mostra as ferramentas que o servidor oferece; cada uma começa **desligada**. No computador também dá para adicionar um **servidor local** (um programa, com aviso antes). Libere cada ferramenta como **Leitura** (o Assistente usa sem perguntar, como uma pesquisa na web) ou **Escrita** (pergunta antes de cada uso). O que o servidor responde é tratado como dado de terceiros, não como ordem.
         """;
 
     private const string Plugins = """
@@ -489,6 +530,7 @@ public static partial class AppDocs
         - Se o arquivo mudar, o plugin desliga até você revisar (**Revisei, ligar**).
         - Os plugins `.js` da versão 1.8.4 não rodam no app nativo; aqui você só os vê e aprova.
         - **Modo seguro** desliga todos os plugins e estilos sem apagar nada.
+        - Com a permissão **agentes**, um plugin pode pedir trabalho a um dos seus agentes, só nas notas ou pastas que indicar. A cada pedido você vê o plugin, o agente, o pedido e onde ele pode gravar, e confirma; fora desse lugar o agente não grava nada.
 
         Plugins são programas: só ligue o que você entende ou que veio de alguém de confiança.
         """;
@@ -529,6 +571,10 @@ public static partial class AppDocs
         ## Quando a pasta muda fora do Urbe
 
         Outro aplicativo ou uma sincronização pode mudar os arquivos enquanto o Urbe está aberto. O Urbe nunca grava por cima do que mudou lá: ao salvar, ele lê a pasta de novo, e as mudanças de fora aparecem. Se a própria nota que você está escrevendo foi mudada lá fora, as duas versões ficam: a de fora continua na nota, e a sua é salva ao lado como **Nome (conflito data hora)**, que segue aberta no editor para você juntar o que quiser.
+
+        ## Texto não salvo
+
+        O Urbe salva sozinho logo depois de uma pausa na escrita. Se o app for fechado de repente antes disso (o sistema encerrou o app, a bateria acabou), o que você digitou fica guardado à parte, só neste aparelho. Ao abrir a nota de novo, o Urbe pergunta: **Recuperar** põe o texto de volta (e dá para desfazer), **Descartar** fica com a nota como estava. Ele avisa se a nota também mudou nesse meio-tempo.
 
         ## Versões e lixeira
 

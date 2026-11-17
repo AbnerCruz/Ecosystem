@@ -111,6 +111,7 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public KnowledgeIndex Knowledge => inner.Knowledge;
     public (string? Path, string? Selection) EditorContext() => inner.EditorContext();
     public int ReadChars => inner.ReadChars;
+    public IReadOnlyCollection<string> OtherFiles => inner.OtherFiles;
     public string Readable(string text) => inner.Readable(text);
     public Task<UrbeDocument> CreateNoteAsync(string path, string content) { Check(path); return inner.CreateNoteAsync(path, content); }
     public Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content) { Check(doc.Path); return inner.SaveNoteAsync(doc, content); }
@@ -130,6 +131,8 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public IAssistantNames? Names => null;
     public IAssistantImages? Images => inner.Images is { } images ? new ScopedImages(images, this) : null;
     public AssistantWebSession? Web => inner.Web;
+    public IAssistantDevice? Device => inner.Device;
+    public IAssistantVideos? Videos => inner.Videos;
     public IAssistantGraphs? Graphs => inner.Graphs is { } graphs ? new ScopedGraphs(graphs, this) : null;
     /// <summary>Depth 1: a delegated specialist does not delegate again.</summary>
     public IAssistantDelegation? Delegation => null;

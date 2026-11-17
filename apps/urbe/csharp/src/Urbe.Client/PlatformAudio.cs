@@ -15,5 +15,11 @@ public static class PlatformAudio
     /// <summary>The text of a 16 kHz WAV part, or null when nothing was understood.</summary>
     public static Func<string, CancellationToken, Task<string?>>? TranscribeWav { get; set; }
 
+    /// <summary>
+    /// #956: speaks a text with the device's voice into a WAV (voice 0 or 1, the podcast's two hosts); false when it
+    /// could not. Null where the platform has no speech synthesis, and the podcast then stays a script.
+    /// </summary>
+    public static Func<string, int, string, CancellationToken, Task<bool>>? SynthesizeToWav { get; set; }
+
     public static bool Available => DecodeToWav is not null && TranscribeWav is not null;
 }

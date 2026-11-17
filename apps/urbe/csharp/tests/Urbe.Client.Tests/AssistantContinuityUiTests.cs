@@ -70,7 +70,8 @@ public sealed partial class HeadlessUiTests
                 Assert.True(panel.CompactActive);
                 Assert.False(panel.IsVisible);
                 Assert.True(view.AssistantMini.IsVisible);
-                Assert.Equal(Avalonia.Layout.VerticalAlignment.Top, view.AssistantMini.VerticalAlignment);
+                // #955 (owner): right above where the person types, never over the note's top
+                Assert.Equal(Avalonia.Layout.VerticalAlignment.Bottom, view.AssistantMini.VerticalAlignment);
                 var composer = view.AssistantMini.GetLogicalDescendants().OfType<TextBox>()
                     .Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Mensagem rápida ao Assistente");
                 var model = new ScriptedModel();
@@ -83,7 +84,7 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
                 composer.Text = "Pergunta enviada pelo popup";
                 var send = view.AssistantMini.GetLogicalDescendants().OfType<Button>()
-                    .Single(b => b.Content is string text && text == "Enviar");
+                    .Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Enviar");
                 send.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 await panel.CurrentRun!;
                 Dispatcher.UIThread.RunJobs();
@@ -177,7 +178,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains(view.AssistantMini.GetLogicalDescendants().OfType<TextBox>(),
                     input => Avalonia.Automation.AutomationProperties.GetName(input) == "Mensagem rápida ao Assistente");
                 Assert.Contains(view.AssistantMini.GetLogicalDescendants().OfType<Button>(),
-                    button => button.Content is string text && text == "Enviar");
+                    button => Avalonia.Automation.AutomationProperties.GetName(button) == "Enviar");
                 Assert.DoesNotContain(conversationScroll.GetLogicalDescendants().OfType<TextBox>(),
                     t => Avalonia.Automation.AutomationProperties.GetName(t) == "Mensagem rápida ao Assistente");
                 Assert.True(view.Editor.IsVisible);

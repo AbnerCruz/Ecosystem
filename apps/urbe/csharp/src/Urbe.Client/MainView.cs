@@ -61,6 +61,7 @@ public sealed partial class MainView : Grid
         Editor.OpenWeb = url => { if (Editor.Pinned.IsVisible) _ = Editor.Pinned.OpenWebAsync(url); else StudyBrowser.Open(url); };
         Editor.Pinned.Web.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
         Editor.Pinned.Web.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
+        Editor.Pinned.Web.SavePageRequested += (url, page) => _ = SaveWebPageAsync(url, page);
         Editor.Pinned.Storage = _vault;
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
@@ -149,6 +150,7 @@ public sealed partial class MainView : Grid
             Dispatcher.UIThread.Post(RefreshNotes, DispatcherPriority.Background);
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
+        if (_vault is not null) WireDrafts();   // CST-144
         Editor.Editor.TextChanged += (_, _) => CaptureEditorHistory();
         Editor.MoreRequested += ShowEditorMenuAsync;
         // UC-69: a tap on the title renames the note; a save that failed after leaving the editor is told here
@@ -178,6 +180,7 @@ public sealed partial class MainView : Grid
         Dialogs.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
         StudyBrowser.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
         StudyBrowser.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
+        StudyBrowser.SavePageRequested += (url, page) => _ = SaveWebPageAsync(url, page);
         _stage.Children.Add(_notice);
         _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the Explorer and the editor (ADD-0021)
         InstallAssistantLauncher();          // contextual AI lives over the editor, not in a second destination
@@ -590,6 +593,7 @@ public sealed partial class MainView : Grid
     /// <summary>flushPending: write a pending record now (window closing, app going to the background).</summary>
     public async Task FlushPendingAsync()
     {
+        WriteDraftNow();   // CST-144: the typed text is kept even if the save below cannot finish before the app is gone
         if (_notesSave is { } notes) await notes.FlushAsync();
         await ReadingState.FlushAsync();
     }
@@ -599,6 +603,39 @@ public sealed partial class MainView : Grid
     {
         try { await SaveNoteAsync(note, expectedUndoContent: null); }
         catch (VaultChangedOutsideException) { await SaveAfterOutsideChangeAsync(note); }
+        TellAffectedPublications(note.Path);
+    }
+
+    private readonly HashSet<string> _toldAffected = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// CST-153: the first time a note is saved, the publications made from it are named, so a change never reaches a
+    /// product silently. Only the publication files are read (they name their sources by id), never the whole vault.
+    /// </summary>
+    private void TellAffectedPublications(string path)
+    {
+        if (_store?.Get(path) is not { } note) return;
+        var using_ = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase) && d.Content.Contains("\"" + note.Id + "\"", StringComparison.Ordinal)).ToList();
+        if (using_.Count == 0) return;
+        static string Title(UrbeDocument d) => System.IO.Path.GetFileName(d.Path)[..^".publication.json".Length];
+        // a passage a publication takes from this note was removed: said at every save while it lasts
+        foreach (var publication in using_)
+        {
+            PublicationProject project;
+            try { project = PublicationProjectCodec.Parse(publication.Content); }
+            catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or NotSupportedException) { continue; }
+            if (PublicationAssets.MissingFragments(project, note.Id, note.Content) is { Count: > 0 } missing)
+            {
+                ShowLifeNotice("A publicação " + Title(publication) + " usa " + (missing.Count == 1 ? "o trecho “" + missing[0] + "”, que" : "os trechos " +
+                    string.Join(", ", missing.Select(m => "“" + m + "”")) + ", que") + " não " + (missing.Count == 1 ? "existe" : "existem") +
+                    " mais nesta nota. Restaure o título ou escolha outro trecho na publicação.", Ui.ToastKind.Warning);
+                return;
+            }
+        }
+        if (!_toldAffected.Add(path)) return;
+        var titles = using_.Select(Title).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
+        Editor.Notify("Esta nota alimenta " + (titles.Count == 1 ? "a publicação " : titles.Count + " publicações: ") + string.Join(", ", titles.Take(3)) +
+            (titles.Count > 3 ? " e outras" : "") + ". A mudança entra na próxima exportação.");
     }
 
     /// <summary>
@@ -709,6 +746,7 @@ public sealed partial class MainView : Grid
         _rail.IsVisible = wide;
         UpdateFloatingNav();
         PlaceAssistant(_assistant, e.NewSize.Width);
+        if (e.HeightChanged) ResizeAssistantMini();
     }
 
     // ---------------- the Explorer's header ----------------
@@ -892,10 +930,15 @@ public sealed partial class MainView : Grid
                     new DialogItem("Exportar legendas", UrbeTheme.Icons.Download,
                         "SRT ou WebVTT feitos desta transcrição revisada.", Run: () => ExportSubtitlesAsync(note.Path, editor.Editor.Text ?? ""))
                 }),
+            .. (DueCards(note) is { Count: > 0 } cards ? new[]
+                {
+                    new DialogItem("Revisar cartões (" + cards.Count + ")", UrbeTheme.Icons.Book,
+                        "Os cartões pergunta::resposta desta nota que vencem hoje.", Run: () => ReviewCardsAsync(new CityNote(note.Path, editor.Editor.Text ?? note.Content)))
+                } : []),
             new DialogItem("Onde esta nota é usada", UrbeTheme.Icons.Connections,
                 "Publicações, dados, progresso e notas que dependem dela.", Run: () => ShowNoteUsageAsync(note.Path)),
             new DialogItem("Criar publicação de um trecho", UrbeTheme.Icons.Page,
-                "Só um título da nota e o que vem embaixo dele.", Run: () => CreatePublicationFromSectionAsync(note.Path)),
+                "Um título da nota e o que vem embaixo dele, ou o parágrafo selecionado.", Run: () => CreatePublicationFromSectionAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
                 {
                     new DialogItem("Voltar à publicação", UrbeTheme.Icons.Back,
@@ -1329,13 +1372,23 @@ public sealed partial class MainView : Grid
     /// extension becomes .md, a name already taken there is refused; the empty file is written to the vault first, then
     /// its document is created (explorer.create) and it opens.
     /// </summary>
-    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, Task<string?>>? contentFor = null)
+    /// <summary>CST-235 "Salvar página como nota": a new note with the page's text, its address and the day; the page stays open.</summary>
+    public async Task SaveWebPageAsync(string url, WebClip.Page page)
     {
-        if (_library is not { } library || _store is null) return;
+        var content = WebClip.Note(url, page, DateTime.Now);
+        var name = CleanNoteName(page.Title);
+        var path = await CreateNoteInNotesAsync(name.Length > 0 && _store?.Get((Explorer.CurrentFolder.Length > 0 ? Explorer.CurrentFolder + "/" : "") + name + ".md") is null ? name : null,
+            contentFor: _ => Task.FromResult<string?>(content), open: false);
+        if (path is not null) _notice.Show("Página salva em " + path + ".", TimeSpan.FromSeconds(8), "Abrir", () => { CloseNotesOverEditor(); Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, content))); });
+    }
+
+    public async Task<string?> CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, Task<string?>>? contentFor = null, bool open = true)
+    {
+        if (_library is not { } library || _store is null) return null;
         if (!VaultWritable)
         {
             await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
-            return;
+            return null;
         }
         folder ??= Explorer.CurrentFolder;
         string PathOf(string name)
@@ -1347,23 +1400,27 @@ public sealed partial class MainView : Grid
             Hint: NotesWhere(folder) + " Sem extensão, será salva como .md.", Confirm: "Criar nota",
             Validate: v => CleanNoteName(v) is not { Length: > 0 } n ? "Use um nome válido." : _store.Get(PathOf(n)) is not null ? "Já existe uma nota com esse nome aqui." : null));
         var name = CleanNoteName(raw);
-        if (name.Length == 0) return;
+        if (name.Length == 0) return null;
         var path = PathOf(name);
-        if (_store.Get(path) is not null || _contents.ContainsKey(path)) return;
+        if (_store.Get(path) is not null || _contents.ContainsKey(path)) return null;
         // UC-44: a note made from a template starts with its filled-in content (null: the person gave up)
         var content = contentFor is null ? "" : await contentFor(name);
-        if (content is null) return;
+        if (content is null) return null;
         // a template's filled-in form is not lost to a failed write: it can be tried again
         if (!await WriteOrAskAsync("Não foi possível criar a nota", () => _vault!.CreateTextFileAsync(path, content),
                 async () => await OnDiskAsync(path) == content))
-            return;
+            return null;
         library.AddNote(path, content, Now);
         _contents[path] = content;
         NotesChanged();
         RefreshNotes();
         // document.open: touchRecent is not called by createNote; the editor opens
-        CloseNotesOverEditor();
-        Editor.Open(new CityNote(path, content));
+        if (open)
+        {
+            CloseNotesOverEditor();
+            Editor.Open(new CityNote(path, content));
+        }
+        return path;
     }
 
     /// <summary>

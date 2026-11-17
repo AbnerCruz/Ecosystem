@@ -151,6 +151,8 @@ public interface IAssistantHost
     (string? Path, string? Selection) EditorContext();
     /// <summary>How much of a note one read may bring (proportional to the model's context).</summary>
     int ReadChars { get; }
+    /// <summary>#963: the vault's files that are not notes (PDFs, images, audio…), so that "no note here" is never read as "no file here".</summary>
+    IReadOnlyCollection<string> OtherFiles => [];
     /// <summary>A note's text as the agent reads it: without the authorship seals when the Urbe manages them (UC-51).</summary>
     string Readable(string text) => text;
     Task<UrbeDocument> CreateNoteAsync(string path, string content);
@@ -176,6 +178,10 @@ public interface IAssistantHost
     IAssistantNames? Names => null;
     /// <summary>UC-63: drawing pictures with the run's provider and keeping them in the vault, when the app can.</summary>
     IAssistantImages? Images => null;
+    /// <summary>CST-173: an external generative video model, when switched on and configured.</summary>
+    IAssistantVideos? Videos => null;
+    /// <summary>The device's alarm clock, calendar and e-mail, when the platform has them and the person allowed them.</summary>
+    IAssistantDevice? Device => null;
     /// <summary>Explicitly authorized network gateway; null keeps every local feature offline.</summary>
     AssistantWebSession? Web => null;
     /// <summary>Explicitly read-only view of authored graph documents in this vault.</summary>
@@ -558,9 +564,16 @@ public static partial class AssistantTools
                     if (!d.Path.ToLowerInvariant().StartsWith(f.ToLowerInvariant() + "/", StringComparison.Ordinal)) return false;
                     return rec || !d.Path[(f.Length + 1)..].Contains('/');
                 }).OrderBy(d => d.Path, Comparer<string>.Create(JsText.LocaleCompare)).ToList();
-                if (hits.Count == 0) return Task.FromResult(new AiToolOutput(f.Length > 0 ? "Nenhuma nota em \"" + f + "\"." : "O vault está vazio."));
-                return Task.FromResult(new AiToolOutput(string.Join("\n", hits.Take(lim).Select(d => "- " + d.Path + " · " + Words(d.Content) + " palavras" + (string.IsNullOrEmpty(d.Modified) ? "" : " · " + d.Modified))) +
-                                                        (hits.Count > lim ? "\n… e mais " + (hits.Count - lim) : "")));
+                // #963: the PDFs and other files of the same folder, listed apart: a folder without notes may hold the book
+                var files = host.OtherFiles.Where(p =>
+                    f.Length == 0 ? rec || !p.Contains('/') : p.StartsWith(f + "/", StringComparison.OrdinalIgnoreCase) && (rec || !p[(f.Length + 1)..].Contains('/')))
+                    .Order(Comparer<string>.Create(JsText.LocaleCompare)).ToList();
+                var notes = hits.Count == 0 ? (f.Length > 0 ? "Nenhuma nota em \"" + f + "\"." : "Nenhuma nota no vault.")
+                    : string.Join("\n", hits.Take(lim).Select(d => "- " + d.Path + " · " + Words(d.Content) + " palavras" + (string.IsNullOrEmpty(d.Modified) ? "" : " · " + d.Modified))) +
+                      (hits.Count > lim ? "\n… e mais " + (hits.Count - lim) : "");
+                return Task.FromResult(new AiToolOutput(notes + (files.Count == 0 ? "" :
+                    "\n\nOutros arquivos (não são notas; PDFs se leem com inspect_document e read_document):\n" +
+                    string.Join("\n", files.Take(lim).Select(p => "- " + p)) + (files.Count > lim ? "\n… e mais " + (files.Count - lim) : ""))));
             }
         },
         new()
@@ -589,7 +602,9 @@ public static partial class AssistantTools
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
                 var r = ReadSlice(Readable(host, d), Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host), inherited: host.Knowledge.Inherited(d.Id));
-                return Task.FromResult(new AiToolOutput(r.Text, Reads: [(d.Path, r.Partial)], Seen: [r.Seen]));
+                // CST-228: the progress the person sees, computed by the app (the agent does not count the boxes again)
+                var progress = string.Join("\n", NoteProgress.Summaries(d.Content, id => host.Documents.Get(id) is { } n && n.Id == id ? n.Content : null).Select(p => "- " + p));
+                return Task.FromResult(new AiToolOutput(progress.Length == 0 ? r.Text : r.Text + "\n\nProgresso calculado pelo app:\n" + progress, Reads: [(d.Path, r.Partial)], Seen: [r.Seen]));
             }
         },
         new()
@@ -932,7 +947,10 @@ public static partial class AssistantTools
                 {
                     if (p["minimum"] is { } mi && n < mi.GetValue<double>()) n = mi.GetValue<double>();
                     if (p["maximum"] is { } ma && n > ma.GetValue<double>()) n = ma.GetValue<double>();
-                    input[k] = n;   // a double, as JSON.parse would give it
+                    // an integer stays an integer: tools read it as (int?) / (long?), and a double there threw
+                    // NodeUnableToConvert (recall_memory max_chars, list_conversations limit — owner's report)
+                    // a JSON number (as the provider sends it) converts to int, long or double alike
+                    input[k] = JsonNode.Parse(((long)n).ToString(CultureInfo.InvariantCulture));
                 }
             }
             if (t == "array" && v is not JsonArray)

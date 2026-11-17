@@ -17,7 +17,7 @@ public sealed class VideoFrameRenderer : IDisposable
     private readonly IReadOnlyDictionary<string, byte[]> _files;
     private readonly Dictionary<string, SKImage?> _images = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (SKPath Path, float W, float H)?> _math = new(StringComparer.Ordinal);
-    private readonly VideoFrameCache<SKImage> _cache;
+    private readonly BoundedCache<SKImage> _cache;
     private readonly object _gate = new();
 
     /// <param name="files">The vault files the elements use (images), read before rendering by their paths.</param>
@@ -25,13 +25,13 @@ public sealed class VideoFrameRenderer : IDisposable
     {
         _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
         _files = files ?? new Dictionary<string, byte[]>();
-        _cache = new VideoFrameCache<SKImage>(cacheBytes, image => (long)image.Width * image.Height * 4);
+        _cache = new BoundedCache<SKImage>(cacheBytes, image => (long)image.Width * image.Height * 4);
     }
 
     public VideoTimeline Timeline => _timeline;
     /// <summary>Scene layers actually drawn (the others came from the cache).</summary>
     public int LayersDrawn { get; private set; }
-    public VideoFrameCache<SKImage> Cache => _cache;
+    public BoundedCache<SKImage> Cache => _cache;
 
     /// <summary>The vault paths of the images a timeline uses (to read before rendering).</summary>
     public static IReadOnlyList<string> FilesUsed(VideoTimeline timeline) => timeline.Scenes

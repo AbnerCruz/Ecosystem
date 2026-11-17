@@ -8,6 +8,25 @@ namespace Urbe.Client;
 
 public sealed partial class AssistantPanel
 {
+    /// <summary>
+    /// #955: a link that is one of the conversation's sources shows what it is first (title, site, date, whether the page
+    /// was read), as Perplexity's citations do; any other link opens as before.
+    /// </summary>
+    public async Task FollowWebLinkAsync(string url)
+    {
+        var source = _conv.WebSources.FirstOrDefault(s => SourceUrl(s.Id) == url);
+        if (source is null || _app.Dialogs is null)
+        {
+            if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher) await launcher.LaunchUriAsync(new Uri(url));
+            return;
+        }
+        var detail = source.Domain + (source.Published is { Length: > 0 } published ? " · " + published : "") + " · " + source.Status;
+        var choice = await _app.Dialogs.ChooseAsync("[" + source.Id + "] " + source.Title,
+            [new DialogItem("Abrir", Detail: url), new DialogItem("Copiar endereço")], detail);
+        if (choice == 0 && TopLevel.GetTopLevel(this)?.Launcher is { } open) await open.LaunchUriAsync(new Uri(url));
+        else if (choice == 1) await Ui.TextActions.CopyAsync(this, url);
+    }
+
     private string? SourceUrl(string id)
     {
         var source = _conv.WebSources.FirstOrDefault(s => s.Id == id);
@@ -34,9 +53,9 @@ public sealed partial class AssistantPanel
             list.Children.Clear();
             var query = (search.Text ?? "").Trim();
             var hits = _conv.WebSources.Where(s => filter.SelectedIndex switch
-                { 1 => s.Status == "página acessada", 2 => s.Status != "página acessada", 3 => false, _ => true })
+                { 1 => Read(s), 2 => !Read(s), 3 => false, _ => true })
                 .Where(s => (s.Id + " " + s.Title + " " + s.Domain).Contains(query, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(s => s.Status == "página acessada").ToList();
+                .OrderByDescending(s => s.Status == "página acessada").ThenByDescending(Read).ToList();
             if (filter.SelectedIndex != 3) list.Children.Add(Hint(hits.Count + " fontes correspondentes"));
             foreach (var source in hits.Take(limit))
             {
@@ -45,7 +64,7 @@ public sealed partial class AssistantPanel
                 link.Content = Wrap(source.Id + " · " + source.Title, 13, UrbeTheme.Accent);
                 link.HorizontalContentAlignment = HorizontalAlignment.Stretch;
                 row.Children.Add(link);
-                row.Children.Add(Wrap(source.Domain + " · " + (source.Status == "página acessada" ? "Página consultada (trechos)" : "Somente resultado de busca"), 12, UrbeTheme.Text2));
+                row.Children.Add(Wrap(source.Domain + " · " + SourceState(source).Short, 12, UrbeTheme.Text2));
                 list.Children.Add(Card(row));
             }
             if (hits.Count > limit) list.Children.Add(LinkButton("Mostrar mais 20", () => { limit += 20; Paint(); }));
@@ -63,11 +82,22 @@ public sealed partial class AssistantPanel
         Paint();
     }
 
+    /// <summary>CST-124: read means the page itself was opened, all of it or in part (a search hit alone is not).</summary>
+    private static bool Read(AiWebSource source) => source.Status is "página acessada" or "leitura parcial";
+
+    /// <summary>The three readings a source can have, in short (the list) and in full (its page).</summary>
+    public static (string Short, string Long) SourceState(AiWebSource source) => source.Status switch
+    {
+        "página acessada" => ("Página lida inteira", "Página lida inteira: o agente teve todo o texto dela."),
+        "leitura parcial" => ("Leitura parcial", "Leitura parcial: o agente leu só uma parte da página; o resto não foi confirmado."),
+        _ => ("Somente resultado de busca", "Somente busca: o conteúdo original não foi confirmado.")
+    };
+
     private void ShowSource(AiWebSource source)
     {
         var body = OpenView(source.Id + " · Fonte", ShowSources);
         body.Children.Add(Wrap(source.Title, 18, UrbeTheme.Text));
-        body.Children.Add(Wrap(source.Status == "página acessada" ? "Página consultada: trechos disponíveis ao agente." : "Somente busca: o conteúdo original não foi confirmado.", 13, UrbeTheme.Text2));
+        body.Children.Add(Wrap(SourceState(source).Long, 13, UrbeTheme.Text2));
         body.Children.Add(Wrap("Publicado: " + (source.Published ?? "não informado") + "\nAcesso: " + source.Accessed, 12, UrbeTheme.Text2));
         body.Children.Add(Pre(source.FinalUrl, false));
         if (SourceUrl(source.Id) is { } url)

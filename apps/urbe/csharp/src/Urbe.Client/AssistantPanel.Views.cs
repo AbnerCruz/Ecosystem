@@ -515,9 +515,13 @@ public sealed partial class AssistantPanel
             foreach (var f in files) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
+        // CST-086: what the answer drew on from memory, open to correct or forget right here
+        var used = r.MemoryUsed.Select(id => AssistantMemoryEngine.ResolveForEdit(_cfg, id)).Where(m => m is not null).Select(m => m!).ToList();
+        if (used.Count > 0)
+            tail.Children.Add(LinkButton("Usou " + (used.Count == 1 ? "1 lembrança" : used.Count + " lembranças"), () => _ = ShowUsedMemoriesAsync(used.Select(m => m.Id).ToList())));
         if (_conv.WebSources.Count > 0)
         {
-            var read = _conv.WebSources.Count(s => s.Status == "página acessada");
+            var read = _conv.WebSources.Count(s => s.Status is "página acessada" or "leitura parcial");
             tail.Children.Add(LinkButton("Fontes · " + _conv.WebSources.Count + " encontradas · " + read + " consultadas", ShowSources));
         }
         return tail.Children.Count > 0 ? tail : null;
@@ -527,22 +531,20 @@ public sealed partial class AssistantPanel
 
     private static readonly string[] OnlinePresets = ["openrouter", "anthropic", "openai", "gemini", "ollama", "custom"];
 
-    /// <summary>The providers one can add; the model on the device first, where the device has one.</summary>
-    private static string[] PresetOrder => HasDeviceAi ? ["device", .. OnlinePresets] : OnlinePresets;
+    /// <summary>The providers one can add.</summary>
+    private static string[] PresetOrder => OnlinePresets;
 
     private static readonly Dictionary<string, string> PresetDetail = new()
     {
         ["openrouter"] = "Recomendado · Claude, GPT, Gemini, Llama e outros com uma chave", ["anthropic"] = "Claude direto da Anthropic", ["openai"] = "GPT direto da OpenAI",
-        ["device"] = "Grátis e sem internet · baixa uma vez e funciona sempre, até no modo avião", ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
+        ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
     };
 
     private Control Onboarding()
     {
         var box = new StackPanel { Spacing = 10, Margin = new Thickness(4, 24, 4, 0) };
         box.Children.Add(Wrap("Conecte um modelo", 20, UrbeTheme.Text, FontWeight.Bold));
-        box.Children.Add(Wrap(HasDeviceAi
-            ? "Use a IA que mora no seu aparelho (grátis, sem internet) ou conecte um provedor com a sua chave. A chave fica salva só neste aparelho."
-            : "O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
+        box.Children.Add(Wrap("O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
         foreach (var k in PresetOrder)
         {
             var pre = AssistantProviders.Presets[k];
@@ -555,7 +557,7 @@ public sealed partial class AssistantPanel
                 Content = new StackPanel { Spacing = 2, Children = { Label(pre.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), Wrap(PresetDetail[k], 12, UrbeTheme.Text3) } }
             };
             Avalonia.Automation.AutomationProperties.SetName(b, pre.Name);
-            b.Click += (_, _) => { if (k == "device") ShowDevice(); else ShowSettings(k); };
+            b.Click += (_, _) => ShowSettings(k);
             box.Children.Add(b);
         }
         return box;
@@ -643,7 +645,7 @@ public sealed partial class AssistantPanel
         RememberCurrentChat();
         _cfg.AgentId = agentId;
         // Switching agents returns to that agent's selected chat; "Nova conversa" is the only reset.
-        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : NewConversation();
+        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : ResumeOrNew();
         RememberCurrentChat();
         SyncActiveConversation();
         _views.Clear();
@@ -897,8 +899,7 @@ public sealed partial class AssistantPanel
         var c = _cfg;
         var v = VaultKey;
         var body = OpenView("Configurações");
-        body.Children.Add(Wrap("O Assistente padrão usa um modelo básico. Configure agentes com modelos melhores conforme suas necessidades. A IA no aparelho requer download prévio do modelo e suporte neste dispositivo.", 14, UrbeTheme.Text2));
-        if (HasDeviceAi) body.Children.Add(TextButton("IA no aparelho", ShowDevice));
+        body.Children.Add(Wrap("Cada agente usa o modelo que você escolher, de qualquer provedor conectado. Um agente sem modelo próprio usa o do Assistente.", 14, UrbeTheme.Text2));
         var choices = new (string Id, string Title, string Description)[]
         {
             ("models", "Modelos", "Provedores e imagens"),
@@ -999,7 +1000,7 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "agents")
         {
-            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, começa uma conversa nova."));
+            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, a conversa em andamento continua; uma parada há mais de duas horas dá lugar a uma nova, e as anteriores ficam em Conversas."));
             var agents = new StackPanel { Spacing = 4 };
             foreach (var a in AgentNames.All(c))
             {
@@ -1036,10 +1037,41 @@ public sealed partial class AssistantPanel
                 Hint(_cfg.Web.Enabled ? "Disponível para todos os agentes · " + (_cfg.Web.Provider == "brave" ? "Brave (opcional)" : "sem chave") : "Desativada pela preferência de privacidade"),
                 TextButton("Privacidade e pesquisa", ShowWebSettings),
                 Hint("Peça para pesquisar no chat. Sem configurar provedor nem permissão individual.")));
+            // the device's alarm clock, calendar and e-mail: each off until the person turns it on (NN-016)
+            Button DeviceSwitch(string key, string name) => TextButton(name + ": " + (_cfg.DeviceAccess.Contains(key) ? "ligado" : "desligado"), () =>
+            {
+                if (!_cfg.DeviceAccess.Remove(key)) _cfg.DeviceAccess.Add(key);
+                SaveConfig();
+                ShowSettings();
+            });
+            body.Children.Add(Section("Vídeo generativo",
+                Hint("Clipes curtos feitos por um modelo externo (OpenAI Sora), pagos por segundo ao provedor; só a descrição é enviada. O vídeo explicativo editável das Publicações não depende disto."),
+                TextButton("Vídeo generativo: " + (_cfg.GenerativeVideo ? "ligado" : "desligado"), () => { _cfg.GenerativeVideo = !_cfg.GenerativeVideo; SaveConfig(); ShowSettings(); })));
+            body.Children.Add(Section("Aparelho",
+                Hint("O que os agentes podem fazer no aparelho. Cada ação que muda algo pede sua aprovação; a agenda e o e-mail abrem no app deles para você confirmar ou enviar."),
+                DeviceSwitch(AssistantDeviceTools.Alarm, "Despertador (marcar e ver o próximo)"),
+                DeviceSwitch(AssistantDeviceTools.Calendar, "Agenda (criar e consultar eventos)"),
+                DeviceSwitch(AssistantDeviceTools.Email, "E-mail (preparar mensagens)")));
+            body.Children.Add(Section("Servidores MCP",
+                Hint(_cfg.McpServers.Count == 0 ? "Nenhum. Um servidor MCP dá ao Assistente ferramentas de outro serviço; cada ferramenta começa desligada."
+                    : string.Join(" · ", _cfg.McpServers.Select(m => m.Name + " (" + m.Tools.Count(t => t.Value is "read" or "write") + " liberadas)"))),
+                TextButton("Servidores MCP", () => _ = McpServersAsync())));
         }
         if (addPreset is not null) EditProvider(null, addPreset);
     }
 
+
+    /// <summary>UC-87: the open agent's memories as a graph (a view of the store, nothing is copied to the vault).</summary>
+    public async Task ShowMemoryGraphAsync()
+    {
+        var agent = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        var name = agent is null ? _conv.AgentId : AgentNames.CallName(agent, _cfg);
+        var records = MemoryGraph.Records(_cfg, VaultKey, _conv.AgentId);
+        if (records.Count == 0) { await _app.Dialogs.AlertAsync("Memória", name + " ainda não tem lembranças neste vault."); return; }
+        Close();
+        await _app.ShowGraphProjectionAsync(MemoryGraph.Build("Memória de " + name, records,
+            AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, _conv.AgentId)));
+    }
 
     /// <summary>Separate memory workspace: no giant list in provider settings or implicit keyboard focus.</summary>
     private void ShowMemoryManager()
@@ -1049,8 +1081,9 @@ public sealed partial class AssistantPanel
         var head = new StackPanel { Spacing = 6 };
         var state = Hint("As notas continuam sendo a fonte de verdade. Lembranças não são instruções provenientes de arquivos.");
         head.Children.Add(state);
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        var actions = new WrapPanel { ItemSpacing = 6, LineSpacing = 6 };
         actions.Children.Add(TextButton("+ Lembrança", () => _ = AddMemoryByHandAsync()));
+        actions.Children.Add(TextButton("Ver como grafo", () => _ = ShowMemoryGraphAsync()));
         actions.Children.Add(TextButton("Exportar memória", () => _ = ExportAgentMemoryAsync()));
         actions.Children.Add(TextButton("Conflitos", () =>
         {
@@ -1208,7 +1241,79 @@ public sealed partial class AssistantPanel
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Não foi possível memorizar", ex.Message); }
     }
 
-    private async Task EditMemoryAsync(string id)
+    /// <summary>
+    /// DEC-0061: the MCP servers — add one by its address, see the tools it offers and allow each as reading (runs like a
+    /// web search) or writing (asks every time), or leave it off; remove a server.
+    /// </summary>
+    private async Task McpServersAsync()
+    {
+        var items = _cfg.McpServers.Select(m => new DialogItem(m.Name, Detail: m.Command is { } c ? "Local: " + c : m.Url)).Append(new DialogItem("Adicionar servidor", UrbeTheme.Icons.Plus)).ToList();
+        if (AssistantMcp.LocalServersAllowed) items.Add(new DialogItem("Adicionar servidor local", UrbeTheme.Icons.Plus, "Um programa deste computador"));
+        if (await _app.Dialogs.ChooseAsync("Servidores MCP", items, "As ferramentas de um servidor só chegam ao Assistente depois que você libera cada uma.") is not int pick) return;
+        AiMcpServer server;
+        if (pick == _cfg.McpServers.Count + 1)
+        {
+            var line = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Comando", Placeholder: "npx -y @modelcontextprotocol/server-everything", Confirm: "Continuar",
+                Hint: "O Urbe vai executar esse programa neste computador. Adicione só servidores em que você confia."));
+            if (string.IsNullOrWhiteSpace(line)) return;
+            var parts = System.Text.RegularExpressions.Regex.Matches(line.Trim(), "\"([^\"]*)\"|(\\S+)").Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).ToList();
+            var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Nome", Value: System.IO.Path.GetFileNameWithoutExtension(parts[^1]), Confirm: "Conectar"));
+            if (name is null) return;
+            server = new AiMcpServer { Id = AssistantAgent.NewId("mcp"), Name = name.Trim(), Command = parts[0], Arguments = parts.Skip(1).ToList() };
+        }
+        else if (pick == _cfg.McpServers.Count)
+        {
+            var url = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Endereço", Placeholder: "https://…/mcp", Confirm: "Continuar",
+                Validate: v => Uri.TryCreate(v.Trim(), UriKind.Absolute, out var u) && u.Scheme is "https" or "http" ? null : "Use um endereço https://"));
+            if (url is null) return;
+            var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Nome", Value: new Uri(url.Trim()).Host, Confirm: "Continuar"));
+            if (name is null) return;
+            var token = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Chave (se o servidor pedir)", Confirm: "Conectar", Required: false));
+            server = new AiMcpServer { Id = AssistantAgent.NewId("mcp"), Name = name.Trim(), Url = url.Trim(), Token = string.IsNullOrWhiteSpace(token) ? null : token.Trim() };
+        }
+        else
+        {
+            server = _cfg.McpServers[pick];
+            var what = await _app.Dialogs.ChooseAsync(server.Name, [new DialogItem("Ferramentas"), new DialogItem("Remover servidor", Danger: true)]);
+            if (what == 1) { _cfg.McpServers.Remove(server); SaveConfig(); ShowSettings(); return; }
+            if (what != 0) return;
+        }
+        try { await AssistantMcp.DiscoverAsync(server); }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        { await _app.Dialogs.AlertAsync("Não foi possível conectar", (server.Command ?? server.Url) + "\n\n" + e.Message); return; }
+        if (!_cfg.McpServers.Contains(server)) _cfg.McpServers.Add(server);
+        SaveConfig();
+        while (true)
+        {
+            string State(string tool) => server.Tools.GetValueOrDefault(tool) switch { "read" => "Leitura", "write" => "Escrita (pede aprovação)", _ => "Desligada" };
+            var names = server.Known.Keys.Order(StringComparer.Ordinal).ToList();
+            if (names.Count == 0) { await _app.Dialogs.AlertAsync(server.Name, "O servidor não oferece ferramentas."); break; }
+            if (await _app.Dialogs.ChooseAsync(server.Name, names.Select(n => new DialogItem(n + " · " + State(n), Detail: server.Known[n].Description)).ToList(),
+                    "Toque numa ferramenta para mudar o que ela pode fazer.") is not int t) break;
+            var grant = await _app.Dialogs.ChooseAsync(names[t], [new DialogItem("Desligada"), new DialogItem("Leitura", Detail: "Usa sem perguntar, como uma pesquisa na web."), new DialogItem("Escrita", Detail: "Pergunta antes de cada uso.")]);
+            if (grant is not int g) continue;
+            if (g == 0) server.Tools.Remove(names[t]); else server.Tools[names[t]] = g == 1 ? "read" : "write";
+            SaveConfig();
+        }
+        ShowSettings();
+    }
+
+    /// <summary>CST-086: the memories an answer used, each with Editar and Esquecer; the chat stays where it was.</summary>
+    private async Task ShowUsedMemoriesAsync(IReadOnlyList<string> ids)
+    {
+        var memories = ids.Select(id => AssistantMemoryEngine.ResolveForEdit(_cfg, id)).Where(m => m is not null).Select(m => m!).ToList();
+        if (memories.Count == 0) return;
+        var pick = await _app.Dialogs.ChooseAsync("Lembranças usadas nesta resposta",
+            memories.Select(m => new DialogItem(m.Text.Length > 120 ? m.Text[..119] + "…" : m.Text, Detail: MemoryKindName(m.Kind) + " · " + MemoryWho(m))).ToList(),
+            "São o que o agente sabia de conversas anteriores. Escolha uma para corrigir ou esquecer.");
+        if (pick is not int i) return;
+        var what = await _app.Dialogs.ChooseAsync(memories[i].Text.Length > 60 ? memories[i].Text[..59] + "…" : memories[i].Text,
+            [new DialogItem("Editar"), new DialogItem("Esquecer", Danger: true)]);
+        if (what == 0) await EditMemoryAsync(memories[i].Id, stay: true);
+        else if (what == 1) await DeleteMemoryAsync(memories[i].Id, stay: true);
+    }
+
+    private async Task EditMemoryAsync(string id, bool stay = false)
     {
         var m = AssistantMemoryEngine.ResolveForEdit(_cfg, id);
         if (m is null) { ShowMemoryManager(); return; }
@@ -1220,12 +1325,12 @@ public sealed partial class AssistantPanel
         {
             if (!AssistantMemoryEngine.Edit(_cfg, m.Id, changed)) return;
             SaveMemoryConfig();
-            ShowMemoryManager();
+            if (stay) RenderLog(); else ShowMemoryManager();
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro na edição", ex.Message); }
     }
 
-    private async Task DeleteMemoryAsync(string id)
+    private async Task DeleteMemoryAsync(string id, bool stay = false)
     {
         if (!await _app.Dialogs.ConfirmAsync("Esquecer esta lembrança?",
                 "Ela será removida da memória local. As notas do vault não serão alteradas.",
@@ -1243,7 +1348,7 @@ public sealed partial class AssistantPanel
             }
             else AssistantMemoryEngine.Forget(_cfg, id);
             SaveMemoryConfig();
-            ShowMemoryManager();
+            if (stay) RenderLog(); else ShowMemoryManager();
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro ao esquecer", ex.Message); }
     }
@@ -1251,7 +1356,7 @@ public sealed partial class AssistantPanel
     private async Task AddProviderAsync()
     {
         var i = await _app.Dialogs.ChooseAsync("Qual provedor?", PresetOrder.Select(k => new DialogItem(AssistantProviders.Presets[k].Name, UrbeTheme.Icons.Storage)).ToList());
-        if (i is { } k) { if (PresetOrder[k] == "device") ShowDevice(); else EditProvider(null, PresetOrder[k]); }
+        if (i is { } k) EditProvider(null, PresetOrder[k]);
     }
 
     private async Task TestProviderAsync(AiProviderConfig p, TextBlock output)
@@ -1284,7 +1389,6 @@ public sealed partial class AssistantPanel
     /// <summary>editProvider(): name, API address and key; saved after the models list answers (a 401/403 stops it), then the model picker.</summary>
     private void EditProvider(AiProviderConfig? p, string preset)
     {
-        if (preset == "device") { ShowDevice(); return; }
         var pre = AssistantProviders.Presets.GetValueOrDefault(preset) ?? AssistantProviders.Presets["custom"];
         bool isNew = p is null;
         p ??= new AiProviderConfig(AssistantAgent.NewId("p"), preset, pre.Name, "", "");
@@ -1470,19 +1574,14 @@ public sealed partial class AssistantPanel
         body.Children.Add(Hint(image
             ? "O modelo de imagem não altera o chat. Preços em US$ com unidade de cobrança e fonte; valores variáveis não são estimados como zero."
             : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
-        var auto = TextButton(image ? "Sem modelo de imagem" : agentId == "geral" ? "Usar modelo básico do aparelho" : "Herdar modelo do Assistente", () =>
-        {
-            if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
-            else if (agentId == "geral" && LocalAi.Text is { } runtime)
+        // the Assistente has no model to fall back to; a specialist inherits the Assistente's
+        if (image || agentId != "geral")
+            body.Children.Add(TextButton(image ? "Sem modelo de imagem" : "Herdar modelo do Assistente", () =>
             {
-                var device = _cfg.Providers.FirstOrDefault(p => p.Preset == "device") ?? new AiProviderConfig("device", "device", "IA no aparelho", "", "");
-                if (!_cfg.Providers.Any(p => p.Id == device.Id)) _cfg.Providers.Add(device);
-                _cfg.AgentModels[agentId] = new AiModelChoice(device.Id, runtime.Recommended.Id);
-            }
-            else _cfg.AgentModels.Remove(agentId!);
-            SaveConfig(); Back(); RenderAll();
-        });
-        body.Children.Add(auto);
+                if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
+                else _cfg.AgentModels.Remove(agentId!);
+                SaveConfig(); Back(); RenderAll();
+            }));
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo" };
         var manual = new TextBox { PlaceholderText = "Ou informe o ID exato do modelo" };

@@ -14,7 +14,22 @@ public static class AssistantExport
     private const string Schema = "urbe.assistant.export/1";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
-    public static string Conversation(AiConversation conversation, bool complete, string? appVersion = null, long? at = null)
+    /// <summary>
+    /// The conversation as a file. <paramref name="secrets"/> (the registered keys and tokens, <see cref="AiConfig.Secrets"/>)
+    /// are taken out wherever they appear, a key pasted into the chat or echoed by an error included (CST-132).
+    /// </summary>
+    public static string Conversation(AiConversation conversation, bool complete, string? appVersion = null, long? at = null, IEnumerable<string>? secrets = null) =>
+        Redact(ConversationText(conversation, complete, appVersion, at), secrets);
+
+    /// <summary>Every secret replaced by "[chave removida]"; text with nothing to hide is returned as it is.</summary>
+    public static string Redact(string text, IEnumerable<string>? secrets)
+    {
+        foreach (var secret in (secrets ?? []).Distinct().OrderByDescending(x => x.Length))
+            text = text.Replace(secret, "[chave removida]", StringComparison.Ordinal);
+        return text;
+    }
+
+    private static string ConversationText(AiConversation conversation, bool complete, string? appVersion, long? at)
     {
         ArgumentNullException.ThrowIfNull(conversation);
         if (!complete) return ConversationMarkdown(conversation, appVersion);

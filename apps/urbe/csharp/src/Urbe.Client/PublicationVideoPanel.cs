@@ -202,7 +202,8 @@ public sealed class PublicationVideoPanel : StackPanel
         if (progress is not null) _progress.Value = progress.Fraction;
         if (message is not null) _status.Text = message;
         else if (progress is not null)
-            _status.Text = progress.Phase + " · quadro " + progress.Frame + " de " + progress.FrameCount + " · " + (int)Math.Round(progress.Fraction * 100) + "%";
+            _status.Text = progress.Phase + " · quadro " + progress.Frame + " de " + progress.FrameCount + " · " + (int)Math.Round(progress.Fraction * 100) + "%" +
+                (progress.Left is { } left ? " · falta " + VideoBudget.Words(left) : "");
     }
 
     public static string Clock(double seconds)
