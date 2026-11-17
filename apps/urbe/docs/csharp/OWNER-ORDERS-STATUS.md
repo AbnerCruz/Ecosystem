@@ -68,7 +68,7 @@ Este arquivo é a lista de tarefas das ordens; o andamento por CST continua em [
 | Infográfico vetorial (SVG + PNG) | Feito | `InfographicTests` |
 | D. Produtos pelo motor de Publicações, vídeo por motion graphics | Feito | testes de Publicações e vídeo |
 | Aceite 2: mesma fonte em 3 sessões e 2 Publicações, revisão detectada | Feito (17/11); aparelho | cada sessão guarda a versão estudada de cada nota e, ao abrir, diz o que mudou e de que tipo (texto, títulos e ligações, só formatação), com “Marcar como revistas”; publicações já diziam o que mudou desde a exportação (`EverySessionWithTheNoteSeesTheChangeAndItsKindUntilReviewed`, `StudySession_ReferencesSourcesAndOpensOneInEstudo`, `Publication_ReopeningSaysWhatChangedSinceTheExport`) |
-| Aceite 4: editar relações do mapa de estudo sem tocar o grafo de memória | Parcial | mapas separados; edição das relações a conferir |
+| Aceite 4: editar relações do mapa de estudo sem tocar o grafo de memória | Feito (17/11); aparelho | o mapa é um grafo comum, editável; refazê-lo atualiza só o que vem das fontes (fonte, tópico, cita), mantém posições, textos, ligações e traços da pessoa, grava pelo caminho dos grafos e não toca as notas nem o grafo de memória (`StudyMapRefreshTests`, `StudySession_ReferencesSourcesAndOpensOneInEstudo`) |
 | Aceite 5: editar uma cena e re-renderizar o MP4 | Parcial | vídeo regenera inteiro; render focalizado a conferir |
 | Aceites 1, 8 e 9 no aparelho | Aparelho | — |
 

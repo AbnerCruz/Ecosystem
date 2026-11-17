@@ -86,9 +86,19 @@ public sealed partial class MainView
         }
         if (i == present.Count + 1)
         {
-            var map = StudyMap.Build(session, present.Select(p => (p.Id, p.Path, ArtifactModel.IsNote(p.Path) ? _contents.GetValueOrDefault(p.Path) : null)).ToList());
             var mapPath = path[..^StudySession.Suffix.Length] + ".grafo.json";
-            await SaveNoteAsync(new CityNote(mapPath, map.Serialize()));
+            // a graph is a file of its own, written only through the graphs' path (which keeps an open graph in step);
+            // made again over the map as the person left it: their relations, notes, drawings and places stay
+            if (GraphOpen && !await SaveGraphAsync()) return;
+            GraphDocument? before = null;
+            bool exists = _attachments.Contains(mapPath);
+            if (exists && _vault is not null && (await _vault.ReadFileAsync(mapPath, long.MaxValue))?.Bytes is { } bytes)
+                try { before = GraphDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF')); }
+                catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or NotSupportedException or ArgumentException)
+                { await Dialogs.AlertAsync("Mapa da sessão", "O mapa salvo não pôde ser lido e não foi tocado: " + e.Message); return; }
+            var map = StudyMap.Refresh(before, session, present.Select(p => (p.Id, p.Path, ArtifactModel.IsNote(p.Path) ? _contents.GetValueOrDefault(p.Path) : null)).ToList());
+            try { await WriteGraphForAssistantAsync(mapPath, map.Serialize(), create: !exists); }
+            catch (Urbe.Core.Assistant.AiToolException e) { await Dialogs.AlertAsync("Mapa da sessão", e.Message); return; }
             await OpenGraphAsync(mapPath);
             return;
         }

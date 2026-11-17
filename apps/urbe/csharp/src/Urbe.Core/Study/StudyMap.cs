@@ -43,6 +43,36 @@ public static partial class StudyMap
         return graph;
     }
 
+    private static readonly HashSet<string> Derived = new(StringComparer.Ordinal) { "fonte", "tópico", "cita" };
+
+    /// <summary>
+    /// #956 acceptance 4: the map made again from the sources over the map as the person left it. What comes from the
+    /// sources is remade (a new heading appears, a gone one leaves); what the person added stays — their relations,
+    /// texts on the canvas, drawings — and the places they gave to nodes that are still there.
+    /// </summary>
+    public static GraphDocument Refresh(GraphDocument? existing, StudySession session, IReadOnlyList<(string Id, string Path, string? Markdown)> sources)
+    {
+        var map = Build(session, sources);
+        if (existing is null) return map;
+        static string Key(GraphNode n) => n.Kind == GraphNodeKind.Text ? "text:" + n.Label : "ref:" + (n.ReferenceId ?? n.Target);
+        var fresh = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var n in map.Nodes) fresh.TryAdd(Key(n), n.Id);
+        // a node is the person's when no line from the sources touches it
+        var fromSources = existing.Edges.Where(e => Derived.Contains(e.Relation)).SelectMany(e => new[] { e.SourceId, e.TargetId }).ToHashSet(StringComparer.Ordinal);
+        var now = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var n in existing.Nodes)
+        {
+            if (fresh.TryGetValue(Key(n), out var id)) { map.MoveNode(id, n.X, n.Y, recordHistory: false); now[n.Id] = id; }
+            else if (!fromSources.Contains(n.Id) && n.ParentId is null)
+                now[n.Id] = map.AddNode(n.Kind, n.Label, n.Target, n.X, n.Y, n.Width, n.Height, n.ReferenceId, recordHistory: false).Id;
+        }
+        foreach (var e in existing.Edges.Where(e => !Derived.Contains(e.Relation)))
+            if (now.TryGetValue(e.SourceId, out var a) && now.TryGetValue(e.TargetId, out var b) && a != b)
+                map.Connect(a, b, e.Label, e.Relation, e.Directed, recordHistory: false);
+        foreach (var stroke in existing.Strokes) map.AddStroke(stroke.Points, stroke.Width);
+        return map;
+    }
+
     [GeneratedRegex(@"^#{1,2}\s+(.+)$", RegexOptions.Multiline)]
     private static partial Regex Heading();
     [GeneratedRegex(@"\[\[([^\]]+)\]\]")]

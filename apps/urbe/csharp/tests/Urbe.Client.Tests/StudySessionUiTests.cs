@@ -59,6 +59,21 @@ public sealed partial class HeadlessUiTests
             Assert.True(File.Exists(Path.Combine(vault, "Estudos", "Física.grafo.json")));
             Assert.True(view.GraphOpen);
             Assert.Contains(view.OpenGraph!.Nodes, n => n.Target == "Newton.md");
+            // #956 acceptance 4: a note the person adds on the map, from the graph screen, survives making the map again
+            ClickButtonWithText(view.GraphsPanel, "+ Texto");
+            await Type("Dúvida minha: e a terceira lei?", "Adicionar");
+            await Settle(window, view);
+            var mapFile = Path.Combine(vault, "Estudos", "Física.grafo.json");
+            var newtonBefore = File.ReadAllText(Path.Combine(vault, "Newton.md"));
+            bool OnMap() => Urbe.Core.GraphDocument.Parse(File.ReadAllText(mapFile)).Nodes.Any(n => n.Label == "Dúvida minha: e a terceira lei?");
+            Assert.True(OnMap());
+            var again = view.OpenStudySessionAsync(path!);
+            await Click("Mapa da sessão");
+            await again;
+            await Settle(window, view);
+            Assert.True(OnMap());
+            Assert.Contains(view.OpenGraph!.Nodes, n => n.Label == "Dúvida minha: e a terceira lei?");
+            Assert.Equal(newtonBefore, File.ReadAllText(Path.Combine(vault, "Newton.md")));   // the source is never touched
             var podcast = view.OpenStudySessionAsync(path!);
             await Click("Podcast da sessão");
             await podcast;
