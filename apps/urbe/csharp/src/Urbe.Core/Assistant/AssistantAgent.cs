@@ -1108,6 +1108,9 @@ public static class AssistantAgent
 
         async Task<Out> Execute(AiChatBlock call, AiTool? tool)
         {
+            // CST-113: a tool the agent's permissions took out of the catalog is refused by name, not called unknown
+            if (tool is null && (o.Tools ?? AssistantTools.All).Any(t => t.Name == call.Name))
+                return new Out("A ferramenta " + call.Name + " não é permitida para este agente com as permissões atuais (" + (policy == "readonly" ? "somente leitura" : agent.Tools) + "). Não tente de novo: use as disponíveis ou diga ao usuário o que precisaria ser liberado.", true);
             if (tool is null) return new Out("Ferramenta desconhecida: " + call.Name + ". Disponíveis: " + string.Join(", ", byName.Keys), true);
             var errs = AssistantTools.Validate(tool, call.Input);
             if (errs.Count > 0) return new Out("Argumentos inválidos para " + tool.Name + ": " + string.Join("; ", errs) + ".", true);
