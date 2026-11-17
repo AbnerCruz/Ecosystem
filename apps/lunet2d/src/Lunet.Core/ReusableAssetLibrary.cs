@@ -214,6 +214,25 @@ public sealed class ReusableAssetLibrary
     }
 
     /// <summary>
+    /// Verifies all stored files before a user imports or exports a version.
+    /// This is read-only: damaged files remain available for manual recovery.
+    /// </summary>
+    public void VerifyIntegrity(string assetId, int version)
+    {
+        var manifest = Find(assetId, version);
+        var root = Path.Combine(VersionDirectory(assetId, version), "files");
+        foreach (var file in manifest.Files)
+        {
+            ValidatePath(file.Path);
+            EnsureNoLinks(root, file.Path);
+            var source = FilePath(root, file.Path);
+            if (!File.Exists(source) || new FileInfo(source).Length != file.Length ||
+                !HashFile(source).Equals(file.Sha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Arquivo ausente ou corrompido: " + file.Path);
+        }
+    }
+
+    /// <summary>
     /// Exports a self-contained immutable version with its manifest and source/derived files.
     /// The destination is never overwritten; a failed export leaves no partial ZIP behind.
     /// </summary>
