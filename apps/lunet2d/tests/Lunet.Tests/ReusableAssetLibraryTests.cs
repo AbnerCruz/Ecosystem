@@ -419,4 +419,27 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Throws<InvalidDataException>(() => library.Publish(source, "Game.cs", "Bad", "Eu", "CC0"));
         Assert.Empty(library.List());
     }
+    [Fact]
+    public void LowercaseManifestSha256_ImportsAndExportsWithoutChangingStoredMetadata()
+    {
+        var source = CreateSpriteProject("LowercaseSource");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Wings", "Author", "CC0");
+        var manifestPath = Path.Combine(LibraryRoot, asset.Id, "v1", "asset.json");
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(manifestPath))!;
+        foreach (var file in document["Files"]!.AsArray())
+            file!["Sha256"] = file["Sha256"]!.GetValue<string>().ToLowerInvariant();
+        var lowercaseManifest = document.ToJsonString();
+        File.WriteAllText(manifestPath, lowercaseManifest);
+
+        Library.VerifyIntegrity(asset.Id, 1);
+        var destination = Projects.Create("LowercaseTarget");
+        Assert.Equal(2, Library.ImportToProject(asset.Id, 1, destination).Count);
+        var zip = Path.Combine(_root, "lowercase.zip");
+        Library.ExportZip(asset.Id, 1, zip);
+        using (var archive = ZipFile.OpenRead(zip))
+            Assert.Equal(3, archive.Entries.Count);
+        Assert.Equal(lowercaseManifest, File.ReadAllText(manifestPath));
+    }
+
 }
