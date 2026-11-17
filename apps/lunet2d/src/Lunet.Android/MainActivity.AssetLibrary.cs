@@ -88,6 +88,20 @@ public sealed partial class MainActivity
                 dialog?.Dismiss();
                 ChooseAssetDestination(version);
             }, ButtonStyle.Secondary));
+            actions.AddView(LunetUi.Button(this, "Verificar", () =>
+            {
+                try
+                {
+                    AssetLibrary.VerifyIntegrity(version.Id, version.Version);
+                    Toast.MakeText(this, "Integridade verificada: arquivos desta versão conferem.", ToastLength.Long)?.Show();
+                }
+                catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+                {
+                    new AlertDialog.Builder(this)!.SetTitle("Integridade comprometida")!
+                        .SetMessage(ex.Message + "\\nA biblioteca não foi alterada.")!
+                        .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+                }
+            }, ButtonStyle.Quiet));
             actions.AddView(LunetUi.Button(this, "Exportar ZIP", () =>
             {
                 dialog?.Dismiss();
