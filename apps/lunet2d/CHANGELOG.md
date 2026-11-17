@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-511 (SAF, DEVICE pendente): a exportação ZIP da biblioteca trata ausência ou bloqueio do seletor de documentos Android sem encerrar a Activity e sem deixar exportação pendente; conteúdo da Library permanece intacto. Validação Android 13 necessária.
+
 - LUNET-511 (CI/DEVICE pendentes): formulário Android de publicação agora aceita tags separadas por vírgula para pesquisa offline; regressão cobre persistência das tags após reinício. Corrigido teste de busca Unicode decomposto que usava sequências de escape literais em vez de caracteres combinantes reais.
 
 - LUNET-511 (busca global, CI/DEVICE pendentes): busca de assets agora aceita termos sem acentos, letras maiúsculas e Unicode decomposto, preservando intactos nomes e metadados originais. Regressão xUnit para título, autor, atribuição e tags.
