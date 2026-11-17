@@ -87,4 +87,31 @@ public sealed class AssistantPublicationTests
         Assert.Contains("layout:article|book|slides|course|video", schema);
         Assert.Contains("placementId", schema);
     }
+
+    /// <summary>CST-178: the agent reviews its publication as the Estúdio does before handing it over, and is told what the review does not check.</summary>
+    [Fact]
+    public async Task TheAgentReviewsThePublicationBeforeDelivering()
+    {
+        var host = new Host();
+        var note = host.Documents.Upsert(new() { Path = "A.md", Content = "# Capítulo\n\n#### Pulei níveis\n\n![](foto.png)\n" });
+        var project = PublicationProject.Create("Livro", note.Id);
+        var path = "Publicações/Livro.publication.json";
+        host.Documents.Upsert(new() { Path = path, Content = PublicationProjectCodec.Serialize(project) });
+        var tool = AssistantPublicationTools.All.Single(t => t.Name == "review_publication");
+        Assert.Equal("read", tool.Access);
+        var text = (await tool.Run(new JsonObject { ["path"] = path }, host)).Content;
+        Assert.Contains("a corrigir", text);
+        Assert.Contains("A.md", text);
+        Assert.Contains("pula do nível", text);
+        Assert.Contains("Não conferido", text);
+        // fixed in the note, the review is clean and still says what it did not look at
+        host.Documents.Upsert(new() { Id = note.Id, Path = note.Path, Content = "# Capítulo\n\nTexto.\n" });
+        text = (await tool.Run(new JsonObject { ["path"] = path }, host)).Content;
+        Assert.StartsWith("Revisão automática sem problemas em 1 seção.", text);
+        Assert.Contains("se os fatos estão certos", text);
+        await Assert.ThrowsAsync<AiToolException>(() => tool.Run(new JsonObject { ["path"] = "Nada.publication.json" }, host));
+        // the method is in the contract the agent reads
+        Assert.Contains("review_publication", AssistantPublicationTools.Schema);
+        Assert.Contains("briefing", AssistantPublicationTools.Schema);
+    }
 }
