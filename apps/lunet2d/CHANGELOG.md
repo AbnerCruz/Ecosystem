@@ -1,4 +1,5 @@
 # Changelog
+- LUNET-511 (PR #962, CI/DEVICE pendentes): importação e exportação ZIP aceitam SHA-256 hexadecimal em minúsculas nos manifestos, coerentemente com a verificação de integridade; regressão cobre importação, ZIP e preservação dos metadados.
 
 - LUNET-511 (PR #962, CI/DEVICE pendentes): importação agora rejeita colisões com arquivos ancestrais durante o preflight, antes de criar staging; teste xUnit cobre preservação de arquivos do projeto e recusa sem importação parcial.
 
