@@ -116,6 +116,9 @@ public sealed class ReusableAssetLibrary
             Bounded(author, 120, "Autor", true), Bounded(license, 120, "Licença"),
             Bounded(attribution, 500, "Atribuição", true), safeTags, [], DateTime.UtcNow);
 
+        // A pre-existing library ID directory may be a symlink to an unrelated location.
+        // Never publish a revision through such a link.
+        if (Directory.Exists(_root)) EnsureNoLinks(_root, id);
         var parent = Path.Combine(_root, id);
         Directory.CreateDirectory(parent);
         var target = VersionDirectory(id, version);
