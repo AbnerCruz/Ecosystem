@@ -98,6 +98,8 @@ public sealed class ReusableAssetLibrary
 
         var id = existingAssetId ?? Guid.NewGuid().ToString("D");
         ValidateId(id);
+        // Validate before reading existing versions: List() must never traverse an asset-ID symlink.
+        if (Directory.Exists(_root)) EnsureNoLinks(_root, id);
         int version = 1;
         if (existingAssetId is not null)
         {
