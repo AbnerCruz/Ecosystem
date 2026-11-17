@@ -14,7 +14,6 @@ public sealed partial class MainView
         if (Formula.IsVisible) { Formula.IsVisible = false; return true; }
         if (Customize.IsVisible) { Customize.Close(); return true; }
         if (_assistant is { IsVisible: true } panel) return panel.HandleBack();
-        if (_studio is { IsVisible: true } studio) { _ = studio.CloseAsync(); return true; }
         if (_publicationsStudio is { IsVisible: true } publications) { publications.Close(); UpdateFloatingNav(); return true; }
         if (StudyBrowser.Back()) return true;
         if (FilePreview.IsVisible)

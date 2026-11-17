@@ -79,7 +79,7 @@ public static partial class PublicationCourse
     {
         var missing = new List<string>();
         var modules = Modules(project, catalog, data, missing);
-        var accent = project.Design.Theme switch { "ocean" => "#075985", "ink" => "#312e81", _ => "#6b4f2a" };
+        var accent = PublicationTheme.Of(project.Design).Accent;
         var title = MarkdownEngine.EscapeHtml(project.Title);
         var sb = new StringBuilder();
         sb.Append("<!doctype html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")

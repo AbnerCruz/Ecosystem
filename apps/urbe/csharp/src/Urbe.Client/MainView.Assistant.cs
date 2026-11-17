@@ -59,13 +59,14 @@ public sealed partial class MainView : IAssistantApp
         _assistantMini.BorderThickness = new Thickness(1);
         _assistantMini.CornerRadius = new CornerRadius(UrbeTokens.Radius.L);
         _assistantMini.BoxShadow = UrbeTokens.Elevation.Low;
-        _assistantMini.Padding = new Thickness(UrbeTokens.Space.M);
-        // An upper-right, bounded companion avoids the keyboard and the note's writing area.
-        _assistantMini.Margin = new Thickness(12, 64, 12, 0);
-        _assistantMini.MaxWidth = 440;
+        _assistantMini.Padding = new Thickness(14, 10, 14, 10);
+        // #955 (owner): the companion sits right above where the person types — over the editor's footer and, with
+        // the keyboard up, over the keyboard (the app shrinks with it) — never over the note's top
+        _assistantMini.Margin = new Thickness(8, 0, 8, 8);
+        _assistantMini.MaxWidth = 560;
         _assistantMini.ZIndex = 19; // Explorer drawer uses ZIndex=1; contextual UI must be above it.
-        _assistantMini.HorizontalAlignment = HorizontalAlignment.Right;
-        _assistantMini.VerticalAlignment = VerticalAlignment.Top;
+        _assistantMini.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _assistantMini.VerticalAlignment = VerticalAlignment.Bottom;
         Avalonia.Automation.AutomationProperties.SetName(_assistantMini, "Assistente contextual");
         _stage.Children.Add(_assistantMini);
         _stage.Children.Add(Ui.UrbeMotion.Pressable(_assistantLauncher));
@@ -97,8 +98,8 @@ public sealed partial class MainView : IAssistantApp
         // a wide window (a tablet, a phone on its side) has the launcher in the same corner: it floats above the
         // footer's Leitura/Edição switch too, and the contextual card above the launcher
         _assistantLauncher.Margin = new Thickness(0, 0, 16, 16 + lift);
-        // Do not lower the companion with the keyboard: its safe anchor is at the top.
-        _assistantMini.Margin = new Thickness(12, 64, 12, 0);
+        _assistantMini.Margin = new Thickness(8, 0, 8, 8 + lift);
+        ResizeAssistantMini();
         if (_radial is null) return;
         _radial.Lift = lift;
     }
@@ -112,10 +113,12 @@ public sealed partial class MainView : IAssistantApp
             && !FilePreview.IsVisible && !StudyBrowser.IsVisible
             // the Explorer's selection bar has every action at the bottom: nothing floats over it
             && !(Explorer.IsVisible && Explorer.Selecting);
-        _assistantLauncher.IsVisible = free && !phone;
+        // nor beside the contextual panel: it has its own Fechar and Abrir conversa
+        _assistantLauncher.IsVisible = free && !phone && !_assistantMini.IsVisible;
         if (_radial is null) return;
         // while writing (keyboard up) the menu would float over the text: it comes back when the block closes
-        _radial.IsVisible = free && phone && !Editor.Writing;
+        // nor while the contextual panel is open: it has its own close, and the button would cover its send
+        _radial.IsVisible = free && phone && !Editor.Writing && !_assistantMini.IsVisible;
         if (!_radial.IsVisible) _radial.Close();
     }
 
@@ -144,13 +147,24 @@ public sealed partial class MainView : IAssistantApp
         _assistantMiniRenderedKey = key;
 
         // Keep the editor alive under this non-modal, bounded surface. Never move keyboard focus.
-        _assistantMini.Child = new ScrollViewer
-        {
-            MaxHeight = 300,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = panel!.CompactContent()
-        };
+        _assistantMini.Child = panel!.CompactContent(AssistantMiniHeight());
+    }
+
+    /// <summary>
+    /// One scroll only (the conversation inside), the composer always in sight; about half the screen, and never taller
+    /// than the room above the editor's footer (a phone on its side has 360 px: the header stays visible).
+    /// </summary>
+    private double AssistantMiniHeight()
+    {
+        var screen = Bounds.Height > 0 ? Bounds.Height : 760;
+        var room = screen - (Editor.IsVisible ? Editor.BottomChrome : 0) - 24;
+        return Math.Round(Math.Min(Math.Clamp(screen * .5, 260, 520), Math.Max(160, room)));
+    }
+
+    /// <summary>Turning the phone or opening the keyboard resizes the open panel in place: what is typed stays.</summary>
+    private void ResizeAssistantMini()
+    {
+        if (_assistantMini is { IsVisible: true, Child: Grid body }) body.Height = AssistantMiniHeight();
 
     }
 
@@ -309,14 +323,32 @@ public sealed partial class MainView : IAssistantApp
 
     Task<string?> IAssistantApp.ReadDataTextAsync(string path) => ReadDataSourceAsync(path);
 
+    /// <summary>
+    /// #963 (exports of 16/11/2026): every reason a document cannot be read is said for what it is — no vault, a path that
+    /// is not in the vault (with the file of the same name when there is one, and how to bring in a chat attachment),
+    /// a file above the limit with its size — instead of one "não encontrado ou acima do limite" the agent kept retrying.
+    /// </summary>
     async Task<byte[]?> IAssistantApp.ReadDocumentBytesAsync(string path, CancellationToken cancellationToken)
     {
-        if (_vault is not { IsConnected: true } vault || !_attachments.Contains(path)) return null;
+        if (_vault is not { IsConnected: true } vault) throw new Urbe.Core.Assistant.AiToolException("Nenhum vault aberto: abra a pasta de notas para ler documentos.");
+        if (!_attachments.Contains(path))
+        {
+            var name = System.IO.Path.GetFileNameWithoutExtension(path);
+            var same = _attachments.Where(a => string.Equals(System.IO.Path.GetExtension(a), System.IO.Path.GetExtension(path), StringComparison.OrdinalIgnoreCase) &&
+                    System.IO.Path.GetFileNameWithoutExtension(a).StartsWith(System.Text.RegularExpressions.Regex.Replace(name, @"\s*\(\d+\)$", ""), StringComparison.OrdinalIgnoreCase))
+                .Take(3).ToList();
+            throw new Urbe.Core.Assistant.AiToolException("Não há arquivo em \"" + path + "\" no vault." +
+                (same.Count > 0 ? " Arquivos com nome parecido: " + string.Join(", ", same) + "." : "") +
+                " Um arquivo anexado ao chat de fora do vault (Downloads, por exemplo) precisa ser trazido para o vault com extract_attachment antes de ser lido." +
+                " Para procurar documentos, list_notes não serve: ele lista só notas.");
+        }
         var isPdf = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
-        if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) return null;
+        if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) throw new Urbe.Core.Assistant.AiToolException("Este tipo de arquivo não é lido por esta ferramenta: " + path + ".");
         var limit = isPdf ? AssistantDocumentTools.MaxFileBytes : AssistantDocumentImageTools.MaxImageBytes;
-        var read = await vault.ReadFileAsync(path, limit, cancellationToken);
-        return read?.Bytes;
+        var read = await vault.ReadFileAsync(path, limit, cancellationToken)
+            ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " está no registro do vault mas não pôde ser aberto agora (foi movido ou apagado fora do Urbe?).");
+        return read.Bytes ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " tem " + PublicationPackage.Size(read.Size) +
+            ", acima do limite de " + PublicationPackage.Size(limit) + " que esta ferramenta lê de uma vez.");
     }
 
     async Task<byte[]?> IAssistantApp.ReadGeneratedImageAsync(string path)
@@ -359,6 +391,8 @@ public sealed partial class MainView : IAssistantApp
         }
         catch (Exception ex) when (ex is not OperationCanceledException) { await Dialogs.AlertAsync("Exportar imagens", StorageProblems.Explain(ex)); }
     }
+
+    IReadOnlyCollection<string> IAssistantApp.OtherFiles => _attachments.ToList();
 
     bool IAssistantApp.FileExists(string path) =>
         _contents.Keys.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase)) ||
@@ -417,7 +451,26 @@ public sealed partial class MainView : IAssistantApp
         return doc;
     }
 
-    async Task<UrbeDocument> IAssistantApp.SaveNoteAsync(UrbeDocument doc, string content)
+    Task<UrbeDocument> IAssistantApp.SaveNoteAsync(UrbeDocument doc, string content) => SaveNoteForAssistantAsync(doc, content, null);
+
+    Task<UrbeDocument> IAssistantApp.SaveNoteAsync(UrbeDocument doc, string content, string by) => SaveNoteForAssistantAsync(doc, content, by);
+
+    /// <summary>
+    /// CST-154: an agent's write keeps the text it replaced in "Versões anteriores", named after the agent (before,
+    /// only typing in the editor was kept: an agent's edit had no version to go back to but the run's Desfazer).
+    /// </summary>
+    private async Task<UrbeDocument> SaveNoteForAssistantAsync(UrbeDocument doc, string content, string? by)
+    {
+        if (by is not null && !_historyReadOnly && _store?.Get(doc.Id) is { } before &&
+            _history.Capture(doc.Id, before.Path, before.Content, content, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), by))
+            _historyDirty = true;
+        if (_historyNote == doc.Path) _historyText = content; // the editor's next change starts from the agent's text
+        var saved = await SaveNoteBodyForAssistantAsync(doc, content);
+        await SaveHistoryAsync();
+        return saved;
+    }
+
+    private async Task<UrbeDocument> SaveNoteBodyForAssistantAsync(UrbeDocument doc, string content)
     {
         RequireWritable();
         bool editing = Editor.IsVisible && Editor.Current?.Path == doc.Path;

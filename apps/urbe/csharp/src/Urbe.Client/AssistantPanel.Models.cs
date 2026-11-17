@@ -92,7 +92,7 @@ public sealed partial class AssistantPanel
             .Select(c => (c.ProviderId, c.Model)).ToHashSet();
         foreach (var group in all.GroupBy(m => m.ProviderId))
         {
-            var models = group.Where(m => inUse.Contains((m.ProviderId, m.ModelId)) || m.Place == AiModelPlace.Device ||
+            var models = group.Where(m => inUse.Contains((m.ProviderId, m.ModelId)) ||
                                           m.Makes(AiModalities.Image) == true || group.Count() <= 6).ToList();
             var rows = new List<Control>();
             foreach (var m in models)

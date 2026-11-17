@@ -646,6 +646,14 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await again.InitializeAsync();
                 Assert.False(again.FirstRun.IsVisible);
+                // CST-104: postponed or done, it is there again in Configurações → Configuração inicial
+                var settings = again.ShowSettingsAsync();
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(again.Dialogs, "Configuração inicial");
+                await settings;
+                for (int i = 0; i < 50 && !again.FirstRun.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(again.FirstRun.IsVisible);
+                Assert.Equal(0, again.FirstRun.Step);   // no folder open in this window yet: it starts at the folder
                 window.Close();
                 return true;
             }

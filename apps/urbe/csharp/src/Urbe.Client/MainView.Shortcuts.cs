@@ -22,10 +22,18 @@ public sealed partial class MainView
         var mine = MyShortcuts();
         string Title(string id) => Search.TitleOf(id) ?? id;
         var items = new List<DialogItem>();
-        foreach (var (shortcut, command) in LegacyKeymap.List().Where(b => !mine.ContainsKey(b.Shortcut)))
+        // CST-140: what in atalhos.json would fail without a word comes first
+        foreach (var problem in UserShortcuts.Problems(_contents.GetValueOrDefault(UserShortcuts.Path), id => Search.TitleOf(id) is not null))
+            items.Add(new DialogItem("Problema em atalhos.json", UrbeTheme.Icons.Close, problem, Run: EditShortcutsAsync));
+        var defaults = LegacyKeymap.List().GroupBy(b => b.Shortcut, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().CommandId, StringComparer.Ordinal);
+        foreach (var (shortcut, command) in defaults.Where(b => !mine.ContainsKey(b.Key)))
             items.Add(new DialogItem(Pretty(shortcut), UrbeTheme.Icons.List, Title(command)));
         foreach (var (shortcut, command) in mine.OrderBy(p => p.Key, StringComparer.Ordinal))
-            items.Add(new DialogItem(Pretty(shortcut), UrbeTheme.Icons.Pencil, command.Length == 0 ? "Desligado (atalhos.json)" : Title(command) + " (seu)"));
+        {
+            // a default it replaces is said, never just gone from the list
+            var replaces = defaults.TryGetValue(shortcut, out var before) && before != command ? " · no lugar de " + Title(before) : "";
+            items.Add(new DialogItem(Pretty(shortcut), UrbeTheme.Icons.Pencil, (command.Length == 0 ? "Desligado (atalhos.json)" : Title(command) + " (seu)") + replaces));
+        }
         items.Add(new DialogItem("Editar meus atalhos", UrbeTheme.Icons.Pencil, UserShortcuts.Path, Run: EditShortcutsAsync));
         return Dialogs.MenuAsync("Atalhos", items);
     }

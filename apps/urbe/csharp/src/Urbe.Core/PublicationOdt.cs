@@ -36,14 +36,22 @@ public static class PublicationOdt
         var pictures = new List<(string Path, string Mime, byte[] Bytes)>();
         int tables = 0;
         var text = new XElement(Office + "text");
-        text.Add(new XElement(Text + "p", new XAttribute(Text + "style-name", "Title"), Safe(doc.Title)));
         var book = doc.Layout == "book";
+        var cover = doc.Chapters.Count > 0 && doc.Chapters[0].Cover;
+        if (!cover) text.Add(new XElement(Text + "p", new XAttribute(Text + "style-name", "Title"), Safe(doc.Title)));
+        // CST-159: the cover note first, then a page break (the empty paragraph starts a page), then the contents
+        if (cover)
+        {
+            Chapter(0, false);
+            text.Add(new XElement(Text + "p", new XAttribute(Text + "style-name", PageBreakStyle(null))));
+        }
         if (book)
             text.Add(new XElement(Text + "table-of-content", new XAttribute(Text + "name", "Sumário"),
                 new XElement(Text + "table-of-content-source", new XAttribute(Text + "outline-level", 3),
                     new XElement(Text + "index-title-template", "Sumário")),
                 new XElement(Text + "index-body", new XElement(Text + "p", "Atualize o sumário: Ferramentas → Atualizar → Tudo."))));
-        for (int c = 0; c < doc.Chapters.Count; c++)
+        for (int c = cover ? 1 : 0; c < doc.Chapters.Count; c++) Chapter(c, book);
+        void Chapter(int c, bool newPage)
         {
             var blocks = PublicationOffice.Flatten(doc.Chapters[c].Blocks).ToList();
             var first = true;
@@ -56,13 +64,13 @@ public static class PublicationOdt
                     while (end < blocks.Count && blocks[end] is OfficeListItem) end++;
                     element = Lists(blocks.Skip(i).Take(end - i).Cast<OfficeListItem>().ToList(), text);
                     i = end - 1;
-                    if (first && c > 0 && book) element.AddFirst(new XAttribute(Text + "continue-numbering", "false"));
+                    if (first && newPage) element.AddFirst(new XAttribute(Text + "continue-numbering", "false"));
                 }
                 else
                 {
                     element = Block(blocks[i]);
                     // a chapter starts on a new page in a book
-                    if (first && c > 0 && book && element.Name.Namespace == Text && element.Name.LocalName is "p" or "h")
+                    if (first && newPage && element.Name.Namespace == Text && element.Name.LocalName is "p" or "h")
                         element.SetAttributeValue(Text + "style-name", PageBreakStyle(element.Attribute(Text + "style-name")?.Value));
                     text.Add(element);
                 }
@@ -70,15 +78,28 @@ public static class PublicationOdt
             }
         }
 
+        // formulas: each one that converts becomes an embedded formula object (MathML) that LibreOffice edits; the rest stay TeX
+        var formulas = new List<(string Dir, XElement Math)>();
+        foreach (var span in text.Descendants(Text + "span").Where(e => (string?)e.Attribute(Text + "style-name") == "SMath").ToList())
+        {
+            var display = (string?)span.Parent?.Attribute(Text + "style-name") == "Formula";
+            if (MathMathMl.Convert(span.Value, display) is not { } math) continue;
+            var dir = "Object " + (formulas.Count + 1);
+            formulas.Add((dir, math));
+            span.ReplaceWith(new XElement(Draw + "frame", new XAttribute(Draw + "name", "Fórmula" + formulas.Count), new XAttribute(Text + "anchor-type", "as-char"),
+                new XElement(Draw + "object", new XAttribute(XLink + "href", "./" + dir), new XAttribute(XLink + "type", "simple"), new XAttribute(XLink + "show", "embed"), new XAttribute(XLink + "actuate", "onLoad"))));
+        }
+        var texLeft = text.Descendants(Text + "span").Any(e => (string?)e.Attribute(Text + "style-name") == "SMath");
         var content = new XElement(Office + "document-content", Namespaces(), new XAttribute(Office + "version", "1.3"),
             new XElement(Office + "automatic-styles", AutomaticStyles(doc)),
             new XElement(Office + "body", text));
-        var styles = new XElement(Office + "document-styles", Namespaces(), new XAttribute(Office + "version", "1.3"), CommonStyles(), PageLayout());
+        var styles = new XElement(Office + "document-styles", Namespaces(), new XAttribute(Office + "version", "1.3"), CommonStyles(doc.Accent), PageLayout());
         var meta = new XElement(Office + "document-meta", Namespaces(), new XAttribute(Office + "version", "1.3"),
             new XElement(Office + "meta", new XElement(DC + "title", Safe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(Meta + "generator", "Urbe")));
         var manifest = new XElement(Manifest + "manifest", new XAttribute(XNamespace.Xmlns + "manifest", Manifest), new XAttribute(Manifest + "version", "1.3"),
             FileEntry("/", Mime), FileEntry("content.xml", "text/xml"), FileEntry("styles.xml", "text/xml"), FileEntry("meta.xml", "text/xml"),
-            pictures.Select(p => FileEntry(p.Path, p.Mime)));
+            pictures.Select(p => FileEntry(p.Path, p.Mime)),
+            formulas.SelectMany(f => new[] { FileEntry(f.Dir + "/", "application/vnd.oasis.opendocument.formula"), FileEntry(f.Dir + "/content.xml", "text/xml") }));
 
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
@@ -88,9 +109,10 @@ public static class PublicationOdt
             Xml(zip, "styles.xml", styles);
             Xml(zip, "meta.xml", meta);
             foreach (var (path, _, bytes) in pictures) Bytes(zip, path, bytes, CompressionLevel.NoCompression);
+            foreach (var (dir, math) in formulas) Xml(zip, dir + "/content.xml", math);
             Xml(zip, "META-INF/manifest.xml", manifest);
         }
-        return new PublicationExport(stream.ToArray(), doc.Limitations);
+        return new PublicationExport(stream.ToArray(), texLeft ? doc.Limitations : doc.Limitations.Where(l => !l.StartsWith("Fórmulas saem como TeX", StringComparison.Ordinal)).ToList());
 
         XElement Block(OfficeBlock block) => block switch
         {
@@ -262,7 +284,8 @@ public static class PublicationOdt
         new XElement(Style + "list-level-label-alignment", new XAttribute(Text + "label-followed-by", "listtab"),
             new XAttribute(Fo + "text-indent", "-0.6cm"), new XAttribute(Fo + "margin-left", Cm(0.6 * level + 0.4))));
 
-    private static XElement CommonStyles()
+    /// <summary>The common styles, the headings and box titles in the publication's accent (CST-161).</summary>
+    private static XElement CommonStyles(string accent)
     {
         XElement Para(string name, string display, string? parent = "Standard", XElement? paragraph = null, XElement? textProps = null, int? outline = null) =>
             new(Style + "style", new XAttribute(Style + "name", name), new XAttribute(Style + "display-name", display), new XAttribute(Style + "family", "paragraph"),
@@ -274,14 +297,14 @@ public static class PublicationOdt
                 new XElement(Style + "text-properties", new XAttribute(Style + "font-name", "Liberation Serif"), new XAttribute(Fo + "font-size", "11pt"), new XAttribute(Fo + "language", "pt"), new XAttribute(Fo + "country", "BR"))),
             Para("Standard", "Standard", null),
             Para("Text_20_body", "Text body", paragraph: new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.25cm"), new XAttribute(Fo + "line-height", "130%"))),
-            Para("Title", "Title", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", "26pt"), new XAttribute(Fo + "color", "#6b4f2a")),
+            Para("Title", "Title", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", "26pt"), new XAttribute(Fo + "color", accent)),
                 paragraph: new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.5cm"))),
             Para("Quotations", "Quotations", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-left", "1cm"), new XAttribute(Fo + "border-left", "1.5pt solid #999999"), new XAttribute(Fo + "padding-left", "0.3cm")),
                 new XElement(Style + "text-properties", new XAttribute(Fo + "font-style", "italic"), new XAttribute(Fo + "color", "#555555"))),
             Para("Preformatted_20_Text", "Preformatted Text", "Standard", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "background-color", "#f3f1ec"), new XAttribute(Fo + "margin-bottom", "0.25cm"), new XAttribute(Fo + "padding", "0.15cm")),
                 new XElement(Style + "text-properties", new XAttribute(Style + "font-name", "Liberation Mono"), new XAttribute(Fo + "font-family", "'Liberation Mono'"), new XAttribute(Fo + "font-size", "9.5pt"))),
             Para("Box", "Box", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "background-color", "#f6f3ee"), new XAttribute(Fo + "border-left", "3pt solid #9c7b45"), new XAttribute(Fo + "padding-left", "0.3cm"), new XAttribute(Fo + "margin-left", "0.3cm"), new XAttribute(Fo + "margin-bottom", "0.1cm"))),
-            Para("Box_20_Title", "Box Title", "Box", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", "#6b4f2a"))),
+            Para("Box_20_Title", "Box Title", "Box", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", accent))),
             Para("Formula", "Formula", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "text-align", "center"))),
             Para("Figure", "Figure", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "text-align", "center"))),
             Para("List_20_Contents", "List Contents", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.1cm"))),
@@ -292,7 +315,7 @@ public static class PublicationOdt
         for (int level = 1; level <= 6; level++)
             styles.Add(Para("Heading_20_" + level, "Heading " + level, "Standard",
                 new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-top", "0.4cm"), new XAttribute(Fo + "margin-bottom", "0.15cm"), new XAttribute(Fo + "keep-with-next", "always")),
-                new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", sizes[level - 1].ToString(CultureInfo.InvariantCulture) + "pt"), new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", "#6b4f2a")), level));
+                new XElement(Style + "text-properties", new XAttribute(Fo + "font-size", sizes[level - 1].ToString(CultureInfo.InvariantCulture) + "pt"), new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", accent)), level));
         return styles;
     }
 

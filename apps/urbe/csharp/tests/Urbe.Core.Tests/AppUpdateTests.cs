@@ -15,6 +15,9 @@ public sealed class AppUpdateTests
     [InlineData("v2.1.0", "2.0.9", true)]
     [InlineData("lixo", "2.0.0", false)]
     [InlineData("2.0.0", null, false)]
+    // #963: a preview says the version it comes from; the next beta is offered to it, its own beta is not
+    [InlineData("2.0.0-beta.57", "2.0.0-beta.56-previa", true)]
+    [InlineData("2.0.0-beta.56", "2.0.0-beta.56-previa", false)]
     public void NewerComparesLikeThe184(string? a, string? b, bool newer) => Assert.Equal(newer, AppUpdate.Newer(a, b));
 
     private static string Release(string tag, string asset, bool draft = false, string host = "https://github.com/AbnerCruz/Ecosystem/releases/download/") =>

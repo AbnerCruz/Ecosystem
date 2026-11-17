@@ -252,6 +252,26 @@ public sealed class AssistantWebResearchTests
         Assert.Empty(h.Requested);
     }
 
+    /// <summary>CST-124: a long page read only in part is a partial reading until its end is read; it never goes back.</summary>
+    [Fact]
+    public async Task APageReadInPartIsAPartialReadingUntilItsEndIsRead()
+    {
+        var page = "<html><head><title>Longa</title></head><body><main>" + string.Concat(Enumerable.Range(1, 300).Select(i => "<p>Parágrafo " + i + ".</p>")) + "</main></body></html>";
+        using var web = new AssistantWebSession(Config(), handler: new Handler(_ => Html(page)), resolver: PublicDns);
+        await web.FetchAsync("https://example.org/longa", 1, 100);
+        Assert.Equal("leitura parcial", Assert.Single(web.Sources).Status);
+        await web.FetchAsync("https://example.org/longa", 101, 180);
+        await web.FetchAsync("https://example.org/longa", 281, 180);
+        Assert.Equal("página acessada", Assert.Single(web.Sources).Status);
+        await web.FetchAsync("https://example.org/longa", 1, 10);   // reading a part again does not undo the whole
+        Assert.Equal("página acessada", Assert.Single(web.Sources).Status);
+        // a jump past unread lines leaves it partial
+        using var gap = new AssistantWebSession(Config(), handler: new Handler(_ => Html(page)), resolver: PublicDns);
+        await gap.FetchAsync("https://example.org/longa", 1, 50);
+        await gap.FetchAsync("https://example.org/longa", 200, 180);
+        Assert.Equal("leitura parcial", Assert.Single(gap.Sources).Status);
+    }
+
     [Fact]
     public void SettingsAndSourcesSurvivePrivateStorageRoundTripWithoutDefaultInternetConsent()
     {

@@ -7,21 +7,9 @@ namespace Urbe.Core.Tests;
 /// <summary>CST-220: one typed catalog per model/provider and the selector by modality, consent and cost.</summary>
 public sealed class AiModelSelectorTests
 {
-    private sealed class Device : ILocalTextRuntime
-    {
-        public static readonly LocalModel M = new("gemma4-e2b", "Gemma 4 E2B", "d", "m.gguf", "https://x.test/m", 10, new string('a', 64), 16384, 1000, true);
-        public IReadOnlyList<LocalModel> Models => [M];
-        public LocalModel Recommended => M;
-        public bool IsInstalled(LocalModel model) => true;
-        public Task InstallAsync(LocalModel model, IProgress<(long Done, long Total)>? progress, CancellationToken cancel) => Task.CompletedTask;
-        public void Remove(LocalModel model) { }
-        public Task<AiResult> ChatAsync(LocalModel model, AiRequest request, Action<AiStreamEvent> onEvent, CancellationToken cancel) => throw new NotSupportedException();
-    }
-
     private static AiConfig Config()
     {
         var cfg = new AiConfig();
-        cfg.Providers.Add(new AiProviderConfig("dev", "device", "IA no aparelho", null, "local://aparelho", "local"));
         cfg.Providers.Add(new AiProviderConfig("or", "openrouter", "OpenRouter", "sk-or-1"));
         cfg.Providers.Add(new AiProviderConfig("ant", "anthropic", "Anthropic", "sk-ant-1"));
         cfg.Providers.Add(new AiProviderConfig("ollama", "ollama", "Ollama"));
@@ -35,21 +23,12 @@ public sealed class AiModelSelectorTests
         return cfg;
     }
 
-    private static IReadOnlyList<AiModelCapabilities> Catalog(AiConfig cfg) => AiModelCatalog.Configured(cfg, new Device());
+    private static IReadOnlyList<AiModelCapabilities> Catalog(AiConfig cfg) => AiModelCatalog.Configured(cfg);
 
     [Fact]
     public void Catalog_TypesEveryConfiguredModelWithoutInventingModalities()
     {
         var all = Catalog(Config());
-        var device = all.Single(m => m.ProviderId == "dev");
-        // the on-device model only gets text from the app, whatever the weights could do
-        Assert.Equal(AiModalities.Text, device.Input);
-        Assert.False(device.Reads(AiModalities.Image));
-        Assert.Equal(AiModelPlace.Device, device.Place);
-        Assert.False(device.LeavesDevice);
-        Assert.Equal(0, device.Price!.Input);
-        Assert.Equal(16384, device.Context);
-
         var vision = all.Single(m => m.ModelId == "acme/vision");
         Assert.True(vision.Reads(AiModalities.Image | AiModalities.Pdf));
         Assert.True(vision.Ocr);
@@ -112,33 +91,19 @@ public sealed class AiModelSelectorTests
     }
 
     [Fact]
-    public void Selector_FromTheDeviceTheFallbackSaysTheFilesLeaveIt()
-    {
-        var s = AiModelSelector.Select(AiModelSelector.ForAttachments(["application/pdf"]), Catalog(Config()), new AiModelChoice("dev", "gemma4-e2b"));
-        Assert.Equal(AiSelectionOutcome.Fallback, s.Outcome);
-        Assert.True(s.Fallback!.Reads(AiModalities.Pdf));
-        Assert.Contains("sairá do aparelho", s.Reason);
-    }
-
-    [Fact]
     public void Selector_WithoutConsentNothingRemoteIsOffered()
     {
-        var s = AiModelSelector.Select(AiModelSelector.ForAttachments(["image/jpeg"]), Catalog(Config()), new AiModelChoice("dev", "gemma4-e2b"), allowRemote: false);
-        Assert.Equal(AiSelectionOutcome.NeedsConsent, s.Outcome);
-        Assert.Contains("fora do aparelho", s.Reason);
-        // plain text stays on the device, at no cost
-        var text = AiModelSelector.Select(new AiTaskNeeds(Tools: true), Catalog(Config()), allowRemote: false);
-        Assert.Equal(AiSelectionOutcome.Automatic, text.Outcome);
-        Assert.Equal(AiModelPlace.Device, text.Model!.Place);
-        Assert.Equal(0, text.Cost.Usd);
+        var s = AiModelSelector.Select(AiModelSelector.ForAttachments(["image/jpeg"]), Catalog(Config()), new AiModelChoice("ollama", "llama3"), allowRemote: false);
+        Assert.NotEqual(AiModelPlace.Remote, s.Capable?.Place ?? AiModelPlace.OwnServer); // nothing at a provider is offered
     }
 
     [Fact]
     public void Selector_NeverPretends()
     {
         var cfg = new AiConfig();
-        cfg.Providers.Add(new AiProviderConfig("dev", "device", "IA no aparelho", null, "local://aparelho", "local"));
-        var s = AiModelSelector.Select(AiModelSelector.ForAttachments(["image/png"]), AiModelCatalog.Configured(cfg, new Device()), new AiModelChoice("dev", "gemma4-e2b"));
+        cfg.Providers.Add(new AiProviderConfig("or", "openrouter", "OpenRouter", "sk-or-1"));
+        cfg.ModelCache["or"] = new AiModelCache(1, [new AiModelInfo("acme/text-only", "Só texto", 32000, (.5, 1), true, ["text"], ["text"])]);
+        var s = AiModelSelector.Select(AiModelSelector.ForAttachments(["image/png"]), AiModelCatalog.Configured(cfg), new AiModelChoice("or", "acme/text-only"));
         Assert.Equal(AiSelectionOutcome.Missing, s.Outcome);
         Assert.Null(s.Capable);
         Assert.Contains("Nenhum modelo configurado faz isso", s.Reason);

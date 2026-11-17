@@ -656,6 +656,8 @@ public sealed class VisualSurface : StackPanel
             ProgressNoteResolver = ProgressNoteResolver,
             DataReader = DataReader,
             ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(r.Block, body),
+            ProgressStepRequested = _readOnly ? null : delta => StepProgress(r.Block, delta),
+            ProgressPendingRequested = ProgressPending,
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             WebLinkTapped = url => WebLinkTapped?.Invoke(url),
             // while a block is being written, a link of the note is a place for the caret like any other text
@@ -670,7 +672,40 @@ public sealed class VisualSurface : StackPanel
         };
         // seals drawn where they belong (one per block, after its text), whatever an older version left in the file (UC-51)
         var shown = AiAuthorship.Canonical(source);
-        var holder = new Border { Background = Brushes.Transparent, Child = container ? reader.BuildMarkdown(shown) : reader.Build(NoteMarks.Parse(shown)) };
+        // Fonte by blocks: each block drawn as its own Markdown, plain, so a long note costs one block per key
+        Control drawn;
+        if (Raw)
+        {
+            TextBlock Line(string text)
+            {
+                var t = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.MonoFont,
+                    FontSize = TextSize * .9, LineHeight = TextSize * .9 * LineFactor, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
+                t.Classes.Add(MarkdownReader.TextClass);
+                return t;
+            }
+            var raw = AiAuthorship.Strip(source).TrimEnd('\n');
+            if (!RawLineNumbers) drawn = new Border { Margin = new Thickness(0, 2), Child = Line(raw) };
+            else
+            {
+                // CST-147 in Fonte by blocks: each source line with its number (the lines joined are the block's text)
+                var rows = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(0, 2) };
+                int first = LineOf(block.Start), row = 0;
+                foreach (var text in raw.Split('\n'))
+                {
+                    rows.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                    var number = new TextBlock { Text = (first + row).ToString(System.Globalization.CultureInfo.InvariantCulture), FontFamily = UrbeTheme.MonoFont,
+                        FontSize = TextSize * .75, LineHeight = TextSize * .9 * LineFactor, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                        TextAlignment = TextAlignment.Right, MinWidth = TextSize * 2.2, Margin = new Thickness(0, 0, 10, 0), IsHitTestVisible = false };
+                    var line = Line(text);
+                    Grid.SetRow(number, row); Grid.SetRow(line, row); Grid.SetColumn(line, 1);
+                    rows.Children.Add(number); rows.Children.Add(line);
+                    row++;
+                }
+                drawn = rows;
+            }
+        }
+        else drawn = container ? reader.BuildMarkdown(shown) : reader.Build(NoteMarks.Parse(shown));
+        var holder = new Border { Background = Brushes.Transparent, Child = drawn };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
         // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")
@@ -701,9 +736,41 @@ public sealed class VisualSurface : StackPanel
         return holder;
     }
 
+    /// <summary>The blocks drawn as their plain Markdown (Fonte by blocks), not formatted.</summary>
+    public bool Raw { get; set; }
+    /// <summary>In <see cref="Raw"/>, each source line with its number on the left.</summary>
+    public bool RawLineNumbers { get; set; }
+
+    private string? _linesOf;
+    private int[] _lineStarts = [];
+    // the 1-based line of an offset of the note (line starts cached per text)
+    private int LineOf(int offset)
+    {
+        if (!ReferenceEquals(_linesOf, _text))
+        {
+            var starts = new List<int> { 0 };
+            for (int i = 0; i < _text.Length; i++) if (_text[i] == '\n') starts.Add(i + 1);
+            _lineStarts = [.. starts];
+            _linesOf = _text;
+        }
+        int at = Array.BinarySearch(_lineStarts, offset);
+        return (at >= 0 ? at : ~at - 1) + 1;
+    }
+
     public Func<string, string?>? ProgressNoteResolver { get; set; }
     public Func<string, Task<string?>>? DataReader { get; set; }
     public Func<string, Task<string?>>? AskProgress { get; set; }
+
+    /// <summary>CST-228: the pending tasks a checklist summary counted (their lines in the note).</summary>
+    public Action<NoteProgressResult>? ProgressPending { get; set; }
+
+    private void StepProgress(MarkdownBlock block, decimal delta)
+    {
+        if (_readOnly || NoteProgress.Step(_text, block.Start, block.End, delta) is not { } changed) return;
+        _text = changed;
+        TextEdited?.Invoke(_text);
+        Rebuild();
+    }
 
     private async Task EditProgressAsync(MarkdownBlock block, string body)
     {
@@ -1468,9 +1535,10 @@ public sealed class VisualSurface : StackPanel
     {
         if (edit is null || _box is null) return;
         EditorInput.Replace(_box, edit.Text);
+        // the caret first: moving it after the selection collapsed a word just turned into `código` (CST-020)
+        _box.CaretIndex = edit.SelectionEnd;
         _box.SelectionStart = edit.SelectionStart;
         _box.SelectionEnd = edit.SelectionEnd;
-        _box.CaretIndex = edit.SelectionEnd;
         UpdateTools();
     }
 
@@ -1535,7 +1603,7 @@ public sealed class VisualSurface : StackPanel
     /// out (removeAtom: a display formula leaves its block empty, which then goes).
     /// </summary>
     /// <summary>The comments on a word (UC-49): shown, and the one written added at the end of the run, in the .md.</summary>
-    public Func<IReadOnlyList<string>, Task<string?>>? AskComment { get; set; }
+    public Func<IReadOnlyList<string>, Task<CommentChange?>>? AskComment { get; set; }
 
     /// <summary>UC-80: a request to an agent asked from the note (its line's button, or Ctrl+Enter on it); the line in the note's text.</summary>
     public event Action<NoteMarks.AgentCall>? AgentAsked;
@@ -1568,13 +1636,16 @@ public sealed class VisualSurface : StackPanel
         if (block is null) return;
         var groups = NoteMarks.CommentGroups(_text[block.Start..block.End]);
         if (index < 0 || index >= groups.Count) return;
-        string? added;
+        CommentChange? change;
+        var baseline = _text;
         _prompting = true;
-        try { added = await ask(groups[index].Comments); }
+        try { change = await ask(groups[index].Comments); }
         finally { _prompting = false; }
-        if (_readOnly || string.IsNullOrWhiteSpace(added)) return;
+        // the window never writes into a note or a version opened while it was open
+        if (_readOnly || change is null || _text != baseline) return;
         var g = groups[index];
-        var source = NoteMarks.AddComment(_text[block.Start..block.End], g, added);
+        var block0 = _text[block.Start..block.End];
+        var source = change.Index is { } at ? NoteMarks.ChangeComment(block0, g, at, change.Text) : NoteMarks.AddComment(block0, g, change.Text!);
         _text = _text[..block.Start] + source + _text[block.End..];
         Rebuild();
         TextEdited?.Invoke(_text);
@@ -1714,12 +1785,20 @@ public sealed class VisualSurface : StackPanel
         var at = b;
         var existing = NoteMarks.CommentGroups(text).FirstOrDefault(g => g.Start == b);
         if (existing is not null) at = existing.Start + existing.Length;
-        string? added;
+        CommentChange? change;
         _prompting = true;
-        try { added = await ask(existing?.Comments ?? []); }
+        try { change = await ask(existing?.Comments ?? []); }
         finally { _prompting = false; }
-        if (string.IsNullOrWhiteSpace(added) || _box is null || _box.Text != text) return;
-        var quoted = NoteMarks.Quote(added);
+        if (change is null || _box is null || _box.Text != text) return;
+        if (change.Index is { } index && existing is not null)
+        {
+            var changed = NoteMarks.ChangeComment(text, existing, index, change.Text);
+            var caret = Math.Min(at + changed.Length - text.Length, changed.Length);
+            Apply(new LegacyEditorTools.TextEdit(changed, caret, caret));
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(change.Text)) return;
+        var quoted = NoteMarks.Quote(change.Text);
         Apply(new LegacyEditorTools.TextEdit(text.Insert(at, quoted), at + quoted.Length, at + quoted.Length));
     }
 

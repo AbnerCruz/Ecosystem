@@ -111,6 +111,8 @@ public sealed class AiRunRecord
     public string? Error { get; set; }
     public AiExecutionMetrics Efficiency { get; set; } = new();
     public bool Reverted { get; set; }
+    /// <summary>CST-086: the memories sent to the model in this run (their ids), so the answer shows what it drew on.</summary>
+    public List<string> MemoryUsed { get; set; } = [];
 }
 
 /// <summary>A conversation: its messages, its agent, model and permissions, and its last runs.</summary>
@@ -151,15 +153,50 @@ public sealed record AiModelChoice(string ProviderId, string Model);
 public sealed record AiInstructionBlock(string Title, string Content);
 
 /// <summary>Assistant configuration, with backward-compatible independent image and agent preferences.</summary>
+/// <summary>DEC-0061: an MCP server the person added, and what each of its tools may do ("read", "write"; missing = off).</summary>
+public sealed class AiMcpServer
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Url { get; set; } = "";
+    /// <summary>A local server on the computer: the program and its arguments (instead of <see cref="Url"/>).</summary>
+    public string? Command { get; set; }
+    public List<string> Arguments { get; set; } = [];
+    /// <summary>A bearer token for the server, when it asks for one (kept with the providers' keys).</summary>
+    public string? Token { get; set; }
+    public Dictionary<string, string> Tools { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>The tools the server offered when last asked: name → (description, input schema as JSON).</summary>
+    public Dictionary<string, AiMcpToolInfo> Known { get; set; } = new(StringComparer.Ordinal);
+}
+
+public sealed class AiMcpToolInfo
+{
+    public string Description { get; set; } = "";
+    public string Schema { get; set; } = "{\"type\":\"object\"}";
+}
+
 public sealed class AiConfig
 {
     public int Version { get; set; } = 1;
+    public List<AiMcpServer> McpServers { get; set; } = [];
     public int AgentWorkspaceVersion { get; set; }
     public Dictionary<string, string> AgentPolicies { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Explicit capability scope per agent. Missing values preserve the agent's legacy Tools ceiling.</summary>
     public Dictionary<string, string> AgentToolScopes { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Only an explicit setting allows unprompted agent-to-agent consultation.</summary>
     public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>The device capabilities the person allowed the agents (alarme, agenda, email); none by default (NN-016).</summary>
+    public HashSet<string> DeviceAccess { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>CST-173: external generative video (paid per second) is off until the person turns it on.</summary>
+    public bool GenerativeVideo { get; set; }
+    /// <summary>
+    /// CST-132: the keys and tokens the person registered (providers, web search, MCP servers), for taking them out of
+    /// anything that leaves the app. Shorter than 8 characters is not told apart from ordinary words and is skipped.
+    /// </summary>
+    public IEnumerable<string> Secrets() =>
+        Providers.Select(p => p.ApiKey).Append(Web.ApiKey).Concat(McpServers.Select(m => m.Token))
+            .Select(x => x?.Trim() ?? "").Where(x => x.Length >= 8).Distinct(StringComparer.Ordinal);
+
     public string ToolScopeFor(AiAgentDef agent) => AgentToolScopes.GetValueOrDefault(agent.Id) is "read" or "write" or "all"
         ? AgentToolScopes[agent.Id] : agent.Tools;
     public Dictionary<string, AiModelChoice> AgentImages { get; set; } = new(StringComparer.Ordinal);
@@ -180,6 +217,8 @@ public sealed class AiConfig
     public string Language { get; set; } = "";
     /// <summary>CST-094: record each run's times and counts (on this device, in the conversation); off keeps only the old counters.</summary>
     public bool MeasureRuns { get; set; } = true;
+    /// <summary>The agent's steps open by default under each request (the most asked-for option in the community).</summary>
+    public bool StepsOpen { get; set; }
     /// <summary>Facts to remember, by vault name ('*' for every vault).</summary>
     public Dictionary<string, List<string>> Memory { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Versioned structured memories. Old entries in Memory are migrated on first write.</summary>
@@ -202,6 +241,19 @@ public sealed class AiConfig
             AgentModels.TryGetValue("geral", out var assistant)) return assistant;
         var id = conversation.ProviderId ?? ProviderId ?? Providers.FirstOrDefault()?.Id ?? "";
         return new AiModelChoice(id, conversation.Model.Length > 0 ? conversation.Model : Model);
+    }
+
+    /// <summary>
+    /// The model a turn runs on, written into the conversation as it starts: the agent's choice wins over the one the
+    /// conversation recorded earlier (owner's audit of the Alice export, 15/11/2026: the conversation said
+    /// gpt-6-luna-pro while the calls went to the agent's deepseek). The record never names a model that was not used.
+    /// </summary>
+    public AiModelChoice UseModelFor(AiConversation conversation)
+    {
+        var choice = ModelFor(conversation);
+        conversation.ProviderId = choice.ProviderId.Length > 0 ? choice.ProviderId : conversation.ProviderId;
+        conversation.Model = choice.Model;
+        return choice;
     }
 
     public AiAgentDef AgentWithInstructions(AiAgentDef agent)
@@ -292,7 +344,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
     }
 
     /// <summary>Initialize agent workspaces once. Never rewrites conversations or infers write grants.</summary>
-    public AiConfig InitializeAgentWorkspaces(ILocalTextRuntime? runtime)
+    public AiConfig InitializeAgentWorkspaces()
     {
         var original = storage.Read(ConfigFile);
         if (original is not null)
@@ -317,16 +369,6 @@ public sealed class AssistantStore(IAssistantStorage storage)
             if (config.CustomAgents.Any(a => a.Id == id)) continue;
             var template = AssistantAgent.Agents.FirstOrDefault(a => a.Id == id);
             config.CustomAgents.Add(template ?? new AiAgentDef(id, "Agente preservado " + id, "sparkle", "", "read", false, ""));
-        }
-        // Preserve explicit choices, including the model in an older conversation. An unconfigured
-        // Assistant gets the local default even when another preference already created config.json.
-        if (runtime is not null && !config.AgentModels.ContainsKey("geral") && config.Model.Length == 0 &&
-            !conversations.Any(c => c.AgentId == "geral" && c.Model.Length > 0))
-        {
-            var provider = config.Providers.FirstOrDefault(p => p.Preset == "device") ??
-                new AiProviderConfig(config.Providers.Any(p => p.Id == "device") ? AssistantAgent.NewId("p") : "device", "device", "IA no aparelho", "", "");
-            if (!config.Providers.Any(p => p.Id == provider.Id)) config.Providers.Add(provider);
-            config.AgentModels["geral"] = new AiModelChoice(provider.Id, runtime.Recommended.Id);
         }
         if (original is not null && !string.IsNullOrWhiteSpace(config.ImageProviderId) && config.ImageModel.Length > 0)
             foreach (var id in retained.Append("geral"))
@@ -519,13 +561,23 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ["timeoutSeconds"] = c.Web.TimeoutSeconds, ["maxDownloadBytes"] = c.Web.MaxDownloadBytes,
             ["agentAccess"] = webAgents
         };
+        // DEC-0061: the MCP servers, their permissions per tool and the tools they offered
+        var mcp = new JsonArray(c.McpServers.Select(m => (JsonNode)new JsonObject
+        {
+            ["id"] = m.Id, ["name"] = m.Name, ["url"] = m.Url, ["token"] = m.Token ?? "", ["command"] = m.Command ?? "",
+            ["arguments"] = new JsonArray(m.Arguments.Select(a => (JsonNode)a).ToArray()),
+            ["tools"] = new JsonObject(m.Tools.OrderBy(t => t.Key, StringComparer.Ordinal).Select(t => KeyValuePair.Create(t.Key, (JsonNode?)t.Value))),
+            ["known"] = new JsonObject(m.Known.OrderBy(t => t.Key, StringComparer.Ordinal).Select(t => KeyValuePair.Create(t.Key, (JsonNode?)new JsonObject { ["description"] = t.Value.Description, ["schema"] = t.Value.Schema })))
+        }).ToArray());
         return new JsonObject
         {
             ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
-            ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
+            ["generativeVideo"] = c.GenerativeVideo,
+            ["deviceAccess"] = new JsonArray(c.DeviceAccess.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()),
+            ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
-            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["language"] = c.Language, ["measureRuns"] = c.MeasureRuns, ["memory"] = memory,
+            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["language"] = c.Language, ["measureRuns"] = c.MeasureRuns, ["stepsOpen"] = c.StepsOpen, ["memory"] = memory,
             ["memorySchemaVersion"] = 2,
             ["memoryRecords"] = JsonSerializer.SerializeToNode(c.MemoryRecords, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
             ["autoCaptureEpisodes"] = c.AutoCaptureEpisodes,
@@ -544,6 +596,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             Model = Str(o["model"]),
             ImageProviderId = o["imageProviderId"] is JsonValue iv && iv.TryGetValue<string>(out var imageId) ? imageId : null,
             ImageModel = Str(o["imageModel"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]), Language = Str(o["language"]), MeasureRuns = o["measureRuns"] is not JsonValue measure || !measure.TryGetValue<bool>(out var measured) || measured,
+            StepsOpen = o["stepsOpen"] is JsonValue open && open.TryGetValue<bool>(out var opened) && opened,
             CustomAgents = (o["customAgents"] as JsonArray ?? []).OfType<JsonObject>().Select(AgentFromJson).ToList(),
             MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"]),
             AutoCaptureEpisodes = o["autoCaptureEpisodes"] is null || (bool?)o["autoCaptureEpisodes"] == true,
@@ -552,6 +605,11 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["agentPolicies"] is JsonObject policies)
             foreach (var (id, policy) in policies) c.AgentPolicies[id] = Str(policy, "readonly");
+        c.GenerativeVideo = o["generativeVideo"] is JsonValue gv && gv.TryGetValue<bool>(out var on) && on;
+        if (o["deviceAccess"] is JsonArray device)
+            foreach (var item in device)
+                if (item is JsonValue v && v.TryGetValue<string>(out var name) && name is AssistantDeviceTools.Alarm or AssistantDeviceTools.Calendar or AssistantDeviceTools.Email)
+                    c.DeviceAccess.Add(name);
         if (o["agentDelegationAuto"] is JsonObject delegation)
             foreach (var (id, allowed) in delegation) c.AgentDelegationAuto[id] = (bool?)allowed ?? false;
         if (o["agentToolScopes"] is JsonObject scopes)
@@ -560,6 +618,16 @@ public sealed class AssistantStore(IAssistantStorage storage)
         if (o["agentImages"] is JsonObject images)
             foreach (var (id, value) in images)
                 if (value is JsonObject image) c.AgentImages[id] = new AiModelChoice(Str(image["providerId"]), Str(image["model"]));
+        if (o["mcpServers"] is JsonArray servers)
+            foreach (var m in servers.OfType<JsonObject>())
+                c.McpServers.Add(new AiMcpServer
+                {
+                    Id = Str(m["id"]), Name = Str(m["name"]), Url = Str(m["url"]), Token = Str(m["token"]) is { Length: > 0 } t ? t : null,
+                    Command = Str(m["command"]) is { Length: > 0 } command ? command : null,
+                    Arguments = (m["arguments"] as JsonArray ?? []).Select(a => Str(a)).ToList(),
+                    Tools = (m["tools"] as JsonObject ?? []).Where(x => Str(x.Value) is "read" or "write").ToDictionary(x => x.Key, x => Str(x.Value), StringComparer.Ordinal),
+                    Known = (m["known"] as JsonObject ?? []).Where(x => x.Value is JsonObject).ToDictionary(x => x.Key, x => new AiMcpToolInfo { Description = Str(x.Value!["description"]), Schema = Str(x.Value!["schema"], "{\"type\":\"object\"}") }, StringComparer.Ordinal)
+                });
         if (o["web"] is JsonObject w)
         {
             // Preserve an explicit old offline preference instead of silently restoring network access.
@@ -594,7 +662,22 @@ public sealed class AssistantStore(IAssistantStorage storage)
         if (o["modelCache"] is JsonObject mc)
             foreach (var (k, v) in mc)
                 if (v is JsonObject e) c.ModelCache[k] = new AiModelCache(Num(e["at"]), (e["list"] as JsonArray ?? []).OfType<JsonObject>().Select(ModelFromJson).ToList());
+        DropOfflineAi(c);
         return c;
+    }
+
+    /// <summary>
+    /// The offline AI was removed (16/11/2026): its provider leaves a saved configuration, and an agent that used it has no
+    /// model until the person picks one (never silently another provider). The rest of the configuration stays as it was.
+    /// </summary>
+    private static void DropOfflineAi(AiConfig c)
+    {
+        var gone = c.Providers.Where(p => p.Preset == "device" || p.Kind == "local").Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
+        if (gone.Count == 0) return;
+        c.Providers.RemoveAll(p => gone.Contains(p.Id));
+        foreach (var id in c.AgentModels.Where(kv => gone.Contains(kv.Value.ProviderId)).Select(kv => kv.Key).ToList()) c.AgentModels.Remove(id);
+        foreach (var id in gone) c.ModelCache.Remove(id);
+        if (c.ProviderId is { } chosen && gone.Contains(chosen)) { c.ProviderId = null; c.Model = ""; }
     }
 
     private static JsonNode? SnapToJson(AiNoteSnap? s) => s is null ? null : new JsonObject { ["path"] = s.Path, ["content"] = s.Content };

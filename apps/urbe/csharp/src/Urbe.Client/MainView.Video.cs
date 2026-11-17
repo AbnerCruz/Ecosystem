@@ -21,8 +21,11 @@ public sealed partial class MainView
     {
         studio.VideoExportRequested += () => _ = ExportPublicationVideoAsync();
         studio.VideoCancelRequested += () => _videoExport?.Cancel();
-        studio.SubtitlesRequested += () => _ = ExportPublicationSubtitlesAsync();
+        studio.SubtitlesRequested += format => _ = ExportPublicationSubtitlesAsync(format);
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
+        studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
+        studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
+        studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
     }
 
@@ -114,10 +117,118 @@ public sealed partial class MainView
         var clip = new VideoAudioClip
         {
             Kind = VideoAudioClip.Kinds[k], Path = sounds[c], Volume = k == 1 ? 0.6 : 1,
+            // music comes in and leaves softly (1 s in, 2 s out); a voice or an effect starts and stops as recorded
+            FadeIn = k == 1 ? 1 : 0, FadeOut = k == 1 ? 2 : 0,
             Start = double.Parse(start.Replace(',', '.'), CultureInfo.InvariantCulture)
         };
         _publicationsStudio.UpdateProject(project with { Video = project.Video! with { Audio = [.. project.Video.Audio, clip] } });
         ShowLifeNotice("Áudio adicionado à trilha do vídeo: " + System.IO.Path.GetFileName(clip.Path));
+    }
+
+    /// <summary>
+    /// CST-172: the narration made by the device's voice (offline, no provider, nothing paid): each scene's script, as
+    /// written in its note, becomes a WAV in Narração/&lt;publicação&gt;/ placed at the scene's start as a voice track. Narrating
+    /// again replaces those tracks (the old files stay in the vault).
+    /// </summary>
+    public async Task NarratePublicationVideoAsync()
+    {
+        var draft = _publicationDraft;
+        if (PlatformAudio.SynthesizeToWav is not { } speak || draft is null || await PrepareVideoAsync(draft) is not { } prepared) return;
+        var (project, timeline) = prepared;
+        var scenes = timeline.Scenes.Where(s => s.Script.Trim().Length > 0).ToList();
+        if (scenes.Count == 0) { await Dialogs.AlertAsync("Narrar o roteiro", "As notas das cenas ainda não têm texto para narrar."); return; }
+        var folder = "Narração/" + ArtifactModel.SafeName(project.Title) + "/";
+        var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "urbe-narration-" + Guid.NewGuid().ToString("N"));
+        var clips = new List<VideoAudioClip>();
+        using var cancel = new CancellationTokenSource();
+        try
+        {
+            Directory.CreateDirectory(temp);
+            for (int i = 0; i < scenes.Count; i++)
+            {
+                _notice.Show("Narrando a cena " + (i + 1) + " de " + scenes.Count, TimeSpan.FromHours(1), "Cancelar", cancel.Cancel);
+                var wav = System.IO.Path.Combine(temp, i + ".wav");
+                if (!await speak(scenes[i].Script.Trim(), 0, wav, cancel.Token))
+                {
+                    _notice.Hide();
+                    await Dialogs.AlertAsync("Narrar o roteiro", "A voz do aparelho não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
+                    return;
+                }
+                var path = folder + "Cena " + (i + 1) + ".wav";
+                for (int n = 2; _attachments.Contains(path); n++) path = folder + "Cena " + (i + 1) + " (" + n + ").wav";
+                await ((IAssistantApp)this).CreateBinaryFileAsync(path, await File.ReadAllBytesAsync(wav, cancel.Token));
+                clips.Add(new VideoAudioClip { Kind = "voice", Path = path, Start = scenes[i].Start });
+            }
+            if (!SameVideoDraft(draft) || _publicationsStudio?.Project is not { Video: { } video } current) return;
+            var kept = video.Audio.Where(a => !(a.Kind == "voice" && a.Path.StartsWith(folder, StringComparison.Ordinal))).ToList();
+            _publicationsStudio.UpdateProject(current with { Video = video with { Audio = [.. kept, .. clips] } });
+            _notice.Show("Narração pronta: " + clips.Count + (clips.Count == 1 ? " cena." : " cenas."), TimeSpan.FromSeconds(6), kind: Ui.ToastKind.Success);
+        }
+        catch (OperationCanceledException) { _notice.Show("Narração parada; o vídeo não mudou."); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            _notice.Hide();
+            await Dialogs.AlertAsync("Narrar o roteiro", StorageProblems.Explain(ex));
+        }
+        finally { try { Directory.Delete(temp, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+    }
+
+    /// <summary>The track's shape (VideoAudio.Waveform), or "" when the file cannot be read or decoded here.</summary>
+    private async Task<string> AudioShapeAsync(string path)
+    {
+        if (_vault is not { } vault) return "";
+        var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "urbe-shape-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            if ((await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes is not { } bytes) return "";
+            Directory.CreateDirectory(temp);
+            var source = System.IO.Path.Combine(temp, "fonte" + System.IO.Path.GetExtension(path));
+            var wav = System.IO.Path.Combine(temp, "som.wav");
+            await File.WriteAllBytesAsync(source, bytes);
+            if (!await PlatformVideo.ToWavAsync(source, wav, CancellationToken.None)) return "";
+            await using var stream = File.OpenRead(wav);
+            return VideoAudio.Waveform(stream);
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException) { return ""; }
+        finally { try { Directory.Delete(temp, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+    }
+
+    /// <summary>CST-172: one track of the video's sound: its volume (0–400 %), how it comes in and leaves, or out.</summary>
+    public async Task AdjustPublicationAudioAsync()
+    {
+        var draft = _publicationDraft;
+        if (_publicationsStudio?.Project is not { Video: { Audio.Count: > 0 } video } project) return;
+        static string Kind(string k) => k switch { "voice" => "Voz", "music" => "Música", _ => "Efeito" };
+        static string N(double v) => v.ToString("0.##", CultureInfo.GetCultureInfo("pt-BR"));
+        var pick = await Dialogs.ChooseAsync("Áudios do vídeo", video.Audio.Select(a => new DialogItem(System.IO.Path.GetFileName(a.Path),
+            Detail: Kind(a.Kind) + " · começa em " + N(a.Start) + " s · volume " + N(a.Volume * 100) + " % · entra em " + N(a.FadeIn) + " s, sai em " + N(a.FadeOut) + " s")).ToList());
+        if (pick is not { } i || !SameVideoDraft(draft)) return;
+        var clip = video.Audio[i];
+        var shape = await AudioShapeAsync(clip.Path);
+        var action = await Dialogs.ChooseAsync(System.IO.Path.GetFileName(clip.Path),
+            [new DialogItem("Volume"), new DialogItem("Entrada suave"), new DialogItem("Saída suave"), new DialogItem("Tirar do vídeo")],
+            shape.Length > 0 ? shape : null);
+        if (action is not { } a || !SameVideoDraft(draft)) return;
+        VideoAudioClip? changed = clip;
+        if (a == 3) changed = null;
+        else
+        {
+            var (title, label, value, max) = a switch
+            {
+                0 => ("Volume", "Porcentagem (100 = como foi gravado)", clip.Volume * 100, 400.0),
+                1 => ("Entrada suave", "Segundos subindo do silêncio (0 = começa direto)", clip.FadeIn, 60.0),
+                _ => ("Saída suave", "Segundos descendo até o silêncio (0 = termina direto)", clip.FadeOut, 60.0)
+            };
+            var typed = await Dialogs.PromptAsync(new PromptOptions(title, Label: label, Value: N(value), Confirm: "Aplicar",
+                Validate: v => double.TryParse(v.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var x) && x >= 0 && x <= max ? null : "Escreva um número de 0 a " + N(max) + "."));
+            if (typed is null || !SameVideoDraft(draft)) return;
+            var x = double.Parse(typed.Replace(',', '.'), CultureInfo.InvariantCulture);
+            changed = a switch { 0 => clip with { Volume = x / 100 }, 1 => clip with { FadeIn = x }, _ => clip with { FadeOut = x } };
+        }
+        var audio = video.Audio.ToList();
+        if (changed is null) audio.RemoveAt(i); else audio[i] = changed;
+        _publicationsStudio.UpdateProject(project with { Video = video with { Audio = audio } });
+        ShowLifeNotice(changed is null ? "Áudio tirado do vídeo." : "Áudio ajustado.");
     }
 
     private async Task<(PublicationProject Project, VideoTimeline Timeline)?> PrepareVideoAsync(PublicationDraft draft)
@@ -135,15 +246,17 @@ public sealed partial class MainView
         return (draft.Project, timeline);
     }
 
-    public async Task ExportPublicationSubtitlesAsync()
+    /// <summary>CST-172: the captions as SRT (players, editors) or WebVTT (the web's &lt;track&gt;), from the same cues.</summary>
+    public async Task ExportPublicationSubtitlesAsync(string format = "srt")
     {
         if (_publicationDraft is not { } draft || await PrepareVideoAsync(draft) is not { } prepared) return;
-        var bytes = System.Text.Encoding.UTF8.GetBytes(prepared.Timeline.Srt());
-        var name = ArtifactModel.SafeName(prepared.Project.Title) + ".srt";
+        bool vtt = format == "vtt";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(vtt ? prepared.Timeline.Vtt() : prepared.Timeline.Srt());
+        var name = ArtifactModel.SafeName(prepared.Project.Title) + (vtt ? ".vtt" : ".srt");
         try
         {
-            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "srt", "application/x-subrip");
-            if (saved == true) ShowLifeNotice("Legendas SRT salvas.");
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, vtt ? "vtt" : "srt", vtt ? "text/vtt" : "application/x-subrip");
+            if (saved == true) ShowLifeNotice(vtt ? "Legendas VTT salvas." : "Legendas SRT salvas.");
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não consegui salvar as legendas", StorageProblems.Explain(e)); }
@@ -162,6 +275,17 @@ public sealed partial class MainView
         }
         var vault = _vault;
         var temp = Directory.CreateTempSubdirectory("urbe-video-").FullName;
+        // CST-186: the space it needs is checked before any work, never discovered full halfway
+        long sources = 0;
+        foreach (var clip in timeline.Audio) sources += vault is null ? 0 : (await vault.ReadFileAsync(clip.Path, 0))?.Size ?? 0;
+        var needed = VideoBudget.DiskNeeded(timeline.Width, timeline.Height, timeline.Fps, timeline.Duration, timeline.Audio.Count, sources);
+        if (FreeSpace(temp) is { } free && free < needed)
+        {
+            try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            await Dialogs.AlertAsync("Exportar MP4", "Este vídeo precisa de até " + PublicationPackage.Size(needed) + " livres enquanto é gerado, e o aparelho tem " +
+                PublicationPackage.Size(free) + ". Libere espaço ou encurte o vídeo.");
+            return;
+        }
         using var cancel = new CancellationTokenSource();
         _videoExport = cancel;
         var panel = studio.VideoPanel;
@@ -185,7 +309,8 @@ public sealed partial class MainView
                     {
                         var read = vault is null ? null : await vault.ReadFileAsync(clip.Path, 1L << 30, cancel.Token);
                         if (read?.Bytes is not { } bytes) { skipped.Add(clip.Path); continue; }
-                        var source = System.IO.Path.Combine(temp, "a" + n + System.IO.Path.GetExtension(clip.Path));
+                        // the original and its WAV never share a name (a .wav track was copied onto itself and the export failed)
+                        var source = System.IO.Path.Combine(temp, "origem" + n + System.IO.Path.GetExtension(clip.Path));
                         var wav = System.IO.Path.Combine(temp, "a" + n++ + ".wav");
                         await File.WriteAllBytesAsync(source, bytes, cancel.Token);
                         if (await PlatformVideo.ToWavAsync(source, wav, cancel.Token)) decoded.Add((clip, File.OpenRead(wav)));
@@ -211,7 +336,14 @@ public sealed partial class MainView
             if (saved == true)
             {
                 LastVideoExport = result;
-                ShowLifeNotice("Vídeo MP4 salvo." + (skipped.Count > 0 ? " Sem o áudio de: " + string.Join(", ", skipped.Select(System.IO.Path.GetFileName)) + " (formato que este aparelho não lê)." : ""),
+                var focus = WhatChangedSinceLastMp4(timeline, project.Video?.Rendered);
+                if (_publicationsStudio?.Project is { Video: { } video } current)
+                    _publicationsStudio.UpdateProject(current with
+                    {
+                        Video = video with { Rendered = timeline.SceneKeys() },
+                        LastExport = PublicationExportRecord.Of(current, "mp4", id => _store?.Get(id)?.Content, DateTimeOffset.Now)
+                    });
+                ShowLifeNotice("Vídeo MP4 salvo." + focus + (skipped.Count > 0 ? " Sem o áudio de: " + string.Join(", ", skipped.Select(System.IO.Path.GetFileName)) + " (formato que este aparelho não lê)." : ""),
                     skipped.Count > 0 ? Ui.ToastKind.Warning : Ui.ToastKind.Success);
             }
         }
@@ -231,7 +363,28 @@ public sealed partial class MainView
         }
     }
 
-    private async Task<bool?> SaveVideoFileAsync(string path)
+    /// <summary>
+    /// #956: after a new MP4, which scenes look different from the last one (an edited word, a moved element), so the
+    /// person sees the change landed where it was made and the rest came out the same.
+    /// </summary>
+    public static string WhatChangedSinceLastMp4(VideoTimeline timeline, IReadOnlyDictionary<string, string>? rendered)
+    {
+        if (timeline.ChangedSince(rendered) is not { } changed) return "";
+        if (changed.Count == 0) return " Nenhuma cena mudou desde o último MP4.";
+        if (changed.Count == timeline.Scenes.Count) return timeline.Scenes.Count == 1 ? "" : " Todas as cenas mudaram desde o último MP4.";
+        string Name(VideoTimelineScene s) => (timeline.Scenes.ToList().IndexOf(s) + 1) + " (" + PublicationVideoPanel.Clock(s.Start) + "–" + PublicationVideoPanel.Clock(s.End) + ")";
+        return (changed.Count == 1 ? " Mudou só a cena " : " Mudaram as cenas ") + string.Join(", ", changed.Take(4).Select(Name)) + (changed.Count > 4 ? "…" : "") +
+            "; as outras saíram iguais ao último MP4.";
+    }
+
+    /// <summary>Free bytes where the export writes, or null when the platform does not say.</summary>
+    public static Func<string, long?> FreeSpace { get; set; } = path =>
+    {
+        try { return new DriveInfo(path).AvailableFreeSpace; }
+        catch (Exception e) when (e is IOException or ArgumentException or UnauthorizedAccessException) { return null; }
+    };
+
+        private async Task<bool?> SaveVideoFileAsync(string path)
     {
         if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage)
             throw new NotSupportedException("Este aparelho não permite salvar arquivos.");
@@ -241,13 +394,7 @@ public sealed partial class MainView
             FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType("MP4") { Patterns = ["*.mp4"], MimeTypes = ["video/mp4"] }]
         });
         if (file is null) return null;
-        await using (var output = await file.OpenWriteAsync())
-        await using (var input = File.OpenRead(path))
-        {
-            if (output.CanSeek) output.SetLength(0);
-            await input.CopyToAsync(output);
-            await output.FlushAsync();
-        }
+        await ExportFiles.WriteAndCheckAsync(file.OpenWriteAsync, file.OpenReadAsync, () => File.OpenRead(path));
         return true;
     }
 }

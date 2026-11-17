@@ -128,6 +128,13 @@ public sealed class VideoTimeline
         return new VideoFrame(t, layers, subtitle);
     }
 
+    /// <summary>What each scene shows (scene ID → content key), kept with the MP4 it went into.</summary>
+    public Dictionary<string, string> SceneKeys() => Scenes.ToDictionary(s => s.Scene.Id, s => s.ContentKey, StringComparer.Ordinal);
+
+    /// <summary>The scenes that look different from <paramref name="rendered"/> (or are new); null when nothing was rendered.</summary>
+    public IReadOnlyList<VideoTimelineScene>? ChangedSince(IReadOnlyDictionary<string, string>? rendered) =>
+        rendered is null ? null : Scenes.Where(s => !rendered.TryGetValue(s.Scene.Id, out var key) || key != s.ContentKey).ToList();
+
     public string Srt() => VideoScript.Srt(Cues);
     public string Vtt() => VideoScript.Vtt(Cues);
 
@@ -193,78 +200,4 @@ public sealed class VideoTimeline
     private static string F(double v) => Math.Round(v, 4).ToString("R", CultureInfo.InvariantCulture);
 
     private static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)), 0, 16);
-}
-
-/// <summary>
-/// Selective cache of rendered scene layers, keyed by <see cref="VideoLayer.StateKey"/> and bounded in bytes (least
-/// recently used out first). Editing one scene changes only its keys: the other scenes come from the cache.
-/// </summary>
-public sealed class VideoFrameCache<T> : IDisposable where T : class
-{
-    private readonly long _budget;
-    private readonly Func<T, long> _size;
-    private readonly Dictionary<string, LinkedListNode<(string Key, T Value, long Size)>> _map = new(StringComparer.Ordinal);
-    private readonly LinkedList<(string Key, T Value, long Size)> _order = new();
-    private readonly object _gate = new();
-    private long _bytes;
-
-    public VideoFrameCache(long budgetBytes, Func<T, long> size)
-    {
-        _budget = Math.Max(0, budgetBytes);
-        _size = size ?? throw new ArgumentNullException(nameof(size));
-    }
-
-    public int Hits { get; private set; }
-    public int Misses { get; private set; }
-    public int Count { get { lock (_gate) return _map.Count; } }
-    public long Bytes { get { lock (_gate) return _bytes; } }
-
-    /// <summary>The cached value for the key, or the one <paramref name="render"/> makes (kept while it fits).</summary>
-    public T GetOrAdd(string key, Func<T> render)
-    {
-        lock (_gate)
-        {
-            if (_map.TryGetValue(key, out var node))
-            {
-                _order.Remove(node);
-                _order.AddFirst(node);
-                Hits++;
-                return node.Value.Value;
-            }
-            Misses++;
-        }
-        var value = render();
-        var size = _size(value);
-        lock (_gate)
-        {
-            if (size > _budget || _map.ContainsKey(key)) return value;
-            _map[key] = _order.AddFirst((key, value, size));
-            _bytes += size;
-            while (_bytes > _budget && _order.Last is { } last && !ReferenceEquals(last.Value.Value, value))
-            {
-                _order.RemoveLast();
-                _map.Remove(last.Value.Key);
-                _bytes -= last.Value.Size;
-                (last.Value.Value as IDisposable)?.Dispose();
-            }
-        }
-        return value;
-    }
-
-    /// <summary>True when the cache owns <paramref name="value"/> (the caller must not dispose it).</summary>
-    public bool Owns(T value)
-    {
-        lock (_gate) return _map.Values.Any(n => ReferenceEquals(n.Value.Value, value));
-    }
-
-    public void Dispose()
-    {
-        lock (_gate)
-        {
-            foreach (var item in _order) (item.Value as IDisposable)?.Dispose();
-            _order.Clear();
-            _map.Clear();
-            _bytes = 0;
-        }
-    }
 }

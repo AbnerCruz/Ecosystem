@@ -41,8 +41,12 @@ public sealed partial class MainView
             if (_store?.Get(reference.DocumentId) is { } source && Editor.Current?.Path == source.Path &&
                 reference.Fragment is { Length: > 0 } fragment) Editor.RevealFragment(fragment);
         };
+        studio.AdaptRequested += piece => _ = AdaptPublicationPieceAsync(piece);
+        studio.AdaptationReviewed += (adaptation, origin) => _ = MarkAdaptationReviewedAsync(adaptation, origin);
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
+        studio.PackageRequested += () => _ = ExportPublicationPackageAsync();
+        studio.AskAssistantRequested += AskAssistantAboutPublication;
         studio.OfficeRequested += format => _ = ExportPublicationOfficeAsync(format);
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
@@ -64,7 +68,61 @@ public sealed partial class MainView
         return studio;
     }
 
+    /// <summary>
+    /// CST-155 "Adaptar": a real note beside the source (named after it and the kind), starting from its text and linked
+    /// to it, takes the piece's place in the publication. The source is not touched.
+    /// </summary>
+    public async Task AdaptPublicationPieceAsync(PublicationPlacement piece)
+    {
+        if (_store?.Get(piece.Source.DocumentId) is not { } origin) return;
+        if (await Dialogs.ChooseAsync("Adaptar " + System.IO.Path.GetFileNameWithoutExtension(origin.Path),
+                EditorialNotes.Kinds.Select(k => new DialogItem(k)).ToList(),
+                "Uma nota nova, ao lado da origem, começa com o texto dela. A origem não muda; a publicação passa a mostrar a adaptação.") is not int kind) return;
+        var folder = System.IO.Path.GetDirectoryName(origin.Path)?.Replace('\\', '/') ?? "";
+        var name = System.IO.Path.GetFileNameWithoutExtension(origin.Path) + " — " + EditorialNotes.Kinds[kind];
+        var content = EditorialNotes.Create(origin.Id, origin.Path, origin.Content, EditorialNotes.Kinds[kind]);
+        var free = _store.Get((folder.Length > 0 ? folder + "/" : "") + name + ".md") is null;
+        var path = await CreateNoteInNotesAsync(free ? name : null, folder, _ => Task.FromResult<string?>(content), open: false);
+        if (path is null || _store.Get(path) is not { } adaptation || PublicationsStudio.Project is not { } project ||
+            !project.Sections.Any(s => s.Id == piece.Id)) return;
+        PublicationsStudio.UpdateProject(project.ReplacePlacementSource(piece.Id, new PublicationSourceReference(adaptation.Id)));
+        _notice.Show("Adaptação criada em " + path + ".", TimeSpan.FromSeconds(8), "Abrir", () => EditPublicationSource(adaptation.Id));
+    }
+
+    /// <summary>CST-155: the adaptation was checked against the source as it is now (only its property changes).</summary>
+    public async Task MarkAdaptationReviewedAsync(string adaptationId, string originId)
+    {
+        if (_store?.Get(adaptationId) is not { } adaptation || _store.Get(originId) is not { } origin) return;
+        await SaveNoteAsync(new CityNote(adaptation.Path, EditorialNotes.Reviewed(adaptation.Content, origin.Content)));
+        PublicationsStudio.Refresh();
+    }
+
     /// <summary>Open an existing project by path, preserving the current unsaved note first.</summary>
+    /// <summary>
+    /// CST-160: a publication made from a tag, folder or search shows the notes that match it now and it does not use
+    /// yet; the person adds them or leaves them out (remembered), and the file is saved before the studio opens.
+    /// </summary>
+    private async Task<PublicationProject> ReviewQueryMatchesAsync(string path, PublicationProject project)
+    {
+        if (project.Query is not { } query || _store is null || !VaultWritable) return project;
+        using var index = new KnowledgeIndex(_store);
+        var found = query.NewMatches(project, _store.List(), q => index.Search(q));
+        if (found.Count == 0) return project;
+        var what = query.Kind switch { "tag" => "com a tag #" + query.Value.TrimStart('#'), "folder" => "na pasta " + query.Value, _ => "para “" + query.Value + "”" };
+        var add = await Dialogs.ConfirmAsync(found.Count + (found.Count == 1 ? " nota nova " : " notas novas ") + what,
+            string.Join("\n", found.Take(12).Select(d => "• " + d.Title)) + (found.Count > 12 ? "\n… e mais " + (found.Count - 12) : "") +
+            "\n\nAcrescentar à publicação? Se não, elas não serão oferecidas de novo.", "Acrescentar", cancel: "Deixar de fora");
+        var next = add ? found.Aggregate(project, (p, d) => p.AddSource(d.Id))
+            : project with { Query = query with { Declined = [.. query.Declined, .. found.Select(d => d.Id)] } };
+        try { await ((IAssistantApp)this).SaveNoteAsync(_store.Get(path)!, PublicationProjectCodec.Serialize(next)); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            await Dialogs.AlertAsync("Publicações", StorageProblems.Explain(ex));
+            return project;
+        }
+        return next;
+    }
+
     public async Task OpenPublicationAsync(string path)
     {
         // Reopening during an outstanding write must not reload its stale on-disk state.
@@ -78,6 +136,7 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Não foi possível abrir a publicação", e.Message);
             return;
         }
+        project = await ReviewQueryMatchesAsync(path, project);
         if (Editor.IsVisible)
         {
             Editor.FinishEditing();
@@ -94,7 +153,6 @@ public sealed partial class MainView
             _publicationsCatalogStore = _store;
         }
         _pagesPanel?.Close();
-        if (_studio?.IsVisible == true) await _studio.CloseAsync();
         ReleaseSavedPublicationDraft(_publicationDraft);
         var key = (_store!, file.Id);
         if (!_publicationDrafts.TryGetValue(key, out var draft) || !draft.Dirty)
@@ -103,7 +161,9 @@ public sealed partial class MainView
             _publicationDrafts[key] = draft;
         }
         _publicationDraft = draft;
+        HideExplorerTip();
         PublicationsStudio.Open(path, draft.Project, _publicationsCatalog!);
+        TellChangesSinceExport(draft.Project);
         PublicationsStudio.SetSaveState(draft.Dirty, draft.Error);
         UpdateFloatingNav();
         await LoadPublicationVideoFilesAsync();
@@ -115,7 +175,7 @@ public sealed partial class MainView
     /// copy (CST-135).
     /// </summary>
     public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
-        string? tag = null, string? fragment = null)
+        string? tag = null, string? fragment = null, PublicationQuery? query = null, PublicationProject? style = null)
     {
         if (!VaultWritable || _store is null)
         {
@@ -135,9 +195,9 @@ public sealed partial class MainView
             ShowLifeNotice("O vault mudou. Abra a criação novamente no vault desejado.", Ui.ToastKind.Warning);
             return;
         }
-        var project = fragment is { Length: > 0 } && source is not null
-            ? PublicationProject.Create(title.Trim()).AddSource(new PublicationSourceReference(source.Id, fragment))
-            : PublicationProject.Create(title.Trim(), source?.Id);
+        var project = style?.StyleFor(title.Trim()) ?? PublicationProject.Create(title.Trim());
+        if (fragment is { Length: > 0 } && source is not null) project = project.AddSource(new PublicationSourceReference(source.Id, fragment));
+        else if (source is not null) project = project.AddSource(source.Id);
         foreach (var p in sourcePaths ?? [])
             if (_store.Get(p) is { } chosen && ArtifactModel.IsNote(chosen.Path)) project = project.AddSource(chosen.Id);
         if (tag is { Length: > 0 })
@@ -154,6 +214,8 @@ public sealed partial class MainView
                 .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
                 project = project.AddSource(note.Id);
         }
+        query ??= tag is { Length: > 0 } ? new PublicationQuery("tag", tag.TrimStart('#')) : folder is { Length: > 0 } ? new PublicationQuery("folder", folder) : null;
+        if (query is not null) project = project with { Query = query };
         if (project.Sections.Count == 0 && (sourcePaths is { Count: > 0 } || tag is { Length: > 0 }))
         {
             await Dialogs.AlertAsync("Publicações", tag is { Length: > 0 } ? "Nenhuma nota tem a tag #" + tag.TrimStart('#') + "." : "Nenhuma das escolhidas é uma nota.");
@@ -178,6 +240,42 @@ public sealed partial class MainView
         await OpenPublicationAsync(path);
     }
 
+    /// <summary>
+    /// CST-157/159: an old page turned into a publication, on command. Its text becomes real notes in
+    /// Publicações/&lt;título&gt;/, its notes are referenced, and a report says what had no equivalent. The page file is not touched.
+    /// </summary>
+    public async Task ConvertPageToPublicationAsync(string pagePath)
+    {
+        if (!VaultWritable || _store is null || _store.Get(pagePath) is not { } file) return;
+        var page = PageDocument.Parse(file.Content);
+        if (page.State is PageDocumentState.Corrupt) { await Dialogs.AlertAsync("Converter em publicação", "A página não pôde ser lida; o arquivo fica como está."); return; }
+        var store = _store;
+        var result = PageToPublication.Convert(page, path => store.Get(path) is { } d && ArtifactModel.IsNote(d.Path) ? d.Id : null);
+        if (result.Pieces.Count == 0) { await Dialogs.AlertAsync("Converter em publicação", "Nada desta página tem equivalente numa publicação.\n\n" + string.Join("\n", result.Report)); return; }
+        var title = page.Title.Trim();
+        var folder = "Publicações/" + ArtifactModel.SafeName(title);
+        var project = PublicationProject.Create(title);
+        int part = 0, texts = result.Pieces.Count(p => p.Markdown is not null);
+        foreach (var piece in result.Pieces)
+        {
+            if (piece.NoteId is { } id) { project = project.AddSource(id); continue; }
+            part++;
+            var name = texts == 1 ? title : title + " — parte " + part;
+            var created = await CreateNoteInNotesAsync(store.Get(folder + "/" + ArtifactModel.SafeName(name) + ".md") is null ? ArtifactModel.SafeName(name) : null,
+                folder, _ => Task.FromResult<string?>(piece.Markdown), open: false);
+            if (created is null || store.Get(created) is not { } note) return;   // nothing half made is hidden: the notes made so far stay
+            project = project.AddSource(note.Id);
+        }
+        var target = "Publicações/" + ArtifactModel.SafeName(title) + ".publication.json";
+        for (var n = 2; store.Get(target) is not null; n++) target = "Publicações/" + ArtifactModel.SafeName(title) + "-" + n + ".publication.json";
+        try { await ((IAssistantApp)this).CreateNoteAsync(target, PublicationProjectCodec.Serialize(project)); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível criar a publicação", StorageProblems.Explain(ex)); return; }
+        await OpenPublicationAsync(target);
+        await Dialogs.AlertAsync("Página convertida", (texts > 0 ? (texts == 1 ? "1 nota" : texts + " notas") + " com os textos da página em " + folder + ".\n" : "") +
+            "A página antiga continua em " + pagePath + ", sem mudança.\n\n" + string.Join("\n", result.Report));
+    }
+
     /// <summary>CST-135: a publication of the notes with a tag (chosen from the vault's tags).</summary>
     public async Task CreatePublicationFromTagAsync()
     {
@@ -192,15 +290,61 @@ public sealed partial class MainView
     }
 
     /// <summary>CST-135: a publication of one section of a note (a heading and what is under it), still the note's text.</summary>
+    /// <summary>CST-161: a new publication in the style of an existing one (its look and audience, none of its notes).</summary>
+    public async Task CreatePublicationInStyleAsync()
+    {
+        if (_store is null) { await Dialogs.AlertAsync("Publicações", NoVaultMessage); return; }
+        var existing = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase)).OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        if (existing.Count == 0) { await Dialogs.AlertAsync("Publicações", "Ainda não há publicações para servir de modelo."); return; }
+        if (await Dialogs.ChooseAsync("No estilo de qual publicação?", existing.Select(d => new DialogItem(System.IO.Path.GetFileName(d.Path)[..^".publication.json".Length], Detail: d.Path)).ToList(),
+                "A nova leva o layout, o tema, a cor, a letra e o público; nenhuma nota.") is not { } i) return;
+        PublicationProject model;
+        try { model = PublicationProjectCodec.Parse(existing[i].Content); }
+        catch (Exception e) when (e is InvalidDataException or NotSupportedException or ArgumentException or System.Text.Json.JsonException)
+        { await Dialogs.AlertAsync("Publicações", "Não foi possível ler essa publicação: " + e.Message); return; }
+        await CreatePublicationAsync(style: model);
+    }
+
+    /// <summary>CST-135: a publication from a search: the notes that match, after the person sees and confirms them.</summary>
+    public async Task CreatePublicationFromSearchAsync()
+    {
+        if (_store is null) { await Dialogs.AlertAsync("Publicações", NoVaultMessage); return; }
+        var query = await Dialogs.PromptAsync(new PromptOptions("Publicação de uma busca", Label: "Buscar", Placeholder: "Ex.: fotossíntese", Confirm: "Buscar"));
+        if (string.IsNullOrWhiteSpace(query)) return;
+        using var index = new KnowledgeIndex(_store);
+        var found = index.Search(query).Where(d => ArtifactModel.IsNote(d.Path)).ToList();
+        if (found.Count == 0) { await Dialogs.AlertAsync("Publicações", "Nenhuma nota encontrada para “" + query.Trim() + "”."); return; }
+        var shown = string.Join("\n", found.Take(12).Select(d => "• " + d.Title)) + (found.Count > 12 ? "\n… e mais " + (found.Count - 12) : "");
+        if (!await Dialogs.ConfirmAsync(found.Count + (found.Count == 1 ? " nota" : " notas") + " para “" + query.Trim() + "”", shown, "Criar publicação")) return;
+        await CreatePublicationAsync(sourcePaths: found.Select(d => d.Path).ToList(), query: new PublicationQuery("search", query.Trim()));
+    }
+
     public async Task CreatePublicationFromSectionAsync(string notePath)
     {
+        if (Editor.Current?.Path == notePath && Editor.HasChanges && !await Editor.SaveAsync()) return;
         if (_store?.Get(notePath) is not { } note) return;
         var headings = Urbe.Core.MarkdownEngine.SplitFrontmatter(note.Content).Body.Replace("\r", "").Split('\n')
             .Where(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^#{1,6}\s+\S")).Select(l => l.TrimStart('#').Trim()).Distinct().ToList();
-        if (headings.Count == 0) { await Dialogs.AlertAsync("Publicações", "Esta nota não tem títulos para escolher um trecho."); return; }
-        var choice = await Dialogs.ChooseAsync("Publicação de um trecho", headings.Select(h => new DialogItem(h)).ToList(), "O trecho é o título escolhido e o que vem embaixo dele; continua sendo o texto da nota.");
+        // CST-135: what is selected in the editor is the passage, when it is one paragraph of the note
+        var selected = ((IAssistantApp)this).EditorNote() is { Path: var open, Selection: { Length: > 0 } text } && open == notePath
+            && note.Content.Replace("\r\n", "\n").IndexOf(text.Trim(), StringComparison.Ordinal) is >= 0 and var at ? at : -1;
+        var items = headings.Select(h => new DialogItem(h)).ToList();
+        if (selected >= 0) items.Insert(0, new DialogItem("O parágrafo selecionado", UrbeTheme.Icons.Page, "Marcado na nota com um ^id, como os links de bloco."));
+        if (items.Count == 0) { await Dialogs.AlertAsync("Publicações", "Esta nota não tem títulos. Selecione um parágrafo no editor e escolha de novo."); return; }
+        var choice = await Dialogs.ChooseAsync("Publicação de um trecho", items, "O trecho continua sendo o texto da nota: um título e o que vem embaixo dele, ou o parágrafo selecionado.");
         if (choice is not { } k) return;
-        await CreatePublicationAsync(sourcePath: notePath, fragment: headings[k]);
+        if (selected < 0 || k > 0) { await CreatePublicationAsync(sourcePath: notePath, fragment: headings[k - (selected >= 0 ? 1 : 0)]); return; }
+        if (Urbe.Core.EmbedFragments.AnchorBlock(note.Content, selected, () => "pub-" + Guid.NewGuid().ToString("N")[..6]) is not { } anchored)
+        {
+            await Dialogs.AlertAsync("Publicações", "A seleção não está num parágrafo (é um título, código ou linha vazia).");
+            return;
+        }
+        if (anchored.Markdown != note.Content.Replace("\r\n", "\n"))
+        {
+            await ((IAssistantApp)this).SaveNoteAsync(_store.Get(notePath)!, anchored.Markdown);
+            if (Editor.Current?.Path == notePath) Editor.Open(new CityNote(notePath, anchored.Markdown));
+        }
+        await CreatePublicationAsync(sourcePath: notePath, fragment: "^" + anchored.Id);
     }
 
     /// <summary>The user chooses a project by title, not by raw JSON path.</summary>
@@ -299,8 +443,18 @@ public sealed partial class MainView
         }
         else if (option == 1)
         {
-            var theme = await Dialogs.ChooseAsync("Tema", [new DialogItem("Papel"), new DialogItem("Oceano"), new DialogItem("Tinta")]);
-            if (theme is >= 0 and <= 2) next = project with { Design = project.Design with { Theme = new[] { "paper", "ocean", "ink" }[theme.Value] } };
+            // CST-161: a theme, the person's own accent, and the type; every output reads them (PublicationTheme)
+            var tokens = PublicationTheme.Of(project.Design);
+            var theme = await Dialogs.ChooseAsync("Tema", [
+                .. PublicationTheme.Themes.Select(t => new DialogItem(t.Name, Detail: t.Accent)),
+                new DialogItem("Cor própria", Detail: project.Design.Accent ?? "a do tema: " + tokens.Accent),
+                new DialogItem("Letra sem serifa"), new DialogItem("Letra serifada", Detail: "como nos livros"), new DialogItem("Letra monoespaçada")]);
+            int themes = PublicationTheme.Themes.Count;
+            if (theme is { } t && t < themes) next = project with { Design = project.Design with { Theme = PublicationTheme.Themes[t].Id, Accent = null } };
+            else if (theme == themes && await Dialogs.PromptAsync(new PromptOptions("Cor própria", Label: "Cor em hexadecimal", Value: tokens.Accent, Placeholder: "#0b6e4f", Confirm: "Usar",
+                         Validate: v => PublicationTheme.ValidAccent(v.Trim()) ? null : "Escreva # e seis dígitos, como #0b6e4f.")) is { } own)
+                next = project with { Design = project.Design with { Accent = own.Trim().ToLowerInvariant() } };
+            else if (theme is { } f && f > themes) next = project with { Design = project.Design with { Font = new[] { "sans", "serif", "mono" }[f - themes - 1] } };
         }
         else if (option is 2 or 3)
         {
@@ -394,7 +548,25 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Fontes indisponíveis", "Resolva as notas ausentes antes de exportar: " + result.MissingDocumentIds.Count + " referência(s).");
             return null;
         }
-        return (project, result);
+        return (project, result with { Html = await EmbedVaultImagesAsync(result.Html) });
+    }
+
+    /// <summary>A file a note names (image, audio, video): the exact vault path, else the one file with that name (as ![[foto.png]] finds it).</summary>
+    private async Task<byte[]?> ReadVaultImageAsync(string reference) =>
+        VaultFileNamed(reference) is { } path && _vault is { } vault ? (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes : null;
+
+    private string? VaultFileNamed(string reference) => _attachments.Contains(reference) ? reference
+        : _attachments.FirstOrDefault(a => string.Equals(System.IO.Path.GetFileName(a), System.IO.Path.GetFileName(reference), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>CST-162: the publication's images read from the vault and carried inside the HTML (works offline, anywhere).</summary>
+    private async Task<string> EmbedVaultImagesAsync(string html)
+    {
+        var read = new Dictionary<string, byte[]?>(StringComparer.Ordinal);
+        foreach (var reference in PublicationAssets.References(html))
+        {
+            read[reference] = await ReadVaultImageAsync(Uri.UnescapeDataString(reference));
+        }
+        return PublicationAssets.Embed(html, r => read.GetValueOrDefault(r));
     }
 
     /// <summary>Uses the platform's print service; opening its dialog is not proof that a PDF was saved.</summary>
@@ -420,18 +592,19 @@ public sealed partial class MainView
     public async Task ExportPublicationEpubAsync()
     {
         if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
-        var vault = _vault;
         var project = draft.Project;
         try
         {
             var data = await PublicationDataAsync(project, catalog);
             var result = await PublicationEpub.ExportWithReportAsync(project, catalog,
-                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes, data: data);
+                ReadVaultImageAsync, data: data);
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
             LastEpubWarnings = result.Warnings;
+            EnsureOpens("epub", result.Bytes);
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, "epub", "application/epub+zip");
             if (saved != true) return;
+            RecordPublicationExport("epub");
             // CST-183: what keeps the book from being fully accessible is said, with how to fix it in the note
             if (result.Warnings.Count > 0)
                 await Dialogs.AlertAsync("Livro EPUB salvo", "Acessibilidade: " + result.Warnings.Count + (result.Warnings.Count == 1 ? " imagem está" : " imagens estão") +
@@ -449,7 +622,6 @@ public sealed partial class MainView
     public async Task ExportPublicationOfficeAsync(string format)
     {
         if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
-        var vault = _vault;
         var project = draft.Project;
         var (extension, mime, kind) = format switch
         {
@@ -460,7 +632,7 @@ public sealed partial class MainView
         };
         try
         {
-            Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
+            Func<string, Task<byte[]?>> asset = ReadVaultImageAsync;
             var data = await PublicationDataAsync(project, catalog);
             var result = extension switch
             {
@@ -471,8 +643,10 @@ public sealed partial class MainView
             };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
+            EnsureOpens(extension, result.Bytes);
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
             if (saved != true) return;
+            RecordPublicationExport(extension);
             LastOfficeLimitations = result.Limitations;
             if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva." : " salvo."));
             else await Dialogs.AlertAsync(kind + (extension == "pptx" ? " salva" : " salvo"),
@@ -480,6 +654,88 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
+    }
+
+    /// <summary>CST-158: the Assistente opens with the publication named in what the person types (they finish and send).</summary>
+    public void AskAssistantAboutPublication()
+    {
+        if (_publicationsStudio?.Project is not { } project || _publicationDraft is not { } draft || _store?.Get(draft.DocumentId) is not { } file) return;
+        if (!AssistantOpen) ToggleAssistant();
+        Assistant.Input.Text = "Na publicação “" + project.Title + "” (" + file.Path + "): ";
+        Assistant.Input.CaretIndex = Assistant.Input.Text.Length;
+    }
+
+    /// <summary>CST-175: what looks private in a publication about to leave the device, shown before; true to go on.</summary>
+    private async Task<bool> ConfirmPrivacyAsync(string html)
+    {
+        var found = PublicationPrivacy.Scan(html);
+        if (found.Count == 0) return true;
+        var lines = found.Take(10).Select(f => "• " + f.Kind + ": " + f.Sample);
+        return await Dialogs.ConfirmAsync("Antes de compartilhar", "A publicação mostra dados que parecem pessoais:\n\n" + string.Join("\n", lines) +
+            (found.Count > 10 ? "\n… e mais " + (found.Count - 10) : "") + "\n\nSe não devem sair, tire-os das notas e exporte de novo.", "Exportar mesmo assim", cancel: "Voltar");
+    }
+
+    /// <summary>CST-163: the publication and a manifest (type, size, SHA-256 of each file, source versions) in one ZIP.</summary>
+    public async Task ExportPublicationPackageAsync()
+    {
+        if (await PreparePublicationOutputAsync() is not { } output) return;
+        var (project, result) = output;
+        if (!await ConfirmPrivacyAsync(result.Html)) return;
+        var versions = PublicationExportRecord.Of(project, "zip", id => _store?.Get(id)?.Content, DateTimeOffset.Now).Sources
+            .Where(kv => _store?.Get(kv.Key) is not null)
+            .ToDictionary(kv => kv.Key, kv => new PublicationPackage.Source(_store!.Get(kv.Key)!.Path, kv.Value, _store.Get(kv.Key)!.Content), StringComparer.Ordinal);
+        // the audio and video it embeds go in the package, read from the vault by the name the note uses; a large
+        // package says its size first (sizes come without reading the files)
+        var references = PublicationPackage.MediaReferences(result.Html);
+        long estimate = System.Text.Encoding.UTF8.GetByteCount(result.Html);
+        foreach (var reference in references)
+            if (VaultFileNamed(reference) is { } path && _vault is { } vault) estimate += (await vault.ReadFileAsync(path, 0))?.Size ?? 0;
+        if (estimate > 50L << 20 && !await Dialogs.ConfirmAsync("Pacote grande", "O pacote terá cerca de " + PublicationPackage.Size(estimate) +
+                " (" + references.Count + (references.Count == 1 ? " áudio ou vídeo" : " áudios e vídeos") + "). Continuar?", "Exportar")) return;
+        var media = new Dictionary<string, byte[]?>(StringComparer.Ordinal);
+        foreach (var reference in references) media[reference] = await ReadVaultImageAsync(reference);
+        var bytes = PublicationPackage.Build(project, result.Html, versions, DateTimeOffset.Now, media);
+        var name = ArtifactModel.SafeName(project.Title) + ".zip";
+        try
+        {
+            EnsureOpens("zip", bytes);
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "zip", "application/zip");
+            if (saved != true) return;
+            RecordPublicationExport("zip");
+            ShowLifeNotice("Pacote salvo (" + PublicationPackage.Size(bytes.Length) + "): a publicação e o manifesto que confere cada arquivo.");
+        }
+        catch (InvalidDataException ex) { await Dialogs.AlertAsync("Não foi possível exportar o pacote", ex.Message); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível exportar o pacote", StorageProblems.Explain(ex)); }
+    }
+
+    /// <summary>CST-153: the version of each source this export used goes into the publication (by hash, never the text).</summary>
+    private void RecordPublicationExport(string format)
+    {
+        if (_publicationsStudio?.Project is not { } project) return;
+        _publicationsStudio.UpdateProject(project with { LastExport = PublicationExportRecord.Of(project, format, id => _store?.Get(id)?.Content, DateTimeOffset.Now) });
+    }
+
+    /// <summary>CST-153: on opening, what changed in the sources since the last export (the products made then are behind).</summary>
+    private void TellChangesSinceExport(PublicationProject project)
+    {
+        if (project.LastExport is not { } last || _store is null) return;
+        var (changed, added) = last.Since(project, id => _store.Get(id)?.Content);
+        if (changed.Count == 0 && added.Count == 0) return;
+        string Kind(PublicationExportRecord.ChangeKind k) => k switch
+        {
+            PublicationExportRecord.ChangeKind.Removed => "saiu do vault",
+            PublicationExportRecord.ChangeKind.Structure => "títulos ou ligações",
+            PublicationExportRecord.ChangeKind.Text => "texto",
+            _ => "só formatação"
+        };
+        string Name(string id) => _store.Get(id)?.Title ?? "uma nota";
+        var parts = new List<string>();
+        if (changed.Count > 0) parts.Add((changed.Count == 1 ? "mudou " : changed.Count + " fontes mudaram: ") +
+            string.Join(", ", changed.Take(3).Select(c => Name(c.Id) + " (" + Kind(c.Kind) + ")")) + (changed.Count > 3 ? "…" : ""));
+        if (added.Count > 0) parts.Add(added.Count == 1 ? "entrou 1 fonte nova" : "entraram " + added.Count + " fontes novas");
+        ShowLifeNotice("Desde a última exportação (" + last.Format.ToUpperInvariant() + ", " + last.At.ToLocalTime().ToString("dd/MM HH:mm", System.Globalization.CultureInfo.InvariantCulture) + "), " +
+            string.Join("; ", parts) + ". Exporte de novo para atualizar o arquivo.");
     }
 
     /// <summary>The issues of the last review (read by tests).</summary>
@@ -520,6 +776,13 @@ public sealed partial class MainView
     /// <summary>What the last office export could not keep (shown to the person; read by tests).</summary>
     public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
 
+    /// <summary>CST-191: a file that does not open as its format is never saved as if it were done.</summary>
+    private static void EnsureOpens(string extension, byte[] bytes)
+    {
+        if (PublicationOutputCheck.Problem(extension, bytes) is { } problem)
+            throw new InvalidDataException("O arquivo gerado não passou na conferência e não foi salvo. " + problem);
+    }
+
     private async Task<bool?> SavePublicationFileAsync(string name, byte[] bytes, string extension, string mime)
     {
         if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage)
@@ -530,22 +793,20 @@ public sealed partial class MainView
             FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType(extension.ToUpperInvariant()) { Patterns = ["*." + extension], MimeTypes = [mime] }]
         });
         if (file is null) return null;
-        await using var stream = await file.OpenWriteAsync();
-        if (stream.CanSeek) stream.SetLength(0);
-        await stream.WriteAsync(bytes);
-        await stream.FlushAsync();
+        await ExportFiles.WriteAndCheckAsync(file, bytes);   // CST-180: written whole and read back
         return true;
     }
 
-    private async Task ExportPublicationHtmlAsync()
+    public async Task ExportPublicationHtmlAsync()
     {
         if (await PreparePublicationOutputAsync() is not { } output) return;
         var (project, result) = output;
+        if (!await ConfirmPrivacyAsync(result.Html)) return;
         var filename = ArtifactModel.SafeName(project.Title) + ".html";
         try
         {
             var resultSaved = await (SavePageFile ?? SaveHtmlFileAsync)(filename, System.Text.Encoding.UTF8.GetBytes(result.Html));
-            if (resultSaved == true) ShowLifeNotice("Publicação HTML salva.");
+            if (resultSaved == true) { RecordPublicationExport("html"); ShowLifeNotice("Publicação HTML salva (" + PublicationPackage.Size(System.Text.Encoding.UTF8.GetByteCount(result.Html)) + ")."); }
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         {

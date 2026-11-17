@@ -214,6 +214,7 @@ public sealed partial class MainView
             _openGraph = graph;
             _openGraphPath = path;
             _graphDirty = false;
+            HideExplorerTip();
             GraphsPanel.Show(graph);
             GraphsPanel.IsVisible = true;
             UpdateNav();
@@ -255,11 +256,24 @@ public sealed partial class MainView
         finally { _graphWriteGate.Release(); }
     }
 
+    /// <summary>A graph made from app data: shown and navigated, never written (moving a node is not saved).</summary>
+    public async Task ShowGraphProjectionAsync(GraphDocument graph)
+    {
+        if (GraphOpen && !await SaveGraphAsync()) return;
+        _openGraph = graph;
+        _openGraphPath = null;
+        _graphDirty = false;
+        GraphsPanel.Show(graph, readOnly: true);
+        GraphsPanel.IsVisible = true;
+        UpdateNav();
+    }
+
     private async Task<bool> SaveGraphAsync()
     {
         await _graphWriteGate.WaitAsync();
         try
         {
+            if (_openGraph is not null && _openGraphPath is null) _graphDirty = false; // a projection: nothing to save
             if (!_graphDirty) return true;
             if (_openGraph is null || _openGraphPath is null || _vault is null || !VaultWritable)
             {
@@ -290,7 +304,7 @@ public sealed partial class MainView
         return !_graphDirty;
     }
 
-    private async Task<bool> CloseGraphAsync()
+    public async Task<bool> CloseGraphAsync()
     {
         if (!await SaveGraphAsync()) return false;
         if (_graphBoard is not null) _graphBoard.IsVisible = false;

@@ -37,6 +37,7 @@ public sealed partial class MainView
             foreach (var reader in new[] { FilePreview, Editor.Pinned.Preview, Editor.Split.Preview })
                 await reader.RetargetSourceAsync(from, to);
         }
+        Assistant.RetargetMemorySources(files);   // CST-134: the memories that came from these notes follow them
         var retarget = LinkRename.Retarget(files, all);
         var cameFrom = files.ToDictionary(f => f.To, f => f.From, StringComparer.Ordinal);
         int changed = 0;

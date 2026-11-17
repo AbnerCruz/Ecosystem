@@ -38,7 +38,7 @@ internal sealed class AndroidVideoEncoder : IVideoEncoder
         if (settings.AudioWavPath is { } wav) EncodeAudio(wav, cancel);
         var format = MediaFormat.CreateVideoFormat("video/avc", settings.Width, settings.Height);
         format.SetInteger(MediaFormat.KeyColorFormat, ColorFormatYuv420Flexible);
-        format.SetInteger(MediaFormat.KeyBitRate, Math.Clamp(settings.Width * settings.Height * settings.Fps / 8, 1_000_000, 20_000_000));
+        format.SetInteger(MediaFormat.KeyBitRate, (int)Urbe.Core.VideoBudget.VideoBitsPerSecond(settings.Width, settings.Height, settings.Fps));
         format.SetInteger(MediaFormat.KeyFrameRate, settings.Fps);
         format.SetInteger(MediaFormat.KeyIFrameInterval, 1);
         _video = MediaCodec.CreateEncoderByType("video/avc");

@@ -81,7 +81,8 @@ public sealed partial class HeadlessUiTests
         var window = new Window { Width = 412, Height = 900, Content = view };
         window.Show();
         await view.LoadAsync(TutorialNotes.Load());
-        view.Editor.Open(new CityNote("Tutorial/Estudo.md", BenchNote()));
+        // under the length where Fonte goes by blocks: this is the whole-text box's handles
+        view.Editor.Open(new CityNote("Tutorial/Estudo.md", BenchNote()[..(EditorOverlay.BlocksFrom - 1)]));
         view.Editor.SetMode(EditorMode.Fonte);
         await BenchPump(window);
         view.Editor.Editor.Focus();

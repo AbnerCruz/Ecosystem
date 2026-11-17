@@ -46,4 +46,14 @@ public sealed class NoteUsageTests
 
         static IEnumerable<(string, string, string)> NoteUsageSingle(DocumentStore s, UrbeDocument n) => NoteUsage.Of(s, n).Select(d => (d.Kind, d.Path, d.Detail));
     }
+
+    [Fact]
+    public void AnAdaptationShowsWhereItsSourceIsUsed()
+    {
+        var store = new DocumentStore();
+        var source = store.Upsert(new DocumentInput { Path = "Bio/Fotossíntese.md", Content = "# F\n\nTexto." });
+        store.Upsert(new DocumentInput { Path = "Bio/Fotossíntese — Roteiro.md", Content = EditorialNotes.Create(source.Id, source.Path, source.Content, "Roteiro") });
+        var used = NoteUsage.Of(store, source);
+        Assert.Contains(used, u => u.Kind == NoteUsage.Adaptation && u.Path == "Bio/Fotossíntese — Roteiro.md" && u.Detail == "roteiro desta nota");
+    }
 }

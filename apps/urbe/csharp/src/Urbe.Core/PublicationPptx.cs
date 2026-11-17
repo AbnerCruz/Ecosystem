@@ -177,7 +177,7 @@ public static class PublicationPptx
             {
                 var rels = new List<(string, string, string, bool)>
                 { ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout", "../slideLayouts/slideLayout1.xml", false) };
-                var (xml, pictures) = SlideXml(slides[i], rels, ref media);
+                var (xml, pictures) = SlideXml(slides[i], rels, ref media, doc.Accent.TrimStart('#').ToUpperInvariant());
                 if (slides[i].Notes.Count > 0)
                 {
                     rels.Add(("rIdNotes", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide", $"../notesSlides/notesSlide{i + 1}.xml", false));
@@ -201,13 +201,13 @@ public static class PublicationPptx
         return new PublicationExport(stream.ToArray(), limitations.ToArray());
     }
 
-    private static (XElement Slide, List<(string Path, byte[] Bytes)> Pictures) SlideXml(PptxSlide slide, List<(string, string, string, bool)> rels, ref int media)
+    private static (XElement Slide, List<(string Path, byte[] Bytes)> Pictures) SlideXml(PptxSlide slide, List<(string, string, string, bool)> rels, ref int media, string accent)
     {
         var pictures = new List<(string, byte[])>();
         var shapes = new List<XElement>();
         int id = 2;
         var title = slide.Title + (slide.Continued && slide.Title.Length > 0 ? " (cont.)" : "");
-        if (title.Length > 0) shapes.Add(TitlePlaceholder(id++, title, title));
+        if (title.Length > 0) shapes.Add(TitlePlaceholder(id++, title, title, accent));
         long textW = slide.Image is null ? SlideW - 2 * Margin : (long)(6.1 * Inch);
         long y = title.Length > 0 ? BodyTop : Margin;
         long available = SlideH - y - (long)(0.4 * Inch);
@@ -353,7 +353,8 @@ public static class PublicationPptx
 
     private static string Plain(IReadOnlyList<OfficeRun> runs) => string.Concat(runs.Select(r => r.Break ? "\n" : r.Text));
 
-    private static XElement TitlePlaceholder(int id, string name, string? text) =>
+    /// <summary>A slide title, in the publication's accent (CST-161).</summary>
+    private static XElement TitlePlaceholder(int id, string name, string? text, string accent = "6B4F2A") =>
         new(P + "sp",
             new XElement(P + "nvSpPr", new XElement(P + "cNvPr", new XAttribute("id", id), new XAttribute("name", "Título " + id)),
                 new XElement(P + "cNvSpPr", new XElement(A + "spLocks", new XAttribute("noGrp", 1))), new XElement(P + "nvPr", new XElement(P + "ph", new XAttribute("type", "title")))),
@@ -361,7 +362,7 @@ public static class PublicationPptx
             new XElement(P + "txBody", new XElement(A + "bodyPr", new XAttribute("anchor", "b"), new XElement(A + "normAutofit")), new XElement(A + "lstStyle"),
                 new XElement(A + "p", text is null ? null : new XElement(A + "r",
                     new XElement(A + "rPr", new XAttribute("lang", "pt-BR"), new XAttribute("sz", TitlePt * 100), new XAttribute("b", 1), new XAttribute("dirty", 0),
-                        new XElement(A + "solidFill", new XElement(A + "srgbClr", new XAttribute("val", "6B4F2A")))),
+                        new XElement(A + "solidFill", new XElement(A + "srgbClr", new XAttribute("val", accent)))),
                     new XElement(A + "t", PublicationOffice.XmlSafe(text))), EndRun(TitlePt))));
 
     private static XElement NotesPlaceholder(int id, string type, int? idx, XElement? body) =>

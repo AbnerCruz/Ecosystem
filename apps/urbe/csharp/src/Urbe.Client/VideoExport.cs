@@ -38,7 +38,7 @@ public static class PlatformVideo
     }
 }
 
-public sealed record VideoExportProgress(int Frame, int FrameCount, string Phase)
+public sealed record VideoExportProgress(int Frame, int FrameCount, string Phase, TimeSpan? Left = null)
 {
     public double Fraction => FrameCount == 0 ? 0 : Frame / (double)FrameCount;
 }
@@ -65,6 +65,7 @@ public static class VideoExport
         try
         {
             await encoder.StartAsync(settings, partial, cancel);
+            var clock = System.Diagnostics.Stopwatch.StartNew();
             await Task.Run(async () =>
             {
                 using var bitmap = new SKBitmap(new SKImageInfo(timeline.Width, timeline.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
@@ -75,7 +76,7 @@ public static class VideoExport
                     renderer.RenderInto(timeline.FrameTime(i), bitmap);
                     System.Runtime.InteropServices.Marshal.Copy(bitmap.GetPixels(), buffer, 0, buffer.Length);
                     await encoder.WriteFrameAsync(buffer, cancel);
-                    progress?.Report(new VideoExportProgress(i + 1, timeline.FrameCount, "Desenhando e codificando"));
+                    progress?.Report(new VideoExportProgress(i + 1, timeline.FrameCount, "Desenhando e codificando", VideoBudget.Remaining(i + 1, timeline.FrameCount, clock.Elapsed)));
                 }
             }, cancel);
             progress?.Report(new VideoExportProgress(timeline.FrameCount, timeline.FrameCount, "Finalizando o MP4"));

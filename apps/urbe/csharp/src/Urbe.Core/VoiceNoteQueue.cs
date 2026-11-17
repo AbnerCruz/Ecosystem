@@ -73,6 +73,33 @@ public static class VoiceNoteQueue
     }
 
     /// <summary>
+    /// CST-057: a recording cut short (the process killed while it recorded) has its audio on disk but a header still
+    /// saying "0 bytes"; the lengths are set from the file (whole samples), nothing is cut. False when the file is not
+    /// such a WAV, is right already, or is still being written.
+    /// </summary>
+    public static bool RepairWav(string path)
+    {
+        try
+        {
+            using var file = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            if (file.Length < 44) return false;
+            var h = new byte[44];
+            file.ReadExactly(h);
+            if (Encoding.ASCII.GetString(h, 0, 4) != "RIFF" || Encoding.ASCII.GetString(h, 8, 4) != "WAVE" || Encoding.ASCII.GetString(h, 36, 4) != "data") return false;
+            int align = Math.Max(1, (int)BitConverter.ToInt16(h, 32));
+            long data = Math.Min((file.Length - 44) / align * align, int.MaxValue - 36);
+            if (BitConverter.ToInt32(h, 40) == data && BitConverter.ToInt32(h, 4) == 36 + data) return false;
+            BitConverter.TryWriteBytes(h.AsSpan(4, 4), (int)(36 + data));
+            BitConverter.TryWriteBytes(h.AsSpan(40, 4), (int)data);
+            file.Seek(0, SeekOrigin.Begin);
+            file.Write(h);
+            file.Flush(true);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
+    }
+
+    /// <summary>
     /// Recordings in the folder that no entry names (the app was killed between saving the audio and the queue)
     /// become entries again, dated by their file time: the audio is never forgotten.
     /// </summary>

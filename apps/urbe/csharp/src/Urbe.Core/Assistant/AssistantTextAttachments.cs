@@ -29,15 +29,20 @@ public static class AssistantTextAttachments
     public static async Task<byte[]?> ReadBoundedAsync(Stream stream, int limit, CancellationToken cancel = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
-        var bytes = new byte[limit + 1];
-        int read = 0;
-        while (read < bytes.Length)
+        // #954: memory follows the file, never the limit (a 512 MiB array for every PDF crashed phones)
+        long known = -1;
+        try { if (stream.CanSeek) known = stream.Length - stream.Position; } catch (NotSupportedException) { }
+        if (known > limit) return null;
+        var buffer = new MemoryStream(known >= 0 ? (int)known : 64 * 1024);
+        var chunk = new byte[81920];
+        int n;
+        while ((n = await stream.ReadAsync(chunk, cancel)) > 0)
         {
-            int next = await stream.ReadAsync(bytes.AsMemory(read), cancel);
-            if (next == 0) break;
-            read += next;
+            if (buffer.Length + n > limit) return null;
+            buffer.Write(chunk, 0, n);
         }
-        return read > limit ? null : bytes.AsSpan(0, read).ToArray();
+        // the exact size was known: the buffer is the file, no second copy
+        return buffer.Capacity == buffer.Length ? buffer.GetBuffer() : buffer.ToArray();
     }
 
     /// <summary>

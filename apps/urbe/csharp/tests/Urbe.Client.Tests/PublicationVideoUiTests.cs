@@ -17,6 +17,11 @@ public sealed partial class HeadlessUiTests
         var dir = Path.Combine(Path.GetTempPath(), "urbe-pubvideo-" + Guid.NewGuid().ToString("N"));
         var vault = Path.Combine(dir, "vault");
         Directory.CreateDirectory(vault);
+        using (var wav = File.Create(Path.Combine(vault, "trilha.wav")))
+        {
+            VideoAudio.WriteWavHeader(wav, 1, 8000, 8000L * 2);
+            for (int k = 0; k < 8000; k++) wav.Write(BitConverter.GetBytes((short)(k < 4000 ? 30000 : 0)));
+        }
         File.WriteAllText(Path.Combine(vault, "Cena.md"), "# Abertura\n\nUma frase do roteiro.\n");
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
         var window = new Window { Width = 412, Height = 860, Content = view };
@@ -52,6 +57,62 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("# Abertura\n\nUma frase do roteiro.\n", File.ReadAllText(Path.Combine(vault, "Cena.md")));
             Assert.Equal(scene.Duration + 0.5, studio.VideoPanel.Timeline!.Duration, 6);
 
+            // CST-172: the same captions as SRT and as WebVTT
+            var captions = new Dictionary<string, string>();
+            view.SavePageFile = (name, bytes) => { captions[name] = System.Text.Encoding.UTF8.GetString(bytes); return Task.FromResult<bool?>(true); };
+            await view.ExportPublicationSubtitlesAsync("srt");
+            await view.ExportPublicationSubtitlesAsync("vtt");
+            Assert.StartsWith("1\n00:00:", captions["Filme.srt"]);
+            Assert.StartsWith("WEBVTT\n\n00:00:", captions["Filme.vtt"]);
+            Assert.Contains(" --> ", captions["Filme.vtt"]);
+            // CST-172: a track's volume is adjusted on screen, and it can be taken out
+            studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Audio = [new VideoAudioClip { Path = "trilha.wav", Kind = "music" }] } });
+            await Pump();
+            async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
+            var adjust = view.AdjustPublicationAudioAsync();
+            await Choose("trilha.wav");
+            for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains('█') == true); j++) await Pump();
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("█▁") == true); // loud, then quiet
+            await Choose("Volume");
+            for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any(); j++) await Pump();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "50";
+            ClickButtonWithText(view.Dialogs, "Aplicar");
+            await adjust;
+            Assert.Equal(0.5, studio.Project!.Video!.Audio.Single().Volume);
+            var remove = view.AdjustPublicationAudioAsync();
+            await Choose("trilha.wav");
+            await Choose("Tirar do vídeo");
+            await remove;
+            Assert.Empty(studio.Project!.Video!.Audio);
+            // CST-172: the device's voice narrates each scene's script, placed at the scene's start
+            var voice = PlatformAudio.SynthesizeToWav;
+            var spoken = new List<string>();
+            PlatformAudio.SynthesizeToWav = (text, _, target, _) => { spoken.Add(text); File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
+            try { await view.NarratePublicationVideoAsync(); }
+            finally { PlatformAudio.SynthesizeToWav = voice; }
+            await Pump();
+            Assert.Contains(spoken, t => t.Contains("Uma frase do roteiro."));
+            var narration = Assert.Single(studio.Project!.Video!.Audio, a => a.Kind == "voice");
+            Assert.Equal(("Narração/Filme/Cena 1.wav", 0.0), (narration.Path, narration.Start));
+            Assert.True(File.Exists(Path.Combine(vault, "Narração", "Filme", "Cena 1.wav")));
+            // CST-186: too little space is said before any frame is drawn, and nothing is saved
+            var (encoder, free) = (PlatformVideo.CreateEncoder, MainView.FreeSpace);
+            var started = false;
+            PlatformVideo.CreateEncoder = () => new NeverStarted(() => started = true);
+            MainView.FreeSpace = _ => 1000;
+            (string, byte[])? none = null;
+            view.SavePageFile = (name, bytes) => { none = (name, bytes); return Task.FromResult<bool?>(true); };
+            try
+            {
+                var tight = view.ExportPublicationVideoAsync();
+                for (int j = 0; j < 100 && !view.Dialogs.IsOpen; j++) await Pump();
+                Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Libere espaço ou encurte o vídeo") == true);
+                ClickButtonWithText(view.Dialogs, "Ok");
+                await tight;
+            }
+            finally { (PlatformVideo.CreateEncoder, MainView.FreeSpace) = (encoder, free); }
+            Assert.False(started);
+            Assert.Null(none);
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is covered where ffmpeg exists
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Resolution = 144 } });
             await Pump();
@@ -59,14 +120,32 @@ public sealed partial class HeadlessUiTests
             view.SavePageFile = (name, bytes) => { saved = (name, bytes); return Task.FromResult<bool?>(true); };
             Click(Named("Exportar vídeo MP4"));
             for (int j = 0; j < 600 && saved is null; j++) await Pump();
-            Assert.NotNull(saved);
+            Assert.True(saved is not null, "dialog: " + string.Join(" | ", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).Where(t => !string.IsNullOrEmpty(t)).Take(6)) + " / " + view.NoticeText);
             Assert.Equal("Filme.mp4", saved!.Value.Name);
             var info = Mp4Inspection.Read(new MemoryStream(saved.Value.Bytes))!;
             Assert.Equal("avc1", info.Video!.Codec);
+            Assert.NotNull(info.Audio);   // the narration (a WAV track) is in the file: a .wav track used to fail the export
             Assert.Equal((int)Math.Ceiling((scene.Duration + 0.5) * 30 - 1e-6), info.Video.SampleCount);
             Assert.Equal((256, 144), (info.Video.Width, info.Video.Height));
+            // #956 acceptance 5: the MP4 is recorded as the last export, with what each scene showed; made again, it says what changed
+            for (int j = 0; j < 80 && !File.ReadAllText(target).Contains("\"rendered\""); j++) await Pump();
+            Assert.Equal("mp4", studio.Project!.LastExport!.Format);
+            Assert.Equal(studio.Project.Video!.Scenes.Single().Id, Assert.Single(studio.Project.Video.Rendered!).Key);
+            saved = null;
+            Click(Named("Exportar vídeo MP4"));
+            for (int j = 0; j < 600 && saved is null; j++) await Pump();
+            Assert.Contains("Nenhuma cena mudou desde o último MP4", view.NoticeText);
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    private sealed class NeverStarted(Action started) : IVideoEncoder
+    {
+        public string Name => "teste";
+        public Task StartAsync(VideoEncodeSettings settings, string outputPath, CancellationToken cancel) { started(); return Task.CompletedTask; }
+        public Task WriteFrameAsync(ReadOnlyMemory<byte> rgba, CancellationToken cancel) => Task.CompletedTask;
+        public Task FinishAsync(CancellationToken cancel) => Task.CompletedTask;
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 }

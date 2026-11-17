@@ -34,6 +34,8 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
         UrbeApp.VaultStorageFactory = () => new AndroidVaultStorage();
         // HTML, PDF, audio and video seen inside the Urbe (ADD-0023)
         AndroidContentViewers.Register();
+        // the Assistente's alarm clock, calendar and e-mail (each off until the person allows it)
+        AndroidDevice.Register();
         // the Notas state kept on the device (favourites, recents), in the app's private files
         UrbeApp.LocalStatePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "notes-state.json");
         UrbeApp.OpeningNamesPath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "opening-names.json");
@@ -42,15 +44,9 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
         CrashLog.FilePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "erros.log");
         AndroidEnvironment.UnhandledExceptionRaiser += (_, e) => { CrashLog.Write(e.Exception, "android"); e.Handled = true; };
         UrbeApp.AssistantFolder = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "assistant");
-        // the AI that answers without the internet: the model in the app's private files, the engine in its native library folder
-        try
-        {
-            var context = Android.App.Application.Context;
-            if (context.ApplicationInfo?.NativeLibraryDir is { } nativeDir) Urbe.LocalAi.LlamaTextRuntime.UseNativeFolder(nativeDir);
-            Urbe.Core.Assistant.LocalAi.Text = new Urbe.LocalAi.LlamaTextRuntime(
-                System.IO.Path.Combine(context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "local-ai"), GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
-        }
-        catch (Exception) { /* without the engine the Assistente keeps to the providers on the internet */ }
+        // the offline AI was removed (16/11/2026): the models it downloaded into the app's private files go, to free the space
+        try { System.IO.Directory.Delete(System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? "", "local-ai"), true); }
+        catch (System.IO.IOException) { } catch (UnauthorizedAccessException) { }
         // Configurações → Verificar atualização: the APK of the newest direct release, over the installed one
         UrbeApp.UpdateAsset = Urbe.Core.AppUpdate.AndroidAsset;
         try
@@ -104,6 +100,7 @@ public sealed class MainActivity : AvaloniaMainActivity
         PlatformVoice.Backlog = VoiceNotes.Backlog(ApplicationContext ?? this);
         // CST-058: an audio file of the vault into a note (decoded and transcribed on the device, Android 13+)
         AudioDecoder.Install(ApplicationContext ?? this);
+        SpeechSynth.Install(ApplicationContext ?? this);
         // CST-209: a video publication exported as an H.264 MP4 (MediaCodec + MediaMuxer)
         AndroidVideoEncoder.Install();
         VoiceNoteWidget.Refresh(this, VoiceNoteService.IsRecording);

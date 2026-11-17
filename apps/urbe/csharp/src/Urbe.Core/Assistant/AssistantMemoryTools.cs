@@ -8,6 +8,14 @@ public static class AssistantMemoryTools
     private static JsonObject Schema(string raw) => JsonNode.Parse(raw)!.AsObject();
     private static string Get(JsonObject o, string key, string fallback = "") => (string?)o[key] ?? fallback;
 
+    /// <summary>
+    /// CST-087: an empty recall says why it can be empty: the search matches words, not meaning, so a synonym the
+    /// person would have used is worth one more try before saying there is no memory (never invent one).
+    /// </summary>
+    public const string NothingFound = "Não encontrei lembranças com essas palavras. A busca da memória é por palavras, não por significado: " +
+        "antes de concluir que não há registro, tente uma vez com sinônimos ou com os termos que a pessoa teria usado (ex.: “prazo” em vez de “data limite”). " +
+        "Se ainda assim nada vier, diga que não há lembrança sobre isso, sem inventar, e consulte as notas como fonte de verdade.";
+
     public static IReadOnlyList<AiTool> All { get; } =
     [
         new()
@@ -19,7 +27,7 @@ public static class AssistantMemoryTools
             Run = (i, host) =>
             {
                 var found = host.SearchMemory(Get(i, "query"), int.MaxValue);
-                if (found.Count == 0) return Task.FromResult(new AiToolOutput("Não encontrei lembranças correspondentes. Consulte as notas como fonte de verdade."));
+                if (found.Count == 0) return Task.FromResult(new AiToolOutput(NothingFound));
                 var offset = Math.Max(0, (int?)i["offset"] ?? 0);
                 // Per-call transport budget prevents an accidental enormous model response,
                 // without placing any limit on total stored knowledge or pages retrievable.

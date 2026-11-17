@@ -33,8 +33,35 @@ public static class AssistantPublicationTools
                 return new AiToolOutput("Publicação salva: " + saved.Path + ". Abra com open_note; as fontes continuam sendo notas editáveis.",
                     [new AiChange(saved.Id, doc is null ? null : new AiNoteSnap(doc.Path, doc.Content), new AiNoteSnap(saved.Path, saved.Content))]);
             }
+        },
+        new AiTool
+        {
+            Name = "review_publication", Access = "read",
+            Description = "Revisa uma publicação como o Estúdio faz antes de exportar: fontes ausentes, títulos que pulam nível, imagens sem descrição, slides cheios, legendas rápidas, links quebrados. Use antes de entregar e corrija nas notas.",
+            Parameters = JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}""")!.AsObject(),
+            Label = i => "Revisando " + ((string?)i["path"] ?? "a publicação"),
+            Run = (input, host) => Task.FromResult(new AiToolOutput(Review((string?)input["path"] ?? "", host)))
         }
     ];
+
+    /// <summary>
+    /// CST-178: the Estúdio's own review, for the agent to check its work before handing it over; it says what it does
+    /// not check (facts, the drawn result), so a clean review is never told as "ficou bom".
+    /// </summary>
+    private static string Review(string path, IAssistantHost host)
+    {
+        var doc = host.Documents.Get(path) ?? throw new AiToolException("Publicação não encontrada: " + path + ".");
+        PublicationProject project;
+        try { project = PublicationProjectCodec.Parse(doc.Content); }
+        catch (Exception e) when (e is InvalidDataException or NotSupportedException or System.Text.Json.JsonException) { throw new AiToolException("Não é uma publicação válida: " + e.Message); }
+        using var catalog = new PublicationSourceCatalog(host.Documents);
+        var files = host.OtherFiles;
+        var issues = PublicationReview.Run(project, catalog, f => files.Contains(f) || host.Documents.Get(f) is not null, n => host.Documents.Get(n) is not null);
+        const string Unchecked = "\nNão conferido por esta revisão: se os fatos estão certos (confira nas fontes) e a aparência final de cada formato.";
+        if (issues.Count == 0) return "Revisão automática sem problemas em " + project.Sections.Count + (project.Sections.Count == 1 ? " seção." : " seções.") + Unchecked;
+        return issues.Count + (issues.Count == 1 ? " ponto" : " pontos") + " a corrigir:\n" +
+               string.Join("\n", issues.Select(i => "- " + (i.Severity == ReviewSeverity.Error ? "[erro] " : "[aviso] ") + i.Place + ": " + i.Message + " → " + i.Fix)) + Unchecked;
+    }
 
     /// <summary>The longest on-screen label a video element may carry in the composition.</summary>
     public const int MaxOverlay = 160;
@@ -54,7 +81,15 @@ public static class AssistantPublicationTools
         "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step}], motions:[{property, expression (fórmula de t)}]}]}], " +
         "audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT; " +
-        "a exportação e o salvamento do arquivo são sempre da pessoa. Não crie .page.json; esse editor foi substituído.";
+        "a exportação e o salvamento do arquivo são sempre da pessoa. Não crie .page.json; esse editor foi substituído. " +
+        "Texto fiel à fonte é editado na própria nota. Quando a publicação precisa de outra redação (resumo, roteiro, fala, tradução), crie uma nota ao lado da " +
+        "fonte com as propriedades adaptacao_de: \"[[Nome da fonte]]\", adaptacao_id (id da fonte), adaptacao_tipo e adaptacao_origem (deixe vazio: o app avisa que a fonte mudou até alguém revisar) " +
+        "e troque a fonte da seção por essa nota; nunca esconda texto no .publication.json. " +
+        // CST-178: the editorial method, in the order a person would follow it in the Estúdio
+        "Método: 1) briefing — objective e audience da publicação (pergunte à pessoa se o pedido não diz); 2) fontes — notas reais lidas por inteiro, sem inventar " +
+        "referências; 3) roteiro — a ordem das seções e o que cada uma diz, antes de escrever; 4) composição — texto nas notas, layout no projeto; " +
+        "5) revisão — review_publication e correção nas notas; 6) entrega — diga o que foi revisado e o que não foi. Decisões de rumo (público, tom, cortes) são da pessoa. " +
+        "Um especialista (consult_agent) só quando ele sabe algo que você não sabe; não divida em vários agentes o que um faz bem.";
 
     private static (string Path, string Text, UrbeDocument? Previous) Validate(JsonObject input, IAssistantHost host)
     {

@@ -263,6 +263,20 @@ public static class AssistantAgent
     /// agent's own role and blocks, then Personalização/AGENTS.md (its part for the model before the general one), then
     /// the Urbe's guidance. Safety, permissions, approvals and authorship seals are not instructions any of them can lift.
     /// </summary>
+    /// <summary>
+    /// #963 (8 real conversations, 16/11/2026): where each kind of answer is, what an empty result does not prove, when not
+    /// to search at all, and the person's word now over an old memory. Given with the mechanisms, not instead of them.
+    /// </summary>
+    public const string SourcesGuidance =
+        "\n- Onde procurar: o que foi dito ou feito em conversas anteriores está no histórico (list_conversations, read_conversation); o que você aprendeu sobre o usuário está na memória (recall_memory); o que está escrito nas notas, no vault (search_notes). Um resultado vazio de uma dessas fontes não prova nada sobre as outras, e review_memory sem candidatos não prova que não há contradição." +
+        "\n- Pergunta geral ou de conversa, que não depende das notas nem de algo do usuário: responda direto, sem buscar nas notas. Busque só quando a resposta depender delas; se a busca trouxer notas de outro assunto (homônimos, como receitas de jogo para uma pergunta de culinária), ignore-as." +
+        "\n- Quando uma lembrança antiga discorda do que o usuário diz agora, vale o que ele diz agora: diga que mudou em vez de repetir a lembrança, e não trate um desabafo ou uma ironia como mudança definitiva sem perguntar." +
+        "\n- Não afirme que um arquivo não existe, que algo foi salvo ou qual é a versão do app sem uma ferramenta ter mostrado isso.\n";
+
+    /// <summary>#963 case 04: read-only closes the notes, not the agent's memory.</summary>
+    public const string ReadOnlyMemoryGuidance =
+        "\n- Modo somente leitura vale para as notas. A sua memória é separada: learn_memory continua disponível (o usuário aprova cada uso), e o app guarda sozinho, depois da sua resposta, preferências, decisões e procedimentos ditos pelo usuário em primeira pessoa (\"prefiro…\", \"gosto de…\", \"vou usar…\"), mostrando \"Aprendi\". Não diga que não pode lembrar algo por causa do modo somente leitura.\n";
+
     public const string InstructionOrder =
         "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Urbe. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
 
@@ -286,7 +300,8 @@ public static class AssistantAgent
 
     public static bool AllowTool(AiAgentDef agent, string policy, string access)
     {
-        if (policy == "readonly" && !Read.Contains(access)) return false;
+        // #963: read-only protects the vault's notes; the agent's own memory is apart (learning still asks every time)
+        if (policy == "readonly" && !Read.Contains(access) && access != "memory-write") return false;
         if (agent.Tools == "read") return Read.Contains(access);
         if (agent.Tools == "write") return access != "destructive";
         return true;
@@ -633,6 +648,7 @@ public static class AssistantAgent
         public KnowledgeIndex Knowledge => inner.Knowledge;
         public (string? Path, string? Selection) EditorContext() => inner.EditorContext();
         public int ReadChars => readChars;
+        public IReadOnlyCollection<string> OtherFiles => inner.OtherFiles;
         public Task<UrbeDocument> CreateNoteAsync(string path, string content) => inner.CreateNoteAsync(path, content);
         public Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content) => inner.SaveNoteAsync(doc, content);
         public Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string newPath) => inner.RenameNoteAsync(doc, newPath);
@@ -652,6 +668,8 @@ public static class AssistantAgent
         public IAssistantNames? Names => inner.Names;
         public IAssistantImages? Images => inner.Images;
         public AssistantWebSession? Web => inner.Web;
+        public IAssistantDevice? Device => inner.Device;
+        public IAssistantVideos? Videos => inner.Videos;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
@@ -849,7 +867,7 @@ public static class AssistantAgent
                     live.Meta ??= new AiChatMeta();
                     live.Meta.Draft = true;
                     emit(new AiAgentEvent("final", live, Usage: result.Usage));
-                    var verified = web.Sources.Where(s => s.Status == "página acessada")
+                    var verified = web.Sources.Where(s => s.Status is "página acessada" or "leitura parcial")
                         .Select(s => "- " + s.Title + " " + s.FinalUrl).ToList();
                     messages.Add(new AiChatMessage
                     {
@@ -1092,6 +1110,9 @@ public static class AssistantAgent
 
         async Task<Out> Execute(AiChatBlock call, AiTool? tool)
         {
+            // CST-113: a tool the agent's permissions took out of the catalog is refused by name, not called unknown
+            if (tool is null && (o.Tools ?? AssistantTools.All).Any(t => t.Name == call.Name))
+                return new Out("A ferramenta " + call.Name + " não é permitida para este agente com as permissões atuais (" + (policy == "readonly" ? "somente leitura" : agent.Tools) + "). Não tente de novo: use as disponíveis ou diga ao usuário o que precisaria ser liberado.", true);
             if (tool is null) return new Out("Ferramenta desconhecida: " + call.Name + ". Disponíveis: " + string.Join(", ", byName.Keys), true);
             var errs = AssistantTools.Validate(tool, call.Input);
             if (errs.Count > 0) return new Out("Argumentos inválidos para " + tool.Name + ": " + string.Join("; ", errs) + ".", true);

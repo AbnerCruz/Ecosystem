@@ -112,7 +112,7 @@ public sealed class VideoProjectTests
         using var _c = catalog;
         project = project with { Video = project.Video! with { Scenes = project.Video.Scenes.Select(s => s with { Duration = 2, Transition = new VideoTransition { Kind = "cut" } }).ToList() } };
         var renders = 0;
-        using var cache = new VideoFrameCache<string>(1 << 20, _ => 10);
+        using var cache = new BoundedCache<string>(1 << 20, _ => 10);
         void RenderAll(VideoTimeline t)
         {
             for (int i = 0; i < t.FrameCount; i++)
@@ -177,5 +177,35 @@ public sealed class VideoProjectTests
         Assert.InRange(At(0.2), 14800, 15200);          // music alone at 3/4 volume
         Assert.Equal(32767, At(1.0));                    // voice + music: limited, not wrapped
         Assert.Equal(0, At(2.5));                        // music ended (3 s − 1 s trimmed)
+    }
+
+    [Fact]
+    public void AudioFadesRiseFromAndFallToSilence()
+    {
+        var tone = new MemoryStream();
+        VideoAudio.WriteWavHeader(tone, 1, 44100, 44100L * 2 * 2);
+        for (int i = 0; i < 44100 * 2; i++) tone.Write(BitConverter.GetBytes((short)20000));
+        var output = new MemoryStream();
+        VideoAudio.Mix([(new VideoAudioClip { Path = "m.wav", FadeIn = 1, FadeOut = 0.5 }, tone)], 2, output, TestContext.Current.CancellationToken);
+        var info = VideoAudio.ReadWavInfo(output)!;
+        short At(double seconds)
+        {
+            output.Position = info.DataOffset + (long)(seconds * 44100) * 4;
+            var b = new byte[2]; output.ReadExactly(b); return BitConverter.ToInt16(b);
+        }
+        Assert.InRange(At(0.0), 0, 50);              // silence at the start
+        Assert.InRange(At(0.5), 9700, 10300);       // halfway up
+        Assert.InRange(At(1.2), 19900, 20100);      // full
+        Assert.InRange(At(1.75), 9700, 10300);      // halfway down
+        Assert.InRange(At(1.999), 0, 200);          // silence at the end
+    }
+
+    [Fact]
+    public void TheWaveformShowsLoudAndQuietParts()
+    {
+        var wav = new MemoryStream();
+        VideoAudio.WriteWavHeader(wav, 1, 8000, 8000L * 2 * 2);
+        for (int i = 0; i < 8000 * 2; i++) wav.Write(BitConverter.GetBytes((short)(i < 8000 ? 32000 : 0))); // a loud second, then silence
+        Assert.Equal("████▁▁▁▁", VideoAudio.Waveform(wav, 8));
     }
 }

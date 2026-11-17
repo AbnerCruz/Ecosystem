@@ -536,7 +536,8 @@ public sealed class NotesExplorer : Border
     {
         Fresh();
         if (!_visibleFolders.Contains(folder)) return false;
-        Toggle(FolderPrefix + folder);
+        // a hold selects (and starts a drag); it never takes a selected row out: a tap does that (CST-037)
+        if (!_selected.Contains(FolderPrefix + folder)) Toggle(FolderPrefix + folder);
         return true;
     }
 
@@ -555,7 +556,7 @@ public sealed class NotesExplorer : Border
     {
         Fresh();
         if (!_visibleNotes.Contains(path)) return false;
-        Toggle(path);
+        if (!_selected.Contains(path)) Toggle(path);
         return true;
     }
 
