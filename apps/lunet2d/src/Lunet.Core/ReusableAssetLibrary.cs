@@ -153,6 +153,28 @@ public sealed class ReusableAssetLibrary
     }
 
     /// <summary>
+    /// Previews destination path collisions without writing files. The actual import
+    /// repeats every check because another editor may change the project meanwhile.
+    /// </summary>
+    public IReadOnlyList<string> FindImportConflicts(string assetId, int version, LunetProject destination)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        var manifest = Find(assetId, version);
+        var conflicts = new List<string>();
+        foreach (var file in manifest.Files)
+        {
+            ValidatePath(file.Path);
+            destination.EnsureInsideProject(file.Path);
+            EnsureNoLinks(destination.Directory, file.Path);
+            var target = Path.Combine(destination.Directory,
+                file.Path.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(target) || Directory.Exists(target))
+                conflicts.Add(file.Path);
+        }
+        return conflicts;
+    }
+
+    /// <summary>
     /// Pré-valida a versão inteira; rejeita colisões sem sobrescrita. Staging e rollback impedem
     /// importação parcial em erros de IO. Uma edição concorrente nunca é apagada pelo rollback.
     /// </summary>
