@@ -21,3 +21,6 @@ Referências técnicas e licenças: auditoria docs/architecture/audits/lunet-hom
 ## Conflitos de importação
 
 Ao selecionar **Usar em…**, a biblioteca verifica se os caminhos do asset já existem no projeto escolhido. Se houver colisões, mostra os caminhos e não inicia a importação. Resolva os conflitos no projeto antes de tentar novamente. A verificação é apenas uma prévia: o núcleo repete os controles ao importar, pois os arquivos podem mudar entre a confirmação e a cópia. Validação em Android físico ainda pendente.
+
+### Busca por arquivos (incremento LUNET-511)
+A pesquisa local aceita termos do título, autoria, licença, tags e também nomes/caminhos dos arquivos de uma versão, como `wing.sprite.json`, `wing.png` ou `Content/Art`. Os termos podem ser combinados e não alteram os manifestos. Teste automatizado registrado; CI e Android físico ainda pendentes.
