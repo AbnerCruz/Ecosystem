@@ -128,6 +128,13 @@ public sealed class VideoTimeline
         return new VideoFrame(t, layers, subtitle);
     }
 
+    /// <summary>What each scene shows (scene ID → content key), kept with the MP4 it went into.</summary>
+    public Dictionary<string, string> SceneKeys() => Scenes.ToDictionary(s => s.Scene.Id, s => s.ContentKey, StringComparer.Ordinal);
+
+    /// <summary>The scenes that look different from <paramref name="rendered"/> (or are new); null when nothing was rendered.</summary>
+    public IReadOnlyList<VideoTimelineScene>? ChangedSince(IReadOnlyDictionary<string, string>? rendered) =>
+        rendered is null ? null : Scenes.Where(s => !rendered.TryGetValue(s.Scene.Id, out var key) || key != s.ContentKey).ToList();
+
     public string Srt() => VideoScript.Srt(Cues);
     public string Vtt() => VideoScript.Vtt(Cues);
 

@@ -336,7 +336,14 @@ public sealed partial class MainView
             if (saved == true)
             {
                 LastVideoExport = result;
-                ShowLifeNotice("Vídeo MP4 salvo." + (skipped.Count > 0 ? " Sem o áudio de: " + string.Join(", ", skipped.Select(System.IO.Path.GetFileName)) + " (formato que este aparelho não lê)." : ""),
+                var focus = WhatChangedSinceLastMp4(timeline, project.Video?.Rendered);
+                if (_publicationsStudio?.Project is { Video: { } video } current)
+                    _publicationsStudio.UpdateProject(current with
+                    {
+                        Video = video with { Rendered = timeline.SceneKeys() },
+                        LastExport = PublicationExportRecord.Of(current, "mp4", id => _store?.Get(id)?.Content, DateTimeOffset.Now)
+                    });
+                ShowLifeNotice("Vídeo MP4 salvo." + focus + (skipped.Count > 0 ? " Sem o áudio de: " + string.Join(", ", skipped.Select(System.IO.Path.GetFileName)) + " (formato que este aparelho não lê)." : ""),
                     skipped.Count > 0 ? Ui.ToastKind.Warning : Ui.ToastKind.Success);
             }
         }
@@ -356,6 +363,20 @@ public sealed partial class MainView
         }
     }
 
+    /// <summary>
+    /// #956: after a new MP4, which scenes look different from the last one (an edited word, a moved element), so the
+    /// person sees the change landed where it was made and the rest came out the same.
+    /// </summary>
+    public static string WhatChangedSinceLastMp4(VideoTimeline timeline, IReadOnlyDictionary<string, string>? rendered)
+    {
+        if (timeline.ChangedSince(rendered) is not { } changed) return "";
+        if (changed.Count == 0) return " Nenhuma cena mudou desde o último MP4.";
+        if (changed.Count == timeline.Scenes.Count) return timeline.Scenes.Count == 1 ? "" : " Todas as cenas mudaram desde o último MP4.";
+        string Name(VideoTimelineScene s) => (timeline.Scenes.ToList().IndexOf(s) + 1) + " (" + PublicationVideoPanel.Clock(s.Start) + "–" + PublicationVideoPanel.Clock(s.End) + ")";
+        return (changed.Count == 1 ? " Mudou só a cena " : " Mudaram as cenas ") + string.Join(", ", changed.Take(4).Select(Name)) + (changed.Count > 4 ? "…" : "") +
+            "; as outras saíram iguais ao último MP4.";
+    }
+
     /// <summary>Free bytes where the export writes, or null when the platform does not say.</summary>
     public static Func<string, long?> FreeSpace { get; set; } = path =>
     {
@@ -373,13 +394,7 @@ public sealed partial class MainView
             FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType("MP4") { Patterns = ["*.mp4"], MimeTypes = ["video/mp4"] }]
         });
         if (file is null) return null;
-        await using (var output = await file.OpenWriteAsync())
-        await using (var input = File.OpenRead(path))
-        {
-            if (output.CanSeek) output.SetLength(0);
-            await input.CopyToAsync(output);
-            await output.FlushAsync();
-        }
+        await ExportFiles.WriteAndCheckAsync(file.OpenWriteAsync, file.OpenReadAsync, () => File.OpenRead(path));
         return true;
     }
 }

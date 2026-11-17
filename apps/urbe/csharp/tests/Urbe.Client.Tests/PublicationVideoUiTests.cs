@@ -127,6 +127,14 @@ public sealed partial class HeadlessUiTests
             Assert.NotNull(info.Audio);   // the narration (a WAV track) is in the file: a .wav track used to fail the export
             Assert.Equal((int)Math.Ceiling((scene.Duration + 0.5) * 30 - 1e-6), info.Video.SampleCount);
             Assert.Equal((256, 144), (info.Video.Width, info.Video.Height));
+            // #956 acceptance 5: the MP4 is recorded as the last export, with what each scene showed; made again, it says what changed
+            for (int j = 0; j < 80 && !File.ReadAllText(target).Contains("\"rendered\""); j++) await Pump();
+            Assert.Equal("mp4", studio.Project!.LastExport!.Format);
+            Assert.Equal(studio.Project.Video!.Scenes.Single().Id, Assert.Single(studio.Project.Video.Rendered!).Key);
+            saved = null;
+            Click(Named("Exportar vídeo MP4"));
+            for (int j = 0; j < 600 && saved is null; j++) await Pump();
+            Assert.Contains("Nenhuma cena mudou desde o último MP4", view.NoticeText);
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }

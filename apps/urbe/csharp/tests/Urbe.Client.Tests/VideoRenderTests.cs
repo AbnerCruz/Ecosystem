@@ -32,6 +32,33 @@ public sealed class VideoRenderTests
 
     private static bool Reddish(SKColor c) => c.Red > 200 && c.Green < 60 && c.Blue < 60;
 
+    /// <summary>#956 acceptance 5: after one word changes in the middle scene, the frames of the other scenes come out pixel for pixel the same.</summary>
+    [Fact]
+    public void EditingOneSceneLeavesTheOtherScenesFramesIdentical()
+    {
+        var store = new DocumentStore();
+        var docs = new[] { "Começo", "Meio", "Fim" }.Select(n => store.Upsert(new DocumentInput { Path = n + ".md", Content = "# " + n + "\n\nA cena " + n.ToLowerInvariant() + " explica uma ideia.\n" })).ToList();
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = VideoComposition.Synced(PublicationProject.Create("Aula", docs[0].Id).AddSource(docs[1].Id).AddSource(docs[2].Id) with { Design = new PublicationDesign { Layout = "video" } });
+        project = project with { Video = project.Video! with { Resolution = 144, Scenes = project.Video.Scenes.Select(s => s with { Elements = [.. s.Elements, new VideoElement { Kind = "script", Y = 0.75 }] }).ToList() } };
+        byte[][] Frames(VideoTimeline t)
+        {
+            using var renderer = new VideoFrameRenderer(t);
+            return t.Scenes.Select(s => { using var b = renderer.Render(s.Start + s.Duration * 0.6); return b.Bytes; }).ToArray();
+        }
+        var before = Frames(VideoTimeline.Build(project, catalog));
+        store.Upsert(new DocumentInput { Id = docs[1].Id, Path = docs[1].Path, Content = "# Meio\n\nA cena meio explica outra ideia.\n" });
+        var after = Frames(VideoTimeline.Build(project, catalog));
+        Assert.Equal(before[0], after[0]);
+        Assert.NotEqual(before[1], after[1]);
+        Assert.Equal(before[2], after[2]);
+        var timeline = VideoTimeline.Build(project, catalog);
+        var rendered = timeline.SceneKeys();
+        rendered[project.Video!.Scenes[1].Id] = "antes";
+        Assert.Equal(" Mudou só a cena 2 (" + PublicationVideoPanel.Clock(timeline.Scenes[1].Start) + "–" + PublicationVideoPanel.Clock(timeline.Scenes[1].End) +
+            "); as outras saíram iguais ao último MP4.", MainView.WhatChangedSinceLastMp4(timeline, rendered));
+    }
+
     [Fact]
     public void FramesShowTheAnimatedStateAtTheirTimeAndStillFramesComeFromTheCache()
     {
