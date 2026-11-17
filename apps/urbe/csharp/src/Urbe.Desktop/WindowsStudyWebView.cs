@@ -115,7 +115,7 @@ internal sealed class WindowsStudyWebView(string content, bool local, Action<str
                     finally { stream?.Dispose(); pending.Complete(); }
                     return;
                 }
-                if (!local && ReaderUris.YouTube(e.Request.Uri) is not null && new Uri(e.Request.Uri).AbsolutePath.StartsWith("/embed/", StringComparison.Ordinal))
+                if (!local && ReaderUris.IsYouTubeEmbed(e.Request.Uri))
                     e.Request.Headers.SetHeader("Referer", "https://urbe.desktop/");
                 if (local && e.Request.Uri == "https://urbe.reader.invalid/content")
                 {

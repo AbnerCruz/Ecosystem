@@ -189,14 +189,12 @@ public sealed class StudyBrowserPanel : Grid
         { _status.Text = "Use uma URL http:// ou https:// sem credenciais no endereço."; return false; }
         _videoId = ReaderUris.YouTube(address)?.Id;
         _video.IsVisible = _videoId is not null;
-        if (ReaderUris.YouTube(address) is { } video)
-        {
-            _timestamp.Text = video.Second.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            // Official player page: no downloaded media, hidden playback, transcript scraping or replacement controls.
-            uri = new Uri("https://www.youtube.com/embed/" + video.Id + "?start=" + video.Second);
-        }
+        if (ReaderUris.YouTube(address) is { } video) _timestamp.Text = video.Second.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        // Official player page (a video, or a playlist): no downloaded media, hidden playback, transcript scraping or replacement controls.
+        var embed = ReaderUris.YouTubeEmbed(address);
+        if (embed is not null) uri = embed;
         _address.Text = uri.AbsoluteUri;
-        _status.Text = _videoId is null ? (uri.Scheme == "https" ? "" : "Conexão sem criptografia (HTTP).")
+        _status.Text = embed is null ? (uri.Scheme == "https" ? "" : "Conexão sem criptografia (HTTP).")
             : "Player oficial do YouTube. Se o vídeo não tocar aqui, use ⋯ → Abrir no navegador do sistema.";
         _status.IsVisible = _status.Text.Length > 0;
         if (_browser is null)

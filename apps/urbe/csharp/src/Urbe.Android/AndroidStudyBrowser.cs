@@ -44,7 +44,7 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
     }
     private void LoadAddress(WebView web)
     {
-        if (ReaderUris.YouTube(Address) is not null && new Uri(Address).AbsolutePath.StartsWith("/embed/", StringComparison.Ordinal))
+        if (ReaderUris.IsYouTubeEmbed(Address))
             web.LoadUrl(Address, new Dictionary<string, string> { ["Referer"] = "https://" + (web.Context?.PackageName ?? "app.urbe.nativepreview") + "/" });
         else web.LoadUrl(Address);
     }
