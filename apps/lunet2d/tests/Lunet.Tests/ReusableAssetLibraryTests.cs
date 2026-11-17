@@ -318,6 +318,21 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void VerifyIntegrity_ReportsCorruptionWithoutDeletingStoredVersion()
+    {
+        var source = CreateSpriteProject("VerifySource");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Asas", "Eu", "CC0");
+        Library.VerifyIntegrity(asset.Id, asset.Version);
+        var file = Path.Combine(LibraryRoot, asset.Id, "v1", "files",
+            "Content", "Art", "wing.png");
+        File.WriteAllBytes(file, [1, 2, 3]);
+        Assert.Throws<InvalidDataException>(() => Library.VerifyIntegrity(asset.Id, asset.Version));
+        Assert.True(File.Exists(file));
+        Assert.Equal(asset.Id, Library.Find(asset.Id, asset.Version).Id);
+    }
+
+    [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
         var source = CreateSpriteProject("Origin");
