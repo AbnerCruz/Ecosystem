@@ -15,6 +15,7 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 ## Auditoria incremental
 
 - [ ] **LUNET-511 — Validação adicional de manifestos (código e testes propostos; CI/DEVICE pendentes):** rejeitar `Kind` fora do enum e `CreatedUtc` ausente ao ler versões locais, preservando arquivo e projetos; regressões xUnit adicionadas na branch #962.
+  - Incremento PR #962: prévia de conflitos inclui arquivo ocupando pasta ancestral; teste de regressão registrado, CI/DEVICE ainda pendentes.
 
  e canal único (15/11/2026)
 
