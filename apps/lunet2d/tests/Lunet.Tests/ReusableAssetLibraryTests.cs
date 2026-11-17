@@ -435,6 +435,10 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Library.VerifyIntegrity(asset.Id, 1);
         var destination = Projects.Create("LowercaseTarget");
         Assert.Equal(2, Library.ImportToProject(asset.Id, 1, destination).Count);
+        Assert.Equal(source.ReadText("Content/Art/wing.sprite.json"),
+            destination.ReadText("Content/Art/wing.sprite.json"));
+        Assert.Equal(File.ReadAllBytes(Path.Combine(source.Directory, "Content", "Art", "wing.png")),
+            File.ReadAllBytes(Path.Combine(destination.Directory, "Content", "Art", "wing.png")));
         var zip = Path.Combine(_root, "lowercase.zip");
         Library.ExportZip(asset.Id, 1, zip);
         using (var archive = ZipFile.OpenRead(zip))
