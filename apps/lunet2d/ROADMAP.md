@@ -529,3 +529,5 @@ Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar
 - [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o editor de notas está fora do escopo de edição.
 
 - LUNET-511 (17/11, PR #962, validação pendente): preflight de importação também detecta colisões case-insensitive em arquivos e diretórios, com testes para ambos; CI e DEVICE ainda necessários.
+
+- [ ] **LUNET-511 / busca por arquivos da Library (PR #962, CI/DEVICE pendentes):** pesquisa local indexa também caminhos e nomes dos arquivos-fonte/derivados, com regressão xUnit após reinício. Não representa conclusão dos Studios independentes.
