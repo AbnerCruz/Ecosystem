@@ -49,7 +49,7 @@ public sealed class ReusableAssetLibrary
         return entries.Where(asset =>
         {
             var searchable = NormalizeSearch(string.Join(" ", new[] { asset.Title, asset.Kind.ToString(),
-                asset.Author, asset.License, asset.Attribution }.Concat(asset.Tags)));
+                asset.Author, asset.License, asset.Attribution }.Concat(asset.Tags).Concat(asset.Files.Select(file => file.Path))));
             return terms.All(term => searchable.Contains(term, StringComparison.Ordinal));
         }).ToArray();
     }
