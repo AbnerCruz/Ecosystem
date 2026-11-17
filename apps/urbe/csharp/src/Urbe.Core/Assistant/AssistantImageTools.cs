@@ -12,6 +12,9 @@ public interface IAssistantImages
     /// <summary>CST-220: why nothing can be drawn now, naming the configured image models when there are any.</summary>
     string Unavailable => "Nenhum provedor de imagens configurado. Adicione uma chave OpenRouter, OpenAI ou Google Gemini nas configurações do Assistente; não é necessário trocar o modelo do chat.";
 
+    /// <summary>CST-082: the image model and the provider that draw, written into the picture as its provenance.</summary>
+    (string Model, string Provider) Drawer => ("", "");
+
     /// <summary>The picture drawn by the run's provider (PNG, JPEG or WebP bytes).</summary>
     Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel);
 
@@ -112,10 +115,14 @@ public static class AssistantImageTools
             catch (AiProviderException e) { throw new AiToolException("A imagem não foi gerada: " + e.Message); }
             var extension = AssistantProviders.ImageExtension(bytes) ?? throw new AiToolException("O provedor devolveu algo que não é uma imagem.");
             var path = PlanPath(Str(i, "path"), prompt, extension, images.Exists);
-            await images.SaveAsync(path, bytes);
-            if (note is null) return new AiToolOutput("Imagem guardada em " + path + ". Para mostrá-la numa nota, escreva ![[" + path + "]].");
+            var (model, provider) = images.Drawer;
+            var marked = new ImageProvenance(model, provider, prompt, DateTimeOffset.Now).Embed(bytes);
+            await images.SaveAsync(path, marked);
+            // the provenance is only promised when it went into the file
+            var told = ReferenceEquals(marked, bytes) ? "" : " O arquivo diz que foi gerado por IA, com o modelo, a descrição e a data.";
+            if (note is null) return new AiToolOutput("Imagem guardada em " + path + "." + told + " Para mostrá-la numa nota, escreva ![[" + path + "]].");
             var u = await host.SaveNoteAsync(note, AssistantTools.AppendText(note.Content, "![[" + path + "]]", null));
-            return new AiToolOutput("Imagem guardada em " + path + " e colocada no fim de " + u.Path + ".",
+            return new AiToolOutput("Imagem guardada em " + path + " e colocada no fim de " + u.Path + "." + told,
                 [new AiChange(note.Id, new AiNoteSnap(note.Path, note.Content), new AiNoteSnap(u.Path, u.Content))]);
         }
     };

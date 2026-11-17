@@ -462,6 +462,8 @@ public static partial class AppDocs
 
         **Prévia de imagem no chat:** quando `generate_image` termina, a imagem salva no vault aparece diretamente no cartão da conversa, com o botão **Abrir** para a visualização nativa em tamanho maior. Não é uma nova cópia nem uma URL externa. Nas conversas anteriores, imagens concluídas continuam à vista mesmo com os passos do agente recolhidos.
 
+        **De onde veio a imagem:** a imagem gerada guarda dentro do próprio arquivo (PNG ou JPEG) que foi feita por IA, com o modelo, a descrição usada e a data, no padrão de metadados IPTC que outros programas também leem. Ao abrir a imagem, o Urbe mostra “gerada por IA” e o modelo; a descrição vira o texto alternativo. Isso vai junto quando você move a imagem ou a usa numa publicação.
+
         ## Skills
 
         Uma **skill** ensina o Assistente a fazer um tipo de trabalho do seu jeito (o formato aberto Agent Skills). Crie uma pasta em `Personalização/Skills/` com um arquivo `SKILL.md`:

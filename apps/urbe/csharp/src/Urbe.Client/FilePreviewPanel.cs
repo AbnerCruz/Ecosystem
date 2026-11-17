@@ -760,6 +760,14 @@ public sealed class FilePreviewPanel : Grid
         if (picture && bytes is not null && Image(bytes) is { } image)
         {
             if (kind == VaultFileKinds.Other) _meta.Text += " · conteúdo: " + FileSignatures.Describe(signature);
+            // CST-082: what made a generated picture, read from the file itself; its description is the alternative text
+            if (ImageProvenance.Read(bytes) is { } made)
+            {
+                _meta.Text += " · gerada por IA (" + (made.Model.Length > 0 ? made.Model : "modelo não informado") +
+                              (made.Created != default ? ", " + made.Created.ToLocalTime().ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture) : "") + ")";
+                Avalonia.Automation.AutomationProperties.SetName(image, made.Prompt);
+                ToolTip.SetTip(image, made.Prompt);
+            }
             if(_requestedRegion is { } region)
             {
                 var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight(),ShowsBack=!Phone};

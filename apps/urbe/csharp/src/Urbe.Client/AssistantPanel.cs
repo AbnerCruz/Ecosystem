@@ -1668,6 +1668,8 @@ public sealed partial class AssistantPanel : Border
         private AiProviderConfig? ImageProvider => panel._cfg.AgentImages.TryGetValue(agentId, out var choice)
             ? panel._cfg.Providers.FirstOrDefault(p => p.Id == choice.ProviderId) : null;
         public bool CanDraw => ImageProvider is not null;
+        public (string Model, string Provider) Drawer => (panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model is { Length: > 0 } m ? m
+            : ImageProvider is { } ip ? AssistantProviders.ImageModel(ip.Preset) ?? "" : "", ImageProvider?.Name ?? ImageProvider?.Preset ?? "");
         public string Unavailable => panel.ImagesUnavailable();
         // CST-219: the run's cancellation reaches the image provider (the tool has no token of its own to give)
         public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken token) =>

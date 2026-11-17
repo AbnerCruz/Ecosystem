@@ -71,6 +71,7 @@
 - **Atalhos sem surpresa.** A lista de atalhos avisa quando o seu `atalhos.json` tem duas entradas para a mesma tecla, um comando que não existe ou um erro de escrita, e diz qual atalho padrão cada um seu substituiu.
 - **Arquivo exportado conferido no destino.** Depois de salvar uma publicação, o Urbe relê o arquivo onde ele foi parar e confere se é igual ao gerado. Salvar uma página HTML por cima de outra maior não deixa mais restos da antiga no fim do arquivo.
 - **Memória do Assistente que aprende do jeito que você fala.** “Eu gosto de…”, “Mudei de ideia: …”, “detesto…”, “adorei X, mas…” agora viram lembranças, e “odeio X” substitui um antigo “gosto de X”. Suas preferências chegam ao agente mesmo quando há muitos registros de tarefas, e o registro de uma tarefa guarda o pedido inteiro.
+- **A imagem gerada diz de onde veio.** O arquivo guarda que foi feito por IA, com o modelo, a descrição e a data; ao abrir, o Urbe mostra isso.
 - **O editor antigo de páginas saiu do app.** As páginas antigas continuam no vault: você vê, imprime, exporta e converte em publicação. Para algo novo, use Publicações.
 - **O vídeo diz o que mudou desde o último MP4.** Ao exportar de novo, o Urbe diz quais cenas mudaram e que as outras saíram iguais. O MP4 salvo é relido e conferido antes da mensagem de sucesso.
 - **O mapa da sessão guarda o que você fez nele.** Refazer o mapa atualiza só o que vem das fontes; as suas anotações, ligações, traços e posições continuam. As notas de origem não são tocadas.
