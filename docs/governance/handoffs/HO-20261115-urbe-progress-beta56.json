@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261115-urbe-progress-beta56",
   "category": "HANDOFF",
-  "timestamp": "2026-11-16T00:00:49.000Z",
+  "timestamp": "2026-11-17T06:00:00.000Z",
   "agent": {
     "id": "claude-code-urbe-editor",
     "kind": "ai-agent"
@@ -160,7 +160,13 @@
     "#956: mapa da sessão de estudo (StudyMap, grafo derivado das fontes), podcast de duas vozes (roteiro em nota editorial pelo agente; áudio pela voz do Android, WAV juntado no Core) e infográfico vetorial da nota (SVG + PNG do mesmo layout).",
     "Memória P1: captura de preferências/decisões/procedimentos ampliada; contradição nova do usuário substitui a antiga (mantida, datada e ligada); refinamento ligado sem conflito; repetição em outra conversa reforça; episódios de execução abaixo do que o usuário disse na busca; aviso \"Aprendi\".",
     "UC-87: grafo da memória do agente como projeção do AssistantStore (nada gravado no vault), com substitui/refina/conflito/fonte; cartões de grafo quebram o texto em vez de cortar em 29 letras; grafo somente leitura sem ferramentas de edição.",
-    "CST-135 completo (parágrafo selecionado com ^id, busca); podcast também no Windows (SAPI); ADR-0051 proposto para CST-201 (execução de código isolada), sem código."
+    "CST-135 completo (parágrafo selecionado com ^id, busca); podcast também no Windows (SAPI); ADR-0051 proposto para CST-201 (execução de código isolada), sem código.",
+    "CST-161: nova publicação no estilo de outra (layout, tema, cor, letra, público, formatos; nenhuma nota).",
+    "CST-191: toda exportação (DOCX, PPTX, ODT, EPUB, ZIP, PDF) é aberta e conferida antes de salvar; falha não é salva.",
+    "CST-188: RESEARCH-LOG.json com hipótese, alternativas, licença, prós e contras (natureza de cada um), decisão e provas que existem.",
+    "CST-186: o vídeo confere o espaço livre antes de começar e mostra o tempo que falta; mesma taxa de bits do codificador do Android.",
+    "Auditorias com defeito corrigido: seleção perdida ao formatar (CST-020), botões do painel fixado abaixo de 48 dp (CST-023), arrastar multisseleção (CST-037), WAV de gravação interrompida (CST-057), ferramenta proibida chamada de desconhecida (CST-113), chave colada no chat saía na exportação (CST-132), leitura parcial de página marcada como lida (CST-124), memória não achava plurais (CST-090), memória não seguia nota renomeada (CST-134), pedido ao modelo prendendo a interface em conversas longas (CST-148, parte).",
+    "Auditorias conferidas sem defeito: CST-018, 048, 080, 104, 119, 121, 125 (parte), 133, 136."
   ],
   "verification": [
     {
@@ -207,6 +213,20 @@
       "result": "pending",
       "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
       "critical": true
+    },
+    {
+      "check": "Conversa longa com a IA no Android não mostra 'Urbe não está respondendo' (comparar com a beta.38)",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "critical": true
+    },
+    {
+      "check": "Nota de voz interrompida pelo sistema é recuperada e transcrita",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/VoiceNoteQueue.cs",
+      "critical": false
     }
   ],
   "known_issues": [
@@ -216,9 +236,9 @@
     "ADR-0051 (CST-201): escolher A (Wasm, com prova de conceito), A+C, B+C, C ou D. Registro em decisions.json fica para quem tem autoridade de governança (ADD-0034)."
   ],
   "next_actions": [
-    "Editor de fonte virtualizado por blocos (gate do editor, desempenho do Fonte em notas longas).",
-    "CST-205: transações multiarquivo de agentes.",
-    "CST-154: operações editoriais compostas com recuperação."
+    "CST-156: árvore semântica (OfficeDocument como base, com identidade de trecho).",
+    "CST-114/137: medir latência no moto g32 (depende do aparelho).",
+    "Restante dos CST sem linha na consolidação, de cima para baixo."
   ],
   "decisions_required": [],
   "normative_sources": [
