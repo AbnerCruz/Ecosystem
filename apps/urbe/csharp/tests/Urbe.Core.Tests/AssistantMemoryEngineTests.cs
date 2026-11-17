@@ -196,6 +196,28 @@ public sealed class AssistantMemoryEngineTests
         Assert.DoesNotContain(AssistantMemoryEngine.Visible(cfg, "Equipe", "geral"), m => m.Id == temporary.Id);
     }
 
+    /// <summary>
+    /// CST-133: forgetting the memory that replaced another never brings the old one back; saying the same thing again
+    /// as a new statement is a new memory (with its own date and origin), not the obsolete record revived.
+    /// </summary>
+    [Fact]
+    public void ForgettingTheReplacementDoesNotReviveTheObsoleteMemory()
+    {
+        var cfg = new AiConfig();
+        var old = AssistantMemoryEngine.Remember(cfg, "O chefe da equipe é Raul", "Equipe");
+        var next = AssistantMemoryEngine.Remember(cfg, "O chefe da equipe é Ana", "Equipe");
+        Assert.True(AssistantMemoryEngine.Supersede(cfg, old.Id, next.Id));
+        Assert.Contains(old.Id, next.RelatedMemoryIds);   // inspectable: who replaced whom, and since when
+        Assert.NotNull(old.ValidUntil);
+        Assert.True(AssistantMemoryEngine.Forget(cfg, next.Id));
+        Assert.Empty(AssistantMemoryEngine.Search(cfg, "Equipe", "geral", "chefe da equipe", 5));
+        Assert.Equal("superseded", Assert.Single(cfg.MemoryRecords).State);
+        var again = AssistantMemoryEngine.Remember(cfg, "O chefe da equipe é Raul", "Equipe");
+        Assert.NotEqual(old.Id, again.Id);
+        Assert.Equal("superseded", cfg.MemoryRecords.Single(m => m.Id == old.Id).State);
+        Assert.Equal(again.Id, Assert.Single(AssistantMemoryEngine.Search(cfg, "Equipe", "geral", "chefe da equipe", 5)).Memory.Id);
+    }
+
     [Fact]
     public void DestructiveMemoryOperationsCannotCrossAgentBoundary()
     {
