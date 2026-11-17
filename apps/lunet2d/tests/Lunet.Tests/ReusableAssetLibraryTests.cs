@@ -359,6 +359,21 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void Search_FindsSourceAndDerivedFilenamesAfterRestart()
+    {
+        var source = CreateSpriteProject("FilenameSearch");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Flying wings", "Artist", "CC0");
+        var reopened = new ReusableAssetLibrary(LibraryRoot);
+
+        Assert.Equal(asset.Id, Assert.Single(reopened.Search("wing.sprite.json")).Id);
+        Assert.Equal(asset.Id, Assert.Single(reopened.Search("content/art/wing.png")).Id);
+        Assert.Equal(asset.Id, Assert.Single(reopened.Search("flying wing.png")).Id);
+        Assert.Empty(reopened.Search("unrelated.png"));
+        Assert.Equal("Flying wings", reopened.Find(asset.Id, 1).Title);
+    }
+
+    [Fact]
     public void PublishedTagsRemainSearchableAfterLibraryRestart()
     {
         var project = CreateSpriteProject("TaggedSource");
