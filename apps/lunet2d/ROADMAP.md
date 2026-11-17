@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] **LUNET-511 — staging e rollback SHA-256 (código e regressão publicados; CI/DEVICE pendentes):** comparação case-insensitive durante a cópia temporária e remoção segura em rollback; teste verifica bytes importados de manifesto minúsculo.
 - [ ] **LUNET-511 — compatibilidade SHA-256 minúsculo (código e teste publicados; CI/DEVICE pendentes):** importação e ZIP tratam hashes válidos sem diferenciar caixa, alinhados à verificação; regressão xUnit adicionada no PR #962.
 
 Fonte de verdade do que existe e do que falta. A especificação completa está em [`docs/SPEC.md`](docs/SPEC.md); as seções citadas como **§N** referem-se a ela. A rotina de trabalho está em [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
