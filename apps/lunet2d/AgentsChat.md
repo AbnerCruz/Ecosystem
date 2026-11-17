@@ -777,3 +777,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação: Biblioteca de assets acessível da Home e da seção Studios mesmo sem projeto aberto. Preservados ReusableAssetLibrary e testes; ainda falta edição dos próprios assets pelo Studio fora de projeto, ZIP e DEVICE.
 - Verificação: CI da branch anterior passou; aguardar novo CI combinado e validação em Android 13. PR mantido em draft até escopo realmente completo.
 - Próximo: implementar IAssetWorkspace sem criar cópias dos Studios, export/import ZIP, provas de integridade e teste físico.
+
+### 20261117-chatgpt-lunet511-hashcase-01 — 2026-11-17 (America/Sao_Paulo) — ChatGPT → integrador — em andamento
+- Item: LUNET-511, compatibilidade de hashes SHA-256 válidos em minúsculas no manifesto persistido.
+- Base: branch feat/lunet-511-versioned-asset-library-20261116; PR #962; #961 integrado, #959/#960 abertos.
+- Código: ReusableAssetLibrary.ImportToProject e ExportZip usam comparação hexadecimal case-insensitive, como VerifyIntegrity; manifestos originais não são regravados.
+- Teste: LowercaseManifestSha256_ImportsAndExportsWithoutChangingStoredMetadata verifica importação, ZIP, verificação e preservação dos bytes do manifesto.
+- Commits: 06d0628, 7697d42; documentação CHANGELOG e ROADMAP atualizada. CI consultado para 7697d42 sem runs retornados; não declarar teste aprovado nem DEVICE.
+- Referências: auditoria Home/Studios/Explorar 15/11, .NET StringComparison.OrdinalIgnoreCase e SHA-256 hexadecimal; sem alteração de estágio.
+- Próximo: verificar CI do head, corrigir regressões, desenvolver Studios autônomos, validar no Android 13.
