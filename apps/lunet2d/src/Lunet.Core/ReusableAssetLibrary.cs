@@ -199,8 +199,18 @@ public sealed class ReusableAssetLibrary
             destination.EnsureInsideProject(item.Path);
             EnsureNoLinks(destination.Directory, item.Path);
             var target = Path.Combine(destination.Directory, item.Path.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(target) || Directory.Exists(target))
-                throw new IOException("Conflito de importação: " + item.Path + " já existe. Nenhum arquivo foi alterado.");
+            // Mirror the preview's ancestor-file check before creating staging or directories.
+            // Otherwise a file named Content/Art blocks Content/Art/sprite.png only at commit time.
+            var parent = Path.GetDirectoryName(target);
+            var blockedByParent = false;
+            while (parent is not null && parent.Length >= destination.Directory.Length)
+            {
+                if (File.Exists(parent)) { blockedByParent = true; break; }
+                if (string.Equals(parent, destination.Directory, StringComparison.Ordinal)) break;
+                parent = Path.GetDirectoryName(parent);
+            }
+            if (blockedByParent || File.Exists(target) || Directory.Exists(target))
+                throw new IOException("Conflito de importação: " + item.Path + " já existe ou está bloqueado por um arquivo ancestral. Nenhum arquivo foi alterado.");
             var source = FilePath(Path.Combine(root, "files"), item.Path);
             EnsureNoLinks(Path.Combine(root, "files"), item.Path);
             if (!File.Exists(source) || new FileInfo(source).Length != item.Length || HashFile(source) != item.Sha256)
