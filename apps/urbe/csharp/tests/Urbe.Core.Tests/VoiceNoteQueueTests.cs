@@ -109,3 +109,48 @@ public sealed class VoiceNoteQueueTests
         finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
     }
 }
+
+/// <summary>CST-057: a recording cut by the process being killed keeps its audio; its WAV header is repaired from the file.</summary>
+public sealed class WavRepairTests
+{
+    private static byte[] Wav(int declared, int actual, int rate = 16000)
+    {
+        var stream = new MemoryStream();
+        VideoAudio.WriteWavHeader(stream, 1, rate, declared);
+        stream.Write(new byte[actual]);
+        return stream.ToArray();
+    }
+
+    [Fact]
+    public void AHeaderLeftAtZeroIsGivenTheRealLength()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "urbe-wav-" + Guid.NewGuid().ToString("N") + ".wav");
+        try
+        {
+            File.WriteAllBytes(path, Wav(0, 32001));   // killed mid-chunk: an odd byte at the end
+            Assert.True(VoiceNoteQueue.RepairWav(path));
+            var bytes = File.ReadAllBytes(path);
+            Assert.Equal(32000, BitConverter.ToInt32(bytes, 40));
+            Assert.Equal(36 + 32000, BitConverter.ToInt32(bytes, 4));
+            Assert.Equal(44 + 32001, bytes.Length);   // nothing is cut from the file
+            Assert.False(VoiceNoteQueue.RepairWav(path));   // a right header is left alone
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void WhatIsNotAWavOrIsInUseIsLeftAlone()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "urbe-wav-" + Guid.NewGuid().ToString("N") + ".wav");
+        try
+        {
+            File.WriteAllBytes(path, [1, 2, 3]);
+            Assert.False(VoiceNoteQueue.RepairWav(path));
+            File.WriteAllBytes(path, Wav(0, 100));
+            using (new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.Read))   // the recorder still has it
+                Assert.False(VoiceNoteQueue.RepairWav(path));
+            Assert.False(VoiceNoteQueue.RepairWav(path + ".nada"));
+        }
+        finally { File.Delete(path); }
+    }
+}

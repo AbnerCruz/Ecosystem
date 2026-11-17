@@ -29,4 +29,34 @@ public sealed class VoiceBacklogBusyTests
         }
         finally { Directory.Delete(dir, true); }
     }
+
+    /// <summary>CST-057: the process killed while recording left a WAV whose header says 0 bytes; the retry still hears it.</summary>
+    [Fact]
+    public async Task ARecordingCutByAKilledProcessIsStillTranscribedAndSaved()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-voice-cut-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var queue = new VoiceNoteQueueFile(Path.Combine(dir, "fila.json"));
+            using (var wav = File.Create(Path.Combine(dir, "cortada.wav")))
+            {
+                VideoAudio.WriteWavHeader(wav, 1, 16000, 0);   // the final header was never written
+                wav.Write(new byte[16000 * 2 * 3]);
+            }
+            queue.Add(new VoiceNoteEntry("cortada", new DateTimeOffset(2026, 11, 16, 9, 0, 0, TimeSpan.FromHours(-3)), "cortada.wav", null));
+            // a transcriber that, like a real one, reads only what the header says
+            Task<string?> Transcribe(string path)
+            {
+                var bytes = File.ReadAllBytes(path);
+                return Task.FromResult<string?>(BitConverter.ToInt32(bytes, 40) > 0 ? "comprar pão" : null);
+            }
+            var written = new List<string>();
+            var (saved, left) = await new VoiceNoteQueueBacklog(queue, Transcribe).RetryAsync((text, _) => { written.Add(text); return Task.FromResult(true); });
+            Assert.Equal((1, 0), (saved, left));
+            Assert.Equal(["comprar pão"], written);
+            Assert.Empty(queue.Load());
+        }
+        finally { Directory.Delete(dir, true); }
+    }
 }
