@@ -139,3 +139,28 @@ public sealed class MemoryContextTests
         Assert.Contains("inclua as fontes", prompt);
     }
 }
+
+/// <summary>Owner's audit (UC-87): the memory graph with many memories stays quick to build and complete.</summary>
+public sealed class MemoryGraphScaleTests
+{
+    [Fact]
+    public void TwoThousandMemoriesBuildQuicklyWithEveryOneOnTheGraph()
+    {
+        var cfg = new AiConfig();
+        string[] kinds = ["preference", "decision", "procedure", "fact", "episode"];
+        for (int i = 0; i < 2000; i++)
+            cfg.MemoryRecords.Add(new AiMemoryRecord
+            {
+                Id = "m" + i, Kind = kinds[i % kinds.Length], Scope = "agent", AgentId = "alice", Vault = "V",
+                Text = "Lembrança " + i + " sobre o projeto " + (i % 50), RelatedPaths = [ "Notas/N" + (i % 300) + ".md" ],
+                RelatedMemoryIds = i > 0 && i % 7 == 0 ? ["m" + (i - 1)] : []
+            });
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var records = MemoryGraph.Records(cfg, "V", "alice");
+        var graph = MemoryGraph.Build("Memória", records, AssistantMemoryEngine.PotentialConflicts(cfg, "V", "alice"));
+        clock.Stop();
+        Assert.Equal(2000, records.Count);
+        Assert.True(graph.Nodes.Count >= 2000 + 300, "nós: " + graph.Nodes.Count);   // every memory and every source note
+        if (Environment.GetEnvironmentVariable("URBE_PERF") == "1") Assert.True(clock.ElapsedMilliseconds < 1500, clock.ElapsedMilliseconds + " ms");
+    }
+}
