@@ -521,7 +521,7 @@ public sealed partial class AssistantPanel
             tail.Children.Add(LinkButton("Usou " + (used.Count == 1 ? "1 lembrança" : used.Count + " lembranças"), () => _ = ShowUsedMemoriesAsync(used.Select(m => m.Id).ToList())));
         if (_conv.WebSources.Count > 0)
         {
-            var read = _conv.WebSources.Count(s => s.Status == "página acessada");
+            var read = _conv.WebSources.Count(s => s.Status is "página acessada" or "leitura parcial");
             tail.Children.Add(LinkButton("Fontes · " + _conv.WebSources.Count + " encontradas · " + read + " consultadas", ShowSources));
         }
         return tail.Children.Count > 0 ? tail : null;

@@ -865,7 +865,7 @@ public static class AssistantAgent
                     live.Meta ??= new AiChatMeta();
                     live.Meta.Draft = true;
                     emit(new AiAgentEvent("final", live, Usage: result.Usage));
-                    var verified = web.Sources.Where(s => s.Status == "página acessada")
+                    var verified = web.Sources.Where(s => s.Status is "página acessada" or "leitura parcial")
                         .Select(s => "- " + s.Title + " " + s.FinalUrl).ToList();
                     messages.Add(new AiChatMessage
                     {
