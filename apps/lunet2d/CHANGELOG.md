@@ -1,4 +1,5 @@
 # Changelog
+- LUNET-511 (PR #962, CI/DEVICE pendentes): prévia e importação agora rejeitam colisões de nomes que diferem apenas por maiúsculas/minúsculas, inclusive em diretórios ancestrais, protegendo a portabilidade dos assets entre Android e desktops; duas regressões xUnit adicionadas.
 - LUNET-511 (PR #962, CI/DEVICE pendentes): importação de manifestos SHA-256 minúsculos também compara hashes sem diferenciar caixa durante staging e rollback; regressão existente reforçada para verificar os bytes realmente importados.
 - LUNET-511 (PR #962, CI/DEVICE pendentes): importação e exportação ZIP aceitam SHA-256 hexadecimal em minúsculas nos manifestos, coerentemente com a verificação de integridade; regressão cobre importação, ZIP e preservação dos metadados.
 
