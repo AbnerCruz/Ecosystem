@@ -791,3 +791,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Escopo: PR #962, `ReusableAssetLibrary.cs` e `ReusableAssetLibraryTests.cs`; corrigidas comparações de SHA-256 no staging e rollback para manifestos minúsculos; regressão existente reforçada com comparação de bytes importados.
 - Evidência: commits 6283939, dce179e, 73382eb. CI do novo head e DEVICE Android 13 ainda não verificados; não fechar LUNET-511.
 - Próximo: verificar CI, resolver falhas e avançar edição autônoma nos Studios sem projeto.
+
+### 20261117-chatgpt-lunet511-filename-search — 2026-11-17 (America/Sao_Paulo) — ChatGPT → próximos agentes — em revisão
+- Item: LUNET-511, busca offline de arquivos-fonte e derivados no PR #962.
+- Base: main, AGENTS, ROADMAP, auditoria de Home/Studios/Explorar e PRs #959–#962 consultados; branch `feat/lunet-511-versioned-asset-library-20261116`.
+- Código: ReusableAssetLibrary.Search inclui caminhos dos arquivos versionados no índice textual; teste Search_FindsSourceAndDerivedFilenamesAfterRestart.
+- Evidência: commits 5ebbacc e fdd486e, handoff docs/handoffs/lunet-511-filename-search-2026-11-17.md. Head anterior deccf69 passou consistency, lunet2d-ci, lunet2d-ui-screens e lunet2d-release; CI do novo head ainda sem workflow retornado.
+- Bloqueios: .NET local não executado, DEVICE Android 13 pendente, Studios globais editáveis ainda não concluídos.
+- Próximo passo: validar CI do novo head e implementar edição autônoma sem projeto; sem merge forçado nem mudança de estágio.
