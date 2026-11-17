@@ -1,4 +1,6 @@
 # Roadmap
+
+- [ ] **LUNET-511 — proteção adicional (feito, sem validação em aparelho):** rejeição de manifestos com colisão arquivo/diretório ancestral (case-insensitive), com regressão xUnit cobrindo importação/exportação sem escrita; CI do novo head e DEVICE pendentes.
 - [ ] **LUNET-511 — staging e rollback SHA-256 (código e regressão publicados; CI/DEVICE pendentes):** comparação case-insensitive durante a cópia temporária e remoção segura em rollback; teste verifica bytes importados de manifesto minúsculo.
 - [ ] **LUNET-511 — compatibilidade SHA-256 minúsculo (código e teste publicados; CI/DEVICE pendentes):** importação e ZIP tratam hashes válidos sem diferenciar caixa, alinhados à verificação; regressão xUnit adicionada no PR #962.
 
