@@ -2078,9 +2078,25 @@ public sealed class EditorOverlay : Grid
         }
     }
 
+    /// <summary>
+    /// CST-144: a note's text typed and not saved yet (path, the saved text it started from, the text), or a null text
+    /// once that note is saved: the host keeps it outside the vault so a crash before the autosave loses nothing.
+    /// </summary>
+    public event Action<string, string, string?>? DraftChanged;
+
+    /// <summary>CST-144: the whole text replaced by a recovered draft, as an unsaved edit that saves by itself.</summary>
+    public void RestoreText(string text)
+    {
+        if (_note is null) return;
+        _visual.FinishEdit();
+        ApplyEdit(new LegacyEditorTools.TextEdit(text, 0, 0));
+        if (OnSurface) _visual.SetText(Editor.Text ?? "");
+    }
+
     private void ScheduleAutosave()
     {
         if (!SaveOnClose || SaveRequested is null || _note is null || !HasChanges) return;
+        DraftChanged?.Invoke(_note.Path, _savedContent, Editor.Text ?? "");
         var now = DateTime.UtcNow;
         if (!_autosave.IsEnabled) { _pendingSince = now; _autosave.Start(); return; }
         // still typing: push the save to the next pause, unless the edit has waited long enough
@@ -2162,6 +2178,7 @@ public sealed class EditorOverlay : Grid
             await SaveRequested(note);
             // the note shown may be another one by now (leaving never waits): only its own save marks it saved
             if (note.Path == _note?.Path) { _savedContent = note.Content; _saveError = null; }
+            if (note.Path != _note?.Path || !HasChanges) DraftChanged?.Invoke(note.Path, note.Content, null);
             _failed.Remove(note.Path);
             return true;
         }

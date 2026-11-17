@@ -150,6 +150,7 @@ public sealed partial class MainView : Grid
             Dispatcher.UIThread.Post(RefreshNotes, DispatcherPriority.Background);
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
+        if (_vault is not null) WireDrafts();   // CST-144
         Editor.Editor.TextChanged += (_, _) => CaptureEditorHistory();
         Editor.MoreRequested += ShowEditorMenuAsync;
         // UC-69: a tap on the title renames the note; a save that failed after leaving the editor is told here
@@ -592,6 +593,7 @@ public sealed partial class MainView : Grid
     /// <summary>flushPending: write a pending record now (window closing, app going to the background).</summary>
     public async Task FlushPendingAsync()
     {
+        WriteDraftNow();   // CST-144: the typed text is kept even if the save below cannot finish before the app is gone
         if (_notesSave is { } notes) await notes.FlushAsync();
         await ReadingState.FlushAsync();
     }
