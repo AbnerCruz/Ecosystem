@@ -387,7 +387,7 @@ public sealed partial class AssistantPanel : Border
         catch (IOException e) { _app.Notify(e.Message); return; }
         _loaded = true;
         if (!AgentNames.All(_cfg).Any(a => a.Id == _cfg.AgentId)) _cfg.AgentId = "geral";
-        _conv = NewConversation();
+        _conv = ResumeOrNew();
         RememberCurrentChat();
         SyncActiveConversation();
         // CST-122: what was being written to each agent comes back, even after Android ended the app
@@ -529,6 +529,22 @@ public sealed partial class AssistantPanel : Border
     {
         Id = AssistantAgent.NewId("c"), Created = Now(), Updated = Now(), AgentId = _cfg.AgentId, ProviderId = _cfg.ProviderId, Model = _cfg.Model, Policy = _cfg.PolicyFor(_cfg.AgentId), Vault = _app.VaultName
     };
+
+    /// <summary>
+    /// CST-145: the current agent's latest conversation when it is still in use (<see cref="ConversationResume"/>),
+    /// else a new one; the older ones stay in Conversas.
+    /// </summary>
+    private AiConversation ResumeOrNew()
+    {
+        try
+        {
+            if (_store.ConversationSummariesFor(_cfg.AgentId, _app.VaultName).FirstOrDefault() is { } latest &&
+                _store.GetConversation(latest.Id) is { } last && last.AgentId == _cfg.AgentId && ConversationResume.InUse(last, Now()))
+                return last;
+        }
+        catch (IOException) { }
+        return NewConversation();
+    }
 
     private void Persist() { if (_conv.Messages.Count > 0) _store.SaveConversation(_conv); }
 

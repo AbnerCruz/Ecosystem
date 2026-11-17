@@ -153,11 +153,12 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("sk-or-teste", File.ReadAllText(Path.Combine(UrbeApp.AssistantFolder!, "config.json")));
                 Assert.DoesNotContain(Directory.GetFiles(vault, "*", SearchOption.AllDirectories), f => File.ReadAllText(f).Contains("sk-or-teste"));
 
-                // The next launch starts fresh; the original conversation stays in explicit history.
+                // CST-145: the next launch, moments later, continues the conversation still in use (an old one would give
+                // way to a new chat); it is the same conversation kept in the history
                 var again = new AssistantPanel(view, new FolderAssistantStorage(UrbeApp.AssistantFolder!));
                 again.Open();
-                Assert.NotEqual(panel.Conversation.Id, again.Conversation.Id);
-                Assert.Empty(again.Conversation.Messages);
+                Assert.Equal(panel.Conversation.Id, again.Conversation.Id);
+                Assert.NotEmpty(again.Conversation.Messages);
                 Assert.Equal("Troque a primeira tarefa", new AssistantStore(
                     new FolderAssistantStorage(UrbeApp.AssistantFolder!)).GetConversation(panel.Conversation.Id)!.Title);
                 // Regression: preserve the full settings layout and the new memory and network tabs.

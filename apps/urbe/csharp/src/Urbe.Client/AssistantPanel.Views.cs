@@ -645,7 +645,7 @@ public sealed partial class AssistantPanel
         RememberCurrentChat();
         _cfg.AgentId = agentId;
         // Switching agents returns to that agent's selected chat; "Nova conversa" is the only reset.
-        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : NewConversation();
+        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : ResumeOrNew();
         RememberCurrentChat();
         SyncActiveConversation();
         _views.Clear();
@@ -1000,7 +1000,7 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "agents")
         {
-            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, começa uma conversa nova."));
+            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, a conversa em andamento continua; uma parada há mais de duas horas dá lugar a uma nova, e as anteriores ficam em Conversas."));
             var agents = new StackPanel { Spacing = 4 };
             foreach (var a in AgentNames.All(c))
             {
