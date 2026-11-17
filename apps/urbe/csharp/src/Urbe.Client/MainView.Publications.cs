@@ -794,10 +794,7 @@ public sealed partial class MainView
             FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType(extension.ToUpperInvariant()) { Patterns = ["*." + extension], MimeTypes = [mime] }]
         });
         if (file is null) return null;
-        await using var stream = await file.OpenWriteAsync();
-        if (stream.CanSeek) stream.SetLength(0);
-        await stream.WriteAsync(bytes);
-        await stream.FlushAsync();
+        await ExportFiles.WriteAndCheckAsync(file, bytes);   // CST-180: written whole and read back
         return true;
     }
 

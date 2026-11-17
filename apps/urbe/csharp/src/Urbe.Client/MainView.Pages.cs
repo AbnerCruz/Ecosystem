@@ -202,8 +202,8 @@ public sealed partial class MainView
             FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType("HTML") { Patterns = ["*.html"], MimeTypes = ["text/html"] }]
         });
         if (file is null) return null;
-        await using var stream = await file.OpenWriteAsync();
-        await stream.WriteAsync(bytes);
+        // a longer HTML saved over before used to leave its end in the file: now cut, written and read back (CST-180)
+        await ExportFiles.WriteAndCheckAsync(file, bytes);
         return true;
     }
 
