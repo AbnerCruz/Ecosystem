@@ -42,6 +42,24 @@ public sealed class ReusableAssetLibraryTests : IDisposable
     }
 
     [Fact]
+    public void FindImportConflicts_ReportsAncestorFileWithoutChangingDestination()
+    {
+        var source = CreateSpriteProject("AncestorSource");
+        var destination = Projects.Create("AncestorDestination");
+        destination.WriteText("Content/Art", "not a directory");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Wings", "Author", "CC0");
+
+        var conflicts = Library.FindImportConflicts(asset.Id, asset.Version, destination);
+
+        Assert.Equal(2, conflicts.Count);
+        Assert.Contains("Content/Art/wing.sprite.json", conflicts);
+        Assert.Contains("Content/Art/wing.png", conflicts);
+        Assert.Equal("not a directory", destination.ReadText("Content/Art"));
+        Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
+    }
+
+    [Fact]
     public void PublishAndImport_CopyBothEditableSourceAndDerivedSpriteWithoutSharedDependency()
     {
         var source = CreateSpriteProject("One");
