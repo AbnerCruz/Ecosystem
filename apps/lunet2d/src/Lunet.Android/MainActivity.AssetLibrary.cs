@@ -274,6 +274,24 @@ public sealed partial class MainActivity
             .SetItems(names, (_, args) =>
             {
                 var selectedName = names[args.Which];
+                try
+                {
+                    var destination = _store.Open(selectedName);
+                    var conflicts = AssetLibrary.FindImportConflicts(version.Id, version.Version, destination);
+                    if (conflicts.Count > 0)
+                    {
+                        new AlertDialog.Builder(this)!.SetTitle("Conflito de arquivos")!
+                            .SetMessage("A importação foi bloqueada para preservar o projeto. Já existem:\n" +
+                                string.Join("\n", conflicts) + "\nRenomeie ou mova os arquivos antes de tentar novamente.")!
+                            .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+                        return;
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException)
+                {
+                    Toast.MakeText(this, "Não foi possível verificar o destino: " + ex.Message, ToastLength.Long)?.Show();
+                    return;
+                }
                 new AlertDialog.Builder(this)!
                     .SetTitle("Importar cópia imutável?")!
                     .SetMessage("Os arquivos serão copiados para " + selectedName + ":\n" +
