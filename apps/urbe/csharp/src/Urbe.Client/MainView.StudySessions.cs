@@ -35,9 +35,12 @@ public sealed partial class MainView
             items.AddRange(left.Select(x => new DialogItem(Path.GetFileName(x.Path), Detail: x.Path)));
             var pick = await Dialogs.ChooseAsync("Fontes de " + session.Title, items);
             if (pick is not int i || i == 0) return session;
-            session = session.Add(left[i - 1].Id, left[i - 1].Path);
+            session = session.Add(left[i - 1].Id, left[i - 1].Path, MarkdownOfSource(left[i - 1].Id));
         }
     }
+
+    /// <summary>A note source's Markdown now (files other than notes are not compared).</summary>
+    private string? MarkdownOfSource(string id) => id.StartsWith("file:", StringComparison.Ordinal) ? null : _store?.Get(id)?.Content;
 
     private string? PathOfSource(string id) =>
         id.StartsWith("file:", StringComparison.Ordinal) ? (_attachments.Contains(id[5..]) ? id[5..] : null) : _store?.Get(id) is { } d && d.Id == id ? d.Path : null;
@@ -49,12 +52,32 @@ public sealed partial class MainView
         try { session = StudySession.Parse(file.Content); }
         catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or NotSupportedException)
         { await Dialogs.AlertAsync("Sessão de estudo", "Não foi possível ler a sessão: " + e.Message); return; }
+        // an older session gets its first baseline now: what changes from here on is told
+        if (session.Sources.Any(x => x.Seen is null && MarkdownOfSource(x.DocumentId) is not null))
+        {
+            var based = session.Sources.Select(x => x.Seen is null && MarkdownOfSource(x.DocumentId) is { } md ? x with { Seen = PublicationExportRecord.Version(md) } : x).ToList();
+            session = session with { Sources = based };
+            await SaveNoteAsync(new CityNote(path, session.Serialize()));
+        }
         var (present, missing) = session.Resolve(PathOfSource);
-        var message = (session.Objectives.Count > 0 ? "Objetivo: " + string.Join("; ", session.Objectives) : "") +
-            (missing.Count > 0 ? (session.Objectives.Count > 0 ? "\n" : "") + "Não estão mais no vault: " + string.Join(", ", missing.Select(m => Path.GetFileName(m.PathHint))) : "");
-        var items = present.Select(p => new DialogItem(Path.GetFileName(p.Path), Detail: p.Path)).Append(new DialogItem("Adicionar fontes")).Append(new DialogItem("Mapa da sessão")).Append(new DialogItem("Podcast da sessão")).ToList();
-        var pick = await Dialogs.ChooseAsync(session.Title, items, message.Length > 0 ? message : null);
+        // #956: the same note can be in several sessions; each one says when it changed since it was studied here
+        var changes = session.Changes(MarkdownOfSource);
+        static string Kind(PublicationExportRecord.ChangeKind k) => k switch
+        {
+            PublicationExportRecord.ChangeKind.Structure => "títulos ou ligações",
+            PublicationExportRecord.ChangeKind.Text => "texto",
+            _ => "só a formatação"
+        };
+        var lines = new List<string>();
+        if (session.Objectives.Count > 0) lines.Add("Objetivo: " + string.Join("; ", session.Objectives));
+        if (missing.Count > 0) lines.Add("Não estão mais no vault: " + string.Join(", ", missing.Select(m => Path.GetFileName(m.PathHint))));
+        if (changes.Count > 0) lines.Add("Mudaram desde a última vez: " + string.Join(", ", changes.Select(c => Path.GetFileName(PathOfSource(c.Source.DocumentId) ?? c.Source.PathHint) + " (" + Kind(c.Kind) + ")")));
+        var items = present.Select(p => new DialogItem(Path.GetFileName(p.Path), Detail: changes.Any(c => c.Source.DocumentId == p.Id) ? "mudou · " + p.Path : p.Path))
+            .Append(new DialogItem("Adicionar fontes")).Append(new DialogItem("Mapa da sessão")).Append(new DialogItem("Podcast da sessão")).ToList();
+        if (changes.Count > 0) items.Add(new DialogItem("Marcar como revistas", Detail: "as mudanças deixam de ser avisadas nesta sessão"));
+        var pick = await Dialogs.ChooseAsync(session.Title, items, lines.Count > 0 ? string.Join("\n", lines) : null);
         if (pick is not int i) return;
+        if (i == present.Count + 3) { await SaveNoteAsync(new CityNote(path, session.MarkSeen(MarkdownOfSource).Serialize())); return; }
         if (i == present.Count)
         {
             var more = await PickStudySourcesAsync(session);

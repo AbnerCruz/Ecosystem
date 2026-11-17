@@ -100,6 +100,14 @@ public sealed record PublicationExportRecord(string Format, DateTimeOffset At, D
         new(format, at, project.Sources.Select(s => s.DocumentId).Distinct(StringComparer.Ordinal)
             .ToDictionary(id => id, id => markdown(id) is { } md ? Version(md) : "", StringComparer.Ordinal));
 
+    /// <summary>How a source changed between two <see cref="Version"/>s, or null when it did not.</summary>
+    public static ChangeKind? Kind(string then, string now)
+    {
+        if (now == then) return null;
+        var a = then.Split(':'); var b = now.Split(':');
+        return a.Length < 3 || b.Length < 3 ? ChangeKind.Text : a[2] != b[2] ? ChangeKind.Structure : a[1] != b[1] ? ChangeKind.Text : ChangeKind.Visual;
+    }
+
     /// <summary>The sources that changed since (with the kind of change) and the ones added since.</summary>
     public (IReadOnlyList<(string Id, ChangeKind Kind)> Changed, IReadOnlyList<string> Added) Since(PublicationProject project, Func<string, string?> markdown)
     {
@@ -107,10 +115,7 @@ public sealed record PublicationExportRecord(string Format, DateTimeOffset At, D
         foreach (var (id, then) in Sources)
         {
             if (markdown(id) is not { } md) { changed.Add((id, ChangeKind.Removed)); continue; }
-            var now = Version(md);
-            if (now == then) continue;
-            var a = then.Split(':'); var b = now.Split(':');
-            changed.Add((id, a.Length < 3 ? ChangeKind.Text : a[2] != b[2] ? ChangeKind.Structure : a[1] != b[1] ? ChangeKind.Text : ChangeKind.Visual));
+            if (Kind(then, Version(md)) is { } kind) changed.Add((id, kind));
         }
         var added = project.Sources.Select(s => s.DocumentId).Distinct(StringComparer.Ordinal).Where(id => !Sources.ContainsKey(id)).ToList();
         return (changed.OrderBy(c => c.Item2).ToList(), added);

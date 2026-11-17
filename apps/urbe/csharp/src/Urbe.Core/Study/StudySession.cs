@@ -3,8 +3,11 @@ using System.Text.Json.Serialization;
 
 namespace Urbe.Core.Study;
 
-/// <summary>One source of a study session: a vault document by its stable id (the path is only a hint for reading).</summary>
-public sealed record StudySource(string DocumentId, string PathHint);
+/// <summary>
+/// One source of a study session: a vault document by its stable id (the path is only a hint for reading), and the
+/// version of it last studied (<see cref="PublicationExportRecord.Version"/>), so a change made since is told.
+/// </summary>
+public sealed record StudySource(string DocumentId, string PathHint, string? Seen = null);
 
 /// <summary>
 /// #956: a study session (the NotebookLM "notebook", adapted): the sources studied, by stable id, and the session's
@@ -21,8 +24,24 @@ public sealed record StudySession
 
     public const string Suffix = ".estudo.json";
 
-    public StudySession Add(string documentId, string path) =>
-        Sources.Any(s => s.DocumentId == documentId) ? this : this with { Sources = [.. Sources, new(documentId, path)] };
+    public StudySession Add(string documentId, string path, string? markdown = null) =>
+        Sources.Any(s => s.DocumentId == documentId) ? this
+            : this with { Sources = [.. Sources, new(documentId, path, markdown is null ? null : PublicationExportRecord.Version(markdown))] };
+
+    /// <summary>
+    /// #956 (one source, many sessions): the notes that changed since they were last studied here, and how (text,
+    /// headings and links, look only). Missing notes are told by <see cref="Resolve"/>; files other than notes are not compared.
+    /// </summary>
+    public IReadOnlyList<(StudySource Source, PublicationExportRecord.ChangeKind Kind)> Changes(Func<string, string?> markdownOfId) =>
+        [.. Sources.Where(s => s.Seen is not null).Select(s => (s, Now: markdownOfId(s.DocumentId)))
+            .Where(x => x.Now is not null).Select(x => (x.s, Kind: PublicationExportRecord.Kind(x.s.Seen!, PublicationExportRecord.Version(x.Now!))))
+            .Where(x => x.Kind is not null).Select(x => (x.s, x.Kind!.Value))];
+
+    /// <summary>The notes as they are now become the versions studied (also the first baseline of an older session).</summary>
+    public StudySession MarkSeen(Func<string, string?> markdownOfId) => this with
+    {
+        Sources = [.. Sources.Select(s => markdownOfId(s.DocumentId) is { } md ? s with { Seen = PublicationExportRecord.Version(md) } : s)]
+    };
 
     public StudySession Remove(string documentId) => this with { Sources = Sources.Where(s => s.DocumentId != documentId).ToList() };
 

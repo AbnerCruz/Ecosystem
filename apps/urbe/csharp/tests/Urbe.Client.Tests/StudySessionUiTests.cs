@@ -65,6 +65,19 @@ public sealed partial class HeadlessUiTests
             await Settle(window, view);
             Assert.Contains("[[Newton]]", File.ReadAllText(Path.Combine(vault, "Estudos", "Física.podcast.md")));
             Assert.Equal("Estudos/Física.podcast.md", view.Editor.Current?.Path);
+
+            // #956 acceptance 2: the source note edited after it was studied is told on opening, with its kind
+            await ((IAssistantApp)view).SaveNoteAsync(view.Documents!.Get("Newton.md")!, "# Newton\n\nF = m·a, a segunda lei.\n");
+            await Settle(window, view);
+            var changed = view.OpenStudySessionAsync(path!);
+            for (int i = 0; i < 200 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Marcar como revistas"); i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            var shown = string.Join(" | ", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+            Assert.True(shown.Contains("Mudaram desde a última vez: Newton.md (texto)"), shown);
+            ClickButtonWithText(view.Dialogs, "Marcar como revistas");
+            await changed;
+            await Settle(window, view);
+            var reviewed = StudySession.Parse(File.ReadAllText(Path.Combine(vault, "Estudos", "Física.estudo.json")));
+            Assert.Empty(reviewed.Changes(id => view.Documents!.Get(id)?.Content));
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
