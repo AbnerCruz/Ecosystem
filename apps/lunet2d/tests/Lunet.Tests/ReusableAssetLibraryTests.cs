@@ -410,6 +410,26 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Equal(malformed, File.ReadAllText(manifestPath));
     }
 
+    [Theory]
+    [InlineData("Content/Art/WING.PNG")]
+    [InlineData("Content/ART/other.png")]
+    public void ImportRejectsCaseInsensitiveFileAndDirectoryCollisions(string conflictingPath)
+    {
+        var source = CreateSpriteProject("CaseSource");
+        var asset = Library.Publish(source, "Content/Art/wing.sprite.json",
+            "Asas", "Eu", "CC0");
+        var destination = Projects.Create("CaseTarget");
+        destination.WriteText(conflictingPath, "personal data");
+        var originalGame = destination.ReadText("Game.cs");
+
+        var conflicts = Library.FindImportConflicts(asset.Id, 1, destination);
+        Assert.NotEmpty(conflicts);
+        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, 1, destination));
+        Assert.Equal("personal data", destination.ReadText(conflictingPath));
+        Assert.Equal(originalGame, destination.ReadText("Game.cs"));
+        Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.sprite.json")));
+    }
+
     [Fact]
     public void UnsupportedPathCannotBecomeAReusableAsset()
     {
