@@ -615,6 +615,43 @@ public sealed partial class AssistantPanel : Border
         return null;
     }
 
+    /// <summary>
+    /// CST-146: a plugin asks one of the person's agents (named, or picked by the person) to work on the notes or
+    /// folders it delimited. The person agrees first; the agent uses its own model and permissions and, as in a
+    /// delegation (<see cref="AssistantScopedHost"/>), writes only inside that scope; the work shows in the small card
+    /// over the note, and the answer is for the person.
+    /// </summary>
+    public async Task AskFromPluginAsync(string plugin, string? agentId, string task, IReadOnlyList<string> scope)
+    {
+        if (_running is not null) { _app.Notify("O Assistente ainda está trabalhando no pedido anterior."); return; }
+        Load();
+        if (!_loaded || scope.Count == 0 || string.IsNullOrWhiteSpace(task)) return;
+        var agents = AgentNames.All(_cfg).ToList();
+        var agent = agentId is null ? null : agents.FirstOrDefault(a => a.Id == agentId) ?? AgentNames.Find(agentId, _cfg);
+        if (agent is null)
+        {
+            if (await _app.Dialogs.ChooseAsync("Qual agente atende o plugin " + plugin + "?",
+                    agents.Select(a => new DialogItem(AgentNames.CallName(a, _cfg))).ToList()) is not { } picked) return;
+            agent = agents[picked];
+        }
+        var who = AgentNames.CallName(agent, _cfg);
+        if (!await _app.Dialogs.ConfirmAsync("Pedido do plugin " + plugin,
+                "O plugin " + plugin + " quer pedir a " + who + ":\n\n" + (task.Length > 900 ? task[..900] + "…" : task) +
+                "\n\nPode trabalhar em: " + string.Join(", ", scope) + ".\n\n" + who +
+                " usa o próprio modelo e as próprias permissões; fora dessas notas e pastas, nada é gravado.", "Pedir")) return;
+        Persist();
+        _cfg.AgentId = agent.Id;
+        SaveConfig();
+        _conv = NewConversation();
+        _conv.Title = "Pedido do plugin " + plugin;
+        _conv.Brief = new AiDelegationBrief(task, scope, scope, "text", null, AiDelegationBrief.DefaultSteps);
+        _views.Clear();
+        if (_cfg.Providers.Count == 0 || ModelId().Length == 0) Open();
+        if (!IsVisible) ActivateCompact();
+        Send(task, (scope[0], "[Pedido do plugin " + plugin + ". Trabalhe somente em: " + string.Join(", ", scope) +
+            ". Leia essas notas ou pastas como contexto; o resultado é para a pessoa. Fora delas nada pode ser gravado.]"));
+    }
+
     /// <summary>UC-80: the note and the <c>&amp;Nome&amp;:</c> line the shown conversation was asked from, or null.</summary>
     private (string Path, string Agent, string Request)? AskedInNote()
     {

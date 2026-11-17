@@ -153,3 +153,51 @@ public sealed class VaultPluginTests
         Assert.NotNull(JsonNode.Parse(VaultPluginSpec.ExampleTimer));
     }
 }
+
+/// <summary>CST-146: a plugin asks an agent only with a declared permission and a delimited scope.</summary>
+public sealed class VaultPluginAgentTests
+{
+    private sealed class AgentHost : IVaultPluginHost
+    {
+        public List<(string? Agent, string Task, IReadOnlyList<string> Scope, string Plugin)> Asked { get; } = [];
+        public DateTime Now => new(2026, 11, 17, 9, 0, 0);
+        public string? OpenNotePath => "Projetos/Plano.md";
+        public IReadOnlyList<string> Notes(string? folder) => [];
+        public string? ReadNote(string path) => null;
+        public void Notice(string text) { }
+        public void Panel(string how) { }
+        public Task WriteNoteAsync(string path, string content, bool append) => Task.CompletedTask;
+        public void InsertText(string text) { }
+        public void OpenNote(string path) { }
+        public string? LoadData(string key) => null;
+        public void SaveData(string key, string json) { }
+        public Task AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin)
+        { Asked.Add((agentId, task, scope, plugin)); return Task.CompletedTask; }
+    }
+
+    private static string Plugin(string permissions, string action) =>
+        "{\"urbe-plugin\": 1, \"nome\": \"Revisor\", \"versao\": \"1.0\", \"permissoes\": [" + permissions + "], " +
+        "\"comandos\": [{\"titulo\": \"Revisar\", \"acoes\": [" + action + "]}]}";
+
+    [Fact]
+    public async Task TheAgentGetsTheTaskAndOnlyTheDelimitedScope()
+    {
+        var spec = VaultPluginSpec.Parse("Personalização/plugins/Revisor.plugin.json", Plugin("\"comandos\", \"agentes\"",
+            "{\"perguntarAgente\": \"Revise {notaAberta}\", \"escopo\": [\"{notaAberta}\", \"Projetos/Anexos/\"], \"agente\": \"revisor\"}"));
+        Assert.Empty(spec.Errors);
+        var host = new AgentHost();
+        var runtime = new VaultPluginRuntime(spec.Spec!, host);
+        await runtime.RunAsync((JsonArray)spec.Spec!.Commands[0]!["acoes"]!);
+        var asked = Assert.Single(host.Asked);
+        Assert.Equal(("revisor", "Revise Projetos/Plano.md", "Revisor"), (asked.Agent, asked.Task, asked.Plugin));
+        Assert.Equal(["Projetos/Plano.md", "Projetos/Anexos/"], asked.Scope);
+    }
+
+    [Fact]
+    public void WithoutAScopeOrThePermissionThePluginIsRefused()
+    {
+        Assert.Contains(VaultPluginSpec.Parse("Personalização/plugins/Revisor.plugin.json", Plugin("\"comandos\", \"agentes\"", "{\"perguntarAgente\": \"Faça algo\"}")).Errors, e => e.Contains("escopo"));
+        Assert.Contains(VaultPluginSpec.Parse("Personalização/plugins/Revisor.plugin.json", Plugin("\"comandos\", \"agentes\"", "{\"perguntarAgente\": \"x\", \"escopo\": []}")).Errors, e => e.Contains("escopo"));
+        Assert.Contains("agentes", VaultPluginSpec.Guide());
+    }
+}
