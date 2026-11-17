@@ -72,3 +72,32 @@ public sealed class MemoryLearningTests
         Assert.Empty(AssistantMemoryEngine.Visible(cfg, "v", "bruno"));
     }
 }
+
+/// <summary>A memory is found whether the question says the word in the singular or the plural (estrelas → Estrela).</summary>
+public sealed class MemoryPluralTests
+{
+    [Theory]
+    [InlineData("Estrela: o Sol é uma", "fale sobre estrelas")]
+    [InlineData("Os animais do sítio", "qual animal?")]
+    [InlineData("Plantar flores na praça", "a flor da praça")]
+    [InlineData("Revisar as lições", "a lição de hoje")]
+    [InlineData("Os jornais da cidade", "jornal")]
+    [InlineData("Os homens do porto", "homem")]
+    public void TheSingularFindsThePluralAndBack(string memory, string query)
+    {
+        foreach (var (text, ask) in new[] { (memory, query), (query, memory) })
+        {
+            var cfg = new AiConfig();
+            cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "m", Text = text, Kind = "fact", Scope = "vault", Vault = "V" });
+            Assert.NotEmpty(AssistantMemoryEngine.Search(cfg, "V", "geral", ask, 5));
+        }
+    }
+
+    [Fact]
+    public void ShortWordsAreNotCutIntoOthers()
+    {
+        var cfg = new AiConfig();
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "m", Text = "Não gosto de nada mal feito", Kind = "preference", Scope = "vault", Vault = "V" });
+        Assert.Empty(AssistantMemoryEngine.Search(cfg, "V", "geral", "quero mais", 5));   // "mais" is not "mal"
+    }
+}

@@ -132,7 +132,23 @@ public static class AssistantMemoryEngine
     private static string[] Tokens(string? s) =>
         Words.Matches(Normalize(s)).Select(m => m.Value)
             .Where(w => w.Length > 2 && w is not ("que" or "para" or "com" or "uma" or "dos" or "das" or "por" or "sobre" or "the" or "and" or "qual" or "quais" or "meu" or "minha" or "como" or "quem" or "onde" or "quando"))
-            .Distinct(StringComparer.Ordinal).ToArray();
+            .Select(Singular).Distinct(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// A light Portuguese plural reduction on accent-folded words, the same on both sides, so "estrelas" finds "Estrela"
+    /// and "lição" finds "lições". Words of four letters or fewer are left as they are ("mais" is not "mal").
+    /// </summary>
+    internal static string Singular(string w)
+    {
+        if (w.Length <= 4) return w;
+        if (w.EndsWith("oes", StringComparison.Ordinal) || w.EndsWith("aes", StringComparison.Ordinal)) return w[..^3] + "ao";
+        if (w.EndsWith("ais", StringComparison.Ordinal)) return w[..^3] + "al";
+        if (w.EndsWith("eis", StringComparison.Ordinal)) return w[..^3] + "el";
+        if (w.EndsWith("ns", StringComparison.Ordinal)) return w[..^2] + "m";
+        if (w.EndsWith("res", StringComparison.Ordinal) || w.EndsWith("zes", StringComparison.Ordinal) || w.EndsWith("ses", StringComparison.Ordinal)) return w[..^2];
+        if (w[^1] == 's' && w[^2] is not ('s' or 'u' or 'i')) return w[..^1];
+        return w;
+    }
 
     /// <summary>The old "memory" JSON is lazily migrated on the first structured write, with no loss.</summary>
     public static void MigrateLegacy(AiConfig cfg, long? timestamp = null)
