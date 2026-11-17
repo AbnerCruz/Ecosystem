@@ -1,5 +1,8 @@
 # Changelog
 
+- LUNET-511 (PR #962, CI/DEVICE pendentes): antes de importar um asset, o Android apresenta os caminhos em conflito sem alterar o projeto; a importação ainda revalida o destino. Regressão xUnit para prévia sem efeitos colaterais e recusa de sobrescrita.
+
+
 - LUNET-511 (integridade de manifestos, CI/DEVICE pendentes): leitura da biblioteca rejeita tipo de asset desconhecido e data de criação ausente, sem alterar o manifesto ou o projeto importador; regressões xUnit cobrem ambos os campos.
 
 
