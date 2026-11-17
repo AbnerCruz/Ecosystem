@@ -101,4 +101,29 @@ public sealed class AssistantExportTests
         Assert.Contains("Um registro", lite);
         Assert.DoesNotContain("outro-agente", lite);
     }
+
+    /// <summary>CST-132: a registered key pasted into the chat never leaves in an export, light or complete.</summary>
+    [Fact]
+    public void RegisteredKeysAreRemovedFromEveryExport()
+    {
+        const string key = "sk-or-v1-SEGREDO0123456789abcdef", web = "BSA-segredo-da-busca-42", token = "tok_mcp_9876543210";
+        var cfg = new AiConfig();
+        cfg.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: key));
+        cfg.Providers.Add(new AiProviderConfig("curta", "openai", ApiKey: "abc"));   // too short to be told from words: kept
+        cfg.Web.ApiKey = web;
+        cfg.McpServers.Add(new AiMcpServer { Id = "m", Name = "M", Token = token });
+        var chat = new AiConversation { Id = "c", Title = "Chaves" };
+        chat.Messages.Add(new AiChatMessage { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("minha chave é " + key + " e a da busca " + web + "; abc")] });
+        chat.Messages.Add(new AiChatMessage { Id = "a", Role = "assistant", Content =
+            [new AiChatBlock { Type = "tool_result", ToolUseId = "t", Content = "Erro 401 com token " + token, IsError = true }] });
+        foreach (var complete in new[] { false, true })
+        {
+            var text = AssistantExport.Conversation(chat, complete, secrets: cfg.Secrets());
+            foreach (var secret in new[] { key, web, token }) Assert.DoesNotContain(secret, text);
+            Assert.Contains("[chave removida]", text);
+            Assert.Contains("abc", text);
+            if (complete) JsonNode.Parse(text);   // still valid JSON
+        }
+        Assert.Equal(new[] { key, web, token }.Order(), cfg.Secrets().Order());
+    }
 }

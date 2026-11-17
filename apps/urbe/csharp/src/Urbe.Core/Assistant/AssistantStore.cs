@@ -185,6 +185,14 @@ public sealed class AiConfig
     public Dictionary<string, string> AgentToolScopes { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Only an explicit setting allows unprompted agent-to-agent consultation.</summary>
     public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>
+    /// CST-132: the keys and tokens the person registered (providers, web search, MCP servers), for taking them out of
+    /// anything that leaves the app. Shorter than 8 characters is not told apart from ordinary words and is skipped.
+    /// </summary>
+    public IEnumerable<string> Secrets() =>
+        Providers.Select(p => p.ApiKey).Append(Web.ApiKey).Concat(McpServers.Select(m => m.Token))
+            .Select(x => x?.Trim() ?? "").Where(x => x.Length >= 8).Distinct(StringComparer.Ordinal);
+
     public string ToolScopeFor(AiAgentDef agent) => AgentToolScopes.GetValueOrDefault(agent.Id) is "read" or "write" or "all"
         ? AgentToolScopes[agent.Id] : agent.Tools;
     public Dictionary<string, AiModelChoice> AgentImages { get; set; } = new(StringComparer.Ordinal);

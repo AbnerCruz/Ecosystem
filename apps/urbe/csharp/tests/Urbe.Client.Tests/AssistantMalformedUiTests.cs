@@ -77,4 +77,55 @@ public sealed partial class HeadlessUiTests
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }, CancellationToken.None));
+
+    /// <summary>CST-132: a registered key, used in a run that writes a note and saves the conversation, is nowhere in the vault.</summary>
+    [Fact]
+    public async Task Assistant_TheProviderKeyNeverReachesTheVault() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            const string key = "sk-or-v1-NUNCANOVAULT0123456789";
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-keyvault-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            File.WriteAllText(Path.Combine(vault, "Um.md"), "# Um\n\n- velho\n");
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var model = new ScriptedModel();
+                var panel = view.Assistant;
+                panel.Open();
+                panel.SelectAgent("geral");
+                panel.Config.AgentPolicies["geral"] = "auto";
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: key));
+                panel.Config.ProviderId = "openrouter"; panel.Config.Model = "org/m";
+                panel.Conversation.ProviderId = "openrouter"; panel.Conversation.Model = "org/m";
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"a","function":{"name":"edit_note","arguments":"{\"path\":\"Um\",\"old_text\":\"- velho\",\"new_text\":\"- novo\"}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Feito."}}]}"""));
+                panel.Send("Troque velho por novo em Um");
+                for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                await panel.CurrentRun!;
+                await view.FlushPendingAsync();
+                for (int i = 0; i < 30; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains("- novo", File.ReadAllText(Path.Combine(vault, "Um.md")));
+                var leaks = Directory.EnumerateFiles(vault, "*", SearchOption.AllDirectories)
+                    .Where(f => File.ReadAllText(f).Contains(key, StringComparison.Ordinal)).ToList();
+                Assert.Empty(leaks);
+                return true;
+            }
+            finally
+            {
+                window.Close();
+                UrbeApp.AssistantFolder = before;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
 }
