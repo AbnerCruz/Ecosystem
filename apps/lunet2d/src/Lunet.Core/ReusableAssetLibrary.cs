@@ -244,7 +244,7 @@ public sealed class ReusableAssetLibrary
         catch
         {
             foreach (var item in created)
-                if (File.Exists(item.Path) && HashFile(item.Path) == item.Hash)
+                if (File.Exists(item.Path) && HashFile(item.Path).Equals(item.Hash, StringComparison.OrdinalIgnoreCase))
                     File.Delete(item.Path);
             throw;
         }
