@@ -218,6 +218,20 @@ public sealed class AssistantMemoryEngineTests
         Assert.Equal(again.Id, Assert.Single(AssistantMemoryEngine.Search(cfg, "Equipe", "geral", "chefe da equipe", 5)).Memory.Id);
     }
 
+    /// <summary>CST-134: a memory's source notes follow a rename or a folder move; other memories are untouched.</summary>
+    [Fact]
+    public void MemorySourcesFollowRenamedAndMovedNotes()
+    {
+        var cfg = new AiConfig();
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "a", Text = "x", RelatedPaths = ["Plano.md", "Pasta/Um.md"] });
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "b", Text = "y", RelatedPaths = ["Outra.md"] });
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "c", Text = "z", RelatedPaths = ["Plano.md", "Plano final.md"] });
+        Assert.Equal(2, AssistantMemoryEngine.RetargetPaths(cfg, [("Plano.md", "Plano final.md"), ("Pasta/Um.md", "Nova/Um.md")]));
+        Assert.Equal(["Plano final.md", "Nova/Um.md"], cfg.MemoryRecords[0].RelatedPaths);
+        Assert.Equal(["Outra.md"], cfg.MemoryRecords[1].RelatedPaths);
+        Assert.Equal(["Plano final.md"], cfg.MemoryRecords[2].RelatedPaths);   // no duplicate when both names were there
+    }
+
     [Fact]
     public void DestructiveMemoryOperationsCannotCrossAgentBoundary()
     {

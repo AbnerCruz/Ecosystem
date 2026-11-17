@@ -539,6 +539,25 @@ public static class AssistantMemoryEngine
         return true;
     }
 
+    /// <summary>
+    /// CST-134: notes renamed or moved (each file, as the vault's relink lists them): every memory that came from one
+    /// points to it at its new path, so the memory graph and the sources stay on the real note. Returns how many changed.
+    /// </summary>
+    public static int RetargetPaths(AiConfig cfg, IReadOnlyCollection<(string From, string To)> files)
+    {
+        MigrateLegacy(cfg);
+        var moved = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (from, to) in files) moved[from] = to;
+        int changed = 0;
+        foreach (var m in cfg.MemoryRecords)
+        {
+            if (!m.RelatedPaths.Any(moved.ContainsKey)) continue;
+            m.RelatedPaths = m.RelatedPaths.Select(p => moved.GetValueOrDefault(p, p)).Distinct(StringComparer.Ordinal).ToList();
+            changed++;
+        }
+        return changed;
+    }
+
     public static bool Forget(AiConfig cfg, string id)
     {
         MigrateLegacy(cfg);

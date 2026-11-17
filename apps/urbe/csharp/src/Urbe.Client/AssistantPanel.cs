@@ -442,6 +442,14 @@ public sealed partial class AssistantPanel : Border
     private string ModelId() => _cfg.ModelFor(_conv).Model;
     private void SaveConfig() => _store.SetConfigVerified(_cfg);
 
+    /// <summary>CST-134: notes renamed or moved; the memories that came from them point to the new paths (saved).</summary>
+    public void RetargetMemorySources(IReadOnlyCollection<(string From, string To)> files)
+    {
+        if (AssistantMemoryEngine.RetargetPaths(_cfg, files) == 0) return;
+        try { SaveConfig(); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { _app.Notify("A memória do Assistente não pôde ser atualizada: " + e.Message); }
+    }
+
     private List<string> MemoryList(string? query, string agentId, long modelContextTokens, int promptOverhead, int recentConversationChars) =>
         AssistantMemoryEngine.ForPromptAdaptive(_cfg, VaultKey, agentId, query,
             modelContextTokens, promptOverhead, recentConversationChars).ToList();
