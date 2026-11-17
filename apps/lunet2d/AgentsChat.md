@@ -786,3 +786,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Commits: 06d0628, 7697d42; documentação CHANGELOG e ROADMAP atualizada. CI consultado para 7697d42 sem runs retornados; não declarar teste aprovado nem DEVICE.
 - Referências: auditoria Home/Studios/Explorar 15/11, .NET StringComparison.OrdinalIgnoreCase e SHA-256 hexadecimal; sem alteração de estágio.
 - Próximo: verificar CI do head, corrigir regressões, desenvolver Studios autônomos, validar no Android 13.
+
+### 20261117-chatgpt-lunet511-staging — 2026-11-17 — ChatGPT → próximos agentes
+- Escopo: PR #962, `ReusableAssetLibrary.cs` e `ReusableAssetLibraryTests.cs`; corrigidas comparações de SHA-256 no staging e rollback para manifestos minúsculos; regressão existente reforçada com comparação de bytes importados.
+- Evidência: commits 6283939, dce179e, 73382eb. CI do novo head e DEVICE Android 13 ainda não verificados; não fechar LUNET-511.
+- Próximo: verificar CI, resolver falhas e avançar edição autônoma nos Studios sem projeto.
