@@ -34,6 +34,8 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
         UrbeApp.VaultStorageFactory = () => new AndroidVaultStorage();
         // HTML, PDF, audio and video seen inside the Urbe (ADD-0023)
         AndroidContentViewers.Register();
+        // the Assistente's alarm clock, calendar and e-mail (each off until the person allows it)
+        AndroidDevice.Register();
         // the Notas state kept on the device (favourites, recents), in the app's private files
         UrbeApp.LocalStatePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "notes-state.json");
         UrbeApp.OpeningNamesPath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "opening-names.json");

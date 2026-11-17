@@ -668,6 +668,7 @@ public static class AssistantAgent
         public IAssistantNames? Names => inner.Names;
         public IAssistantImages? Images => inner.Images;
         public AssistantWebSession? Web => inner.Web;
+        public IAssistantDevice? Device => inner.Device;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;

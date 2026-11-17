@@ -185,6 +185,8 @@ public sealed class AiConfig
     public Dictionary<string, string> AgentToolScopes { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Only an explicit setting allows unprompted agent-to-agent consultation.</summary>
     public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>The device capabilities the person allowed the agents (alarme, agenda, email); none by default (NN-016).</summary>
+    public HashSet<string> DeviceAccess { get; set; } = new(StringComparer.Ordinal);
     /// <summary>
     /// CST-132: the keys and tokens the person registered (providers, web search, MCP servers), for taking them out of
     /// anything that leaves the app. Shorter than 8 characters is not told apart from ordinary words and is skipped.
@@ -568,6 +570,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         return new JsonObject
         {
             ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
+            ["deviceAccess"] = new JsonArray(c.DeviceAccess.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()),
             ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
@@ -599,6 +602,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["agentPolicies"] is JsonObject policies)
             foreach (var (id, policy) in policies) c.AgentPolicies[id] = Str(policy, "readonly");
+        if (o["deviceAccess"] is JsonArray device)
+            foreach (var item in device)
+                if (item is JsonValue v && v.TryGetValue<string>(out var name) && name is AssistantDeviceTools.Alarm or AssistantDeviceTools.Calendar or AssistantDeviceTools.Email)
+                    c.DeviceAccess.Add(name);
         if (o["agentDelegationAuto"] is JsonObject delegation)
             foreach (var (id, allowed) in delegation) c.AgentDelegationAuto[id] = (bool?)allowed ?? false;
         if (o["agentToolScopes"] is JsonObject scopes)

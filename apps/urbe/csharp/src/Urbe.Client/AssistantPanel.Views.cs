@@ -1037,6 +1037,18 @@ public sealed partial class AssistantPanel
                 Hint(_cfg.Web.Enabled ? "Disponível para todos os agentes · " + (_cfg.Web.Provider == "brave" ? "Brave (opcional)" : "sem chave") : "Desativada pela preferência de privacidade"),
                 TextButton("Privacidade e pesquisa", ShowWebSettings),
                 Hint("Peça para pesquisar no chat. Sem configurar provedor nem permissão individual.")));
+            // the device's alarm clock, calendar and e-mail: each off until the person turns it on (NN-016)
+            Button DeviceSwitch(string key, string name) => TextButton(name + ": " + (_cfg.DeviceAccess.Contains(key) ? "ligado" : "desligado"), () =>
+            {
+                if (!_cfg.DeviceAccess.Remove(key)) _cfg.DeviceAccess.Add(key);
+                SaveConfig();
+                ShowSettings();
+            });
+            body.Children.Add(Section("Aparelho",
+                Hint("O que os agentes podem fazer no aparelho. Cada ação que muda algo pede sua aprovação; a agenda e o e-mail abrem no app deles para você confirmar ou enviar."),
+                DeviceSwitch(AssistantDeviceTools.Alarm, "Despertador (marcar e ver o próximo)"),
+                DeviceSwitch(AssistantDeviceTools.Calendar, "Agenda (criar e consultar eventos)"),
+                DeviceSwitch(AssistantDeviceTools.Email, "E-mail (preparar mensagens)")));
             body.Children.Add(Section("Servidores MCP",
                 Hint(_cfg.McpServers.Count == 0 ? "Nenhum. Um servidor MCP dá ao Assistente ferramentas de outro serviço; cada ferramenta começa desligada."
                     : string.Join(" · ", _cfg.McpServers.Select(m => m.Name + " (" + m.Tools.Count(t => t.Value is "read" or "write") + " liberadas)"))),
