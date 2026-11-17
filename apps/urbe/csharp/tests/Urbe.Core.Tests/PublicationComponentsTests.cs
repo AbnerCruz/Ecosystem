@@ -48,15 +48,18 @@ public sealed class PublicationComponentsTests
 
         var word = await PublicationDocx.ExportAsync(project, catalog, Asset, ct);
         var docxText = AllText(word.Bytes, "word/");
-        // the formula goes as editable TeX, and the export says so (never a silent loss)
-        foreach (var part in new[] { "Marés", "puxa", "<w:tbl>", "altura = 2 * lua", "\\frac{m_1 m_2}{r^2}", "O mar respira", "https://exemplo.org/mares", "<w:drawing>" })
+        // the formula is a native equation Word edits, so nothing is said about TeX
+        foreach (var part in new[] { "Marés", "puxa", "<w:tbl>", "altura = 2 * lua", "<m:oMathPara><m:oMath>", "<m:f>", "O mar respira", "https://exemplo.org/mares", "<w:drawing>" })
             Assert.Contains(part, docxText);
-        Assert.Contains(word.Limitations, l => l.Contains("TeX", StringComparison.Ordinal));
+        Assert.DoesNotContain(word.Limitations, l => l.Contains("TeX", StringComparison.Ordinal));
 
         var odt = (await PublicationOdt.ExportAsync(project, catalog, Asset, ct)).Bytes;
         var odtText = AllText(odt, "");
-        foreach (var part in new[] { "Marés", "puxa", "<table:table", "altura = 2 * lua", "O mar respira", "https://exemplo.org/mares", "draw:image" })
+        foreach (var part in new[] { "Marés", "puxa", "<table:table", "altura = 2 * lua", "O mar respira", "https://exemplo.org/mares", "draw:image", "<draw:object xlink:href=\"./Object 1\"", "application/vnd.oasis.opendocument.formula" })
             Assert.Contains(part, odtText);
+        using (var archive = new ZipArchive(new MemoryStream(odt), ZipArchiveMode.Read))
+        using (var formula = new StreamReader(archive.GetEntry("Object 1/content.xml")!.Open()))
+            Assert.Contains("<mfrac>", formula.ReadToEnd());
 
         var pptx = (await PublicationPptx.ExportAsync(project with { Design = new PublicationDesign { Layout = "slides" } }, catalog, Asset, ct)).Bytes;
         var pptxText = AllText(pptx, "ppt/");

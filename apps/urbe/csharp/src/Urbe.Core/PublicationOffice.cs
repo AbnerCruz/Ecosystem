@@ -318,7 +318,7 @@ public static class PublicationOffice
 
         OfficeRun MathRun(string tex)
         {
-            limits.Add("Fórmulas saem como TeX editável (o editor de equações do Word/LibreOffice não as recebe convertidas).");
+            limits.Add("Fórmulas saem como TeX editável onde não viram equação: nos slides, e no Word/ODT quando usam algo sem equivalente no editor de equações.");
             return new OfficeRun(tex, Math: true);
         }
     }

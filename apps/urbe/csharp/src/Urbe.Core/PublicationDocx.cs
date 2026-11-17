@@ -78,7 +78,7 @@ public static class PublicationDocx
                 new XAttribute(W + "left", 1134), new XAttribute(W + "header", 709), new XAttribute(W + "footer", 709), new XAttribute(W + "gutter", 0))));
         var document = new XDocument(new XElement(W + "document",
             new XAttribute(XNamespace.Xmlns + "w", W), new XAttribute(XNamespace.Xmlns + "r", R), new XAttribute(XNamespace.Xmlns + "wp", WP),
-            new XAttribute(XNamespace.Xmlns + "a", A), new XAttribute(XNamespace.Xmlns + "pic", Pic), body));
+            new XAttribute(XNamespace.Xmlns + "a", A), new XAttribute(XNamespace.Xmlns + "pic", Pic), new XAttribute(XNamespace.Xmlns + "m", MathOmml.M), body));
 
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
@@ -112,7 +112,9 @@ public static class PublicationDocx
             Xml(zip, "word/_rels/document.xml.rels", new XElement(Rel + "Relationships", rels));
             foreach (var (path, bytes) in media) Bytes(zip, "word/" + path, bytes);
         }
-        return new PublicationExport(stream.ToArray(), doc.Limitations);
+        // the TeX notice stays only if some formula is still TeX (one that has no native equation here)
+        var texLeft = body.Descendants(W + "rStyle").Any(e => (string?)e.Attribute(W + "val") == "MathTex");
+        return new PublicationExport(stream.ToArray(), texLeft ? doc.Limitations : doc.Limitations.Where(l => !l.StartsWith("Fórmulas saem como TeX", StringComparison.Ordinal)).ToList());
 
         IEnumerable<XElement> Block(OfficeBlock block)
         {
@@ -120,7 +122,10 @@ public static class PublicationDocx
             {
                 case OfficeHeading h: yield return Para("Heading" + Math.Clamp(h.Level, 1, 6), Runs(h.Runs)); break;
                 case OfficeParagraph p:
-                    yield return Para(p.Style switch { "quote" => "Quote", "math" => "Formula", "box" => "Box", "boxtitle" => "BoxTitle", _ => null }, Runs(p.Runs));
+                    // a display formula is a native equation paragraph when it converts (Word, LibreOffice and Google Docs edit it)
+                    if (p.Style == "math" && p.Runs is [{ Math: true } only] && MathOmml.Convert(only.Text) is { } display)
+                        yield return Para("Formula", new XElement(MathOmml.M + "oMathPara", display));
+                    else yield return Para(p.Style switch { "quote" => "Quote", "math" => "Formula", "box" => "Box", "boxtitle" => "BoxTitle", _ => null }, Runs(p.Runs));
                     break;
                 case OfficeListItem li:
                     if (!lists.TryGetValue(li.ListId, out var list)) lists[li.ListId] = list = (lists.Count + 1, li.Ordered);
@@ -224,6 +229,7 @@ public static class PublicationDocx
     private static XElement Run(OfficeRun run, string? style)
     {
         if (run.Break) return new XElement(W + "r", new XElement(W + "br"));
+        if (run.Math && style is null && MathOmml.Convert(run.Text) is { } equation) return equation;
         var props = new XElement(W + "rPr");
         if (style is not null) props.Add(new XElement(W + "rStyle", new XAttribute(W + "val", style)));
         else if (run.Code) props.Add(new XElement(W + "rStyle", new XAttribute(W + "val", "InlineCode")));

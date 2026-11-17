@@ -78,6 +78,18 @@ public static class PublicationOdt
             }
         }
 
+        // formulas: each one that converts becomes an embedded formula object (MathML) that LibreOffice edits; the rest stay TeX
+        var formulas = new List<(string Dir, XElement Math)>();
+        foreach (var span in text.Descendants(Text + "span").Where(e => (string?)e.Attribute(Text + "style-name") == "SMath").ToList())
+        {
+            var display = (string?)span.Parent?.Attribute(Text + "style-name") == "Formula";
+            if (MathMathMl.Convert(span.Value, display) is not { } math) continue;
+            var dir = "Object " + (formulas.Count + 1);
+            formulas.Add((dir, math));
+            span.ReplaceWith(new XElement(Draw + "frame", new XAttribute(Draw + "name", "Fórmula" + formulas.Count), new XAttribute(Text + "anchor-type", "as-char"),
+                new XElement(Draw + "object", new XAttribute(XLink + "href", "./" + dir), new XAttribute(XLink + "type", "simple"), new XAttribute(XLink + "show", "embed"), new XAttribute(XLink + "actuate", "onLoad"))));
+        }
+        var texLeft = text.Descendants(Text + "span").Any(e => (string?)e.Attribute(Text + "style-name") == "SMath");
         var content = new XElement(Office + "document-content", Namespaces(), new XAttribute(Office + "version", "1.3"),
             new XElement(Office + "automatic-styles", AutomaticStyles(doc)),
             new XElement(Office + "body", text));
@@ -86,7 +98,8 @@ public static class PublicationOdt
             new XElement(Office + "meta", new XElement(DC + "title", Safe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(Meta + "generator", "Urbe")));
         var manifest = new XElement(Manifest + "manifest", new XAttribute(XNamespace.Xmlns + "manifest", Manifest), new XAttribute(Manifest + "version", "1.3"),
             FileEntry("/", Mime), FileEntry("content.xml", "text/xml"), FileEntry("styles.xml", "text/xml"), FileEntry("meta.xml", "text/xml"),
-            pictures.Select(p => FileEntry(p.Path, p.Mime)));
+            pictures.Select(p => FileEntry(p.Path, p.Mime)),
+            formulas.SelectMany(f => new[] { FileEntry(f.Dir + "/", "application/vnd.oasis.opendocument.formula"), FileEntry(f.Dir + "/content.xml", "text/xml") }));
 
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
@@ -96,9 +109,10 @@ public static class PublicationOdt
             Xml(zip, "styles.xml", styles);
             Xml(zip, "meta.xml", meta);
             foreach (var (path, _, bytes) in pictures) Bytes(zip, path, bytes, CompressionLevel.NoCompression);
+            foreach (var (dir, math) in formulas) Xml(zip, dir + "/content.xml", math);
             Xml(zip, "META-INF/manifest.xml", manifest);
         }
-        return new PublicationExport(stream.ToArray(), doc.Limitations);
+        return new PublicationExport(stream.ToArray(), texLeft ? doc.Limitations : doc.Limitations.Where(l => !l.StartsWith("Fórmulas saem como TeX", StringComparison.Ordinal)).ToList());
 
         XElement Block(OfficeBlock block) => block switch
         {
