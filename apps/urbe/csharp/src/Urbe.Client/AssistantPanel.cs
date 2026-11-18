@@ -622,24 +622,25 @@ public sealed partial class AssistantPanel : Border
     /// delegation (<see cref="AssistantScopedHost"/>), writes only inside that scope; the work shows in the small card
     /// over the note, and the answer is for the person.
     /// </summary>
-    public async Task AskFromPluginAsync(string plugin, string? agentId, string task, IReadOnlyList<string> scope)
+    /// <returns>CST-146: the agent's final answer for the plugin, or null when declined, not started or stopped without one.</returns>
+    public async Task<string?> AskFromPluginAsync(string plugin, string? agentId, string task, IReadOnlyList<string> scope, bool structured = false)
     {
-        if (_running is not null) { _app.Notify("O Assistente ainda está trabalhando no pedido anterior."); return; }
+        if (_running is not null) { _app.Notify("O Assistente ainda está trabalhando no pedido anterior."); return null; }
         Load();
-        if (!_loaded || scope.Count == 0 || string.IsNullOrWhiteSpace(task)) return;
+        if (!_loaded || scope.Count == 0 || string.IsNullOrWhiteSpace(task)) return null;
         var agents = AgentNames.All(_cfg).ToList();
         var agent = agentId is null ? null : agents.FirstOrDefault(a => a.Id == agentId) ?? AgentNames.Find(agentId, _cfg);
         if (agent is null)
         {
             if (await _app.Dialogs.ChooseAsync("Qual agente atende o plugin " + plugin + "?",
-                    agents.Select(a => new DialogItem(AgentNames.CallName(a, _cfg))).ToList()) is not { } picked) return;
+                    agents.Select(a => new DialogItem(AgentNames.CallName(a, _cfg))).ToList()) is not { } picked) return null;
             agent = agents[picked];
         }
         var who = AgentNames.CallName(agent, _cfg);
         if (!await _app.Dialogs.ConfirmAsync("Pedido do plugin " + plugin,
                 "O plugin " + plugin + " quer pedir a " + who + ":\n\n" + (task.Length > 900 ? task[..900] + "…" : task) +
                 "\n\nPode trabalhar em: " + string.Join(", ", scope) + ".\n\n" + who +
-                " usa o próprio modelo e as próprias permissões; fora dessas notas e pastas, nada é gravado.", "Pedir")) return;
+                " usa o próprio modelo e as próprias permissões; fora dessas notas e pastas, nada é gravado.", "Pedir")) return null;
         Persist();
         _cfg.AgentId = agent.Id;
         SaveConfig();
@@ -649,9 +650,18 @@ public sealed partial class AssistantPanel : Border
         _views.Clear();
         if (_cfg.Providers.Count == 0 || ModelId().Length == 0) Open();
         if (!IsVisible) ActivateCompact();
+        var finished = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _pluginAnswers[_conv.Id] = finished;
         Send(task, (scope[0], "[Pedido do plugin " + plugin + ". Trabalhe somente em: " + string.Join(", ", scope) +
-            ". Leia essas notas ou pastas como contexto; o resultado é para a pessoa. Fora delas nada pode ser gravado.]"));
+            ". Leia essas notas ou pastas como contexto; o resultado é para a pessoa e para o plugin. Fora delas nada pode ser gravado." +
+            (structured ? " " + Urbe.Core.Plugins.PluginAgentAnswer.Instruction : "") + "]"));
+        // a turn that never started (no model configured) leaves nothing to wait for
+        if (!_activeRuns.ContainsKey(_conv.Id)) { _pluginAnswers.Remove(_conv.Id); return null; }
+        return await finished.Task;
     }
+
+    /// <summary>CST-146: the conversations a plugin waits on, completed with the final answer when their run ends.</summary>
+    private readonly Dictionary<string, TaskCompletionSource<string?>> _pluginAnswers = new(StringComparer.Ordinal);
 
     /// <summary>UC-80: the note and the <c>&amp;Nome&amp;:</c> line the shown conversation was asked from, or null.</summary>
     private (string Path, string Agent, string Request)? AskedInNote()
@@ -1243,6 +1253,9 @@ public sealed partial class AssistantPanel : Border
             _activeRuns.Remove(conv.Id);
             _activeConversations.Remove(conv.Id);
             _pendingRuns.Remove(conv.Id);
+            if (_pluginAnswers.Remove(conv.Id, out var asking))
+                asking.TrySetResult(run.Stopped is "error" or "aborted" ? null : string.Join("\n", conv.Messages.LastOrDefault(m => m.Role == "assistant")?.Content
+                    .Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text) ?? []).Trim() is { Length: > 0 } said ? said : null);
             if (ReferenceEquals(conv, _conv)) { _running = null; _pending = null; }
             if (_inNote is { } asked && ReferenceEquals(asked.Conv, conv))
             {
