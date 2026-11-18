@@ -439,6 +439,10 @@ public static class AssistantMemoryEngine
 
             var normalized = Normalize(sentence);
             var kind = StatementKind(normalized);
+            // a judgement is learned only when it turns around something remembered (praise, then criticism): never on its own
+            if (kind is null && EvaluationOf(sentence) is not null && cfg.MemoryRecords.Any(m => m.State == "active" && m.Scope == "agent" &&
+                    m.Vault == vault && m.AgentId == agentId && m.Kind is "preference" or "fact" && Relate(m.Text, sentence) == MemoryRelation.Contradicts))
+                kind = "preference";
             if (kind is null) continue;
 
             // Said again (in this or another conversation): the same memory, reinforced, with the new source kept.
@@ -654,10 +658,34 @@ public static class AssistantMemoryEngine
         return (Disliking.Contains(m.Groups["verb"].Value) == m.Groups["neg"].Success, words);
     }
 
+    // #963 case 08: praise and criticism of a thing ("a transparência ficou linda" … "está horrível")
+    private static readonly Regex Evaluation = new(
+        @"^(?:(?:acho|achei)\s+(?:que\s+)?)?(?<obj>\S.{0,58}?)\s+(?<neg>nao\s+)?(?:e|esta|ficou|fica|era|foi|continua|parece|ta)\s+(?:(?:muito|bem|super|tao|meio|bastante|realmente|simplesmente|ainda|um pouco)\s+)*(?<adj>[a-z]+)\s*[.!]*$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly HashSet<string> Praise = new(StringComparer.Ordinal)
+        { "bom", "boa", "otimo", "otima", "excelente", "incrivel", "perfeito", "perfeita", "lindo", "linda", "bonito", "bonita", "legal", "maravilhoso", "maravilhosa", "agradavel", "elegante", "util" };
+    private static readonly HashSet<string> Criticism = new(StringComparer.Ordinal)
+        { "ruim", "pessimo", "pessima", "horrivel", "terrivel", "feio", "feia", "chato", "chata", "confuso", "confusa", "inutil", "estranho", "estranha", "desagradavel", "poluido", "poluida" };
+
+    /// <summary>A judgement of a thing: for or against, and what it is about. Only weighed against what is already remembered.</summary>
+    internal static (bool Positive, HashSet<string> About)? EvaluationOf(string sentence)
+    {
+        var m = Evaluation.Match(Lead.Replace(Normalize(sentence).Trim(), ""));
+        if (!m.Success) return null;
+        var adj = m.Groups["adj"].Value;
+        bool? positive = Praise.Contains(adj) ? true : Criticism.Contains(adj) ? false : null;
+        if (positive is null) return null;
+        var words = Tokens(m.Groups["obj"].Value).Where(w => !Fillers.Contains(w) && !Negations.Contains(w)).ToHashSet(StringComparer.Ordinal);
+        return words.Count is 0 or > 4 ? null : (positive.Value != m.Groups["neg"].Success, words);
+    }
+
+    private static (bool Positive, HashSet<string> About)? StanceOf(string sentence) => PreferenceOf(sentence) ?? EvaluationOf(sentence);
+
     public static MemoryRelation Relate(string a, string b)
     {
         if (Normalize(a) == Normalize(b)) return MemoryRelation.None;
-        if (PreferenceOf(a) is { } pa && PreferenceOf(b) is { } pb)
+        if (StanceOf(a) is { } pa && StanceOf(b) is { } pb)
         {
             if (pa.About.SetEquals(pb.About)) return pa.Positive != pb.Positive ? MemoryRelation.Contradicts : MemoryRelation.None;
             if (pa.Positive == pb.Positive && (pa.About.IsProperSubsetOf(pb.About) || pb.About.IsProperSubsetOf(pa.About))) return MemoryRelation.Refines;

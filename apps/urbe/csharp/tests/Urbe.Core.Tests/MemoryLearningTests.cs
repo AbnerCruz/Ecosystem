@@ -32,6 +32,24 @@ public sealed class MemoryLearningTests
         Assert.Empty(AssistantMemoryEngine.PotentialConflicts(cfg, "v", "alice"));
     }
 
+    /// <summary>
+    /// #963 case 08: praise remembered, criticism said later of the same thing ("a transparência ficou horrível") — the
+    /// criticism replaces the praise as the current preference; a judgement that turns nothing around is not learned.
+    /// </summary>
+    [Fact]
+    public void CriticismOfSomethingPraisedReplacesThePraise()
+    {
+        var cfg = new AiConfig();
+        var praise = Say(cfg, "Gosto da transparência dos painéis.", "c1").Single();
+        Assert.Empty(Say(cfg, "O tempo hoje está muito bom.", "c2"));   // a judgement alone is not a memory
+        Assert.Empty(Say(cfg, "A transparência ficou linda.", "c2"));   // agrees: nothing to turn around
+        var now = Say(cfg, "Na verdade, a transparência dos painéis ficou horrível.", "c3").Single();
+        Assert.Equal("superseded", praise.State);
+        Assert.Contains(praise.Id, now.RelatedMemoryIds);
+        Assert.Equal([now.Text], Active(cfg).Select(m => m.Text));
+        Assert.Equal(AssistantMemoryEngine.MemoryRelation.Contradicts, AssistantMemoryEngine.Relate("A transparência não é boa.", "Adoro a transparência."));
+    }
+
     [Fact]
     public void AMoreSpecificStatementRefinesAndBothStay()
     {
