@@ -33,8 +33,9 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
     {
         UrbeApp.VaultStorageFactory = () => new AndroidVaultStorage();
 #if URBE_EMULATOR
-        // CI emulator only (never the beta): the example vault adb pushes into the app's own folder opens without the picker
-        var e2e = System.IO.Path.Combine(Android.App.Application.Context.GetExternalFilesDir(null)?.AbsolutePath ?? "", "e2e-vault");
+        // CI emulator only (never the beta): the example vault adb copies (run-as) into the app's files opens without the picker
+        var e2e = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? "", "e2e-vault");
+        Android.Util.Log.Info("urbe-e2e", System.IO.Directory.Exists(e2e) ? "vault de exemplo: " + System.IO.Directory.GetFiles(e2e, "*", System.IO.SearchOption.AllDirectories).Length + " arquivos" : "sem vault de exemplo");
         if (System.IO.Directory.Exists(e2e))
         {
             var selection = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "e2e-vault.json");
