@@ -146,6 +146,7 @@ public sealed class MainActivity : AvaloniaMainActivity
 #if URBE_EMULATOR
         if (intent?.GetStringExtra("urbe.open") is not { Length: > 0 } path) return;
         bool play = intent.GetBooleanExtra("urbe.play", false);
+        Android.Util.Log.Info("urbe-e2e", "abrir " + path + (play ? " e tocar" : ""));
         intent.RemoveExtra("urbe.open");
         Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
         {

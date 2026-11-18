@@ -8,6 +8,13 @@ PKG=app.urbe.nativepreview
 OUT=apps/urbe/csharp/artifacts/android-smoke
 mkdir -p "$OUT"
 shot() { adb exec-out screencap -p > "$OUT/$1.png"; }
+# the screen as the accessibility tree sees it (Avalonia exposes its texts and names)
+screen() { adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1; adb exec-out cat /sdcard/ui.xml; }
+expect() { screen > "$OUT/$2.xml"; grep -q "$1" "$OUT/$2.xml" || { echo "::error::'$1' not on screen at $2"; shot "$2"; adb logcat -d -v threadtime > "$OUT/logcat.txt"; exit 1; }; }
+tap_text() {
+  local b; b=$(screen | grep -o "text=\"$1\"[^>]*bounds=\"[^\"]*\"" | head -1 | grep -o 'bounds="[^"]*"' | tr -dc '0-9,[]' | tr '[]' ' ')
+  [ -n "$b" ] && set -- $(echo "$b" | tr ',' ' ') && adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+}
 alive() { adb shell pidof "$PKG" > /dev/null || { echo "::error::$PKG is not running after: $1"; adb logcat -d -v threadtime > "$OUT/logcat.txt"; exit 1; }; }
 
 adb install -r "$(find apps/urbe/csharp/artifacts/emulator -name '*-Signed.apk' | head -1)" || exit 1
@@ -25,16 +32,21 @@ adb logcat -d -v threadtime > "$OUT/startup-logcat.txt"
 alive "launch"
 grep "urbe-e2e" "$OUT/startup-logcat.txt"
 grep -q "urbe-e2e.*vault de exemplo: [1-9]" "$OUT/startup-logcat.txt" || { echo "::error::the example vault did not reach the app"; shot 01-notas; exit 1; }
+expect "Roteiro" 01-notas
 shot 01-notas
-adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1 && adb pull /sdcard/ui.xml "$OUT/01-notas.xml" > /dev/null 2>&1
+tap_text "Entendi"   # the first-use tip
+sleep 1
 
 # 2. the video publication opens in the Estúdio (not as JSON) and plays — recorded
 adb shell screenrecord --time-limit 24 /sdcard/urbe-video.mp4 &
 REC=$!
 sleep 1
-adb shell am start --activity-single-top -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -p "$PKG" \
-  --es urbe.open "Publicações/Demo.publication.json" --ez urbe.play true > /dev/null
-sleep 4
+# its own action: an intent equal to the task's MAIN/LAUNCHER (extras do not count) only brings the task forward
+ACTIVITY=$(adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$PKG" | tail -1 | tr -d '\r')
+adb shell am start --activity-single-top -n "$ACTIVITY" -a app.urbe.e2e.OPEN \
+  --es urbe.open "Publicações/Demo.publication.json" --ez urbe.play true
+sleep 5
+expect "Prévia do vídeo" 02-estudio
 shot 02-estudio
 # scroll the Estúdio down to the preview, the timeline and the scenes
 adb shell input swipe 540 1700 540 600 400
