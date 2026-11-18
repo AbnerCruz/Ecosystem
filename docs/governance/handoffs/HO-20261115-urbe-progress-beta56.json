@@ -146,7 +146,7 @@
     "CST-157/159: Converter em publicação (página antiga → publicação; textos viram notas reais; relatório do que não tem equivalente; .page.json intocado).",
     "CST-226: Onde esta nota é usada inclui as adaptações.",
     "CST-234: Ler por páginas no EPUB (colunas de uma tela, setas viram página e capítulo, volta à última página, posição mantida, lembrado por livro). Verificado no Chromium do CI (readers.mjs) com capítulo real; achados e corrigidos deslocamento de colunas e retomada uma página antes.",
-    "CST-022: comentários de palavras podem ser editados e excluídos na janela do 💬.",
+    "CST-022: comentários de palavras podem ser editados e excluídos na janela do \uD83D\uDCAC.",
     "CST-048: campo calculado não soma campos ocultos; grupo repetível diz qual item e campo corrigir; cada tipo de campo diz o formato certo.",
     "CST-086: a resposta mostra as lembranças que usou, com Editar e Esquecer no próprio chat.",
     "Medição: digitação no Fonte ~30 ms/tecla vs Visual ~11 ms/tecla (runner); custo no TextBox inteiro, não nos complementos do Urbe — próxima frente do gate do editor (editor de fonte virtualizado por blocos).",
@@ -224,9 +224,10 @@
     {
       "check": "Nota de voz interrompida pelo sistema é recuperada e transcrita",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/src/Urbe.Core/VoiceNoteQueue.cs",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/967); registro em docs/governance/responses/VAL-HO-20261115-urbe-progress-beta56-21f9ef87fc7f.md."
     }
   ],
   "known_issues": [
