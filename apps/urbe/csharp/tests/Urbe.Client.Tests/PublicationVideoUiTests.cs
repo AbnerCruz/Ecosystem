@@ -70,6 +70,13 @@ public sealed partial class HeadlessUiTests
             panel.MoveSelected(0.5, 0.25);
             await Pump();
             Assert.Equal(0.25, studio.Project!.Video!.Scenes[0].Elements[0].Keyframes.Single(k => k.Property == "y" && Math.Abs(k.Time - 1) < 0.01).Value, 6);
+            var width = studio.Project!.Video!.Scenes[0].Elements[0].Width;
+            panel.PinchSelected(1.5);   // two fingers opened: the object grows by the pinch
+            await Pump();
+            Assert.Equal(width * 1.5, studio.Project!.Video!.Scenes[0].Elements[0].Width, 6);
+            panel.PinchSelected(1.01);   // a wobble of the fingers changes nothing
+            await Pump();
+            Assert.Equal(width * 1.5, studio.Project!.Video!.Scenes[0].Elements[0].Width, 6);
             panel.TapAt(0.02, 0.98);   // nothing there: the selection ends
             Assert.Null(panel.Selected);
 

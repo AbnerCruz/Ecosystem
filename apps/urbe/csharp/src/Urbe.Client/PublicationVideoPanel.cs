@@ -44,6 +44,7 @@ public sealed class PublicationVideoPanel : StackPanel
     private (string Scene, string Element)? _selected;
     private Point? _dragFrom;
     private Point _dragBy;
+    private double _pinch = 1;
 
     public PublicationVideoPanel()
     {
@@ -87,6 +88,18 @@ public sealed class PublicationVideoPanel : StackPanel
         _stage.PointerReleased += (_, _) => Release(commit: true);
         _stage.PointerCaptureLost += (_, _) => Release(commit: true);
         _stage.SizeChanged += (_, _) => DrawOutline();
+        // two fingers resize the selected object: the outline follows, the size is written when the fingers leave
+        _stage.GestureRecognizers.Add(new Avalonia.Input.PinchGestureRecognizer());
+        _stage.AddHandler(Avalonia.Input.InputElement.PinchEvent, (_, e) =>
+        {
+            if (_selected is null) return;
+            _dragFrom = null;
+            _dragBy = default;
+            _pinch = Math.Clamp(e.Scale, 0.1, 10);
+            DrawOutline();
+            e.Handled = true;
+        });
+        _stage.AddHandler(Avalonia.Input.InputElement.PinchEndedEvent, (_, _) => PinchSelected(_pinch));
         _hint.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         Children.Add(new Border { CornerRadius = new CornerRadius(10), ClipToBounds = true, Background = Brushes.Black, Child = _stage });
         Children.Add(_hint);
@@ -184,6 +197,14 @@ public sealed class PublicationVideoPanel : StackPanel
         MoveSelected(c.State.X + by.X / picture.Width, c.State.Y + by.Y / picture.Height);
     }
 
+    /// <summary>Resizes the selected object by <paramref name="factor"/> (the end of a pinch); a tiny change is a wobble, not a resize.</summary>
+    public void PinchSelected(double factor)
+    {
+        _pinch = 1;
+        if (Math.Abs(factor - 1) < 0.03 || Current() is not { } c) { DrawOutline(); return; }
+        SceneChanged?.Invoke(VideoEditing.Resize(c.Scene.Scene, c.State.Id, factor));
+    }
+
     /// <summary>Moves the selected object's centre to (x, y) at the playhead (a keyframe there when it is animated).</summary>
     public void MoveSelected(double x, double y)
     {
@@ -210,7 +231,7 @@ public sealed class PublicationVideoPanel : StackPanel
         var picture = Picture();
         if (Current() is not { } c || picture.Width <= 0) { _outline.IsVisible = false; return; }
         var e = c.State;
-        double w = e.Width * e.Scale * picture.Width, h = e.Height * e.Scale * picture.Height;
+        double w = e.Width * e.Scale * _pinch * picture.Width, h = e.Height * e.Scale * _pinch * picture.Height;
         _outline.Width = Math.Max(8, w);
         _outline.Height = Math.Max(8, h);
         _outline.RenderTransform = e.Rotation == 0 ? null : new RotateTransform(e.Rotation);
