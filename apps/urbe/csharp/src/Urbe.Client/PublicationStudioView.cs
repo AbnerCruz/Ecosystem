@@ -64,6 +64,7 @@ public sealed class PublicationStudioView : Border
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
             Item("Verificar publicação", () => ReviewRequested?.Invoke());
+            if (_project?.Sections.Count > 1) Item("Ordenar as notas", () => SortRequested?.Invoke());
             Item("Pedir ao Assistente", () => AskAssistantRequested?.Invoke());
             Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             if (IsVideo)
@@ -149,6 +150,8 @@ public sealed class PublicationStudioView : Border
     public event Action? RenameRequested;
     /// <summary>CST-179/180: "Verificar publicação" — what to fix before exporting.</summary>
     public event Action? ReviewRequested;
+    /// <summary>CST-160: order the notes by title, date or folder.</summary>
+    public event Action? SortRequested;
     public event Action? ConfigureRequested;
     public event Action? Closed;
     public event Action<string>? EditSourceRequested;

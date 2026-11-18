@@ -33,6 +33,7 @@ public sealed partial class MainView
         studio.AddSourceRequested += () => _ = AddPublicationSourceAsync();
         studio.RenameRequested += () => _ = RenamePublicationAsync();
         studio.ReviewRequested += () => _ = ReviewPublicationAsync();
+        studio.SortRequested += () => _ = SortPublicationAsync();
         studio.ConfigureRequested += () => _ = ConfigurePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.EditReferenceRequested += reference => _ = EditPublicationReferenceAsync(reference);
@@ -92,6 +93,18 @@ public sealed partial class MainView
         PublicationsStudio.Refresh();
     }
 
+    /// <summary>CST-160: the notes of the publication ordered by title, by date or grouped by folder (the cover stays first; undoable).</summary>
+    public async Task SortPublicationAsync()
+    {
+        if (_publicationsStudio?.Project is not { } project || _store is not { } store) return;
+        string[] kinds = ["titulo", "data", "pasta"];
+        var pick = await Dialogs.ChooseAsync("Ordenar as notas",
+            [new DialogItem("Pelo título", Detail: "De A a Z"), new DialogItem("Pela data", Detail: "Da mudança mais antiga para a mais nova"),
+             new DialogItem("Pela pasta", Detail: "Agrupadas por pasta, pelo título dentro de cada uma")]);
+        if (pick is not { } i || !ReferenceEquals(_publicationsStudio?.Project, project)) return;
+        _publicationsStudio.UpdateProject(project.SortedBy(kinds[i], store.Get));
+    }
+
     /// <summary>Open an existing project by path, preserving the current unsaved note first.</summary>
     /// <summary>
     /// CST-160: a publication made from a tag, folder or search shows the notes that match it now and it does not use
@@ -102,13 +115,29 @@ public sealed partial class MainView
         if (project.Query is not { } query || _store is null || !VaultWritable) return project;
         using var index = new KnowledgeIndex(_store);
         var found = query.NewMatches(project, _store.List(), q => index.Search(q));
-        if (found.Count == 0) return project;
+        // and the other way: notes it uses that stopped matching, told for review (never taken out by themselves)
+        var gone = query.NoLongerMatching(project, _store.Get, q => index.Search(q));
+        if (found.Count == 0 && gone.Count == 0) return project;
         var what = query.Kind switch { "tag" => "com a tag #" + query.Value.TrimStart('#'), "folder" => "na pasta " + query.Value, _ => "para “" + query.Value + "”" };
+        var next = project;
+        if (gone.Count > 0)
+            next = await Dialogs.ConfirmAsync(gone.Count + (gone.Count == 1 ? " nota da publicação não está mais " : " notas da publicação não estão mais ") + what,
+                string.Join("\n", gone.Take(12).Select(d => "• " + d.Title)) + (gone.Count > 12 ? "\n… e mais " + (gone.Count - 12) : "") +
+                "\n\nTirar da publicação? As notas continuam no vault. Se mantiver, não pergunto de novo.", "Tirar da publicação", cancel: "Manter")
+                ? gone.Aggregate(next, (p, d) => p.RemoveSource(d.Id))
+                : next with { Query = query with { Kept = [.. query.Kept, .. gone.Select(d => d.Id)] } };
+        if (found.Count == 0) return await SaveQueryReviewAsync(path, project, next);
         var add = await Dialogs.ConfirmAsync(found.Count + (found.Count == 1 ? " nota nova " : " notas novas ") + what,
             string.Join("\n", found.Take(12).Select(d => "• " + d.Title)) + (found.Count > 12 ? "\n… e mais " + (found.Count - 12) : "") +
             "\n\nAcrescentar à publicação? Se não, elas não serão oferecidas de novo.", "Acrescentar", cancel: "Deixar de fora");
-        var next = add ? found.Aggregate(project, (p, d) => p.AddSource(d.Id))
-            : project with { Query = query with { Declined = [.. query.Declined, .. found.Select(d => d.Id)] } };
+        next = add ? found.Aggregate(next, (p, d) => p.AddSource(d.Id))
+            : next with { Query = (next.Query ?? query) with { Declined = [.. query.Declined, .. found.Select(d => d.Id)] } };
+        return await SaveQueryReviewAsync(path, project, next);
+    }
+
+    private async Task<PublicationProject> SaveQueryReviewAsync(string path, PublicationProject project, PublicationProject next)
+    {
+        if (ReferenceEquals(project, next) || _store is null) return project;
         try { await ((IAssistantApp)this).SaveNoteAsync(_store.Get(path)!, PublicationProjectCodec.Serialize(next)); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
         {

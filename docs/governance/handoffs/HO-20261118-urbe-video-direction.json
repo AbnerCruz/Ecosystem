@@ -64,7 +64,11 @@
     "apps/urbe/csharp/src/Urbe.Client/Plugins/VaultPluginAdapter.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultPluginTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PluginAgentUiTests.cs",
-    "apps/urbe/docs/csharp/OWNER-ORDERS-STATUS.md"
+    "apps/urbe/docs/csharp/OWNER-ORDERS-STATUS.md",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationQueryTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationSelectionUiTests.cs"
   ],
   "work_completed": [
     "#956 P1, ciclo de direção visual da IA: review_publication passa a medir cada cena de vídeo nos mesmos quadros do MP4. Aponta objeto fora do quadro ou dos 90% seguros (SMPTE ST 2046-1), texto cortado ou reduzido (medido pelo renderizador real), sobreposição, texto sob a legenda, contraste abaixo do WCAG 2 e imagem ausente, e lista cenas e elementos por id.",
@@ -86,14 +90,15 @@
     "Jornada Android na CI corrigida duas vezes pelo que os prints mostraram: o vault não chegava ao app (agora run-as nos arquivos privados) e o Estúdio não abria (intent igual à da tarefa; agora ação própria). O roteiro confere o texto da tela pela árvore de acessibilidade e falha se o vault ou a prévia do vídeo não aparecem.",
     "Defeito visto na gravação do emulador Android: ao terminar de tocar, a prévia voltava a t=0, um quadro preto (entrada em fade). Agora volta à capa (a primeira cena formada), e tocar a partir da capa começa do início.",
     "#956 P2, linha do tempo visual: faixa com as cenas em blocos do tamanho da duração, trilhas de áudio, cabeça de leitura e quadros-chave do objeto selecionado; tocar leva ao instante; arrastar a borda de uma cena muda a duração (com folga depois do fim para alongar a última cena, defeito achado no teste), pela mesma atualização e desfazer.",
-    "CST-146 (resultado ao plugin): perguntarAgente com \"resposta\" devolve ao plugin o texto e as partes (ação, justificativa, passos, critério, fontes, incertezas, estado); fontes fora do escopo ou inexistentes viram incerteza; a ação do plugin espera o fim da execução. Plugin Próxima tarefa demonstrado no teste."
+    "CST-146 (resultado ao plugin): perguntarAgente com \"resposta\" devolve ao plugin o texto e as partes (ação, justificativa, passos, critério, fontes, incertezas, estado); fontes fora do escopo ou inexistentes viram incerteza; a ação do plugin espera o fim da execução. Plugin Próxima tarefa demonstrado no teste.",
+    "CST-160: ordenar as notas da publicação (título, data, pasta; capa primeiro; desfazer) e, nas publicações de consulta, a nota que deixou de combinar é dita para revisão (tirar ou manter, e manter é lembrado)."
   ],
   "verification": [
     {
       "check": "Urbe.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1770/1770."
+      "evidence": "1772/1772."
     },
     {
       "check": "Urbe.Client.Tests",

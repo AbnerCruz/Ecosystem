@@ -410,6 +410,8 @@ public static partial class AppDocs
         - Antes de salvar, o Urbe **abre o arquivo gerado e confere** se ele está inteiro; se não estiver, nada é salvo e você vê o motivo.
         - O que um formato não guarda como no Urbe (uma fórmula que vira texto, um gráfico que vira imagem) é dito ao salvar. Dados que parecem pessoais são mostrados antes de compartilhar, para você decidir.
         - O estúdio diz o que mudou nas notas desde a última exportação.
+        - **Ordenar as notas** (no ⋯) põe as notas pelo título, pela data ou agrupadas por pasta; a capa continua primeiro.
+        - Numa publicação feita de uma tag, pasta ou busca, ao abrir o Urbe oferece as notas novas que combinam e avisa das que deixaram de combinar, para você tirar ou manter.
 
         ## Vídeo
 

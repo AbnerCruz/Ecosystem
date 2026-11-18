@@ -123,6 +123,34 @@ public sealed partial class HeadlessUiTests
             var json = File.ReadAllText(Path.Combine(vault, "Publicações", "Receitas.publication.json"));
             Assert.Contains(view.Documents!.Get("Pão.md")!.Id, json);
             Assert.Contains("\"kind\": \"tag\"", json);
+
+            // CST-160: the tag taken off a note in use — told when the publication opens; kept on purpose, not asked again
+            await view.FlushPendingAsync();
+            File.WriteAllText(Path.Combine(vault, "Bolo.md"), "# Bolo\n\nSem tag agora.\n");
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var again = view.OpenPublicationAsync("Publicações/Receitas.publication.json");
+            await Wait(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Manter"));
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("não está mais com a tag #receita") == true);
+            ClickButtonWithText(view.Dialogs, "Manter");
+            await again;
+            await Settle(window, view);
+            Assert.False(view.Dialogs.IsOpen);
+            Assert.Equal(2, view.PublicationsStudio.Project!.Sections.Count);
+            var third = view.OpenPublicationAsync("Publicações/Receitas.publication.json");
+            await Settle(window, view);
+            Assert.False(view.Dialogs.IsOpen);   // kept: not asked again
+            await third;
+
+            // CST-160: ordered by title (Bolo, Pão) — the composition only, the notes untouched
+            var studioProject = view.PublicationsStudio.Project!;
+            view.PublicationsStudio.UpdateProject(studioProject.MovePlacement(studioProject.Sections[1].Id, 0));   // Pão first
+            Assert.Equal("Pão.md", view.Documents!.Get(view.PublicationsStudio.Project!.Sections[0].Source.DocumentId)!.Path);
+            var sort = view.SortPublicationAsync();
+            await Wait(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Pelo título"));
+            ClickButtonWithText(view.Dialogs, "Pelo título");
+            await sort;
+            Assert.Equal(["Bolo.md", "Pão.md"], view.PublicationsStudio.Project!.Sections.Select(s => view.Documents!.Get(s.Source.DocumentId)!.Path));
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
