@@ -618,7 +618,7 @@ public sealed partial class MainView
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
             LastEpubWarnings = result.Warnings;
-            EnsureOpens("epub", result.Bytes);
+            var receipt = EnsureOpens("epub", result.Bytes);
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, "epub", "application/epub+zip");
             if (saved != true) return;
             RecordPublicationExport("epub");
@@ -626,7 +626,7 @@ public sealed partial class MainView
             if (result.Warnings.Count > 0)
                 await Dialogs.AlertAsync("Livro EPUB salvo", "Acessibilidade: " + result.Warnings.Count + (result.Warnings.Count == 1 ? " imagem está" : " imagens estão") +
                     " sem descrição para quem usa leitor de tela.\n\n" + string.Join("\n", result.Warnings.Take(8)) + (result.Warnings.Count > 8 ? "\n…\n\nTodas estão em ⋯ → Verificar publicação." : ""));
-            else ShowLifeNotice("Livro EPUB salvo.");
+            else ShowLifeNotice("Livro EPUB salvo · " + receipt.Summary + ".");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar EPUB", ex.Message); }
@@ -660,14 +660,15 @@ public sealed partial class MainView
             };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
-            EnsureOpens(extension, result.Bytes);
+            var receipt = EnsureOpens(extension, result.Bytes).Summary;
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
             if (saved != true) return;
             RecordPublicationExport(extension);
             LastOfficeLimitations = result.Limitations;
-            if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva." : " salvo."));
+            // CST-213: the notice says what the check confirmed in the file, and what it could not
+            if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva · " : " salvo · ") + receipt + ".");
             else await Dialogs.AlertAsync(kind + (extension == "pptx" ? " salva" : " salvo"),
-                "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations));
+                "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations) + "\n\nConferência: " + receipt + ".");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
@@ -794,10 +795,13 @@ public sealed partial class MainView
     public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
 
     /// <summary>CST-191: a file that does not open as its format is never saved as if it were done.</summary>
-    private static void EnsureOpens(string extension, byte[] bytes)
+    /// <summary>The file's check (CST-191/213): a problem stops the save; otherwise its receipt, to tell the person.</summary>
+    private static OutputReceipt EnsureOpens(string extension, byte[] bytes)
     {
-        if (PublicationOutputCheck.Problem(extension, bytes) is { } problem)
+        var receipt = PublicationOutputCheck.Receipt(extension, bytes);
+        if (receipt.Problem is { } problem)
             throw new InvalidDataException("O arquivo gerado não passou na conferência e não foi salvo. " + problem);
+        return receipt;
     }
 
     private async Task<bool?> SavePublicationFileAsync(string name, byte[] bytes, string extension, string mime)

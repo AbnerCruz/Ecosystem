@@ -19,6 +19,11 @@ public sealed class PublicationPdfTests
         var result = await PublicationPdf.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
         if (Environment.GetEnvironmentVariable("URBE_SNAPSHOT_DIR") is { Length: > 0 } dir) { Directory.CreateDirectory(dir); File.WriteAllBytes(Path.Combine(dir, "publication-book.pdf"), result.Bytes); }
         Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(result.Bytes, 0, 5));
+        // CST-213: the real book passes the format check: strict reader, its pages, its fonts embedded
+        var receipt = PublicationOutputCheck.Receipt("pdf", result.Bytes);
+        Assert.True(receipt.Problem is null, receipt.Summary + " " + receipt.Problem);
+        Assert.Contains(receipt.Checked, c => c.Contains("páginas, estrutura válida"));
+        Assert.Contains("fontes embutidas", receipt.Checked);
         using var pdf = PdfDocument.Open(result.Bytes);
         Assert.True(pdf.NumberOfPages >= 5, "pages: " + pdf.NumberOfPages); // cover, contents, chapter one over pages, chapter two
         Assert.All(pdf.GetPages(), p => { Assert.Equal(595, p.Width, 0); Assert.Equal(842, p.Height, 0); });
