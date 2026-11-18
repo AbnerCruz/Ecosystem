@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261118-urbe-video-direction",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-18T18:19:55Z",
+  "agent": { "id": "claude-code-urbe-editor", "kind": "ai-agent" },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "4b337cce1fac0e204e006c9f019b1a5b22cdc57d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VideoInspection.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDelegation.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoFrameRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Video.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tools/android-e2e.sh",
+    "apps/urbe/csharp/tests/fixtures/e2e-vault",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    ".github/workflows/urbe-checks.yml"
+  ],
+  "work_completed": [
+    "#956 P1, ciclo de direção visual da IA: review_publication passa a medir cada cena de vídeo nos mesmos quadros do MP4. Aponta objeto fora do quadro ou dos 90% seguros (SMPTE ST 2046-1), texto cortado ou reduzido (medido pelo renderizador real), sobreposição, texto sob a legenda, contraste abaixo do WCAG 2 e imagem ausente, e lista cenas e elementos por id.",
+    "Ferramenta nova look_at_video: desenha quadros reais (folha numerada) e os mostra ao modelo visual, com consentimento. Sem visão, devolve só a revisão medida, sem gerar erro que leve a loop.",
+    "Ferramenta nova edit_video_scene: muda só uma cena por id (campos enviados de cada elemento), com expected_revision, prévia, aprovação e undo; as outras cenas e as notas não mudam.",
+    "write_publication grava as cenas de um vídeo, e o id padrão de cena e de título deriva da seção: o id que a revisão mostra é o mesmo que a edição usa.",
+    "#956 P1, sincronização: Narrar mede o WAV de cada cena. Uma cena mais curta que a fala cresce para caber (fala + 0,4 s), a trilha guarda a duração real, as legendas terminam com a fala e a revisão avisa quando a fala passa da cena.",
+    "UX verificada no app desktop real (Xvfb): tocar numa .publication.json no Explorer mostrava o JSON cru; agora abre o Estúdio (também pelo open_note da IA). A prévia começava num quadro preto; agora começa na cena formada, e tocar numa cena vai ao momento em que ela está pronta.",
+    "Teste Android na CI: build do emulador (URBE_EMULATOR) abre o vault de exemplo enviado por adb e aceita urbe.open/urbe.play. O passo android-runtime-smoke percorre Notas, Estúdio, vídeo tocando, cenas e retomada, com prints, gravação de tela e logcat como artefatos."
+  ],
+  "verification": [
+    { "check": "Urbe.Core.Tests", "kind": "automated", "result": "passed", "evidence": "1762/1762 antes dos ajustes de painel; VideoDirectionTests 5/5 (cena com título cortado e fora do quadro achada, corrigida só ela, revisão limpa; narração mais longa que a cena)." },
+    { "check": "Urbe.Client.Tests", "kind": "automated", "result": "passed", "evidence": "692/692; TheReviewMeasuresTextAsDrawnAndTheSheetShowsTheRealFrames usa o renderizador Skia real (folhas antes/depois geradas)." },
+    { "check": "App desktop real sob Xvfb", "kind": "automated", "result": "passed", "evidence": "Explorer → Demo.publication.json abre o Estúdio; reprodução de 12 s gravada com ffmpeg x11grab; quadros conferidos (gráfico traçando, fórmula, legendas)." },
+    { "check": "Jornada no emulador Android (CI)", "kind": "automated", "result": "pending", "evidence": "artefato urbe-android-runtime-smoke do PR" },
+    { "check": "Pedido real de motion graphics no moto g32, com modelo multimodal: a IA monta, olha, corrige e exporta MP4", "kind": "human", "result": "pending", "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs", "critical": false }
+  ],
+  "known_issues": [
+    "A legenda continua distribuída por comprimento dentro da janela da fala; tempos por palavra exigiriam timestamps do sintetizador, que a voz do aparelho não fornece.",
+    "Exportação incremental por segmentos H.264 (P2) não foi feita: ChangedSince só informa as cenas mudadas.",
+    "Timeline multitrilha, edição de keyframes por toque e novos tipos de objeto (P2) seguem pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "#956 P2: inspetor de elemento e keyframes por toque no PublicationVideoPanel, depois exportação reaproveitando cenas sem mudança.",
+    "#963: medir as orientações de memória e busca em conversas reais; branch de diagnóstico só depois da validação no aparelho.",
+    "Seguir a consolidação 2.6 de cima para baixo (gate do editor, §3 item 1)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md", "MANIFEST.md", "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "O roteiro continua nas notas; a edição de cena só muda a composição; a duração da narração vem do WAV, sem cópia." },
+    { "id": "NN-016", "evidence": "look_at_video é network e pede consentimento antes de enviar a imagem; edit_video_scene é write, com prévia e aprovação." },
+    { "id": "NN-017", "evidence": "Emulador e Xvfb não são DEVICE; validação no moto g32 registrada como pendente." },
+    { "id": "NN-018", "evidence": "Cada mudança com teste vermelho→verde e prints/vídeo do app real." }
+  ],
+  "reuse_assessment": [ { "subject": "urbe-video-inspection", "status": "product-specific", "rationale": "Revisão do motor de vídeo do Urbe." } ],
+  "criticality": { "declared": "routine", "classes": [], "reason": "Feature autorizada (#956) dentro do Urbe (ADD-0034)." }
+}

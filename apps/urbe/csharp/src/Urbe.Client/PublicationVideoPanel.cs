@@ -94,7 +94,8 @@ public sealed class PublicationVideoPanel : StackPanel
     /// <summary>A new timeline (project or note changed): the frame at the same time is drawn again.</summary>
     public void Show(VideoTimeline timeline, IReadOnlyDictionary<string, byte[]> files, Func<string, string> sceneLabel)
     {
-        var at = _scrubber.Value;
+        // the first look is the first scene formed, not the black of its fade-in
+        var at = _renderer is null && timeline.Scenes.Count > 0 ? timeline.Scenes[0].Settled : _scrubber.Value;
         _renderer?.Dispose();
         _renderer = new VideoFrameRenderer(timeline, files, 48L << 20);
         _timer.Interval = TimeSpan.FromSeconds(1.0 / Math.Clamp(timeline.Fps, 1, 30));
@@ -145,7 +146,7 @@ public sealed class PublicationVideoPanel : StackPanel
             }
         };
         AutomationProperties.SetName(seek, "Ir para a cena " + label);
-        seek.Click += (_, _) => { Stop(); _scrubber.Value = placed.Start; ShowAt(placed.Start); };
+        seek.Click += (_, _) => { Stop(); ShowAt(placed.Settled); };
         row.Children.Add(seek);
         return row;
     }

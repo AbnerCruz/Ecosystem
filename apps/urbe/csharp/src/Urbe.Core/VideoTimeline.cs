@@ -11,6 +11,21 @@ public sealed record VideoTimelineScene(
     string? Title, string Script, string ContentKey)
 {
     public double End => Start + Duration;
+
+    /// <summary>When the scene looks formed: its entrance and every keyframe done, before its end (a poster frame).</summary>
+    public double Settled
+    {
+        get
+        {
+            double t = FadeIn;
+            foreach (var e in Scene.Elements)
+            {
+                t = Math.Max(t, e.Start);
+                foreach (var k in e.Keyframes) t = Math.Max(t, e.Start + k.Time);
+            }
+            return Start + Math.Min(t + 0.05, Duration * 0.95);
+        }
+    }
 }
 
 /// <summary>An element as it is at one instant: every animated property resolved.</summary>
@@ -97,8 +112,10 @@ public sealed class VideoTimeline
             var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height);
             var placed = new VideoTimelineScene(scene, placement, start, scene.Duration, fade, title, plain, key);
             scenes.Add(placed);
-            // subtitles of a scene start after its entrance and end before the next one's
-            cues.AddRange(VideoScript.Cues(plain, start + overlap, start + scene.Duration));
+            // subtitles of a scene start after its entrance and end before the next one's — or with its narration, when known
+            var voice = video.Audio.FirstOrDefault(a => a.Kind == "voice" && a.Length is not null && Math.Abs(a.Start - start) < 0.05);
+            var speechEnd = voice is null ? start + scene.Duration : Math.Clamp(voice.Start + voice.Length!.Value, start + overlap + 0.5, start + scene.Duration);
+            cues.AddRange(VideoScript.Cues(plain, start + overlap, speechEnd));
             end = placed.End;
         }
         return new VideoTimeline(width, height, video.Fps, scenes, cues, video.Audio.ToList(), missing, video.Subtitles);

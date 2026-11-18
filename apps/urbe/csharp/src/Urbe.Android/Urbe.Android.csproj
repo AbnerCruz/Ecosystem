@@ -19,6 +19,8 @@
          impunha android-x64 também ao Urbe.Core net10.0 e falhava ao copiar Urbe.Core.dll. -->
     <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' != 'true'">android-arm64</RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' == 'true'">android-x64</RuntimeIdentifiers>
+    <!-- CI emulator only: an adb-pushed example vault opens by itself and adb can open a file (MainActivity) -->
+    <DefineConstants Condition="'$(UrbeEmulatorBuild)' == 'true'">$(DefineConstants);URBE_EMULATOR</DefineConstants>
     <!--
       DEC-0048 / ADD-0025 — canal beta do Urbe C# no Android ("Urbe Beta 2.0"): única fonte da versão publicada.
       urbe-csharp-mobile-release.yml compila com -p:UrbeChannel=beta; sem isso o APK é a prévia acima.

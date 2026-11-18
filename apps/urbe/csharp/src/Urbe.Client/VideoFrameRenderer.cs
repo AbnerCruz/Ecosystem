@@ -207,18 +207,8 @@ public sealed class VideoFrameRenderer : IDisposable
     {
         if (string.IsNullOrWhiteSpace(text)) return;
         if (progress < 1) text = text[..(int)Math.Round(text.Length * progress)];
-        using var typeface = SKTypeface.FromFamilyName(null, bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright) ?? SKTypeface.Default;
-        using var font = new SKFont(typeface, size) { Subpixel = true, Edging = SKFontEdging.Antialias };
-        List<string> lines;
-        float min = size * 0.35f;
-        while (true)
-        {
-            lines = Wrap(text, font, box.Width);
-            if (lines.Count * font.Spacing <= box.Height || font.Size <= min) break;
-            font.Size = Math.Max(min, font.Size * 0.9f);
-        }
-        int fit = Math.Max(1, (int)(box.Height / font.Spacing));
-        if (lines.Count > fit) { lines = lines.Take(fit).ToList(); lines[^1] = lines[^1].TrimEnd() + "…"; }
+        using var font = Font(bold, size);
+        var (lines, _) = Layout(text, box, font);
         using var paint = new SKPaint { Color = color, IsAntialias = true };
         float y = -lines.Count * font.Spacing / 2 - font.Metrics.Ascent;
         foreach (var line in lines)
@@ -227,6 +217,65 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawText(line, x, y, align, font, paint);
             y += font.Spacing;
         }
+    }
+
+    private static readonly SKTypeface Regular = Face(SKFontStyleWeight.Normal), Bold = Face(SKFontStyleWeight.Bold);
+    private static SKTypeface Face(SKFontStyleWeight weight) =>
+        SKTypeface.FromFamilyName(null, weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright) ?? SKTypeface.Default;
+    private static SKFont Font(bool bold, float size) => new(bold ? Bold : Regular, size) { Subpixel = true, Edging = SKFontEdging.Antialias };
+
+    /// <summary>The lines drawn in the box; the font's size goes down to fit it (to 35 %), then the last line is cut with "…".</summary>
+    private static (List<string> Lines, bool Cut) Layout(string text, SKRect box, SKFont font)
+    {
+        List<string> lines;
+        float min = font.Size * 0.35f;
+        while (true)
+        {
+            lines = Wrap(text, font, box.Width);
+            if (lines.Count * font.Spacing <= box.Height || font.Size <= min) break;
+            font.Size = Math.Max(min, font.Size * 0.9f);
+        }
+        int fit = Math.Max(1, (int)(box.Height / font.Spacing));
+        if (lines.Count <= fit) return (lines, false);
+        lines = lines.Take(fit).ToList();
+        lines[^1] = lines[^1].TrimEnd() + "…";
+        return (lines, true);
+    }
+
+    /// <summary>#956: how a text element fits its box when drawn — the measure the agent's review uses.</summary>
+    public static VideoTextFit Fit(VideoElementState e, int width, int height)
+    {
+        if (string.IsNullOrWhiteSpace(e.Text)) return new(1, false);
+        float size = (float)(e.FontSize * height);
+        using var font = Font(e.Kind == "title", size);
+        var (_, cut) = Layout(e.Text, new SKRect(0, 0, (float)(e.Width * width), (float)(e.Height * height)), font);
+        return new(font.Size / size, cut);
+    }
+
+    /// <summary>
+    /// #956: the frames at <paramref name="times"/> in a grid of up to four columns, each numbered in its corner — one
+    /// image the agent's visual model looks at.
+    /// </summary>
+    public byte[] RenderSheet(IReadOnlyList<double> times)
+    {
+        int columns = Math.Min(4, Math.Max(1, times.Count)), rows = (times.Count + columns - 1) / columns, w = _timeline.Width, h = _timeline.Height, gap = 8;
+        using var sheet = new SKBitmap(columns * w + (columns + 1) * gap, Math.Max(1, rows) * h + (rows + 1) * gap);
+        using var canvas = new SKCanvas(sheet);
+        canvas.Clear(new SKColor(40, 40, 40));
+        using var label = new SKFont(SKTypeface.Default, Math.Max(14, h / 12f)) { Edging = SKFontEdging.Antialias };
+        using var back = new SKPaint { Color = new SKColor(0, 0, 0, 200) };
+        using var ink = new SKPaint { Color = SKColors.Yellow, IsAntialias = true };
+        for (int i = 0; i < times.Count; i++)
+        {
+            float x = gap + i % columns * (w + gap), y = gap + i / columns * (h + gap);
+            using (var frame = Render(times[i])) canvas.DrawBitmap(frame, x, y);
+            var n = (i + 1).ToString(CultureInfo.InvariantCulture);
+            canvas.DrawRect(x, y, label.MeasureText(n) + label.Size * 0.8f, label.Spacing * 1.1f, back);
+            canvas.DrawText(n, x + label.Size * 0.4f, y - label.Metrics.Ascent + label.Spacing * 0.05f, SKTextAlign.Left, label, ink);
+        }
+        using var image = SKImage.FromBitmap(sheet);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 90);
+        return data.ToArray();
     }
 
     private static List<string> Wrap(string text, SKFont font, float width)

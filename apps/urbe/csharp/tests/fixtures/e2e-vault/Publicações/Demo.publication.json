@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "publicationId": "pub_e2e_demo",
+  "title": "Demo de vídeo",
+  "sources": [{"documentId": "doc_e2e_abertura"}, {"documentId": "doc_e2e_capacidades"}, {"documentId": "doc_e2e_fim"}],
+  "sections": [
+    {"id": "abertura", "source": {"documentId": "doc_e2e_abertura"}, "role": "section"},
+    {"id": "capacidades", "source": {"documentId": "doc_e2e_capacidades"}, "role": "section"},
+    {"id": "fim", "source": {"documentId": "doc_e2e_fim"}, "role": "section"}
+  ],
+  "design": {"theme": "ink", "layout": "video"},
+  "formats": ["mp4"],
+  "video": {
+    "aspect": "16:9", "resolution": 720, "fps": 30, "subtitles": true,
+    "scenes": [
+      {"id": "scene_abertura", "placementId": "abertura", "duration": 4, "transition": {"kind": "fade", "seconds": 0.5}, "background": "#101418",
+       "elements": [
+        {"id": "title_abertura", "kind": "title", "x": 0.5, "y": 0.4, "width": 0.84, "height": 0.25, "fontSize": 0.09,
+         "keyframes": [{"property": "opacity", "time": 0, "value": 0}, {"property": "opacity", "time": 0.6, "value": 1, "easing": "easeOut"},
+                       {"property": "y", "time": 0, "value": 0.46}, {"property": "y", "time": 0.6, "value": 0.4, "easing": "easeOut"}]}]},
+      {"id": "scene_capacidades", "placementId": "capacidades", "duration": 5, "transition": {"kind": "fade", "seconds": 0.5}, "background": "#0b2239",
+       "elements": [
+        {"id": "title_capacidades", "kind": "title", "x": 0.5, "y": 0.15, "width": 0.84, "height": 0.14, "fontSize": 0.07},
+        {"id": "grafico", "kind": "plot", "text": "y = sin(x)", "x": 0.3, "y": 0.5, "width": 0.4, "height": 0.35,
+         "keyframes": [{"property": "progress", "time": 0, "value": 0}, {"property": "progress", "time": 2.5, "value": 1, "easing": "linear"}]},
+        {"id": "formula", "kind": "math", "text": "e^{i\\pi} + 1 = 0", "x": 0.73, "y": 0.5, "width": 0.36, "height": 0.2}]},
+      {"id": "scene_fim", "placementId": "fim", "duration": 4, "transition": {"kind": "fade", "seconds": 0.5}, "background": "#101418",
+       "elements": [
+        {"id": "title_fim", "kind": "title", "x": 0.5, "y": 0.4, "width": 0.84, "height": 0.25, "fontSize": 0.09,
+         "motions": [{"property": "scale", "expression": "0.03*sin(2*pi*t/2)"}]}]}
+    ],
+    "audio": []
+  }
+}

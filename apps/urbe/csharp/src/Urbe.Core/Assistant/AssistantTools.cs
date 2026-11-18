@@ -180,6 +180,8 @@ public interface IAssistantHost
     IAssistantImages? Images => null;
     /// <summary>CST-173: an external generative video model, when switched on and configured.</summary>
     IAssistantVideos? Videos => null;
+    /// <summary>#956: the real video renderer — text measured as drawn, and frames drawn for the agent to look at.</summary>
+    IAssistantVideoFrames? VideoFrames => null;
     /// <summary>The device's alarm clock, calendar and e-mail, when the platform has them and the person allowed them.</summary>
     IAssistantDevice? Device => null;
     /// <summary>Explicitly authorized network gateway; null keeps every local feature offline.</summary>
