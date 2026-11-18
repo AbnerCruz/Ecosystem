@@ -190,6 +190,7 @@ public sealed class AssistantImageToolsTests
         public Dictionary<string, byte[]> Saved { get; } = new(StringComparer.OrdinalIgnoreCase);
         public bool CanDraw { get; set; } = true;
         public (string Model, string Provider) Drawer => ("modelo-teste", "Provedor");
+        public string? PriceQuote => "US$ 0,04/imagem";
         public Host() => _documents.Upsert(new DocumentInput { Id = "doc_1", Path = "Lia.md", Content = "# Lia\n" });
         public DocumentStore Documents => _documents;
         public KnowledgeIndex Knowledge => new(_documents);
@@ -218,6 +219,7 @@ public sealed class AssistantImageToolsTests
         Assert.Equal("write", tool.Access);   // asked for approval like every tool that writes
         var input = new JsonObject { ["prompt"] = "Retrato da Lia, aquarela", ["size"] = "1024x1536", ["note"] = "Lia" };
         Assert.Contains("Imagens/", tool.Preview!(input, host).Note);
+        Assert.Contains("Preço de referência: US$ 0,04/imagem", tool.Preview!(input, host).Note);
         var output = await tool.Run(input, host);
         var (path, bytes) = Assert.Single(host.Saved);
         Assert.Equal("Imagens/Retrato da Lia aquarela.png", path);

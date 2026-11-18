@@ -15,6 +15,9 @@ public interface IAssistantImages
     /// <summary>CST-082: the image model and the provider that draw, written into the picture as its provenance.</summary>
     (string Model, string Provider) Drawer => ("", "");
 
+    /// <summary>CST-082: the provider's published price for the image model, when known, said before approving.</summary>
+    string? PriceQuote => null;
+
     /// <summary>The picture drawn by the run's provider (PNG, JPEG or WebP bytes).</summary>
     Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel);
 
@@ -99,7 +102,8 @@ public static class AssistantImageTools
             var where = Str(i, "path") is { Length: > 0 } p ? AssistantTools.Norm(p) : Folder + "/";
             return new AiPreview(where, null, null,
                 "Gerar imagem com um provedor visual configurado, sem trocar o modelo do chat (" + (Str(i, "size") is { Length: > 0 } s ? s : Sizes[0]) + "), e guardá-la em " + where +
-                (note.Length > 0 ? " e colocá-la no fim de " + AssistantTools.Norm(note) : "") + ".\n\nDescrição: " + Str(i, "prompt"));
+                (note.Length > 0 ? " e colocá-la no fim de " + AssistantTools.Norm(note) : "") + "." +
+                (host.Images?.PriceQuote is { } price ? " Preço de referência: " + price + "." : "") + "\n\nDescrição: " + Str(i, "prompt"));
         },
         Run = async (i, host) =>
         {
