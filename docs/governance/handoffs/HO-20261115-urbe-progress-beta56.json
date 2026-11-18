@@ -184,9 +184,10 @@
     {
       "check": "Toque no aparelho: progresso, Anotar instante, Modo leitura, Salvar página, rodapés, Ler por páginas, Adaptar, Converter em publicação, comentários, lembranças usadas (moto g32 e Windows)",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/969); registro em docs/governance/responses/VAL-HO-20261115-urbe-progress-beta56-1b026ed9c997.md."
     },
     {
       "check": "Anexar PDF de livro ao Assistente no Android (#954)",
