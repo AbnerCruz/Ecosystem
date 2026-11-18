@@ -21,9 +21,9 @@ public sealed record VideoTimelineScene(
             foreach (var e in Scene.Elements)
             {
                 t = Math.Max(t, e.Start);
-                foreach (var k in e.Keyframes) t = Math.Max(t, e.Start + k.Time);
+                foreach (var k in e.Keyframes) t = Math.Max(t, k.Time);
             }
-            return Start + Math.Min(t + 0.05, Duration * 0.95);
+            return Start + Math.Min(t, Duration * 0.95);
         }
     }
 }

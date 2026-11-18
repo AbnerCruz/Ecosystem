@@ -35,6 +35,15 @@ public sealed class PublicationVideoPanel : StackPanel
     private WriteableBitmap? _bitmap;
     private double _playFrom;
     private bool _scrubbing;
+    // #956 P2: the object selected on the preview, its outline, the inspector, and a drag under way
+    private readonly Canvas _overlay = new() { IsHitTestVisible = false };
+    private readonly Border _outline = new() { BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(3), IsVisible = false };
+    private readonly Grid _stage = new() { Background = Brushes.Black };
+    private readonly StackPanel _inspector = new() { Spacing = 6, IsVisible = false };
+    private readonly TextBlock _hint = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
+    private (string Scene, string Element)? _selected;
+    private Point? _dragFrom;
+    private Point _dragBy;
 
     public PublicationVideoPanel()
     {
@@ -69,7 +78,19 @@ public sealed class PublicationVideoPanel : StackPanel
         controls.Children.Add(_time);
         controls.Children.Add(_scrubber);
         var exportRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { _export, _cancel } };
-        Children.Add(new Border { CornerRadius = new CornerRadius(10), ClipToBounds = true, Background = Brushes.Black, Child = _frame });
+        _outline.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
+        _overlay.Children.Add(_outline);
+        _stage.Children.Add(_frame);
+        _stage.Children.Add(_overlay);
+        _stage.PointerPressed += (_, e) => { if (Press(e.GetPosition(_stage))) e.Pointer.Capture(_stage); };
+        _stage.PointerMoved += (_, e) => Drag(e.GetPosition(_stage));
+        _stage.PointerReleased += (_, _) => Release(commit: true);
+        _stage.PointerCaptureLost += (_, _) => Release(commit: true);
+        _stage.SizeChanged += (_, _) => DrawOutline();
+        _hint.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        Children.Add(new Border { CornerRadius = new CornerRadius(10), ClipToBounds = true, Background = Brushes.Black, Child = _stage });
+        Children.Add(_hint);
+        Children.Add(_inspector);
         Children.Add(controls);
         Children.Add(exportRow);
         Children.Add(_progress);
@@ -109,6 +130,151 @@ public sealed class PublicationVideoPanel : StackPanel
                 : timeline.Scenes.Count + (timeline.Scenes.Count == 1 ? " cena" : " cenas") + " · " + Clock(timeline.Duration) + " · " + timeline.Fps + " qps";
         _scenes.Children.Clear();
         foreach (var placed in timeline.Scenes) _scenes.Children.Add(SceneRow(placed, sceneLabel(placed.Placement.Id)));
+        if (_selected is { } sel && !timeline.Scenes.Any(x => x.Scene.Id == sel.Scene && x.Scene.Elements.Any(e => e.Id == sel.Element))) Select(null);
+        else Inspect();
+    }
+
+    /// <summary>The object selected on the preview (scene and element ids), or null.</summary>
+    public (string Scene, string Element)? Selected => _selected;
+
+    /// <summary>Where the frame's picture is drawn inside the stage (letterboxed by Stretch.Uniform).</summary>
+    private Rect Picture()
+    {
+        if (_renderer is not { } r) return default;
+        var box = _stage.Bounds.Size;
+        double scale = Math.Min(box.Width / r.Timeline.Width, Math.Min(_frame.MaxHeight, box.Height) / r.Timeline.Height);
+        double w = r.Timeline.Width * scale, h = r.Timeline.Height * scale;
+        return new Rect((box.Width - w) / 2, (box.Height - h) / 2, w, h);
+    }
+
+    /// <summary>A tap on the preview (fractions of the stage's picture): selects the object under it, or nothing.</summary>
+    public void TapAt(double fx, double fy)
+    {
+        if (_renderer is not { } r || IsPlaying) return;
+        var hit = VideoEditing.HitTest(r.Timeline.Evaluate(CurrentTime), fx, fy, r.Timeline.Width, r.Timeline.Height);
+        Select(hit is { } h ? (h.Layer.Scene.Scene.Id, h.Element.Id) : null);
+    }
+
+    /// <summary>Selects what is under the finger; true when a drag of it may follow.</summary>
+    private bool Press(Point at)
+    {
+        var picture = Picture();
+        if (picture.Width <= 0) return false;
+        TapAt((at.X - picture.X) / picture.Width, (at.Y - picture.Y) / picture.Height);
+        _dragFrom = _selected is not null ? at : null;
+        _dragBy = default;
+        return _dragFrom is not null;
+    }
+
+    private void Drag(Point at)
+    {
+        if (_dragFrom is not { } from) return;
+        _dragBy = at - from;
+        DrawOutline();
+    }
+
+    private void Release(bool commit)
+    {
+        if (_dragFrom is null) return;
+        var by = _dragBy;
+        _dragFrom = null;
+        _dragBy = default;
+        var picture = Picture();
+        if (!commit || Math.Abs(by.X) + Math.Abs(by.Y) < 4 || picture.Width <= 0 || Current() is not { } c) { DrawOutline(); return; }
+        MoveSelected(c.State.X + by.X / picture.Width, c.State.Y + by.Y / picture.Height);
+    }
+
+    /// <summary>Moves the selected object's centre to (x, y) at the playhead (a keyframe there when it is animated).</summary>
+    public void MoveSelected(double x, double y)
+    {
+        if (Current() is { } c) SceneChanged?.Invoke(VideoEditing.Move(c.Scene.Scene, c.State.Id, c.Local, x, y));
+    }
+
+    private (VideoTimelineScene Scene, VideoElementState State, double Local)? Current()
+    {
+        if (_selected is not { } sel || _renderer is not { } r) return null;
+        var scene = r.Timeline.Scenes.FirstOrDefault(x => x.Scene.Id == sel.Scene);
+        var layer = r.Timeline.Evaluate(CurrentTime).Layers.FirstOrDefault(l => ReferenceEquals(l.Scene, scene));
+        var state = layer?.Elements.FirstOrDefault(e => e.Id == sel.Element);
+        return scene is null || state is null ? null : (scene, state, CurrentTime - scene.Start);
+    }
+
+    private void Select((string Scene, string Element)? which)
+    {
+        _selected = which;
+        Inspect();
+    }
+
+    private void DrawOutline()
+    {
+        var picture = Picture();
+        if (Current() is not { } c || picture.Width <= 0) { _outline.IsVisible = false; return; }
+        var e = c.State;
+        double w = e.Width * e.Scale * picture.Width, h = e.Height * e.Scale * picture.Height;
+        _outline.Width = Math.Max(8, w);
+        _outline.Height = Math.Max(8, h);
+        _outline.RenderTransform = e.Rotation == 0 ? null : new RotateTransform(e.Rotation);
+        Canvas.SetLeft(_outline, picture.X + e.X * picture.Width - w / 2 + _dragBy.X);
+        Canvas.SetTop(_outline, picture.Y + e.Y * picture.Height - h / 2 + _dragBy.Y);
+        _outline.IsVisible = true;
+    }
+
+    /// <summary>The inspector of the selected object: keyframe at the playhead, size, removal, and its keyframes to jump to.</summary>
+    private void Inspect()
+    {
+        _inspector.Children.Clear();
+        var c = Current();
+        _inspector.IsVisible = _selected is not null;
+        _hint.IsVisible = _selected is null;
+        DrawOutline();
+        if (_selected is not { } sel || _renderer is not { } r) return;
+        var scene = r.Timeline.Scenes.FirstOrDefault(x => x.Scene.Id == sel.Scene);
+        var element = scene?.Scene.Elements.FirstOrDefault(e => e.Id == sel.Element);
+        if (scene is null || element is null) return;
+        Button Action(string text, string name, Action run, bool enabled = true)
+        {
+            var b = new Button { Content = text, MinWidth = 44, MinHeight = 44, Padding = new Thickness(10, 4), IsEnabled = enabled };
+            AutomationProperties.SetName(b, name);
+            b.Click += (_, _) => run();
+            return b;
+        }
+        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", _ => "Texto" };
+        _inspector.Children.Add(new TextBlock
+        {
+            Text = kind + (c is null ? " · fora da cena neste instante" : " · " + Clock(c.Value.Local) + " da cena"),
+            FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
+        });
+        bool keyed = c is { } now && VideoEditing.HasKeyframe(element, now.Local);
+        var actions = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var b in new[]
+        {
+            Action(keyed ? "◆ Tirar quadro-chave" : "◇ Quadro-chave aqui", keyed ? "Tirar o quadro-chave deste instante" : "Marcar quadro-chave neste instante",
+                () => { if (Current() is { } x) SceneChanged?.Invoke(VideoEditing.ToggleKeyframe(x.Scene.Scene, x.State.Id, x.Local, x.State)); }, c is not null),
+            Action("Maior", "Aumentar o objeto", () => SceneChanged?.Invoke(VideoEditing.Resize(scene.Scene, element.Id, 1.15))),
+            Action("Menor", "Diminuir o objeto", () => SceneChanged?.Invoke(VideoEditing.Resize(scene.Scene, element.Id, 1 / 1.15))),
+            Action("Remover", "Remover o objeto da cena", () => { Select(null); SceneChanged?.Invoke(VideoEditing.Remove(scene.Scene, element.Id)); }),
+            Action("Pronto", "Terminar de editar o objeto", () => Select(null))
+        })
+        {
+            b.Margin = new Thickness(0, 0, 6, 6);
+            actions.Children.Add(b);
+        }
+        _inspector.Children.Add(actions);
+        var times = element.Keyframes.Select(k => k.Time).Distinct().OrderBy(t => t).ToList();
+        if (times.Count > 0)
+        {
+            var row = new WrapPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            foreach (var t in times)
+            {
+                var jump = Action("◆ " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s", "Ir ao quadro-chave de " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s",
+                    () => { Stop(); ShowAt(scene.Start + t); Inspect(); });
+                jump.Margin = new Thickness(0, 0, 6, 6);
+                row.Children.Add(jump);
+            }
+            _inspector.Children.Add(row);
+        }
+        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
     }
 
     private Control SceneRow(VideoTimelineScene placed, string label)
@@ -193,6 +359,8 @@ public sealed class PublicationVideoPanel : StackPanel
         _frame.Source = null;
         _frame.Source = _bitmap;
         _frame.InvalidateVisual();
+        if (_selected is not null && !IsPlaying) Inspect();
+        else _outline.IsVisible = false;
     }
 
     public void SetProgress(VideoExportProgress? progress, string? message = null)

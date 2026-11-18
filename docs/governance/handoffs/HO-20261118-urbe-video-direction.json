@@ -47,7 +47,10 @@
     "apps/urbe/csharp/src/Urbe.Core/GraphProjection.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/UiStallWatchTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/GraphAuthoringTests.cs",
-    "apps/urbe/docs/csharp/CONSOLIDATION.md"
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "apps/urbe/csharp/src/Urbe.Core/VideoEditing.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoEditingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs"
   ],
   "work_completed": [
     "#956 P1, ciclo de direção visual da IA: review_publication passa a medir cada cena de vídeo nos mesmos quadros do MP4. Aponta objeto fora do quadro ou dos 90% seguros (SMPTE ST 2046-1), texto cortado ou reduzido (medido pelo renderizador real), sobreposição, texto sob a legenda, contraste abaixo do WCAG 2 e imagem ausente, e lista cenas e elementos por id.",
@@ -59,14 +62,15 @@
     "Teste Android na CI: build do emulador (URBE_EMULATOR) abre o vault de exemplo enviado por adb e aceita urbe.open/urbe.play. O passo android-runtime-smoke percorre Notas, Estúdio, vídeo tocando, cenas e retomada, com prints, gravação de tela e logcat como artefatos.",
     "CST-011 (parte): monitor de travamento da interface (atraso > 700 ms, limite de frozen frame do Android vitals) grava no Relatório de erros a ação em curso, sem conteúdo; pausa com o app em segundo plano.",
     "Investigação no desktop real com vault sintético de 3.001 notas e nota de 20 mil linhas: abrir, alternar Notas/Estudo/Grafos e gerar a estrutura do vault sem travamento registrado.",
-    "Defeito de UX achado nessa jornada: a estrutura de um vault grande era uma única coluna; agora é um mapa de blocos por pasta, com as notas em grade, perto de 16:9."
+    "Defeito de UX achado nessa jornada: a estrutura de um vault grande era uma única coluna; agora é um mapa de blocos por pasta, com as notas em grade, perto de 16:9.",
+    "#956 P2, edição por toque na prévia: tocar seleciona o objeto (escala e rotação contadas) com contorno; arrastar move o contorno e grava ao soltar (quadro-chave no instante se o objeto é animado); inspetor com quadro-chave aqui/tirar, maior, menor, remover e os quadros-chave para pular. Um quadro-chave a até 0,1 s é editado em vez de duplicado (defeito visto no app: 0,6 s e 0,65 s). Padrão de suavização easeInOut, não linear."
   ],
   "verification": [
     {
       "check": "Urbe.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1763/1763 (inclui VideoDirectionTests e AVaultStructureOfThousandsOfNotesIsAMapNotAColumn)."
+      "evidence": "1766/1766 (VideoDirectionTests, VideoEditingTests, AVaultStructureOfThousandsOfNotesIsAMapNotAColumn)."
     },
     {
       "check": "Urbe.Client.Tests",
@@ -104,11 +108,11 @@
   "known_issues": [
     "A legenda continua distribuída por comprimento dentro da janela da fala; tempos por palavra exigiriam timestamps do sintetizador, que a voz do aparelho não fornece.",
     "Exportação incremental por segmentos H.264 (P2) não foi feita: ChangedSince só informa as cenas mudadas.",
-    "Timeline multitrilha, edição de keyframes por toque e novos tipos de objeto (P2) seguem pendentes."
+    "Timeline multitrilha visual, pinça para escala e novos tipos de objeto (P2) seguem pendentes; a edição por toque cobre posição, tamanho, quadro-chave e remoção."
   ],
   "blockers": [],
   "next_actions": [
-    "#956 P2: inspetor de elemento e keyframes por toque no PublicationVideoPanel, depois exportação reaproveitando cenas sem mudança.",
+    "#956 P2 seguinte: timeline multitrilha visual e pinça para escala; depois exportação reaproveitando cenas sem mudança.",
     "#963: medir as orientações de memória e busca em conversas reais; branch de diagnóstico só depois da validação no aparelho.",
     "Seguir a consolidação 2.6 de cima para baixo (gate do editor, §3 item 1)."
   ],

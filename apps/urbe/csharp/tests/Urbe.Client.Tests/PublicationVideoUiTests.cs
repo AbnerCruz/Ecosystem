@@ -57,6 +57,22 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("# Abertura\n\nUma frase do roteiro.\n", File.ReadAllText(Path.Combine(vault, "Cena.md")));
             Assert.Equal(scene.Duration + 0.5, studio.VideoPanel.Timeline!.Duration, 6);
 
+            // #956 P2: a tap on the title selects it; the inspector marks a keyframe at the playhead; a move goes to the project
+            var panel = studio.VideoPanel;
+            var title = studio.Project!.Video!.Scenes[0].Elements[0];
+            panel.ShowAt(1);
+            panel.TapAt(title.X, title.Y);
+            Assert.Equal(title.Id, panel.Selected!.Value.Element);
+            Click(Named("Marcar quadro-chave neste instante"));
+            await Pump();
+            Assert.True(VideoEditing.HasKeyframe(studio.Project!.Video!.Scenes[0].Elements[0], 1));
+            Assert.NotNull(Named("Tirar o quadro-chave deste instante"));   // the button says what it does now
+            panel.MoveSelected(0.5, 0.25);
+            await Pump();
+            Assert.Equal(0.25, studio.Project!.Video!.Scenes[0].Elements[0].Keyframes.Single(k => k.Property == "y" && Math.Abs(k.Time - 1) < 0.01).Value, 6);
+            panel.TapAt(0.02, 0.98);   // nothing there: the selection ends
+            Assert.Null(panel.Selected);
+
             // CST-172: the same captions as SRT and as WebVTT
             var captions = new Dictionary<string, string>();
             view.SavePageFile = (name, bytes) => { captions[name] = System.Text.Encoding.UTF8.GetString(bytes); return Task.FromResult<bool?>(true); };
