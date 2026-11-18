@@ -66,9 +66,7 @@ public sealed class PublicationVideoPanel : StackPanel
         _timer.Tick += (_, _) =>
         {
             if (_renderer is null) { Stop(); return; }
-            var t = _playFrom + _clock.Elapsed.TotalSeconds;
-            if (t >= _renderer.Timeline.Duration) { Stop(); t = 0; }
-            ShowAt(t);
+            Advance(_playFrom + _clock.Elapsed.TotalSeconds);
         };
         var controls = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(_play, Dock.Left);
@@ -129,7 +127,7 @@ public sealed class PublicationVideoPanel : StackPanel
     public void Show(VideoTimeline timeline, IReadOnlyDictionary<string, byte[]> files, Func<string, string> sceneLabel)
     {
         // the first look is the first scene formed, not the black of its fade-in
-        var at = _renderer is null && timeline.Scenes.Count > 0 ? timeline.Scenes[0].Settled : _scrubber.Value;
+        var at = _renderer is null ? Poster(timeline) : _scrubber.Value;
         _renderer?.Dispose();
         _renderer = new VideoFrameRenderer(timeline, files, 48L << 20);
         _timer.Interval = TimeSpan.FromSeconds(1.0 / Math.Clamp(timeline.Fps, 1, 30));
@@ -146,6 +144,16 @@ public sealed class PublicationVideoPanel : StackPanel
         if (_selected is { } sel && !timeline.Scenes.Any(x => x.Scene.Id == sel.Scene && x.Scene.Elements.Any(e => e.Id == sel.Element))) Select(null);
         else Inspect();
     }
+
+    /// <summary>Playback reached <paramref name="t"/>: past the end it stops and goes back to the poster, not to the black of the fade-in.</summary>
+    public void Advance(double t)
+    {
+        if (_renderer is not { } r) return;
+        if (t >= r.Timeline.Duration) { Stop(); t = Poster(r.Timeline); }
+        ShowAt(t);
+    }
+
+    private static double Poster(VideoTimeline timeline) => timeline.Scenes.Count > 0 ? timeline.Scenes[0].Settled : 0;
 
     /// <summary>The object selected on the preview (scene and element ids), or null.</summary>
     public (string Scene, string Element)? Selected => _selected;
@@ -342,7 +350,8 @@ public sealed class PublicationVideoPanel : StackPanel
     {
         if (_timer.IsEnabled) { Stop(); return; }
         if (_renderer is null || _renderer.Timeline.FrameCount == 0) return;
-        _playFrom = _scrubber.Value >= _renderer.Timeline.Duration - 0.01 ? 0 : _scrubber.Value;
+        // playing from the poster starts the video from its beginning
+        _playFrom = _scrubber.Value >= _renderer.Timeline.Duration - 0.01 || Math.Abs(_scrubber.Value - Poster(_renderer.Timeline)) < 1e-6 ? 0 : _scrubber.Value;
         _clock.Restart();
         _timer.Start();
         _play.Content = "❚❚ Pausar";

@@ -57,6 +57,12 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("# Abertura\n\nUma frase do roteiro.\n", File.ReadAllText(Path.Combine(vault, "Cena.md")));
             Assert.Equal(scene.Duration + 0.5, studio.VideoPanel.Timeline!.Duration, 6);
 
+            // the first look and the end of playback are the poster (the scene formed), never the black of the fade-in
+            var poster = studio.VideoPanel.Timeline!.Scenes[0].Settled;
+            Assert.True(poster > 0);
+            studio.VideoPanel.Advance(studio.VideoPanel.Timeline.Duration + 1);
+            Assert.Equal(poster, studio.VideoPanel.CurrentTime, 6);
+            Assert.False(studio.VideoPanel.IsPlaying);
             // #956 P2: a tap on the title selects it; the inspector marks a keyframe at the playhead; a move goes to the project
             var panel = studio.VideoPanel;
             var title = studio.Project!.Video!.Scenes[0].Elements[0];

@@ -74,7 +74,8 @@
     "#986/#956: teste do pedido de motion graphics no loop real do agente (modelo roteirizado): nota do roteiro → write_publication pelo caminho → revisão medida → edit_video_scene numa cena → look_at_video → entrega; cinco ferramentas, nenhum erro, nada repetido, escritas aprovadas.",
     "#956 P2: pinça com dois dedos redimensiona o objeto selecionado na prévia.",
     "#956 P2, medição antes de otimizar: o vídeo de exemplo (12 s, 720p, 30 qps) desenha em 9,2 ms/quadro no x64 do agente; 126 das 360 camadas desenhadas, o resto do cache (RenderingTheExampleVideoAt720pIsMeasured). Falta o perfil no moto g32 antes de qualquer reexportação por segmentos.",
-    "Jornada Android na CI corrigida duas vezes pelo que os prints mostraram: o vault não chegava ao app (agora run-as nos arquivos privados) e o Estúdio não abria (intent igual à da tarefa; agora ação própria). O roteiro confere o texto da tela pela árvore de acessibilidade e falha se o vault ou a prévia do vídeo não aparecem."
+    "Jornada Android na CI corrigida duas vezes pelo que os prints mostraram: o vault não chegava ao app (agora run-as nos arquivos privados) e o Estúdio não abria (intent igual à da tarefa; agora ação própria). O roteiro confere o texto da tela pela árvore de acessibilidade e falha se o vault ou a prévia do vídeo não aparecem.",
+    "Defeito visto na gravação do emulador Android: ao terminar de tocar, a prévia voltava a t=0, um quadro preto (entrada em fade). Agora volta à capa (a primeira cena formada), e tocar a partir da capa começa do início."
   ],
   "verification": [
     {
@@ -96,10 +97,10 @@
       "evidence": "Explorer → Demo.publication.json abre o Estúdio; reprodução de 12 s gravada com ffmpeg x11grab; quadros conferidos (gráfico traçando, fórmula, legendas)."
     },
     {
-      "check": "Jornada no emulador Android (CI)",
+      "check": "Jornada no emulador Android (CI, Pixel 6 API 35)",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "artefato urbe-android-runtime-smoke do PR"
+      "result": "passed",
+      "evidence": "android-runtime-smoke: vault de exemplo aberto (texto 'Roteiro' na árvore de acessibilidade), Estúdio com 'Prévia do vídeo', reprodução gravada (capa 0:00.6, Pausar 3,4 s e 9,6 s, cenas avançando), retomada sem FATAL/ANR."
     },
     {
       "check": "Pedido real de motion graphics no moto g32, com modelo multimodal: a IA monta, olha, corrige e exporta MP4",

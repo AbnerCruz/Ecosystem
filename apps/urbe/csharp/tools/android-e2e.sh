@@ -45,15 +45,15 @@ sleep 1
 ACTIVITY=$(adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER "$PKG" | tail -1 | tr -d '\r')
 adb shell am start --activity-single-top -n "$ACTIVITY" -a app.urbe.e2e.OPEN \
   --es urbe.open "Publicações/Demo.publication.json" --ez urbe.play true
-sleep 5
-expect "Prévia do vídeo" 02-estudio
-shot 02-estudio
-# scroll the Estúdio down to the preview, the timeline and the scenes
-adb shell input swipe 540 1700 540 600 400
+# screenshots first: an accessibility dump takes seconds and the video lasts 12
 sleep 3
+shot 02-estudio
+adb shell input swipe 540 1700 540 900 300
+sleep 1
 shot 03-video-tocando
-sleep 6
+sleep 4
 shot 04-video-cena-2
+expect "Prévia do vídeo" 04-estudio
 adb shell input swipe 540 1700 540 900 400
 sleep 3
 shot 05-cenas
