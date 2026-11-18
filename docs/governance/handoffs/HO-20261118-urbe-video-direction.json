@@ -36,7 +36,6 @@
     "apps/urbe/csharp/tests/fixtures/e2e-vault",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
-    ".github/workflows/urbe-checks.yml",
     "apps/urbe/csharp/src/Urbe.Client/UiStallWatch.cs",
     "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
     "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
@@ -144,6 +143,7 @@
   ],
   "blockers": [],
   "next_actions": [
+    "PROPOSTA ao proprietário (control-plane, fora da autonomia do produto): ligar a jornada Android na CI trocando o script do passo 'Install, launch and resume' em .github/workflows/urbe-checks.yml por `script: bash apps/urbe/csharp/tools/android-e2e.sh` (com profile: pixel_6). Rodou verde neste PR antes de ser retirado (run 44376164723): vault aberto, Estúdio com prévia, reprodução gravada, retomada.",
     "#956 P2 seguinte: timeline multitrilha visual e pinça para escala; depois exportação reaproveitando cenas sem mudança.",
     "#963: medir as orientações de memória e busca em conversas reais; branch de diagnóstico só depois da validação no aparelho.",
     "Seguir a consolidação 2.6 de cima para baixo (gate do editor, §3 item 1).",
