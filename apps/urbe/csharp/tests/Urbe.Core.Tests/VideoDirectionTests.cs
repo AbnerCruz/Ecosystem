@@ -173,4 +173,63 @@ public sealed class VideoDirectionTests
         var issue = Assert.Single(VideoInspection.Run(VideoTimeline.Build(cut, Read)), i => i.Message.Contains("narração"));
         Assert.Contains("6,6 s", issue.Fix);
     }
+
+    /// <summary>
+    /// #986/#956 acceptance in the agent's own loop: "faça um motion graphics" → the script note → a video publication by
+    /// the note's path → review (finds the provoked cut label, names the scene) → one scene fixed → looking at the frames
+    /// → delivered. One write_publication, no tool error, nothing repeated, every write approved.
+    /// </summary>
+    [Fact]
+    public async Task AMotionGraphicsRequestRunsWithoutLoopsFromScriptToALookedAtVideo()
+    {
+        var host = new Host();
+        var tools = new[] { AssistantTools.Get("create_note")! }.Concat(AssistantPublicationTools.All).Concat(AssistantVideoDirectionTools.All).ToArray();
+        var calls = new List<string>();
+        int approvals = 0, step = 0;
+        string Last(AiRequest request) => request.Messages.SelectMany(m => m.Content).LastOrDefault(b => b.Type == "tool_result")?.Content ?? "";
+        static AiResult Use(string name, JsonObject input) => new([AiBlock.ToolUse("t" + Guid.NewGuid().ToString("N")[..6], name, input)], "", "tool_use", new(1, 1, null), "test");
+        string? scene = null;
+        List<AiChatMessage> messages = [new() { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("Faça um motion graphics curto mostrando que o Urbe faz vídeos das notas.")] }];
+        await AssistantAgent.RunAsync(new()
+        {
+            Host = host, Model = "test", Provider = new("p", "openai"), Policy = "ask", Tools = tools,
+            Messages = messages,
+            Approve = (_, _) => { approvals++; return Task.FromResult(AiApproval.Approve); },
+            Stream = (_, request, _, _) =>
+            {
+                var last = Last(request);
+                AiResult next = ++step switch
+                {
+                    1 => Use("create_note", new JsonObject { ["path"] = "Roteiros/Demo.md", ["content"] = "# Vídeos das suas notas\n\nO Urbe transforma notas em vídeos editáveis." }),
+                    2 => Use("write_publication", new JsonObject
+                    {
+                        ["path"] = "Publicações/Demo.publication.json",
+                        ["spec"] = JsonNode.Parse("""{"schemaVersion":1,"title":"Demo","sources":[{"documentId":"Roteiros/Demo.md"}],"design":{"layout":"video"},"formats":["mp4"]}""")
+                    }),
+                    3 => Use("review_publication", new JsonObject { ["path"] = "Publicações/Demo.publication.json" }),
+                    4 => Use("edit_video_scene", new JsonObject
+                    {
+                        ["path"] = "Publicações/Demo.publication.json", ["expected_revision"] = host.Documents.Get("Publicações/Demo.publication.json")!.Revision,
+                        ["scene_id"] = scene = System.Text.RegularExpressions.Regex.Match(last, @"Cena 1 (\S+)").Groups[1].Value,
+                        ["elements"] = new JsonArray(new JsonObject { ["id"] = "selo", ["kind"] = "text", ["text"] = "Feito no Urbe com notas reais", ["x"] = 0.5, ["y"] = 0.72, ["width"] = 0.8, ["height"] = 0.1 })
+                    }),
+                    5 => Use("look_at_video", new JsonObject { ["path"] = "Publicações/Demo.publication.json" }),
+                    _ => new([AiBlock.TextBlock("Pronto: o vídeo está em Publicações/Demo.publication.json. Revisei a geometria e olhei os quadros; exporte o MP4 no Estúdio.")], "", "end_turn", new(1, 1, null), "test")
+                };
+                if (next.Content.FirstOrDefault(b => b.Type == "tool_use") is { } use) calls.Add(use.Name!);
+                if (step == 4) Assert.Contains("Revisão visual medida", last);   // the review measured the video and named its scene
+                return Task.FromResult(next);
+            }
+        });
+        Assert.Equal(["create_note", "write_publication", "review_publication", "edit_video_scene", "look_at_video"], calls);
+        var results = messages.SelectMany(m => m.Content).Where(b => b.Type == "tool_result").ToList();
+        Assert.Equal(5, results.Count);
+        Assert.All(results, r => Assert.False(r.IsError, r.Content));
+        Assert.True(approvals >= 3);   // the note, the publication and the scene's edit were each approved
+        var saved = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Demo.publication.json")!.Content);
+        Assert.Equal("video", saved.Design.Layout);
+        Assert.Contains(saved.Video!.Scenes.Single(x => x.Id == scene).Elements, e => e.Id == "selo");
+        Assert.Equal("# Vídeos das suas notas\n\nO Urbe transforma notas em vídeos editáveis.", host.Documents.Get("Roteiros/Demo.md")!.Content);
+        Assert.Single(host.Sheets);
+    }
 }
