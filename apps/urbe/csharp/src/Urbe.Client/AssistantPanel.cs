@@ -1682,6 +1682,7 @@ public sealed partial class AssistantPanel : Border
         private AiProviderConfig? ImageProvider => panel._cfg.AgentImages.TryGetValue(agentId, out var choice)
             ? panel._cfg.Providers.FirstOrDefault(p => p.Id == choice.ProviderId) : null;
         public bool CanDraw => ImageProvider is not null;
+        public string? PriceQuote => ImageProvider is { } ip ? AssistantImagePricing.Published(ip.Preset, panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model is { Length: > 0 } m ? m : AssistantProviders.ImageModel(ip.Preset) ?? "")?.Rate : null;
         public (string Model, string Provider) Drawer => (panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model is { Length: > 0 } m ? m
             : ImageProvider is { } ip ? AssistantProviders.ImageModel(ip.Preset) ?? "" : "", ImageProvider?.Name ?? ImageProvider?.Preset ?? "");
         public string Unavailable => panel.ImagesUnavailable();

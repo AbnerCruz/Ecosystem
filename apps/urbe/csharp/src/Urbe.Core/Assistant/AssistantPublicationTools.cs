@@ -30,7 +30,8 @@ public static class AssistantPublicationTools
             {
                 var (path, text, doc) = Validate(input, host);
                 var saved = doc is null ? await host.CreateNoteAsync(path, text) : await host.SaveNoteAsync(doc, text);
-                return new AiToolOutput("Publicação salva: " + saved.Path + ". Abra com open_note; as fontes continuam sendo notas editáveis.",
+                var ids = string.Join(", ", PublicationProjectCodec.Parse(text).Sources.Select(x => (host.Documents.Get(x.DocumentId)?.Path ?? "?") + " = " + x.DocumentId));
+                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + "). Abra com open_note; as fontes continuam sendo notas editáveis.",
                     [new AiChange(saved.Id, doc is null ? null : new AiNoteSnap(doc.Path, doc.Content), new AiNoteSnap(saved.Path, saved.Content))]);
             }
         },
@@ -70,7 +71,7 @@ public static class AssistantPublicationTools
     public const string Schema =
         "Publicações usam .publication.json, schemaVersion=1. Campos: publicationId (estável), title, objective, audience, sources [{documentId,fragment?}], " +
         "sections [{id,source:{documentId,fragment?},role}], design:{theme:paper|ocean|ink, layout:article|book|slides|course|video}, formats:[html,epub,…]. " +
-        "Use IDs persistentes de read_note/search_notes, não caminhos, como documentId. Fragmentos são títulos únicos ou ^id existente; ausência ou ambiguidade é erro. " +
+        "Em documentId use o caminho da nota (como list_notes/search_notes mostram), o título ou o id; o Urbe guarda o id. sections pode faltar: uma seção por fonte, na ordem. Fragmentos são títulos únicos ou ^id existente; ausência ou ambiguidade é erro. " +
         "Escreva/adapte conteúdo em notas Markdown reais pelas ferramentas de notas; reordenação/layout nunca modifica notas. write_publication requer expected_revision " +
         "para substituir um projeto existente, mantendo publicationId. " +
         "Layouts: article e book (capítulos, sumário); slides (cada nota/#/##/--- inicia slide; :::notas vira notas do apresentador); course (cada nota um módulo, " +
@@ -90,6 +91,42 @@ public static class AssistantPublicationTools
         "referências; 3) roteiro — a ordem das seções e o que cada uma diz, antes de escrever; 4) composição — texto nas notas, layout no projeto; " +
         "5) revisão — review_publication e correção nas notas; 6) entrega — diga o que foi revisado e o que não foi. Decisões de rumo (público, tom, cortes) são da pessoa. " +
         "Um especialista (consult_agent) só quando ele sabe algo que você não sabe; não divida em vários agentes o que um faz bem.";
+
+    /// <summary>
+    /// #986: the agent names a source the way it knows it — the note's id, path or title (the note tools show paths,
+    /// not ids). Each one becomes the canonical id; missing sections are made from the sources, one per source, in order.
+    /// Every name that matches nothing is listed with what to do, so the agent stops instead of trying invented ids.
+    /// </summary>
+    private static void Canonicalize(JsonObject spec, IAssistantHost host)
+    {
+        var unknown = new List<string>();
+        string? Resolve(JsonNode? reference)
+        {
+            if (reference is not JsonObject r || r["documentId"] is not JsonValue v || !v.TryGetValue<string>(out var name) || name.Trim().Length == 0) return null;
+            var doc = host.Documents.Get(name.Trim()) ?? AssistantTools.ResolveDoc(host, name.Trim(), must: false);
+            if (doc is null) { if (!unknown.Contains(name)) unknown.Add(name); return null; }
+            r["documentId"] = doc.Id;
+            return doc.Id;
+        }
+        foreach (var source in spec["sources"] as JsonArray ?? []) Resolve(source);
+        if (spec["sections"] is not JsonArray { Count: > 0 } sections)
+            spec["sections"] = new JsonArray((spec["sources"] as JsonArray ?? []).Select(s => (JsonNode)new JsonObject
+                { ["id"] = "piece_" + Guid.NewGuid().ToString("N"), ["source"] = s!.DeepClone(), ["role"] = "section" }).ToArray());
+        else
+            foreach (var section in sections.OfType<JsonObject>())
+            {
+                if (section["id"] is null) section["id"] = "piece_" + Guid.NewGuid().ToString("N");
+                Resolve(section["source"]);
+            }
+        // a section's note that is not among the sources joins them (one list of sources, kept in sync)
+        var sources = spec["sources"] as JsonArray ?? (JsonArray)(spec["sources"] = new JsonArray());
+        foreach (var section in (spec["sections"] as JsonArray)!.OfType<JsonObject>())
+            if (section["source"] is JsonObject src && !sources.OfType<JsonObject>().Any(x => (string?)x["documentId"] == (string?)src["documentId"] && (string?)x["fragment"] == (string?)src["fragment"]))
+                sources.Add(src.DeepClone());
+        if (unknown.Count > 0)
+            throw new AiToolException("Nenhuma nota com " + string.Join(", ", unknown.Select(u => "\"" + u + "\"")) +
+                ". Use o caminho que list_notes ou search_notes mostra (por exemplo Pasta/Nota.md); não invente ids. Se a nota ainda não existe, crie-a com create_note antes.");
+    }
 
     private static (string Path, string Text, UrbeDocument? Previous) Validate(JsonObject input, IAssistantHost host)
     {
@@ -115,6 +152,7 @@ public static class AssistantPublicationTools
             else if (node is JsonArray array) foreach (var value in array) CheckNoCopiedText(value, videoElement);
         }
         CheckNoCopiedText(spec);
+        Canonicalize(spec, host);
         PublicationProject project;
         try { project = PublicationProjectCodec.Parse(spec.ToJsonString()); }
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or ArgumentException)

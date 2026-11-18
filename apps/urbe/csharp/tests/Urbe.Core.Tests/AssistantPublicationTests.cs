@@ -114,4 +114,32 @@ public sealed class AssistantPublicationTests
         Assert.Contains("review_publication", AssistantPublicationTools.Schema);
         Assert.Contains("briefing", AssistantPublicationTools.Schema);
     }
+
+    /// <summary>#986: the agent writes a video publication from the note it just created, naming it by path or title (it never sees the id); no loop of id errors.</summary>
+    [Fact]
+    public async Task AVideoPublicationAcceptsTheNoteByPathOrTitleAndSaysWhatIsWrong()
+    {
+        var host = new Host();
+        var note = host.Documents.Upsert(new() { Path = "Roteiros/Demo.md", Content = "# Demo\n\nCena um.\n" });
+        var tool = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        var spec = JsonNode.Parse("""{"schemaVersion":1,"title":"Demo","sources":[{"documentId":"Roteiros/Demo.md"}],"design":{"layout":"video"},"formats":["mp4"]}""")!.AsObject();
+        var result = await tool.Run(new JsonObject { ["path"] = "Publicações/Demo.publication.json", ["spec"] = spec }, host);
+        var saved = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Demo.publication.json")!.Content);
+        Assert.Equal(note.Id, Assert.Single(saved.Sources).DocumentId);
+        Assert.Equal(note.Id, Assert.Single(saved.Sections).Source.DocumentId);   // the section is made from the source
+        Assert.Equal("video", saved.Design.Layout);
+        Assert.Contains(note.Id, result.Content);   // the ids are told back for the next edit
+        using (var catalog = new PublicationSourceCatalog(host.Documents))
+        {
+            var timeline = VideoTimeline.Build(saved, catalog);
+            Assert.True(timeline.IsComplete);
+            Assert.Equal("Demo", Assert.Single(timeline.Scenes).Title);
+            Assert.True(timeline.FrameCount > 0);
+        }
+        // by title too; a name that matches nothing says which one and how to find it
+        spec["sources"] = JsonNode.Parse("""[{"documentId":"Demo"},{"documentId":"Inexistente"}]""");
+        var e = Assert.Throws<AiToolException>(() => tool.Preview!(new JsonObject { ["path"] = "Publicações/Outra.publication.json", ["spec"] = spec.DeepClone() }, host));
+        Assert.Contains("\"Inexistente\"", e.Message);
+        Assert.Contains("list_notes", e.Message);
+    }
 }
