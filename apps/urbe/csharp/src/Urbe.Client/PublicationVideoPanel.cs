@@ -45,6 +45,7 @@ public sealed class PublicationVideoPanel : StackPanel
     private Point? _dragFrom;
     private Point _dragBy;
     private double _pinch = 1;
+    private readonly VideoTimelineStrip _strip = new() { Margin = new Thickness(0, 2, 0, 2) };
 
     public PublicationVideoPanel()
     {
@@ -76,6 +77,8 @@ public sealed class PublicationVideoPanel : StackPanel
         controls.Children.Add(_play);
         controls.Children.Add(_time);
         controls.Children.Add(_scrubber);
+        _strip.Seek += t => { Stop(); ShowAt(t); };
+        _strip.SceneResized += scene => SceneChanged?.Invoke(scene);
         var exportRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { _export, _cancel } };
         _outline.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
         _overlay.Children.Add(_outline);
@@ -103,6 +106,7 @@ public sealed class PublicationVideoPanel : StackPanel
         Children.Add(_hint);
         Children.Add(_inspector);
         Children.Add(controls);
+        Children.Add(_strip);
         Children.Add(exportRow);
         Children.Add(_progress);
         Children.Add(_status);
@@ -154,6 +158,8 @@ public sealed class PublicationVideoPanel : StackPanel
     }
 
     private static double Poster(VideoTimeline timeline) => timeline.Scenes.Count > 0 ? timeline.Scenes[0].Settled : 0;
+
+    public VideoTimelineStrip Strip => _strip;
 
     /// <summary>The object selected on the preview (scene and element ids), or null.</summary>
     public (string Scene, string Element)? Selected => _selected;
@@ -391,6 +397,11 @@ public sealed class PublicationVideoPanel : StackPanel
         _frame.InvalidateVisual();
         if (_selected is not null && !IsPlaying) Inspect();
         else _outline.IsVisible = false;
+        // the strip: the playhead, and the selected object's keyframes as diamonds
+        var keyed = _selected is { } sel && timeline.Scenes.FirstOrDefault(x => x.Scene.Id == sel.Scene) is { } owner
+            ? owner.Scene.Elements.FirstOrDefault(e => e.Id == sel.Element)?.Keyframes.Select(k => owner.Start + k.Time).Distinct().ToList() ?? []
+            : [];
+        _strip.Show(timeline, time, keyed);
     }
 
     public void SetProgress(VideoExportProgress? progress, string? message = null)

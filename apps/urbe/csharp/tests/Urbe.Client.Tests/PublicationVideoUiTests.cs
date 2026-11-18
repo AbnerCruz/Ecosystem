@@ -63,6 +63,22 @@ public sealed partial class HeadlessUiTests
             studio.VideoPanel.Advance(studio.VideoPanel.Timeline.Duration + 1);
             Assert.Equal(poster, studio.VideoPanel.CurrentTime, 6);
             Assert.False(studio.VideoPanel.IsPlaying);
+            // #956 P2: the timeline strip — a tap goes to that instant; the scene's right edge dragged makes it longer
+            var strip = studio.VideoPanel.Strip;
+            var before = studio.Project!.Video!.Scenes[0].Duration;
+            Assert.True(strip.Bounds.Width > 100);
+            Assert.False(strip.Press(strip.X(0.5)));   // a tap in the middle of the scene: no drag, a seek
+            Assert.Equal(0.5, studio.VideoPanel.CurrentTime, 1);
+            Assert.True(strip.Press(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End) - 2));   // on the last scene's edge
+            strip.Drag(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End + 1.04));   // into the room after the end
+            strip.Release();
+            await Pump();
+            Assert.Equal(before + 1, studio.Project!.Video!.Scenes[0].Duration, 6);
+            Assert.True(strip.Press(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End) + 3));   // and back, shorter
+            strip.Drag(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End - 1));
+            strip.Release();
+            await Pump();
+            Assert.Equal(before, studio.Project!.Video!.Scenes[0].Duration, 6);
             // #956 P2: a tap on the title selects it; the inspector marks a keyframe at the playhead; a move goes to the project
             var panel = studio.VideoPanel;
             var title = studio.Project!.Video!.Scenes[0].Elements[0];

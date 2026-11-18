@@ -415,6 +415,7 @@ public static partial class AppDocs
 
         - Tocar numa publicação no Explorer abre o estúdio. A prévia começa na primeira cena já formada, e tocar numa cena leva ao momento em que ela está pronta.
         - Tocar num objeto da prévia seleciona ele. Arrastar muda o lugar; a pinça com dois dedos, **Maior** e **Menor** mudam o tamanho; **Quadro-chave aqui** guarda como ele está neste instante. Para animar, marque um quadro-chave, mude o tempo e mova o objeto: o Urbe faz o caminho entre os dois.
+        - A faixa da linha do tempo mostra as cenas no tamanho que duram, as trilhas de som e os quadros-chave do objeto escolhido. Tocar nela leva àquele instante; puxar a borda direita de uma cena muda quanto ela dura.
         - **Narrar o roteiro** usa a voz do aparelho para ler o texto de cada cena e põe a fala no começo dela. Se a fala for mais longa que a cena, a cena cresce para caber, e as legendas acompanham a fala.
         - O Assistente que monta um vídeo confere o que fez: mede cada cena (texto cortado, objeto fora do quadro, sobreposição, contraste e legenda cobrindo algo), olha os quadros reais quando o modelo enxerga imagens, e corrige só a cena com problema.
         - **Ajustar áudios do vídeo** muda o volume, a entrada e a saída de cada trilha (a música entra em 1 s e sai em 2 s por padrão).
