@@ -233,4 +233,29 @@ public sealed class VideoRenderTests
             File.WriteAllBytes(Path.Combine(dir, "video-depois.png"), after);
         }
     }
+
+    /// <summary>#956 P2: the cost of drawing every frame of a real 12 s video at 720p (headless measure, not a device claim).</summary>
+    [Fact]
+    public void RenderingTheExampleVideoAt720pIsMeasured()
+    {
+        var vault = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "e2e-vault");
+        var store = new DocumentStore();
+        foreach (var file in Directory.GetFiles(Path.Combine(vault, "Roteiro")))
+            store.Upsert(new DocumentInput { Id = "doc_e2e_" + Path.GetFileNameWithoutExtension(file).ToLowerInvariant(), Path = "Roteiro/" + Path.GetFileName(file), Content = File.ReadAllText(file) });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = PublicationProjectCodec.Parse(File.ReadAllText(Path.Combine(vault, "Publicações", "Demo.publication.json")));
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.True(timeline.IsComplete);
+        using var renderer = new VideoFrameRenderer(timeline);
+        using var frame = new SKBitmap(timeline.Width, timeline.Height);
+        var clock = Stopwatch.StartNew();
+        for (int i = 0; i < timeline.FrameCount; i++) renderer.RenderInto(timeline.FrameTime(i), frame);
+        clock.Stop();
+        double perFrame = clock.Elapsed.TotalMilliseconds / timeline.FrameCount;
+        TestContext.Current.SendDiagnosticMessage("video.render720p " + timeline.FrameCount + " quadros: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) +
+            " ms/quadro, " + renderer.LayersDrawn + " camadas desenhadas (o resto veio do cache)");
+        Console.WriteLine("video.render720p " + timeline.FrameCount + " frames: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " ms/frame, layers drawn " + renderer.LayersDrawn);
+        Assert.Equal(360, timeline.FrameCount);
+        Assert.True(renderer.LayersDrawn < timeline.FrameCount, "still frames reuse their layer");
+    }
 }

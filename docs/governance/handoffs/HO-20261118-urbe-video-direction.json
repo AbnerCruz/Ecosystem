@@ -53,7 +53,9 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
     "apps/urbe/csharp/src/Urbe.Core/PublicationOutputCheck.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationOutputCheckTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationPdfTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationPdfTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MemoryLearningTests.cs"
   ],
   "work_completed": [
     "#956 P1, ciclo de direção visual da IA: review_publication passa a medir cada cena de vídeo nos mesmos quadros do MP4. Aponta objeto fora do quadro ou dos 90% seguros (SMPTE ST 2046-1), texto cortado ou reduzido (medido pelo renderizador real), sobreposição, texto sob a legenda, contraste abaixo do WCAG 2 e imagem ausente, e lista cenas e elementos por id.",
@@ -67,7 +69,12 @@
     "Investigação no desktop real com vault sintético de 3.001 notas e nota de 20 mil linhas: abrir, alternar Notas/Estudo/Grafos e gerar a estrutura do vault sem travamento registrado.",
     "Defeito de UX achado nessa jornada: a estrutura de um vault grande era uma única coluna; agora é um mapa de blocos por pasta, com as notas em grade, perto de 16:9.",
     "#956 P2, edição por toque na prévia: tocar seleciona o objeto (escala e rotação contadas) com contorno; arrastar move o contorno e grava ao soltar (quadro-chave no instante se o objeto é animado); inspetor com quadro-chave aqui/tirar, maior, menor, remover e os quadros-chave para pular. Um quadro-chave a até 0,1 s é editado em vez de duplicado (defeito visto no app: 0,6 s e 0,65 s). Padrão de suavização easeInOut, não linear.",
-    "CST-213 (parte, formatos): a conferência de cada exportação vira recibo verificado/parcial/com problema, com evidência. Pega ligação OOXML para parte inexistente e parte sem tipo de conteúdo (o 'conteúdo ilegível' do Word), manifesto ODF/EPUB com arquivo ausente, ordem de leitura do EPUB apontando para item inexistente, PPTX sem slides, PDF que um leitor estrito (PdfPig) não abre, PDF sem páginas e fonte não embutida. O aviso de exportação diz o que foi conferido e o que não foi (aparência)."
+    "CST-213 (parte, formatos): a conferência de cada exportação vira recibo verificado/parcial/com problema, com evidência. Pega ligação OOXML para parte inexistente e parte sem tipo de conteúdo (o 'conteúdo ilegível' do Word), manifesto ODF/EPUB com arquivo ausente, ordem de leitura do EPUB apontando para item inexistente, PPTX sem slides, PDF que um leitor estrito (PdfPig) não abre, PDF sem páginas e fonte não embutida. O aviso de exportação diz o que foi conferido e o que não foi (aparência).",
+    "#963 caso 08: uma crítica a algo elogiado ('a transparência ficou horrível') substitui o elogio guardado como preferência atual (o antigo fica datado e ligado); um julgamento sozinho ('o tempo está bom') nunca vira memória.",
+    "#986/#956: teste do pedido de motion graphics no loop real do agente (modelo roteirizado): nota do roteiro → write_publication pelo caminho → revisão medida → edit_video_scene numa cena → look_at_video → entrega; cinco ferramentas, nenhum erro, nada repetido, escritas aprovadas.",
+    "#956 P2: pinça com dois dedos redimensiona o objeto selecionado na prévia.",
+    "#956 P2, medição antes de otimizar: o vídeo de exemplo (12 s, 720p, 30 qps) desenha em 9,2 ms/quadro no x64 do agente; 126 das 360 camadas desenhadas, o resto do cache (RenderingTheExampleVideoAt720pIsMeasured). Falta o perfil no moto g32 antes de qualquer reexportação por segmentos.",
+    "Jornada Android na CI corrigida duas vezes pelo que os prints mostraram: o vault não chegava ao app (agora run-as nos arquivos privados) e o Estúdio não abria (intent igual à da tarefa; agora ação própria). O roteiro confere o texto da tela pela árvore de acessibilidade e falha se o vault ou a prévia do vídeo não aparecem."
   ],
   "verification": [
     {
