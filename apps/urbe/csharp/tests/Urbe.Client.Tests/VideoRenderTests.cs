@@ -217,7 +217,7 @@ public sealed class VideoRenderTests
         Assert.Contains(issues, i => i.ElementId == "titulo" && i.Message.Contains("reticências"));
         Assert.Contains(issues, i => i.ElementId == "titulo" && i.Message.Contains("sai do quadro"));
         Assert.Contains(issues, i => With(0.2, 0.5) is var small && VideoInspection.Run(small, e => VideoFrameRenderer.Fit(e, small.Width, small.Height)).Any(x => x.Severity == ReviewSeverity.Error && x.Message.Contains("pequeno demais")));
-        var fixedTimeline = With(0.86, 0.5);
+        var fixedTimeline = With(0.86, 0.5, 0.3);   // two lines in any font (CI draws with a wider one)
         Assert.Empty(Review(fixedTimeline));
 
         byte[] Sheet(VideoTimeline t) { using var r = new VideoFrameRenderer(t); return r.RenderSheet([0.5, 2.5]); }
