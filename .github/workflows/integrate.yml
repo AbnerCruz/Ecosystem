@@ -38,6 +38,8 @@ jobs:
     permissions:
       contents: write
       statuses: write
+      checks: read
+      actions: read
       pull-requests: read
     env:
       GH_TOKEN: ${{ github.token }}

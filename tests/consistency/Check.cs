@@ -1892,6 +1892,7 @@ static class IntegrationQueue
         if (p.HeadRef.StartsWith("dependabot/", StringComparison.Ordinal)) return ("skip", "Dependabot");
         var st = ParseStatus(p.StatusDescription);
         if (st is null) return ("evaluate", "nunca avaliado");
+        if (st.Result == "aguarda-checks") return ("wait", "checks adicionais do head ainda não passaram");
         if (!SameSha(st.Main, mainSha)) return ("evaluate", $"a main mudou desde a avaliação ({st.Main[..Math.Min(12, st.Main.Length)]})");
         return st.Result switch
         {
@@ -3573,6 +3574,10 @@ static class SelfTest
         Report(d.Action == "none", "conflito ou check vermelho contra a main atual: aguarda nova versão do PR (sem laço)");
         d = IntegrationQueue.Plan(main, [P(9, "pending", $"testando main={main} combined={comb} routine")]);
         Report(d.Action == "evaluate", "avaliação interrompida ou obsoleta é retomada");
+        d = IntegrationQueue.Plan(main, [P(9, "pending", $"aguarda-checks main={old} combined={comb} routine"), P(10)]);
+        Report(d.Action == "evaluate" && d.Pr == 10 && !d.More, "checks pendentes de um head não bloqueiam o próximo PR, mesmo após avanço da main");
+        d = IntegrationQueue.Plan(main, [P(9, "pending", $"aguarda-checks main={main} combined={comb} routine")]);
+        Report(d.Action == "none", "a fila não repete a avaliação combinada enquanto os checks do head estiverem pendentes");
         var ps = IntegrationQueue.ParseStatus($"pronto main={main} combined={comb} critical: aguardando autorização");
         Report(ps is { Result: "pronto", Combined: comb, Criticality: "critical" } && ps.Main == main, "status persiste main, commit combinado exato e classificação");
 
