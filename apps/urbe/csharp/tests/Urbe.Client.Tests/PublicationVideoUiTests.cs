@@ -57,6 +57,51 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("# Abertura\n\nUma frase do roteiro.\n", File.ReadAllText(Path.Combine(vault, "Cena.md")));
             Assert.Equal(scene.Duration + 0.5, studio.VideoPanel.Timeline!.Duration, 6);
 
+            // the first look and the end of playback are the poster (the scene formed), never the black of the fade-in
+            var poster = studio.VideoPanel.Timeline!.Scenes[0].Settled;
+            Assert.True(poster > 0);
+            studio.VideoPanel.Advance(studio.VideoPanel.Timeline.Duration + 1);
+            Assert.Equal(poster, studio.VideoPanel.CurrentTime, 6);
+            Assert.False(studio.VideoPanel.IsPlaying);
+            // #956 P2: the timeline strip — a tap goes to that instant; the scene's right edge dragged makes it longer
+            var strip = studio.VideoPanel.Strip;
+            var before = studio.Project!.Video!.Scenes[0].Duration;
+            Assert.True(strip.Bounds.Width > 100);
+            Assert.False(strip.Press(strip.X(0.5)));   // a tap in the middle of the scene: no drag, a seek
+            Assert.Equal(0.5, studio.VideoPanel.CurrentTime, 1);
+            Assert.True(strip.Press(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End) - 2));   // on the last scene's edge
+            strip.Drag(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End + 1.04));   // into the room after the end
+            strip.Release();
+            await Pump();
+            Assert.Equal(before + 1, studio.Project!.Video!.Scenes[0].Duration, 6);
+            Assert.True(strip.Press(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End) + 3));   // and back, shorter
+            strip.Drag(strip.X(studio.VideoPanel.Timeline!.Scenes[0].End - 1));
+            strip.Release();
+            await Pump();
+            Assert.Equal(before, studio.Project!.Video!.Scenes[0].Duration, 6);
+            // #956 P2: a tap on the title selects it; the inspector marks a keyframe at the playhead; a move goes to the project
+            var panel = studio.VideoPanel;
+            var title = studio.Project!.Video!.Scenes[0].Elements[0];
+            panel.ShowAt(1);
+            panel.TapAt(title.X, title.Y);
+            Assert.Equal(title.Id, panel.Selected!.Value.Element);
+            Click(Named("Marcar quadro-chave neste instante"));
+            await Pump();
+            Assert.True(VideoEditing.HasKeyframe(studio.Project!.Video!.Scenes[0].Elements[0], 1));
+            Assert.NotNull(Named("Tirar o quadro-chave deste instante"));   // the button says what it does now
+            panel.MoveSelected(0.5, 0.25);
+            await Pump();
+            Assert.Equal(0.25, studio.Project!.Video!.Scenes[0].Elements[0].Keyframes.Single(k => k.Property == "y" && Math.Abs(k.Time - 1) < 0.01).Value, 6);
+            var width = studio.Project!.Video!.Scenes[0].Elements[0].Width;
+            panel.PinchSelected(1.5);   // two fingers opened: the object grows by the pinch
+            await Pump();
+            Assert.Equal(width * 1.5, studio.Project!.Video!.Scenes[0].Elements[0].Width, 6);
+            panel.PinchSelected(1.01);   // a wobble of the fingers changes nothing
+            await Pump();
+            Assert.Equal(width * 1.5, studio.Project!.Video!.Scenes[0].Elements[0].Width, 6);
+            panel.TapAt(0.02, 0.98);   // nothing there: the selection ends
+            Assert.Null(panel.Selected);
+
             // CST-172: the same captions as SRT and as WebVTT
             var captions = new Dictionary<string, string>();
             view.SavePageFile = (name, bytes) => { captions[name] = System.Text.Encoding.UTF8.GetString(bytes); return Task.FromResult<bool?>(true); };

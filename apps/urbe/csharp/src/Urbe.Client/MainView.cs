@@ -246,6 +246,8 @@ public sealed partial class MainView : Grid
     /// <summary>document.open for a note of the vault: the editor over the Explorer.</summary>
     public void OpenNoteByPath(string path)
     {
+        // a publication opens where it is made: the Estúdio, not its JSON (#956)
+        if (IsPublication(path)) { _ = OpenPublicationAsync(path); return; }
         CloseNotesOverEditor();
         Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
     }
@@ -370,6 +372,7 @@ public sealed partial class MainView : Grid
 
     public async Task OpenVaultAsync()
     {
+        UiStallWatch.Doing("abrir o vault");
         if (_vault is null) return;
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         if (!await Editor.Split.Preview.TryCloseAsync()) return;
@@ -390,6 +393,7 @@ public sealed partial class MainView : Grid
     private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false,
         IReadOnlyList<string>? listedFiles = null, IReadOnlyList<string>? listedFolders = null)
     {
+        UiStallWatch.Doing("mostrar o vault");
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
         if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)
@@ -1230,7 +1234,10 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>
-    private Task ShowFileAsync(string path) => Dialogs.IsOpen ? Task.CompletedTask : GraphDocument.IsGraphPath(path) ? OpenGraphAsync(path) : FilePreview.OpenAsync(path);
+    private Task ShowFileAsync(string path) => Dialogs.IsOpen ? Task.CompletedTask : GraphDocument.IsGraphPath(path) ? OpenGraphAsync(path)
+        : IsPublication(path) ? OpenPublicationAsync(path) : FilePreview.OpenAsync(path);
+
+    private static bool IsPublication(string path) => path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// The "⋯" of a folder in the Explorer (the 1.8.4 showed no options when a folder was selected, DEC-0045, UC-38):

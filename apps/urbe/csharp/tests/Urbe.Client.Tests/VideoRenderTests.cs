@@ -190,4 +190,72 @@ public sealed class VideoRenderTests
         }
         finally { Directory.Delete(dir, true); }
     }
+
+    /// <summary>
+    /// #956: the agent's review measures text with the renderer that draws it — a long title in a small box is told as
+    /// cut (it ends in "…" on screen), and after widening the box it fits; the contact sheet is a real PNG of the frames.
+    /// </summary>
+    [Fact]
+    public void TheReviewMeasuresTextAsDrawnAndTheSheetShowsTheRealFrames()
+    {
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "Demo.md", Content = "# Vídeos editáveis feitos das suas notas\n\nCada cena vem de uma nota.\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = VideoComposition.Synced(PublicationProject.Create("Demo", note.Id) with { Design = new PublicationDesign { Layout = "video" } });
+        VideoTimeline With(double width, double x, double height = 0.14)
+        {
+            var scene = project.Video!.Scenes[0] with
+            {
+                Duration = 3, Transition = new VideoTransition { Kind = "cut" },
+                Elements = [new VideoElement { Id = "titulo", Kind = "title", X = x, Y = 0.4, Width = width, Height = height, FontSize = 0.1 }]
+            };
+            return VideoTimeline.Build(project with { Video = project.Video with { Resolution = 360, Scenes = [scene] } }, catalog);
+        }
+        IReadOnlyList<VideoIssue> Review(VideoTimeline t) => VideoInspection.Run(t, e => VideoFrameRenderer.Fit(e, t.Width, t.Height));
+        var broken = With(0.16, 0.95, 0.06);
+        var issues = Review(broken);
+        Assert.Contains(issues, i => i.ElementId == "titulo" && i.Message.Contains("reticências"));
+        Assert.Contains(issues, i => i.ElementId == "titulo" && i.Message.Contains("sai do quadro"));
+        Assert.Contains(issues, i => With(0.2, 0.5) is var small && VideoInspection.Run(small, e => VideoFrameRenderer.Fit(e, small.Width, small.Height)).Any(x => x.Severity == ReviewSeverity.Error && x.Message.Contains("pequeno demais")));
+        var fixedTimeline = With(0.86, 0.5, 0.3);   // two lines in any font (CI draws with a wider one)
+        Assert.Empty(Review(fixedTimeline));
+
+        byte[] Sheet(VideoTimeline t) { using var r = new VideoFrameRenderer(t); return r.RenderSheet([0.5, 2.5]); }
+        var before = Sheet(broken);
+        var after = Sheet(fixedTimeline);
+        using var decoded = SKBitmap.Decode(after);
+        Assert.Equal((2 * 640 + 3 * 8, 360 + 2 * 8), (decoded.Width, decoded.Height));
+        Assert.NotEqual(before, after);
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllBytes(Path.Combine(dir, "video-antes.png"), before);
+            File.WriteAllBytes(Path.Combine(dir, "video-depois.png"), after);
+        }
+    }
+
+    /// <summary>#956 P2: the cost of drawing every frame of a real 12 s video at 720p (headless measure, not a device claim).</summary>
+    [Fact]
+    public void RenderingTheExampleVideoAt720pIsMeasured()
+    {
+        var vault = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "fixtures", "e2e-vault");
+        var store = new DocumentStore();
+        foreach (var file in Directory.GetFiles(Path.Combine(vault, "Roteiro")))
+            store.Upsert(new DocumentInput { Id = "doc_e2e_" + Path.GetFileNameWithoutExtension(file).ToLowerInvariant(), Path = "Roteiro/" + Path.GetFileName(file), Content = File.ReadAllText(file) });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = PublicationProjectCodec.Parse(File.ReadAllText(Path.Combine(vault, "Publicações", "Demo.publication.json")));
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.True(timeline.IsComplete);
+        using var renderer = new VideoFrameRenderer(timeline);
+        using var frame = new SKBitmap(timeline.Width, timeline.Height);
+        var clock = Stopwatch.StartNew();
+        for (int i = 0; i < timeline.FrameCount; i++) renderer.RenderInto(timeline.FrameTime(i), frame);
+        clock.Stop();
+        double perFrame = clock.Elapsed.TotalMilliseconds / timeline.FrameCount;
+        TestContext.Current.SendDiagnosticMessage("video.render720p " + timeline.FrameCount + " quadros: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) +
+            " ms/quadro, " + renderer.LayersDrawn + " camadas desenhadas (o resto veio do cache)");
+        Console.WriteLine("video.render720p " + timeline.FrameCount + " frames: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " ms/frame, layers drawn " + renderer.LayersDrawn);
+        Assert.Equal(360, timeline.FrameCount);
+        Assert.True(renderer.LayersDrawn < timeline.FrameCount, "still frames reuse their layer");
+    }
 }

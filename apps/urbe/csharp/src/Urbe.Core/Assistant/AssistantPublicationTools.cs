@@ -58,10 +58,19 @@ public static class AssistantPublicationTools
         using var catalog = new PublicationSourceCatalog(host.Documents);
         var files = host.OtherFiles;
         var issues = PublicationReview.Run(project, catalog, f => files.Contains(f) || host.Documents.Get(f) is not null, n => host.Documents.Get(n) is not null);
-        const string Unchecked = "\nNão conferido por esta revisão: se os fatos estão certos (confira nas fontes) e a aparência final de cada formato.";
-        if (issues.Count == 0) return "Revisão automática sem problemas em " + project.Sections.Count + (project.Sections.Count == 1 ? " seção." : " seções.") + Unchecked;
+        // #956: a video is also looked at — the frames measured, and the scenes listed by id for edit_video_scene
+        string video = "";
+        if (project.Design.Layout == "video" && project.Sections.Count > 0)
+        {
+            var (_, _, timeline) = AssistantVideoDirectionTools.Load(path, host);
+            video = "\n\n" + AssistantVideoDirectionTools.Issues(AssistantVideoDirectionTools.Inspect(timeline, host), host.VideoFrames is not null) +
+                    "\n\nRevisão " + doc.Revision + ". " + AssistantVideoDirectionTools.Outline(timeline);
+        }
+        string Unchecked = "\nNão conferido por esta revisão: se os fatos estão certos (confira nas fontes) e " +
+            (project.Design.Layout == "video" ? "o gosto e o ritmo do vídeo (veja os quadros com look_at_video)." : "a aparência final de cada formato.");
+        if (issues.Count == 0) return "Revisão automática sem problemas em " + project.Sections.Count + (project.Sections.Count == 1 ? " seção." : " seções.") + video + Unchecked;
         return issues.Count + (issues.Count == 1 ? " ponto" : " pontos") + " a corrigir:\n" +
-               string.Join("\n", issues.Select(i => "- " + (i.Severity == ReviewSeverity.Error ? "[erro] " : "[aviso] ") + i.Place + ": " + i.Message + " → " + i.Fix)) + Unchecked;
+               string.Join("\n", issues.Select(i => "- " + (i.Severity == ReviewSeverity.Error ? "[erro] " : "[aviso] ") + i.Place + ": " + i.Message + " → " + i.Fix)) + video + Unchecked;
     }
 
     /// <summary>The longest on-screen label a video element may carry in the composition.</summary>
@@ -90,6 +99,8 @@ public static class AssistantPublicationTools
         "Método: 1) briefing — objective e audience da publicação (pergunte à pessoa se o pedido não diz); 2) fontes — notas reais lidas por inteiro, sem inventar " +
         "referências; 3) roteiro — a ordem das seções e o que cada uma diz, antes de escrever; 4) composição — texto nas notas, layout no projeto; " +
         "5) revisão — review_publication e correção nas notas; 6) entrega — diga o que foi revisado e o que não foi. Decisões de rumo (público, tom, cortes) são da pessoa. " +
+        "Vídeo, depois de montar: review_publication mede cada cena (fora do quadro, texto cortado, sobreposição, contraste) e lista os ids; " +
+        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa. " +
         "Um especialista (consult_agent) só quando ele sabe algo que você não sabe; não divida em vários agentes o que um faz bem.";
 
     /// <summary>
@@ -128,6 +139,24 @@ public static class AssistantPublicationTools
                 ". Use o caminho que list_notes ou search_notes mostra (por exemplo Pasta/Nota.md); não invente ids. Se a nota ainda não existe, crie-a com create_note antes.");
     }
 
+    /// <summary>Authored text belongs to notes; only a video element may carry a short on-screen label.</summary>
+    internal static void CheckNoCopiedText(JsonNode? node, bool videoElement = false)
+    {
+        if (node is JsonObject obj)
+            foreach (var (key, value) in obj)
+            {
+                string name = key.ToLowerInvariant();
+                // a video element may carry a short on-screen label ("Passo 1"); the script stays in the note
+                if (name == "text" && videoElement && value is JsonValue label && label.TryGetValue<string>(out var t) && t.Length <= MaxOverlay) continue;
+                if (name is "markdown" or "content" or "text" or "html" or "body")
+                    throw new AiToolException(name == "text" && videoElement
+                        ? "Rótulo de vídeo com mais de " + MaxOverlay + " caracteres: o roteiro pertence à nota da cena (elemento kind \"script\")."
+                        : "Texto autoral pertence a notas reais, não à composição: " + key);
+                CheckNoCopiedText(value, videoElement || name == "elements" && value is JsonArray);
+            }
+        else if (node is JsonArray array) foreach (var value in array) CheckNoCopiedText(value, videoElement);
+    }
+
     private static (string Path, string Text, UrbeDocument? Previous) Validate(JsonObject input, IAssistantHost host)
     {
         var path = (string?)input["path"] ?? "";
@@ -135,22 +164,6 @@ public static class AssistantPublicationTools
             path.Split('/').Any(p => p is "" or "." or "..") || path.Any(c => char.IsControl(c) || ":*?\"<>|".Contains(c)))
             throw new AiToolException("Use um caminho relativo seguro terminado em .publication.json.");
         if (input["spec"] is not JsonObject spec) throw new AiToolException("Informe spec conforme publication_schema.");
-        void CheckNoCopiedText(JsonNode? node, bool videoElement = false)
-        {
-            if (node is JsonObject obj)
-                foreach (var (key, value) in obj)
-                {
-                    string name = key.ToLowerInvariant();
-                    // a video element may carry a short on-screen label ("Passo 1"); the script stays in the note
-                    if (name == "text" && videoElement && value is JsonValue label && label.TryGetValue<string>(out var t) && t.Length <= MaxOverlay) continue;
-                    if (name is "markdown" or "content" or "text" or "html" or "body")
-                        throw new AiToolException(name == "text" && videoElement
-                            ? "Rótulo de vídeo com mais de " + MaxOverlay + " caracteres: o roteiro pertence à nota da cena (elemento kind \"script\")."
-                            : "Texto autoral pertence a notas reais, não à composição: " + key);
-                    CheckNoCopiedText(value, videoElement || name == "elements" && value is JsonArray);
-                }
-            else if (node is JsonArray array) foreach (var value in array) CheckNoCopiedText(value, videoElement);
-        }
         CheckNoCopiedText(spec);
         Canonicalize(spec, host);
         PublicationProject project;
@@ -159,6 +172,8 @@ public static class AssistantPublicationTools
         { throw new AiToolException(e.Message); }
         using var catalog = new PublicationSourceCatalog(host.Documents);
         if (project.Sources.Any(source => catalog.Read(source) is null)) throw new AiToolException("Uma fonte não existe ou o trecho está indisponível.");
+        // #956: a video is saved with its scenes, so their ids stay the same for edit_video_scene
+        if (project.Design.Layout == "video") project = VideoComposition.Synced(project, r => catalog.Read(r)?.Markdown);
         var previous = host.Documents.Get(path);
         if (previous is not null)
         {

@@ -47,6 +47,7 @@ public sealed partial class MainView
 
     public async Task OpenStudySessionAsync(string path)
     {
+        UiStallWatch.Doing("abrir uma sessão de estudo");
         if (_store?.Get(path) is not { } file) return;
         StudySession session;
         try { session = StudySession.Parse(file.Content); }

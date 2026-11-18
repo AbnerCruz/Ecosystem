@@ -130,6 +130,9 @@ public sealed partial class MainView
     /// written in its note, becomes a WAV in Narração/&lt;publicação&gt;/ placed at the scene's start as a voice track. Narrating
     /// again replaces those tracks (the old files stay in the vault).
     /// </summary>
+    /// <summary>Plays or pauses the open video publication's preview (the panel's button; emulator tests use it too).</summary>
+    public void PlayVideoPreview() => _publicationsStudio?.VideoPanel.TogglePlay();
+
     public async Task NarratePublicationVideoAsync()
     {
         var draft = _publicationDraft;
@@ -139,7 +142,7 @@ public sealed partial class MainView
         if (scenes.Count == 0) { await Dialogs.AlertAsync("Narrar o roteiro", "As notas das cenas ainda não têm texto para narrar."); return; }
         var folder = "Narração/" + ArtifactModel.SafeName(project.Title) + "/";
         var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "urbe-narration-" + Guid.NewGuid().ToString("N"));
-        var clips = new List<VideoAudioClip>();
+        var spoken = new List<(VideoTimelineScene Scene, string Wav, double Seconds)>();
         using var cancel = new CancellationTokenSource();
         try
         {
@@ -154,15 +157,29 @@ public sealed partial class MainView
                     await Dialogs.AlertAsync("Narrar o roteiro", "A voz do aparelho não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
                     return;
                 }
-                var path = folder + "Cena " + (i + 1) + ".wav";
-                for (int n = 2; _attachments.Contains(path); n++) path = folder + "Cena " + (i + 1) + " (" + n + ").wav";
-                await ((IAssistantApp)this).CreateBinaryFileAsync(path, await File.ReadAllBytesAsync(wav, cancel.Token));
-                clips.Add(new VideoAudioClip { Kind = "voice", Path = path, Start = scenes[i].Start });
+                double seconds;
+                await using (var read = File.OpenRead(wav)) seconds = VideoAudio.ReadWavInfo(read)?.Seconds ?? 0;
+                spoken.Add((scenes[i], wav, seconds));
             }
             if (!SameVideoDraft(draft) || _publicationsStudio?.Project is not { Video: { } video } current) return;
-            var kept = video.Audio.Where(a => !(a.Kind == "voice" && a.Path.StartsWith(folder, StringComparison.Ordinal))).ToList();
-            _publicationsStudio.UpdateProject(current with { Video = video with { Audio = [.. kept, .. clips] } });
-            _notice.Show("Narração pronta: " + clips.Count + (clips.Count == 1 ? " cena." : " cenas."), TimeSpan.FromSeconds(6), kind: Ui.ToastKind.Success);
+            // #956: a scene shorter than its voice grows to hold it; the voice is placed where the scene now starts
+            var fitted = video.FitToVoices(spoken.Where(x => x.Seconds > 0).ToDictionary(x => x.Scene.Scene.Id, x => x.Seconds));
+            var grown = fitted.Scenes.Zip(video.Scenes).Count(p => p.First.Duration != p.Second.Duration);
+            var starts = VideoTimeline.Build(current with { Video = fitted }, _ => null).Scenes.ToDictionary(x => x.Scene.Id, x => x.Start);
+            var clips = new List<VideoAudioClip>();
+            for (int i = 0; i < spoken.Count; i++)
+            {
+                var path = folder + "Cena " + (i + 1) + ".wav";
+                for (int n = 2; _attachments.Contains(path); n++) path = folder + "Cena " + (i + 1) + " (" + n + ").wav";
+                await ((IAssistantApp)this).CreateBinaryFileAsync(path, await File.ReadAllBytesAsync(spoken[i].Wav, cancel.Token));
+                clips.Add(new VideoAudioClip { Kind = "voice", Path = path, Start = starts[spoken[i].Scene.Scene.Id], Length = spoken[i].Seconds > 0 ? spoken[i].Seconds : null });
+            }
+            if (!SameVideoDraft(draft)) return;
+            var kept = fitted.Audio.Where(a => !(a.Kind == "voice" && a.Path.StartsWith(folder, StringComparison.Ordinal))).ToList();
+            _publicationsStudio.UpdateProject(current with { Video = fitted with { Audio = [.. kept, .. clips] } });
+            _notice.Show("Narração pronta: " + clips.Count + (clips.Count == 1 ? " cena" : " cenas") +
+                (grown == 0 ? "." : grown == 1 ? "; uma cena ficou mais longa para caber a fala." : "; " + grown + " cenas ficaram mais longas para caber a fala."),
+                TimeSpan.FromSeconds(6), kind: Ui.ToastKind.Success);
         }
         catch (OperationCanceledException) { _notice.Show("Narração parada; o vídeo não mudou."); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)

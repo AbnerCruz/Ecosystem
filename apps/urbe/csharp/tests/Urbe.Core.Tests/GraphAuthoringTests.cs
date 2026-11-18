@@ -82,6 +82,29 @@ public sealed class GraphAuthoringTests
         Assert.Equal(graph.Nodes.Count, GraphDocument.Parse(graph.Serialize()).Nodes.Count);
     }
 
+    /// <summary>
+    /// A vault of 3,000 notes in 30 folders read as one column 350,000 px tall (seen in the desktop app, 18/11/2026).
+    /// Now each folder is a block with its notes in a grid beside it, packed towards 16:9; no two cards share a place.
+    /// </summary>
+    [Fact]
+    public void AVaultStructureOfThousandsOfNotesIsAMapNotAColumn()
+    {
+        var docs = Enumerable.Range(0, 3000).Select(i => new UrbeDocument("n" + i, $"Projeto {i / 100:00}/Nota {i:0000}.md", "N", "",
+            new Dictionary<string, string>(), [], [], null, null, 1)).ToList();
+        docs.Add(new UrbeDocument("solta", "Solta.md", "S", "", new Dictionary<string, string>(), [], [], null, null, 1));
+        docs.Add(new UrbeDocument("fundo", "Projeto 00/Sub/Funda.md", "F", "", new Dictionary<string, string>(), [], [], null, null, 1));
+        var graph = GraphProjection.FromVault(docs, [], [], _ => []);
+        double w = graph.Nodes.Max(n => n.X) - graph.Nodes.Min(n => n.X), h = graph.Nodes.Max(n => n.Y) - graph.Nodes.Min(n => n.Y);
+        Assert.InRange(w / h, 0.8, 3.5);
+        Assert.Equal(graph.Nodes.Count, graph.Nodes.Select(n => (n.X, n.Y)).Distinct().Count());
+        var folder = graph.Nodes.Single(n => n.Target == "Projeto 07");
+        var notes = graph.Nodes.Where(n => n.Target?.StartsWith("Projeto 07/") == true).ToList();
+        Assert.All(notes, n => Assert.True(n.X > folder.X && n.Y >= folder.Y));   // beside and below its folder
+        Assert.True(notes.Max(n => n.X) - notes.Min(n => n.X) > 1000);   // a grid, not a column
+        var sub = graph.Nodes.Single(n => n.Target == "Projeto 00/Sub");
+        Assert.True(graph.Nodes.Single(n => n.Target == "Projeto 00/Sub/Funda.md").X > sub.X);
+    }
+
     [Fact]
     public void StructureProjectionDoesNotDiscardFilesAboveAnInventedQuota()
     {

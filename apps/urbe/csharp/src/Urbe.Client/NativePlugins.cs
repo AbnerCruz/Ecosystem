@@ -94,8 +94,14 @@ public interface IPluginApi
     /// <summary>The note open in the editor, or null.</summary>
     string? OpenNotePath { get; }
 
-    /// <summary><see cref="PluginPermissions.Agents"/>: an agent works on the delimited notes or folders (CST-146).</summary>
-    Task AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope);
+    /// <summary>
+    /// <see cref="PluginPermissions.Agents"/>: an agent works on the delimited notes or folders (CST-146); its final answer
+    /// comes back (null when the person declined), closed with the structured block when <paramref name="structured"/>.
+    /// </summary>
+    Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, bool structured = false);
+
+    /// <summary><see cref="PluginPermissions.Agents"/>: whether a path the agent cited is a note or file of the vault (nothing more).</summary>
+    bool SourceExists(string path);
 }
 
 /// <summary>A plugin's floating panel.</summary>

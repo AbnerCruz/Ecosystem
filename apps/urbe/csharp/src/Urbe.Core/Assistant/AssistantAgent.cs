@@ -670,6 +670,7 @@ public static class AssistantAgent
         public AssistantWebSession? Web => inner.Web;
         public IAssistantDevice? Device => inner.Device;
         public IAssistantVideos? Videos => inner.Videos;
+        public IAssistantVideoFrames? VideoFrames => inner.VideoFrames;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;

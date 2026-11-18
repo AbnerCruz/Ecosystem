@@ -2,6 +2,11 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.56 — 18/11/2026
+- Barras de progresso com −/+, checklist por seção, leitura por páginas, notas de rodapé, marcação de instantes no YouTube, modo leitura e salvar página da web como nota.
+- Revisão de formulários, comentários, adaptações no Estúdio, conversão de páginas em publicações e memória dos agentes. Corrigido o fechamento ao anexar PDFs ao Assistente.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.56
+
 ## 2.0.0-beta.55 — 15/11/2026
 - O app é a pasta 1:1 (pastas e notas mudadas fora aparecem), gravações sem reler o vault, Restaurar tudo, multi-seleção com arquivos, Ordenar notas, botões que avisam quando falham.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.55

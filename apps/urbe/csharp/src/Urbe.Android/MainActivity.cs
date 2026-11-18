@@ -32,6 +32,17 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
     public UrbeAndroidApplication(IntPtr javaReference, JniHandleOwnership transfer) : base(javaReference, transfer)
     {
         UrbeApp.VaultStorageFactory = () => new AndroidVaultStorage();
+#if URBE_EMULATOR
+        // CI emulator only (never the beta): the example vault adb copies (run-as) into the app's files opens without the picker
+        var e2e = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? "", "e2e-vault");
+        Android.Util.Log.Info("urbe-e2e", System.IO.Directory.Exists(e2e) ? "vault de exemplo: " + System.IO.Directory.GetFiles(e2e, "*", System.IO.SearchOption.AllDirectories).Length + " arquivos" : "sem vault de exemplo");
+        if (System.IO.Directory.Exists(e2e))
+        {
+            var selection = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "e2e-vault.json");
+            System.IO.File.WriteAllText(selection, System.Text.Json.JsonSerializer.Serialize(new { Folder = e2e }));
+            UrbeApp.VaultStorageFactory = () => new FolderVaultStorage(_ => Task.FromResult<string?>(e2e), selection);
+        }
+#endif
         // HTML, PDF, audio and video seen inside the Urbe (ADD-0023)
         AndroidContentViewers.Register();
         // the Assistente's alarm clock, calendar and e-mail (each off until the person allows it)
@@ -110,6 +121,7 @@ public sealed class MainActivity : AvaloniaMainActivity
         UrbeTokens.Motion.Reduced = Android.Provider.Settings.Global.GetFloat(ContentResolver, Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f;
         HandleVoiceIntent(Intent);
         HandleAssistantIntent(Intent);
+        HandleTestIntent(Intent);
     }
 
     private static FeedbackConstants Haptic(Urbe.Client.Ui.HapticKind kind) => kind switch
@@ -125,6 +137,26 @@ public sealed class MainActivity : AvaloniaMainActivity
         base.OnNewIntent(intent);
         HandleVoiceIntent(intent);
         HandleAssistantIntent(intent);
+        HandleTestIntent(intent);
+    }
+
+    /// <summary>CI emulator only: <c>am start --es urbe.open Pasta/Arquivo</c> opens it; <c>--ez urbe.play true</c> then plays the video preview.</summary>
+    private static void HandleTestIntent(Intent? intent)
+    {
+#if URBE_EMULATOR
+        if (intent?.GetStringExtra("urbe.open") is not { Length: > 0 } path) return;
+        bool play = intent.GetBooleanExtra("urbe.play", false);
+        Android.Util.Log.Info("urbe-e2e", "abrir " + path + (play ? " e tocar" : ""));
+        intent.RemoveExtra("urbe.open");
+        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        {
+            if (UrbeApp.ActiveView is not { } view) return;
+            view.OpenNoteByPath(path);
+            if (!play) return;
+            await Task.Delay(1500);
+            view.PlayVideoPreview();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+#endif
     }
 
     private void HandleAssistantIntent(Intent? intent)
@@ -197,6 +229,7 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         base.OnResume();
         IsVisibleToUser = true;
+        UiStallWatch.Resume();
         ShowRequestedAssistant();
         // what was deleted or created in the folder while the app was away shows now (1:1 with the device)
         UrbeApp.RefreshOnForeground();
@@ -205,6 +238,7 @@ public sealed class MainActivity : AvaloniaMainActivity
     protected override void OnPause()
     {
         IsVisibleToUser = false;
+        UiStallWatch.Pause();
         UrbeApp.FlushPendingOnBackground();
         base.OnPause();
     }

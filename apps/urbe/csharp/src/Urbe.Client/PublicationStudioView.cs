@@ -64,6 +64,7 @@ public sealed class PublicationStudioView : Border
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
             Item("Verificar publicação", () => ReviewRequested?.Invoke());
+            if (_project?.Sections.Count > 1) Item("Ordenar as notas", () => SortRequested?.Invoke());
             Item("Pedir ao Assistente", () => AskAssistantRequested?.Invoke());
             Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             if (IsVideo)
@@ -149,10 +150,14 @@ public sealed class PublicationStudioView : Border
     public event Action? RenameRequested;
     /// <summary>CST-179/180: "Verificar publicação" — what to fix before exporting.</summary>
     public event Action? ReviewRequested;
+    /// <summary>CST-160: order the notes by title, date or folder.</summary>
+    public event Action? SortRequested;
     public event Action? ConfigureRequested;
     public event Action? Closed;
     public event Action<string>? EditSourceRequested;
     public event Action<PublicationSourceReference>? EditReferenceRequested;
+    /// <summary>CST-156: a double tap on the preview — the source and the text shown where it was tapped.</summary>
+    public event Action<PublicationSourceReference, string>? EditShownTextRequested;
     public event Action<PublicationProject>? ProjectChanged;
     /// <summary>CST-155: "Adaptar" on a piece — a real note adapted from its source takes its place.</summary>
     public event Action<PublicationPlacement>? AdaptRequested;
@@ -194,6 +199,18 @@ public sealed class PublicationStudioView : Border
     {
         try { return _catalog?.Read(reference)?.Markdown; }
         catch (NotSupportedException) { return null; }
+    }
+
+    /// <summary>The text of the block the pointer is on: the nearest text control up from where it landed.</summary>
+    private static string? ShownText(object? source)
+    {
+        for (var v = source as Avalonia.Visual; v is not null; v = Avalonia.VisualTree.VisualExtensions.GetVisualParent(v))
+            switch (v)
+            {
+                case SelectableTextBlock s when !string.IsNullOrWhiteSpace(s.Text ?? s.Inlines?.Text): return s.Text ?? s.Inlines?.Text;
+                case TextBlock t when !string.IsNullOrWhiteSpace(t.Text ?? t.Inlines?.Text): return t.Text ?? t.Inlines?.Text;
+            }
+        return null;
     }
 
     public void SetSaveState(bool dirty, string? error = null)
@@ -422,7 +439,7 @@ public sealed class PublicationStudioView : Border
                 var text = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;
                 var origin = Provenance(source, catalog);
                 if (origin is not null) _preview.Children.Add(origin);
-                _preview.Children.Add(new Border
+                var shown = new Border
                 {
                     // the cover stands apart: its own block, taller, as its page in the book
                     Padding = piece.IsCover ? new Thickness(14, 48) : new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
@@ -438,7 +455,14 @@ public sealed class PublicationStudioView : Border
                                 ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown }.BuildMarkdown(text)
                         }
                     }
-                });
+                };
+                // CST-156: a double tap on a paragraph of the preview opens its note at that paragraph
+                var reference = piece.Source;
+                shown.DoubleTapped += (_, e) =>
+                {
+                    if (ShownText(e.Source) is { Length: > 0 } tapped) { EditShownTextRequested?.Invoke(reference, tapped); e.Handled = true; }
+                };
+                _preview.Children.Add(shown);
             }
             else
                 _preview.Children.Add(new TextBlock { Text = "Fonte ausente — o arquivo original não será substituído.", Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });

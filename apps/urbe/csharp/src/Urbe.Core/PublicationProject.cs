@@ -60,6 +60,8 @@ public static partial class PublicationTheme
 public sealed record PublicationQuery(string Kind, string Value)
 {
     public List<string> Declined { get; init; } = [];
+    /// <summary>Notes kept on purpose although they no longer match (not asked about again), by id.</summary>
+    public List<string> Kept { get; init; } = [];
 
     private bool Matches(UrbeDocument note) => Kind switch
     {
@@ -67,6 +69,17 @@ public sealed record PublicationQuery(string Kind, string Value)
         "folder" => Value.Trim('/').Length == 0 || note.Path.StartsWith(Value.Trim('/') + "/", StringComparison.Ordinal),
         _ => false
     };
+
+    /// <summary>
+    /// CST-160: the notes the publication uses that no longer match (the tag taken off, moved out of the folder, gone from
+    /// the search) — told for editorial review, never taken out by themselves.
+    /// </summary>
+    public IReadOnlyList<UrbeDocument> NoLongerMatching(PublicationProject project, Func<string, UrbeDocument?> note, Func<string, IReadOnlyList<UrbeDocument>> search)
+    {
+        var found = Kind == "search" ? search(Value).Select(d => d.Id).ToHashSet(StringComparer.Ordinal) : null;
+        return project.Sections.Where(s => !s.IsCover).Select(s => note(s.Source.DocumentId)).OfType<UrbeDocument>()
+            .Where(n => !Kept.Contains(n.Id) && !(found?.Contains(n.Id) ?? Matches(n))).DistinctBy(n => n.Id).ToList();
+    }
 
     /// <summary>The notes that match now and the publication does not use yet (nor were declined).</summary>
     public IReadOnlyList<UrbeDocument> NewMatches(PublicationProject project, IEnumerable<UrbeDocument> notes, Func<string, IReadOnlyList<UrbeDocument>> search)
@@ -228,6 +241,27 @@ public sealed record PublicationProject
         sections.Remove(piece);
         sections.Insert(Math.Clamp(index, 0, sections.Count), piece);
         return this with { Sections = CoverFirst(sections) };
+    }
+
+    /// <summary>
+    /// CST-160: the sections in another order — "titulo" (alphabetical), "data" (oldest change first, a diary's order)
+    /// or "pasta" (grouped by folder, then by name). The cover stays first; equal keys keep their order; notes untouched.
+    /// </summary>
+    public PublicationProject SortedBy(string by, Func<string, UrbeDocument?> note)
+    {
+        ArgumentNullException.ThrowIfNull(note);
+        var culture = StringComparer.Create(System.Globalization.CultureInfo.GetCultureInfo("pt-BR"), System.Globalization.CompareOptions.IgnoreCase);
+        IOrderedEnumerable<PublicationPlacement> order = by switch
+        {
+            "titulo" => Sections.OrderBy(s => note(s.Source.DocumentId)?.Title ?? "", culture),
+            // ISO dates sort as text; a note without a date goes last
+            "data" => Sections.OrderBy(s => note(s.Source.DocumentId)?.Modified ?? "\uffff", StringComparer.Ordinal),
+            "pasta" => Sections.OrderBy(s => Path.GetDirectoryName(note(s.Source.DocumentId)?.Path ?? "") ?? "", culture)
+                               .ThenBy(s => note(s.Source.DocumentId)?.Title ?? "", culture),
+            _ => throw new ArgumentException("Ordem desconhecida: " + by, nameof(by))
+        };
+        var sections = CoverFirst(order.ToList());
+        return this with { Sections = sections, Sources = sections.Select(s => s.Source).Distinct().ToList() };
     }
 
     // the cover never leaves the start: moving another piece before it, or moving it, keeps it there

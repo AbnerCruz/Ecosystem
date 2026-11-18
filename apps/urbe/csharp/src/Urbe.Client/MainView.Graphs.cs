@@ -202,6 +202,7 @@ public sealed partial class MainView
     /// <summary>Opens any graph file listed by the explorer, including files created outside Urbe.</summary>
     public async Task OpenGraphAsync(string path)
     {
+        UiStallWatch.Doing("abrir um grafo");
         if (!GraphDocument.IsGraphPath(path)) return;
         if (_vault is null) return;
         if (GraphOpen && !await SaveGraphAsync()) return;

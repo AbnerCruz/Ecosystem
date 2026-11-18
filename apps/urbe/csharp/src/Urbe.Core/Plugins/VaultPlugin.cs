@@ -281,7 +281,7 @@ public sealed class VaultPluginSpec
         "  {\"escreverNota\": \"Diário/{data()}.md\", \"conteudo\": \"- {hora()} pausa\", \"modo\": \"acrescentar\"|\"substituir\"}   (\"notas.escrever\"; nunca em .urbe nem em plugins)",
         "  {\"inserirTexto\": \"⏱ {formatarTempo(segundos)}\"}          insere no cursor da nota aberta no editor (\"notas.escrever\")",
         "  {\"abrirNota\": \"Diário/{data()}.md\"}                      abre no editor (\"notas.ler\")",
-        "  {\"perguntarAgente\": \"Resuma o que falta fazer\", \"escopo\": [\"{notaAberta}\"], \"agente\": \"geral\"}   um dos seus agentes trabalha só nessas notas ou pastas, com o próprio modelo e permissões; a pessoa confirma cada pedido e escolhe o agente se \"agente\" faltar (\"agentes\")",
+        "  {\"perguntarAgente\": \"Resuma o que falta fazer\", \"escopo\": [\"{notaAberta}\"], \"agente\": \"geral\", \"resposta\": \"rec\"}   um dos seus agentes trabalha só nessas notas ou pastas, com o próprio modelo e permissões; a pessoa confirma cada pedido e escolhe o agente se \"agente\" faltar (\"agentes\"). Com \"resposta\", a variável rec recebe o texto e, se declaradas, rec_acao, rec_justificativa, rec_passos (lista), rec_criterio, rec_fontes (lista, só fontes conferidas no escopo), rec_incertezas (lista) e rec_estado (concluido, sem estrutura ou recusado)",
         "  {\"parar\": true}                                          para as ações restantes",
         "",
         "EXPRESSÕES: números, \"textos\" ou 'textos', verdadeiro/falso, nulo, [listas], variáveis do estado, + - * / %, == != < <= > >=, e/&&, ou/||, nao/!, condição ? a : b, lista[i].",
@@ -338,9 +338,13 @@ public interface IVaultPluginHost : IPluginScriptHost
     /// <summary>
     /// CST-146: asks an agent (by id, or the person picks when null) to do <paramref name="task"/> on
     /// <paramref name="scope"/> only: its own model and permissions, writes only inside the scope, the person agrees first.
+    /// Returns the agent's final answer (null when the person declined or the run ended without one).
     /// </summary>
-    Task AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin) =>
+    Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin, bool structured = false) =>
         throw new PluginScriptException("Este lugar não oferece agentes a plugins.");
+
+    /// <summary>Whether a path is a note or file of the vault (to check the sources an agent cites).</summary>
+    bool Exists(string path) => false;
 }
 
 /// <summary>
@@ -522,8 +526,16 @@ public sealed class VaultPluginRuntime
                 {
                     var scope = (a["escopo"] as JsonArray ?? []).Select(x => PluginScript.Template(VaultPluginSpec.Str(x), s).Trim()).Where(x => x.Length > 0).ToList();
                     if (scope.Count == 0) throw new PluginScriptException("perguntarAgente sem escopo: nada para o agente trabalhar.");
-                    await _host.AskAgentAsync(VaultPluginSpec.Str(a["agente"]) is { Length: > 0 } id ? id : null,
-                        PluginScript.Template(VaultPluginSpec.Str(a["perguntarAgente"]), s), scope, _spec.Name);
+                    // "resposta": the variable that receives the answer (and its parts, when declared) for the plugin to use
+                    var into = VaultPluginSpec.Str(a["resposta"]);
+                    if (into.Length > 0 && !s.Vars.ContainsKey(into)) throw new PluginScriptException("Variável desconhecida: " + into + ". Declare-a em \"estado\".");
+                    var answer = await _host.AskAgentAsync(VaultPluginSpec.Str(a["agente"]) is { Length: > 0 } id ? id : null,
+                        PluginScript.Template(VaultPluginSpec.Str(a["perguntarAgente"]), s), scope, _spec.Name, structured: into.Length > 0);
+                    if (into.Length == 0) break;
+                    bool InScope(string path) => scope.Any(x => string.Equals(path, x, StringComparison.OrdinalIgnoreCase) ||
+                        path.StartsWith(x.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase));
+                    foreach (var (name, value) in PluginAgentAnswer.Parse(answer, InScope, _host.Exists).Variables(into))
+                        if (s.Vars.ContainsKey(name)) s.Vars[name] = value;
                     break;
                 }
             }

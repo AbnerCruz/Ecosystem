@@ -59,6 +59,16 @@ public sealed record VideoComposition
         return project with { Video = video with { Scenes = scenes } };
     }
 
+    /// <summary>
+    /// #956: each scene lasts at least its narration plus <paramref name="pad"/> seconds, so a voice is never cut by
+    /// the next scene; a scene longer than its voice keeps the duration the person chose.
+    /// </summary>
+    public VideoComposition FitToVoices(IReadOnlyDictionary<string, double> voiceSeconds, double pad = 0.4) => this with
+    {
+        Scenes = Scenes.Select(s => voiceSeconds.TryGetValue(s.Id, out var v) && v + pad > s.Duration
+            ? s with { Duration = Math.Min(3600, Math.Ceiling((v + pad) * 10) / 10) } : s).ToList()
+    };
+
     public VideoComposition WithScene(VideoScene scene)
     {
         var index = Scenes.FindIndex(s => s.Id == scene.Id);
@@ -89,8 +99,10 @@ public sealed record VideoScene
         return Math.Round(Math.Clamp(words / 2.6, 3, 600) * 2, MidpointRounding.AwayFromZero) / 2;
     }
 
+    /// <summary>A scene for a new placement; its IDs come from the placement, so the same scene is named alike until saved.</summary>
     public static VideoScene Default(string placementId, string? script = null) => new()
     {
+        Id = "scene_" + placementId,
         PlacementId = placementId,
         Duration = SuggestedDuration(script),
         Transition = new VideoTransition { Kind = "fade", Seconds = 0.5 },
@@ -98,6 +110,7 @@ public sealed record VideoScene
         [
             new VideoElement
             {
+                Id = "title_" + placementId,
                 Kind = "title", Y = 0.42, Height = 0.3, FontSize = 0.09,
                 Keyframes =
                 [

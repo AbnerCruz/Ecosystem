@@ -33,6 +33,13 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("Longa.md", view.Editor.Current?.Path);
                 var text = view.Editor.Editor.Text ?? "";
                 Assert.Equal(text.IndexOf("Terceiro alvo.", StringComparison.Ordinal), view.Editor.Editor.CaretIndex);
+
+                // CST-156: a double tap on a paragraph of the preview opens the note right there, without asking
+                await view.EditPublicationAtTextAsync(new PublicationSourceReference(id), "Segundo parágrafo.");
+                await Settle(window, view);
+                Assert.False(view.Dialogs.IsOpen);
+                text = view.Editor.Editor.Text ?? "";
+                Assert.Equal(text.IndexOf("Segundo parágrafo.", StringComparison.Ordinal), view.Editor.Editor.CaretIndex);
                 return true;
             }
             finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }

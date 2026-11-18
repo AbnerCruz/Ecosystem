@@ -40,6 +40,7 @@ Este arquivo é a lista de tarefas das ordens; o andamento por CST continua em [
 |---|---|---|
 | 02, 03, 05, 06 — contradições entre conversas | Feito | testes de memória acima |
 | 04 — somente leitura × memória | Feito | `ReadonlyMemoryTests` |
+| 08 — crítica depois de elogio (“a transparência ficou horrível”) | Feito (18/11) | `CriticismOfSomethingPraisedReplacesThePraise`; julgamento sozinho não vira memória |
 | 07 — busca irrelevante (“receita” de jogo) | Parcial | orientação ao agente; eficiência só se mede em conversas reais |
 | 08 — elogio seguido de crítica | Feito (17/11) | `PraiseThenCriticismLearnsThePraiseAndKeepsTheSpecificApart` |
 | Versão `0.1.0` no export | Feito | prévia diz `…-previa` |
@@ -81,3 +82,15 @@ Este arquivo é a lista de tarefas das ordens; o andamento por CST continua em [
 | OCR e figuras do livro | Feito (CST-242) |
 | Navegador de estudo | Feito em parte (CST-235) |
 | Provas no aparelho de toque, IME, rotação e tablet | Aparelho |
+
+## Motion graphics: #986 (P0) e auditoria do #956 (18/11/2026)
+
+| Item | Estado | Prova |
+|---|---|---|
+| #986: `write_publication` em loop por `documentId` | Feito (PR #987, incluído no #988); aparelho | `AVideoPublicationAcceptsTheNoteByPathOrTitleAndSaysWhatIsWrong`; jornada no loop do agente `AMotionGraphicsRequestRunsWithoutLoopsFromScriptToALookedAtVideo` |
+| P1: IA vê a própria saída (quadros reais) e corrige só o trecho | Feito; aparelho | `look_at_video`, `edit_video_scene`; `TheAgentFindsACutTitleFixesOnlyThatSceneAndLooksAgain` |
+| P1: revisão audiovisual verificável (quadro, área segura, corte, contraste, colisões, legenda, imagem ausente) | Feito | `VideoInspection`; `TheReviewMeasuresTextAsDrawnAndTheSheetShowsTheRealFrames` (renderizador real) |
+| P1: sincronização com a duração real da fala | Feito; aparelho | `Narration_GrowsTheSceneToHoldTheVoiceAndTheSubtitlesFollowIt` |
+| P2: edição por toque, keyframes, timeline visual | Parcial | seleção, arrasto, pinça, quadro-chave, faixa com duração por arrasto (`VideoEditingTests`, `PublicationVideo_…`); faltam curvas e novos objetos |
+| P2: desempenho e reexportação | Parcial | medido (9,2 ms/quadro a 720p no x64); perfil no moto g32 antes de segmentar |
+| Aceite no moto g32 com modelo multimodal e MP4 | Aparelho | — |

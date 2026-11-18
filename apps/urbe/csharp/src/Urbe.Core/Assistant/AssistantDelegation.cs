@@ -133,6 +133,7 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public AssistantWebSession? Web => inner.Web;
     public IAssistantDevice? Device => inner.Device;
     public IAssistantVideos? Videos => inner.Videos;
+    public IAssistantVideoFrames? VideoFrames => inner.VideoFrames;
     public IAssistantGraphs? Graphs => inner.Graphs is { } graphs ? new ScopedGraphs(graphs, this) : null;
     /// <summary>Depth 1: a delegated specialist does not delegate again.</summary>
     public IAssistantDelegation? Delegation => null;
