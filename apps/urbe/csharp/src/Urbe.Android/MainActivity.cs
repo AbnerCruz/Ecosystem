@@ -227,6 +227,7 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         base.OnResume();
         IsVisibleToUser = true;
+        UiStallWatch.Resume();
         ShowRequestedAssistant();
         // what was deleted or created in the folder while the app was away shows now (1:1 with the device)
         UrbeApp.RefreshOnForeground();
@@ -235,6 +236,7 @@ public sealed class MainActivity : AvaloniaMainActivity
     protected override void OnPause()
     {
         IsVisibleToUser = false;
+        UiStallWatch.Pause();
         UrbeApp.FlushPendingOnBackground();
         base.OnPause();
     }

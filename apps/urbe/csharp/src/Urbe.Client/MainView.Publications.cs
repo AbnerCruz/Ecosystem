@@ -120,6 +120,7 @@ public sealed partial class MainView
 
     public async Task OpenPublicationAsync(string path)
     {
+        UiStallWatch.Doing("abrir uma publicação");
         // Reopening during an outstanding write must not reload its stale on-disk state.
         await _publicationWrites.WaitAsync();
         _publicationWrites.Release();

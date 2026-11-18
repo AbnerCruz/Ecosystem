@@ -361,6 +361,7 @@ public sealed partial class AssistantPanel : Border
     /// <summary>opened(): the panel shown, the configuration and the last conversation of this vault (if recent) loaded once.</summary>
     public void Open()
     {
+        UiStallWatch.Doing("abrir o Assistente");
         Load();
         if (!_loaded) return;
         CompactActive = false;
@@ -678,6 +679,7 @@ public sealed partial class AssistantPanel : Border
 
     private void Send(string text, (string Path, string Text)? inNote)
     {
+        UiStallWatch.Doing("enviar mensagem ao Assistente");
         if (!_loaded) return;
         CloseView();
         if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }

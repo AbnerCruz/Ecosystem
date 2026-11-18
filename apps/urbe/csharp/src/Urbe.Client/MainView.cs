@@ -372,6 +372,7 @@ public sealed partial class MainView : Grid
 
     public async Task OpenVaultAsync()
     {
+        UiStallWatch.Doing("abrir o vault");
         if (_vault is null) return;
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         if (!await Editor.Split.Preview.TryCloseAsync()) return;
@@ -392,6 +393,7 @@ public sealed partial class MainView : Grid
     private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false,
         IReadOnlyList<string>? listedFiles = null, IReadOnlyList<string>? listedFolders = null)
     {
+        UiStallWatch.Doing("mostrar o vault");
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
         if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)

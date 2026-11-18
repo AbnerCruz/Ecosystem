@@ -225,7 +225,7 @@ public sealed class EditorOverlay : Grid
             }
             _acceptedSourceText = normalized;
         };
-        Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
+        Editor.TextChanged += (_, _) => { UiStallWatch.Doing("editar uma nota"); OnTextChanged(); KeepSourceCaretSoon(typing: true); };
         // a finger on the text: the keyboard is asked for (explicitly: after Back closed it, Android ignores implicit asks)
         Editor.AddHandler(TappedEvent, (object? _, TappedEventArgs e) =>
         {
@@ -618,6 +618,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Opens a note fresh (from Notas, a search…): the trail of followed links starts over.</summary>
     public void Open(CityNote note)
     {
+        UiStallWatch.Doing("abrir uma nota");
         if (IsVisible && _note is not null && ConfirmEmbeddedAtlasExitAsync is { } confirm)
         {
             var canLeave = confirm();

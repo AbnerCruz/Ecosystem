@@ -40,6 +40,7 @@ public sealed class UrbeApp : Application
     public override void OnFrameworkInitializationCompleted()
     {
         CrashLog.Install();
+        UiStallWatch.Start();
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
