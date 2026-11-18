@@ -192,9 +192,10 @@
     {
       "check": "Anexar PDF de livro ao Assistente no Android (#954)",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "critical": true
+      "critical": true,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/983); registro em docs/governance/responses/VAL-HO-20261115-urbe-progress-beta56-337ee3068150.md."
     },
     {
       "check": "Core 1679/1679, Client 655/655, consistency 22/22",
