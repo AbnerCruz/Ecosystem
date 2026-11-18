@@ -118,7 +118,8 @@
   "next_actions": [
     "#956 P2 seguinte: timeline multitrilha visual e pinça para escala; depois exportação reaproveitando cenas sem mudança.",
     "#963: medir as orientações de memória e busca em conversas reais; branch de diagnóstico só depois da validação no aparelho.",
-    "Seguir a consolidação 2.6 de cima para baixo (gate do editor, §3 item 1)."
+    "Seguir a consolidação 2.6 de cima para baixo (gate do editor, §3 item 1).",
+    "ADR-0051 (CST-201), fatos para a decisão do proprietário, pesquisados em 18/11/2026: o NuGet Wasmtime 50.0.1 traz binários só para linux/osx/win (sem android-arm64); os releases do Wasmtime publicam wasmtime-vX-aarch64-android-c-api.tar.xz, que o binding .NET poderia carregar; a issue #12778 (v42.0.1) registrou 'Illegal instruction' no arm64 Android por autenticação de ponteiro (autiasp) na troca de fibras, fechada em 16/04/2026 sem fix oficial confirmado. A prova de conceito no moto g32 precisa usar versão posterior e testar exatamente isso."
   ],
   "decisions_required": [],
   "normative_sources": [
