@@ -207,6 +207,7 @@ public sealed partial class MainActivity
             ? "Cores oficiais do jogo · sprites, tiles, UI e código" : "Defina as cores do jogo para manter tudo coerente", ShowPaletteStudio);
         Card("sparkle", "Partículas", $"{count.Count(f => f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase))} efeito(s) · fogo, fumaça, chuva, magia…", ShowParticleStudio);
         Card("data", "Dados", $"{count.Count(IsDataTable)} tabela(s) · inimigos, itens, fases, diálogos", ShowDataStudio);
+        Card("folder", "Biblioteca pessoal", "Assets reutilizáveis, versões imutáveis e uso entre projetos", ShowReusableAssetLibrary);
         Card("folder", "Assets do projeto", "Imagens, sons e dados com prévia e uso no código", ShowAssets);
         Card("note", "Notas e esboços", "Ideias, roteiros e esquemas dentro do projeto", ShowNotes);
         var scroll = new ScrollView(this);

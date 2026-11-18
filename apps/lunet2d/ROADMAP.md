@@ -1,5 +1,11 @@
 # Roadmap
 
+- [ ] **LUNET-511 / integridade de publicação (PR #962):** recusar diretórios simbólicos de ID de asset antes de enumerar revisões ou publicar; regressão xUnit adicionada, CI e DEVICE pendentes.
+
+- [ ] **LUNET-511 — proteção adicional (feito, sem validação em aparelho):** rejeição de manifestos com colisão arquivo/diretório ancestral (case-insensitive), com regressão xUnit cobrindo importação/exportação sem escrita; CI do novo head e DEVICE pendentes.
+- [ ] **LUNET-511 — staging e rollback SHA-256 (código e regressão publicados; CI/DEVICE pendentes):** comparação case-insensitive durante a cópia temporária e remoção segura em rollback; teste verifica bytes importados de manifesto minúsculo.
+- [ ] **LUNET-511 — compatibilidade SHA-256 minúsculo (código e teste publicados; CI/DEVICE pendentes):** importação e ZIP tratam hashes válidos sem diferenciar caixa, alinhados à verificação; regressão xUnit adicionada no PR #962.
+
 Fonte de verdade do que existe e do que falta. A especificação completa está em [`docs/SPEC.md`](docs/SPEC.md); as seções citadas como **§N** referem-se a ela. A rotina de trabalho está em [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## Regras deste arquivo
@@ -12,7 +18,12 @@ Fonte de verdade do que existe e do que falta. A especificação completa está 
 
 Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
 
-## Auditoria incremental e canal único (15/11/2026)
+## Auditoria incremental
+
+- [ ] **LUNET-511 — Validação adicional de manifestos (código e testes propostos; CI/DEVICE pendentes):** rejeitar `Kind` fora do enum e `CreatedUtc` ausente ao ler versões locais, preservando arquivo e projetos; regressões xUnit adicionadas na branch #962.
+  - Incremento PR #962: prévia de conflitos inclui arquivo ocupando pasta ancestral; teste de regressão registrado, CI/DEVICE ainda pendentes.
+
+ e canal único (15/11/2026)
 
 - [ ] **LUNET-509 — Eliminar espelho e registrar a auditoria atual (implementação documental proposta; CI/integrador pendentes):** DEC-0064/ADD-0035 determinam apenas Ecosystem para código, CI e releases. O próximo agente deve ler `../../docs/architecture/audits/lunet-estado-atual-2026-11-15.md`, verificar a main e priorizar E2E no Android, segurança de edições da IA, fluxo completo dos Studios, desempenho e multiplayer real; não fechar gates sem DEVICE. Não mexer na maturidade alfa/beta/dev/estável por iniciativa própria.
 
@@ -21,8 +32,14 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 Estudo e critérios propostos em `../../docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md`. Nenhuma função abaixo foi implementada nem validada no aparelho: devem ser realizadas por incrementos com TDD, prints do Android e gates do produto.
 
 - [ ] **LUNET-510 — Home como área de trabalho (incremento funcional em PR; CI/DEVICE pendentes):** abrir sem projeto, projetos recentes/fixados, novo projeto completo, navegação mobile-first para Studios, Explorar, Biblioteca, documentação e configurações globais (temas, fonte, IA, preferências). Back, acessibilidade, persistência e continuidade de IA/editor. Sem menu sobrecarregado. Incremento LUNET-510: Home sem projeto com Início/Projetos/Studios/Explorar, fixados e último jogo persistidos fora dos projetos, busca local, documentação offline e acesso a configurações; Studios ainda exigem escolher projeto (a biblioteca global pertence a LUNET-511). Testes LauncherPreferencesTests, guia docs/guides/home-workspace.md; faltam validação Android física e preferências globais avançadas.
-- [ ] **LUNET-511 — Studios autônomos e biblioteca de assets multi-projeto (estudo concluído; implementação pendente):** Studio abre sem `_project`, salva na Library local versionada; dentro do jogo é o mesmo Studio com contexto do projeto. Importação segura por cópia da fonte e derivados para um ou vários projetos, licença/proveniência, conflitos explícitos e export ZIP/APK intactos. Não criar dependência global silenciosa entre jogos.
+- [ ] **LUNET-511 — Studios autônomos e biblioteca de assets multi-projeto (biblioteca versionada em desenvolvimento, CI/DEVICE pendentes):** Studio abre sem `_project`, salva na Library local versionada; dentro do jogo é o mesmo Studio com contexto do projeto. Importação segura por cópia da fonte e derivados para um ou vários projetos, licença/proveniência, conflitos explícitos e export ZIP/APK intactos. Não criar dependência global silenciosa entre jogos. Verificação de integridade SHA-256 por versão acessível na UI (PR #962; teste xUnit incluído, CI/DEVICE pendentes). Busca offline por título, tipo, autor, licença, atribuição e tags combinadas com interface Android e regressão xUnit (CI/DEVICE pendentes). Código inicial em ReusableAssetLibrary e MainActivity.AssetLibrary: publicar versões imutáveis de assets com origem/licença/hashes, importar cópias verificadas sem sobrescrever arquivos e manter versões anteriores; testes ReusableAssetLibraryTests, incluindo rejeição de metadados nulos e SHA-256 não hexadecimal sem tocar no destino (CI/DEVICE a validar). Entrada para a Biblioteca pela Home e Studios implementada; edição Studio sem projeto, ZIP da biblioteca disponível no núcleo e via SAF Android, com verificação SHA-256 dos bytes efetivamente compactados e teste do conteúdo exportado; edição Studio independente, integração completa e DEVICE ainda pendentes; não declarar LUNET-511 completo.
+  - Importação: preflight também recusa arquivo ancestral no destino, alinhando execução à prévia de conflitos; regressão xUnit adicionada (CI/DEVICE pendentes).
+  - Prévia de conflitos de importação: a UI lista caminhos já ocupados antes de pedir confirmação; o núcleo repete a verificação no momento da cópia para evitar sobrescritas concorrentes. Teste xUnit adicionado; CI/DEVICE pendentes.
+  - Exportação ZIP via SAF: tratar seletor ausente/bloqueado sem crash e limpar estado pendente (commit 39cb0a8; validação DEVICE Android 13 pendente).
+  - Busca offline agora ignora diferenças de caixa, acentos e Unicode decomposto em título, autor, licença, atribuição e tags (teste xUnit adicionado; CI/DEVICE pendentes).
 - [ ] **LUNET-512 — Explorar gêneros, mecânicas e jogos de referência offline (primeira entrega funcional, CI/DEVICE pendentes):** catálogo curado local, busca por título, gênero, mecânica, perspectiva, estética e outros filtros combináveis; fichas educativas, favoritos e notas, vínculos opcionais a projetos. IA/online opcionais, sem misturar com o futuro catálogo de jogos publicados no Lunet e sem embutir screenshots não licenciadas. Implementação proposta: catálogo curado e pessoal em `InspirationLibrary`, busca por múltiplos filtros/acentos, favoritos, notas e associação a projeto, CRUD e tela Android acessível do launcher (`MainActivity.Inspiration.cs`), com testes `InspirationLibraryTests` e guia `docs/guides/inspiracao.md`. Integrações externas/mídia licenciada seguem fora desta entrega; não fechar gate até DEVICE.
+
+- [ ] **LUNET-511 — Tags no formulário Android (código/teste propostos; CI/DEVICE pendentes):** publicação permite informar tags separadas por vírgula, persistidas por versão e pesquisáveis offline. Regressão cobre reinício e busca por múltiplos termos; Studios sem projeto seguem pendentes.
 
 ## Proteção da integridade dos projetos (15/11/2026)
 
@@ -514,3 +531,7 @@ Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar
 - [ ] Memória contextual indexada, orçamento de tokens real e custo de API medido por provider; não confundir histórico simples com memória semântica.
 - [ ] Agentes especialistas, planejamento em camadas, revisão independente e recuperação persistente entre runs.
 - [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o editor de notas está fora do escopo de edição.
+
+- LUNET-511 (17/11, PR #962, validação pendente): preflight de importação também detecta colisões case-insensitive em arquivos e diretórios, com testes para ambos; CI e DEVICE ainda necessários.
+
+- [ ] **LUNET-511 / busca por arquivos da Library (PR #962, CI/DEVICE pendentes):** pesquisa local indexa também caminhos e nomes dos arquivos-fonte/derivados, com regressão xUnit após reinício. Não representa conclusão dos Studios independentes.
