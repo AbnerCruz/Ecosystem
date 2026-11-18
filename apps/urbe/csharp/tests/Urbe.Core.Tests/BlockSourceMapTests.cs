@@ -28,4 +28,16 @@ public sealed class BlockSourceMapTests
         Assert.Equal(crlf.Replace("> citação", "> outra"), VisualDocumentEditor.ReplaceBlock(crlf, 4, "> outra"));
         Assert.Equal(VisualDocumentEditor.Parse(Note).Blocks, VisualDocumentEditor.Locate(Note).Select(l => l.Block));
     }
+
+    /// <summary>CST-156: the text the preview drew (no marks) finds its block's first line; a text in two blocks or none asks.</summary>
+    [Fact]
+    public void TheShownTextFindsItsBlock()
+    {
+        const string Note = "---\ntags: [a]\n---\n# Ciclo da água\n\nA água **evapora** e vira [nuvem](https://x.org).\n\n- primeiro item\n- segundo item\n\nRepete.\n\nRepete.\n";
+        Assert.Equal(4, VisualDocumentEditor.LineShowing(Note, "Ciclo da água"));
+        Assert.Equal(6, VisualDocumentEditor.LineShowing(Note, "A água evapora e vira nuvem."));
+        Assert.Equal(8, VisualDocumentEditor.LineShowing(Note, "segundo item"));
+        Assert.Null(VisualDocumentEditor.LineShowing(Note, "Repete."));   // two blocks say it: ask
+        Assert.Null(VisualDocumentEditor.LineShowing(Note, "não está aqui"));
+    }
 }

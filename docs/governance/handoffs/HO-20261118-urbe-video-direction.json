@@ -68,7 +68,10 @@
     "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
     "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationQueryTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationSelectionUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationSelectionUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VisualDocumentEditor.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/BlockSourceMapTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationEditBlockUiTests.cs"
   ],
   "work_completed": [
     "#956 P1, ciclo de direção visual da IA: review_publication passa a medir cada cena de vídeo nos mesmos quadros do MP4. Aponta objeto fora do quadro ou dos 90% seguros (SMPTE ST 2046-1), texto cortado ou reduzido (medido pelo renderizador real), sobreposição, texto sob a legenda, contraste abaixo do WCAG 2 e imagem ausente, e lista cenas e elementos por id.",
@@ -91,14 +94,15 @@
     "Defeito visto na gravação do emulador Android: ao terminar de tocar, a prévia voltava a t=0, um quadro preto (entrada em fade). Agora volta à capa (a primeira cena formada), e tocar a partir da capa começa do início.",
     "#956 P2, linha do tempo visual: faixa com as cenas em blocos do tamanho da duração, trilhas de áudio, cabeça de leitura e quadros-chave do objeto selecionado; tocar leva ao instante; arrastar a borda de uma cena muda a duração (com folga depois do fim para alongar a última cena, defeito achado no teste), pela mesma atualização e desfazer.",
     "CST-146 (resultado ao plugin): perguntarAgente com \"resposta\" devolve ao plugin o texto e as partes (ação, justificativa, passos, critério, fontes, incertezas, estado); fontes fora do escopo ou inexistentes viram incerteza; a ação do plugin espera o fim da execução. Plugin Próxima tarefa demonstrado no teste.",
-    "CST-160: ordenar as notas da publicação (título, data, pasta; capa primeiro; desfazer) e, nas publicações de consulta, a nota que deixou de combinar é dita para revisão (tirar ou manter, e manter é lembrado)."
+    "CST-160: ordenar as notas da publicação (título, data, pasta; capa primeiro; desfazer) e, nas publicações de consulta, a nota que deixou de combinar é dita para revisão (tirar ou manter, e manter é lembrado).",
+    "CST-156 (parte): toque duplo num parágrafo da prévia de uma publicação abre a nota de origem naquele bloco; quando o texto está em dois blocos ou em nenhum, pergunta 'Editar onde?'."
   ],
   "verification": [
     {
       "check": "Urbe.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1772/1772."
+      "evidence": "1773/1773."
     },
     {
       "check": "Urbe.Client.Tests",

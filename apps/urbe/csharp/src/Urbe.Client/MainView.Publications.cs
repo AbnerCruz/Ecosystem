@@ -37,6 +37,7 @@ public sealed partial class MainView
         studio.ConfigureRequested += () => _ = ConfigurePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.EditReferenceRequested += reference => _ = EditPublicationReferenceAsync(reference);
+        studio.EditShownTextRequested += (reference, text) => _ = EditPublicationAtTextAsync(reference, text);
         studio.AdaptRequested += piece => _ = AdaptPublicationPieceAsync(piece);
         studio.AdaptationReviewed += (adaptation, origin) => _ = MarkAdaptationReviewedAsync(adaptation, origin);
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
@@ -446,6 +447,15 @@ public sealed partial class MainView
         if (Editor.Current?.Path != note.Path) return;
         if (reference.Fragment is { Length: > 0 } fragment) Editor.RevealFragment(fragment);
         else if (line is { } at) Editor.RevealLine(at);
+    }
+
+    /// <summary>CST-156: the note opens at the block that shows the tapped text; when it cannot tell which, it asks (“Editar onde?”).</summary>
+    public async Task EditPublicationAtTextAsync(PublicationSourceReference reference, string shown)
+    {
+        if (_store?.Get(reference.DocumentId) is not { } note || !ArtifactModel.IsNote(note.Path)) return;
+        if (VisualDocumentEditor.LineShowing(note.Content, shown) is not { } line) { await EditPublicationReferenceAsync(reference); return; }
+        EditPublicationSource(reference.DocumentId);
+        if (Editor.Current?.Path == note.Path) Editor.RevealLine(line);
     }
 
     private void EditPublicationSource(string documentId)
