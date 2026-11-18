@@ -282,7 +282,8 @@ public sealed partial class HeadlessUiTests
                 ClickNamed(view.Editor, "Pedir a Jarvis");
                 for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 if (panel.CurrentRun is { } run) await run;
-                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                // under a loaded machine the compact card settles later: wait for it, never a fixed time
+                for (int i = 0; i < 800 && panel.CompactStatus != "result"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 // UC-81: note invocation completes in a contextual sheet, not an unsolicited full chat.
                 Assert.False(panel.IsVisible);
                 Assert.True(view.AssistantMini.IsVisible);
