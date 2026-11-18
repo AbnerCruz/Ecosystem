@@ -35,12 +35,7 @@ public sealed partial class MainView
         studio.ReviewRequested += () => _ = ReviewPublicationAsync();
         studio.ConfigureRequested += () => _ = ConfigurePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
-        studio.EditReferenceRequested += reference =>
-        {
-            EditPublicationSource(reference.DocumentId);
-            if (_store?.Get(reference.DocumentId) is { } source && Editor.Current?.Path == source.Path &&
-                reference.Fragment is { Length: > 0 } fragment) Editor.RevealFragment(fragment);
-        };
+        studio.EditReferenceRequested += reference => _ = EditPublicationReferenceAsync(reference);
         studio.AdaptRequested += piece => _ = AdaptPublicationPieceAsync(piece);
         studio.AdaptationReviewed += (adaptation, origin) => _ = MarkAdaptationReviewedAsync(adaptation, origin);
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
@@ -400,6 +395,27 @@ public sealed partial class MainView
             { ShowLifeNotice("A origem mudou. Selecione o trecho novamente.", Ui.ToastKind.Warning); return; }
             _publicationsStudio.AddSource(reference);
         }
+    }
+
+    /// <summary>
+    /// CST-156: editing a piece's source opens the note where the person wants to change it — one of its blocks, mapped
+    /// to its lines (<see cref="VisualDocumentEditor.Locate"/>) — instead of always at the top of a long note.
+    /// </summary>
+    public async Task EditPublicationReferenceAsync(PublicationSourceReference reference)
+    {
+        if (_store?.Get(reference.DocumentId) is not { } note || !ArtifactModel.IsNote(note.Path)) return;
+        int? line = null;
+        if (reference.Fragment is not { Length: > 0 } && VisualDocumentEditor.Locate(note.Content) is { Count: > 2 } blocks)
+        {
+            static string Preview(VisualBlock b) { var t = b.Text.Replace('\n', ' ').Trim(); return t.Length > 70 ? t[..70] + "…" : t; }
+            var pick = await Dialogs.ChooseAsync("Editar onde?", [new DialogItem("Início da nota"), .. blocks.Select(b => new DialogItem(Preview(b.Block), Detail: "linha " + b.FirstLine))]);
+            if (pick is null) return;
+            if (pick > 0) line = blocks[pick.Value - 1].FirstLine;
+        }
+        EditPublicationSource(reference.DocumentId);
+        if (Editor.Current?.Path != note.Path) return;
+        if (reference.Fragment is { Length: > 0 } fragment) Editor.RevealFragment(fragment);
+        else if (line is { } at) Editor.RevealLine(at);
     }
 
     private void EditPublicationSource(string documentId)
