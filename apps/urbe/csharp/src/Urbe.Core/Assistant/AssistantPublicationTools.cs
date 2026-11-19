@@ -88,12 +88,29 @@ public static class AssistantPublicationTools
         "Layouts: article e book (capítulos, sumário); slides (cada nota/#/##/--- inicia slide; :::notas vira notas do apresentador); course (cada nota um módulo, " +
         "cada ## uma aula, blocos ```quiz viram questões); video (cada seção é uma cena; o texto da nota é o roteiro e a legenda). " +
         "Vídeo: campo video {aspect:16:9|9:16|1:1, resolution:144–2160, fps:1–60, subtitles:bool, scenes:[{id, placementId (= id da seção), duration (s), " +
-        "transition:{kind:cut|fade, seconds}, background:#rrggbb, elements:[{id, kind:title|text|script|shape|image|plot|math, text? (rótulo curto, até " +
-        "160 caracteres; o roteiro é a nota), source? (imagem do vault, função do gráfico ou TeX), x,y,width,height (0–1 do quadro), color, fontSize, start, end?, " +
-        "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step}], motions:[{property, expression (fórmula de t)}]}]}], " +
+        "transition:{kind:cut|fade, seconds}, background:#rrggbb, elements:[{id, kind:title|text|script|shape|image|plot|math|path|group, text? (rótulo curto, até " +
+        "160 caracteres; o roteiro é a nota; em plot a função, em math o TeX, em path os dados de path SVG \"M… L… C… Z\" ajustados à caixa), source? (imagem do vault), " +
+        "x,y,width,height (0–1 do quadro), color, fontSize (em path, a espessura do traço), start, end?, parent? (id de outro elemento da cena: x,y viram deslocamento " +
+        "a partir do centro dele, e escala, rotação e opacidade dele valem para este; group não desenha nada e serve de pai), " +
+        "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step|back|cubic-bezier(x1,y1,x2,y2)}] " +
+        "(progress de 0 a 1 desenha path e plot ao longo do tempo; back passa do alvo e volta), motions:[{property, expression (fórmula de t)}]}]}], " +
         "audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
-        "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT; " +
-        "a exportação e o salvamento do arquivo são sempre da pessoa. Não crie .page.json; esse editor foi substituído. " +
+        "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT. " +
+        "Um vídeo pedido a você termina em render_video, que narra, gera o MP4 e as legendas no vault. Não crie .page.json; esse editor foi substituído. " +
+        // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
+        "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
+        "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"background\":\"#0b1d33\",\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
+        "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
+        "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02,\"color\":\"#9ad1ff\"}," +
+        "{\"id\":\"pulso\",\"kind\":\"shape\",\"text\":\"circle\",\"x\":0.3,\"y\":0.6,\"width\":0.03,\"height\":0.053,\"color\":\"#ffd166\",\"motions\":[{\"property\":\"y\",\"expression\":\"0.12*sin(2*pi*t)\"}]}," +
+        "{\"id\":\"seta\",\"kind\":\"shape\",\"text\":\"arrow\",\"x\":0.55,\"y\":0.5,\"width\":0.15,\"height\":0.015,\"keyframes\":[{\"property\":\"progress\",\"time\":1,\"value\":0},{\"property\":\"progress\",\"time\":2,\"value\":1}]}," +
+        "{\"id\":\"g\",\"kind\":\"plot\",\"text\":\"y = 1/sqrt(1-x^2)\\nx: 0..0.95\\ny: 0..4\",\"x\":0.78,\"y\":0.5,\"width\":0.34,\"height\":0.36,\"keyframes\":[{\"property\":\"progress\",\"time\":1,\"value\":0},{\"property\":\"progress\",\"time\":4,\"value\":1,\"easing\":\"linear\"}]}," +
+        "{\"id\":\"f\",\"kind\":\"math\",\"text\":\"\\\\gamma=\\\\frac{1}{\\\\sqrt{1-v^2/c^2}}\",\"x\":0.78,\"y\":0.82,\"width\":0.3,\"height\":0.1}]}. " +
+        "Formas: rect, ellipse/circle, line, arrow (progress desenha line e arrow). " +
+        "Qualidade: uma ideia por cena; a mesma paleta (2–3 cores sobre um fundo escuro) e as mesmas posições de título em todas as cenas; texto na tela curto " +
+        "(o roteiro vai na narração e na legenda); elementos dentro de 5–95% do quadro e acima de y 0,8, onde fica a legenda; cada elemento entra animado " +
+        "(opacity, y, scale ou progress) em vez de aparecer pronto; diagramas feitos de formas, setas, gráficos e fórmulas que se constroem com a fala. " +
+        "Cada nota de cena tem só a fala daquela cena (12 a 30 palavras para 5 a 10 s). Para várias cenas de uma nota, use seções com fragment = título exato da nota. " +
         "Texto fiel à fonte é editado na própria nota. Quando a publicação precisa de outra redação (resumo, roteiro, fala, tradução), crie uma nota ao lado da " +
         "fonte com as propriedades adaptacao_de: \"[[Nome da fonte]]\", adaptacao_id (id da fonte), adaptacao_tipo e adaptacao_origem (deixe vazio: o app avisa que a fonte mudou até alguém revisar) " +
         "e troque a fonte da seção por essa nota; nunca esconda texto no .publication.json. " +
@@ -102,7 +119,7 @@ public static class AssistantPublicationTools
         "referências; 3) roteiro — a ordem das seções e o que cada uma diz, antes de escrever; 4) composição — texto nas notas, layout no projeto; " +
         "5) revisão — review_publication e correção nas notas; 6) entrega — diga o que foi revisado e o que não foi. Decisões de rumo (público, tom, cortes) são da pessoa. " +
         "Vídeo, depois de montar: review_publication mede cada cena (fora do quadro, texto cortado, sobreposição, contraste) e lista os ids; " +
-        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa. " +
+        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa; por fim render_video. " +
         "Um especialista (consult_agent) só quando ele sabe algo que você não sabe; não divida em vários agentes o que um faz bem.";
 
     /// <summary>
@@ -159,6 +176,19 @@ public static class AssistantPublicationTools
         else if (node is JsonArray array) foreach (var value in array) CheckNoCopiedText(value, videoElement);
     }
 
+    /// <summary>Which source is missing and what there is instead: the note's headings, or notes with a similar name.</summary>
+    private static string MissingSource(PublicationSourceReference source, IAssistantHost host)
+    {
+        var doc = host.Documents.Get(source.DocumentId);
+        if (doc is null)
+            return "A fonte " + source.DocumentId + " não existe. Use o caminho da nota como list_notes ou search_notes mostram" +
+                   (host.Documents.List().Where(d => d.Path.Contains(System.IO.Path.GetFileNameWithoutExtension(source.DocumentId), StringComparison.OrdinalIgnoreCase)).Take(5).Select(d => d.Path).ToList() is { Count: > 0 } like
+                       ? "; parecidas: " + string.Join(", ", like) : "") + ".";
+        var headings = EmbedFragments.Headings(doc.Content);
+        return "O trecho \"" + source.Fragment + "\" não existe em " + doc.Path + ". Use um título exato da nota" +
+               (headings.Count > 0 ? ": " + string.Join(" | ", headings.Take(40)) : " (ela não tem títulos: use a nota inteira, sem fragment)") + ".";
+    }
+
     private static (string Path, string Text, UrbeDocument? Previous) Validate(JsonObject input, IAssistantHost host)
     {
         var path = (string?)input["path"] ?? "";
@@ -173,7 +203,8 @@ public static class AssistantPublicationTools
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or ArgumentException)
         { throw new AiToolException(e.Message); }
         using var catalog = new PublicationSourceCatalog(host.Documents);
-        if (project.Sources.Any(source => catalog.Read(source) is null)) throw new AiToolException("Uma fonte não existe ou o trecho está indisponível.");
+        foreach (var source in project.Sources.Concat(project.Sections.Select(p => p.Source)))
+            if (catalog.Read(source) is null) throw new AiToolException(MissingSource(source, host));
         // #956: a video is saved with its scenes, so their ids stay the same for edit_video_scene
         if (project.Design.Layout == "video") project = VideoComposition.Synced(project, r => catalog.Read(r)?.Markdown);
         var previous = host.Documents.Get(path);

@@ -10,6 +10,53 @@ namespace Urbe.Client.Tests;
 /// <summary>CST-170/209 in the studio: a video publication previewed, timed and exported as a verified MP4.</summary>
 public sealed partial class HeadlessUiTests
 {
+    /// <summary>#956 (conversa da beta.57: "o vídeo não ficou pronto"): render_video speaks and encodes through the app, as the Estúdio exports.</summary>
+    [Fact]
+    public async Task PublicationVideo_TheAssistantGetsTheVoiceAndAVerifiedMp4() =>
+        Assert.True(await Session.Dispatch(AssistantVideo, CancellationToken.None));
+
+    private static async Task<bool> AssistantVideo()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-agentvideo-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Cena.md"), "# Abertura\n\nUma frase do roteiro.\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        var voice = PlatformAudio.SynthesizeToWav;
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            IAssistantApp app = view;
+            PlatformAudio.SynthesizeToWav = (_, _, target, _) => { File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
+            var wav = await app.SpeakAsync("Uma frase.", CancellationToken.None);
+            Assert.NotNull(wav);
+            Assert.True(VideoAudio.ReadWavInfo(new MemoryStream(wav!)) is { Frames: 800 });
+            PlatformAudio.SynthesizeToWav = null;
+            Assert.Null(await app.SpeakAsync("Uma frase.", CancellationToken.None));
+            if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is checked where ffmpeg exists
+            var store = new DocumentStore();
+            var doc = store.Upsert(new DocumentInput { Path = "Cena.md", Content = File.ReadAllText(Path.Combine(vault, "Cena.md")) });
+            using var catalog = new PublicationSourceCatalog(store);
+            var project = VideoComposition.Synced(PublicationProject.Create("Filme", doc.Id) with { Design = new PublicationDesign { Layout = "video" } });
+            project = project with { Video = project.Video! with { Resolution = 144, Scenes = [project.Video.Scenes[0] with { Duration = 1 }] } };
+            var output = await app.RenderVideoAsync(VideoTimeline.Build(project, catalog), CancellationToken.None);
+            var info = Mp4Inspection.Read(new MemoryStream(output.Mp4))!;
+            Assert.Equal("avc1", info.Video!.Codec);
+            Assert.Equal(30L, (long)info.Video.SampleCount);
+            Assert.Contains("verificado", output.Checked);
+            return true;
+        }
+        finally
+        {
+            PlatformAudio.SynthesizeToWav = voice;
+            window.Close();
+            try { Directory.Delete(dir, true); } catch (IOException) { }
+        }
+    }
+
     [Fact]
     public async Task PublicationVideo_PreviewTimingInProjectScriptInNoteAndVerifiedMp4() =>
         Assert.True(await Session.Dispatch<bool>(async () =>

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Urbe.Core;
+using Urbe.Core.Assistant;
 
 namespace Urbe.Client;
 
@@ -47,6 +48,15 @@ public sealed partial class MainView
     private bool SameVideoDraft(PublicationDraft? draft) =>
         draft is not null && ReferenceEquals(_publicationDraft, draft) && ReferenceEquals(_store, draft.Store) && _publicationsStudio?.IsVisible == true;
 
+    /// <summary>#956: strokes that draw themselves, the annotations of explainer videos (SVG path data, fitted to the box).</summary>
+    internal static readonly (string Label, string Data)[] VideoStrokes =
+    [
+        ("Seta", "M 0 50 L 90 50 M 66 26 L 90 50 L 66 74"),
+        ("Sublinhado", "M 0 12 C 30 2, 70 22, 100 8"),
+        ("Visto", "M 0 52 L 34 86 L 100 0"),
+        ("Círculo", "M 50 2 C 80 2, 100 22, 100 50 C 100 80, 76 100, 48 98 C 20 96, 0 76, 2 48 C 4 22, 26 4, 56 6"),
+    ];
+
     private async Task AddPublicationVideoElementAsync(string sceneId)
     {
         var draft = _publicationDraft;
@@ -56,7 +66,8 @@ public sealed partial class MainView
         var kind = await Dialogs.ChooseAsync("Objeto da cena", [
             new DialogItem("Texto", Detail: "Uma frase na tela"), new DialogItem("Roteiro", Detail: "O texto da nota desta cena"),
             new DialogItem("Forma", Detail: "Retângulo ou elipse"), new DialogItem("Imagem do vault"),
-            new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}")]);
+            new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}"),
+            new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela")]);
         if (kind is not { } k) return;
         // every object enters with a short fade; keyframes and motions stay editable in the project
         var fadeIn = new List<VideoKeyframe> { new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "opacity", Time = 0.5, Value = 1, Easing = "easeOut" } };
@@ -91,6 +102,15 @@ public sealed partial class MainView
             case 5:
                 var tex = await Dialogs.PromptAsync(new PromptOptions("Fórmula", Label: "TeX", Confirm: "Adicionar"));
                 if (!string.IsNullOrWhiteSpace(tex)) element = new VideoElement { Kind = "math", Text = tex.Trim(), Width = 0.5, Height = 0.25, Keyframes = fadeIn };
+                break;
+            case 6:
+                var stroke = await Dialogs.ChooseAsync("Traço", VideoStrokes.Select(t => new DialogItem(t.Label)).ToList());
+                if (stroke is { } st)
+                    element = new VideoElement
+                    {
+                        Kind = "path", Text = VideoStrokes[st].Data, Width = 0.3, Height = 0.2, Color = "#ffd166", FontSize = 0.06,
+                        Keyframes = [new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0.8, Value = 1, Easing = "easeOut" }]
+                    };
                 break;
         }
         if (element is null || !SameVideoDraft(draft) || _publicationsStudio.Project?.Video?.Scenes.FirstOrDefault(s => s.Id == sceneId) is not { } current) return;
@@ -311,40 +331,9 @@ public sealed partial class MainView
         var skipped = new List<string>();
         try
         {
-            // the images and the sound, read from the vault; the soundtrack is mixed once into a WAV
-            var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-            foreach (var path in VideoFrameRenderer.FilesUsed(timeline))
-                if (vault is not null && (await vault.ReadFileAsync(path, 64L << 20, cancel.Token))?.Bytes is { } bytes) files[path] = bytes;
-            string? soundtrack = null;
-            if (timeline.Audio.Count > 0)
-            {
-                var decoded = new List<(VideoAudioClip Clip, Stream Wav)>();
-                try
-                {
-                    int n = 0;
-                    foreach (var clip in timeline.Audio)
-                    {
-                        var read = vault is null ? null : await vault.ReadFileAsync(clip.Path, 1L << 30, cancel.Token);
-                        if (read?.Bytes is not { } bytes) { skipped.Add(clip.Path); continue; }
-                        // the original and its WAV never share a name (a .wav track was copied onto itself and the export failed)
-                        var source = System.IO.Path.Combine(temp, "origem" + n + System.IO.Path.GetExtension(clip.Path));
-                        var wav = System.IO.Path.Combine(temp, "a" + n++ + ".wav");
-                        await File.WriteAllBytesAsync(source, bytes, cancel.Token);
-                        if (await PlatformVideo.ToWavAsync(source, wav, cancel.Token)) decoded.Add((clip, File.OpenRead(wav)));
-                        else skipped.Add(clip.Path);
-                    }
-                    if (decoded.Count > 0)
-                    {
-                        soundtrack = System.IO.Path.Combine(temp, "trilha.wav");
-                        await Task.Run(() => { using var output = File.Create(soundtrack); VideoAudio.Mix(decoded, timeline.Duration, output, cancel.Token); }, cancel.Token);
-                    }
-                }
-                finally { foreach (var (_, wav) in decoded) wav.Dispose(); }
-            }
-            using var renderer = new VideoFrameRenderer(timeline, files);
             var target = System.IO.Path.Combine(temp, ArtifactModel.SafeName(project.Title) + ".mp4");
             var progress = new Progress<VideoExportProgress>(p => panel.SetProgress(p));
-            var result = await VideoExport.RunAsync(renderer, encoder, target, soundtrack, progress, cancel.Token);
+            var result = await EncodeVideoAsync(timeline, encoder, temp, target, skipped, progress, cancel.Token);
             panel.SetProgress(null, "MP4 verificado: H.264 " + timeline.Width + "×" + timeline.Height + ", " + result.Info.Video!.SampleCount + " quadros, " +
                 PublicationVideoPanel.Clock(result.Info.Seconds) + (result.Info.Audio is null ? ", sem som" : ", com som") + ".");
             bool? saved;
@@ -378,6 +367,79 @@ public sealed partial class MainView
             _videoExport = null;
             try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
+    }
+
+    async Task<byte[]?> IAssistantApp.SpeakAsync(string text, CancellationToken cancel)
+    {
+        if (PlatformAudio.SynthesizeToWav is not { } speak) return null;
+        var wav = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "urbe-voz-" + Guid.NewGuid().ToString("N") + ".wav");
+        try { return await speak(text, 0, wav, cancel) ? await File.ReadAllBytesAsync(wav, cancel) : null; }
+        finally { try { File.Delete(wav); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+    }
+
+    /// <summary>#956: render_video — the same render, encoding and check as the Estúdio's "Exportar MP4", for the Assistente.</summary>
+    async Task<VideoRenderOutput> IAssistantApp.RenderVideoAsync(VideoTimeline timeline, CancellationToken cancel)
+    {
+        if (PlatformVideo.Encoder() is not { } encoder) throw new AiToolException(PlatformVideo.Unavailable);
+        var temp = Directory.CreateTempSubdirectory("urbe-video-").FullName;
+        try
+        {
+            var needed = VideoBudget.DiskNeeded(timeline.Width, timeline.Height, timeline.Fps, timeline.Duration, timeline.Audio.Count, 0);
+            if (FreeSpace(temp) is { } free && free < needed)
+                throw new AiToolException("Este vídeo precisa de até " + PublicationPackage.Size(needed) + " livres enquanto é gerado, e o aparelho tem " + PublicationPackage.Size(free) + ".");
+            var skipped = new List<string>();
+            var target = System.IO.Path.Combine(temp, "video.mp4");
+            var result = await EncodeVideoAsync(timeline, encoder, temp, target, skipped, null, cancel);
+            return new VideoRenderOutput(await File.ReadAllBytesAsync(target, cancel),
+                "H.264 " + timeline.Width + "×" + timeline.Height + ", " + result.Info.Video!.SampleCount + " quadros, " +
+                PublicationVideoPanel.Clock(result.Info.Seconds) + (result.Info.Audio is null ? ", sem som" : ", com som") + ", verificado", skipped);
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        { throw new AiToolException("O MP4 não foi gerado: " + e.Message); }
+        finally { try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { } }
+    }
+
+    /// <summary>
+    /// The MP4 of a timeline at <paramref name="target"/>: its images and sound read from the vault, the soundtrack mixed
+    /// once into a WAV in <paramref name="temp"/>, then rendered, encoded and verified (the Estúdio's export and the
+    /// Assistente's render_video). Sound files this device cannot decode go to <paramref name="skipped"/>.
+    /// </summary>
+    internal async Task<VideoExportResult> EncodeVideoAsync(VideoTimeline timeline, IVideoEncoder encoder, string temp, string target, List<string> skipped,
+        IProgress<VideoExportProgress>? progress, CancellationToken cancel)
+    {
+        var vault = _vault;
+        // the images and the sound, read from the vault; the soundtrack is mixed once into a WAV
+        var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var path in VideoFrameRenderer.FilesUsed(timeline))
+            if (vault is not null && (await vault.ReadFileAsync(path, 64L << 20, cancel))?.Bytes is { } bytes) files[path] = bytes;
+        string? soundtrack = null;
+        if (timeline.Audio.Count > 0)
+        {
+            var decoded = new List<(VideoAudioClip Clip, Stream Wav)>();
+            try
+            {
+                int n = 0;
+                foreach (var clip in timeline.Audio)
+                {
+                    var read = vault is null ? null : await vault.ReadFileAsync(clip.Path, 1L << 30, cancel);
+                    if (read?.Bytes is not { } bytes) { skipped.Add(clip.Path); continue; }
+                    // the original and its WAV never share a name (a .wav track was copied onto itself and the export failed)
+                    var source = System.IO.Path.Combine(temp, "origem" + n + System.IO.Path.GetExtension(clip.Path));
+                    var wav = System.IO.Path.Combine(temp, "a" + n++ + ".wav");
+                    await File.WriteAllBytesAsync(source, bytes, cancel);
+                    if (await PlatformVideo.ToWavAsync(source, wav, cancel)) decoded.Add((clip, File.OpenRead(wav)));
+                    else skipped.Add(clip.Path);
+                }
+                if (decoded.Count > 0)
+                {
+                    soundtrack = System.IO.Path.Combine(temp, "trilha.wav");
+                    await Task.Run(() => { using var output = File.Create(soundtrack); VideoAudio.Mix(decoded, timeline.Duration, output, cancel); }, cancel);
+                }
+            }
+            finally { foreach (var (_, wav) in decoded) wav.Dispose(); }
+        }
+        using var renderer = new VideoFrameRenderer(timeline, files);
+        return await VideoExport.RunAsync(renderer, encoder, target, soundtrack, progress, cancel);
     }
 
     /// <summary>

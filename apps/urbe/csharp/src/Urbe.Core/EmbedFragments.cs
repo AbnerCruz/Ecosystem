@@ -79,7 +79,7 @@ public static partial class EmbedFragments
         var code = CodeLines(lines);
         var found = new List<string>();
         for (int i = 0; i < lines.Length; i++)
-            if (!code[i] && HeadingRegex().Match(lines[i]) is { Success: true } h && h.Groups[2].Value.Trim() is { Length: > 0 } title) found.Add(title);
+            if (!code[i] && HeadingRegex().Match(lines[i]) is { Success: true } h && Title(h) is { Length: > 0 } title) found.Add(title);
         return found;
     }
 
@@ -124,6 +124,9 @@ public static partial class EmbedFragments
     [GeneratedRegex(@"(?:[ \t]*\{ia:""[^""\n]*""\})*[ \t]*$")]
     private static partial Regex TrailingSealsRegex();
 
+    /// <summary>A heading's text as the person reads it: without the Assistente's authorship seal at its end.</summary>
+    private static string Title(Match heading) => TrailingSealsRegex().Replace(heading.Groups[2].Value, "").Trim();
+
     /// <summary>The section [start, end) of the first heading named <paramref name="name"/> between the two lines.</summary>
     private static (int Start, int End)? Heading(string[] lines, int from, int to, string name)
     {
@@ -132,7 +135,7 @@ public static partial class EmbedFragments
         for (int i = from; i < to; i++)
         {
             if (code[i] || HeadingRegex().Match(lines[i]) is not { Success: true } h) continue;
-            if (AssistantTools.Fold(h.Groups[2].Value.Trim()) != wanted) continue;
+            if (AssistantTools.Fold(Title(h)) != wanted) continue;
             int level = h.Groups[1].Length, end = i + 1;
             while (end < to && (code[end] || HeadingRegex().Match(lines[end]) is not { Success: true } next || next.Groups[1].Length > level)) end++;
             return (i, end);

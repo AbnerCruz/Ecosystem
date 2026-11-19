@@ -32,6 +32,26 @@ public sealed class VideoDirectionTests
         public Task<string> ExaminePageAsync(string reference, byte[] singlePagePdf, int page, CancellationToken c = default) => throw new NotSupportedException();
         public Task<string> ExamineImageAsync(string reference, byte[] image, string mimeType, string? instruction = null, CancellationToken c = default)
         { Instruction = instruction; return Task.FromResult("Quadro 1: o título sai pela direita."); }
+        /// <summary>The device's voice: one second of silence for every five words.</summary>
+        public bool HasVoice { get; set; } = true;
+        public Task<byte[]?> SpeakAsync(string text, CancellationToken c = default) =>
+            Task.FromResult(HasVoice ? Wav(text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length / 5.0) : null);
+        public List<VideoTimeline> Encoded { get; } = [];
+        public Task<VideoRenderOutput> EncodeAsync(VideoTimeline timeline, CancellationToken c = default)
+        { Encoded.Add(timeline); return Task.FromResult(new VideoRenderOutput([0, 0, 0, 0x18, (byte)'f', (byte)'t', (byte)'y', (byte)'p'], "H.264 verificado", [])); }
+        public Dictionary<string, byte[]> Files { get; } = [];
+        public Task SaveFileAsync(string path, byte[] bytes) { if (!Files.TryAdd(path, bytes)) throw new InvalidOperationException("Já existe " + path); return Task.CompletedTask; }
+        public bool FileExists(string path) => Files.ContainsKey(path);
+
+        private static byte[] Wav(double seconds)
+        {
+            int rate = 8000, frames = (int)(seconds * rate);
+            using var ms = new MemoryStream();
+            using var w = new BinaryWriter(ms);
+            w.Write("RIFF"u8); w.Write(36 + frames * 2); w.Write("WAVE"u8); w.Write("fmt "u8); w.Write(16); w.Write((short)1); w.Write((short)1);
+            w.Write(rate); w.Write(rate * 2); w.Write((short)2); w.Write((short)16); w.Write("data"u8); w.Write(frames * 2); w.Write(new byte[frames * 2]);
+            return ms.ToArray();
+        }
     }
 
     private static VideoTimeline Timeline(params VideoElement[] elements)
@@ -231,5 +251,156 @@ public sealed class VideoDirectionTests
         Assert.Contains(saved.Video!.Scenes.Single(x => x.Id == scene).Elements, e => e.Id == "selo");
         Assert.Equal("# Vídeos das suas notas\n\nO Urbe transforma notas em vídeos editáveis.", host.Documents.Get("Roteiros/Demo.md")!.Content);
         Assert.Single(host.Sheets);
+    }
+
+    // ---- Defeitos vistos numa conversa real da beta.57 (reprodução sem o conteúdo privado) ----
+
+    private const string Sealed = "# Relógios {ia:\"modelo-x\"}\n\n## O relógio de luz {ia:\"modelo-x\"}\n\nUm pulso entre dois espelhos. {ia:\"modelo-x\"}\n\n## A conta {ia:\"modelo-x\"}\n\nO tempo se estica. {ia:\"modelo-x\"}\n";
+
+    [Fact]
+    public async Task ANoteWrittenByTheAssistantCanBeCutIntoScenesByItsHeadings()
+    {
+        // its headings carry the authorship seal; a fragment names the heading as the person reads it
+        var host = new Host();
+        host.Documents.Upsert(new() { Path = "Roteiro.md", Content = Sealed });
+        var write = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        var spec = JsonNode.Parse("""
+            {"schemaVersion":1,"title":"V","design":{"layout":"video"},"sources":[{"documentId":"Roteiro.md"}],
+             "sections":[{"id":"a","source":{"documentId":"Roteiro.md","fragment":"O relógio de luz"}},{"id":"b","source":{"documentId":"Roteiro.md","fragment":"A conta"}}]}
+            """)!.AsObject();
+        var result = await write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = spec }, host);
+        Assert.Contains("Publicação salva", result.Content);
+        var project = PublicationProjectCodec.Parse(host.Documents.Get("V.publication.json")!.Content);
+        using var catalog = new PublicationSourceCatalog(host.Documents);
+        var timeline = VideoTimeline.Build(project, catalog);
+        // the seal never reaches the screen: not in the title, not in the subtitles
+        Assert.Equal(["O relógio de luz", "A conta"], timeline.Scenes.Select(s => s.Title));
+        Assert.DoesNotContain(timeline.Cues, c => c.Text.Contains("{ia:"));
+        Assert.DoesNotContain(timeline.Scenes, s => s.Script.Contains("{ia:"));
+    }
+
+    [Fact]
+    public async Task AMissingSourceIsNamedWithWhatExists()
+    {
+        var host = new Host();
+        host.Documents.Upsert(new() { Path = "Roteiro.md", Content = Sealed });
+        var write = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        var spec = JsonNode.Parse("""
+            {"schemaVersion":1,"title":"V","design":{"layout":"video"},"sources":[{"documentId":"Roteiro.md"}],
+             "sections":[{"id":"a","source":{"documentId":"Roteiro.md","fragment":"Relógio de luz"}}]}
+            """)!.AsObject();
+        var error = await Assert.ThrowsAsync<AiToolException>(() => write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = spec }, host));
+        Assert.Contains("Relógio de luz", error.Message);
+        Assert.Contains("O relógio de luz", error.Message);   // the headings it has
+        var missing = JsonNode.Parse("""{"schemaVersion":1,"title":"V","design":{"layout":"video"},"sources":[{"documentId":"Nao existe.md"}]}""")!.AsObject();
+        error = await Assert.ThrowsAsync<AiToolException>(() => write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = missing }, host));
+        Assert.Contains("Nao existe.md", error.Message);
+    }
+
+    [Fact]
+    public async Task ScenesWrittenWithOtherPlacementIdsAreKeptInOrder()
+    {
+        // the model wrote its scenes but not with the section ids: they used to be replaced by default scenes, silently
+        var host = new Host();
+        host.Documents.Upsert(new() { Path = "A.md", Content = "# A\n\nUm." });
+        host.Documents.Upsert(new() { Path = "B.md", Content = "# B\n\nDois." });
+        var write = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        var spec = JsonNode.Parse("""
+            {"schemaVersion":1,"title":"V","design":{"layout":"video"},"sources":[{"documentId":"A.md"},{"documentId":"B.md"}],
+             "video":{"scenes":[{"id":"s1","placementId":"cena1","duration":3,"elements":[{"id":"x1","kind":"text","text":"Um"}]},
+                                {"id":"s2","placementId":"cena2","duration":5,"elements":[{"id":"x2","kind":"text","text":"Dois"}]}]}}
+            """)!.AsObject();
+        await write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = spec }, host);
+        var project = PublicationProjectCodec.Parse(host.Documents.Get("V.publication.json")!.Content);
+        Assert.Equal(["s1", "s2"], project.Video!.Scenes.Select(s => s.Id));
+        Assert.Equal([3.0, 5.0], project.Video.Scenes.Select(s => s.Duration));
+        Assert.Equal(project.Sections.Select(p => p.Id), project.Video.Scenes.Select(s => s.PlacementId));
+    }
+
+    [Fact]
+    public void WhatModelsWriteNaturallyIsDrawn()
+    {
+        // a function or TeX in source (what the schema used to say), line and arrow shapes, and width animated
+        var timeline = Timeline(
+            new VideoElement { Id = "g", Kind = "plot", Source = "y = x^2" },
+            new VideoElement { Id = "m", Kind = "math", Source = "E = mc^2" },
+            new VideoElement { Id = "barra", Kind = "shape", Text = "rect", Width = 0.1,
+                Keyframes = [new() { Property = "width", Time = 0, Value = 0.1 }, new() { Property = "width", Time = 2, Value = 0.5, Easing = "linear" }] });
+        var at = timeline.Evaluate(1).Layers.Single().Elements;
+        Assert.Equal("y = x^2", at.Single(e => e.Id == "g").Text);
+        Assert.Equal("E = mc^2", at.Single(e => e.Id == "m").Text);
+        Assert.Equal(0.3, at.Single(e => e.Id == "barra").Width, 6);
+    }
+
+    [Fact]
+    public void AnInvalidKeyframeSaysWhichAndWhatIsAccepted()
+    {
+        var project = VideoComposition.Synced(PublicationProject.Create("V", "n1") with { Design = new PublicationDesign { Layout = "video" } });
+        var scene = project.Video!.Scenes[0] with { Elements = [new VideoElement { Id = "bola", Keyframes = [new() { Property = "cor", Time = 0, Value = 1 }] }] };
+        var error = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project with { Video = project.Video.WithScene(scene) }));
+        Assert.Contains("bola", error.Message);
+        Assert.Contains("cor", error.Message);
+        Assert.Contains("opacity", error.Message);
+    }
+
+    [Fact]
+    public void TheSchemaExampleSceneIsAValidScene()
+    {
+        // the example the model copies must itself pass the engine's rules
+        var schema = AssistantPublicationTools.Schema;
+        int start = schema.IndexOf("Exemplo de cena completa: ", StringComparison.Ordinal) + "Exemplo de cena completa: ".Length;
+        var json = schema[start..schema.IndexOf(". Formas:", start, StringComparison.Ordinal)].Replace("<id da seção>", "p");
+        var scene = System.Text.Json.JsonSerializer.Deserialize<VideoScene>(json, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })!;
+        var project = VideoComposition.Synced(PublicationProject.Create("V", "n1") with { Design = new PublicationDesign { Layout = "video" } });
+        project = project with { Video = project.Video! with { Scenes = [scene with { PlacementId = project.Sections[0].Id }] } };
+        PublicationProjectCodec.Validate(project);
+        Assert.Contains(scene.Elements, e => e.Kind == "math" && e.Text!.StartsWith("\\gamma"));
+        Assert.Contains(scene.Elements, e => e.Kind == "plot" && e.Text!.Contains('\n'));
+    }
+
+    [Fact]
+    public async Task RenderVideoNarratesFitsTheScenesAndSavesAnMp4WithSubtitles()
+    {
+        var host = new Host();
+        host.Documents.Upsert(new() { Path = "Vídeos/A.md", Content = "# A\n\num dois três quatro cinco seis sete oito nove dez onze doze treze quatorze quinze dezesseis dezessete dezoito dezenove vinte vinte-e-um vinte-e-dois vinte-e-três vinte-e-quatro vinte-e-cinco." });
+        host.Documents.Upsert(new() { Path = "Vídeos/B.md", Content = "# B\n\nCurta." });
+        var write = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        await write.Run(new JsonObject { ["path"] = "Vídeos/Aula.publication.json", ["spec"] = JsonNode.Parse("""
+            {"schemaVersion":1,"title":"Aula","design":{"layout":"video"},"sources":[{"documentId":"Vídeos/A.md"},{"documentId":"Vídeos/B.md"}],
+             "video":{"scenes":[{"id":"s1","placementId":"x","duration":3},{"id":"s2","placementId":"y","duration":3}]}}
+            """)!.AsObject() }, host);
+        var render = AssistantVideoDirectionTools.All.Single(t => t.Name == "render_video");
+        var result = await render.Run(new JsonObject { ["path"] = "Vídeos/Aula.publication.json" }, host);
+        Assert.Contains("Vídeo pronto: Vídeos/Aula.mp4", result.Content);
+        Assert.True(host.Files.ContainsKey("Vídeos/Aula.mp4"));
+        Assert.Contains("00:00:00,000 --> ", System.Text.Encoding.UTF8.GetString(host.Files["Vídeos/Aula.srt"]));
+        Assert.Equal(2, host.Files.Keys.Count(k => k.StartsWith("Narração/Aula/", StringComparison.Ordinal)));
+        var project = PublicationProjectCodec.Parse(host.Documents.Get("Vídeos/Aula.publication.json")!.Content);
+        // the 25-word scene speaks for 5 s: it grew from 3 s to hold the voice; the short one kept its 3 s
+        Assert.Equal(5.4, project.Video!.Scenes[0].Duration, 6);
+        Assert.Equal(3, project.Video.Scenes[1].Duration, 6);
+        Assert.Equal(2, project.Video.Audio.Count(a => a.Kind == "voice"));
+        Assert.NotNull(project.Video.Rendered);
+        // the MP4 was made from the narrated timeline, and every change can be undone
+        Assert.Equal(2, host.Encoded.Single().Audio.Count);
+        Assert.Equal(2, result.Changes!.Count);
+
+        // again: new files beside the first ones, nothing replaced, no second narration over the first
+        var again = await render.Run(new JsonObject { ["path"] = "Vídeos/Aula.publication.json" }, host);
+        Assert.Contains("Vídeos/Aula (2).mp4", again.Content);
+        Assert.Equal(2, host.Files.Keys.Count(k => k.StartsWith("Narração/", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task RenderVideoWithoutAVoiceStillDeliversTheVideoAndSaysSo()
+    {
+        var host = new Host { HasVoice = false };
+        host.Documents.Upsert(new() { Path = "A.md", Content = "# A\n\nTexto." });
+        await AssistantPublicationTools.All.Single(t => t.Name == "write_publication").Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = JsonNode.Parse("""
+            {"schemaVersion":1,"title":"V","design":{"layout":"video"},"sources":[{"documentId":"A.md"}]}
+            """)!.AsObject() }, host);
+        var result = await AssistantVideoDirectionTools.All.Single(t => t.Name == "render_video").Run(new JsonObject { ["path"] = "V.publication.json" }, host);
+        Assert.Contains("Vídeo pronto: V.mp4", result.Content);
+        Assert.Contains("sem narração", result.Content);
     }
 }

@@ -53,8 +53,11 @@ public sealed record VideoComposition
         var byPlacement = new Dictionary<string, VideoScene>(StringComparer.Ordinal);
         foreach (var scene in video.Scenes)
             byPlacement.TryAdd(scene.PlacementId, scene);
-        var scenes = project.Sections.Select(p => byPlacement.TryGetValue(p.Id, out var kept)
-            ? kept : VideoScene.Default(p.Id, script?.Invoke(p.Source))).ToList();
+        // scenes written for placements that are not there (another id) go, in order, to the placements without one
+        var spare = new Queue<VideoScene>(video.Scenes.Where(s => !project.Sections.Any(p => p.Id == s.PlacementId)));
+        var scenes = project.Sections.Select(p => byPlacement.TryGetValue(p.Id, out var kept) ? kept
+            : spare.TryDequeue(out var moved) ? moved with { PlacementId = p.Id }
+            : VideoScene.Default(p.Id, script?.Invoke(p.Source))).ToList();
         if (project.Video is not null && scenes.SequenceEqual(video.Scenes)) return project;
         return project with { Video = video with { Scenes = scenes } };
     }
@@ -135,11 +138,13 @@ public sealed record VideoTransition
 /// An object of a scene. Positions and sizes are fractions of the frame (x, y = centre), font size a fraction of the
 /// frame height, times seconds from the scene start. Kinds: title (the scene note's first heading unless Text is set),
 /// text, script (the note's text), shape (Text = rect | ellipse), image (Source = a vault image), plot (Text = a
-/// gráfico block, e.g. "y = sin(x)") and math (Text = TeX).
+/// gráfico block, e.g. "y = sin(x)"), math (Text = TeX), path (Text = SVG path data, fitted to the box; progress
+/// draws it on) and group (draws nothing: other elements follow it through <see cref="Parent"/>).
 /// </summary>
 public sealed record VideoElement
 {
-    public static readonly string[] Kinds = ["title", "text", "script", "shape", "image", "plot", "math"];
+    public static readonly string[] Kinds = ["title", "text", "script", "shape", "image", "plot", "math", "path", "group"];
+    public const int MaxPathData = 8192;
 
     public string Id { get; init; } = "el_" + Guid.NewGuid().ToString("N");
     public string Kind { get; init; } = "text";
@@ -155,16 +160,28 @@ public sealed record VideoElement
     public double? End { get; init; }
     public List<VideoKeyframe> Keyframes { get; init; } = [];
     public List<VideoMotion> Motions { get; init; } = [];
+    /// <summary>
+    /// Another element of the scene this one follows: X and Y become an offset from the parent's centre, and the
+    /// parent's scale, rotation and opacity apply to it too. Hidden while the parent is.
+    /// </summary>
+    public string? Parent { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
+
+    /// <summary>SVG path data: commands and numbers only, starting with a move.</summary>
+    public static bool IsPathData(string? data) =>
+        data is { Length: > 0 and <= MaxPathData } && System.Text.RegularExpressions.Regex.IsMatch(data, @"^\s*[Mm][MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]*$");
 }
 
 /// <summary>The value a property reaches at a time; <see cref="Easing"/> shapes the way from the previous keyframe.</summary>
 public sealed record VideoKeyframe
 {
-    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress"];
-    public static readonly string[] Easings = ["linear", "easeIn", "easeOut", "easeInOut", "step"];
+    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress", "width", "height"];
+    /// <summary>Named curves; any CSS <c>cubic-bezier(x1, y1, x2, y2)</c> is accepted too (x in 0–1). "back" overshoots and settles.</summary>
+    public static readonly string[] Easings = ["linear", "easeIn", "easeOut", "easeInOut", "step", "back"];
+
+    public static bool IsEasing(string? easing) => easing is not null && (Easings.Contains(easing) || CubicBezier.TryParse(easing, out _));
 
     public string Property { get; init; } = "opacity";
     public double Time { get; init; }
@@ -229,20 +246,36 @@ public static class VideoCompositionRules
             {
                 if (e is null) throw Bad("elemento vazio");
                 Id(e.Id);
-                if (!VideoElement.Kinds.Contains(e.Kind)) throw Bad("tipo de elemento " + e.Kind);
+                if (!VideoElement.Kinds.Contains(e.Kind)) throw Bad("tipo de elemento \"" + e.Kind + "\" em " + e.Id + "; tipos: " + string.Join(", ", VideoElement.Kinds));
                 if (new[] { e.X, e.Y, e.Width, e.Height, e.FontSize, e.Start }.Any(v => !Finite(v)) || e.End is { } end && !Finite(end) ||
                     e.Width <= 0 || e.Height <= 0 || e.FontSize <= 0 || e.FontSize > 1) throw Bad("geometria do elemento");
                 if (e.Kind == "image" && !VideoScript.IsVaultPath(e.Source)) throw Bad("imagem sem caminho do vault");
+                if (e.Kind == "path" && !VideoElement.IsPathData(e.Text ?? e.Source)) throw Bad("caminho vetorial de " + e.Id + ": dados de path SVG em text, começando com M");
                 if (e.Keyframes is null || e.Motions is null || e.Keyframes.Count > 1024 || e.Motions.Count > 16) throw Bad("animações");
                 foreach (var k in e.Keyframes)
-                    if (k is null || !VideoKeyframe.Properties.Contains(k.Property) || !VideoKeyframe.Easings.Contains(k.Easing) ||
-                        !Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe");
+                {
+                    if (k is null) throw Bad("keyframe vazio em " + e.Id);
+                    if (!VideoKeyframe.Properties.Contains(k.Property))
+                        throw Bad("keyframe de " + e.Id + " anima \"" + k.Property + "\"; propriedades animáveis: " + string.Join(", ", VideoKeyframe.Properties));
+                    if (!VideoKeyframe.IsEasing(k.Easing))
+                        throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
+                    if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
+                }
                 foreach (var m in e.Motions)
                 {
-                    if (m is null || !VideoKeyframe.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512) throw Bad("movimento");
+                    if (m is null || !VideoKeyframe.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512)
+                        throw Bad("movimento de " + e.Id + ": propriedade \"" + m?.Property + "\" (animáveis: " + string.Join(", ", VideoKeyframe.Properties) + ") e expressão de até 512 caracteres");
                     try { FunctionPlot.Expression.Parse(m.Expression, "t"); }
                     catch (FormatException ex) { throw Bad("movimento " + m.Expression + ": " + ex.Message); }
                 }
+            }
+            // a parent is another element of the same scene, and following parents never comes back to the start
+            var byId = scene.Elements.ToDictionary(e => e.Id, StringComparer.Ordinal);
+            foreach (var e in scene.Elements)
+            {
+                var seen = new HashSet<string>(StringComparer.Ordinal) { e.Id };
+                for (var p = e.Parent; p is not null; p = byId[p].Parent)
+                    if (!byId.ContainsKey(p) || !seen.Add(p)) throw Bad("o pai " + p + " de " + e.Id + " não existe na cena ou forma um ciclo");
             }
         }
         foreach (var clip in video.Audio)
@@ -295,6 +328,8 @@ public static class VideoScript
 
     private static string Inline(string text)
     {
+        // the authorship seal is the app's, never shown on screen or spoken
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\s*\{ia:""[^""\n]*""\}", "");
         text = System.Text.RegularExpressions.Regex.Replace(text, @"!\[\[[^\]]*\]\]|!\[[^\]]*\]\([^)]*\)", "");
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\[\[([^\]|#]*)(?:#[^\]|]*)?(?:\|([^\]]*))?\]\]", m => m.Groups[2].Success ? m.Groups[2].Value : m.Groups[1].Value);
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\[([^\]]*)\]\([^)]*\)", "$1");
@@ -350,3 +385,51 @@ public static class VideoScript
 
 /// <summary>A subtitle: text shown from <see cref="Start"/> to <see cref="End"/> seconds of the video.</summary>
 public sealed record VideoCue(double Start, double End, string Text);
+
+/// <summary>A CSS timing curve: the cubic Bézier from (0,0) to (1,1) through (x1,y1) and (x2,y2), read as y for a given x.</summary>
+public readonly record struct CubicBezier(double X1, double Y1, double X2, double Y2)
+{
+    private static readonly System.Text.RegularExpressions.Regex Syntax = new(
+        @"^\s*cubic-bezier\(\s*([-+]?[\d.]+)\s*,\s*([-+]?[\d.]+)\s*,\s*([-+]?[\d.]+)\s*,\s*([-+]?[\d.]+)\s*\)\s*$",
+        System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    public static bool TryParse(string text, out CubicBezier curve)
+    {
+        curve = default;
+        var m = Syntax.Match(text);
+        if (!m.Success) return false;
+        var v = new double[4];
+        for (int i = 0; i < 4; i++)
+            if (!double.TryParse(m.Groups[i + 1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out v[i])) return false;
+        // x must stay in 0–1 so the curve is a function of time; y may leave it (overshoot), within reason
+        if (v[0] is < 0 or > 1 || v[2] is < 0 or > 1 || v[1] is < -2 or > 3 || v[3] is < -2 or > 3) return false;
+        curve = new CubicBezier(v[0], v[1], v[2], v[3]);
+        return true;
+    }
+
+    private static double At(double a, double b, double s) => 3 * a * s * (1 - s) * (1 - s) + 3 * b * s * s * (1 - s) + s * s * s;
+
+    public double Solve(double x)
+    {
+        if (x <= 0) return 0;
+        if (x >= 1) return 1;
+        // the curve's parameter for this x: Newton's method from x, bisection if it does not settle
+        double s = x;
+        for (int i = 0; i < 8; i++)
+        {
+            double err = At(X1, X2, s) - x;
+            if (Math.Abs(err) < 1e-7) return At(Y1, Y2, s);
+            double d = 3 * X1 * (1 - s) * (1 - s) + 6 * (X2 - X1) * s * (1 - s) + 3 * (1 - X2) * s * s;
+            if (Math.Abs(d) < 1e-6) break;
+            s -= err / d;
+        }
+        double lo = 0, hi = 1;
+        s = x;
+        for (int i = 0; i < 60; i++)
+        {
+            if (At(X1, X2, s) < x) lo = s; else hi = s;
+            s = (lo + hi) / 2;
+        }
+        return At(Y1, Y2, s);
+    }
+}
