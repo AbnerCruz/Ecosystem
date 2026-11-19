@@ -700,14 +700,20 @@ public sealed partial class MainView
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
             var receipt = EnsureOpens(extension, result.Bytes).Summary;
+            LastOfficeLimitations = result.Limitations;
+            // CST-191: what this format does not keep, found in these notes, is said before saving — the person can go back
+            var accepted = draft.DocumentId + "|" + extension;
+            var lost = string.Join("\n", result.Limitations);
+            if (result.Limitations.Count > 0 && _acceptedLosses.GetValueOrDefault(accepted) != lost && !await Dialogs.ConfirmAsync(kind + ": o que muda neste formato",
+                    "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations),
+                    "Salvar assim", cancel: "Voltar"))
+                return;
+            _acceptedLosses[accepted] = lost;   // the same losses for the same publication and format are not asked again this session
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
             if (saved != true) return;
             RecordPublicationExport(extension);
-            LastOfficeLimitations = result.Limitations;
             // CST-213: the notice says what the check confirmed in the file, and what it could not
-            if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva · " : " salvo · ") + receipt + ".");
-            else await Dialogs.AlertAsync(kind + (extension == "pptx" ? " salva" : " salvo"),
-                "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations) + "\n\nConferência: " + receipt + ".");
+            ShowLifeNotice(kind + (extension == "pptx" ? " salva · " : " salvo · ") + receipt + ".");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
@@ -811,7 +817,9 @@ public sealed partial class MainView
         var notes = _contents.Keys.Select(p => new CityNote(p, "")).ToList();
         bool NoteExists(string name) => files.Contains(name) || files.Contains(name + ".md") ||
             notes.Any(n => string.Equals(System.IO.Path.GetFileNameWithoutExtension(n.Path), System.IO.Path.GetFileName(name), StringComparison.OrdinalIgnoreCase));
-        var issues = await Task.Run(() => PublicationReview.Run(project, catalog, files.Contains, NoteExists, data));
+        string? ReadNote(string name) => notes.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.OrdinalIgnoreCase) || string.Equals(n.Path, name + ".md", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(System.IO.Path.GetFileNameWithoutExtension(n.Path), System.IO.Path.GetFileName(name), StringComparison.OrdinalIgnoreCase))?.Content;
+        var issues = await Task.Run(() => PublicationReview.Run(project, catalog, files.Contains, NoteExists, data, ReadNote));
         LastPublicationReview = issues;
         if (!ReferenceEquals(draft, _publicationDraft)) return;
         if (issues.Count == 0) { ShowLifeNotice("Nada a corrigir: a publicação está pronta para exportar."); return; }
@@ -834,6 +842,8 @@ public sealed partial class MainView
     public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
 
     /// <summary>CST-191: a file that does not open as its format is never saved as if it were done.</summary>
+    private readonly Dictionary<string, string> _acceptedLosses = new(StringComparer.Ordinal);
+
     /// <summary>The file's check (CST-191/213): a problem stops the save; otherwise its receipt, to tell the person.</summary>
     private static OutputReceipt EnsureOpens(string extension, byte[] bytes)
     {

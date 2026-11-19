@@ -57,7 +57,9 @@ public static class AssistantPublicationTools
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or System.Text.Json.JsonException) { throw new AiToolException("Não é uma publicação válida: " + e.Message); }
         using var catalog = new PublicationSourceCatalog(host.Documents);
         var files = host.OtherFiles;
-        var issues = PublicationReview.Run(project, catalog, f => files.Contains(f) || host.Documents.Get(f) is not null, n => host.Documents.Get(n) is not null);
+        UrbeDocument? Named(string n) => host.Documents.Get(n) ?? host.Documents.Get(n + ".md") ??
+            host.Documents.List().FirstOrDefault(d => string.Equals(System.IO.Path.GetFileNameWithoutExtension(d.Path), System.IO.Path.GetFileName(n), StringComparison.OrdinalIgnoreCase));
+        var issues = PublicationReview.Run(project, catalog, f => files.Contains(f) || host.Documents.Get(f) is not null, n => Named(n) is not null, readNote: n => Named(n)?.Content);
         // #956: a video is also looked at — the frames measured, and the scenes listed by id for edit_video_scene
         string video = "";
         if (project.Design.Layout == "video" && project.Sections.Count > 0)
