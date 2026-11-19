@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261119-automacao-plena",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-19T11:35:35Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "GOV-0065",
+  "component": "integrator",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "5f56695f235f6ec6e53a5c01f72d007725a3e6a3",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/urbe-checks.yml",
+    "AGENTS.md",
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/handoffs/HO-20261119-automacao-plena.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/manifest-changelog.md",
+    "site/generator/GenerateStatus.cs",
+    "tests/consistency/Check.cs"
+  ],
+  "work_completed": [
+    "ADD-0035/DEC-0065 registrados a partir da ordem do proprietário de 19/11/2026: sem etapa de validação no aparelho, integração automática para tudo exceto a classe extreme.",
+    "integration-policy.json: classe extreme (política, checker, integrador, integrate.yml, consistency.yml, chaves de assinatura); Check.cs: só extreme exige o proprietário; CHK-INTEGRATION exige o portão dentro de extreme.",
+    "Portal: fila de validações humanas vazia; CHK-HANDOFFS recusa handoff novo com validação humana pendente; MANIFEST NN-017, definition-of-done, communication §9 e AGENTS.md atualizados; changelog do manifesto.",
+    "urbe-checks.yml: jornada Android (vault, Estúdio, vídeo gravado, retomada) ligada na CI, agora fora da classe que exige aprovação."
+  ],
+  "verification": [
+    {
+      "check": "Consistency checks",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22."
+    },
+    {
+      "check": "Self-test do checker",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "--self-test: todos os checks provam detectar violações; novos casos ADD-0035 (workflow de produto e MANIFEST integram sozinhos; chave de assinatura e integrate.yml esperam o proprietário; portão fora de extreme é recusado)."
+    },
+    {
+      "check": "Testes do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "unittest 11/11; simulate.sh: todos os cenários passaram."
+    }
+  ],
+  "known_issues": [
+    "Este PR muda o próprio portão (classe extreme na política da main atual): é a única aprovação que ainda precisa do proprietário."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois de integrado: informar em linguagem simples o que mudou a cada integração; seguir a consolidação 2.6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Mantida como regra de linguagem (nada apresentado como validado no aparelho sem ter sido); removida como etapa por decisão do proprietário (ADD-0035, changelog)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Ordem do chat persistida em ADD-0035 e DEC-0065."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão continua exigindo evidência automática."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "extreme",
+      "constitution"
+    ],
+    "reason": "Muda o portão de integração e a constituição por ordem do proprietário; exige a review dele no head."
+  }
+}

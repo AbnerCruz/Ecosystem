@@ -1,6 +1,10 @@
 # AGENTS.md — Instruções operacionais para agentes
 
-## Diretriz vigente de autonomia e entrega (DEC-0063 / ADD-0034)
+## Diretriz vigente: automação plena (DEC-0065 / ADD-0035)
+
+[ADD-0035](docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md) prevalece sobre o que divergir abaixo: **sem etapa de validação no aparelho e sem aprovações.** Tudo integra quando o estado combinado com a `main` está verde, inclusive governança, workflows, segurança, dados e distribuição; só a classe `extreme` (o próprio portão de integração, chaves de assinatura) e o estágio da versão esperam o proprietário. Não crie validação humana pendente: diga em `known_issues` o que não foi testado no aparelho, e nunca apresente CI, headless ou emulador como teste no aparelho. A cada integração, informe ao proprietário em linguagem simples o que de fato foi implementado.
+
+## Diretriz anterior de autonomia e entrega (DEC-0063 / ADD-0034)
 
 [ADD-0034](docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md) prevalece sobre a exigência anterior de label: PR pronto, escopo autorizado e todos os checks verdes integram automaticamente. Cada app cujo código mudou recebe release própria; estágio alfa/beta/dev/estável pertence exclusivamente ao usuário, agente apenas incrementa número. Claude tem máxima no Urbe, sem autoridade sobre governança do Ecosystem, própria concessão ou estágio. Pendência bloqueia só a ação dependente; registrar proposta de mudança da regra e avançar trabalho independente autorizado. Governança não é contornada; review do proprietário vinculada ao head substitui label quando necessária. CI não significa DEVICE.
 
