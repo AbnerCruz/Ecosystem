@@ -10,7 +10,18 @@ public interface IAssistantVideoFrames
     VideoTextFit Fit(VideoElementState element, int width, int height);
     /// <summary>The frames at <paramref name="times"/> side by side in one PNG, each labelled with its number.</summary>
     Task<byte[]> RenderSheetAsync(VideoTimeline timeline, IReadOnlyList<double> times, CancellationToken cancel = default);
+    /// <summary>The text spoken by the device's voice, as a WAV; null when this device has no voice.</summary>
+    Task<byte[]?> SpeakAsync(string text, CancellationToken cancel = default) => Task.FromResult<byte[]?>(null);
+    /// <summary>The MP4 of the timeline (its images and sound read from the vault), encoded and verified as the Estúdio's export.</summary>
+    Task<VideoRenderOutput> EncodeAsync(VideoTimeline timeline, CancellationToken cancel = default) =>
+        throw new AiToolException("Este app não gera MP4 aqui. A pessoa exporta pelo Estúdio.");
+    /// <summary>Writes a new file of the vault (never replaces one).</summary>
+    Task SaveFileAsync(string path, byte[] bytes) => throw new AiToolException("Este app não grava arquivos do vídeo.");
+    bool FileExists(string path) => false;
 }
+
+/// <summary>A rendered MP4 and what its check found (frames, size, seconds, sound), and the sound files it could not read.</summary>
+public sealed record VideoRenderOutput(byte[] Mp4, string Checked, IReadOnlyList<string> SkippedAudio);
 
 /// <summary>
 /// #956: the loop of a motion graphics director — look at the real frames (look_at_video), find what is wrong
@@ -31,6 +42,16 @@ public static class AssistantVideoDirectionTools
             Parameters = JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"times":{"type":"array","items":{"type":"number","minimum":0},"maxItems":12}},"required":["path"],"additionalProperties":false}""")!.AsObject(),
             Label = i => "Olhando o vídeo " + ((string?)i["path"] ?? ""),
             Run = LookAsync
+        },
+        new AiTool
+        {
+            Name = "render_video", Access = "write",
+            Description = "Entrega o vídeo pronto: narra o roteiro de cada cena com a voz do aparelho (narrate, padrão sim quando o vídeo não tem voz), " +
+                          "alonga as cenas que ficariam curtas para a fala, gera o MP4 H.264 verificado e as legendas SRT dentro do vault, ao lado da publicação, " +
+                          "e devolve os caminhos. Use por último, depois de review_publication e look_at_video sem problemas. Nunca substitui arquivos: cria um nome novo.",
+            Parameters = JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"narrate":{"type":"boolean"}},"required":["path"],"additionalProperties":false}""")!.AsObject(),
+            Label = i => "Gerando o MP4 de " + ((string?)i["path"] ?? ""),
+            Run = RenderAsync
         },
         new AiTool
         {
@@ -119,6 +140,83 @@ public static class AssistantVideoDirectionTools
         var issues = Inspect(Load(path, host).Timeline, host);
         return new AiToolOutput(path + " · revisão " + doc.Revision + " · " + timeline.Scenes.Count + " cenas, " + N(timeline.Duration) + " s\n" + legend +
             "\n\nO que o modelo visual viu:\n" + seen + "\n\n" + Issues(issues, true) + "\n\n" + Outline(timeline));
+    }
+
+    /// <summary>
+    /// #956: narration, MP4 and subtitles made by the agent, so a request for a video ends in a video to play. The voice
+    /// is the device's (as the Estúdio's Narrar); files are new ones in the vault; the publication keeps the voice
+    /// tracks and which scenes the MP4 holds, through the same save (and undo) as the other edits.
+    /// </summary>
+    private static async Task<AiToolOutput> RenderAsync(JsonObject input, IAssistantHost host)
+    {
+        var path = (string?)input["path"] ?? "";
+        var frames = host.VideoFrames ?? throw new AiToolException("Este app não gera vídeo aqui. A pessoa exporta pelo Estúdio.");
+        var (doc, project, timeline) = Load(path, host);
+        if (!timeline.IsComplete) throw new AiToolException("Faltam notas das cenas: " + string.Join(", ", timeline.MissingDocumentIds) + ". Corrija as fontes com write_publication.");
+        if (Inspect(timeline, host).Where(i => i.Severity == ReviewSeverity.Error).ToList() is { Count: > 0 } errors)
+            throw new AiToolException("Corrija antes de gerar o MP4 (edit_video_scene):\n" + Issues(errors, host.VideoFrames is not null));
+        var video = project.Video!;
+        var changes = new List<AiChange>();
+        var notes = new List<string>();
+        string Unique(string wanted)
+        {
+            var dot = wanted.LastIndexOf('.');
+            var candidate = wanted;
+            for (int n = 2; frames.FileExists(candidate) || host.Documents.Get(candidate) is not null; n++) candidate = wanted[..dot] + " (" + n + ")" + wanted[dot..];
+            return candidate;
+        }
+        var folder = path.Contains('/') ? path[..(path.LastIndexOf('/') + 1)] : "";
+        var name = ArtifactModel.SafeName(project.Title);
+        bool narrate = input["narrate"] is JsonValue v && v.TryGetValue<bool>(out var asked) ? asked : !video.Audio.Any(a => a.Kind == "voice");
+        if (narrate)
+        {
+            var seconds = new Dictionary<string, double>(StringComparer.Ordinal);
+            var wavs = new List<(VideoTimelineScene Scene, byte[] Wav, double Seconds)>();
+            foreach (var scene in timeline.Scenes.Where(s => s.Script.Trim().Length > 0))
+            {
+                var wav = await frames.SpeakAsync(scene.Script.Trim());
+                if (wav is null) { notes.Add("Sem voz neste aparelho: o vídeo saiu sem narração."); wavs.Clear(); break; }
+                double length;
+                using (var read = new MemoryStream(wav)) length = VideoAudio.ReadWavInfo(read)?.Seconds ?? 0;
+                wavs.Add((scene, wav, length));
+                if (length > 0) seconds[scene.Scene.Id] = length;
+            }
+            if (wavs.Count > 0)
+            {
+                var fitted = video.FitToVoices(seconds);
+                var starts = VideoTimeline.Build(project with { Video = fitted }, _ => null).Scenes.ToDictionary(x => x.Scene.Id, x => x.Start);
+                var clips = new List<VideoAudioClip>();
+                for (int i = 0; i < wavs.Count; i++)
+                {
+                    var wavPath = Unique("Narração/" + name + "/Cena " + (i + 1) + ".wav");
+                    await frames.SaveFileAsync(wavPath, wavs[i].Wav);
+                    clips.Add(new VideoAudioClip { Kind = "voice", Path = wavPath, Start = starts[wavs[i].Scene.Scene.Id], Length = wavs[i].Seconds > 0 ? wavs[i].Seconds : null });
+                }
+                var grown = fitted.Scenes.Zip(video.Scenes).Count(p => p.First.Duration != p.Second.Duration);
+                video = fitted with { Audio = [.. fitted.Audio.Where(a => a.Kind != "voice"), .. clips] };
+                notes.Add("Narração de " + clips.Count + (clips.Count == 1 ? " cena" : " cenas") + (grown > 0 ? "; " + grown + " ficaram mais longas para caber a fala" : "") + ".");
+                (doc, var change) = await Save(doc, project = project with { Video = video });
+                changes.Add(change);
+                using var catalog = new PublicationSourceCatalog(host.Documents);
+                timeline = VideoTimeline.Build(project, catalog);
+            }
+        }
+        var output = await frames.EncodeAsync(timeline);
+        var mp4 = Unique(folder + name + ".mp4");
+        await frames.SaveFileAsync(mp4, output.Mp4);
+        var srt = Unique(folder + name + ".srt");
+        await frames.SaveFileAsync(srt, System.Text.Encoding.UTF8.GetBytes(timeline.Srt()));
+        if (output.SkippedAudio.Count > 0) notes.Add("Sem o áudio de: " + string.Join(", ", output.SkippedAudio) + " (formato que este aparelho não lê).");
+        (doc, var rendered) = await Save(doc, project with { Video = video with { Rendered = timeline.SceneKeys() } });
+        changes.Add(rendered);
+        return new AiToolOutput("Vídeo pronto: " + mp4 + " (" + output.Checked + "). Legendas: " + srt + ". " + string.Join(" ", notes) +
+            " Diga à pessoa onde está o vídeo; ela toca no arquivo para assistir.", changes);
+
+        async Task<(UrbeDocument, AiChange)> Save(UrbeDocument current, PublicationProject changed)
+        {
+            var saved = await host.SaveNoteAsync(current, PublicationProjectCodec.Serialize(changed));
+            return (saved, new AiChange(saved.Id, new AiNoteSnap(current.Path, current.Content), new AiNoteSnap(saved.Path, saved.Content)));
+        }
     }
 
     private static (UrbeDocument Doc, string Text, string Note) Edit(JsonObject input, IAssistantHost host)

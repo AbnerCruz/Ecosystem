@@ -107,7 +107,26 @@ public sealed class VideoFrameRenderer : IDisposable
         using var paint = new SKPaint { Color = color, IsAntialias = true };
         var r = box;
         if (e.Progress < 1) r = new SKRect(box.Left, box.Top, box.Left + box.Width * (float)e.Progress, box.Bottom);
-        if (e.Text?.Trim().ToLowerInvariant() is "ellipse" or "circle" or "elipse" or "círculo") canvas.DrawOval(r, paint);
+        var kind = e.Text?.Trim().ToLowerInvariant();
+        if (kind is "line" or "linha" or "arrow" or "seta")
+        {
+            // a stroke along the box's middle, as thick as the box is tall (at most a fifth of its length), drawn by progress
+            paint.Style = SKPaintStyle.Stroke;
+            paint.StrokeCap = SKStrokeCap.Round;
+            float thick = Math.Clamp(box.Height, 2, Math.Max(2, box.Width / 5)), x2 = box.Left + box.Width * (float)Math.Clamp(e.Progress, 0, 1);
+            paint.StrokeWidth = thick;
+            bool arrow = kind is "arrow" or "seta";
+            float head = arrow ? Math.Min(box.Width * 0.3f, thick * 3) : 0;
+            canvas.DrawLine(box.Left + thick / 2, 0, Math.Max(box.Left + thick / 2, x2 - head * 0.6f), 0, paint);
+            if (arrow && e.Progress > 0)
+            {
+                paint.Style = SKPaintStyle.Fill;
+                using var tip = new SKPath();
+                tip.MoveTo(x2, 0); tip.LineTo(x2 - head, -head * 0.6f); tip.LineTo(x2 - head, head * 0.6f); tip.Close();
+                canvas.DrawPath(tip, paint);
+            }
+        }
+        else if (kind is "ellipse" or "circle" or "elipse" or "círculo") canvas.DrawOval(r, paint);
         else canvas.DrawRoundRect(r, Math.Min(box.Width, box.Height) * 0.08f, Math.Min(box.Width, box.Height) * 0.08f, paint);
     }
 

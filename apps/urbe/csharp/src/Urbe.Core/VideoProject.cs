@@ -53,8 +53,11 @@ public sealed record VideoComposition
         var byPlacement = new Dictionary<string, VideoScene>(StringComparer.Ordinal);
         foreach (var scene in video.Scenes)
             byPlacement.TryAdd(scene.PlacementId, scene);
-        var scenes = project.Sections.Select(p => byPlacement.TryGetValue(p.Id, out var kept)
-            ? kept : VideoScene.Default(p.Id, script?.Invoke(p.Source))).ToList();
+        // scenes written for placements that are not there (another id) go, in order, to the placements without one
+        var spare = new Queue<VideoScene>(video.Scenes.Where(s => !project.Sections.Any(p => p.Id == s.PlacementId)));
+        var scenes = project.Sections.Select(p => byPlacement.TryGetValue(p.Id, out var kept) ? kept
+            : spare.TryDequeue(out var moved) ? moved with { PlacementId = p.Id }
+            : VideoScene.Default(p.Id, script?.Invoke(p.Source))).ToList();
         if (project.Video is not null && scenes.SequenceEqual(video.Scenes)) return project;
         return project with { Video = video with { Scenes = scenes } };
     }
@@ -174,7 +177,7 @@ public sealed record VideoElement
 /// <summary>The value a property reaches at a time; <see cref="Easing"/> shapes the way from the previous keyframe.</summary>
 public sealed record VideoKeyframe
 {
-    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress"];
+    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress", "width", "height"];
     /// <summary>Named curves; any CSS <c>cubic-bezier(x1, y1, x2, y2)</c> is accepted too (x in 0–1). "back" overshoots and settles.</summary>
     public static readonly string[] Easings = ["linear", "easeIn", "easeOut", "easeInOut", "step", "back"];
 
@@ -243,18 +246,25 @@ public static class VideoCompositionRules
             {
                 if (e is null) throw Bad("elemento vazio");
                 Id(e.Id);
-                if (!VideoElement.Kinds.Contains(e.Kind)) throw Bad("tipo de elemento " + e.Kind);
+                if (!VideoElement.Kinds.Contains(e.Kind)) throw Bad("tipo de elemento \"" + e.Kind + "\" em " + e.Id + "; tipos: " + string.Join(", ", VideoElement.Kinds));
                 if (new[] { e.X, e.Y, e.Width, e.Height, e.FontSize, e.Start }.Any(v => !Finite(v)) || e.End is { } end && !Finite(end) ||
                     e.Width <= 0 || e.Height <= 0 || e.FontSize <= 0 || e.FontSize > 1) throw Bad("geometria do elemento");
                 if (e.Kind == "image" && !VideoScript.IsVaultPath(e.Source)) throw Bad("imagem sem caminho do vault");
-                if (e.Kind == "path" && !VideoElement.IsPathData(e.Text)) throw Bad("caminho vetorial (dados de path SVG começando com M)");
+                if (e.Kind == "path" && !VideoElement.IsPathData(e.Text ?? e.Source)) throw Bad("caminho vetorial de " + e.Id + ": dados de path SVG em text, começando com M");
                 if (e.Keyframes is null || e.Motions is null || e.Keyframes.Count > 1024 || e.Motions.Count > 16) throw Bad("animações");
                 foreach (var k in e.Keyframes)
-                    if (k is null || !VideoKeyframe.Properties.Contains(k.Property) || !VideoKeyframe.IsEasing(k.Easing) ||
-                        !Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe");
+                {
+                    if (k is null) throw Bad("keyframe vazio em " + e.Id);
+                    if (!VideoKeyframe.Properties.Contains(k.Property))
+                        throw Bad("keyframe de " + e.Id + " anima \"" + k.Property + "\"; propriedades animáveis: " + string.Join(", ", VideoKeyframe.Properties));
+                    if (!VideoKeyframe.IsEasing(k.Easing))
+                        throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
+                    if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
+                }
                 foreach (var m in e.Motions)
                 {
-                    if (m is null || !VideoKeyframe.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512) throw Bad("movimento");
+                    if (m is null || !VideoKeyframe.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512)
+                        throw Bad("movimento de " + e.Id + ": propriedade \"" + m?.Property + "\" (animáveis: " + string.Join(", ", VideoKeyframe.Properties) + ") e expressão de até 512 caracteres");
                     try { FunctionPlot.Expression.Parse(m.Expression, "t"); }
                     catch (FormatException ex) { throw Bad("movimento " + m.Expression + ": " + ex.Message); }
                 }
@@ -318,6 +328,8 @@ public static class VideoScript
 
     private static string Inline(string text)
     {
+        // the authorship seal is the app's, never shown on screen or spoken
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\s*\{ia:""[^""\n]*""\}", "");
         text = System.Text.RegularExpressions.Regex.Replace(text, @"!\[\[[^\]]*\]\]|!\[[^\]]*\]\([^)]*\)", "");
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\[\[([^\]|#]*)(?:#[^\]|]*)?(?:\|([^\]]*))?\]\]", m => m.Groups[2].Success ? m.Groups[2].Value : m.Groups[1].Value);
         text = System.Text.RegularExpressions.Regex.Replace(text, @"\[([^\]]*)\]\([^)]*\)", "$1");

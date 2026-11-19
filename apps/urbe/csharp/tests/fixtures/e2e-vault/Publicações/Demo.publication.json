@@ -24,14 +24,14 @@
         {"id": "grafico", "kind": "plot", "text": "y = sin(x)", "x": 0.3, "y": 0.5, "width": 0.4, "height": 0.35,
          "keyframes": [{"property": "progress", "time": 0, "value": 0}, {"property": "progress", "time": 2.5, "value": 1, "easing": "linear"}]},
         {"id": "formula", "kind": "math", "text": "e^{i\\pi} + 1 = 0", "x": 0.73, "y": 0.5, "width": 0.36, "height": 0.2},
-        {"id": "seta", "kind": "path", "text": "M 0 50 L 90 50 M 66 26 L 90 50 L 66 74", "x": 0.52, "y": 0.5, "width": 0.07, "height": 0.08, "color": "#ffd166", "fontSize": 0.05, "start": 2.5, "keyframes": [{"property": "progress", "time": 2.5, "value": 0}, {"property": "progress", "time": 3.3, "value": 1, "easing": "easeOut"}]}]},
+        {"id": "seta", "kind": "path", "text": "M 0 50 L 90 50 M 66 26 L 90 50 L 66 74", "x": 0.505, "y": 0.5, "width": 0.05, "height": 0.08, "color": "#ffd166", "fontSize": 0.05, "start": 2.5, "keyframes": [{"property": "progress", "time": 2.5, "value": 0}, {"property": "progress", "time": 3.3, "value": 1, "easing": "easeOut"}]}]},
       {"id": "scene_fim", "placementId": "fim", "duration": 4, "transition": {"kind": "fade", "seconds": 0.5}, "background": "#101418",
        "elements": [
         {"id": "title_fim", "kind": "title", "x": 0.5, "y": 0.4, "width": 0.84, "height": 0.25, "fontSize": 0.09,
          "motions": [{"property": "scale", "expression": "0.03*sin(2*pi*t/2)"}]},
-        {"id": "orbita", "kind": "group", "x": 0.5, "y": 0.68, "width": 0.1, "height": 0.1, "keyframes": [{"property": "rotation", "time": 0, "value": 0}, {"property": "rotation", "time": 4, "value": 360, "easing": "linear"}]},
-        {"id": "satelite", "kind": "shape", "text": "ellipse", "parent": "orbita", "x": 0.12, "y": 0, "width": 0.04, "height": 0.07, "color": "#4f8cff"},
-        {"id": "visto", "kind": "path", "text": "M 0 52 L 34 86 L 100 0", "x": 0.5, "y": 0.68, "width": 0.08, "height": 0.1, "color": "#7bd88f", "fontSize": 0.05, "keyframes": [{"property": "progress", "time": 0.3, "value": 0}, {"property": "progress", "time": 1.2, "value": 1, "easing": "easeOut"}, {"property": "scale", "time": 1.2, "value": 0.6}, {"property": "scale", "time": 1.8, "value": 1, "easing": "back"}]}]}
+        {"id": "orbita", "kind": "group", "x": 0.5, "y": 0.64, "width": 0.1, "height": 0.1, "keyframes": [{"property": "rotation", "time": 0, "value": 0}, {"property": "rotation", "time": 4, "value": 360, "easing": "linear"}]},
+        {"id": "satelite", "kind": "shape", "text": "ellipse", "parent": "orbita", "x": 0.07, "y": 0, "width": 0.04, "height": 0.07, "color": "#4f8cff"},
+        {"id": "visto", "kind": "path", "text": "M 0 52 L 34 86 L 100 0", "x": 0.5, "y": 0.64, "width": 0.08, "height": 0.1, "color": "#7bd88f", "fontSize": 0.05, "keyframes": [{"property": "progress", "time": 0.3, "value": 0}, {"property": "progress", "time": 1.2, "value": 1, "easing": "easeOut"}, {"property": "scale", "time": 1.2, "value": 0.6}, {"property": "scale", "time": 1.8, "value": 1, "easing": "back"}]}]}
     ],
     "audio": []
   }

@@ -155,7 +155,8 @@ public sealed class VideoTimeline
             var sb = new StringBuilder(scene.ContentKey);
             foreach (var s in states)
                 sb.Append('|').Append(s.Id).Append(';').Append(F(s.X)).Append(';').Append(F(s.Y)).Append(';').Append(F(s.Scale))
-                  .Append(';').Append(F(s.Opacity)).Append(';').Append(F(s.Rotation)).Append(';').Append(F(s.Progress));
+                  .Append(';').Append(F(s.Opacity)).Append(';').Append(F(s.Rotation)).Append(';').Append(F(s.Progress))
+                  .Append(';').Append(F(s.Width)).Append(';').Append(F(s.Height));
             layers.Add(new VideoLayer(scene, opacity, local, states, Hash(sb.ToString())));
         }
         string? subtitle = BurnSubtitles ? Cues.LastOrDefault(c => t >= c.Start && t < c.End)?.Text : null;
@@ -217,9 +218,11 @@ public sealed class VideoTimeline
         {
             "title" => e.Text ?? scene.Title ?? "",
             "script" => scene.Script,
+            // a function, TeX or path data written in source is read there too
+            "plot" or "math" or "path" => e.Text ?? e.Source ?? "",
             _ => e.Text ?? ""
         };
-        return new VideoElementState(e.Id, e.Kind, text, e.Source, Value("x", e.X), Value("y", e.Y), e.Width, e.Height,
+        return new VideoElementState(e.Id, e.Kind, text, e.Source, Value("x", e.X), Value("y", e.Y), Math.Max(0.001, Value("width", e.Width)), Math.Max(0.001, Value("height", e.Height)),
             Math.Max(0, Value("scale", 1)), Math.Clamp(Value("opacity", 1), 0, 1), Value("rotation", 0),
             Math.Clamp(Value("progress", 1), 0, 1), e.Color, e.FontSize);
     }
