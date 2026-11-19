@@ -124,9 +124,10 @@
     {
       "check": "Pedido real de motion graphics no moto g32, com modelo multimodal: a IA monta, olha, corrige e exporta MP4",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-19 (Issue https://github.com/AbnerCruz/Ecosystem/issues/992); registro em docs/governance/responses/VAL-HO-20261118-urbe-video-direction-28b37f9ce3cc.md."
     },
     {
       "check": "Relatório de travamentos lido no moto g32 depois de uso real",
