@@ -10,19 +10,22 @@ mkdir -p "$OUT"
 shot() { adb exec-out screencap -p > "$OUT/$1.png"; }
 # the screen as the accessibility tree sees it (Avalonia exposes its texts and names)
 screen() { adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1; adb exec-out cat /sdcard/ui.xml; }
-# the emulator's own launcher sometimes stops answering right after boot and its system dialog covers the app: wait it out
-dismiss_system() {
-  local i
-  for i in 1 2 3 4 5; do
-    screen | grep -q "isn't responding" || return 0
-    echo "system dialog over the app (attempt $i): $(screen | grep -o 'text="[^"]*isn.t responding"' | head -1)"
-    tap_text "Wait"
-    sleep 3
-  done
-}
+# the emulator's own launcher sometimes stops answering right after boot and its system dialog covers the app (the app
+# logs no error). The check retries for a while; a dialog about another app is closed ("Close app" closes that app, the
+# launcher, never the Urbe), one about the Urbe is a real failure.
 expect() {
-  dismiss_system
-  screen > "$OUT/$2.xml"; grep -q "$1" "$OUT/$2.xml" || { echo "::error::'$1' not on screen at $2"; shot "$2"; adb logcat -d -v threadtime > "$OUT/logcat.txt"; exit 1; }
+  local i
+  for i in $(seq 1 20); do
+    screen > "$OUT/$2.xml"
+    grep -q "$1" "$OUT/$2.xml" && return 0
+    if grep -q "isn't responding" "$OUT/$2.xml"; then
+      grep -q "Urbe[^\"]*isn't responding" "$OUT/$2.xml" && break
+      echo "a system dialog of another app covers the Urbe (attempt $i): $(grep -o 'text="[^"]*responding"' "$OUT/$2.xml" | head -1)"
+      tap_text "Close app" || tap_text "Wait"
+    fi
+    sleep 2
+  done
+  echo "::error::'$1' not on screen at $2"; shot "$2"; adb logcat -d -v threadtime > "$OUT/logcat.txt"; exit 1
 }
 tap_text() {
   local b; b=$(screen | grep -o "text=\"$1\"[^>]*bounds=\"[^\"]*\"" | head -1 | grep -o 'bounds="[^"]*"' | tr -dc '0-9,[]' | tr '[]' ' ')
