@@ -46,6 +46,15 @@ A como caminho principal, depois de uma prova de conceito que meça Android e Wi
 - Nova ferramenta no catálogo do Assistente, sob as políticas e aprovações existentes.
 - Nenhuma mudança de dados do vault.
 
+## Pesquisa de 19/11/2026 (fatos verificados)
+
+- **Wasmtime para .NET não roda no Android.** O pacote `Wasmtime` 50.0.1 traz binários para `linux-x64/arm64`, `osx`, `win-x64/arm64` — nenhum para `android-arm64` (o `linux-arm64` é ligado à glibc, que o Android não tem). Usá-lo no celular exigiria compilar a biblioteca C do Wasmtime com o NDK e manter esse binário: dezenas de MB e uma cadeia de build nova.
+- **Existe um interpretador WebAssembly só em C#**: [WACS](https://github.com/kelnishi/WACS) 0.16.14 (Apache-2.0, `net8.0`/`netstandard2.1`, sem código nativo), com WASI Preview 1 (`WACS.WASI.Preview1`) cuja raiz de arquivos é uma pasta escolhida pelo host. Rodaria igual no Android e no Windows, sem aumentar o APK com binário nativo. É interpretado: mais lento que o Wasmtime, adequado a scripts curtos.
+- **Intérprete candidato**: QuickJS-ng 0.10.1 publica `qjs-wasi.wasm` (1,4 MB) — JavaScript completo dentro do Wasm. Um Python em Wasm tem dezenas de MB.
+- **Ainda não medido**: velocidade, memória e limite de CPU do WACS com o QuickJS no aparelho. Esta sessão não executou o binário baixado (a política de execução do ambiente bloqueou) e nada foi integrado ao app.
+
+Com isso, a opção A passa a ter duas variantes: **A1 — WACS (C# puro)**, igual nas duas plataformas, mais lento; **A2 — Wasmtime**, rápido no Windows, e no Android só com build próprio pelo NDK.
+
 ## Decisão pendente
 
-O proprietário escolhe entre A (com prova de conceito antes), A+C, B+C, C ou D. Até a decisão, nenhum código de execução é escrito.
+O proprietário escolhe em DEC-0066 (portal). Até a decisão, nenhum código de execução é escrito.
