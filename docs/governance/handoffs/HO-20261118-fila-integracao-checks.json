@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261118-fila-integracao-checks",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-18T21:02:54Z",
+  "agent": {
+    "id": "codex-ecosystem-integration",
+    "kind": "ai-agent"
+  },
+  "task_id": "GOV-0063",
+  "component": "integrator",
+  "state": "review",
+  "branch": "fix/integrator-head-check-queue",
+  "base_commit": "6a4d925aa5f0f663865ed4322e857482b72f36b0",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/workflows/integrate.yml",
+    "docs/adr/0015-integrador-automatico.md",
+    "tests/consistency/Check.cs",
+    "docs/governance/handoffs/HO-20261118-fila-integracao-checks.json"
+  ],
+  "work_completed": [
+    "O PR #959 mantinha a fila ocupada após falhar no check adicional de APK. As execuções 44394153058 e 44395370461 confirmam a repetição na mesma base.",
+    "O integrador registra aguarda-checks para o head bloqueado, passa aos demais PRs e reavalia o candidato com a main atual quando seus checks voltam a ficar verdes."
+  ],
+  "verification": [
+    {
+      "check": "Testes Python do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "python3 -m unittest discover -s .github/integrator/tests: 11 testes."
+    },
+    {
+      "check": "Coleta de PRs com API simulada",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "O status continua aguarda-checks com APK vermelho, volta a testando quando o mesmo head fica verde e outro PR continua no resultado da coleta."
+    },
+    {
+      "check": "Sintaxe Bash e diff",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "bash -n .github/integrator/integrate.sh e git diff --check."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar os checks do PR e a autorização do proprietário exigida para uma mudança no integrador."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0049-autonomia-por-escopo-e-releases-automaticas.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "A coleta ganha somente leitura de checks e metadados de Actions. A integração continua conferindo os checks imediatamente antes do push."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "O planejador tem regressão para aguarda-checks com outro PR pronto e com a main avançada."
+    }
+  ]
+}
