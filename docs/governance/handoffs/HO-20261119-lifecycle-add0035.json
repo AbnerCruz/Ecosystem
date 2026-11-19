@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261119-lifecycle-add0035",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-19T13:02:56Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "GOV-0066",
+  "component": "integrator",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "5935f4ef298cb60ce83e132a970841581bb9b237",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/lifecycle.py",
+    ".github/integrator/tests/test_lifecycle.py",
+    "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261119-lifecycle-add0035.json"
+  ],
+  "work_completed": [
+    "O passo de release do integrador (lifecycle.py) ainda tinha a lista de caminhos reservados do ADD-0034 (AGENTS.md, MANIFEST.md, .github/, docs/governance/, docs/adr/, docs/contracts/, tests/consistency/) e exigia o proprietário para eles, contra o ADD-0035. Isso travou o PR #994, resolvido tirando dele o registro do ADR-0051.",
+    "A lista saiu: quem espera o proprietário é só a classe 'extreme' da integration-policy.json da main, aplicada pelo Check.cs (uma autoridade, NN-001). O lifecycle só acrescenta a mudança de estágio da versão, que é do proprietário.",
+    "ADR-0051 recebe a pesquisa de 19/11 (Wasmtime .NET sem android-arm64; WACS em C# puro, Apache-2.0) e DEC-0066 entra pendente no portal com as alternativas A1, A2, C e D."
+  ],
+  "verification": [
+    {
+      "check": "Testes do lifecycle",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "python3 -m unittest discover -s .github/integrator/tests: 11 testes, incluindo governança/ADR/AGENTS.md sem exigir o proprietário e mudança de estágio exigindo."
+    },
+    {
+      "check": "Simulação do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "bash .github/integrator/simulate.sh: todos os cenários passaram (integrate.yml continua esperando o proprietário pela classe extreme)."
+    },
+    {
+      "check": "Consistência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22."
+    }
+  ],
+  "known_issues": [
+    "Este PR muda .github/integrator/** (classe extreme): espera a review do proprietário no head, uma vez."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois desta integração, governança e documentos integram verdes sem o proprietário, como manda o ADD-0035."
+  ],
+  "decisions_required": [
+    "DEC-0066"
+  ],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Mantida como regra de linguagem (nada apresentado como validado no aparelho sem ter sido); removida como etapa por decisão do proprietário (ADD-0035, changelog)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Ordem do chat persistida em ADD-0035 e DEC-0065."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão continua exigindo evidência automática."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "extreme"
+    ],
+    "reason": "Muda o próprio portão de integração (.github/integrator/lifecycle.py)."
+  }
+}
