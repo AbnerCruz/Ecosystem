@@ -1,5 +1,9 @@
 # Changelog
 
+- LUNET-512 (segurança de leitura, CI/DEVICE pendentes): campos inválidos em JSON persistido, incluindo notas longas e associação de projeto fora dos limites, agora são reportados como dados inválidos sem exceção não tratada no Android. O arquivo original é preservado. Testes de regressão cobrem ambos os campos.
+
+- LUNET-512 (integridade de dados, CI/DEVICE pendentes): referências curadas retiradas do catálogo embutido continuam acessíveis como snapshots locais, preservando favoritos, notas e associação a projetos após atualizar o aplicativo e salvar novamente. Identificadores pessoais inválidos continuam rejeitados; referências curadas que retornarem recebem metadados oficiais com dados pessoais preservados.
+
 - LUNET-510 (PR em andamento, DEVICE pendente): Home mobile-first sem abrir projeto, quatro destinos (Início, Projetos, Studios e Explorar), pesquisa de jogos, fixados, último projeto aberto, documentação offline e acesso a configurações; preferências locais persistidas fora dos jogos com gravação atômica. Studios ainda vinculados a projetos até LUNET-511.
 
 - LUNET-512 (implementação em PR, CI/DEVICE pendentes): Explorar diretamente do launcher — catálogo offline de jogos e gêneros para inspiração, filtros combinados por mecânica/perspectiva/estilo, busca por texto, notas, favoritos, criação/edição/exclusão de referências pessoais e associação opcional a projetos. Sem capturar arte protegida, sem loja e sem internet obrigatória.

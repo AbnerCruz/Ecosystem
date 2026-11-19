@@ -48,9 +48,18 @@ public sealed class InspirationLibrary
                 }
                 else
                 {
-                    if (entry.Curated || !Guid.TryParse(entry.Id, out _))
-                        throw new InvalidDataException("Referência salva sem identificação válida; o arquivo foi preservado.");
-                    byId.Add(entry.Id, Validate(entry with { Curated = false }));
+                    if (entry.Curated && entry.Id.StartsWith("ref.", StringComparison.Ordinal))
+                    {
+                        // Keep retired curated entries as read-only snapshots so upgrades cannot erase
+                        // user notes/favorites. If the ID returns to the catalog, installed metadata wins.
+                        byId.Add(entry.Id, Validate(entry));
+                    }
+                    else
+                    {
+                        if (entry.Curated || !Guid.TryParse(entry.Id, out _))
+                            throw new InvalidDataException("Referência salva sem identificação válida; o arquivo foi preservado.");
+                        byId.Add(entry.Id, Validate(entry with { Curated = false }));
+                    }
                 }
             }
             _entries = byId.Values.ToList();
@@ -58,6 +67,12 @@ public sealed class InspirationLibrary
         catch (JsonException ex)
         {
             throw new InvalidDataException("Não foi possível ler a biblioteca de inspiração. O arquivo original foi preservado.", ex);
+        }
+        catch (ArgumentException ex)
+        {
+            // Saved user data is untrusted input, even when the JSON itself is syntactically valid.
+            // Convert validation failures to the documented recovery path instead of crashing Android.
+            throw new InvalidDataException("A biblioteca contém campos inválidos. O arquivo original foi preservado.", ex);
         }
     }
 
