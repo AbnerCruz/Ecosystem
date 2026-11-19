@@ -63,4 +63,22 @@ public sealed class PublicationReviewTests
     public void Review_AnEmptyPublicationSaysSo() =>
         Assert.Equal("A publicação não tem nenhuma nota.", Assert.Single(PublicationReview.Run(
             PublicationProject.Create("Nada", "x") with { Sections = [], Sources = [] }, new PublicationSourceCatalog(new DocumentStore()))).Message);
+
+    /// <summary>CST-213: a citation of a heading or ^block that the cited note does not have (renamed, deleted) is caught; good ones pass.</summary>
+    [Fact]
+    public void ACitationOfAMissingPartIsCaught()
+    {
+        var store = new DocumentStore();
+        store.Upsert(new DocumentInput { Path = "Fontes/Livro.md", Content = "# Livro\n\n## Capítulo 2\n\nUma frase. ^frase\n" });
+        var text = store.Upsert(new DocumentInput { Path = "Artigo.md", Content =
+            "# Artigo\n\nVer [[Livro#Capítulo 2]], [[Livro#^frase]], [[Livro#Capítulo 9]], [[Livro#^sumiu]] e [[#Artigo]] e [[#Fim]].\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        string? Read(string name) => (store.Get(name) ?? store.List().FirstOrDefault(d => Path.GetFileNameWithoutExtension(d.Path) == name))?.Content;
+        var issues = PublicationReview.Run(PublicationProject.Create("P", text.Id), catalog, noteExists: n => Read(n) is not null, readNote: Read)
+            .Where(i => i.Message.StartsWith("Citação", StringComparison.Ordinal)).Select(i => i.Message).ToList();
+        Assert.Equal(3, issues.Count);
+        Assert.Contains(issues, m => m.Contains("[[Livro#Capítulo 9]]"));
+        Assert.Contains(issues, m => m.Contains("[[Livro#^sumiu]]"));
+        Assert.Contains(issues, m => m.Contains("[[#Fim]]"));   // the note's own heading that is not there
+    }
 }

@@ -811,7 +811,9 @@ public sealed partial class MainView
         var notes = _contents.Keys.Select(p => new CityNote(p, "")).ToList();
         bool NoteExists(string name) => files.Contains(name) || files.Contains(name + ".md") ||
             notes.Any(n => string.Equals(System.IO.Path.GetFileNameWithoutExtension(n.Path), System.IO.Path.GetFileName(name), StringComparison.OrdinalIgnoreCase));
-        var issues = await Task.Run(() => PublicationReview.Run(project, catalog, files.Contains, NoteExists, data));
+        string? ReadNote(string name) => notes.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.OrdinalIgnoreCase) || string.Equals(n.Path, name + ".md", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(System.IO.Path.GetFileNameWithoutExtension(n.Path), System.IO.Path.GetFileName(name), StringComparison.OrdinalIgnoreCase))?.Content;
+        var issues = await Task.Run(() => PublicationReview.Run(project, catalog, files.Contains, NoteExists, data, ReadNote));
         LastPublicationReview = issues;
         if (!ReferenceEquals(draft, _publicationDraft)) return;
         if (issues.Count == 0) { ShowLifeNotice("Nada a corrigir: a publicação está pronta para exportar."); return; }

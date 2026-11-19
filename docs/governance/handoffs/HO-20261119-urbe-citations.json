@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261119-urbe-citations",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-19T10:15:23Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-213",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "6a4d925aa5f0f663865ed4322e857482b72f36b0",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PublicationReview.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationReviewTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md"
+  ],
+  "work_completed": [
+    "CST-213 (citações erradas): a verificação da publicação aponta [[Nota#Título]], [[Nota#^bloco]] e [[#Título]] cujo trecho não existe na nota citada (renomeado ou apagado), com a correção; a revisão da IA (review_publication) usa a mesma regra e passa a achar a nota citada também pelo título."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1774/1774 (ACitationOfAMissingPartIsCaught)."
+    },
+    {
+      "check": "Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "694/694."
+    },
+    {
+      "check": "Verificar publicação no aparelho com uma citação quebrada",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/PublicationReview.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "A âncora de título é comparada como o leitor do Urbe a resolve (EmbedFragments.LineOf); outros programas podem gerar âncoras diferentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Seguir a consolidação 2.6 de cima para baixo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A verificação só lê as notas; nada é copiado ou gravado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Teste com citações válidas e quebradas."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-publication-review",
+      "status": "product-specific",
+      "rationale": "Revisão das Publicações do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature autorizada dentro do Urbe (ADD-0034)."
+  }
+}
