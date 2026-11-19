@@ -3351,11 +3351,16 @@ static class SelfTest
                 File.WriteAllText(Path.Combine(hdir, n["message_id"]!.GetValue<string>() + ".json"), n.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
             Save(Make("HO-99990101-teste-validacao", "P9-9", "2026-10-01T19:01:00Z", "review"));
             Save(Make("HO-99990102-teste-validacao-2", "P9-8", "2026-10-01T19:02:00Z", "review"));
-            RunGenerator(tmp);
-            using var proj = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
-            var val = proj.RootElement.Arr("pendingValidations").First(v => v.Str("taskId") == "P9-9");
-            var approve = val.GetProperty("approve"); var reject = val.GetProperty("reject");
-            string title = approve.Str("issueTitle")!, body = approve.Str("issueBody")!;
+            // ADD-0035: o portal não projeta mais validações; o aplicador ainda responde registros antigos, no mesmo formato.
+            (string Title, string Body) Answer(string task, string handoff, bool approve)
+            {
+                var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                    "Validação de teste\n" + "docs/governance/handoffs/" + handoff + ".json"))).ToLowerInvariant()[..12];
+                string result = approve ? "passed" : "failed", verb = approve ? "aprovada" : "reprovada";
+                return ($"Validação {task}: {verb}", "<!-- ecosystem-validation:v1 -->\n" + $"validation: {task}\nhandoff: {handoff}\ncheck-hash: {hash}\nresult: {result}\n\ncomment:\n");
+            }
+            var (title, body) = Answer("P9-9", "HO-99990101-teste-validacao", true);
+            var (rejectTitle, rejectBody) = Answer("P9-9", "HO-99990101-teste-validacao", false);
             var path = Path.Combine(hdir, "HO-99990101-teste-validacao.json");
             var before = File.ReadAllText(path);
             // Regressão #114: evidência pending do build já referencia o handoff.
@@ -3406,26 +3411,25 @@ static class SelfTest
             var replayVal = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
             Report(replayVal.Code == 0 && replayVal.Outcome == "already-registered" && File.ReadAllText(path) == handoffRegistered, "reprocessar a mesma validação é idempotente (nada alterado)");
             Report(WorkflowVerdict(replayVal) == 0 && File.ReadAllText(buildPath) == buildRegistered, "repetição idempotente sem commit permanece verde e sem divergência de build");
-            var opposite = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            var opposite = RunApplier(tmp, "AbnerCruz", "OWNER", rejectTitle, rejectBody);
             Report(opposite.Code == 3 && opposite.Outcome == "rejected" && File.ReadAllText(path) == handoffRegistered, "resposta oposta a uma validação já respondida é recusada e não sobrescreve");
 
             Report(WorkflowVerdict(opposite) != 0, "resposta conflitante termina workflow vermelho");
             // Restaura SOMENTE a fixture isolada para exercitar pending → failed.
             File.WriteAllText(path, before); build["state"] = "HUMAN_VALIDATION_PENDING"; File.WriteAllText(buildPath, build.ToJsonString());
-            var rejectedValidation = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            var rejectedValidation = RunApplier(tmp, "AbnerCruz", "OWNER", rejectTitle, rejectBody);
             RunGenerator(tmp); var negativeConsistent = Checks.RunAll(tmp);
             if (negativeConsistent.Failed) negativeConsistent.Print(Console.Out);
             Report(rejectedValidation.Code == 0 && rejectedValidation.Outcome == "registered" && !negativeConsistent.Failed
                 && WorkflowVerdict(rejectedValidation, "0", "true") == 0, "reprovação válida registra failed, conserva consistência e termina workflow verde");
             Report(File.ReadAllText(buildPath).Contains("IMPLEMENTED"), "build reprovado não permanece validado nem verificado automaticamente");
-            var negativeReplay = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            var negativeReplay = RunApplier(tmp, "AbnerCruz", "OWNER", rejectTitle, rejectBody);
             Report(negativeReplay.Outcome == "already-registered" && WorkflowVerdict(negativeReplay) == 0, "reprovação repetida também é idempotente e verde");
 
             // Reprovação e handoff substituído por um mais recente da mesma tarefa.
-            using var proj2 = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
-            var other = proj2.RootElement.Arr("pendingValidations").First(v => v.Str("taskId") == "P9-8");
+            var other = Answer("P9-8", "HO-99990102-teste-validacao-2", false);
             Save(Make("HO-99990103-teste-validacao-3", "P9-8", "2026-10-01T19:03:00Z", "review"));
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", other.GetProperty("reject").Str("issueTitle")!, other.GetProperty("reject").Str("issueBody")!).Code == 3,
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", other.Title, other.Body).Code == 3,
                 "recusa handoff que não é mais o mais recente da tarefa");
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
