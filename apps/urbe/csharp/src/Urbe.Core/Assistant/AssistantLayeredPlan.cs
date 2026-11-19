@@ -123,7 +123,8 @@ public static class AssistantLayeredPlan
             var verificationEvidence = Get(step, "verification_evidence");
             var acceptance = Get(step, "acceptance");
             if (status is "in_progress" or "done" && (tests.Length == 0 || acceptance.Length == 0))
-                throw new AiToolException(id + ": defina primeiro os testes e o critério de aceite.");
+                throw new AiToolException(id + " está " + status + " sem " + (tests.Length == 0 && acceptance.Length == 0 ? "os campos tests e acceptance" : tests.Length == 0 ? "o campo tests" : "o campo acceptance") +
+                    ". Envie no próprio nó: \"acceptance\" (o que conta como pronto) e \"tests\" (como você vai conferir), ou deixe status \"pending\" até defini-los.");
             if (status == "done" && (testEvidence.Length == 0 || implementationEvidence.Length == 0
                 || verificationEvidence.Length == 0 ||
                 IsPending(testEvidence) || IsPending(implementationEvidence) || IsPending(verificationEvidence)))

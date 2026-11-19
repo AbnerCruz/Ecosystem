@@ -59,7 +59,8 @@ public sealed record AiDelegationBrief(string Task, IReadOnlyList<string> Scope,
                 : "Resultado esperado: texto na sua resposta.");
             lines.Add("Ao terminar, responda com: ARTEFATO: o caminho da nota (ou \"texto\"); JUSTIFICATIVA: como chegou ao resultado e quais fontes usou; PENDÊNCIAS: o que não foi possível fazer.");
         }
-        lines.Add("Limite deste trabalho: " + MaxSteps + " etapas. Você não vê a conversa nem as memórias de quem pediu; peça o que faltar.");
+        // the owner (19/11/2026): no limit of steps; what matters is a good result
+        lines.Add("Você não vê a conversa nem as memórias de quem pediu; peça o que faltar.");
         return string.Join("\n", lines);
     }
 

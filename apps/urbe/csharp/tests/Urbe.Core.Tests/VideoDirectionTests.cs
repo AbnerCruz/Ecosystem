@@ -270,6 +270,8 @@ public sealed class VideoDirectionTests
             """)!.AsObject();
         var result = await write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = spec }, host);
         Assert.Contains("Publicação salva", result.Content);
+        // the scene ids come back, so the agent fills each scene with edit_video_scene in small calls
+        Assert.Contains("Cenas (preencha cada uma com edit_video_scene): 1 scene_a = Roteiro.md", result.Content);
         var project = PublicationProjectCodec.Parse(host.Documents.Get("V.publication.json")!.Content);
         using var catalog = new PublicationSourceCatalog(host.Documents);
         var timeline = VideoTimeline.Build(project, catalog);

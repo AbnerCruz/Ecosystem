@@ -1,26 +1,25 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.58
+**Versão canônica preparada:** 2.0.0-beta.59
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-## Vídeos feitos pelo Assistente
+## Cálculo
 
-- **O Assistente entrega o vídeo pronto.** Ao pedir um vídeo, ele narra o roteiro com a voz do aparelho, alonga as cenas que ficariam curtas para a fala, gera o MP4 conferido e as legendas dentro do vault e diz onde estão. Nenhum arquivo existente é substituído.
-- **Sem pedir permissão a cada quadro.** Com o agente em "autônomo", olhar os quadros do vídeo não abre mais uma janela de autorização a cada vez.
-- **Gráficos e fórmulas aparecem.** As instruções do Assistente mandavam a função e o TeX para o campo errado, e eles saíam vazios. Corrigido, e o motor aceita os dois campos.
-- **O selo da IA não aparece mais no vídeo.** Títulos e legendas de notas escritas pelo Assistente não mostram mais o selo de autoria, e os trechos dessas notas podem virar cenas pelo título.
-- **Erros que dizem o que fazer.** Fonte ou trecho ausente, propriedade ou curva desconhecida: a mensagem diz qual e lista o que existe. Cenas escritas com outro identificador são mantidas, na ordem, em vez de trocadas por cenas vazias.
-- **O Assistente sabe o que o motor faz.** Recebe um exemplo completo de cena e orientações de qualidade (uma ideia por cena, paleta única, nada sob a legenda, elementos que entram animados), em vez de criar publicações de teste.
+- **Integrais certas.** A integral definida dava valor errado em algumas funções periódicas: ∫₀²π (1+cos x)² dx saía 8π/3 em vez de 3π. Corrigido; uma integral que não converge (como 1/x passando por zero) é recusada com explicação.
+- **Integral dentro de uma conta.** `0,5*integral de … de 0 até 2*pi` e `pi*integral de x^4 de 0 até 2` agora funcionam.
 
-## Motion graphics
+## Assistente
 
-- **Curvas de animação.** Suave, desacelerar, acelerar, constante, ressalto e degrau no inspetor; o Assistente também usa qualquer cubic-bezier.
-- **Traços que se desenham.** Seta, sublinhado, visto e círculo, ou qualquer desenho vetorial (SVG).
-- **Grupos.** Um objeto pode seguir outro em posição, escala, rotação e opacidade.
-- **Linha e seta** como formas; largura e altura animáveis.
+- **Sem limite de passos.** Tarefas delegadas a outro agente não param mais em 30 (ou 24) etapas.
+- **Resposta cortada continua sozinha.** Quando o modelo atinge o limite de texto de uma resposta, o Assistente continua de onde parou, sem você precisar escrever "continue".
+- **Chamada grande cortada não falha às cegas.** Se o modelo tenta mandar algo grande demais de uma vez (como um vídeo inteiro), o Urbe avisa que a chamada foi cortada e orienta a fazer por partes, em vez de responder "falta spec".
+- **Vídeos montados por partes.** O Assistente cria a publicação com as fontes, recebe os ids das cenas e preenche uma cena por vez.
+- **Pergunta o que você quer antes de produzir.** Num pedido como "faz um simulado", o Assistente pergunta uma vez o formato (quantas questões, gabarito recolhível, formulário que corrige sozinho, PDF), com a recomendação primeiro, e depois executa.
+- **Contas conferidas em lote.** O Assistente confere todas as contas numa chamada só, em vez de uma por vez.
+- **Erro do plano explicado.** O plano diz exatamente quais campos faltam em vez de uma mensagem que o modelo repetia.
 
 ## Não testado no aparelho
 
-- Narração e geração do MP4 pelo Assistente foram testadas no computador (com o codificador do PC) e com voz simulada; a voz e o codificador do Android não foram usados nesta versão.
+- As mudanças foram testadas com testes automáticos e simulações do modelo; não rodei de novo as conversas reais com os modelos do proprietário.
