@@ -88,6 +88,9 @@ public sealed partial class MainActivity
         void ShowProblem(Exception ex) =>
             Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show();
 
+        const int pageSize = 18;
+        int visibleCount = pageSize;
+
         void Refresh()
         {
             items.RemoveAllViews();
@@ -101,7 +104,7 @@ public sealed partial class MainActivity
                 return;
             }
 
-            foreach (var reference in matches)
+            foreach (var reference in matches.Take(visibleCount))
             {
                 var item = reference;
                 var card = LunetUi.Column(this, 7);
@@ -153,7 +156,7 @@ public sealed partial class MainActivity
                 }
                 card.AddView(actions);
                 if (!string.IsNullOrWhiteSpace(item.Url))
-                    card.AddView(LunetUi.Button(this, "Abrir página da referência", () =>
+                    card.AddView(LunetUi.Button(this, item.Curated ? "Pesquisar gameplay" : "Abrir página da referência", () =>
                     {
                         StartActivity(new Intent(Intent.ActionView, global::Android.Net.Uri.Parse(item.Url)));
                     }, ButtonStyle.Quiet));
@@ -162,6 +165,15 @@ public sealed partial class MainActivity
                     card.AddView(LunetUi.Button(this, "Abrir projeto associado", () => OpenProject(item.ProjectName),
                         ButtonStyle.Quiet));
                 items.AddView(card, LunetUi.FillWidth());
+            }
+            if (matches.Count > visibleCount)
+            {
+                items.AddView(LunetUi.Button(this,
+                    $"Mostrar mais ({matches.Count - visibleCount} restantes)", () =>
+                    {
+                        visibleCount += pageSize;
+                        Refresh();
+                    }, ButtonStyle.Secondary));
             }
         }
 
@@ -178,6 +190,7 @@ public sealed partial class MainActivity
             spinner.ItemSelected += (_, args) =>
             {
                 set(args.Position == 0 ? "" : options[args.Position]);
+                visibleCount = pageSize;
                 Refresh();
             };
             return spinner;
@@ -188,8 +201,8 @@ public sealed partial class MainActivity
         AddFilter("perspectiva", library.Perspectives, _inspirationPerspective,
             value => _inspirationPerspective = value);
         AddFilter("estilo", library.Styles, _inspirationStyle, value => _inspirationStyle = value);
-        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; Refresh(); };
-        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; Refresh(); };
+        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; visibleCount = pageSize; Refresh(); };
+        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; visibleCount = pageSize; Refresh(); };
         Refresh();
         root.AddView(BuildLauncherNavigation("explore"));
         SetContentView(root);

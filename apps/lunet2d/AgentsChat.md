@@ -764,3 +764,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação: Home sem abrir jogo, navegação em quatro destinos com alvos de toque de 48dp, fixados/último jogo em arquivo privado fora dos projetos, lista com busca, documentação offline e configurações. Studios permitem escolher projeto real. Não cria projetos temporários nem altera código Game.cs.
 - Testes: LauncherPreferencesTests (seis cenários), compilação/testes Android e consistency dependem do CI. DEVICE e prints pendentes; não declarar gate LUNET-510 fechado.
 - Próximo: corrigir CI/Build se necessário, validar moto g32 Android 13 e avançar Library/Studios autônomos LUNET-511. Sem merge manual nem mudança do estágio.
+
+### 20261116-chatgpt-lunet512-population-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → próximos agentes/integrador — pronto para revisão
+- Item: LUNET-512 — popular Explorar. Base main `54cdca1d`; branch `feat/lunet-512-populate-reference-catalog-20261116`; somente `AbnerCruz/Ecosystem/apps/lunet2d`.
+- Auditoria: 12 referências já funcionavam offline com filtros, favoritos e notas; a interface criava todos os cards de uma vez. PRs #959 (link externo) e #960 (referências curadas aposentadas) estavam abertos e não foram alterados.
+- Implementação: 119 novas fichas textuais educativas, agora 131 no catálogo, distribuídas por gêneros, perspectivas, estilos e mecânicas. Links curados abrem busca de gameplay por toque; nenhum vídeo ou imagem protegida é distribuído no APK. Movimento aéreo e montarias pesquisáveis (Owlboy/Terraria). Android carrega 18 cards inicialmente com botão Mostrar mais.
+- Testes: `InspirationCatalogPopulationTests.cs` protege contagem/IDs, conteúdo, busca combinada e persistência de favoritos/notas de versões anteriores. Testes .NET e CI ainda pendentes neste ambiente sem SDK; não alegar que passaram.
+- Arquivos/documentos: `InspirationCatalogExpansion.cs`, `InspirationLibrary.cs`, `MainActivity.Inspiration.cs`, testes, `docs/guides/inspiracao.md`, ROADMAP, CHANGELOG e `HO-20261116-lunet-512-catalog-population.json`.
+- Próximos passos: inspecionar CI, reconciliar com #959/#960 e validar moto g32 Android 13 (incluindo pesquisa/links sem navegador, notas, IME, fluidez). Sem DEVICE nem APK/release confirmada.
