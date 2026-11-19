@@ -10,7 +10,20 @@ mkdir -p "$OUT"
 shot() { adb exec-out screencap -p > "$OUT/$1.png"; }
 # the screen as the accessibility tree sees it (Avalonia exposes its texts and names)
 screen() { adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1; adb exec-out cat /sdcard/ui.xml; }
-expect() { screen > "$OUT/$2.xml"; grep -q "$1" "$OUT/$2.xml" || { echo "::error::'$1' not on screen at $2"; shot "$2"; adb logcat -d -v threadtime > "$OUT/logcat.txt"; exit 1; }; }
+# the emulator's own launcher sometimes stops answering right after boot and its system dialog covers the app: wait it out
+dismiss_system() {
+  local i
+  for i in 1 2 3 4 5; do
+    screen | grep -q "isn't responding" || return 0
+    echo "system dialog over the app (attempt $i): $(screen | grep -o 'text="[^"]*isn.t responding"' | head -1)"
+    tap_text "Wait"
+    sleep 3
+  done
+}
+expect() {
+  dismiss_system
+  screen > "$OUT/$2.xml"; grep -q "$1" "$OUT/$2.xml" || { echo "::error::'$1' not on screen at $2"; shot "$2"; adb logcat -d -v threadtime > "$OUT/logcat.txt"; exit 1; }
+}
 tap_text() {
   local b; b=$(screen | grep -o "text=\"$1\"[^>]*bounds=\"[^\"]*\"" | head -1 | grep -o 'bounds="[^"]*"' | tr -dc '0-9,[]' | tr '[]' ' ')
   [ -n "$b" ] && set -- $(echo "$b" | tr ',' ' ') && adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
