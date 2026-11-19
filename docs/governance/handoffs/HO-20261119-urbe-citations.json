@@ -19,10 +19,13 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationReviewTests.cs",
-    "apps/urbe/docs/csharp/CONSOLIDATION.md"
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs"
   ],
   "work_completed": [
-    "CST-213 (citações erradas): a verificação da publicação aponta [[Nota#Título]], [[Nota#^bloco]] e [[#Título]] cujo trecho não existe na nota citada (renomeado ou apagado), com a correção; a revisão da IA (review_publication) usa a mesma regra e passa a achar a nota citada também pelo título."
+    "CST-213 (citações erradas): a verificação da publicação aponta [[Nota#Título]], [[Nota#^bloco]] e [[#Título]] cujo trecho não existe na nota citada (renomeado ou apagado), com a correção; a revisão da IA (review_publication) usa a mesma regra e passa a achar a nota citada também pelo título.",
+    "CST-191: o que o formato de destino perde nestas notas é dito antes de salvar (Salvar assim / Voltar), não depois; perdas já aceitas para a mesma publicação e formato não são perguntadas de novo na sessão."
   ],
   "verification": [
     {
