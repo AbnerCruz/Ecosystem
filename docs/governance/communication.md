@@ -85,11 +85,13 @@ Handoff de trabalho que **cria ou reestrutura** uma funcionalidade relevante pod
 O agente **nunca** pede uma decisão ou validação só no chat. Antes de pedir:
 
 - **Decisão pendente:** entrada `status: pending` em [`decisions.json`](decisions.json) com `related` apontando para o(s) documento(s), ADR(s) ou artefato(s) — o **objeto** — que o proprietário precisa olhar. `CHK-DECISIONS` recusa pendência sem objeto.
-- **Validação humana pendente:** verificação `kind: human`, `result: pending` em um handoff, com `object` (caminho do repositório ou URL do artefato/página a validar). `CHK-HANDOFFS` recusa validação pendente sem objeto.
+- **Validação humana pendente:** não existe mais desde ADD-0035 (19/11/2026). O agente não cria verificação `kind: human`, `result: pending`; diz em `known_issues` o que não foi testado no aparelho. `CHK-HANDOFFS` recusa handoff novo com validação humana pendente.
 
 O gerador do portal projeta ambas em seções próprias, com link para o objeto, e `CHK-PORTAL` recusa uma projeção que omita alguma pendência. O proprietário responde **clicando na alternativa no portal** (Issue pré-preenchida confirmada no GitHub, registrada pela automação — [`portal.md`](../architecture/portal.md) §3.2, ADR-0007) ou, se preferir, ao agente no chat; nos dois casos a decisão fica em `decisions.json` com a fonte persistida (NN-009). Uma **validação humana** é respondida do mesmo modo, com **Aprovar** ou **Reprovar** no portal (ADR-0008, ADD-0005): a automação grava o resultado na própria verificação do handoff e o agente depois atualiza o `state`. Um agente **nunca** responde por ele (decisão ou validação) nem cria a Issue de resposta. **Veredito do registro:** o workflow `decision` só termina **verde** quando o resultado desejado existe no repositório (registrado agora, ou já registrado com a mesma escolha — reprocessar o evento é idempotente); recusa, erro, falha de consistência ou de push terminam **vermelho**, com a causa em comentário na Issue (`decision-verdict.sh`, testado pelo self-test). "Decidida com consequências ainda a aplicar" (`consequencesApplied: false`) é um estado legítimo de **sucesso** do registrador; "não registrada" nunca é.
 
-## 9.1 Só o crítico chega ao proprietário (ADD-0012)
+## 9.1 Só o extremamente crítico chega ao proprietário (ADD-0012, ADD-0035)
+
+> **ADD-0035 (19/11/2026):** «Quero merge automático, e no máximo ter que responder decisões de nível extremamente crítico, fora isso quero automação plena.» Tudo integra quando o estado combinado está verde; só a classe `extreme` de [`integration-policy.json`](integration-policy.json) — o próprio portão (política, checker, integrador e seus workflows), chaves de assinatura — e o estágio da versão esperam a review do proprietário. A cada integração o agente informa, em linguagem simples, o que de fato mudou para quem usa o produto. O texto abaixo, de ADD-0012, vale no que não contradiz isso.
 
 > «Quero decidir e aprovar somente coisas críticas, se uma implementação funciona normalmente dentro dos padrões não deve precisar de mim.»
 

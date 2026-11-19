@@ -336,6 +336,8 @@ Acesso a filesystem, projeto, Git, GitHub, build, network, assets, execução e 
 
 ## NN-017 — CI verde não equivale a validação completa
 
+> **ADD-0035 (DEC-0065, 19/11/2026):** por decisão do proprietário, a validação no aparelho deixou de ser etapa: nenhuma tarefa, roadmap, release ou integração espera validação humana. Continua obrigatório dizer a verdade: o que só foi testado em CI, headless, Xvfb ou emulador nunca é apresentado como validado no aparelho. O texto abaixo vale como distinção de linguagem, não como gate.
+
 Testes automáticos são necessários, mas não substituem validação humana quando o requisito depende de:
 
 - dispositivo real;

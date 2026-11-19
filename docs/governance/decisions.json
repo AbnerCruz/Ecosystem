@@ -2316,6 +2316,38 @@
         "docs/architecture/audits/lunet-estado-atual-2026-11-15.md"
       ],
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0065",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Automação plena: sem validação no aparelho e sem aprovações, salvo o extremamente crítico",
+      "context": "Ordem expressa do proprietário em 19/11/2026: as etapas de validação no aparelho e as aprovações atrasam o trabalho; quer merge automático e responder só decisões extremamente críticas, e ser informado do que foi implementado.",
+      "question": "O que ainda exige o proprietário?",
+      "alternatives": [
+        {
+          "option": "A — Só o extremamente crítico",
+          "consequences": "Tudo integra quando verde; o proprietário só aprova mudanças no portão (política, checker, integrador e seus workflows), chaves de assinatura e estágio da versão."
+        },
+        {
+          "option": "B — Manter validações e aprovações por classe",
+          "consequences": "Mantém as etapas que o proprietário mandou remover."
+        }
+      ],
+      "consequences": "Nenhuma validação humana pendente é criada ou exibida; tarefas concluem com evidência automática dita como tal; integração automática para todas as classes, exceto 'extreme'.",
+      "manifestCompatibility": "NN-017 deixa de ser etapa obrigatória e passa a exigir só que nada se apresente como validado no aparelho sem ter sido; NN-018 continua (evidência automática); os demais NN preservados.",
+      "raisedBy": "claude-code-urbe-editor",
+      "raisedAt": "2026-11-19",
+      "decision": "A, conforme ordem direta do proprietário nesta conversa.",
+      "decidedAt": "2026-11-19",
+      "record": "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+      "related": [
+        "docs/governance/integration-policy.json",
+        "MANIFEST.md",
+        "docs/governance/definition-of-done.md"
+      ],
+      "consequencesApplied": true
     }
   ]
 }
