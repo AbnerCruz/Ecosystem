@@ -2348,41 +2348,6 @@
         "docs/governance/definition-of-done.md"
       ],
       "consequencesApplied": true
-    },
-    {
-      "id": "DEC-0066",
-      "status": "pending",
-      "component": "urbe",
-      "blocking": false,
-      "title": "Urbe: como executar código escrito pela IA com isolamento (ADR-0051)",
-      "context": "O plano Numa 2.6 pede que o Assistente execute código (cálculos, dados, gráficos, conversões) sem terminal (CST-201–204, 206–212). Executar código de um modelo é executar código não confiável: precisa de uma fronteira que impeça acesso ao vault, aos segredos, à rede e consumo ilimitado. A pesquisa de 19/11/2026 (ADR-0051) confirmou que o Wasmtime para .NET não tem binário Android e que existe um interpretador WebAssembly só em C# (WACS, Apache-2.0).",
-      "question": "Qual fronteira de execução de código o Urbe adota?",
-      "alternatives": [
-        {
-          "option": "A1 — WebAssembly interpretado em C# (WACS + QuickJS), no app",
-          "consequences": "Igual no Android e no Windows, offline, sem binário nativo; mais lento (scripts curtos). Prova de conceito no aparelho antes de entrar na release."
-        },
-        {
-          "option": "A2 — Wasmtime (nativo)",
-          "consequences": "Rápido; no Android exige compilar e manter o Wasmtime com o NDK (dezenas de MB no APK)."
-        },
-        {
-          "option": "C — Sandbox remoto opcional",
-          "consequences": "Funciona em qualquer aparelho, mas envia código e dados a um serviço externo e exige internet e chave."
-        },
-        {
-          "option": "D — Não executar código",
-          "consequences": "Sem nova fronteira; o Assistente fica no cálculo e nos dados próprios; CST-201–204 não são feitos."
-        }
-      ],
-      "recommendation": "A1, com C como complemento explícito: a mesma fronteira nas duas plataformas, sem binário nativo novo; a execução recebe cópias dos arquivos liberados, nunca o vault, e aparece nas etapas do Assistente com código, saída e limites.",
-      "consequences": "Define a fronteira de segurança da execução de código (NN-016) e libera CST-201–204 e 206–212 na variante escolhida.",
-      "manifestCompatibility": "NN-016 (permissões antes da autonomia) e NN-011 (decisão explícita); nenhum dado do vault muda; nenhum Product passa a depender de outro.",
-      "related": [
-        "docs/adr/0051-urbe-execucao-de-codigo-isolada.md"
-      ],
-      "raisedBy": "claude-code-urbe-editor",
-      "raisedAt": "2026-11-19"
     }
   ]
 }

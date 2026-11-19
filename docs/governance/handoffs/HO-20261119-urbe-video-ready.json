@@ -34,8 +34,6 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoExpressivenessTests.cs",
-    "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
-    "docs/governance/decisions.json",
     "docs/governance/handoffs/HO-20261119-urbe-video-ready.json"
   ],
   "work_completed": [
@@ -47,8 +45,7 @@
     "Causa 5: look_at_video abria um diálogo de envio a cada quadro mesmo com o agente em autônomo; sob autônomo envia ao mesmo provedor da conversa sem perguntar.",
     "Ferramenta nova render_video: narra com a voz do aparelho, ajusta cenas à fala, gera o MP4 verificado (mesmo caminho do Exportar MP4 do Estúdio) e o SRT no vault, sem substituir arquivos, e registra o MP4 na publicação.",
     "Schema do Assistente: exemplo completo de cena (validado por teste), formas line/arrow, orientações de qualidade e regra de não criar publicações de teste.",
-    "Motor: curvas cubic-bezier e back, traço vetorial (path) que se desenha, grupos (parent), formas line e arrow, largura/altura animáveis; inspetor com Curva até aqui; Estúdio com traços prontos.",
-    "ADR-0051: pesquisa (Wasmtime .NET sem android-arm64; WACS C# puro, Apache-2.0) e DEC-0066 pendente no portal."
+    "Motor: curvas cubic-bezier e back, traço vetorial (path) que se desenha, grupos (parent), formas line e arrow, largura/altura animáveis; inspetor com Curva até aqui; Estúdio com traços prontos."
   ],
   "verification": [
     {
@@ -79,14 +76,14 @@
   "blockers": [],
   "next_actions": [
     "Presets visuais de vídeo (tema, tipografia, paleta) que o Assistente e a pessoa aplicam de uma vez.",
-    "Reexportação por segmentos."
+    "Reexportação por segmentos.",
+    "Governança em PR próprio (exige o proprietário pelas regras vigentes do integrador): ADR-0051 com a pesquisa de 19/11 e DEC-0066 pendente; alinhar .github/integrator/lifecycle.py ao ADD-0035 (hoje qualquer mudança em docs/governance ou docs/adr exige o proprietário)."
   ],
   "decisions_required": [],
   "normative_sources": [
     "AGENTS.md",
     "MANIFEST.md",
     "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
-    "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
     "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
   ],
   "invariants": [
