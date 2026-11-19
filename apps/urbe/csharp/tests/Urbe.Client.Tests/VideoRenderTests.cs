@@ -59,6 +59,44 @@ public sealed class VideoRenderTests
             "); as outras saíram iguais ao último MP4.", MainView.WhatChangedSinceLastMp4(timeline, rendered));
     }
 
+    /// <summary>#956 P2: a path draws itself along its length; a group draws nothing and carries its child with it.</summary>
+    [Fact]
+    public void APathDrawsOnAndAGroupCarriesItsChild()
+    {
+        var (catalog, project) = Project();
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Elements =
+            [
+                // a horizontal line across the left half, drawn from left to right in the first second
+                new VideoElement { Id = "linha", Kind = "path", Text = "M 0 0 L 100 0", X = 0.25, Y = 0.3, Width = 0.4, Height = 0.1, Color = "#ff0000", FontSize = 0.1,
+                    Keyframes = [new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 1, Value = 1, Easing = "linear" }] },
+                new VideoElement { Id = "grupo", Kind = "group", X = 0.25, Y = 0.75, Width = 0.3, Height = 0.3,
+                    Keyframes = [new() { Property = "x", Time = 0, Value = 0.25 }, new() { Property = "x", Time = 2, Value = 0.75, Easing = "linear" }] },
+                new VideoElement { Id = "filho", Kind = "shape", Text = "rect", Parent = "grupo", X = 0, Y = 0, Width = 0.1, Height = 0.1, Color = "#ff0000" }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var renderer = new VideoFrameRenderer(timeline);
+        int Red(SKBitmap b, int y) => Enumerable.Range(0, b.Width).Count(x => Reddish(b.GetPixel(x, y)));
+        using (var half = renderer.Render(0.5))
+        using (var whole = renderer.Render(1.5))
+        {
+            int y = (int)(0.3 * 180);
+            // half the progress draws about half the line, from its start
+            Assert.InRange(Red(half, y) / (double)Red(whole, y), 0.4, 0.6);
+            Assert.True(Reddish(half.GetPixel(40, y)));
+            Assert.False(Reddish(half.GetPixel(110, y)));
+            // the child sits at its parent's centre and moves with it; the group itself left no mark
+            Assert.True(Reddish(half.GetPixel((int)(0.375 * 320), 135)));
+        }
+        using var end = renderer.Render(2.5);
+        Assert.True(Reddish(end.GetPixel(240, 135)));
+        Assert.False(Reddish(end.GetPixel(80, 135)));
+    }
+
     [Fact]
     public void FramesShowTheAnimatedStateAtTheirTimeAndStillFramesComeFromTheCache()
     {
@@ -257,5 +295,15 @@ public sealed class VideoRenderTests
         Console.WriteLine("video.render720p " + timeline.FrameCount + " frames: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " ms/frame, layers drawn " + renderer.LayersDrawn);
         Assert.Equal(360, timeline.FrameCount);
         Assert.True(renderer.LayersDrawn < timeline.FrameCount, "still frames reuse their layer");
+        // the example uses the new vocabulary (an arrow drawn on, a group turning its child, a "back" curve) and
+        // still passes the measured review: nothing out of the frame, cut or over the subtitles
+        Assert.Contains(project.Video!.Scenes.SelectMany(s => s.Elements), e => e.Kind == "path");
+        Assert.Contains(project.Video.Scenes.SelectMany(s => s.Elements), e => e.Parent is not null);
+        Assert.DoesNotContain(VideoInspection.Run(timeline, e => VideoFrameRenderer.Fit(e, timeline.Width, timeline.Height)), i => i.Severity == ReviewSeverity.Error);
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllBytes(Path.Combine(dir, "video-expressividade.png"), renderer.RenderSheet([5.2, 7.0, 7.6, 8.1, 9.0, 10.5]));
+        }
     }
 }

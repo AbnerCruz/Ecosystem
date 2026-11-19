@@ -47,6 +47,15 @@ public sealed partial class MainView
     private bool SameVideoDraft(PublicationDraft? draft) =>
         draft is not null && ReferenceEquals(_publicationDraft, draft) && ReferenceEquals(_store, draft.Store) && _publicationsStudio?.IsVisible == true;
 
+    /// <summary>#956: strokes that draw themselves, the annotations of explainer videos (SVG path data, fitted to the box).</summary>
+    internal static readonly (string Label, string Data)[] VideoStrokes =
+    [
+        ("Seta", "M 0 50 L 90 50 M 66 26 L 90 50 L 66 74"),
+        ("Sublinhado", "M 0 12 C 30 2, 70 22, 100 8"),
+        ("Visto", "M 0 52 L 34 86 L 100 0"),
+        ("Círculo", "M 50 2 C 80 2, 100 22, 100 50 C 100 80, 76 100, 48 98 C 20 96, 0 76, 2 48 C 4 22, 26 4, 56 6"),
+    ];
+
     private async Task AddPublicationVideoElementAsync(string sceneId)
     {
         var draft = _publicationDraft;
@@ -56,7 +65,8 @@ public sealed partial class MainView
         var kind = await Dialogs.ChooseAsync("Objeto da cena", [
             new DialogItem("Texto", Detail: "Uma frase na tela"), new DialogItem("Roteiro", Detail: "O texto da nota desta cena"),
             new DialogItem("Forma", Detail: "Retângulo ou elipse"), new DialogItem("Imagem do vault"),
-            new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}")]);
+            new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}"),
+            new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela")]);
         if (kind is not { } k) return;
         // every object enters with a short fade; keyframes and motions stay editable in the project
         var fadeIn = new List<VideoKeyframe> { new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "opacity", Time = 0.5, Value = 1, Easing = "easeOut" } };
@@ -91,6 +101,15 @@ public sealed partial class MainView
             case 5:
                 var tex = await Dialogs.PromptAsync(new PromptOptions("Fórmula", Label: "TeX", Confirm: "Adicionar"));
                 if (!string.IsNullOrWhiteSpace(tex)) element = new VideoElement { Kind = "math", Text = tex.Trim(), Width = 0.5, Height = 0.25, Keyframes = fadeIn };
+                break;
+            case 6:
+                var stroke = await Dialogs.ChooseAsync("Traço", VideoStrokes.Select(t => new DialogItem(t.Label)).ToList());
+                if (stroke is { } st)
+                    element = new VideoElement
+                    {
+                        Kind = "path", Text = VideoStrokes[st].Data, Width = 0.3, Height = 0.2, Color = "#ffd166", FontSize = 0.06,
+                        Keyframes = [new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0.8, Value = 1, Easing = "easeOut" }]
+                    };
                 break;
         }
         if (element is null || !SameVideoDraft(draft) || _publicationsStudio.Project?.Video?.Scenes.FirstOrDefault(s => s.Id == sceneId) is not { } current) return;

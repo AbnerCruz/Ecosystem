@@ -28,10 +28,27 @@ public sealed record VideoTimelineScene(
     }
 }
 
-/// <summary>An element as it is at one instant: every animated property resolved.</summary>
+/// <summary>An element as it is at one instant: every animated property resolved, in frame coordinates.</summary>
+/// <param name="Parent">For an element that follows another, where its parent is (to turn a drag back into an offset).</param>
 public sealed record VideoElementState(
     string Id, string Kind, string Text, string? Source, double X, double Y, double Width, double Height,
-    double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize);
+    double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize, VideoParentFrame? Parent = null);
+
+/// <summary>A parent's place at one instant and the frame's size: what turns a child's offset into frame coordinates.</summary>
+public sealed record VideoParentFrame(double X, double Y, double Scale, double Rotation, double Opacity, int Width, int Height)
+{
+    public (double X, double Y) ToFrame(double ox, double oy)
+    {
+        double a = Rotation * Math.PI / 180, dx = ox * Width * Scale, dy = oy * Height * Scale;
+        return (X + (dx * Math.Cos(a) - dy * Math.Sin(a)) / Width, Y + (dx * Math.Sin(a) + dy * Math.Cos(a)) / Height);
+    }
+
+    public (double X, double Y) ToOffset(double fx, double fy)
+    {
+        double a = -Rotation * Math.PI / 180, dx = (fx - X) * Width, dy = (fy - Y) * Height, s = Math.Max(1e-6, Scale);
+        return ((dx * Math.Cos(a) - dy * Math.Sin(a)) / s / Width, (dx * Math.Sin(a) + dy * Math.Cos(a)) / s / Height);
+    }
+}
 
 /// <summary>
 /// A scene drawn at one instant. <see cref="StateKey"/> is equal for two instants that look the same (a still
@@ -134,7 +151,7 @@ public sealed class VideoTimeline
             if (t < scene.Start || t >= scene.End) continue;
             var local = t - scene.Start;
             var opacity = scene.FadeIn > 0 && local < scene.FadeIn ? Ease("easeInOut", local / scene.FadeIn) : 1;
-            var states = scene.Scene.Elements.Select(e => State(scene, e, local)).Where(s => s is not null).Select(s => s!).ToList();
+            var states = States(scene, local);
             var sb = new StringBuilder(scene.ContentKey);
             foreach (var s in states)
                 sb.Append('|').Append(s.Id).Append(';').Append(F(s.X)).Append(';').Append(F(s.Y)).Append(';').Append(F(s.Scale))
@@ -154,6 +171,36 @@ public sealed class VideoTimeline
 
     public string Srt() => VideoScript.Srt(Cues);
     public string Vtt() => VideoScript.Vtt(Cues);
+
+    /// <summary>The visible elements of a scene, each placed through its parents (validation rules out cycles).</summary>
+    private List<VideoElementState> States(VideoTimelineScene scene, double local)
+    {
+        var own = new Dictionary<string, VideoElementState?>(StringComparer.Ordinal);
+        foreach (var e in scene.Scene.Elements) own[e.Id] = State(scene, e, local);
+        var placed = new Dictionary<string, VideoElementState?>(StringComparer.Ordinal);
+        VideoElementState? Placed(VideoElement e)
+        {
+            if (placed.TryGetValue(e.Id, out var done)) return done;
+            var state = own[e.Id];
+            if (state is not null && e.Parent is { } parentId)
+            {
+                var parent = Placed(scene.Scene.Elements.First(p => p.Id == parentId));
+                if (parent is null) state = null;
+                else
+                {
+                    var frame = new VideoParentFrame(parent.X, parent.Y, parent.Scale, parent.Rotation, parent.Opacity, Width, Height);
+                    var (x, y) = frame.ToFrame(state.X, state.Y);
+                    state = state with
+                    {
+                        X = x, Y = y, Scale = state.Scale * parent.Scale, Rotation = state.Rotation + parent.Rotation,
+                        Opacity = state.Opacity * parent.Opacity, Parent = frame
+                    };
+                }
+            }
+            return placed[e.Id] = state;
+        }
+        return scene.Scene.Elements.Select(Placed).Where(s => s is not null).Select(s => s!).ToList();
+    }
 
     private VideoElementState? State(VideoTimelineScene scene, VideoElement e, double local)
     {
@@ -201,6 +248,8 @@ public sealed class VideoTimeline
         return sorted[^1].Value;
     }
 
+    private static readonly CubicBezier Back = new(0.34, 1.56, 0.64, 1);
+
     public static double Ease(string easing, double u)
     {
         u = Math.Clamp(u, 0, 1);
@@ -210,6 +259,9 @@ public sealed class VideoTimeline
             "easeIn" => u * u * u,
             "easeOut" => 1 - Math.Pow(1 - u, 3),
             "step" => u >= 1 ? 1 : 0,
+            "back" => Back.Solve(u),
+            "easeInOut" => u < 0.5 ? 4 * u * u * u : 1 - Math.Pow(-2 * u + 2, 3) / 2,
+            _ when CubicBezier.TryParse(easing, out var curve) => curve.Solve(u),
             _ => u < 0.5 ? 4 * u * u * u : 1 - Math.Pow(-2 * u + 2, 3) / 2
         };
     }

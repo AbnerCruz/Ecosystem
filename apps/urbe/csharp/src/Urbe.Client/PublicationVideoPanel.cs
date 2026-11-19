@@ -222,7 +222,7 @@ public sealed class PublicationVideoPanel : StackPanel
     /// <summary>Moves the selected object's centre to (x, y) at the playhead (a keyframe there when it is animated).</summary>
     public void MoveSelected(double x, double y)
     {
-        if (Current() is { } c) SceneChanged?.Invoke(VideoEditing.Move(c.Scene.Scene, c.State.Id, c.Local, x, y));
+        if (Current() is { } c) SceneChanged?.Invoke(VideoEditing.Move(c.Scene.Scene, c.State.Id, c.Local, x, y, c.State.Parent));
     }
 
     private (VideoTimelineScene Scene, VideoElementState State, double Local)? Current()
@@ -273,7 +273,7 @@ public sealed class PublicationVideoPanel : StackPanel
             b.Click += (_, _) => run();
             return b;
         }
-        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", _ => "Texto" };
+        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", _ => "Texto" };
         _inspector.Children.Add(new TextBlock
         {
             Text = kind + (c is null ? " · fora da cena neste instante" : " · " + Clock(c.Value.Local) + " da cena"),
@@ -295,6 +295,21 @@ public sealed class PublicationVideoPanel : StackPanel
             actions.Children.Add(b);
         }
         _inspector.Children.Add(actions);
+        // the curve that arrives at the keyframe under the playhead: how the object gets there
+        if (c is { } at && VideoEditing.EasingAt(element, at.Local) is { } easing)
+        {
+            var curves = new WrapPanel { Orientation = Orientation.Horizontal };
+            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            foreach (var (label, value) in VideoEditing.Curves)
+            {
+                var chosen = value == easing;
+                var b = Action((chosen ? "● " : "") + label, "Curva " + label + (chosen ? " (atual)" : ""),
+                    () => { if (Current() is { } x) SceneChanged?.Invoke(VideoEditing.SetEasing(x.Scene.Scene, x.State.Id, x.Local, value)); });
+                b.Margin = new Thickness(0, 0, 6, 6);
+                curves.Children.Add(b);
+            }
+            _inspector.Children.Add(curves);
+        }
         var times = element.Keyframes.Select(k => k.Time).Distinct().OrderBy(t => t).ToList();
         if (times.Count > 0)
         {

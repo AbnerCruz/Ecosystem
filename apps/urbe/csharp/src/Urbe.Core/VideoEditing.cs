@@ -17,7 +17,8 @@ public static class VideoEditing
         foreach (var layer in frame.Layers.Reverse())
             foreach (var e in layer.Elements.Reverse())
             {
-                if (e.Opacity < 0.05 || e.Scale <= 0) continue;
+                // a group has no drawing of its own: a tap goes to what is drawn
+                if (e.Opacity < 0.05 || e.Scale <= 0 || e.Kind == "group") continue;
                 double dx = (fx - e.X) * width, dy = (fy - e.Y) * height, a = -e.Rotation * Math.PI / 180;
                 double rx = dx * Math.Cos(a) - dy * Math.Sin(a), ry = dx * Math.Sin(a) + dy * Math.Cos(a);
                 if (Math.Abs(rx) <= e.Width * width * e.Scale / 2 && Math.Abs(ry) <= e.Height * height * e.Scale / 2) return (layer, e);
@@ -27,12 +28,14 @@ public static class VideoEditing
 
     /// <summary>
     /// Puts the element's centre at (x, y) at <paramref name="local"/> seconds of the scene: an element animated in x/y
-    /// gets (or changes) a keyframe there; a still one simply moves.
+    /// gets (or changes) a keyframe there; a still one simply moves. An element that follows a parent keeps following
+    /// it: the point becomes its offset from the parent (<paramref name="parent"/>, from its state at that instant).
     /// </summary>
-    public static VideoScene Move(VideoScene scene, string elementId, double local, double x, double y) => Change(scene, elementId, e =>
+    public static VideoScene Move(VideoScene scene, string elementId, double local, double x, double y, VideoParentFrame? parent = null) => Change(scene, elementId, e =>
     {
         x = Math.Clamp(x, -0.5, 1.5);
         y = Math.Clamp(y, -0.5, 1.5);
+        if (e.Parent is not null && parent is not null) (x, y) = parent.ToOffset(x, y);
         bool animated = e.Keyframes.Any(k => k.Property is "x" or "y");
         if (!animated) return e with { X = x, Y = y };
         return e with { Keyframes = Set(Set(e.Keyframes, "x", local, x), "y", local, y) };
@@ -43,13 +46,35 @@ public static class VideoEditing
     {
         if (HasKeyframe(e, local)) return e with { Keyframes = e.Keyframes.Where(k => Math.Abs(k.Time - local) >= SameTime).ToList() };
         var frames = e.Keyframes;
-        foreach (var (property, value) in new[] { ("x", now.X), ("y", now.Y), ("scale", now.Scale), ("opacity", now.Opacity) })
+        // a child's keyframes are its own offset, scale and opacity, not what its parent adds
+        var p = e.Parent is null ? null : now.Parent;
+        var (x, y) = p?.ToOffset(now.X, now.Y) ?? (now.X, now.Y);
+        double scale = now.Scale / Math.Max(1e-6, p?.Scale ?? 1), opacity = Math.Clamp(now.Opacity / Math.Max(1e-6, p?.Opacity ?? 1), 0, 1);
+        foreach (var (property, value) in new[] { ("x", x), ("y", y), ("scale", scale), ("opacity", opacity) })
             frames = Set(frames, property, local, value);
         return e with { Keyframes = frames };
     });
 
     /// <summary>Keyframe times are seconds of the scene, as <see cref="VideoTimeline"/> reads them.</summary>
     public static bool HasKeyframe(VideoElement e, double local) => e.Keyframes.Any(k => Math.Abs(k.Time - local) < SameTime);
+
+    /// <summary>The curves a person chooses by name, in the inspector's order (label, easing).</summary>
+    public static readonly (string Label, string Easing)[] Curves =
+        [("Suave", "easeInOut"), ("Desacelerar", "easeOut"), ("Acelerar", "easeIn"), ("Constante", "linear"), ("Ressalto", "back"), ("Degrau", "step")];
+
+    /// <summary>The curve that arrives at the keyframes at <paramref name="local"/> (every property keyed there).</summary>
+    public static VideoScene SetEasing(VideoScene scene, string elementId, double local, string easing)
+    {
+        if (!VideoKeyframe.IsEasing(easing)) throw new ArgumentException("Curva desconhecida: " + easing, nameof(easing));
+        return Change(scene, elementId, e => e with
+        {
+            Keyframes = e.Keyframes.Select(k => Math.Abs(k.Time - local) < SameTime ? k with { Easing = easing } : k).ToList()
+        });
+    }
+
+    /// <summary>The curve of the keyframes at <paramref name="local"/>, or null with none there.</summary>
+    public static string? EasingAt(VideoElement e, double local) =>
+        e.Keyframes.FirstOrDefault(k => Math.Abs(k.Time - local) < SameTime)?.Easing;
 
     /// <summary>The box and the text size grow or shrink together.</summary>
     public static VideoScene Resize(VideoScene scene, string elementId, double factor) => Change(scene, elementId, e => e with

@@ -17,6 +17,7 @@ public sealed class VideoFrameRenderer : IDisposable
     private readonly IReadOnlyDictionary<string, byte[]> _files;
     private readonly Dictionary<string, SKImage?> _images = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (SKPath Path, float W, float H)?> _math = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SKPath?> _paths = new(StringComparer.Ordinal);
     private readonly BoundedCache<SKImage> _cache;
     private readonly object _gate = new();
 
@@ -92,6 +93,8 @@ public sealed class VideoFrameRenderer : IDisposable
                 case "image": DrawImage(canvas, e, box); break;
                 case "plot": DrawPlot(canvas, e, box, color); break;
                 case "math": DrawMath(canvas, e, box, color); break;
+                case "path": DrawPath(canvas, e, box, color, h); break;
+                case "group": break;   // only carries its children
                 default: DrawText(canvas, e.Text, box, (float)(e.FontSize * h), color, e.Kind == "title", e.Kind == "script" ? SKTextAlign.Left : SKTextAlign.Center, e.Progress); break;
             }
             canvas.Restore();
@@ -151,6 +154,41 @@ public sealed class VideoFrameRenderer : IDisposable
             }
         }
         canvas.Restore();
+    }
+
+    /// <summary>
+    /// #956: SVG path data fitted inside the box (aspect kept, like an image), stroked; progress draws it on along its
+    /// length — the "trim path" of motion design tools.
+    /// </summary>
+    private void DrawPath(SKCanvas canvas, VideoElementState e, SKRect box, SKColor color, int h)
+    {
+        var data = e.Text ?? "";
+        if (!_paths.TryGetValue(data, out var source)) _paths[data] = source = SKPath.ParseSvgPathData(data);
+        if (source is null || source.Bounds.Width + source.Bounds.Height <= 0 || e.Progress <= 0) return;
+        var b = source.Bounds;
+        float scale = Math.Min(box.Width / Math.Max(1e-3f, b.Width), box.Height / Math.Max(1e-3f, b.Height));
+        using var path = new SKPath(source);
+        path.Transform(SKMatrix.CreateTranslation(-b.MidX, -b.MidY).PostConcat(SKMatrix.CreateScale(scale, scale)));
+        using var paint = new SKPaint
+        {
+            Color = color, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1.5f, (float)(e.FontSize * h / 6)),
+            StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round
+        };
+        if (e.Progress >= 1) { canvas.DrawPath(path, paint); return; }
+        using var measure = new SKPathMeasure(path, false);
+        var lengths = new List<float>();
+        do lengths.Add(measure.Length); while (measure.NextContour());
+        float left = lengths.Sum() * (float)e.Progress;
+        using var drawn = new SKPath();
+        using var again = new SKPathMeasure(path, false);
+        foreach (var length in lengths)
+        {
+            if (left <= 0) break;
+            again.GetSegment(0, Math.Min(length, left), drawn, true);
+            left -= length;
+            again.NextContour();
+        }
+        canvas.DrawPath(drawn, paint);
     }
 
     private void DrawMath(SKCanvas canvas, VideoElementState e, SKRect box, SKColor color)
@@ -317,7 +355,9 @@ public sealed class VideoFrameRenderer : IDisposable
         _cache.Dispose();
         foreach (var image in _images.Values) image?.Dispose();
         foreach (var m in _math.Values) m?.Path.Dispose();
+        foreach (var p in _paths.Values) p?.Dispose();
         _images.Clear();
         _math.Clear();
+        _paths.Clear();
     }
 }

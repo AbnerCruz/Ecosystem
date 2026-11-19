@@ -88,9 +88,12 @@ public static class AssistantPublicationTools
         "Layouts: article e book (capítulos, sumário); slides (cada nota/#/##/--- inicia slide; :::notas vira notas do apresentador); course (cada nota um módulo, " +
         "cada ## uma aula, blocos ```quiz viram questões); video (cada seção é uma cena; o texto da nota é o roteiro e a legenda). " +
         "Vídeo: campo video {aspect:16:9|9:16|1:1, resolution:144–2160, fps:1–60, subtitles:bool, scenes:[{id, placementId (= id da seção), duration (s), " +
-        "transition:{kind:cut|fade, seconds}, background:#rrggbb, elements:[{id, kind:title|text|script|shape|image|plot|math, text? (rótulo curto, até " +
-        "160 caracteres; o roteiro é a nota), source? (imagem do vault, função do gráfico ou TeX), x,y,width,height (0–1 do quadro), color, fontSize, start, end?, " +
-        "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step}], motions:[{property, expression (fórmula de t)}]}]}], " +
+        "transition:{kind:cut|fade, seconds}, background:#rrggbb, elements:[{id, kind:title|text|script|shape|image|plot|math|path|group, text? (rótulo curto, até " +
+        "160 caracteres; o roteiro é a nota; em plot a função, em math o TeX, em path os dados de path SVG \"M… L… C… Z\" ajustados à caixa), source? (imagem do vault), " +
+        "x,y,width,height (0–1 do quadro), color, fontSize (em path, a espessura do traço), start, end?, parent? (id de outro elemento da cena: x,y viram deslocamento " +
+        "a partir do centro dele, e escala, rotação e opacidade dele valem para este; group não desenha nada e serve de pai), " +
+        "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step|back|cubic-bezier(x1,y1,x2,y2)}] " +
+        "(progress de 0 a 1 desenha path e plot ao longo do tempo; back passa do alvo e volta), motions:[{property, expression (fórmula de t)}]}]}], " +
         "audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT; " +
         "a exportação e o salvamento do arquivo são sempre da pessoa. Não crie .page.json; esse editor foi substituído. " +
