@@ -31,7 +31,12 @@ public static class AssistantPublicationTools
                 var (path, text, doc) = Validate(input, host);
                 var saved = doc is null ? await host.CreateNoteAsync(path, text) : await host.SaveNoteAsync(doc, text);
                 var ids = string.Join(", ", PublicationProjectCodec.Parse(text).Sources.Select(x => (host.Documents.Get(x.DocumentId)?.Path ?? "?") + " = " + x.DocumentId));
-                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + "). Abra com open_note; as fontes continuam sendo notas editáveis.",
+                var project = PublicationProjectCodec.Parse(text);
+                var scenes = project.Video is { Scenes.Count: > 0 } video
+                    ? " Revisão " + saved.Revision + ". Cenas (preencha cada uma com edit_video_scene): " + string.Join("; ", video.Scenes.Select((sc, i) =>
+                        (i + 1) + " " + sc.Id + " = " + (host.Documents.Get(project.Sections[i].Source.DocumentId)?.Path ?? "?") + " (" + sc.Elements.Count + " elementos)")) + "."
+                    : "";
+                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + ")." + scenes + " Abra com open_note; as fontes continuam sendo notas editáveis.",
                     [new AiChange(saved.Id, doc is null ? null : new AiNoteSnap(doc.Path, doc.Content), new AiNoteSnap(saved.Path, saved.Content))]);
             }
         },
@@ -99,6 +104,9 @@ public static class AssistantPublicationTools
         "Um vídeo pedido a você termina em render_video, que narra, gera o MP4 e as legendas no vault. Não crie .page.json; esse editor foi substituído. " +
         // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
+        // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
+        "Monte um vídeo em partes: 1) write_publication só com sources e design {layout:video} (o Urbe cria uma cena por fonte e devolve os ids); " +
+        "2) edit_video_scene para cada cena, uma por chamada, com os elementos dela; 3) review_publication e look_at_video; 4) render_video. Nunca mande todas as cenas numa chamada só. " +
         "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"background\":\"#0b1d33\",\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
         "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
         "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02,\"color\":\"#9ad1ff\"}," +

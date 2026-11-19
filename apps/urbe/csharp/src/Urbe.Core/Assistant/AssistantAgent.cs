@@ -281,6 +281,9 @@ public static class AssistantAgent
         "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Urbe. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
 
     public const string UrbeGuidance =
+        // the owner (19/11/2026): "um simulado de cálculo 2" took dozens of steps with no question about what to make
+        "- Pedido para produzir algo (simulado, lista de exercícios, resumo, apostila, apresentação, vídeo, planilha) sem formato, tamanho ou uso definidos: antes de trabalhar, faça UMA pergunta com ask_user oferecendo 2–4 opções concretas do produto, a sua recomendação primeiro (num simulado: quantas questões e de quais tópicos; nota com gabarito recolhível, formulário que corrige sozinho ou PDF para imprimir). Com a resposta, planeje o melhor resultado e execute sem novas perguntas. Se o pedido já disser o que quer, não pergunte.\n" +
+        "- Confira contas em lote: junte numa única chamada de calculate todas as linhas a verificar, em vez de uma chamada por conta. O resultado do motor é confiável; se divergir da sua conta, refaça a sua conta, não peça o mesmo cálculo de novo.\n" +
         "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
         "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.\\n" +
         "- Descoberta antes da execução: para pedidos significativos, construa entendimento explícito sobre problema, objetivo real, público, contexto, restrições, insumos, prioridades, decisões irreversíveis, padrões de qualidade e critérios de aceitação. Inspecione primeiro o que o vault permite descobrir, inclusive conteúdos e referências relevantes. Não invente respostas que pertencem ao usuário.\\n" +
@@ -742,6 +745,8 @@ public static class AssistantAgent
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
         int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
         bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false, sourceReviewed = false;
+        string? truncatedCall = null;
+        int emptyCuts = 0;
         bool noProgressNudged = false;
         // CST-079: the answer written before the mandatory review, and how many changes there were then
         AiChatMessage? reviewedAnswer = null;
@@ -830,9 +835,27 @@ public static class AssistantAgent
             emit(new AiAgentEvent("final", live, Usage: result.Usage));
             if (live.Content.Count == 0) { messages.RemoveAt(messages.Count - 1); emit(new AiAgentEvent("removed", live)); }
             var calls = live.Content.Where(b => b.Type == "tool_use").ToList();
+            // the reply was cut by the model's output limit: its last call has incomplete arguments and is not run
+            truncatedCall = res.StopReason == "max_tokens" && calls.Count > 0 ? calls[^1].Id : null;
+            if (calls.Count > 0) emptyCuts = 0;
             if (calls.Count == 0)
             {
-                if (res.StopReason == "max_tokens") { result.Stopped = "max_tokens"; break; }
+                // a long answer cut by the output limit goes on where it stopped (the owner: no limit on steps, only a good result);
+                // two cuts in a row with nothing written are a model that cannot answer here, and the run stops
+                if (res.StopReason == "max_tokens")
+                {
+                    bool wrote = res.Content.Any(b => b.Type == "text" && LegacyCustomize.JsTrim(b.Text).Length > 0);
+                    emptyCuts = wrote ? 0 : emptyCuts + 1;
+                    if (emptyCuts >= 2 || cancel.IsCancellationRequested) { result.Stopped = "max_tokens"; break; }
+                    var more = new AiChatMessage
+                    {
+                        Id = uid("m"), Role = "user", Meta = new AiChatMeta { ToolResults = true },
+                        Content = [AiChatBlock.TextBlock("[Contexto do sistema] Sua resposta foi cortada pelo limite de saída do modelo. Continue exatamente de onde parou, sem repetir o que já escreveu.")]
+                    };
+                    messages.Add(more);
+                    emit(new AiAgentEvent("message", more));
+                    continue;
+                }
                 // some models (e.g. gpt-oss) end with reasoning only after the tools: ask once for the final text
                 bool said = res.Content.Any(b => b.Type == "text" && LegacyCustomize.JsTrim(b.Text).Length > 0);
                 var prev = messages.Count > 0 ? messages[^1] : null;
@@ -1034,6 +1057,10 @@ public static class AssistantAgent
         {
             byName.TryGetValue(call.Name, out var tool);
             if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
+            if (call.Id == truncatedCall)
+                return new Out("Esta chamada foi cortada pelo limite de saída do modelo antes de terminar: os argumentos chegaram incompletos e nada foi feito. " +
+                    "Não repita a mesma chamada inteira: divida o trabalho em chamadas menores (por exemplo, crie a publicação só com fontes e design e depois " +
+                    "preencha cada cena com edit_video_scene; escreva uma nota longa por partes com edit_note).", true, "error");
             // the same call that already failed is not run again: the model is told to change strategy
             var sig = o.OptimizeToolUse ? AssistantExecutionEfficiency.Signature(call.Name, call.Input, host.Documents.Revision)
                 : call.Name + " " + LegacyCustomize.Stringify(call.Input ?? new JsonObject());

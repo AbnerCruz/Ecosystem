@@ -60,7 +60,8 @@ public sealed class AgentNamesTests
         // UC-77: the app's guidance (an apostila becomes a page in the book format), after the 1.8.4's prompt
         var guided = AssistantAgent.SystemPrompt(agent, "ask", "V", 1, null, null, null, new DateTime(2026, 10, 22), guidance: AssistantAgent.UrbeGuidance);
         Assert.StartsWith(plain, guided);
-        Assert.Contains("## No Urbe\n- Quando o pedido for uma apostila", guided);
+        Assert.Contains("## No Urbe\n- Pedido para produzir algo", guided);
+        Assert.Contains("\n- Quando o pedido for uma apostila", guided);
         Assert.Contains("modelo book", guided);
 
         var host = new Host(c, "geral");

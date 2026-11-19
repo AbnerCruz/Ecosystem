@@ -481,7 +481,8 @@ public sealed class AssistantProviders
             output2.Add(AiBlock.ToolUse(c.Id.Length > 0 ? c.Id : "call_" + Base36(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) + "_" + i, c.Name, ParseJsonLoose(c.Args.ToString())));
         }
         var hasTools = output2.Any(b => b.Type == "tool_use");
-        return new AiResult(output2, reasoning.ToString(), hasTools ? "tool_use" : finish == "length" ? "max_tokens" : "end", new AiUsage(input, output, cost, cacheRead, cacheCreation, reasoningOutput, cost is null ? "unknown" : "reported"), model);
+        // a reply cut by the output limit is "max_tokens" even with tool calls: the last call's arguments are incomplete
+        return new AiResult(output2, reasoning.ToString(), finish == "length" ? "max_tokens" : hasTools ? "tool_use" : "end", new AiUsage(input, output, cost, cacheRead, cacheCreation, reasoningOutput, cost is null ? "unknown" : "reported"), model);
     }
 
     private async Task<List<AiModelInfo>> OpenAiModelsAsync(Resolved p, CancellationToken cancel)
