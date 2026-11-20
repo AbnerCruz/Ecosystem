@@ -33,7 +33,7 @@ public sealed partial class HeadlessUiTests
                 var panel = view.Assistant;
                 panel.Open();
                 var name = ((IAssistantApp)view).VaultName;
-                var key = name.Length > 0 ? name : "Urbe";
+                var key = name.Length > 0 ? name : "Numa";
                 panel.Config.Providers.Add(new AiProviderConfig("p", "openrouter", ApiKey: "test"));
                 panel.Config.ProviderId = "p";
                 panel.Config.Model = "modelo-de-quem-pede";

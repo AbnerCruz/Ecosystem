@@ -222,7 +222,7 @@ public sealed class TouchDebug : Grid
         var top = TopLevel.GetTopLevel(_host);
         var size = top?.ClientSize ?? _host.Bounds.Size;
         return string.Join("\n",
-            "Relatório de teclado, foco, rolagem e toques — Urbe " + Version,
+            "Relatório de teclado, foco, rolagem e toques — Numa " + Version,
             "Aparelho: " + RuntimeInformation.OSDescription + " · " + RuntimeInformation.ProcessArchitecture,
             "Tela: " + Math.Round(size.Width) + "×" + Math.Round(size.Height) + " @" + (top?.RenderScaling ?? 1).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "x",
             "",

@@ -66,7 +66,7 @@ internal sealed class AndroidDevice : IDevicePlatform
     public async Task<IReadOnlyList<DeviceEvent>> EventsAsync(DateTimeOffset from, DateTimeOffset to)
     {
         if (Ctx.CheckSelfPermission(Android.Manifest.Permission.ReadCalendar) != Permission.Granted && !await CalendarPermissionActivity.RequestAsync())
-            throw new AiToolException("A pessoa não permitiu que o Urbe lesse a agenda. Ela pode permitir nas configurações do Android.");
+            throw new AiToolException("A pessoa não permitiu que o Numa lesse a agenda. Ela pode permitir nas configurações do Android.");
         return await Task.Run(() =>
         {
             var builder = CalendarContract.Instances.ContentUri!.BuildUpon()!;
@@ -93,7 +93,7 @@ internal sealed class AndroidDevice : IDevicePlatform
         intent.PutExtra(Intent.ExtraSubject, subject);
         intent.PutExtra(Intent.ExtraText, body);
         Start(intent, "Nenhum app de e-mail neste aparelho.");
-        return Task.FromResult("A mensagem está pronta no app de e-mail; a pessoa revisa e envia lá. Nada foi enviado pelo Urbe.");
+        return Task.FromResult("A mensagem está pronta no app de e-mail; a pessoa revisa e envia lá. Nada foi enviado pelo Numa.");
     }
 }
 

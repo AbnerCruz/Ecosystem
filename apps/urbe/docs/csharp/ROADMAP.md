@@ -19,6 +19,13 @@ Nenhum `[x]` ou aceite físico decorre de compilação/teste headless. Publicaç
 da branch foi rejeitada por revisão automática; não há PR ou release desse
 conjunto. A implementação autorizada continua sem contornar esse bloqueio.
 
+## Nome exibido Numa — DEC-0060 (proprietário, 30/10/2026; aplicado em 20/11/2026)
+
+O app se apresenta como **Numa** (rótulo do Android, título da janela, textos da interface, guia embutido e o que o Assistente diz sobre si). Ficam iguais, como a decisão determina: o pacote `app.urbe.csharp` (a atualização instala por cima), o id do componente `urbe`, o nome do componente no `ecosystem.json`, as pastas e chaves de dados (`.urbe/`, a pasta de dados do app, o vault padrão das conversas) e os formatos legados (Páginas, plugins da 1.8.4).
+
+- [x] CST-108 (nome): nome Numa aplicado aos textos visíveis.
+- [ ] CST-108/CST-130 (símbolo): **bloqueado** — o estudo aprovado do logo está no vault do proprietário (`Páginas/Identidade Numa — estudo de logo.page.json`), fora do repositório; o plano manda registrar o bloqueio em vez de reinventar o símbolo. Desbloqueia quando o arquivo (ou o desenho final) for enviado.
+
 ## O Urbe sem a simulação visual — proprietário, 22/10/2026 (DEC-0051)
 
 **Esta seção prevalece sobre todas as seções abaixo onde houver conflito.** Fontes: DEC-0051, [ADD-0028](../../../../docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md) e [ADR-0034](../../../../docs/adr/0034-urbe-sem-simulacao-visual.md).

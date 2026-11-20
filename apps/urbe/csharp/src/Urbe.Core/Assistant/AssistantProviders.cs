@@ -379,7 +379,7 @@ public sealed class AssistantProviders
     {
         var h = new List<(string, string)> { ("Content-Type", "application/json") };
         if (p.ApiKey.Length > 0) h.Add(("Authorization", "Bearer " + p.ApiKey));
-        if (p.Preset == "openrouter") h.Add(("X-Title", "Urbe"));
+        if (p.Preset == "openrouter") h.Add(("X-Title", "Numa"));
         return h;
     }
 

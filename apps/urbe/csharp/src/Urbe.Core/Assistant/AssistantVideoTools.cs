@@ -35,7 +35,7 @@ public static class AssistantVideoTools
     {
         Name = "generate_video", Access = "write",
         Description = "Gera um clipe curto com um modelo de vídeo generativo externo (pago por segundo; envia só a descrição) e guarda o MP4 em Vídeos/. " +
-                      "Para vídeo explicativo editável a partir de notas, use uma Publicação no layout video (motion graphics do Urbe), não esta ferramenta.",
+                      "Para vídeo explicativo editável a partir de notas, use uma Publicação no layout video (motion graphics do Numa), não esta ferramenta.",
         Parameters = JsonNode.Parse("""
             {"type":"object","properties":{
               "prompt":{"type":"string","description":"O que mostrar: assunto, ação, enquadramento, estilo"},

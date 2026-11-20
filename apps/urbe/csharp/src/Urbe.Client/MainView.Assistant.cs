@@ -346,7 +346,7 @@ public sealed partial class MainView : IAssistantApp
         if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) throw new Urbe.Core.Assistant.AiToolException("Este tipo de arquivo não é lido por esta ferramenta: " + path + ".");
         var limit = isPdf ? AssistantDocumentTools.MaxFileBytes : AssistantDocumentImageTools.MaxImageBytes;
         var read = await vault.ReadFileAsync(path, limit, cancellationToken)
-            ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " está no registro do vault mas não pôde ser aberto agora (foi movido ou apagado fora do Urbe?).");
+            ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " está no registro do vault mas não pôde ser aberto agora (foi movido ou apagado fora do Numa?).");
         return read.Bytes ?? throw new Urbe.Core.Assistant.AiToolException("O arquivo " + path + " tem " + PublicationPackage.Size(read.Size) +
             ", acima do limite de " + PublicationPackage.Size(limit) + " que esta ferramenta lê de uma vez.");
     }

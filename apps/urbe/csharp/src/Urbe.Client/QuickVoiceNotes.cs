@@ -190,7 +190,7 @@ public sealed partial class MainView
     }
 
     private DialogItem? QuickVoiceItem() => Voice is null ? null
-        : new DialogItem("Nota rápida", UrbeTheme.Icons.Mic, "Fale e o Urbe escreve em “" + QuickNotes.Folder + "”.", Run: QuickVoiceNoteAsync);
+        : new DialogItem("Nota rápida", UrbeTheme.Icons.Mic, "Fale e o Numa escreve em “" + QuickNotes.Folder + "”.", Run: QuickVoiceNoteAsync);
 
     /// <summary>Listens, then appends what was said to today's quick note.</summary>
     public async Task QuickVoiceNoteAsync()

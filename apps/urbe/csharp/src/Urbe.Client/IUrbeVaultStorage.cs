@@ -9,7 +9,7 @@ namespace Urbe.Client;
 /// nothing written there is overwritten. The caller reads the folder again before writing (CST-005).
 /// </summary>
 public sealed class VaultChangedOutsideException()
-    : IOException("A pasta foi modificada fora do Urbe. Reabra o vault antes de salvar para evitar sobrescrever dados.");
+    : IOException("A pasta foi modificada fora do Numa. Reabra o vault antes de salvar para evitar sobrescrever dados.");
 
 public interface IUrbeVaultStorage
 {
@@ -457,7 +457,7 @@ public interface IUrbeVaultStorage
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
         if (existing is not null && NoteLibrary.IsFuture(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span)))
-            throw new InvalidOperationException("O registro das notas é de uma versão mais nova do Urbe: escrita recusada.");
+            throw new InvalidOperationException("O registro das notas é de uma versão mais nova do Numa: escrita recusada.");
         if (!NoteLibrary.IsRecord(json)) throw new InvalidDataException("notas.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
@@ -481,7 +481,7 @@ public interface IUrbeVaultStorage
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
         if (existing is not null && !AreaLayout.IsLayout(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
-            throw new InvalidOperationException("A aparência das caixas é de uma versão mais nova do Urbe: escrita recusada.");
+            throw new InvalidOperationException("A aparência das caixas é de uma versão mais nova do Numa: escrita recusada.");
         if (!AreaLayout.IsLayout(json)) throw new InvalidDataException("area.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
@@ -504,7 +504,7 @@ public interface IUrbeVaultStorage
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
         if (existing is not null && !Constellation.IsConstellation(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
-            throw new InvalidOperationException("A Constelação é de uma versão mais nova do Urbe: escrita recusada.");
+            throw new InvalidOperationException("A Constelação é de uma versão mais nova do Numa: escrita recusada.");
         if (!Constellation.IsConstellation(json)) throw new InvalidDataException("constelacao.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
@@ -528,7 +528,7 @@ public interface IUrbeVaultStorage
         if (segments.Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.')))
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
         if (!WritableExtensions.Contains(Path.GetExtension(path)))
-            throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+            throw new NotSupportedException("Tipo de arquivo que o Numa não grava: " + path);
     }
 
     /// <summary>
@@ -542,7 +542,7 @@ public interface IUrbeVaultStorage
         if (path.Split('/').Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ') || s.EndsWith('.')))
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
         if (!BinaryExtensions.Contains(Path.GetExtension(path)))
-            throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+            throw new NotSupportedException("Tipo de arquivo que o Numa não grava: " + path);
     }
 
     /// <summary>Use the existing text/binary allowlists and hidden-path protections without decoding the original bytes.</summary>

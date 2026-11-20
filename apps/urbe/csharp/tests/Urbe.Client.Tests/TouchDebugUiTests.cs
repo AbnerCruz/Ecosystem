@@ -49,7 +49,7 @@ public sealed partial class HeadlessUiTests
 
                 Snapshot(window, "native-touch-debug.png");
                 var report = view.TouchDebug.Report();
-                Assert.StartsWith("Relatório de teclado, foco, rolagem e toques — Urbe nativo", report);
+                Assert.StartsWith("Relatório de teclado, foco, rolagem e toques — Numa nativo", report);
                 Assert.Contains(line, report);
 
                 // the × turns it off, on this device too

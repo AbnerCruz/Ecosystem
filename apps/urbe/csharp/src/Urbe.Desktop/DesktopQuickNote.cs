@@ -43,13 +43,13 @@ internal static class DesktopQuickNote
         if (Application.Current is not { } app) return;
         var note = new NativeMenuItem("Nota rápida" + (OperatingSystem.IsWindows() ? " (" + Shortcut + ")" : ""));
         note.Click += (_, _) => QuickNote(window);
-        var open = new NativeMenuItem("Abrir o Urbe");
+        var open = new NativeMenuItem("Abrir o Numa");
         open.Click += (_, _) => { if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal; window.Show(); window.Activate(); };
         var quit = new NativeMenuItem("Sair");
         quit.Click += (_, _) => window.Close();
         var tray = new TrayIcon
         {
-            ToolTipText = "Urbe — nota rápida",
+            ToolTipText = "Numa — nota rápida",
             Menu = new NativeMenu { note, open, new NativeMenuItemSeparator(), quit }
         };
         try { tray.Icon = new WindowIcon(Icon()); }

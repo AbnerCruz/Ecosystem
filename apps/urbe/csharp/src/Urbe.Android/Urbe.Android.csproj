@@ -9,7 +9,7 @@
     <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
     <OutputType>Exe</OutputType>
     <RootNamespace>Urbe.AndroidHost</RootNamespace>
-    <ApplicationTitle>Urbe nativo (prévia)</ApplicationTitle>
+    <ApplicationTitle>Numa (prévia)</ApplicationTitle>
     <ApplicationId>app.urbe.nativepreview</ApplicationId>
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
@@ -32,8 +32,8 @@
          After owner-authorized integration, the trusted integrator explicitly
          dispatches urbe-csharp-mobile-release: GITHUB_TOKEN push cannot trigger
          a second on:push workflow. Do not change the signed beta certificate. -->
-    <UrbeBetaVersion>2.0.0-beta.61</UrbeBetaVersion>
-    <UrbeBetaVersionCode>2000061</UrbeBetaVersionCode>
+    <UrbeBetaVersion>2.0.0-beta.62</UrbeBetaVersion>
+    <UrbeBetaVersionCode>2000062</UrbeBetaVersionCode>
     <!-- Corte oficial da beta.27: UC-88 Grafos (PR #748), assistente contextual/FAB (#747)
          e pesquisa publica sem chave (#750) integrados na main.
          A identidade app.urbe.csharp e o certificado beta estavel permanecem.
@@ -51,7 +51,7 @@
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(UrbeChannel)' == 'beta'">
-    <ApplicationTitle>Urbe</ApplicationTitle>
+    <ApplicationTitle>Numa</ApplicationTitle>
     <ApplicationId>app.urbe.csharp</ApplicationId>
     <ApplicationDisplayVersion>$(UrbeBetaVersion)</ApplicationDisplayVersion>
     <ApplicationVersion>$(UrbeBetaVersionCode)</ApplicationVersion>

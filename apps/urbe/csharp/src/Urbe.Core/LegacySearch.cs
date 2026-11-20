@@ -402,7 +402,7 @@ public static class UserShortcuts
         var seen = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (key, value) in map)
         {
-            if (Canonical(key) is not { } shortcut) { problems.Add("“" + key + "” não é um atalho que o Urbe entende (use, por exemplo, Ctrl+Shift+K)."); continue; }
+            if (Canonical(key) is not { } shortcut) { problems.Add("“" + key + "” não é um atalho que o Numa entende (use, por exemplo, Ctrl+Shift+K)."); continue; }
             if (seen.TryGetValue(shortcut, out var first)) problems.Add("“" + first + "” e “" + key + "” são a mesma tecla: só a última vale.");
             else seen[shortcut] = key;
             var command = value is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<string>(out var c) ? c.Trim() : null;

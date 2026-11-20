@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261120-urbe-nome-numa",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-20T10:47:26Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-108",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "3a96ecad99716fe9e00bb7bc28d852a9ec19ee53",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidDevice.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AssistantRunService.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AtlasMapJavascriptBridge.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceNoteService.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoicePermissionActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Models.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizationExtras.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FirstRunView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.DiskMirror.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Errors.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Import.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Notices.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Opening.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.StorageFailures.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Updates.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.VaultCompatibility.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PlatformDevice.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationPdf.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StorageProblems.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchDebug.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoExport.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentSkills.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AiModelCatalog.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AiModelSelector.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantCalcTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantCustomizeTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDelegateTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDelegation.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDeviceTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExport.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGuideTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPluginTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantRunJournal.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ComicBook.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FormatSupport.cs",
+    "apps/urbe/csharp/src/Urbe.Core/GraphDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ImageProvenance.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ImportPipeline.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacySearch.cs",
+    "apps/urbe/csharp/src/Urbe.Core/OdpSlides.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PptxDeck.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationDocx.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationEpub.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationOdt.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationPptx.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultCompatibility.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VoiceNoteQueue.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/DesktopQuickNote.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DelegationIsolationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExportUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/MemoryScopesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/OpenNoteGoneUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/OutsideChangeSaveUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StorageFailureUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchDebugUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentNamesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantGuideToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownVisualTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageCompositionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageRichBlockRendererTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageThemeTemplateTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ResearchLogTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultReaderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterPlanOneTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
+    "apps/urbe/csharp/tests/fixtures/assistant/agent-run-a.json",
+    "apps/urbe/csharp/tests/fixtures/assistant/customize-run-a.json",
+    "apps/urbe/csharp/tests/fixtures/assistant/providers-run-a.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261120-urbe-nome-numa.json"
+  ],
+  "work_completed": [
+    "DEC-0060 (alternativa A, escolhida pelo proprietário em 30/10, consequências pendentes desde então): o nome exibido passa a Numa nos textos visíveis (cerca de 230 textos da interface, guia embutido, notificações, widget, rótulo do Android e título da janela) e no que o Assistente diz de si.",
+    "Preservado como a decisão manda: pacote app.urbe.csharp, id urbe, nome do componente no ecosystem.json (ProductIdentity), pastas e chaves de dados (.urbe/, pasta de dados do app, vault padrão das conversas, estado exportado) e os formatos legados com oráculo (Páginas e plugins da 1.8.4).",
+    "Logo: bloqueado — o estudo aprovado está no vault do proprietário, fora do repositório (CST-130 manda registrar o bloqueio em vez de reinventar)."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1812/1812 (oráculos do Assistente atualizados para o nome novo)."
+    },
+    {
+      "check": "Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "700 testes; dois falharam só por dados de teste trocados junto com o nome e passaram ao restaurar os dados."
+    }
+  ],
+  "known_issues": [
+    "Símbolo/ícone novo bloqueado pelo estudo do logo, que está no vault do proprietário.",
+    "Rótulo no Android não conferido em aparelho (ADD-0035)."
+  ],
+  "blockers": [
+    "Estudo do logo Numa (Páginas/Identidade Numa — estudo de logo.page.json) não está no repositório."
+  ],
+  "next_actions": [
+    "Aplicar o símbolo quando o proprietário enviar o estudo ou o desenho final."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Nada declarado como testado no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Cada defeito tem teste que falhava antes da correção."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-display-name",
+      "status": "product-specific",
+      "rationale": "Nome do produto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Decisão do proprietário já tomada (DEC-0060); só aplicação."
+  }
+}

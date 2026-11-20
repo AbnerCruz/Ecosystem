@@ -224,13 +224,13 @@ public static class AiModelCatalog
             m.Input is { } i ? "Lê: " + ModalityNames(i & AppSends) + (i & ~AppSends) switch
             {
                 AiModalities.None => "",
-                var extra => " (o modelo também aceita " + ModalityNames(extra) + ", que o Urbe ainda não envia)"
+                var extra => " (o modelo também aceita " + ModalityNames(extra) + ", que o Numa ainda não envia)"
             } : "Lê: não informado pelo provedor",
             m.Output is { } o ? "Produz: " + ModalityNames(o) : "Produz: não informado",
             Yes(m.Tools, "Ferramentas") + " · " + Yes(m.Ocr, "OCR (texto em imagens)"),
             "Contexto: " + (m.Context is { } c ? c >= 1_000_000 ? (c / 1e6).ToString("0.#", Pt) + "M tokens" : Math.Round(c / 1000.0) + "k tokens" : "não informado"),
             "Preço: " + PriceText(m),
-            Yes(m.PromptCache, "Cache de prompt") + " · " + (m.Batch == true ? "lote: o provedor oferece (o Urbe não usa)" : Yes(m.Batch, "Lote")) +
+            Yes(m.PromptCache, "Cache de prompt") + " · " + (m.Batch == true ? "lote: o provedor oferece (o Numa não usa)" : Yes(m.Batch, "Lote")) +
                 " · streaming: " + (m.Streaming ? "sim" : "não"),
             m.Place switch
             {

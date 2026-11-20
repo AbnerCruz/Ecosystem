@@ -153,7 +153,7 @@ public static class AssistantDocumentTools
         catch (AiToolException) { throw; }
         catch (UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException)
         {
-            throw new AiToolException("Este PDF está protegido por senha e o Urbe ainda não lê PDFs com senha. Diga isso à pessoa; não tente adivinhar o conteúdo.");
+            throw new AiToolException("Este PDF está protegido por senha e o Numa ainda não lê PDFs com senha. Diga isso à pessoa; não tente adivinhar o conteúdo.");
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

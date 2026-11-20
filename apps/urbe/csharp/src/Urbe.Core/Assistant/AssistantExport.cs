@@ -56,7 +56,7 @@ public static class AssistantExport
             var sb = new StringBuilder();
             sb.AppendLine("# Memória do agente " + agentId);
             sb.AppendLine();
-            sb.AppendLine("Formato: " + Schema + " · modo leve · versão do Urbe: " + (appVersion ?? "desconhecida"));
+            sb.AppendLine("Formato: " + Schema + " · modo leve · versão do Numa: " + (appVersion ?? "desconhecida"));
             sb.AppendLine();
             foreach (var m in memories)
             {
@@ -85,7 +85,7 @@ public static class AssistantExport
         var sb = new StringBuilder();
         sb.AppendLine("# " + (string.IsNullOrWhiteSpace(conversation.Title) ? "Conversa" : conversation.Title));
         sb.AppendLine();
-        sb.AppendLine("Formato: " + Schema + " · modo leve · versão do Urbe: " + (version ?? "desconhecida"));
+        sb.AppendLine("Formato: " + Schema + " · modo leve · versão do Numa: " + (version ?? "desconhecida"));
         sb.AppendLine("Conversa: " + conversation.Id + " · agente: " + conversation.AgentId + " · modelo: " + conversation.Model);
         sb.AppendLine();
         // The lightweight view remains chronological and displays tools without dropping them silently.

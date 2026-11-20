@@ -359,7 +359,7 @@ public sealed partial class HeadlessUiTests
         vault.Storage.Fail("save");
         var closed = false;
         vault.Window.Closed += (_, _) => closed = true;
-        var dialogs = await AnsweringAsync(vault, () => { vault.Window.Close(); return Task.Delay(300); }, _ => "Continuar no Urbe");
+        var dialogs = await AnsweringAsync(vault, () => { vault.Window.Close(); return Task.Delay(300); }, _ => "Continuar no Numa");
         Assert.Contains(dialogs, d => d.Contains("A nota não foi salva") && d.Contains("Fechar sem salvar"));
         Assert.False(closed);
         Assert.True(view.Editor.HasChanges);   // the text is still there; saving now works

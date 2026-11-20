@@ -259,7 +259,7 @@ public sealed partial class MainView
         var name = path[(path.LastIndexOf('/') + 1)..];
         return Dialogs.MenuAsync(name,
         [
-            new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Urbe.", Run: () => ShowPageAsync(path)),
+            new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Numa.", Run: () => ShowPageAsync(path)),
             new DialogItem("Converter em publicação", UrbeTheme.Icons.Page, "Os textos viram notas; a página antiga fica como está.", Run: () => ConvertPageToPublicationAsync(path)),
             new DialogItem("Imprimir ou salvar PDF", UrbeTheme.Icons.Page, "Pela impressão do sistema", Run: () => PrintPageAsync(path)),
             new DialogItem("Baixar HTML", UrbeTheme.Icons.Download, "Arquivo único, funciona em qualquer hospedagem", Run: () => DownloadPageHtmlAsync(path)),

@@ -52,7 +52,7 @@ public sealed record AiDelegationBrief(string Task, IReadOnlyList<string> Scope,
         }
         else
         {
-            lines.Add(Scope.Count > 0 ? "Escopo de escrita: " + string.Join(", ", Scope) + ". Gravações fora dele são recusadas pelo Urbe."
+            lines.Add(Scope.Count > 0 ? "Escopo de escrita: " + string.Join(", ", Scope) + ". Gravações fora dele são recusadas pelo Numa."
                 : "Escopo de escrita: nenhum. Não altere o vault; devolva o resultado em texto.");
             lines.Add(Expected == "note" && ArtifactPath is not null
                 ? "Resultado esperado: a nota " + ArtifactPath + ", gravada no vault."

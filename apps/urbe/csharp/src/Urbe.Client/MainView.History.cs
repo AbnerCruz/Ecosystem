@@ -83,7 +83,7 @@ public sealed partial class MainView
         var versions = _history.List(doc.Id);
         if (versions.Count == 0)
         {
-            await Dialogs.AlertAsync("Versões anteriores", "Esta nota ainda não tem versões guardadas. A cada mudança o Urbe guarda a versão anterior (até 40 por nota).");
+            await Dialogs.AlertAsync("Versões anteriores", "Esta nota ainda não tem versões guardadas. A cada mudança o Numa guarda a versão anterior (até 40 por nota).");
             return;
         }
         static string When(long ms)

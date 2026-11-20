@@ -12,7 +12,7 @@ public sealed class ResearchLogTests
     {
         for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null; d = d.Parent)
             if (File.Exists(Path.Combine(d.FullName, "Urbe.Portable.slnx"))) return d.FullName;
-        throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Urbe.");
+        throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Numa.");
     }
 
     [Fact]

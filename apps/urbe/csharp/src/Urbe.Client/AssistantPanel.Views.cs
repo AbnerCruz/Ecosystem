@@ -1254,7 +1254,7 @@ public sealed partial class AssistantPanel
         if (pick == _cfg.McpServers.Count + 1)
         {
             var line = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Comando", Placeholder: "npx -y @modelcontextprotocol/server-everything", Confirm: "Continuar",
-                Hint: "O Urbe vai executar esse programa neste computador. Adicione só servidores em que você confia."));
+                Hint: "O Numa vai executar esse programa neste computador. Adicione só servidores em que você confia."));
             if (string.IsNullOrWhiteSpace(line)) return;
             var parts = System.Text.RegularExpressions.Regex.Matches(line.Trim(), "\"([^\"]*)\"|(\\S+)").Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).ToList();
             var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Nome", Value: System.IO.Path.GetFileNameWithoutExtension(parts[^1]), Confirm: "Conectar"));

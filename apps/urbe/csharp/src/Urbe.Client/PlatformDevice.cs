@@ -21,10 +21,10 @@ public sealed class LauncherDevice(Func<ILauncher?> launcher) : IDevicePlatform
     private ILauncher Launcher => launcher() ?? throw new AiToolException("Este aparelho não deixou abrir outros apps.");
 
     public Task<string> SetAlarmAsync(int hour, int minute, string label, IReadOnlyList<DayOfWeek> days) =>
-        throw new AiToolException("Este computador não tem um relógio com despertador que o Urbe consiga marcar. No celular, o despertador funciona.");
+        throw new AiToolException("Este computador não tem um relógio com despertador que o Numa consiga marcar. No celular, o despertador funciona.");
 
     public Task<DateTimeOffset?> NextAlarmAsync() =>
-        throw new AiToolException("Este computador não informa despertadores ao Urbe.");
+        throw new AiToolException("Este computador não informa despertadores ao Numa.");
 
     public async Task<string> AddEventAsync(DeviceEvent e)
     {
@@ -36,12 +36,12 @@ public sealed class LauncherDevice(Func<ILauncher?> launcher) : IDevicePlatform
     }
 
     public Task<IReadOnlyList<DeviceEvent>> EventsAsync(DateTimeOffset from, DateTimeOffset to) =>
-        throw new AiToolException("Este computador não dá ao Urbe acesso à agenda. No celular, a consulta funciona.");
+        throw new AiToolException("Este computador não dá ao Numa acesso à agenda. No celular, a consulta funciona.");
 
     public async Task<string> ComposeEmailAsync(IReadOnlyList<string> to, string subject, string body)
     {
         if (!await Launcher.LaunchUriAsync(new Uri(AssistantDeviceTools.MailTo(to, subject, body))))
             throw new AiToolException("Nenhum app de e-mail abriu a mensagem.");
-        return "A mensagem está pronta no app de e-mail; a pessoa revisa e envia lá. Nada foi enviado pelo Urbe.";
+        return "A mensagem está pronta no app de e-mail; a pessoa revisa e envia lá. Nada foi enviado pelo Numa.";
     }
 }

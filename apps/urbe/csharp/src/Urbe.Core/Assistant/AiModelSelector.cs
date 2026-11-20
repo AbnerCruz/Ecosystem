@@ -153,7 +153,7 @@ public static class AiModelSelector
             return new(true, false, generative, "Vídeo generativo externo: " + generative.Label +
 "; a descrição sai do aparelho e precisa de " + generative.HostRequirement + ". " + Estimate(generative, new(Output: AiModalities.Video)).Text);
         return new(false, false, generative,
-            "Vídeo indisponível: este aparelho ainda não tem o renderizador de vídeo programático do Urbe, e " +
+            "Vídeo indisponível: este aparelho ainda não tem o renderizador de vídeo programático do Numa, e " +
             (generative is null ? "nenhum modelo configurado gera vídeo (um vídeo generativo exigiria um provedor externo, com envio e cobrança)."
                 : "o único modelo que gera vídeo, " + generative.Label + ", enviaria os dados para fora do aparelho."));
     }
