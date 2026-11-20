@@ -537,6 +537,7 @@ Issue [#1005](https://github.com/AbnerCruz/Ecosystem/issues/1005). Orientação 
 - [~] Fatia 2 — inventário estático de stores e arquivos ([DATA-INVENTORY-20261120.md](DATA-INVENTORY-20261120.md)): `.urbe/`, estado privado e o que o app cria visível no Explorer, com propostas P1–P5 (não decididas).
 - [ ] Fatia 2, restante: medir arquivos produzidos em uso real; P1 (narração fora do Explorer) e as demais propostas, cada uma com teste.
 - [ ] Fatia 3 — tokens do design system e componentes de painel compartilhados; navegação adaptativa.
-- [ ] Fatia 4 — registry de capacidades e verificador de intenção (pedido × contrato × artefato).
+- [~] Fatia 4 (primeiro passo): verificador determinístico pedido × ferramenta (`AssistantIntent`): pedido de flashcards com o recurso nativo disponível recusa `write_plugin`/`plugin_guide` e aponta `create_flashcards`, exceto quando a pessoa pede plugin (`AModelThatReachesForAPluginIsSteeredToTheNativeTool`).
+- [ ] Fatia 4, restante: registry de capacidades e verificação do artefato final contra o pedido.
 - [ ] Validação no aparelho (NN-017): achar Flashcards a partir do Estudo, revisar com o dedo, reabrir o app.
 - **Decisão aberta (doc 01 §7):** local físico dos objetos duráveis. Fatia 1 usa `.urbe/estudo/` (reversível, portável); mudança posterior exige ADR e migração.

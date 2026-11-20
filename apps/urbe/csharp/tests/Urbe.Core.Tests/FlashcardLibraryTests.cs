@@ -167,4 +167,43 @@ public sealed class FlashcardLibraryTests
         public void Remember(string fact) { }
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
     }
+
+    [Theory]
+    [InlineData("faça dois flashcards utilizando a ferramenta nativa, com o tema animais", "write_plugin", true)]
+    [InlineData("crie cartões de memorização sobre células", "plugin_guide", true)]
+    [InlineData("crie um plugin de flashcards com cronômetro", "write_plugin", false)]   // a plugin was asked for
+    [InlineData("crie um plugin de cronômetro", "write_plugin", false)]
+    [InlineData("faça flashcards de animais", "create_flashcards", false)]
+    public void APluginToolIsRefusedWhenFlashcardsWereAskedAndTheAppHasThem(string request, string tool, bool refused)
+    {
+        Assert.Equal(refused, AssistantIntent.Refusal(request, tool, nativeFlashcards: true) is not null);
+        Assert.Null(AssistantIntent.Refusal(request, tool, nativeFlashcards: false));
+    }
+
+    /// <summary>The beta.60 run, replayed with a model that reaches for a plugin first: the run steers it to the native tool.</summary>
+    [Fact]
+    public async Task AModelThatReachesForAPluginIsSteeredToTheNativeTool()
+    {
+        var host = new Host();
+        var replies = new Queue<AiResult>(
+        [
+            new([AiBlock.ToolUse("t1", "plugin_guide", new JsonObject())], "", "tool_use", new AiUsage(10, 1, 0), "m"),
+            new([AiBlock.ToolUse("t2", "create_flashcards", Input("""{"title":"Animais","cards":[{"front":"Maior mamífero?","back":"Baleia-azul"},{"front":"Ave mais rápida?","back":"Falcão-peregrino"}]}"""))], "", "tool_use", new AiUsage(10, 1, 0), "m"),
+            new([AiBlock.TextBlock("Pronto.")], "", "end", new AiUsage(10, 1, 0), "m"),
+        ]);
+        var messages = new List<AiChatMessage> { new() { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("faça dois flashcards utilizando a ferramenta nativa, com o tema animais")] } };
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Agent = AssistantAgent.AgentById("geral"), Policy = "auto", Messages = messages, Host = host, Cancel = CancellationToken.None,
+            Provider = new AiProviderConfig("p1", ""), Model = "m", VaultName = "Cofre", Now = new DateTime(2026, 11, 20, 12, 0, 0),
+            Stream = (_, _, _, _) => Task.FromResult(replies.Dequeue()),
+            Approve = (_, _) => Task.FromResult(AiApproval.Approve),
+            Tools = [.. AssistantStudyTools.All, .. AssistantPluginTools.All]
+        });
+        var results = messages.SelectMany(m => m.Content).Where(b => b.Type == "tool_result").ToList();
+        Assert.True(results[0].IsError);
+        Assert.Contains("create_flashcards", results[0].Content);
+        Assert.Equal(2, Assert.Single(host.Library.Decks).Cards.Count);
+        Assert.Empty(host.Documents.List());
+    }
 }

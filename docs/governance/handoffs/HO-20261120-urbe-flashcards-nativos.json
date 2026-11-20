@@ -14,6 +14,7 @@
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Study/FlashcardLibrary.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStudyTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantIntent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDelegation.cs",
@@ -38,6 +39,7 @@
   ],
   "work_completed": [
     "#1005 fatia 1 (Flashcards nativos): FlashcardLibrary com conjuntos tipados em .urbe/estudo/flashcards.json (no vault, portável, oculto do Explorer como todo .urbe), gravação com as salvaguardas de area.json (versão mais nova/vault protegido recusados, bytes verificados) nos hosts Windows e Android; biblioteca única que inclui as notas pergunta::resposta sem copiá-las; SM-2 e estado de progresso existentes preservados (mesmo id e chave). Operação única IAssistantStudy para UI e IA; ferramentas create_flashcards (lote numa chamada), list_flashcards, open_flashcards; write_plugin e plugin_guide passam a excluir flashcards; sem biblioteca, a ferramenta recusa e diz para não trocar por plugin. Linha Flashcards no seletor do Estudo; biblioteca com criar, revisar, ver, editar, excluir cartão, renomear e excluir conjunto. Guia: artigo Flashcards; busca com sinônimos, termos genéricos com peso baixo, seção só entra com termo específico, e 'nada no guia' quando as palavras centrais não aparecem.",
+    "Verificador de intenção (AssistantIntent): pedido de flashcards com recurso nativo recusa write_plugin/plugin_guide na execução e aponta create_flashcards, salvo pedido explícito de plugin; replay do caso beta.60 com modelo roteirizado termina com 1 conjunto de 2 cartões e nenhuma nota.",
     "Plano canônico da #1005 registrado no ROADMAP C# (fatias 1–4 e decisão aberta de local físico)."
   ],
   "verification": [
