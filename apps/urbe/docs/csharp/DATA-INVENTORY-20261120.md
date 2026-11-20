@@ -50,7 +50,7 @@ Tudo que começa com `.` é ocultado pelo `FolderVaultStorage`/`AndroidVaultStor
 
 ## 4. Propostas (não decididas; cada uma é uma fatia própria com teste)
 
-- **P1 — Narração fora do Explorer.** Os WAV de narração passam para `.urbe/derivados/narracao/` (cache reconstruível) e o MP4 continua em `Vídeos/`. Projetos antigos: ler os dois lugares, sem mover bytes sem migração (doc 01 §5).
+- **P1 — Narração fora do Explorer.** Os WAV de narração passam para `.urbe/derivados/narracao/` (cache reconstruível) e o MP4 continua em `Vídeos/`. Projetos antigos: ler os dois lugares, sem mover bytes sem migração (doc 01 §5). **Restrição encontrada:** `VideoScript.IsVaultPath` recusa caminhos em `.urbe` de propósito (o modelo não aponta arquivos internos) e as gravações recusam segmentos ocultos. Então a P1 precisa de um tipo de referência própria para áudio derivado (resolvido pelo app, não pelo caminho escrito no projeto), não de afrouxar essa regra. É mudança de fronteira: ADR antes de implementar.
 - **P2 — Sessões de estudo como objeto.** Listar as sessões na biblioteca de Estudo, como os flashcards, e parar de criar arquivos novos em `Estudos/`. Exige decisão sobre o local físico (ver P3).
 - **P3 — Progresso que sobrevive à desinstalação.** Levar o progresso SM-2 para junto dos conjuntos (`.urbe/estudo/`), mantendo a chave por cartão. Hoje ele fica na área privada do app (seção 2). Muda modelo de dados: requer ADR (NN-011).
 - **P4 — Estudo sem nota automática.** Abrir Estudo sem nota aberta mostra a fonte e pergunta antes de criar `Anotações de estudo.md`. Mudança de comportamento do produto: precisa de validação da direção pelo proprietário.
