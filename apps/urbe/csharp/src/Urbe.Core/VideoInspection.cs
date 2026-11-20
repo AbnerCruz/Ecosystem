@@ -145,9 +145,25 @@ public static class VideoInspection
             if (o.Kind is not ("shape" or "image")) continue;
             if (Math.Abs(o.X - e.X) > o.Width * o.Scale / 2 || Math.Abs(o.Y - e.Y) > o.Height * o.Scale / 2) continue;
             if (o.Kind == "image") return null;
-            back = o.Color;
+            // a translucent shape is mixed with what is behind it, as it is drawn
+            back = o.Opacity >= 0.999 ? o.Color : Blend(o.Color, back, o.Opacity) ?? o.Color;
         }
         return Luminance(e.Color) is { } fg && Luminance(back) is { } bg ? (Math.Max(fg, bg) + 0.05) / (Math.Min(fg, bg) + 0.05) : null;
+    }
+
+    /// <summary><paramref name="top"/> over <paramref name="under"/> at <paramref name="alpha"/>, as #rrggbb.</summary>
+    private static string? Blend(string top, string under, double alpha)
+    {
+        static int[]? Rgb(string c)
+        {
+            var hex = c.Trim().TrimStart('#');
+            if (hex.Length == 3) hex = string.Concat(hex.Select(ch => new string(ch, 2)));
+            if (hex.Length == 8) hex = hex[2..];
+            return hex.Length == 6 && int.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var v) ? [v >> 16 & 255, v >> 8 & 255, v & 255] : null;
+        }
+        if (Rgb(top) is not { } a || Rgb(under) is not { } b) return null;
+        alpha = Math.Clamp(alpha, 0, 1);
+        return "#" + string.Concat(a.Zip(b, (x, y) => ((int)Math.Round(x * alpha + y * (1 - alpha))).ToString("x2", CultureInfo.InvariantCulture)));
     }
 
     /// <summary>WCAG 2 relative luminance of #rgb / #rrggbb (#aarrggbb takes the colour part).</summary>

@@ -107,7 +107,8 @@ public static class AssistantPublicationTools
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
         "Monte um vídeo em partes: 1) write_publication só com sources e design {layout:video} (o Urbe cria uma cena por fonte e devolve os ids); " +
-        "2) edit_video_scene para cada cena, uma por chamada, com os elementos dela; 3) review_publication e look_at_video; 4) render_video. Nunca mande todas as cenas numa chamada só. " +
+        "2) edit_video_scene para cada cena, uma por chamada, de preferência com layout e slots (abertura, topico, comparacao, numero, formula, grafico, citacao: " +
+        "composições prontas com entradas animadas), acrescentando elementos só quando o layout não basta; 3) review_publication e look_at_video; 4) render_video. Nunca mande todas as cenas numa chamada só. " +
         "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
         "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
         "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02}," +

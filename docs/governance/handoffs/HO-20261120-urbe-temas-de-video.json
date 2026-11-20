@@ -29,10 +29,12 @@
     "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoExpressivenessTests.cs",
-    "docs/governance/handoffs/HO-20261120-urbe-temas-de-video.json"
+    "docs/governance/handoffs/HO-20261120-urbe-temas-de-video.json",
+    "apps/urbe/csharp/src/Urbe.Core/VideoLayouts.cs"
   ],
   "work_completed": [
-    "#956 (qualidade visual): temas de vídeo prontos (noite, quadro, papel, neon, sobrio) com fundo em gradiente, cor de texto, duas cores de diagrama e legendas; aplicam-se ao que mantém a cor e o fundo padrão; a revisão de contraste mede contra o fundo do tema; Estúdio → Tema do vídeo; o schema do Assistente pede sempre um tema e o exemplo deixou de fixar cores; o vídeo de exemplo usa o tema Noite."
+    "#956 (qualidade visual): temas de vídeo prontos (noite, quadro, papel, neon, sobrio) com fundo em gradiente, cor de texto, duas cores de diagrama e legendas; aplicam-se ao que mantém a cor e o fundo padrão; a revisão de contraste mede contra o fundo do tema; Estúdio → Tema do vídeo; o schema do Assistente pede sempre um tema e o exemplo deixou de fixar cores; o vídeo de exemplo usa o tema Noite.",
+    "#956: layouts de cena compostos (abertura, topico, comparacao, numero, formula, grafico, citacao) com posições na área segura, acima da legenda, e entradas animadas escalonadas; edit_video_scene aceita layout + slots; a revisão de contraste mistura formas translúcidas com o fundo."
   ],
   "verification": [
     {
@@ -40,6 +42,18 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "VideoExpressivenessTests e VideoDirectionTests (28) e VideoRenderTests (9), com a mesma cena renderizada nos 5 temas."
+    },
+    {
+      "check": "Bateria completa (agente de teste, commit 3b14058d)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Consistência 22/22, Urbe.Core.Tests 1809/1809, Urbe.Client.Tests 698/698."
+    },
+    {
+      "check": "Layouts × temas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "EveryLayoutPassesTheMeasuredReview: 7 layouts em 5 temas sem nenhum problema na revisão medida com o texto real."
     }
   ],
   "known_issues": [

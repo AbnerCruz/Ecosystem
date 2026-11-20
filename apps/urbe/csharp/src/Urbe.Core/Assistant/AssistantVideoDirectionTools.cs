@@ -56,9 +56,11 @@ public static class AssistantVideoDirectionTools
         new AiTool
         {
             Name = "edit_video_scene", Access = "write",
-            Description = "Muda só uma cena de uma publicação de vídeo, pelo id: duration, background, transition e elementos. Cada elemento de elements com id existente recebe só os campos enviados; sem id ou com id novo, entra na cena. " +
+            Description = "Muda só uma cena de uma publicação de vídeo, pelo id: duration, background, transition e elementos. " +
+                          "layout + slots monta a cena inteira já composta (posições, tamanhos e entradas animadas): " + string.Join("; ", VideoLayouts.All.Select(l => l.Id + " (" + string.Join(", ", l.Required) + (l.Optional.Length > 0 ? "; opcional " + string.Join(", ", l.Optional) : "") + ")")) +
+                          ". Prefira um layout por cena a posicionar elementos à mão; textos na tela curtos (o que é falado fica na nota). Cada elemento de elements com id existente recebe só os campos enviados; sem id ou com id novo, entra na cena. " +
                           "remove_elements tira elementos. As outras cenas e as notas não mudam. Requer expected_revision (a revisão que review_publication ou look_at_video informam).",
-            Parameters = JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"expected_revision":{"type":"integer"},"scene_id":{"type":"string"},"duration":{"type":"number"},"background":{"type":"string"},"transition":{"type":"object","additionalProperties":true},"elements":{"type":"array","items":{"type":"object","additionalProperties":true}},"remove_elements":{"type":"array","items":{"type":"string"}}},"required":["path","expected_revision","scene_id"],"additionalProperties":false}""")!.AsObject(),
+            Parameters = JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"expected_revision":{"type":"integer"},"scene_id":{"type":"string"},"layout":{"type":"string"},"slots":{"type":"object","additionalProperties":{"type":"string"}},"duration":{"type":"number"},"background":{"type":"string"},"transition":{"type":"object","additionalProperties":true},"elements":{"type":"array","items":{"type":"object","additionalProperties":true}},"remove_elements":{"type":"array","items":{"type":"string"}}},"required":["path","expected_revision","scene_id"],"additionalProperties":false}""")!.AsObject(),
             Label = i => "Ajustando a cena " + ((string?)i["scene_id"] ?? ""),
             Preview = (input, host) =>
             {
@@ -233,6 +235,23 @@ public static class AssistantVideoDirectionTools
         var changed = new List<string>();
         foreach (var field in new[] { "duration", "background", "transition" })
             if (input[field] is { } value) { scene[field] = value.DeepClone(); changed.Add(field); }
+        // #956: a composed layout replaces the scene's elements (the narration stays in the note)
+        if (input["layout"] is JsonValue lv && lv.TryGetValue<string>(out var layoutId))
+        {
+            var slots = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (key, value) in input["slots"] as JsonObject ?? [])
+            {
+                var text = value is JsonValue v && v.TryGetValue<string>(out var str) ? str : value?.ToJsonString() ?? "";
+                if (text.Length > AssistantPublicationTools.MaxOverlay)
+                    throw new AiToolException("O texto de " + key + " tem " + text.Length + " caracteres; na tela vão até " + AssistantPublicationTools.MaxOverlay + ". O que é falado fica na nota da cena.");
+                slots[key] = text;
+            }
+            List<VideoElement> built;
+            try { built = VideoLayouts.Build(layoutId, slots, sceneId); }
+            catch (ArgumentException e) { throw new AiToolException(e.Message); }
+            scene["elements"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(built, LayoutJson));
+            changed.Add("layout " + layoutId);
+        }
         var elements = scene["elements"] as JsonArray ?? (JsonArray)(scene["elements"] = new JsonArray());
         foreach (var id in (input["remove_elements"] as JsonArray ?? []).Select(n => (string?)n))
         {
@@ -265,4 +284,10 @@ public static class AssistantVideoDirectionTools
     }
 
     private static string N(double v) => v.ToString("0.##", CultureInfo.GetCultureInfo("pt-BR"));
+
+    private static readonly System.Text.Json.JsonSerializerOptions LayoutJson = new()
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
 }
