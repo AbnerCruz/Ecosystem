@@ -48,6 +48,31 @@ public sealed partial class HeadlessUiTests
             await view.StartStudyAsync();
             Dispatcher.UIThread.RunJobs();
             Assert.NotNull(view.Editor.Pinned.FlashcardsRow);
+
+            // the library panel: the row opens it, a set shows its cards, the review grades with buttons
+            view.Editor.Pinned.FlashcardsRow!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            var panel = view.FlashcardsView;
+            Assert.NotNull(panel);
+            Assert.Equal("list", panel!.Screen);
+            Snapshot(window, "native-flashcards-list.png");
+            panel.ShowSet("deck:animais");
+            Assert.Equal("set", panel.Screen);
+            panel.StartReview(study.Sets()[0].Set, all: false);
+            Assert.Equal("review", panel.Screen);
+            panel.Reveal();
+            Dispatcher.UIThread.RunJobs();
+            Snapshot(window, "native-flashcards-review.png");
+            panel.GradeCurrent(Recall.Bom);
+            panel.GradeCurrent(Recall.Bom);   // not shown yet: ignored
+            panel.Reveal();
+            panel.GradeCurrent(Recall.Errei);
+            Assert.Equal("summary", panel.Screen);
+            Assert.Equal(1, study.Sets()[0].Progress.Due);      // the one forgotten is due again today
+            Assert.Equal(2, study.Sets()[0].Progress.Reviewed);
+            Assert.True(panel.GoBack());
+            view.CloseFlashcards();
+            Assert.Null(view.FlashcardsView);
             window.Close();
 
             // the app reopens: the deck is still there, and the vault shows nothing new
@@ -58,6 +83,7 @@ public sealed partial class HeadlessUiTests
             await Settle(again, reopened);
             var back = ((IAssistantStudy)reopened).Sets();
             Assert.Equal(["Maior mamífero?", "Animal terrestre mais rápido?"], back[0].Set.Cards.Select(c => c.Front));
+            Assert.Equal(2, back[0].Progress.Reviewed);   // the review's progress came back too
             Assert.Equal(before, Visible());
             again.Close();
             return true;

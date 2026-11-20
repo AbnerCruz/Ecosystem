@@ -127,65 +127,81 @@ public sealed partial class MainView : IAssistantStudy
 
     void IAssistantStudy.OpenStudy(string? setId) => _ = ShowFlashcardsAsync(setId);
 
-    /// <summary>The library: every set with its cards due today; choosing one opens what can be done with it.</summary>
-    public async Task ShowFlashcardsAsync(string? setId)
+    private FlashcardsPanel? _flashcardsPanel;
+
+    /// <summary>The library panel on the screen (tests and automation).</summary>
+    public FlashcardsPanel? FlashcardsView => _flashcardsPanel is { IsVisible: true } p ? p : null;
+
+    /// <summary>Opens the library panel over the app (at a set, when given).</summary>
+    public Task ShowFlashcardsAsync(string? setId)
     {
-        while (true)
+        if (_flashcardsPanel is null)
         {
-            var sets = Sets();
-            var chosen = setId is null ? null : sets.FirstOrDefault(s => s.Set.Id == setId || s.Set.DeckId == setId).Set;
-            setId = null;
-            if (chosen is null)
-            {
-                var items = sets.Select(s => new DialogItem(s.Set.Title, s.Set.Kind == "note" ? UrbeTheme.Icons.File : UrbeTheme.Icons.Book,
-                    s.Progress.Cards + (s.Progress.Cards == 1 ? " cartão" : " cartões") + " · " + (s.Progress.Due == 0 ? "nada para hoje" : s.Progress.Due + " para hoje") +
-                    (s.Set.Kind == "note" ? " · da nota" : ""))).ToList();
-                items.Add(new DialogItem("Novo conjunto", UrbeTheme.Icons.Plus, "Escreva os cartões aqui; nenhuma nota é criada."));
-                var pick = await Dialogs.ChooseAsync("Flashcards", items, sets.Count == 0 ? "Nenhum conjunto ainda. Crie um, peça ao Assistente, ou escreva pergunta::resposta numa nota." : null);
-                if (pick is not int i) return;
-                if (i == sets.Count) { if (await NewDeckAsync() is { } made) setId = "deck:" + made.Id; continue; }
-                chosen = sets[i].Set;
-            }
-            if (!await SetActionsAsync(chosen)) return;
+            _flashcardsPanel = new FlashcardsPanel(new FlashcardsHost(this)) { ZIndex = 30 };
+            _stage.Children.Add(_flashcardsPanel);
         }
+        _flashcardsPanel.IsVisible = true;
+        _flashcardsPanel.Show(setId);
+        _flashcardsPanel.Focus();
+        return Task.CompletedTask;
     }
 
-    /// <summary>What can be done with a set; false when the person left the library.</summary>
-    private async Task<bool> SetActionsAsync(StudySet set)
+    public void CloseFlashcards() { if (_flashcardsPanel is not null) _flashcardsPanel.IsVisible = false; }
+
+    private sealed class FlashcardsHost(MainView view) : FlashcardsPanel.IHost
     {
-        while (true)
+        private static DateOnly Today => DateOnly.FromDateTime(DateTime.Now);
+        public IReadOnlyList<(StudySet Set, StudySetProgress Progress)> Sets() => view.Sets();
+        public IReadOnlyList<Flashcard> Due(StudySet set, bool all)
         {
-            var (current, progress) = Sets().FirstOrDefault(s => s.Set.Id == set.Id);
-            if (current is null) return true;
-            var actions = new List<(DialogItem Item, Func<Task<bool>> Run)>
-            {
-                (new DialogItem(progress.Due == 0 ? "Revisar (nada para hoje)" : "Revisar " + progress.Due + (progress.Due == 1 ? " cartão" : " cartões"), UrbeTheme.Icons.Book,
-                    progress.Next is { } next && progress.Due == 0 ? "O próximo volta em " + next.ToString("dd/MM") : "Pergunta, resposta e o quanto você lembrou."),
-                    async () => { await ReviewSetAsync(current, all: false); return true; }),
-                (new DialogItem("Ver os cartões", UrbeTheme.Icons.Notes, progress.Cards + " no conjunto, " + progress.Reviewed + " já revisados"), async () => { await BrowseCardsAsync(current); return true; }),
-            };
-            if (current.Kind == "deck" && current.DeckId is { } deckId)
-            {
-                actions.Add((new DialogItem("Adicionar cartão", UrbeTheme.Icons.Plus), async () => { await AddCardManuallyAsync(deckId); return true; }));
-                actions.Add((new DialogItem("Renomear", UrbeTheme.Icons.Pencil), async () =>
-                {
-                    if (await Dialogs.PromptAsync(new PromptOptions("Renomear conjunto", "Título", current.Title)) is { Length: > 0 } t)
-                        await Guard(() => ChangeFlashcardsAsync(l => l.Rename(deckId, t, DateTime.UtcNow)));
-                    return true;
-                }));
-                actions.Add((new DialogItem("Excluir conjunto", UrbeTheme.Icons.Trash, "Os cartões e o progresso deles somem.", Danger: true), async () =>
-                {
-                    if (!await Dialogs.ConfirmAsync("Excluir \"" + current.Title + "\"?", progress.Cards + " cartões serão apagados.", "Excluir", danger: true)) return true;
-                    await Guard(() => ChangeFlashcardsAsync(l => l.Delete(deckId)));
-                    return false;
-                }));
-            }
-            else if (current.NotePath is { } path)
-                actions.Add((new DialogItem("Abrir a nota", UrbeTheme.Icons.File, "Os cartões são as linhas pergunta::resposta dela."), () => { OpenNoteByPath(path); return Task.FromResult(false); }));
-            var pick = await Dialogs.ChooseAsync(current.Title, actions.Select(a => a.Item).ToList(), current.Kind == "note" ? "Da nota " + current.NotePath : null);
-            if (pick is not int i) return true;
-            if (!await actions[i].Run()) return i == actions.Count - 1 && current.Kind == "deck";
+            var states = view.Study();
+            return all ? set.Cards : set.Cards.Where(c => !states.TryGetValue(view.StateKey(c.Id), out var s) || s.Due <= Today).ToList();
         }
+        public IReadOnlyList<(string Label, string Detail)> When(Flashcard card)
+        {
+            var before = view.Study().GetValueOrDefault(view.StateKey(card.Id));
+            return Enum.GetValues<Recall>().Select(r =>
+            {
+                var d = Flashcards.Review(before, r, Today).Due.DayNumber - Today.DayNumber;
+                return (r.ToString(), d <= 0 ? "hoje" : d == 1 ? "amanhã" : d + " dias");
+            }).ToList();
+        }
+        public void Grade(Flashcard card, Recall grade)
+        {
+            var key = view.StateKey(card.Id);
+            view.Study()[key] = Flashcards.Review(view.Study().GetValueOrDefault(key), grade, Today);
+            view.SaveStudy();
+        }
+        public string StateOf(Flashcard card) =>
+            view.Study().GetValueOrDefault(view.StateKey(card.Id)) is not { } s ? "novo" : s.Due <= Today ? "para hoje" : "volta em " + s.Due.ToString("dd/MM");
+        public async Task NewSetAsync() => await view.NewDeckAsync();
+        public Task SetMenuAsync(StudySet set) => view.DeckMenuAsync(set);
+        public Task CardMenuAsync(StudySet set, Flashcard card) => view.CardMenuAsync(set, card);
+        public void OpenNote(string path) { view.CloseFlashcards(); view.OpenNoteByPath(path); }
+        public void Close() => view.CloseFlashcards();
+    }
+
+    private async Task DeckMenuAsync(StudySet set)
+    {
+        if (set.DeckId is not { } deckId) return;
+        var pick = await Dialogs.ChooseAsync(set.Title,
+            [new DialogItem("Adicionar cartão", UrbeTheme.Icons.Plus), new DialogItem("Renomear", UrbeTheme.Icons.Pencil),
+             new DialogItem("Excluir conjunto", UrbeTheme.Icons.Trash, "Os cartões e o progresso deles somem.", Danger: true)]);
+        if (pick == 0) await AddCardManuallyAsync(deckId);
+        else if (pick == 1 && await Dialogs.PromptAsync(new PromptOptions("Renomear conjunto", "Título", set.Title)) is { Length: > 0 } t)
+            await Guard(() => ChangeFlashcardsAsync(l => l.Rename(deckId, t, DateTime.UtcNow)));
+        else if (pick == 2 && await Dialogs.ConfirmAsync("Excluir \"" + set.Title + "\"?", set.Cards.Count + " cartões serão apagados.", "Excluir", danger: true))
+            await Guard(() => ChangeFlashcardsAsync(l => l.Delete(deckId)));
+    }
+
+    private async Task CardMenuAsync(StudySet set, Flashcard card)
+    {
+        if (set.DeckId is not { } deckId) return;
+        var choice = await Dialogs.ChooseAsync(card.Front, [new DialogItem("Editar", UrbeTheme.Icons.Pencil, "Mudar só a resposta mantém o progresso."), new DialogItem("Excluir cartão", UrbeTheme.Icons.Trash, Danger: true)], card.Back);
+        if (choice == 0 && await AskCardAsync((card.Front, card.Back)) is { } edited)
+            await Guard(() => ChangeFlashcardsAsync(l => l.EditCard(deckId, card.Id, edited.Front, edited.Back, DateTime.UtcNow)));
+        else if (choice == 1 && await Dialogs.ConfirmAsync("Excluir o cartão?", card.Front, "Excluir", danger: true))
+            await Guard(() => ChangeFlashcardsAsync(l => l.RemoveCard(deckId, card.Id, DateTime.UtcNow)));
     }
 
     private async Task Guard(Func<Task> act)
@@ -201,6 +217,7 @@ public sealed partial class MainView : IAssistantStudy
         if (await AskCardAsync(null) is not { } card) return null;
         FlashcardDeck? made = null;
         await Guard(async () => made = await ChangeFlashcardsAsync(l => l.Create(title, [card], "manual", null, DateTime.UtcNow)));
+        if (made is not null && await Dialogs.ConfirmAsync("Conjunto criado", "Adicionar outro cartão?", "Adicionar outro", cancel: "Pronto")) await AddCardManuallyAsync(made.Id);
         return made;
     }
 
@@ -218,50 +235,5 @@ public sealed partial class MainView : IAssistantStudy
         if (await Dialogs.PromptAsync(new PromptOptions("Frente do cartão", "Pergunta ou termo", current?.Front ?? "", Confirm: "Próximo")) is not { Length: > 0 } front) return null;
         if (await Dialogs.PromptAsync(new PromptOptions("Verso do cartão", front, current?.Back ?? "", Confirm: "Salvar")) is not { Length: > 0 } back) return null;
         return (front, back);
-    }
-
-    private async Task BrowseCardsAsync(StudySet set)
-    {
-        var states = Study();
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        var items = set.Cards.Select(c =>
-        {
-            var s = states.GetValueOrDefault(StateKey(c.Id));
-            return new DialogItem(c.Front, Detail: c.Back + " · " + (s is null ? "novo" : s.Due <= today ? "para hoje" : "volta em " + s.Due.ToString("dd/MM")));
-        }).ToList();
-        var pick = await Dialogs.ChooseAsync(set.Title, items);
-        if (pick is not int i || set.DeckId is not { } deckId) return;
-        var card = set.Cards[i];
-        var choice = await Dialogs.ChooseAsync(card.Front, [new DialogItem("Editar", UrbeTheme.Icons.Pencil, "Mudar só a resposta mantém o progresso."), new DialogItem("Excluir cartão", UrbeTheme.Icons.Trash, Danger: true)], card.Back);
-        if (choice == 0 && await AskCardAsync((card.Front, card.Back)) is { } edited)
-            await Guard(() => ChangeFlashcardsAsync(l => l.EditCard(deckId, card.Id, edited.Front, edited.Back, DateTime.UtcNow)));
-        else if (choice == 1 && await Dialogs.ConfirmAsync("Excluir o cartão?", card.Front, "Excluir", danger: true))
-            await Guard(() => ChangeFlashcardsAsync(l => l.RemoveCard(deckId, card.Id, DateTime.UtcNow)));
-    }
-
-    /// <summary>The review of a set: front, then back, then how well it was remembered (SM-2), saved after each card.</summary>
-    private async Task ReviewSetAsync(StudySet set, bool all)
-    {
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        var states = Study();
-        var due = all ? set.Cards : set.Cards.Where(c => !states.TryGetValue(StateKey(c.Id), out var s) || s.Due <= today).ToList();
-        if (due.Count == 0) { await Dialogs.AlertAsync(set.Title, "Nada para revisar hoje neste conjunto."); return; }
-        int done = 0, right = 0;
-        for (int i = 0; i < due.Count; i++)
-        {
-            var card = due[i];
-            if (await Dialogs.ChooseAsync("Cartão " + (i + 1) + " de " + due.Count, [new DialogItem("Mostrar resposta")], card.Front) is not 0) break;
-            var before = Study().GetValueOrDefault(StateKey(card.Id));
-            string When(Recall r) { var d = Flashcards.Review(before, r, today).Due.DayNumber - today.DayNumber; return d <= 0 ? "Volta hoje" : d == 1 ? "Volta amanhã" : "Volta em " + d + " dias"; }
-            var pick = await Dialogs.ChooseAsync(card.Front,
-                [new DialogItem("Errei", Detail: When(Recall.Errei)), new DialogItem("Difícil", Detail: When(Recall.Dificil)),
-                 new DialogItem("Bom", Detail: When(Recall.Bom)), new DialogItem("Fácil", Detail: When(Recall.Facil))], card.Back);
-            if (pick is not int grade) break;
-            Study()[StateKey(card.Id)] = Flashcards.Review(before, (Recall)grade, today);
-            SaveStudy();
-            done++;
-            if (grade > 0) right++;
-        }
-        if (done > 0) await Dialogs.AlertAsync(set.Title, done + (done == 1 ? " cartão revisado" : " cartões revisados") + ", " + right + " lembrados.");
     }
 }

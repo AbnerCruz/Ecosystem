@@ -23,6 +23,7 @@
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FlashcardsPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
     "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
     "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
@@ -46,9 +47,9 @@
   "known_issues": [
     "Não testado no aparelho (ADD-0035); Android compilado só por paridade de código com SaveAreaLayoutAsync, sem build Android aqui.",
     "Prompt da beta.60 não reexecutado com modelo real; métricas comparadas (chamadas, tempo) pendentes.",
-    "Biblioteca usa diálogos, não painel próprio; sem cartão de artefato tipado no chat; sem migração de plugin de flashcards antigo."
+    "Painel próprio feito (FlashcardsPanel); criar/editar cartões ainda em diálogos; sem cartão de artefato tipado no chat; sem migração de plugin de flashcards antigo."
   ],
-  "next_actions": [ "Painel próprio da biblioteca de Estudo e cartão de artefato no chat; depois fatia 2 (inventário de stores)." ],
+  "next_actions": [ "Cartão de artefato tipado no chat; depois fatia 2 (inventário de stores)." ],
   "decisions_required": [],
   "normative_sources": [
     "AGENTS.md",
