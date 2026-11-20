@@ -157,7 +157,7 @@ public sealed partial class MainView : Grid
         Editor.RenameRequested += () => { if (Editor.Current is { } open) _ = RenameNoteAsync(open.Path); };
         Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
         Editor.AgentAsked += call => _ = AskAgentInNoteAsync(call);
-        Editor.Shown += path => { ApplyEditorCompatibility(path); NoteOpened?.Invoke(path); };   // plugins: "nota:aberta"
+        Editor.Shown += path => { ApplyEditorCompatibility(path); NoteOpened?.Invoke(path); Touch(); };   // plugins: "nota:aberta"; #51: using the app
         Editor.ReadOnlyChanged += PreventUnsafeEditorToggle;
 
         Explorer.TitleMark = _vaultDot;
@@ -211,6 +211,7 @@ public sealed partial class MainView : Grid
         Search.UserShortcuts = MyShortcuts;
         RestoreTouchDebug();
         WatchErrors();
+        WatchActivity();
         WatchSession();
         WatchTips();
         WireSplit();
@@ -347,13 +348,15 @@ public sealed partial class MainView : Grid
                 Explorer.Opening = Workspace.Opening = true;
                 // UC-78: the tree of the last opening at once, from its names, while the folder is read
                 ShowLastNames();
+                // #51: the last note comes back only when this opening continues the production session
+                bool continues = OpeningContinuesSession();
                 // and the last note, read alone, before the whole folder (it becomes editable once the folder is read)
-                await ShowLastNoteEarlyAsync();
+                if (continues) await ShowLastNoteEarlyAsync();
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
                     // UC-59: the last note opens as soon as the vault is read
-                    if (snapshot is not null) { await ShowVaultAsync(snapshot, restoreSession: true); return; }
+                    if (snapshot is not null) { await ShowVaultAsync(snapshot, restoreSession: continues); return; }
                 }
                 catch (Exception ex) { ShowLifeNotice("Vault indisponível: " + ex.Message, Ui.ToastKind.Warning); }
             }
@@ -394,6 +397,7 @@ public sealed partial class MainView : Grid
         IReadOnlyList<string>? listedFiles = null, IReadOnlyList<string>? listedFolders = null)
     {
         UiStallWatch.Doing("mostrar o vault");
+        Touch(force: true);   // #51: opening a folder is using the app
         if (!await Editor.Pinned.TryUnpinAsync()) return;
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
         if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)

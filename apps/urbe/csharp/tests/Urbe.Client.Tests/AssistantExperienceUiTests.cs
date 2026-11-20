@@ -87,16 +87,17 @@ public sealed partial class HeadlessUiTests
                 "Fonte exclusiva " + i, "https://example.org/" + i, "https://example.org/" + i, "example.org", null, "2026-10-24", "resultado de busca"));
             panel.RenderAll();
             await Settle(window, view);
-            var activity = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
-            Assert.Null(activity.Content);
+            var activity = panel.Log.GetLogicalDescendants().OfType<Button>()
+                .First(b => (Avalonia.Automation.AutomationProperties.GetName(b) ?? "").StartsWith("Atividade do agente", StringComparison.Ordinal));
             Snapshot(window, "native-assistant-experience-phone.png");
+            // a tap on the activity line opens the panel of steps (#50)
             var point = activity.TranslatePoint(new Point(48, 20), window)!.Value;
             window.MouseDown(point, MouseButton.Left);
             window.MouseUp(point, MouseButton.Left);
             await Settle(window, view);
-            Assert.True(activity.IsExpanded);
-            Assert.DoesNotContain(activity.GetVisualDescendants().OfType<TextBlock>(), t => t.Text is "⌃" or "⌄");
-            var stage = ((Panel)activity.Content!).Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
+            Assert.True(panel.StepsSheet.IsOpen);
+            Assert.DoesNotContain(panel.StepsSheet.GetVisualDescendants().OfType<TextBlock>(), t => t.Text is "⌃" or "⌄");
+            var stage = panel.StepsList!.Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
             Assert.NotNull(stage);
             Assert.Null(stage.Content);
             stage.IsExpanded = true;
@@ -104,8 +105,9 @@ public sealed partial class HeadlessUiTests
             Assert.Contains("Conteúdo preservado.", stage.GetLogicalDescendants().OfType<CodeBlockView>().Last().SourceText);
             Snapshot(window, "native-assistant-experience-activity.png");
             // Select from the visible response; refreshing must leave that exact control mounted.
-            activity.IsExpanded = false;
+            Named(panel.StepsSheet.Card, "Fechar etapas").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             await Settle(window, view);
+            Assert.False(panel.StepsSheet.IsOpen);
             var selection = panel.Log.GetVisualDescendants().OfType<SelectableTextBlock>().First(t => t.Text?.StartsWith("Analise") == true);
             selection.SelectionStart = 0;
             selection.SelectionEnd = 7;

@@ -55,6 +55,8 @@ public interface IAssistantApp
     void EndSuggestion() { }
     /// <summary>UC-63: a new file that is not text (an image the Assistente made), written and read back in the vault.</summary>
     Task CreateBinaryFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não grava imagens.");
+    /// <summary>AbnerCruz/Urbe#51: false when the app opened (or came back) in a new production session.</summary>
+    bool ContinuesSession => true;
     /// <summary>#956: the device's voice saying <paramref name="text"/>, as a WAV; null where there is no voice.</summary>
     Task<byte[]?> SpeakAsync(string text, CancellationToken cancel) => Task.FromResult<byte[]?>(null);
     /// <summary>#956: the verified MP4 of a timeline, made as the Estúdio's export makes it.</summary>
@@ -323,7 +325,7 @@ public sealed partial class AssistantPanel : Border
         layout.Children.Add(compose);
         layout.Children.Add(_scroll);
         _view.Background = UrbeTheme.Brush(UrbeTheme.Bg);
-        Child = new Grid { Children = { layout, _view } };
+        Child = new Grid { Children = { layout, _view, _stepsSheet } };
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
@@ -545,7 +547,9 @@ public sealed partial class AssistantPanel : Border
         try
         {
             if (_store.ConversationSummariesFor(_cfg.AgentId, _app.VaultName).FirstOrDefault() is { } latest &&
-                _store.GetConversation(latest.Id) is { } last && last.AgentId == _cfg.AgentId && ConversationResume.InUse(last, Now()))
+                _store.GetConversation(latest.Id) is { } last && last.AgentId == _cfg.AgentId &&
+                // #51: in a new production session only a conversation waiting on the person (queued message, form) comes back
+                (_app.ContinuesSession ? ConversationResume.InUse(last, Now()) : ConversationResume.Waiting(last)))
                 return last;
         }
         catch (IOException) { }
@@ -559,6 +563,18 @@ public sealed partial class AssistantPanel : Border
     /// going in its own conversation (runs belong to their conversation's id, as when switching agents), and a view
     /// open over the chat (Conversas, Configurações) closes so the new conversation shows.
     /// </summary>
+    /// <summary>AbnerCruz/Urbe#51: a new production session starts on a new conversation; a run going on keeps its own.</summary>
+    public void StartFresh()
+    {
+        if (_activeRuns.Count > 0 || !_loaded || ConversationResume.Waiting(_conv)) return;
+        Persist();
+        _conv = NewConversation();
+        RememberCurrentChat();
+        SyncActiveConversation();
+        _views.Clear();
+        if (IsVisible) RenderAll();
+    }
+
     private void NewConversationClicked()
     {
         Persist();

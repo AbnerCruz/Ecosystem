@@ -122,6 +122,8 @@ public sealed class UrbeApp : Application
         if (ActiveView is not { } view) return;
         _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
         {
+            try { await view.ReturnFromBackgroundAsync(); }
+            catch { /* a return that cannot close the note keeps it open: nothing is lost */ }
             try { await view.RefreshFromDiskAsync(); }
             catch { /* the vault stays as it was shown; the next write checks the folder again */ }
         });
@@ -132,6 +134,7 @@ public sealed class UrbeApp : Application
         if (ActiveView is not { } view) return;
         _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
         {
+            view.Touch(force: true);   // #51: when the person left
             try { await view.Editor.FlushAsync(); }
             catch { /* shown by the editor's save state */ }
             try { await view.FlushPendingAsync(); }

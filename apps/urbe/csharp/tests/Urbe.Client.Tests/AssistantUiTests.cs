@@ -460,13 +460,10 @@ public sealed partial class HeadlessUiTests
                 // Latest request: collapsed summary and nested inspection with intact results.
                 var activity = Assert.IsType<StackPanel>(panel.Log.Children[31]);
                 var activityBorder = Assert.IsType<Border>(activity.Children[0]);
-                var activityFold = Assert.IsType<Expander>(activityBorder.Child);
-                Assert.Null(activityFold.Content);
+                Assert.IsType<Button>(activityBorder.Child);
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(),
                     t => t.Text?.Contains("10 etapas", StringComparison.Ordinal) == true);
-                activityFold.IsExpanded = true;
-                Dispatcher.UIThread.RunJobs();
-                var timeline = Assert.IsType<StackPanel>(activityFold.Content);
+                var timeline = Assert.IsType<StackPanel>(OpenSteps(panel));
                 Assert.Equal(10, timeline.Children.Count);
                 var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(Assert.IsType<Ui.Deferred>(timeline.Children[0]).View).Child);
                 firstStage.IsExpanded = true;

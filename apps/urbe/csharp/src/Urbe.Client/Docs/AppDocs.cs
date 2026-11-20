@@ -31,6 +31,8 @@ public static partial class AppDocs
 
         A Área de trabalho é a tela de base do Urbe. Cada **projeto** (uma pasta no topo da sua pasta de notas) é uma caixa de vidro na sua cor, com as notas e os arquivos mais recentes à vista; as notas soltas na raiz ficam em **Soltas**.
 
+        Ao voltar ao Urbe depois de pouco tempo, ele continua na nota e na conversa em que você estava. Depois de uma pausa longa, abre aqui, na Área de trabalho, e o Assistente começa uma conversa nova; nada se perde. A pausa se escolhe em Personalização → Editor → **Ao voltar ao Urbe** (30 minutos, se você não mudar).
+
         ## Abrir e procurar
 
         - Toque numa caixa (ou em **Ver tudo**) para abrir o catálogo do projeto, com o caminho de volta no alto.
@@ -460,6 +462,8 @@ public static partial class AppDocs
         - Os agentes não veem os selos e não conseguem removê-los. Se você pedir, eles explicam que a autoria é mantida pelo aplicativo.
 
         **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Uma mensagem leva até 20 anexos, somando até 30 MB, o que os provedores aceitam juntos. Fotos grandes ou deitadas vão de pé e reduzidas (2000 px, JPEG), em vez de serem recusadas. PDFs vão até 20 MB e textos até 384 KB por arquivo, tanto do aparelho quanto do vault. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
+
+        **Etapas:** o cartão de atividade mostra as últimas etapas e, enquanto a IA trabalha, o resumo do que o modelo diz estar fazendo. Tocar nele abre o painel de etapas, que sobe da parte de baixo: as mais recentes primeiro na tela, "Ver anteriores" e "Ver mais recentes" para andar pelo histórico, e o X no topo para fechar. Fechar o painel não interrompe a IA.
 
         **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. O cartão mostra quantas dúvidas já foram esclarecidas, a compreensão que o agente declara, as dúvidas que ainda estão em aberto e o que mudou desde a pergunta anterior (as esclarecidas e as novas). São estimativas declaradas pelo agente, não medições.
 

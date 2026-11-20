@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.59 — 19/11/2026
+- Integrais certas (a de (1+cos x)² em [0, 2π] dava 8π/3), sem limite de passos, resposta cortada continua sozinha, o Assistente pergunta o formato antes de produzir e monta vídeos cena por cena.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.59
+
 ## 2.0.0-beta.58 — 19/11/2026
 - O Assistente entrega o vídeo pronto (narração, MP4 e legendas no vault), gráficos e fórmulas aparecem nos vídeos, o selo da IA não aparece na tela e não há pedido de permissão a cada quadro; curvas, traços que se desenham e grupos no motor.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.58

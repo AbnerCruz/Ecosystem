@@ -784,6 +784,14 @@ public sealed class EditorOverlay : Grid
         Show(target.Path == _note?.Path ? Current! : target);
     }
 
+    /// <summary>AbnerCruz/Urbe#51: closes the editor (the note is saved on the way) without going back through the trail.</summary>
+    public Task CloseToHomeAsync()
+    {
+        _trail.Clear();
+        _forward.Clear();
+        return BackAsync();
+    }
+
     /// <summary>Voltar: the previous note of the trail, or closes back to where the editor was opened from.</summary>
     public async Task BackAsync()
     {
