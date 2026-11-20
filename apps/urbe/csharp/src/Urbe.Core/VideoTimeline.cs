@@ -67,6 +67,14 @@ public sealed record VideoLayer(VideoTimelineScene Scene, double Opacity, double
 /// <summary>#1004 slice 4: the camera at one instant: the frame point at the centre, the zoom and the rotation.</summary>
 public sealed record VideoCameraState(double X, double Y, double Zoom, double Rotation)
 {
+    /// <summary>The element as the camera shows it on a <paramref name="width"/>×<paramref name="height"/> frame.</summary>
+    public VideoElementState Apply(VideoElementState e, int width, int height)
+    {
+        double dx = (e.X - X) * width * Zoom, dy = (e.Y - Y) * height * Zoom, a = -Rotation * Math.PI / 180;
+        double rx = dx * Math.Cos(a) - dy * Math.Sin(a), ry = dx * Math.Sin(a) + dy * Math.Cos(a);
+        return e with { X = 0.5 + rx / width, Y = 0.5 + ry / height, Scale = e.Scale * Zoom, Rotation = e.Rotation - Rotation };
+    }
+
     public bool IsStill => Math.Abs(X - 0.5) < 1e-9 && Math.Abs(Y - 0.5) < 1e-9 && Math.Abs(Zoom - 1) < 1e-9 && Math.Abs(Rotation) < 1e-9;
 }
 

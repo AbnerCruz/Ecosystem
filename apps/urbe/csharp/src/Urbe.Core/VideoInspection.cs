@@ -50,7 +50,9 @@ public static class VideoInspection
                 var t = scene.Start + local;
                 var frame = timeline.Evaluate(t);
                 if (frame.Layers.FirstOrDefault(l => ReferenceEquals(l.Scene, scene)) is not { } layer) continue;
-                var visible = layer.Elements.Where(e => e.Opacity >= 0.1 && e.Scale > 0).ToList();
+                // #1004 slice 4: measured where the camera shows them
+                var shown = layer.Camera is { } cam ? layer.Elements.Select(e => cam.Apply(e, timeline.Width, timeline.Height)) : layer.Elements;
+                var visible = shown.Where(e => e.Opacity >= 0.1 && e.Scale > 0).ToList();
                 bool subtitle = frame.Subtitle is not null;
                 for (int i = 0; i < visible.Count; i++)
                 {

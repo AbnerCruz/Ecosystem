@@ -27,5 +27,5 @@
 ## Não testado no aparelho
 
 - Testado com testes automáticos num computador: 2000 partículas a 720p são desenhadas e medidas, abaixo de 1 s por quadro no limite do teste; não medi no seu Android.
-- Com a câmera em movimento, a revisão automática do vídeo e o arrastar de elementos no Estúdio ainda medem a cena sem a câmera.
+- Com a câmera em movimento, arrastar elementos no Estúdio ainda usa a cena sem a câmera (a revisão automática já mede o que a câmera mostra).
 - Não reexecutei um pedido real de vídeo nem de flashcards com o seu modelo; o caso da beta.60 foi provado com testes automáticos, não medido de novo com o modelo.

@@ -296,4 +296,21 @@ public sealed class VideoProceduralTests
         var zero = project with { Video = project.Video.WithScene(scene with { Camera = new VideoCamera { Keyframes = [new() { Property = "zoom", Time = 0, Value = 0 }] } }) };
         Assert.Contains("zoom", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(zero)).Message);
     }
+
+    [Fact]
+    public void TheReviewMeasuresWhatTheCameraShows()
+    {
+        // a text well inside the frame, then a camera zoomed 3× on a corner: on the screen it leaves the frame
+        var (catalog, project) = Scene(new VideoElement { Id = "caixa", Kind = "text", Text = "Olá", X = 0.5, Y = 0.5, Width = 0.3, Height = 0.15 });
+        using var _ = catalog;
+        Assert.DoesNotContain(VideoInspection.Run(VideoTimeline.Build(project, catalog)), i => i.ElementId == "caixa");
+        var scene = project.Video!.Scenes[0] with { Camera = new VideoCamera { Keyframes = [new() { Property = "zoom", Time = 0, Value = 3 }, new() { Property = "x", Time = 0, Value = 0.4 }] } };
+        var zoomed = project with { Video = project.Video.WithScene(scene) };
+        var tl = VideoTimeline.Build(zoomed, catalog);
+        var found = VideoInspection.Run(tl);
+        Assert.True(found.Any(i => i.ElementId == "caixa" && i.Severity == ReviewSeverity.Error), string.Join(" | ", found.Select(i => i.Place + ": " + i.Message)) + " cam=" + tl.Evaluate(1).Layers[0].Camera);
+        var cam = new VideoCameraState(0.4, 0.5, 3, 0);
+        var at = cam.Apply(new VideoElementState("x", "shape", "", null, 0.5, 0.5, 0.1, 0.1, 1, 1, 0, 1, "#fff", 0.05), 1000, 500);
+        Assert.Equal((0.8, 0.5, 3.0), (Math.Round(at.X, 9), at.Y, at.Scale));
+    }
 }
