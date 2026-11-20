@@ -208,6 +208,10 @@ public static class AssistantPublicationTools
         if (input["spec"] is not JsonObject spec) throw new AiToolException("Informe spec conforme publication_schema.");
         CheckNoCopiedText(spec);
         Canonicalize(spec, host);
+        // rewriting an existing publication without naming its id keeps the id it has (asking for it made models loop)
+        if (spec["publicationId"] is null && host.Documents.Get(path) is { } prior)
+            try { spec["publicationId"] = PublicationProjectCodec.Parse(prior.Content).PublicationId; }
+            catch (InvalidDataException) { /* an unreadable file is replaced only with a valid revision, below */ }
         PublicationProject project;
         try { project = PublicationProjectCodec.Parse(spec.ToJsonString()); }
         catch (Exception e) when (e is InvalidDataException or NotSupportedException or ArgumentException)
@@ -220,10 +224,12 @@ public static class AssistantPublicationTools
         var previous = host.Documents.Get(path);
         if (previous is not null)
         {
+            var existingId = PublicationProjectCodec.Parse(previous.Content).PublicationId;
             if (!int.TryParse(input["expected_revision"]?.ToJsonString(), out var expected) || expected != previous.Revision)
-                throw new AiToolException("Releia a publicação e informe expected_revision atual antes de substituir.");
-            if (PublicationProjectCodec.Parse(previous.Content).PublicationId != project.PublicationId)
-                throw new AiToolException("Preserve o publicationId do projeto existente.");
+                throw new AiToolException(path + " já existe, na revisão " + previous.Revision + ". Para substituí-la envie expected_revision: " + previous.Revision +
+                    " e publicationId: \"" + existingId + "\"; para mudar uma cena só, use edit_video_scene.");
+            if (existingId != project.PublicationId)
+                throw new AiToolException("Preserve o publicationId do projeto existente: \"" + existingId + "\".");
         }
         return (path, PublicationProjectCodec.Serialize(project), previous);
     }

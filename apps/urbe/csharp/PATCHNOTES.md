@@ -14,6 +14,10 @@
 - **Vídeo novo já com tema.** Um vídeo novo começa no tema Noite; troque em Tema do vídeo.
 - **Contraste medido de verdade.** A revisão do vídeo considera a transparência das formas por trás do texto.
 
+## Assistente
+
+- **Erros que dizem o que fazer.** Um id repetido no vídeo diz qual é e onde; um JSON quebrado diz o campo e a linha; regravar uma publicação diz a revisão a informar, e o id existente é mantido sozinho.
+
 ## Não testado no aparelho
 
 - Testado com testes automáticos e quadros renderizados no computador.

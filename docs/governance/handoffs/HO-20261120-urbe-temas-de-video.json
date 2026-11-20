@@ -35,7 +35,8 @@
   "work_completed": [
     "#956 (qualidade visual): temas de vídeo prontos (noite, quadro, papel, neon, sobrio) com fundo em gradiente, cor de texto, duas cores de diagrama e legendas; aplicam-se ao que mantém a cor e o fundo padrão; a revisão de contraste mede contra o fundo do tema; Estúdio → Tema do vídeo; o schema do Assistente pede sempre um tema e o exemplo deixou de fixar cores; o vídeo de exemplo usa o tema Noite.",
     "#956: layouts de cena compostos (abertura, topico, comparacao, numero, formula, grafico, citacao) com posições na área segura, acima da legenda, e entradas animadas escalonadas; edit_video_scene aceita layout + slots; a revisão de contraste mistura formas translúcidas com o fundo.",
-    "Estúdio: Objeto → Cena pronta (layout) monta a cena com um layout e pede só o conteúdo (o título vem da nota); vídeos novos começam com o tema Noite."
+    "Estúdio: Objeto → Cena pronta (layout) monta a cena com um layout e pede só o conteúdo (o título vem da nota); vídeos novos começam com o tema Noite.",
+    "Erros que travavam o modelo na conversa da beta.58 agora dizem o que fazer: id repetido diz qual e onde; JSON inválido diz o campo e a linha; publicação existente diz a revisão e o publicationId a enviar, e regravar sem publicationId mantém o id existente."
   ],
   "verification": [
     {

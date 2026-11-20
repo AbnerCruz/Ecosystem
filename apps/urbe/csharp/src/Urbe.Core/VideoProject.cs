@@ -236,12 +236,16 @@ public static class VideoCompositionRules
         if (video.Theme is not null && VideoThemes.Find(video.Theme) is null)
             throw Bad("tema \"" + video.Theme + "\"; temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)));
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        void Id(string? id) { if (string.IsNullOrWhiteSpace(id) || !ids.Add(id)) throw Bad("identidade ausente ou repetida"); }
+        void Id(string? id, string what)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw Bad(what + " sem id: todo elemento, cena e áudio precisa de um id único");
+            if (!ids.Add(id)) throw Bad("o id \"" + id + "\" aparece mais de uma vez (" + what + "); cenas, elementos e áudios precisam de ids diferentes entre si");
+        }
         static bool Finite(double v) => double.IsFinite(v);
         foreach (var scene in video.Scenes)
         {
             if (scene is null) throw Bad("cena vazia");
-            Id(scene.Id);
+            Id(scene.Id, "cena");
             if (string.IsNullOrWhiteSpace(scene.PlacementId)) throw Bad("cena sem nota");
             if (!Finite(scene.Duration) || scene.Duration is < 0.1 or > 3600) throw Bad("duração da cena");
             if (scene.Transition is null || scene.Transition.Kind is not ("cut" or "fade") ||
@@ -250,7 +254,7 @@ public static class VideoCompositionRules
             foreach (var e in scene.Elements)
             {
                 if (e is null) throw Bad("elemento vazio");
-                Id(e.Id);
+                Id(e.Id, "elemento da cena " + scene.Id);
                 if (!VideoElement.Kinds.Contains(e.Kind)) throw Bad("tipo de elemento \"" + e.Kind + "\" em " + e.Id + "; tipos: " + string.Join(", ", VideoElement.Kinds));
                 if (new[] { e.X, e.Y, e.Width, e.Height, e.FontSize, e.Start }.Any(v => !Finite(v)) || e.End is { } end && !Finite(end) ||
                     e.Width <= 0 || e.Height <= 0 || e.FontSize <= 0 || e.FontSize > 1) throw Bad("geometria do elemento");
@@ -286,7 +290,7 @@ public static class VideoCompositionRules
         foreach (var clip in video.Audio)
         {
             if (clip is null) throw Bad("áudio vazio");
-            Id(clip.Id);
+            Id(clip.Id, "áudio " + clip.Path);
             if (!VideoAudioClip.Kinds.Contains(clip.Kind) || !VideoScript.IsVaultPath(clip.Path)) throw Bad("áudio " + clip.Path);
             if (!Finite(clip.Start) || !Finite(clip.TrimStart) || !Finite(clip.Volume) || clip.Start < 0 || clip.TrimStart < 0 ||
                 clip.Volume is < 0 or > 4 || !Finite(clip.FadeIn) || !Finite(clip.FadeOut) || clip.FadeIn < 0 || clip.FadeOut < 0 || clip.Length is { } length && (!Finite(length) || length <= 0)) throw Bad("tempo do áudio");
