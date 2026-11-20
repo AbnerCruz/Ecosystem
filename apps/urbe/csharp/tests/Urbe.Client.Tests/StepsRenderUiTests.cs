@@ -80,6 +80,8 @@ public sealed partial class HeadlessUiTests
             Assert.False(ReferenceEquals(kept[^1], now[^1]));   // the step being written is the one renewed
             Assert.Equal(0, detached);                           // and no other step left the list and came back
             Assert.Equal(headKids, head.Children.ToList());
+            await Settle(window, view);
+            Snapshot(window, "steps-1000-open.png");
             PerfLog($"BENCH steps1000 render closed {closed:0.00} ms · open {open:0.00} ms (a frame with nothing changed: {idle:0.00} ms)");
             return true;
         }
