@@ -36,7 +36,7 @@ public sealed class VideoFrameRenderer : IDisposable
 
     /// <summary>The vault paths of the images a timeline uses (to read before rendering).</summary>
     public static IReadOnlyList<string> FilesUsed(VideoTimeline timeline) => timeline.Scenes
-        .SelectMany(s => s.Scene.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!)
+        .SelectMany(s => s.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!)
         .Distinct(StringComparer.Ordinal).ToList();
 
     public SKBitmap RenderFrame(int index) => Render(_timeline.FrameTime(index));

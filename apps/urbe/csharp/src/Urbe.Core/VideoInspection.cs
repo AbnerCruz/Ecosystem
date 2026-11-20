@@ -39,7 +39,7 @@ public static class VideoInspection
             {
                 if (seen.Add(id + "|" + element + "|" + kind)) issues.Add(new(severity, s, id, element, t, message, fix));
             }
-            foreach (var e in scene.Scene.Elements)
+            foreach (var e in scene.Elements)
             {
                 if (e.Start >= scene.Duration) Add(ReviewSeverity.Warning, e.Id, "never", e.Start, "Começa em " + N(e.Start) + " s, depois do fim da cena (" + N(scene.Duration) + " s): nunca aparece.", "Diminua start ou aumente a duração da cena.");
                 if (e.Kind == "image" && fileExists is not null && e.Source is { } src && !fileExists(src))
@@ -113,7 +113,7 @@ public static class VideoInspection
         var d = scene.Duration;
         var times = new SortedSet<double> { Math.Min(scene.FadeIn, d * 0.99), d * 0.99 };
         for (double t = 0.5; t < d; t += 0.5) times.Add(t);
-        foreach (var e in scene.Scene.Elements)
+        foreach (var e in scene.Elements)
         {
             times.Add(e.Start);
             if (e.End is { } end) times.Add(end - 0.01);

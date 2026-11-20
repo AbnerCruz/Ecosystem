@@ -12,6 +12,12 @@ public sealed record VideoTimelineScene(
 {
     public double End => Start + Duration;
 
+    /// <summary>
+    /// #1004 slice 5: what the scene draws — its elements with every component placed expanded. <see cref="Scene"/>
+    /// stays as saved (a "use" stays one element), so an edit never writes the expansion back.
+    /// </summary>
+    public IReadOnlyList<VideoElement> Elements { get; init; } = Scene.Elements;
+
     /// <summary>When the scene looks formed: its entrance and every keyframe done, before its end (a poster frame).</summary>
     public double Settled
     {
@@ -156,8 +162,11 @@ public sealed class VideoTimeline
             // a crossfade overlaps the previous scene; the first one fades in from black
             double overlap = i == 0 ? 0 : Math.Min(fade, scenes[^1].Duration / 2);
             double start = Math.Max(0, end - overlap);
-            var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height + "\u0001" + video.Theme);
-            var placed = new VideoTimelineScene(scene, placement, start, scene.Duration, fade, title, plain, key);
+            var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + (video.Components is { Count: > 0 } && scene.Elements.Any(e => e.Kind == "use") ? JsonSerializer.Serialize(video.Components) : "") + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height + "\u0001" + video.Theme);
+            var placed = new VideoTimelineScene(scene, placement, start, scene.Duration, fade, title, plain, key)
+            {
+                Elements = VideoComponents.ExpandScene(scene, video.Components).Elements
+            };
             scenes.Add(placed);
             // subtitles of a scene start after its entrance and end before the next one's — or with its narration, when known
             var voice = video.Audio.FirstOrDefault(a => a.Kind == "voice" && a.Length is not null && Math.Abs(a.Start - start) < 0.05);
@@ -216,7 +225,7 @@ public sealed class VideoTimeline
         VideoElementState? ParentState(string id)
         {
             if (placed.TryGetValue(id, out var done)) return done;
-            var e = scene.Scene.Elements.First(p => p.Id == id);
+            var e = scene.Elements.First(p => p.Id == id);
             var own = State(scene, e, local, 0, 1);
             return placed[id] = own is null ? null : Place(own, e);
         }
@@ -234,7 +243,7 @@ public sealed class VideoTimeline
             };
         }
         var states = new List<VideoElementState>();
-        foreach (var e in scene.Scene.Elements)
+        foreach (var e in scene.Elements)
         {
             int n = Math.Clamp(e.Repeat, 1, VideoProcedural.MaxRepeat);
             if (e.Split is not null)

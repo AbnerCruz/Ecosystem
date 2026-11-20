@@ -519,9 +519,10 @@ Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f
 - [~] Fatia 1, instâncias procedurais: `repeat` 1–2000, fórmulas de `t`, `i`, `n`, `u`, modo `add|set`, `rand`/`noise` determinísticos e funções de vários argumentos (`VideoProceduralTests`, `TwoThousandParticlesAt720pAreDrawnAndMeasured`).
 - [~] Fatia 2, tipografia cinética: `split: letters|words` em title/text; cada parte é instância com `i`, `n`, `u`, desenhada no seu lugar do texto e girada/escalada em torno do próprio centro (`ASplitTextIsOneInstancePerLetterOrWordWithoutSpaces`, `ASplitTitleEntersLetterByLetterInItsPlace`).
 - [~] Fatia 3, efeitos: `glow` (+`glowColor`), `shadow`, `blur` animáveis (keyframes e motions) e `gradient`, numa camada por elemento com filtros do SkiaSharp (`EffectsAreAnimatableAndCheckedAndChangeTheFramesKey`, `GlowShadowBlurAndGradientAreDrawn`). Máscara/recorte ficam para depois.
+- [~] Fatia 5, componentes: `video.components` e elementos `use` com `params` ({{chave}}); a timeline expande para desenhar e revisar, mas guarda a cena salva, e um toque num pedaço seleciona o `use` (`AComponentIsMadeOnceAndPlacedWithItsParameters`).
 - [~] Fatia 4, câmera por cena: `scene.camera` com keyframes/motions em x, y, zoom e rotation; fundo fixo (`ASceneCameraPansZoomsAndTurnsAndIsChecked`, `TheCameraZoomsAndPans`). A revisão medida mede o que a câmera mostra (`TheReviewMeasuresWhatTheCameraShows`). Toque e arraste no Estúdio também (`UnderACameraATapFindsTheElementWhereItIsShownAndADragGoesBackToTheScene`).
 - [~] Fatia 3b, recorte: `clip` = id de uma forma rect/ellipse/circle da cena, que segue animada; forma invisível que cresce faz a revelação (`AClipIsAShapeOfTheSceneAndIsCarriedToTheFrame`, `AClipRevealsTheElementOnlyInsideTheShape`). Máscara por imagem/gradiente fica para depois.
-- [ ] Fatia 5, componentes reutilizáveis. Fatia 6, benchmark com os três prompts da issue. Narração neural (adendos da issue).
+- [ ] Fatia 6, benchmark com os três prompts da issue. Narração neural (adendos da issue).
 - [ ] Validação no aparelho (NN-017): render de 2000 instâncias no Android de referência.
 
 ## Reorganização da experiência: dados, painéis e IA nativa — #1005 (20/11/2026)

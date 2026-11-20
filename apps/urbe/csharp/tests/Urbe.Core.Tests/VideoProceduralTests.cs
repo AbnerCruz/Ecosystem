@@ -351,4 +351,44 @@ public sealed class VideoProceduralTests
             Assert.Contains("clip", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(bad.Project)).Message);
         }
     }
+
+    [Fact]
+    public void AComponentIsMadeOnceAndPlacedWithItsParameters()
+    {
+        var (catalog, project) = Scene(
+            new VideoElement { Id = "c1", Kind = "use", Component = "rotulo", X = 0.3, Y = 0.4, Params = new() { ["nome"] = "Massa" } },
+            new VideoElement { Id = "c2", Kind = "use", Component = "rotulo", X = 0.7, Y = 0.4, Params = new() { ["nome"] = "Energia" } });
+        using var _ = catalog;
+        var video = project.Video! with
+        {
+            Components = new()
+            {
+                ["rotulo"] =
+                [
+                    new VideoElement { Id = "fundo", Kind = "shape", Text = "rect", X = 0, Y = 0, Width = 0.2, Height = 0.1 },
+                    new VideoElement { Id = "texto", Kind = "text", Text = "{{nome}}", X = 0, Y = 0, Width = 0.18, Height = 0.08, Clip = "fundo" },
+                ]
+            }
+        };
+        project = project with { Video = video };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        var texts = timeline.Evaluate(1).Layers[0].Elements.Where(e => e.Kind == "text").ToList();
+        Assert.Equal(["Massa", "Energia"], texts.Select(t => t.Text));
+        Assert.Equal(["c1.fundo", "c2.fundo"], texts.Select(t => t.Clip));
+        Assert.Equal(0.3, texts[0].X, 9);   // placed by its use, as a group carries its children
+        Assert.Equal(0.7, texts[1].X, 9);
+        // the timeline keeps the scene as saved (an edit never writes the expansion back), and a tap on a part selects its use
+        Assert.Equal(["c1", "c2"], timeline.Scenes[0].Scene.Elements.Select(e => e.Id));
+        var frame = timeline.Evaluate(1);
+        Assert.Equal("c2", VideoEditing.HitTest(frame, 0.7, 0.4, timeline.Width, timeline.Height)?.Element.Id);
+        Assert.Equal("c1", VideoEditing.HitTest(frame, 0.3, 0.4, timeline.Width, timeline.Height)?.Element.Id);
+        // the project keeps the component once
+        var back = PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project)).Video!;
+        Assert.Single(back.Components!);
+        Assert.Equal(2, back.Scenes[0].Elements.Count);
+
+        var missing = project with { Video = video with { Components = null } };
+        Assert.Contains("rotulo", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(missing)).Message);
+    }
 }

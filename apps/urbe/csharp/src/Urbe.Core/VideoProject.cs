@@ -26,6 +26,8 @@ public sealed record VideoComposition
     public string? Theme { get; init; }
     public List<VideoScene> Scenes { get; init; } = [];
     public List<VideoAudioClip> Audio { get; init; } = [];
+    /// <summary>#1004 slice 5: reusable groups of elements by name, placed in scenes by elements of kind "use".</summary>
+    public Dictionary<string, List<VideoElement>>? Components { get; init; }
     /// <summary>#956: what each scene showed in the last MP4 saved (scene ID → <see cref="VideoTimelineScene.ContentKey"/>).</summary>
     public Dictionary<string, string>? Rendered { get; init; }
 
@@ -190,6 +192,9 @@ public sealed record VideoElement
     /// The shape keeps moving by its own keyframes and formulas, so an invisible one (opacity 0) that grows is a reveal.
     /// </summary>
     public string? Clip { get; init; }
+    /// <summary>#1004 slice 5: for kind "use", the component placed and the values of its {{parameters}}.</summary>
+    public string? Component { get; init; }
+    public Dictionary<string, string>? Params { get; init; }
     public double Glow { get; init; }
     public string? GlowColor { get; init; }
     public double Shadow { get; init; }
@@ -278,6 +283,8 @@ public static class VideoCompositionRules
     {
         ArgumentNullException.ThrowIfNull(video);
         static InvalidDataException Bad(string why) => new("Vídeo inválido: " + why);
+        // a component placed is checked as the elements it becomes
+        video = VideoComponents.Expand(video);
         if (!VideoComposition.Aspects.Contains(video.Aspect)) throw Bad("proporção " + video.Aspect);
         if (video.Resolution is < VideoComposition.MinHeight or > VideoComposition.MaxHeight) throw Bad("resolução " + video.Resolution);
         if (video.Fps is < 1 or > VideoComposition.MaxFps) throw Bad("quadros por segundo " + video.Fps);
