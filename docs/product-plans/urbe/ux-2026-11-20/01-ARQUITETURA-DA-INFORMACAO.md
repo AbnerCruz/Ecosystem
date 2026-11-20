@@ -1,0 +1,61 @@
+# Numa — fronteiras de dados, organização e ciclo de vida
+20/11/2026 · Proposta técnica para reconciliar com Numa 2.6, CST-004–007, 036–042, 075, 085–089, 097–098, 104–106, 149–159, 200, 205, 216, 223–226 e 229–246.
+
+## 1. O defeito conceitual
+O Explorer não deve ser o espelho indiscriminado de tudo que a aplicação persiste. Em um editor de arquivos locais, o usuário precisa ter propriedade e portabilidade; isso não exige que caches, configuração, histórico, plugins, resultados temporários e mídia auxiliar tenham a mesma relevância de uma nota autoral. Uma nota é uma entidade de conhecimento; um deck é um objeto de estudo; um render é derivado; um chat é uma interação. São coisas diferentes, mesmo se forem representáveis em arquivos.
+
+A decisão proposta é **separação lógica primeiro, localização física por contrato depois**. Não mover indiscriminadamente dados para armazenamento privado, porque no Android dados app-specific podem sumir na desinstalação. Um vault portável deve continuar levando o conhecimento e os objetos que o usuário deseja preservar. Referências: [Android app-specific](https://developer.android.com/training/data-storage/app-specific), [shared storage](https://developer.android.com/training/data-storage/), [Ink & Switch local-first](https://www.inkandswitch.com/essay/local-first/), [Obsidian config](https://obsidian.md/help/configuration-folder), [Zotero attachments](https://www.zotero.org/support/attaching_files), [Joplin resources](https://joplinapp.org/help/apps/attachments/).
+
+## 2. Taxonomia obrigatória (contratos conceituais, caminhos a decidir via auditoria)
+| Classe | Exemplos | Autoridade / apresentação | Retenção / acesso |
+|---|---|---|---|
+| Conteúdo humano explícito | notas md, livros, fontes importadas, arquivos que o usuário criou/importou/exportou para o vault | Vault, Explorer, busca, projetos, vínculos | nunca limpar automaticamente; export e ferramentas externas |
+| Objetos de produto duráveis | decks, quizzes, grafos, Publicações, formulários, sessões de estudo salvas | catálogo tipado e painel dedicado; referência estável a fonte/nota; se armazenado no vault, filtro de tipo e não duplicação | export, backup, restaurar, renomear, arquivar, excluir com intenção |
+| Assets de apoio duráveis | imagem colada, mídia incorporada, fonte necessária à publicação, anexo promovido | biblioteca de recursos/gerenciador; vínculo à nota/produto; opacidade de pasta por padrão, não invisibilidade do conteúdo | manter enquanto houver referências; preservar portabilidade |
+| Área de trabalho transitória | rascunho de IA, transcrição não aceita, staging de código ou vídeo, prévia, anexo só para uma conversa | isolado por execução/conversa/objeto; visível pelo chat ou inspeção técnica; não incluir em busca normal do vault | recuperação, cotas informativas, limpeza apenas conforme retenção declarada |
+| Estado privado por vault | índice, posição de leitura, progresso de revisão, histórico, journals, memória de agente escopada, config relativa ao vault | serviço do app único, sem resultados normais na árvore | backup/export seletivo, isolamento entre vaults; retenção definida por tipo |
+| Estado privado global | identidade do app, preferência de tema, configuração de provedor, permissões, logs sanitizados | Configurações, armazenamento privado; segredos via mecanismo seguro apropriado ao host | backup de config sem segredos por padrão; remover com consentimento |
+| Cache reconstruível | thumbnails, OCR derivado quando reconstruível, índices reconstruíveis, temporários de render | serviço de cache, invisível por padrão | pode expirar; limpeza nunca apaga fonte ou resultado aceito |
+
+Distinga rascunho autoral (valuable, recuperação obrigatória) de cache (descartável). Um PDF importado deliberadamente ao vault não deve desaparecer porque se chama anexo. Um PDF temporário anexado apenas ao chat não deve ser importado automaticamente. Um resultado de IA solicitado como nota deve ser salvo como nota; se pedido como deck, deve nascer no painel de estudo. Se a pessoa quiser promove/exporta. Imagem incorporada deve continuar resolvível fora do app conforme contrato portátil. Credenciais não têm lugar sequer em backup comum de vault.
+
+### Modelo conceitual
+Reutilize identidade e store atuais. Proposta de metadados mínimos por objeto: stableId, kind, ownerScope (vault/project/conversation), title, lifecycle, canonicalRef, references[], sourceRevision, created/updated, origin, dependencies, visibility e exportability. Não fixe banco nem formato antes de catalogar stores existentes e especificar operações. Catálogo é índice/visão, não cópia concorrente do conteúdo. Referências a notas/blocos exigem identidade estável e verificação de versão; não resolva referências por título ambíguo.
+- VaultIndex: somente conhecimento e objetos explicitamente publicados/indexáveis; índices separados para app artifacts, conversas e memória; consulta pode ampliar escopo por escolha explícita/grant.
+- AssetStore: resolver IDs e caminhos por contrato, referência/ownership múltiplo, checar dependências antes de mover/apagar.
+- WorkspaceState: abas, seleção, sessão, posição e preferências não são documentos de conhecimento.
+- ArtifactRegistry: tipo, ações, visualização, editor, busca, import/export e capacidades; analisar ArtifactModel, não duplicar.
+- StorageRouter: destino por intenção + classe + escopo, não por conveniência da tool. Tool recebe destino semântico; o domínio confirma. O agente não inventa pastas de infraestrutura.
+
+## 3. Ciclo de vida ponta a ponta
+Criação solicitada → resultado transitório ou objeto durável conforme intenção → prévia/validação → commit transacional → catálogo → abrir/continuar/editar → arquivar/exportar/excluir → recuperação/lixeira. Não criar nota intermediária para cada etapa técnica; checkpoints de execução e arquivos de render não entram no Explorer normal. Não exigir ação 'salvar no vault' para conservar um deck que o usuário pediu criar: ele já deve ser durável no espaço de estudo. Respostas puramente conversacionais não criam arquivos. Não esconder erro ou mudança real.
+
+O conteúdo editorial de Publicações continua conforme Numa 2.6 §§1.1, 9.2: quando uma redação independente se torna conteúdo autoral real, há uma nota editorial real identificada e vinculada. Configuração de layout/corte/duração permanece na Publicação. Antes da aceitação, rascunho temporário pode existir no espaço de trabalho; não converter todo rascunho em nota visível. Na aprovação, materializar apenas as notas efetivamente necessárias, sem copiar versões concorrentes. Se a pessoa inspecionar projeto, mostrar as notas editoriais vinculadas e onde estão. A representação exata deve passar por ADR se mudar persistência já consolidada.
+
+## 4. Área do aplicativo: uma superfície administrativa, não a home
+Acesso por Configurações > Dados do aplicativo (nome/posição a validar). Organização: Geral, Vault atual, Conversas e IA, Rascunhos/recuperação, Arquivos de apoio, Plugins/integrações, Armazenamento e cache, Backups/exportação, Diagnóstico. Mostrar contagem e tamanho sob demanda, origem, motivo de retenção, data, referências, ação abrir/exportar/restaurar. Filtros avançados para inspecionar objetos técnicos; incluir navegação para a origem humana. Configuração privada e per-vault distinguíveis. Diagnóstico não exibe segredos; logs sem conteúdo privado por padrão. Exclusão de dados importantes explícita; limpeza de cache distinta da exclusão de conteúdo. Nenhuma nova pasta técnica na árvore padrão por mera execução do agente.
+
+A busca deve permitir escopo claro: workspace/vault, projeto, estudo, artefatos, conversa ou administração. Não cruzar agentes/vaults sem permissão. O guia do app é fonte própria, não procurar funcionalidades no vault. Import/export usa seletor do sistema quando apropriado (Android SAF: https://developer.android.com/training/data-storage/shared/documents-files).
+
+## 5. Migração segura e reversível
+1. Inventariar arquivos reais produzidos por cada ação manual, IA e plugin, no Android e Windows; amostras de 0, 10, 100 e 1.000 operações, reinícios, cancelamentos e falhas. Catalogar stores atuais (private AssistantStore e .urbe são ponto de partida). Registrar paths e referências, schemas, autoria, top-level exposure, backup, tamanho e limpeza.
+2. Classificar por tipo/manifest/proveniência/ownership, não por nome de pasta sozinho. Um usuário pode ter criado 'Estudos' ou 'Personalização' para seu próprio trabalho. Não mover dados ambíguos; oferecer relatório e escolha.
+3. Adicionar projeção de visibilidade sem mudança de bytes inicialmente; testar com vault limpo e fixture de vault antigo. Provar que Explorer, links, busca e IA respeitam escopo sem ocultar informação autoral.
+4. Se localização física mudar: ADR e catálogo de dados, backup restaurável, dry-run com relatório de objetos e bytes, mapping de IDs/referências, journal e rollback; migração idempotente, reabrir após interrupção e falha de disco. Nenhuma exclusão original antes de verificar cópia, referências e recuperação. Não tocar .urbe/mapa.json ou mundo.json congelados. Evitar migrar configuração global para dentro do vault. Testar SAF, permissões revogadas e atualização por cima.
+5. Migração do plugin fake de flashcards: detectar apenas candidato com schema/version/proveniência comprovados, apresentar conversão em deck nativo preservando perguntas/respostas e links; plugin original só desligar/arquivar com autorização, nunca apagar silenciosamente.
+6. Validar export independente do app, restauração de objetos de estudo/histórico selecionado, limpeza de cache após reload, notas com anexos em leitores externos, e remoção do app em fixture descartável. Não realizar desinstalação real do proprietário.
+
+### Invariantes e critérios
+- Jornada criar deck/chat/analisar PDF/gerar vídeo sem criar pastas e arquivos visíveis não pedidos. Contabilizar delta de objetos por classe, incluindo artefatos solicitados; não mascarar lixo com filtro sem gestão.
+- 100 execuções em vault de fixture não aumentam notas visíveis por tarefas somente conversacionais/deck. Cache e rascunhos têm política mensurável, storage recuperável.
+- Seleção de anexo, cancelar e reiniciar: nenhuma promoção não solicitada; rascunho recuperável onde previsto.
+- Mesma nota referenciada por estudo e publicação, editar uma vez; contagem de cópias concorrentes = 0. Migração de formato desconhecido não destrutiva.
+- Lixeira/restauração, conflitos de edição externa, backup/restore e falha de espaço preservam bytes. Limpeza não remove assets referenciados nem histórico que o usuário decidiu manter.
+- Regressão: o editor opera com o mesmo contrato de escrita/undo/autoria; nenhum impacto em IME/seleção; logs e grants preservados.
+- Princípio de local-first: autonomia do usuário acima da conveniência de armazenamento; documentar efeitos da desinstalação e portabilidade por classe.
+
+## 6. Evidência da comunidade
+[Obsidian: organização de anexos](https://www.reddit.com/r/ObsidianMD/comments/1v68vd8/what_are_you_favorite_plugins_for_managing/) relata alternativas por pasta/centralizada/plugins em vaults grandes. [Outro relato](https://www.reddit.com/r/ObsidianMD/comments/1qqhq0y/best_way_to_keep_attachments_pdfs_photos_docs_etc/) separa anexos e conteúdo frequente. [Portabilidade](https://www.reddit.com/r/ObsidianMD/comments/1t9wjhi/how_to_move_notes_that_reference_attachements_to/) evidencia preocupação em mover notas junto a dependências. São relatos anedóticos, não pesquisa de prevalência. Derivar fixtures com anexos compartilhados, relações quebradas e reorganização sem duplicação. Não copiar soluções de plugins nem adotar exclusão automática de recursos de Joplin sem contrato do Urbe.
+
+## 7. Decisões ainda abertas
+Localização física de objetos duráveis no vault vs área gerida exportável (avaliar híbrido); granularidade de isolamento de anexos; política de retenção dos rascunhos; formato de exportação de decks; status de conteúdo editorial aceito e visibilidade default. A ordem expressa é separar e não poluir: nomes, schemas e implementation detail são propostas. Registrar alternativas e consequências no roadmap/ADR sem bloquear trabalho independente. O agente deve mostrar o resultado no produto, não apenas um diagrama de pastas.
