@@ -344,6 +344,8 @@ public sealed partial class CustomizePanel
             RangeRow("texto.alturaLinha", N(t, "alturaLinha", 1.7), 1.2, 2.2, .05, "Altura da linha", ""), sample));
     }
 
+    private static string SessionPauseValue(TimeSpan? pause) => pause is { } p ? p.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture) : "sempre";
+
     private void EditorSection()
     {
         var e = Sec("editor");
@@ -355,7 +357,11 @@ public sealed partial class CustomizePanel
                 Seg(Customization.LineNumbers, [(EditorLineNumbers.Always, "Sempre"), (EditorLineNumbers.CodeOnly, "Só código"), (EditorLineNumbers.Never, "Nunca")],
                     v => { Customization.LineNumbers = v; return Task.CompletedTask; })),
             Toggle(Customization.BlockTimes, "Horário de cada bloco", "Mostra, ao lado de cada bloco, quando ele mudou pela última vez (pelas Versões anteriores)",
-                v => { Customization.BlockTimes = v; return Task.CompletedTask; })));
+                v => { Customization.BlockTimes = v; return Task.CompletedTask; }),
+            // AbnerCruz/Urbe#51: after a pause this long, the Urbe opens on the Área de trabalho; nothing is lost
+            Row("Ao voltar ao Urbe", "Depois de uma pausa maior que esta, o Urbe abre na Área de trabalho; antes disso, volta à nota e à conversa onde você estava",
+                Seg(SessionPauseValue(Customization.SessionPause), ProductionSession.Choices.Select(c => (SessionPauseValue(c.Pause), c.Label)).ToArray(),
+                    v => { Customization.SessionPause = ProductionSession.Choices.First(c => SessionPauseValue(c.Pause) == v).Pause; return Task.CompletedTask; }))));
         _body.Children.Add(BarBlock());
     }
 

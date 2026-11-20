@@ -23,13 +23,33 @@ public sealed partial class AssistantPanel
     /// </summary>
     private sealed class Timeline
     {
+        public required string Key { get; init; }
         public required StackPanel Root { get; init; }
         public required StackPanel Head { get; init; }
-        public required Expander Fold { get; init; }
+        public required Button Open { get; init; }
         public StackPanel? List { get; set; }
         public IReadOnlyList<AiChatMessage> Messages { get; set; } = [];
         public Dictionary<string, (string Signature, Control View)> Items { get; } = new(StringComparer.Ordinal);
+        /// <summary>#50: the stages drawn, [Start, End) of the chronology; null until the panel first opens (then: the latest).</summary>
+        public (int Start, int End)? Window { get; set; }
+        /// <summary>How many stages the chronology had at the last sync.</summary>
+        public int Total { get; set; }
+        public Button? Older { get; set; }
+        public Button? Newer { get; set; }
     }
+
+    /// <summary>
+    /// #50 (owner, beta.58): expanding hundreds of steps inside the conversation froze the app and there was no quick way to
+    /// close them. The steps open in a panel that rises from the bottom, with a fixed X, in chronological order, drawing
+    /// only a window of them — "Ver anteriores" and "Ver mais recentes" move it. Closing never stops the run.
+    /// </summary>
+    public const int StepsPage = 20, StepsMax = 60;
+    private readonly Ui.BottomSheet _stepsSheet = new();
+    private Timeline? _stepsShown;
+    /// <summary>The panel of steps (tests).</summary>
+    public Ui.BottomSheet StepsSheet => _stepsSheet;
+    /// <summary>The list in the panel of steps (tests).</summary>
+    public StackPanel? StepsList => _stepsShown?.List;
 
     private readonly Dictionary<string, Timeline> _timelines = new(StringComparer.Ordinal);
     private readonly HashSet<string> _timelinesUsed = new(StringComparer.Ordinal);
@@ -76,14 +96,14 @@ public sealed partial class AssistantPanel
         if (!_timelines.TryGetValue(key, out var timeline))
         {
             var head = new StackPanel { Spacing = 5 };
-            Timeline? made = null;
-            var fold = Lazy(head, () => SyncTimeline(made!));
-            made = timeline = new Timeline { Root = new StackPanel { Spacing = 9 }, Head = head, Fold = fold };
-            fold.IsExpanded = _activityExpanded.TryGetValue(request.Id, out var chosen) ? chosen : _cfg.StepsOpen;
-            fold.PropertyChanged += (_, e) =>
+            var open = new Button
             {
-                if (e.Property == Expander.IsExpandedProperty) _activityExpanded[request.Id] = fold.IsExpanded;
+                Content = head, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0),
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, MinHeight = UrbeTokens.MinTouch
             };
+            timeline = new Timeline { Key = key, Root = new StackPanel { Spacing = 9 }, Head = head, Open = open };
+            var made = timeline;
+            open.Click += (_, _) => OpenSteps(made);
             _timelines[key] = timeline;
         }
         timeline.Messages = messages;
@@ -103,7 +123,18 @@ public sealed partial class AssistantPanel
             try { return ToolByName(b.Name)?.Label(b.Input as JsonObject ?? new JsonObject()) ?? b.Name; }
             catch (Exception e) when (e is not OutOfMemoryException) { return b.Name; }
         }
-        foreach (var (block, _) in calls.Where(x => x.Block.Name is not ("update_plan" or "ask_user")).TakeLast(3))
+        // #50: what the model says it is doing, in sight while it runs (its own summary; nothing is made up)
+        if (running && messages.LastOrDefault(m => m.Role == "assistant" && m.Meta?.Reasoning is { Length: > 0 })?.Meta?.Reasoning is { } thinking)
+        {
+            var tail = thinking.Trim().Replace("\r", "");
+            if (tail.Length > 240) tail = "…" + tail[^240..].TrimStart();
+            var thought = Wrap(tail, 12, UrbeTheme.Text3);
+            thought.FontStyle = FontStyle.Italic;
+            thought.MaxLines = 3;
+            thought.TextTrimming = TextTrimming.CharacterEllipsis;
+            header.Children.Add(thought);
+        }
+        foreach (var (block, _) in calls.Where(x => x.Block.Name is not ("update_plan" or "ask_user")).TakeLast(_cfg.StepsOpen ? 6 : 3))
         {
             var result = ResultFor(block.Id);
             var mark = result is null ? "⋯" : result.IsError ? "✗" : "✓";
@@ -124,7 +155,7 @@ public sealed partial class AssistantPanel
         if (reads > 0) parts.Add("leu " + Count(reads, "fonte", "fontes"));
         if (writes > 0) parts.Add("alterou " + Count(writes, "nota", "notas"));
         if (failures > 0) parts.Add(Count(failures, "alerta", "alertas"));
-        if (calls.Count > 0) parts.Add(Count(calls.Count, "etapa", "etapas") + " · tocar para ver tudo");
+        if (calls.Count > 0) parts.Add(Count(calls.Count, "etapa", "etapas") + " · tocar para ver as etapas");
         var detail = calls.Count == 0 ? (running ? "Preparando as próximas etapas" : "Processamento concluído") : string.Join(" · ", parts);
         if (detail.Length > 0) detail = char.ToUpper(detail[0]) + detail[1..];
         header.Children.Add(Wrap(detail, 11, UrbeTheme.Text3));
@@ -137,9 +168,9 @@ public sealed partial class AssistantPanel
                 Background = UrbeTheme.Brush(UrbeTheme.Line2)
             });
 
-        // an expanded history keeps its controls: only new or changed stages are made (CST-112)
-        if (timeline.Fold.Content is not null) SyncTimeline(timeline);
-        Avalonia.Automation.AutomationProperties.SetName(timeline.Fold, "Atividade do agente: " + headline + ". " + detail);
+        // the open panel keeps its controls: only new or changed stages are made (CST-112)
+        if (ReferenceEquals(_stepsShown, timeline) && _stepsSheet.IsOpen) SyncTimeline(timeline);
+        Avalonia.Automation.AutomationProperties.SetName(timeline.Open, "Atividade do agente: " + headline + ". " + detail);
         var root = timeline.Root;
         if (root.Children.Count == 0)
             root.Children.Add(new Border
@@ -148,7 +179,7 @@ public sealed partial class AssistantPanel
                 Padding = new Thickness(6, 7, 2, 7),
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
-                Child = timeline.Fold
+                Child = timeline.Open
             });
         while (root.Children.Count > 1) root.Children.RemoveAt(1);
 
@@ -159,54 +190,112 @@ public sealed partial class AssistantPanel
         return root;
     }
 
+    /// <summary>Opens the panel of steps of a request, at its latest steps.</summary>
+    private void OpenSteps(Timeline timeline)
+    {
+        _stepsShown = timeline;
+        timeline.Window = null;
+        var title = Label("Etapas · " + timeline.Messages.Sum(m => m.Content.Count(b => b.Type == "tool_use")), 15, UrbeTheme.Text);
+        title.FontWeight = FontWeight.SemiBold;
+        title.VerticalAlignment = VerticalAlignment.Center;
+        var close = new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 18, UrbeTheme.Text2), MinWidth = UrbeTokens.MinTouch, MinHeight = UrbeTokens.MinTouch,
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Right
+        };
+        Avalonia.Automation.AutomationProperties.SetName(close, "Fechar etapas");
+        ToolTip.SetTip(close, "Fechar (a IA continua trabalhando)");
+        close.Click += (_, _) => _ = _stepsSheet.CloseAsync();
+        var bar = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+        DockPanel.SetDock(close, Dock.Right);
+        bar.Children.Add(close);
+        bar.Children.Add(title);
+        var scroll = new ScrollViewer { Content = SyncTimeline(timeline), HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        var body = new DockPanel();
+        DockPanel.SetDock(bar, Dock.Top);
+        body.Children.Add(bar);
+        body.Children.Add(scroll);
+        _stepsSheet.Open(body);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => scroll.ScrollToEnd(), Avalonia.Threading.DispatcherPriority.Background);
+    }
+
     /// <summary>
-    /// The whole chronology (reasoning, every operation, intermediate drafts) as controls, reusing the ones whose state did
-    /// not change; parts are still loaded only when the person opens them.
+    /// The chronology (reasoning, every operation, intermediate drafts) in the panel: only the window's stages are
+    /// controls, reusing the ones whose state did not change; parts are still loaded only when the person opens them.
+    /// While the window reaches the latest step it follows the run.
     /// </summary>
     private StackPanel SyncTimeline(Timeline timeline)
     {
         if (timeline.List is null)
         {
-            timeline.List = new StackPanel { Spacing = 5, Margin = new Thickness(0, 8, 0, 2) };
-            Ui.Deferred.Watch(timeline.List);   // a run of hundreds of steps opens at once: only those near the screen are made
+            timeline.List = new StackPanel { Spacing = 5, Margin = new Thickness(0, 2, 0, 2) };
+            Ui.Deferred.Watch(timeline.List);
         }
         var list = timeline.List;
-        var desired = new List<Control>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        // the estimates are the heights of a closed line (48) and of a closed step (65): the list keeps its length while the
-        // lines far from the screen wait
-        Control Item(string key, string signature, Func<Control> make, double estimate = 48)
-        {
-            seen.Add(key);
-            if (timeline.Items.TryGetValue(key, out var kept) && kept.Signature == signature) return kept.View;
-            var view = new Ui.Deferred(make, estimate);
-            if (kept.View is Ui.Deferred { IsMade: true }) view.Make();   // a step that changed on screen is redrawn at once
-            timeline.Items[key] = (signature, view);
-            return view;
-        }
+        var all = new List<(string Key, string Signature, Func<Control> Make, double Estimate)>();
         foreach (var message in timeline.Messages)
         {
             var mk = KeyOf(message);
             if (message.Meta?.Reasoning is { Length: > 0 } thought)
-                desired.Add(Item(mk + ":think", thought.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    () => Lazy(Label("Resumo de raciocínio do modelo", 12, UrbeTheme.Text2), () => Markdown(thought))));
+                all.Add((mk + ":think", thought.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    () => Lazy(ThoughtPreview(thought), () => Markdown(thought)), 48));
             for (int i = 0; i < message.Content.Count; i++)
             {
                 var block = message.Content[i];
                 if (block.Type == "tool_use")
                 {
                     var stageKey = block.Id.Length > 0 && !block.Pending ? "t:" + block.Id : mk + ":tool:" + i;
-                    desired.Add(Item(stageKey, StageSignature(block, message), () => ActivityStage(block, message), 65));
+                    all.Add((stageKey, StageSignature(block, message), () => ActivityStage(block, message), 65));
                 }
                 else if (block.Type == "text" && !block.Hidden && !string.IsNullOrEmpty(block.Text))
                 {
                     var draft = block.Text;
                     bool isDraft = message.Meta?.Draft == true;
-                    desired.Add(Item(mk + ":text:" + i, (isDraft ? "d" : "o") + draft.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        () => Lazy(Label(isDraft ? "Rascunho intermediário" : "Observação do agente", 12, UrbeTheme.Text2), () => Markdown(draft))));
+                    all.Add((mk + ":text:" + i, (isDraft ? "d" : "o") + draft.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        () => Lazy(Label(isDraft ? "Rascunho intermediário" : "Observação do agente", 12, UrbeTheme.Text2), () => Markdown(draft)), 48));
                 }
             }
         }
+        // the window: the latest page at first; it follows new steps while it shows the last one
+        int total = all.Count;
+        var (start, end) = timeline.Window is { } w ? (w.Start, w.End) : (Math.Max(0, total - StepsPage), total);
+        if (timeline.Window is { } was && was.End >= timeline.Total) end = total;   // it was at the latest step: it follows
+        timeline.Total = total;
+        end = Math.Min(end, total);
+        if (end - start > StepsMax) start = end - StepsMax;
+        start = Math.Clamp(start, 0, end);
+        timeline.Window = (start, end);
+
+        var desired = new List<Control>();
+        // the two page buttons are kept: a streamed token does not rebuild the list around them
+        timeline.Older ??= PageButton("Ver as etapas anteriores", () =>
+        {
+            var (s2, e2) = timeline.Window!.Value;
+            s2 = Math.Max(0, s2 - StepsPage);
+            timeline.Window = (s2, Math.Min(e2, s2 + StepsMax));
+            SyncTimeline(timeline);
+        });
+        timeline.Newer ??= PageButton("Ver as etapas mais recentes", () =>
+        {
+            var (s2, e2) = timeline.Window!.Value;
+            e2 = Math.Min(timeline.Total, e2 + StepsPage);
+            timeline.Window = (Math.Max(s2, e2 - StepsMax), e2);
+            SyncTimeline(timeline);
+        });
+        timeline.Older.Content = "Ver anteriores (" + start + ")";
+        timeline.Newer.Content = "Ver mais recentes (" + (total - end) + ")";
+        if (start > 0) desired.Add(timeline.Older);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (key, signature, make, estimate) in all.Skip(start).Take(end - start))
+        {
+            seen.Add(key);
+            if (timeline.Items.TryGetValue(key, out var kept) && kept.Signature == signature) { desired.Add(kept.View); continue; }
+            var view = new Ui.Deferred(make, estimate);
+            if (kept.View is Ui.Deferred { IsMade: true }) view.Make();   // a step that changed on screen is redrawn at once
+            timeline.Items[key] = (signature, view);
+            desired.Add(view);
+        }
+        if (end < total) desired.Add(timeline.Newer);
         foreach (var gone in timeline.Items.Keys.Where(k => !seen.Contains(k)).ToArray()) timeline.Items.Remove(gone);
         if (desired.Count == 0) desired.Add(Hint("O modelo ainda não registrou operações."));
         // appending is the common case (a new step): keep every control in place and add the new ones
@@ -219,6 +308,29 @@ public sealed partial class AssistantPanel
             list.Children.AddRange(desired);
         }
         return list;
+    }
+
+    /// <summary>#50: the model's summary of its reasoning, in sight (its start; a tap shows all of it).</summary>
+    private static Control ThoughtPreview(string thought)
+    {
+        var text = System.Text.RegularExpressions.Regex.Replace(thought.Trim(), @"\s+", " ");
+        var preview = Wrap(text.Length > 220 ? text[..220] + "…" : text, 12, UrbeTheme.Text3);
+        preview.FontStyle = FontStyle.Italic;
+        preview.MaxLines = 3;
+        preview.TextTrimming = TextTrimming.CharacterEllipsis;
+        return preview;
+    }
+
+    private static Button PageButton(string name, Action run)
+    {
+        var b = new Button
+        {
+            MinHeight = UrbeTokens.MinTouch, HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center, Background = Brushes.Transparent
+        };
+        Avalonia.Automation.AutomationProperties.SetName(b, name);
+        b.Click += (_, _) => run();
+        return b;
     }
 
     /// <summary>What a stage shows: when any of it changes, the stage is made again.</summary>

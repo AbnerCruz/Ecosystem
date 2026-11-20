@@ -10,6 +10,10 @@ public static class ConversationResume
 {
     public static readonly TimeSpan Window = TimeSpan.FromHours(2);
 
+    /// <summary>Waiting on the person: a message queued or a form to answer (it comes back even in a new session).</summary>
+    public static bool Waiting(AiConversation conversation) =>
+        conversation.Messages.Count > 0 && (conversation.QueuedMessages.Count > 0 || conversation.Forms.Any(f => f.State == "pending"));
+
     public static bool InUse(AiConversation conversation, long nowMs) =>
         conversation.Messages.Count > 0 &&
         (conversation.QueuedMessages.Count > 0 || conversation.Forms.Any(f => f.State == "pending") || nowMs - conversation.Updated < Window.TotalMilliseconds);
