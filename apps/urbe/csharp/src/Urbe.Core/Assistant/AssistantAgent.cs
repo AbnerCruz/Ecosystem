@@ -676,6 +676,7 @@ public static class AssistantAgent
         public IAssistantVideoFrames? VideoFrames => inner.VideoFrames;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
+        public IAssistantStudy? Study => inner.Study;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
         public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
         public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);

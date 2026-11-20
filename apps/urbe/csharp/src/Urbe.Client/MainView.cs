@@ -66,6 +66,8 @@ public sealed partial class MainView : Grid
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
         Editor.Pinned.ContinueReading = () => ContinueReading();
+        Editor.Pinned.FlashcardsSummary = FlashcardsSummary;
+        Editor.Pinned.OpenFlashcards = () => _ = ShowFlashcardsAsync(null);
         Editor.Pinned.NoteText = path => ArtifactModel.IsNote(path) ? _contents.GetValueOrDefault(path) : null;
         FilePreview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
         Editor.Pinned.Preview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
@@ -422,6 +424,7 @@ public sealed partial class MainView : Grid
         _trash = LegacyTrash.Read(Text(LegacyTrash.Path), Text(LegacyTrash.PathV1), out _trashReadOnly);
         LoadHistory(Text);
         LoadArea(Text(AreaLayout.Path));
+        LoadFlashcards(Text(Urbe.Core.Study.FlashcardLibrary.Path));
         _skyText = Text(Constellation.Path);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var notes = snapshot.Documents.Where(d => d.Text is not null && !GraphDocument.IsGraphPath(d.Path)).Select(d => new CityNote(d.Path, d.Text!)).ToArray();

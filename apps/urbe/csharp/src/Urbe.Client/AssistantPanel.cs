@@ -49,6 +49,8 @@ public interface IAssistantApp
     /// <summary>The vault's plugins (write_plugin turns them on).</summary>
     IAssistantPlugins? Plugins => null;
     IAssistantGraphs? Graphs => null;
+    /// <summary>#1005: the native study library (flashcards).</summary>
+    IAssistantStudy? Study => null;
     /// <summary>UC-80: an agent's change to the note open in the editor, shown there to accept or refuse; false when it cannot be.</summary>
     bool SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse) => false;
     /// <summary>UC-80: the suggestion in the note (if any) leaves the editor.</summary>
@@ -329,7 +331,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantVideoDirectionTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantVideoDirectionTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, .. AssistantStudyTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
         AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate, AssistantDataTools.Query, AssistantTools.StructureTool,
         .. AgentSkills.Tools(host => SkillsOf(host.Documents)),
         .. AssistantEvidenceTools.All,
@@ -1805,6 +1807,7 @@ public sealed partial class AssistantPanel : Border
         public IAssistantAppearance? Appearance => panel._app.Appearance;
         public IAssistantPlugins? Plugins => panel._app.Plugins;
         public IAssistantGraphs? Graphs => panel._app.Graphs;
+        public IAssistantStudy? Study => panel._app.Study;
     }
 
     private sealed class Undo(IAssistantApp app, DocumentStore documents) : IAssistantUndoHost

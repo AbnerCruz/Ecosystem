@@ -5,6 +5,14 @@
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
+## Flashcards nativos (#1005)
+
+- **Uma biblioteca de Flashcards.** Em Estudo, no alto da lista de fontes, a linha **Flashcards** mostra seus conjuntos e quantos cartões vencem hoje. Ali ficam juntos os conjuntos feitos no app e as notas com linhas `pergunta::resposta`; os cartões das notas continuam sendo o texto delas, sem cópia.
+- **Criar, revisar e editar.** Crie um conjunto escrevendo os cartões, revise com Errei, Difícil, Bom e Fácil (a mesma revisão espaçada de antes, com o progresso que você já tinha) e edite ou exclua cartões. Mudar só a resposta mantém o progresso.
+- **O Assistente usa a ferramenta certa.** "Faça dois flashcards sobre animais" vira um conjunto da biblioteca numa chamada só. Ele não cria mais plugin, nota ou pasta para isso, e quando a biblioteca não está disponível ele diz isso em vez de improvisar.
+- **Nada sobra no Explorer.** Os conjuntos ficam guardados dentro da sua pasta de notas, numa área que o Explorer não mostra; vão junto em backups e na cópia da pasta.
+- **O guia acha o que se pergunta.** Há um artigo de Flashcards no guia. A busca entende "cartões", "cards" e "memorização" e, quando o guia não cobre um assunto, diz isso em vez de trazer páginas sobre outra coisa.
+
 ## Vídeos: movimento procedural (#1004)
 
 - **Um elemento, muitas cópias.** Um elemento do vídeo pode se repetir até 2000 vezes. Cada cópia sabe o próprio número, e as fórmulas de movimento usam isso: estrelas espalhadas, partículas em órbita, grades, ondas e entradas uma depois da outra são um elemento com uma fórmula, e não dezenas de elementos montados à mão.
@@ -15,4 +23,5 @@
 ## Não testado no aparelho
 
 - Testado com testes automáticos num computador: 2000 partículas a 720p são desenhadas e medidas, abaixo de 1 s por quadro no limite do teste; não medi no seu Android.
-- Não reexecutei um pedido real de vídeo com o seu modelo.
+- Não reexecutei um pedido real de vídeo nem de flashcards com o seu modelo; o caso da beta.60 foi provado com testes automáticos, não medido de novo com o modelo.
+- A biblioteca de Flashcards ainda usa janelas de diálogo; um painel próprio vem depois.

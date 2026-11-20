@@ -140,6 +140,7 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public IAssistantDelegation? Delegation => null;
     public IAssistantConversations? Conversations => inner.Conversations;
     public IAssistantForms? Forms => inner.Forms;
+    public IAssistantStudy? Study => inner.Study;
     public IAssistantAttachmentExtractor? Attachments => null;
     public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
     public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);

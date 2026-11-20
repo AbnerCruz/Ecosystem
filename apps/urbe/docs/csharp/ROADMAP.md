@@ -511,3 +511,23 @@ Issue [#948](https://github.com/AbnerCruz/Ecosystem/issues/948); branch `ccr-c71
 - [~] CST-101 (parte): nota aberta movida fora do app é acompanhada pelo editor; apagada, avisa e salvar a cria de novo com o texto.
 - [~] CST-099 (parte): medição repetível de abrir, selecionar, mover, excluir e reler com 200 e 2.000 notas (`Bench_VaultOperationsAtScale`, headless).
 - [ ] Validação no aparelho (NN-017): pasta apagada pelo gerenciador de arquivos, excluir várias notas, Lixeira e multi-seleção com o dedo.
+
+## Motion graphics programáveis — #1004 (20/11/2026)
+
+Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f022efc2-0vtff7`, PR #1006. Linguagem de fórmulas fechada em C# (sem acesso a vault, rede ou segredos); execução de código geral (WASM) segue sob a DEC-0066, não assumida.
+
+- [~] Fatia 1, instâncias procedurais: `repeat` 1–2000, fórmulas de `t`, `i`, `n`, `u`, modo `add|set`, `rand`/`noise` determinísticos e funções de vários argumentos (`VideoProceduralTests`, `TwoThousandParticlesAt720pAreDrawnAndMeasured`).
+- [ ] Fatia 2, tipografia cinética por letra/palavra. Fatia 3, efeitos (glow, sombra, desfoque, gradiente, máscara). Fatia 4, câmera por cena. Fatia 5, componentes reutilizáveis. Fatia 6, benchmark com os três prompts da issue. Narração neural (adendos da issue).
+- [ ] Validação no aparelho (NN-017): render de 2000 instâncias no Android de referência.
+
+## Reorganização da experiência: dados, painéis e IA nativa — #1005 (20/11/2026)
+
+Issue [#1005](https://github.com/AbnerCruz/Ecosystem/issues/1005). Orientação do proprietário em `docs/product-plans/urbe/ux-2026-11-20/` (branch `docs/numa-ux-reorganizacao-20261120`; propostas, não decisões de schema/layout). O editor fica como está. Ordem de execução registrada aqui:
+
+- [~] **Fatia 1 — Flashcards nativos.** Biblioteca de Estudo única: conjuntos do app (`FlashcardLibrary`, em `.urbe/estudo/flashcards.json` — dentro do vault, portável, fora do Explorer) e os cartões `pergunta::resposta` das notas, sem cópia. Revisão SM-2 e progresso existentes preservados (mesmo id por cartão). Uma operação para UI e IA (`IAssistantStudy`); ferramentas `create_flashcards`, `list_flashcards`, `open_flashcards`; `write_plugin`/`plugin_guide` dizem que flashcards não são plugin. Linha "Flashcards" no Estudo. Guia: artigo Flashcards, sinônimos e busca que exige termo específico e responde "nada no guia" em vez de trechos soltos. Provado por `FlashcardLibraryTests`, `Flashcards_ADeckIsNativeDurableAndLeavesNoResidue` (gravado, nenhum arquivo visível novo, volta após reabrir) e `AppDocsGuideTests`.
+- [ ] Fatia 1, restante: painel próprio da biblioteca (hoje em diálogos), cartão de artefato tipado no chat, conversão de plugin de flashcards antigo (só com autorização), reexecução do prompt da beta.60 com modelo real e métricas comparadas.
+- [ ] Fatia 2 — inventário de stores e arquivos produzidos por cada ação (taxonomia do doc 01) e projeção de visibilidade sem mover bytes.
+- [ ] Fatia 3 — tokens do design system e componentes de painel compartilhados; navegação adaptativa.
+- [ ] Fatia 4 — registry de capacidades e verificador de intenção (pedido × contrato × artefato).
+- [ ] Validação no aparelho (NN-017): achar Flashcards a partir do Estudo, revisar com o dedo, reabrir o app.
+- **Decisão aberta (doc 01 §7):** local físico dos objetos duráveis. Fatia 1 usa `.urbe/estudo/` (reversível, portável); mudança posterior exige ADR e migração.

@@ -73,6 +73,7 @@ public sealed partial class HeadlessUiTests
         public Task SaveMaintenanceAsync(System.Text.Json.Nodes.JsonObject maintenance, CancellationToken c = default) => inner.SaveMaintenanceAsync(maintenance, c);
         public Task SaveNotesRecordAsync(string json, CancellationToken c = default) => Run("record", () => inner.SaveNotesRecordAsync(json, c));
         public Task SaveAreaLayoutAsync(string json, CancellationToken c = default) => inner.SaveAreaLayoutAsync(json, c);
+        public Task SaveFlashcardsAsync(string json, CancellationToken c = default) => inner.SaveFlashcardsAsync(json, c);
         public Task SaveConstellationAsync(string json, CancellationToken c = default) => inner.SaveConstellationAsync(json, c);
     }
 

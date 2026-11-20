@@ -509,6 +509,29 @@ public interface IUrbeVaultStorage
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
 
+    /// <summary>
+    /// #1005: rewrites .urbe/estudo/flashcards.json (the study library's decks) alone, with the same safeguards as
+    /// area.json: never over a newer or unreadable file, in a protected vault or after an interrupted operation.
+    /// </summary>
+    Task SaveFlashcardsAsync(string json, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava os flashcards.");
+
+    /// <summary>The checks of a flashcards.json rewrite.</summary>
+    static (string Path, byte[] Bytes) PlanFlashcardsWrite(IReadOnlyList<VaultFile> files, string json)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(json);
+        var snapshot = VaultReader.Read(files);
+        var existing = files.FirstOrDefault(f => string.Equals(f.Path, Urbe.Core.Study.FlashcardLibrary.Path, StringComparison.OrdinalIgnoreCase));
+        var path = existing?.Path ?? Urbe.Core.Study.FlashcardLibrary.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
+        if (existing is not null && !Urbe.Core.Study.FlashcardLibrary.IsLibrary(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
+            throw new InvalidOperationException("Os flashcards são de uma versão mais nova do Numa: escrita recusada.");
+        if (!Urbe.Core.Study.FlashcardLibrary.IsLibrary(json)) throw new InvalidDataException("flashcards.json inválido.");
+        return (path, System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
     static void EnsureWritableFolderPath(string path)
     {
