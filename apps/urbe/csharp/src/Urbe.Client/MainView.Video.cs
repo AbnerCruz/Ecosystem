@@ -430,6 +430,9 @@ public sealed partial class MainView
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
     }
 
+    /// <summary>What the voice says when it is tried: numbers, a name and a pause, like a narration.</summary>
+    public const string VoiceSample = "Olá! Esta é a voz que vai narrar seus vídeos. Em 1905, Einstein publicou quatro artigos; a luz viaja a 300 mil quilômetros por segundo.";
+
     /// <summary>#1004: the device's Portuguese voices, the chosen one marked; the choice narrates scenes, podcasts and the Assistente's videos.</summary>
     public async Task ChooseNarrationVoiceAsync()
     {
@@ -441,7 +444,25 @@ public sealed partial class MainView
         }
         var items = voices.Select(v => new DialogItem(v + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""))).Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
         if (await Dialogs.ChooseAsync("Voz da narração", items, "Vale para narrar vídeos, podcasts e os vídeos do Assistente, neste aparelho.") is not int pick) return;
+        var before = PlatformAudio.PreferredVoice;
         PlatformAudio.PreferredVoice = pick == 0 ? null : voices[pick - 1];
+        // a sample in the chosen voice, before keeping it
+        if (PlatformAudio.PlayWav is { } play && PlatformAudio.SynthesizeToWav is { } speak)
+        {
+            var sample = Path.Combine(Path.GetTempPath(), "urbe-voz-amostra-" + Guid.NewGuid().ToString("N") + ".wav");
+            try
+            {
+                using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                if (await speak(VoiceSample, 0, sample, stop.Token)) await play(sample, stop.Token);
+            }
+            catch (Exception e) when (e is IOException or OperationCanceledException or InvalidOperationException) { }
+            finally { try { File.Delete(sample); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+            if (!await Dialogs.ConfirmAsync("Voz da narração", "Usar " + (PlatformAudio.PreferredVoice ?? "a voz padrão do aparelho") + "?", "Usar esta voz", cancel: "Voltar"))
+            {
+                PlatformAudio.PreferredVoice = before;
+                return;
+            }
+        }
         try
         {
             if (VoiceSettingPath is { } path)

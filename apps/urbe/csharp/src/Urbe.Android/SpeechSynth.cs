@@ -26,6 +26,7 @@ internal sealed class SpeechSynth : UtteranceProgressListener
     public static void Install(Context context)
     {
         SpeechSynth? synth = null;
+        PlatformAudio.PlayWav = PlayAsync;
         PlatformAudio.SynthesizeToWav = (text, voice, target, cancel) => (synth ??= new SpeechSynth(context)).SpeakAsync(text, voice, target, cancel);
     }
 
@@ -54,6 +55,21 @@ internal sealed class SpeechSynth : UtteranceProgressListener
     {
         var first = _portuguese.FirstOrDefault(v => v.Name == PlatformAudio.PreferredVoice) ?? _portuguese.FirstOrDefault();
         _voices = [first, _portuguese.FirstOrDefault(v => v != first)];
+    }
+
+    /// <summary>Plays a WAV to its end with the media player; cancelling stops it.</summary>
+    private static async Task PlayAsync(string path, CancellationToken cancel)
+    {
+        using var player = new Android.Media.MediaPlayer();
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        player.Completion += (_, _) => done.TrySetResult();
+        player.Error += (_, _) => done.TrySetResult();
+        player.SetDataSource(path);
+        player.Prepare();
+        player.Start();
+        using (cancel.Register(() => { try { player.Stop(); } catch (Java.Lang.IllegalStateException) { } done.TrySetResult(); }))
+            await done.Task;
+        player.Release();
     }
 
     private async Task<bool> SpeakAsync(string text, int voice, string target, CancellationToken cancel)

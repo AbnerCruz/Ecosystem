@@ -30,5 +30,8 @@ public static class PlatformAudio
     /// <summary>The voice the person chose for narration (a name from <see cref="Voices"/>); null is the platform's choice.</summary>
     public static string? PreferredVoice { get; set; }
 
+    /// <summary>#1004: plays a WAV file to the end (or until cancelled); null where the platform cannot play one here.</summary>
+    public static Func<string, CancellationToken, Task>? PlayWav { get; set; }
+
     public static bool Available => DecodeToWav is not null && TranscribeWav is not null;
 }

@@ -36,7 +36,8 @@
     "#1004 fatia 4 (câmera): scene.camera com keyframes e motions em x, y, zoom e rotation, validada; estado por quadro na camada e na chave de cache; o renderizador aplica a câmera depois do fundo; a revisão medida avalia cada elemento onde a câmera o mostra (VideoCameraState.Apply); toque, contorno e arraste no Estúdio usam a câmera e Unapply devolve o ponto à cena.",
     "#1004 fatia 3b (recorte): clip = id de uma forma rect/ellipse/circle da cena, validado; o renderizador recorta o elemento pelo contorno atual da forma (posição, escala, rotação e progress).",
     "#1004 fatia 5 (componentes): video.components e kind use com params; VideoComponents expande por cena (ids prefixados pelo use, filhos do grupo, clip e parent remapeados), a validação vale para a expansão, a timeline desenha e revisa a expansão mas mantém a cena salva (VideoTimelineScene.Elements), e o toque num pedaço seleciona o use.",
-    "#1004 fatia 6 (benchmark do motor): VideoBenchmarkTests compõe à mão as três produções da issue a 720p, exige revisão sem erros, mede ms/quadro e, com URBE_EVIDENCE, grava folha de quadros, MP4 verificado e números. Medido: matemática 148, software 37, partículas 61 ms/quadro (CPU, sem GPU). Otimizações achadas pela medição: halo direto (sem camada) para formas simples com brilho e camada de efeito por letra em texto dividido (partículas 1,5 s → 38 ms/quadro); revisão mede a caixa do texto dividido sem a escala de cada parte."
+    "#1004 fatia 6 (benchmark do motor): VideoBenchmarkTests compõe à mão as três produções da issue a 720p, exige revisão sem erros, mede ms/quadro e, com URBE_EVIDENCE, grava folha de quadros, MP4 verificado e números. Medido: matemática 148, software 37, partículas 61 ms/quadro (CPU, sem GPU). Otimizações achadas pela medição: halo direto (sem camada) para formas simples com brilho e camada de efeito por letra em texto dividido (partículas 1,5 s → 38 ms/quadro); revisão mede a caixa do texto dividido sem a escala de cada parte.",
+    "Prévia audível da voz: PlatformAudio.PlayWav (MediaPlayer no Android, PlaySound no Windows); a escolha fala uma amostra na voz e só guarda se a pessoa confirmar."
   ],
   "verification": [
     {
@@ -55,11 +56,11 @@
   "known_issues": [
     "Não testado no aparelho (ADD-0035); desempenho medido só no container, sem GPU. O projeto Android compila (Debug, Android SDK 36), sem execução em emulador ou aparelho.",
     "Não reexecutado com o modelo do proprietário.",
-    "Fatias seguintes da #1004 (máscara por imagem/gradiente, câmera, componentes, benchmark, TTS neural) não feitas."
+    "Fatias seguintes da #1004 (máscara por imagem/gradiente, câmera, componentes, benchmark, TTS neural) não feitas.",
+    "Instabilidade de tempo na suíte completa do Client sob carga: Bench_VaultOperationsAtScale e Drafts_TextTypedBeforeACrashIsOfferedBack falharam uma vez cada e passam isolados; não relacionados a esta mudança."
   ],
   "next_actions": [
     "Pedir os três prompts da #1004 ao Assistente com modelo real e medir chamadas, tempo e qualidade contra o benchmark do motor.",
-    "Prévia audível da voz da narração.",
     "Voz neural local depois da DEC-0067."
   ],
   "decisions_required": [],

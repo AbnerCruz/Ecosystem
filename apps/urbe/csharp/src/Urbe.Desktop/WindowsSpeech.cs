@@ -17,11 +17,22 @@ internal static class WindowsSpeech
     {
         if (!OperatingSystem.IsWindows() || Type.GetTypeFromProgID("SAPI.SpVoice") is not { } voiceType ||
             Type.GetTypeFromProgID("SAPI.SpFileStream") is not { } streamType) return;
+        PlatformAudio.PlayWav = (path, cancel) => Task.Run(() =>
+        {
+            if (!OperatingSystem.IsWindows()) return;
+            using var stop = cancel.Register(() => PlaySound(null, IntPtr.Zero, 0));
+            PlaySound(path, IntPtr.Zero, SndFilename | SndNoDefault);   // synchronous: returns at the end or when stopped
+        }, cancel);
         PlatformAudio.Voices = () => OperatingSystem.IsWindows() ? Names(voiceType) : [];
         PlatformAudio.SynthesizeToWav = (text, voice, target, cancel) => Task.Run(() => OperatingSystem.IsWindows() && Speak(voiceType, streamType, text, voice, target), cancel);
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private const uint SndFilename = 0x00020000, SndNoDefault = 0x0002;
+
+    [DllImport("winmm.dll", CharSet = CharSet.Unicode, EntryPoint = "PlaySoundW")]
+    private static extern bool PlaySound(string? sound, IntPtr module, uint flags);
+
     /// <summary>The Portuguese voices Windows has (all voices when it has none in Portuguese), by description.</summary>
     private static IReadOnlyList<string> Names(Type voiceType)
     {
