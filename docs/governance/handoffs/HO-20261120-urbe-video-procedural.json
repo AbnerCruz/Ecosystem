@@ -3,7 +3,10 @@
   "message_id": "HO-20261120-urbe-video-procedural",
   "category": "HANDOFF",
   "timestamp": "2026-11-20T16:33:18Z",
-  "agent": { "id": "claude-code-urbe-editor", "kind": "ai-agent" },
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
   "task_id": "CST-209",
   "component": "urbe",
   "state": "review",
@@ -36,15 +39,27 @@
     "#1004 fatia 6 (benchmark do motor): VideoBenchmarkTests compõe à mão as três produções da issue a 720p, exige revisão sem erros, mede ms/quadro e, com URBE_EVIDENCE, grava folha de quadros, MP4 verificado e números. Medido: matemática 148, software 37, partículas 61 ms/quadro (CPU, sem GPU). Otimizações achadas pela medição: halo direto (sem camada) para formas simples com brilho e camada de efeito por letra em texto dividido (partículas 1,5 s → 38 ms/quadro); revisão mede a caixa do texto dividido sem a escala de cada parte."
   ],
   "verification": [
-    { "check": "Urbe.Core.Tests (vídeo/gráfico)", "kind": "automated", "result": "passed", "evidence": "1837/1837 na suíte inteira; 120/120 no filtro Video|FunctionPlot|VideoProcedural, incluindo funções de vários argumentos, aridade errada e partículas fora da borda." },
-    { "check": "Urbe.Client.Tests (VideoRender)", "kind": "automated", "result": "passed", "evidence": "702/702 na suíte inteira; TwoThousandParticlesAt720pAreDrawnAndMeasured desenha 2000 instâncias a 720p abaixo de 1 s/quadro e revisa em menos de 20 s." }
+    {
+      "check": "Urbe.Core.Tests (vídeo/gráfico)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1837/1837 na suíte inteira; 120/120 no filtro Video|FunctionPlot|VideoProcedural, incluindo funções de vários argumentos, aridade errada e partículas fora da borda."
+    },
+    {
+      "check": "Urbe.Client.Tests (VideoRender)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "702/702 na suíte inteira; TwoThousandParticlesAt720pAreDrawnAndMeasured desenha 2000 instâncias a 720p abaixo de 1 s/quadro e revisa em menos de 20 s."
+    }
   ],
   "known_issues": [
     "Não testado no aparelho (ADD-0035); desempenho medido só no container, sem GPU. O projeto Android compila (Debug, Android SDK 36), sem execução em emulador ou aparelho.",
     "Não reexecutado com o modelo do proprietário.",
     "Fatias seguintes da #1004 (máscara por imagem/gradiente, câmera, componentes, benchmark, TTS neural) não feitas."
   ],
-  "next_actions": [ "#1004 fatia 5: componentes reutilizáveis." ],
+  "next_actions": [
+    "#1004 fatia 5: componentes reutilizáveis."
+  ],
   "decisions_required": [],
   "normative_sources": [
     "AGENTS.md",
@@ -52,11 +67,30 @@
     "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md"
   ],
   "invariants": [
-    { "id": "NN-016", "evidence": "Fórmulas só aritmética e funções puras; nenhum acesso fora do quadro." },
-    { "id": "NN-017", "evidence": "Nada declarado como testado no aparelho." },
-    { "id": "NN-018", "evidence": "Testes automáticos citados acima." }
+    {
+      "id": "NN-016",
+      "evidence": "Fórmulas só aritmética e funções puras; nenhum acesso fora do quadro."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada declarado como testado no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes automáticos citados acima."
+    }
   ],
-  "reuse_assessment": [ { "subject": "urbe-video-procedural", "status": "product-specific", "rationale": "Motor de vídeo do Urbe." } ],
-  "criticality": { "declared": "routine", "classes": [], "reason": "Feature autorizada (#1004) dentro do Urbe." },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-video-procedural",
+      "status": "product-specific",
+      "rationale": "Motor de vídeo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature autorizada (#1004) dentro do Urbe."
+  },
   "blockers": []
 }
