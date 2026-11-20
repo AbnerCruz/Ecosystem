@@ -48,12 +48,20 @@ public sealed partial class HeadlessUiTests
             var kept = Directory.GetFiles(drafts, "*.json").ToDictionary(f => f, File.ReadAllText);
             window.Close();
             await Pump(100);
+            // closing saves the note and, once saved, clears its draft in the background; both must end before the
+            // "crash" state is put back, or a late clear deletes it (seen when the whole suite runs and the machine is busy)
+            for (int i = 0; i < 500 && (File.ReadAllText(file) != typed || Directory.GetFiles(drafts, "*.json").Length > 0); i++)
+            {
+                await Pump(10);
+                await view.DraftWrites;
+            }
             File.WriteAllText(file, saved);
             foreach (var (path, text) in kept) File.WriteAllText(path, text);
 
             (view, window) = await Open();
             view.OpenNoteByPath("Plano.md");
-            for (int i = 0; i < 100 && !view.Dialogs.IsOpen; i++) await Pump(10);
+            // the recovery dialog comes after the vault opens; under a loaded test run that can take a few seconds
+            for (int i = 0; i < 500 && !view.Dialogs.IsOpen; i++) await Pump(10);
             Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("não chegou a ser salvo") == true);
             ClickButtonWithText(view.Dialogs, "Recuperar");
             await Pump(50);

@@ -11,6 +11,11 @@ namespace Urbe.Client.Tests;
 /// measured. They show what the engine can draw; they say nothing yet about what a model writes with it.
 /// With URBE_EVIDENCE set, each leaves a contact sheet, an MP4 (when ffmpeg exists) and its numbers.
 /// </summary>
+[CollectionDefinition(nameof(VideoBenchmarkTests), DisableParallelization = true)]
+public sealed class VideoBenchmarkCollection;
+
+// heavy rendering: run alone, so it neither measures the other tests' load nor slows the UI tests' timed waits
+[Collection(nameof(VideoBenchmarkTests))]
 public sealed class VideoBenchmarkTests
 {
     private static (PublicationSourceCatalog, PublicationProject) Video(string title, double seconds, string background, VideoCamera? camera, Dictionary<string, List<VideoElement>>? components, params VideoElement[] elements)
