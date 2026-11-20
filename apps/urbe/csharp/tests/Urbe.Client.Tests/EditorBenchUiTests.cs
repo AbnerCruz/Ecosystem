@@ -114,8 +114,11 @@ public sealed partial class HeadlessUiTests
             view.Editor.Editor.CaretIndex = view.Editor.Editor.Text!.Length / 2;
             window.KeyTextInput("a");
             Dispatcher.UIThread.RunJobs();
+            // a long note is in the Fonte by blocks (EditorOverlay.BlocksFrom): the single text box is not where keys go,
+            // so its timing would measure nothing (it printed 0,00 ms/key without typing anything)
+            if (!view.Editor.Editor.IsFocused) PerfLog($"BENCH fonte-key n/a: nota de {note.Length} caracteres na Fonte por blocos (as teclas vão ao bloco, como no Visual)");
             var fonteKey = Time(() => { window.KeyTextInput("a"); window.UpdateLayout(); }, 60);
-            PerfLog($"BENCH fonte-key {fonteKey:0.00} ms/key");
+            if (view.Editor.Editor.IsFocused) PerfLog($"BENCH fonte-key {fonteKey:0.00} ms/key");
             var fonteFrame = Time(() => { window.KeyTextInput("b"); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }, 30);
             PerfLog($"BENCH fonte-key+frame {fonteFrame:0.00} ms/key");
             await BenchPump(window);

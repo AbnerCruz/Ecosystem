@@ -494,7 +494,7 @@ Issue [#945](https://github.com/AbnerCruz/Ecosystem/issues/945); branch `ccr-c71
 - [x] CI, integração autorizada e publicação da beta.53 pelo workflow oficial ([release](https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.53)).
 - [~] beta.54 — seleção, cópia e colagem no celular em todo o app: menu em português com Selecionar tudo em todos os campos; no Visual, segurar seleciona com alças e a bolha copia/recorta/cola/seleciona tudo; alça solta fora do bloco estende a seleção entre blocos; textos só de leitura (inclusive nota em leitura, painel fixado e tutorial) selecionáveis por toque prolongado.
 - [ ] Validação no aparelho (Android e Windows) de cada item acima (NN-017).
-- [ ] Fonte em notas muito longas: custo por tecla dentro do `TextBox` do Avalonia; resolver exige controle de edição próprio (decisão de arquitetura, NN-011).
+- [x] Fonte em notas muito longas: resolvido sem controle de edição próprio pela **Fonte por blocos** (`EditorOverlay`, notas a partir de `BlocksFrom`): a mesma superfície do Visual com cada bloco em Markdown cru, então uma tecla custa um bloco e não a nota inteira. Conferido em 20/11/2026: a caixa única do Fonte só é usada em notas curtas; nas longas a digitação vai ao bloco (medição headless dominada pelo desenho por software, sem GPU; não é medida de aparelho).
 
 ## Vault 1:1 com a pasta, gravações rápidas e organização — beta.55 (15/11/2026)
 
