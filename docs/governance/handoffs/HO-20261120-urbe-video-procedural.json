@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261120-urbe-video-procedural",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-20T16:33:18Z",
+  "agent": { "id": "claude-code-urbe-editor", "kind": "ai-agent" },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "3f002029ce417c17dd9438636354bc9c499e5a74",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VideoProcedural.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoInspection.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FunctionPlot.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoProceduralTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261120-urbe-video-procedural.json"
+  ],
+  "work_completed": [
+    "#1004 fatia 1 (instâncias procedurais): elemento com repeat 1–2000 vira N instâncias; motions veem t, i, n, u e têm modo add|set; funções fract, sat, smooth, rand (determinístico), noise e min/max/mod/pow/atan2/step/mix/lerp/clamp (vírgula separa argumentos dentro delas; fora, 0,5 continua decimal). Validação recusa repeat fora do intervalo, modo inválido, fórmula ilegível e elemento repetido como pai. Revisão medida não acusa borda em formas repetidas (campos de partículas); texto repetido segue revisado. Schema e exemplo para o Assistente; outline mostra instâncias. Linguagem fechada sem acesso a vault, rede ou segredos; WASM continua sob DEC-0066, não assumida."
+  ],
+  "verification": [
+    { "check": "Urbe.Core.Tests (vídeo/gráfico)", "kind": "automated", "result": "passed", "evidence": "1837/1837 na suíte inteira; 120/120 no filtro Video|FunctionPlot|VideoProcedural, incluindo funções de vários argumentos, aridade errada e partículas fora da borda." },
+    { "check": "Urbe.Client.Tests (VideoRender)", "kind": "automated", "result": "passed", "evidence": "702/702 na suíte inteira; TwoThousandParticlesAt720pAreDrawnAndMeasured desenha 2000 instâncias a 720p abaixo de 1 s/quadro e revisa em menos de 20 s." }
+  ],
+  "known_issues": [
+    "Não testado no aparelho (ADD-0035); desempenho de 2000 instâncias medido só no container, sem GPU.",
+    "Não reexecutado com o modelo do proprietário.",
+    "Fatias seguintes da #1004 (tipografia cinética, efeitos, câmera, componentes, benchmark, TTS neural) não feitas."
+  ],
+  "next_actions": [ "#1004 fatia 2: tipografia cinética por letra/palavra como instâncias." ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md"
+  ],
+  "invariants": [
+    { "id": "NN-016", "evidence": "Fórmulas só aritmética e funções puras; nenhum acesso fora do quadro." },
+    { "id": "NN-017", "evidence": "Nada declarado como testado no aparelho." },
+    { "id": "NN-018", "evidence": "Testes automáticos citados acima." }
+  ],
+  "reuse_assessment": [ { "subject": "urbe-video-procedural", "status": "product-specific", "rationale": "Motor de vídeo do Urbe." } ],
+  "criticality": { "declared": "routine", "classes": [], "reason": "Feature autorizada (#1004) dentro do Urbe." },
+  "blockers": []
+}

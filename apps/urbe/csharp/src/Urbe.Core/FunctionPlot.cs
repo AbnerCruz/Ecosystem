@@ -321,6 +321,19 @@ public sealed partial class FunctionPlot
             ["rand"] = Random01, ["noise"] = Noise,
         };
 
+        /// <summary>
+        /// #1004: functions of several arguments. Inside their parentheses the comma separates the arguments (write
+        /// decimals with a point there: min(0.5, x)); outside them "0,5" is still a decimal.
+        /// </summary>
+        private static readonly Dictionary<string, (int Arity, Func<double, double, double, double> Run)> Multi = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["min"] = (2, (a, b, _) => Math.Min(a, b)), ["max"] = (2, (a, b, _) => Math.Max(a, b)),
+            ["mod"] = (2, (a, b, _) => b == 0 ? double.NaN : a - b * Math.Floor(a / b)), ["pow"] = (2, (a, b, _) => Math.Pow(a, b)),
+            ["atan2"] = (2, (a, b, _) => Math.Atan2(a, b)), ["step"] = (2, (edge, v, _) => v >= edge ? 1 : 0),
+            ["mix"] = (3, (a, b, u) => a + (b - a) * u), ["lerp"] = (3, (a, b, u) => a + (b - a) * u),
+            ["clamp"] = (3, (v, lo, hi) => double.IsNaN(v) ? lo : Math.Clamp(v, Math.Min(lo, hi), Math.Max(lo, hi))),
+        };
+
         private static double Saturate(double v) => double.IsNaN(v) ? 0 : Math.Clamp(v, 0, 1);
 
         /// <summary>A number in [0, 1) that depends only on <paramref name="v"/> (the same in every frame and on every machine).</summary>
@@ -382,6 +395,8 @@ public sealed partial class FunctionPlot
             }
 
             private int _at;
+            // inside the parentheses of a function of several arguments, where the comma separates them
+            private int _arguments;
 
             private char Peek() { Skip(); return _at < text.Length ? text[_at] : '\0'; }
             private void Skip() { while (_at < text.Length && char.IsWhiteSpace(text[_at])) _at++; }
@@ -467,10 +482,10 @@ public sealed partial class FunctionPlot
                     _at++;
                     return x => Math.Abs(inner(x));
                 }
-                if (char.IsDigit(c) || c == '.' || c == ',')
+                if (char.IsDigit(c) || c == '.' || c == ',' && _arguments == 0)
                 {
                     int start = _at;
-                    while (_at < text.Length && (char.IsDigit(text[_at]) || (text[_at] is '.' or ',' && _at + 1 < text.Length && char.IsDigit(text[_at + 1])))) _at++;
+                    while (_at < text.Length && (char.IsDigit(text[_at]) || ((text[_at] == '.' || text[_at] == ',' && _arguments == 0) && _at + 1 < text.Length && char.IsDigit(text[_at + 1])))) _at++;
                     if (!double.TryParse(text[start.._at].Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
                         throw new FormatException("número inválido: " + text[start.._at]);
                     return _ => value;
@@ -484,6 +499,29 @@ public sealed partial class FunctionPlot
                     // a name read greedily may be a function followed by x ("sinx" is not allowed; "xsin(x)" is x·sin(x))
                     if (Peek() == '(')
                     {
+                        if (Multi.TryGetValue(name, out var multi))
+                        {
+                            _at++;
+                            _arguments++;
+                            var args = new Func<double, double>[multi.Arity];
+                            for (int k = 0; k < multi.Arity; k++)
+                            {
+                                if (k > 0)
+                                {
+                                    if (Peek() != ',') throw new FormatException(name + " leva " + multi.Arity + " argumentos separados por vírgula (decimais com ponto)");
+                                    _at++;
+                                }
+                                args[k] = Sum();
+                            }
+                            _arguments--;
+                            if (Peek() != ')') throw new FormatException(Peek() == ',' ? name + " leva só " + multi.Arity + " argumentos" : "falta fechar o parêntese de " + name);
+                            _at++;
+                            var run = multi.Run;
+                            var (a0, a1) = (args[0], args[1]);
+                            if (args.Length == 2) return x => run(a0(x), a1(x), 0);
+                            var a2 = args[2];
+                            return x => run(a0(x), a1(x), a2(x));
+                        }
                         if (Functions.TryGetValue(name, out var f))
                         {
                             _at++;

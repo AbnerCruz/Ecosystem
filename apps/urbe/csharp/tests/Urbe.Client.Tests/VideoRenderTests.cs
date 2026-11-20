@@ -379,4 +379,41 @@ public sealed class VideoRenderTests
             File.WriteAllBytes(Path.Combine(dir, "video-expressividade.png"), renderer.RenderSheet([5.2, 7.0, 7.6, 8.1, 9.0, 10.5]));
         }
     }
+
+    /// <summary>#1004: 2000 instances of one element (the most allowed) at 720p, drawn and measured.</summary>
+    [Fact]
+    public void TwoThousandParticlesAt720pAreDrawnAndMeasured()
+    {
+        var (catalog, project) = Project(resolution: 720, seconds: 2);
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Elements =
+            [
+                new VideoElement { Id = "galaxia", Kind = "shape", Text = "circle", Width = 0.004, Height = 0.007, Color = "#ff0000", Repeat = VideoProcedural.MaxRepeat,
+                    Motions =
+                    [
+                        new() { Property = "x", Mode = "set", Expression = "0.5 + (0.05 + 0.35*rand(i))*cos(tau*rand(i + 0.5) + t*(0.3 + rand(i)))" },
+                        new() { Property = "y", Mode = "set", Expression = "0.5 + (0.05 + 0.35*rand(i))*sin(tau*rand(i + 0.5) + t*(0.3 + rand(i)))*1.6" },
+                        new() { Property = "opacity", Mode = "set", Expression = "0.4 + 0.6*noise(i + 3t)" },
+                    ] }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var renderer = new VideoFrameRenderer(timeline);
+        using var frame = new SKBitmap(timeline.Width, timeline.Height);
+        var clock = Stopwatch.StartNew();
+        const int frames = 20;
+        for (int i = 0; i < frames; i++) renderer.RenderInto(i / 30.0, frame);
+        double perFrame = clock.Elapsed.TotalMilliseconds / frames;
+        Console.WriteLine("video.particles720p " + VideoProcedural.MaxRepeat + " instances: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " ms/frame");
+        int red = 0;
+        for (int y = 0; y < frame.Height; y += 2) for (int x = 0; x < frame.Width; x += 2) if (frame.GetPixel(x, y).Red > 120 && frame.GetPixel(x, y).Blue < 120) red++;
+        Assert.True(red > 300, "the particles are drawn: " + red);
+        Assert.True(perFrame < 1000, "a frame of 2000 instances took " + perFrame + " ms");
+        var clock2 = Stopwatch.StartNew();
+        VideoInspection.Run(timeline);
+        Assert.True(clock2.Elapsed.TotalSeconds < 20, "the review of 2000 instances took " + clock2.Elapsed);
+    }
 }

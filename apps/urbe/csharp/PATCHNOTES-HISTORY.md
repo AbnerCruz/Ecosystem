@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.63 — 20/11/2026
+- Painel de etapas sem travar com muitas etapas (#1000) e create_video: o vídeo inteiro numa chamada.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.63
+
 ## 2.0.0-beta.62 — 20/11/2026
 - O app passa a se chamar Numa (DEC-0060); pacote, pastas e dados continuam os mesmos.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.62

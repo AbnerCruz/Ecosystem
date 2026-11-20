@@ -57,7 +57,11 @@ public static class VideoInspection
                     var e = visible[i];
                     if (!Visual.Contains(e.Kind)) continue;
                     var b = Box(e, W, H);
-                    if (b.L < -0.01 * W || b.T < -0.01 * H || b.R > 1.01 * W || b.B > 1.01 * H)
+                    // #1004: instances of a repeated shape are a field (particles, stars, a grid) that may run past the
+                    // edges on purpose; a repeated text is still read, so it is still checked
+                    bool field = e.Instance >= 0 && !Text.Contains(e.Kind);
+                    if (field) { }
+                    else if (b.L < -0.01 * W || b.T < -0.01 * H || b.R > 1.01 * W || b.B > 1.01 * H)
                         Add(ReviewSeverity.Error, e.Id, "out", local, Name(e) + " sai do quadro.", "Aproxime x/y do centro ou reduza width/height/scale (posições são do centro, de 0 a 1).");
                     else if (b.L < SafeMargin * W || b.T < SafeMargin * H || b.R > (1 - SafeMargin) * W || b.B > (1 - SafeMargin) * H)
                         Add(ReviewSeverity.Warning, e.Id, "safe", local, Name(e) + " encosta na borda (fora dos 90 % seguros do quadro); pode ser cortado em telas e players.", "Mantenha a caixa entre 0,05 e 0,95 do quadro.");

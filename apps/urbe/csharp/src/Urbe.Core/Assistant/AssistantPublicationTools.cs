@@ -99,7 +99,13 @@ public static class AssistantPublicationTools
         "x,y,width,height (0–1 do quadro), color, fontSize (em path, a espessura do traço), start, end?, parent? (id de outro elemento da cena: x,y viram deslocamento " +
         "a partir do centro dele, e escala, rotação e opacidade dele valem para este; group não desenha nada e serve de pai), " +
         "keyframes:[{property:x|y|scale|opacity|rotation|progress, time, value, easing:linear|easeIn|easeOut|easeInOut|step|back|cubic-bezier(x1,y1,x2,y2)}] " +
-        "(progress de 0 a 1 desenha path e plot ao longo do tempo; back passa do alvo e volta), motions:[{property, expression (fórmula de t)}]}]}], " +
+        "(progress de 0 a 1 desenha path e plot ao longo do tempo; back passa do alvo e volta), motions:[{property, expression (fórmula de t), mode:add|set (add soma ao valor; set vira o valor)}], repeat? (1–2000: o elemento vira N instâncias; as fórmulas veem i (0 a n−1), n e u = i/(n−1); um elemento repetido não é pai)}]}], " +
+        // #1004: procedural motion — the model invents particles, orbits, grids and staggers as formulas instead of lists of elements
+        "Fórmulas: + - * / ^, pi, tau, e; sin cos tan atan sqrt abs exp ln floor ceil round fract sat smooth (0–1 suave) rand(v) (0–1 determinístico por v) noise(v) (ruído suave); " +
+        "min(a,b) max(a,b) mod(a,b) pow(a,b) atan2(y,x) step(borda,v) mix(a,b,u) clamp(v,lo,hi) — dentro delas a vírgula separa argumentos e o decimal é ponto. " +
+        "Movimento procedural: partículas, órbitas, grades, ondas e entradas escalonadas são UM elemento com repeat e fórmulas, nunca dezenas de elementos; " +
+        "ex. 200 estrelas: {\"id\":\"estrelas\",\"kind\":\"shape\",\"text\":\"circle\",\"width\":0.004,\"height\":0.007,\"repeat\":200,\"motions\":[{\"property\":\"x\",\"mode\":\"set\",\"expression\":\"rand(i)\"},{\"property\":\"y\",\"mode\":\"set\",\"expression\":\"rand(i+0.5)\"},{\"property\":\"opacity\",\"mode\":\"set\",\"expression\":\"0.3+0.7*noise(i+2t)\"}]}; " +
+        "escalonar: opacity set sat((t - 0.1*i)/0.4). Formas repetidas podem passar da borda; texto repetido é revisado como texto. " +
         "audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT. " +
         "Um vídeo pedido a você termina em render_video, que narra, gera o MP4 e as legendas no vault. Não crie .page.json; esse editor foi substituído. " +

@@ -166,4 +166,37 @@ public sealed class VideoProceduralTests
         Assert.Equal(40, e.Repeat);
         Assert.Equal("set", e.Motions[0].Mode);
     }
+
+    [Theory]
+    [InlineData("min(0.2, 0.7)", 0.2)]
+    [InlineData("max(0.2,0.7)", 0.7)]
+    [InlineData("mod(-1, 3)", 2)]
+    [InlineData("pow(2, 10)", 1024)]
+    [InlineData("step(0.5, 0.6)", 1)]
+    [InlineData("mix(10, 20, 0.25)", 12.5)]
+    [InlineData("clamp(5, 0, 1)", 1)]
+    [InlineData("0,5 + min(1, 2)", 1.5)]
+    public void FunctionsOfSeveralArgumentsUseTheCommaAsSeparator(string expression, double expected) =>
+        Assert.Equal(expected, VideoProcedural.Evaluate(expression, 0), 9);
+
+    [Theory]
+    [InlineData("min(1)")]
+    [InlineData("min(1, 2, 3)")]
+    [InlineData("mix(1, 2")]
+    public void AWrongNumberOfArgumentsIsRefusedSayingWhy(string expression) =>
+        Assert.Throws<FormatException>(() => VideoProcedural.Check(expression));
+
+    [Fact]
+    public void ParticlesRunningPastTheEdgeAreNotAnErrorButARepeatedTextIs()
+    {
+        var (catalog, project) = Scene(
+            new VideoElement { Id = "chuva", Kind = "shape", Text = "circle", Width = 0.01, Height = 0.02, Repeat = 50,
+                Motions = [new() { Property = "x", Mode = "set", Expression = "u" }, new() { Property = "y", Mode = "set", Expression = "fract(rand(i) + t) * 1.2 - 0.1" }] },
+            new VideoElement { Id = "rotulos", Kind = "text", Text = "a", Width = 0.1, Height = 0.06, Repeat = 3,
+                Motions = [new() { Property = "x", Mode = "set", Expression = "-0.2 + 0.1*i" }] });
+        using var _ = catalog;
+        var issues = VideoInspection.Run(VideoTimeline.Build(project, catalog));
+        Assert.DoesNotContain(issues, i => i.ElementId == "chuva");
+        Assert.Contains(issues, i => i.ElementId == "rotulos" && i.Severity == ReviewSeverity.Error);
+    }
 }
