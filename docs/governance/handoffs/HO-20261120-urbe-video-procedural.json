@@ -58,7 +58,9 @@
     "Fatias seguintes da #1004 (máscara por imagem/gradiente, câmera, componentes, benchmark, TTS neural) não feitas."
   ],
   "next_actions": [
-    "#1004 fatia 5: componentes reutilizáveis."
+    "Pedir os três prompts da #1004 ao Assistente com modelo real e medir chamadas, tempo e qualidade contra o benchmark do motor.",
+    "Prévia audível da voz da narração.",
+    "Voz neural local depois da DEC-0067."
   ],
   "decisions_required": [],
   "normative_sources": [
