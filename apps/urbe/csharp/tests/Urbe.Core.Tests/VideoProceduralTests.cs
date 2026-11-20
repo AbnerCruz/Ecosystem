@@ -1,0 +1,169 @@
+using Urbe.Core;
+
+namespace Urbe.Core.Tests;
+
+/// <summary>
+/// #1004 (motion graphics at the level of code-made ones), slice 1: procedural elements. One element with repeat N is N
+/// instances whose motions are formulas of t, i, n and u — particles, orbits, grids and staggered entrances without
+/// writing hundreds of elements, deterministic on every machine.
+/// </summary>
+public sealed class VideoProceduralTests
+{
+    private static (PublicationSourceCatalog Catalog, PublicationProject Project) Scene(params VideoElement[] elements)
+    {
+        var store = new DocumentStore();
+        var a = store.Upsert(new DocumentInput { Path = "Roteiro/Cena.md", Content = "# Cena\n\nTexto.\n" });
+        var catalog = new PublicationSourceCatalog(store);
+        var project = VideoComposition.Synced(PublicationProject.Create("Vídeo", a.Id) with { Design = new PublicationDesign { Layout = "video" } });
+        var scene = project.Video!.Scenes[0] with { Duration = 4, Transition = new VideoTransition(), Elements = elements.ToList() };
+        return (catalog, project with { Video = project.Video.WithScene(scene) });
+    }
+
+    private static List<VideoElementState> At(VideoTimeline timeline, string id, double t) =>
+        timeline.Evaluate(t).Layers.Single().Elements.Where(e => e.Id == id).ToList();
+
+    [Fact]
+    public void ARepeatedElementIsOneInstancePerIndexPlacedByItsFormulas()
+    {
+        // twelve dots on a circle that turns: x and y set by the angle of each one, plus the time
+        var (catalog, project) = Scene(new VideoElement
+        {
+            Id = "orbita", Kind = "shape", Text = "circle", Width = 0.02, Height = 0.035, Repeat = 12,
+            Motions =
+            [
+                new() { Property = "x", Mode = "set", Expression = "0.5 + 0.3*cos(tau*i/n + t)" },
+                new() { Property = "y", Mode = "set", Expression = "0.5 + 0.3*sin(tau*i/n + t)" },
+            ]
+        });
+        using var _ = catalog;
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        var dots = At(timeline, "orbita", 0);
+        Assert.Equal(12, dots.Count);
+        Assert.Equal(Enumerable.Range(0, 12), dots.Select(d => d.Instance));
+        for (int i = 0; i < 12; i++)
+        {
+            Assert.Equal(0.5 + 0.3 * Math.Cos(Math.Tau * i / 12), dots[i].X, 9);
+            Assert.Equal(0.5 + 0.3 * Math.Sin(Math.Tau * i / 12), dots[i].Y, 9);
+        }
+        // it turns with t
+        Assert.Equal(0.5 + 0.3 * Math.Cos(1), At(timeline, "orbita", 1)[0].X, 9);
+    }
+
+    [Fact]
+    public void AStaggeredEntranceIsOneFormula()
+    {
+        // each bar fades in 0.1 s after the previous one; u spreads them across the frame
+        var (catalog, project) = Scene(new VideoElement
+        {
+            Id = "barras", Kind = "shape", Text = "rect", Repeat = 5, Width = 0.05, Height = 0.3,
+            Motions =
+            [
+                new() { Property = "x", Mode = "set", Expression = "0.2 + 0.6*u" },
+                new() { Property = "opacity", Mode = "set", Expression = "smooth((t - 0.1*i)/0.4)" },
+            ]
+        });
+        using var _ = catalog;
+        var timeline = VideoTimeline.Build(project, catalog);
+        var at = At(timeline, "barras", 0.25);
+        Assert.Equal([0.2, 0.35, 0.5, 0.65, 0.8], at.Select(b => Math.Round(b.X, 9)));
+        // the first is half way in, the last has not started
+        Assert.True(at[0].Opacity > at[1].Opacity && at[1].Opacity > at[2].Opacity);
+        Assert.Equal(0, at[4].Opacity, 9);
+        Assert.All(At(timeline, "barras", 1), b => Assert.Equal(1, b.Opacity, 9));
+    }
+
+    [Fact]
+    public void RandomAndNoiseAreTheSameEveryTimeAndDifferPerInstance()
+    {
+        var (catalog, project) = Scene(new VideoElement
+        {
+            Id = "estrelas", Kind = "shape", Text = "circle", Repeat = 300, Width = 0.004, Height = 0.007,
+            Motions =
+            [
+                new() { Property = "x", Mode = "set", Expression = "rand(i)" },
+                new() { Property = "y", Mode = "set", Expression = "rand(i + 1000)" },
+                new() { Property = "opacity", Mode = "set", Expression = "0.4 + 0.6*noise(2*t + 13*i)" },
+            ]
+        });
+        using var _ = catalog;
+        var one = At(VideoTimeline.Build(project, catalog), "estrelas", 1.3);
+        var two = At(VideoTimeline.Build(project, catalog), "estrelas", 1.3);
+        Assert.Equal(one, two);   // deterministic: preview and export, here and on the phone
+        Assert.True(one.Select(s => Math.Round(s.X, 6)).Distinct().Count() > 290);
+        Assert.All(one, s => Assert.InRange(s.X, 0, 1));
+        // spread over the frame, not clumped
+        Assert.InRange(one.Average(s => s.X), 0.4, 0.6);
+        Assert.InRange(one.Average(s => s.Y), 0.4, 0.6);
+        Assert.All(one, s => Assert.InRange(s.Opacity, 0.4, 1));
+        // noise is smooth: a frame later it has barely moved
+        var next = At(VideoTimeline.Build(project, catalog), "estrelas", 1.3 + 1 / 30.0);
+        Assert.All(one.Zip(next), p => Assert.True(Math.Abs(p.First.Opacity - p.Second.Opacity) < 0.15));
+    }
+
+    [Fact]
+    public void AddKeepsTheKeyframesAndSetReplacesThem()
+    {
+        var (catalog, project) = Scene(new VideoElement
+        {
+            Id = "a", Kind = "text", Text = "x", Repeat = 3, X = 0.3,
+            Keyframes = [new() { Property = "x", Time = 0, Value = 0.4 }],
+            Motions = [new() { Property = "x", Expression = "0.1*i" }, new() { Property = "y", Mode = "set", Expression = "0.2" }]
+        });
+        using var _ = catalog;
+        var at = At(VideoTimeline.Build(project, catalog), "a", 1);
+        Assert.Equal([0.4, 0.5, 0.6], at.Select(s => Math.Round(s.X, 9)));
+        Assert.All(at, s => Assert.Equal(0.2, s.Y, 9));
+    }
+
+    [Fact]
+    public void ARepeatedChildFollowsItsParent()
+    {
+        var (catalog, project) = Scene(
+            new VideoElement { Id = "g", Kind = "group", X = 0.5, Y = 0.5, Keyframes = [new() { Property = "x", Time = 0, Value = 0.6 }] },
+            new VideoElement { Id = "raios", Kind = "shape", Text = "line", Parent = "g", Repeat = 4, X = 0, Y = 0,
+                Motions = [new() { Property = "rotation", Mode = "set", Expression = "90*i" }] });
+        using var _ = catalog;
+        var at = At(VideoTimeline.Build(project, catalog), "raios", 1);
+        Assert.Equal(4, at.Count);
+        Assert.All(at, s => Assert.Equal(0.6, s.X, 9));
+        Assert.Equal([0.0, 90, 180, 270], at.Select(s => s.Rotation));
+    }
+
+    [Theory]
+    [InlineData(0, "x", "add", "0.1")]
+    [InlineData(VideoProcedural.MaxRepeat + 1, "x", "add", "0.1")]
+    [InlineData(3, "x", "multiply", "0.1")]
+    [InlineData(3, "x", "add", "rand(")]
+    [InlineData(3, "x", "add", "k*i")]   // an unknown name
+    public void ABadProceduralElementIsRefusedSayingWhy(int repeat, string property, string mode, string expression)
+    {
+        var (catalog, project) = Scene(new VideoElement { Id = "p", Kind = "shape", Text = "circle", Repeat = repeat,
+            Motions = [new() { Property = property, Mode = mode, Expression = expression }] });
+        using var _ = catalog;
+        var error = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project));
+        Assert.Contains("p", error.Message);
+    }
+
+    [Fact]
+    public void ARepeatedElementIsNotAParent()
+    {
+        var (catalog, project) = Scene(
+            new VideoElement { Id = "muitos", Kind = "group", Repeat = 3 },
+            new VideoElement { Id = "filho", Kind = "text", Text = "x", Parent = "muitos" });
+        using var _ = catalog;
+        Assert.Contains("repeat", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project)).Message);
+    }
+
+    [Fact]
+    public void ARepeatedElementSurvivesSavingAndReading()
+    {
+        var (catalog, project) = Scene(new VideoElement { Id = "p", Kind = "shape", Text = "circle", Repeat = 40,
+            Motions = [new() { Property = "x", Mode = "set", Expression = "u" }] });
+        using var _ = catalog;
+        var back = PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project));
+        var e = back.Video!.Scenes[0].Elements[0];
+        Assert.Equal(40, e.Repeat);
+        Assert.Equal("set", e.Motions[0].Mode);
+    }
+}

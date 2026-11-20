@@ -316,7 +316,32 @@ public sealed partial class FunctionPlot
             ["atan"] = Math.Atan, ["arctan"] = Math.Atan, ["arctg"] = Math.Atan, ["sinh"] = Math.Sinh, ["cosh"] = Math.Cosh, ["tanh"] = Math.Tanh,
             ["sqrt"] = Math.Sqrt, ["raiz"] = Math.Sqrt, ["abs"] = Math.Abs, ["ln"] = Math.Log, ["log"] = Math.Log10, ["exp"] = Math.Exp,
             ["floor"] = Math.Floor, ["piso"] = Math.Floor, ["ceil"] = Math.Ceiling, ["teto"] = Math.Ceiling, ["round"] = Math.Round, ["sign"] = v => Math.Sign(v), ["sinal"] = v => Math.Sign(v),
+            // #1004 (procedural motion): the fraction, a clamp to 0–1, a smooth step, a deterministic random number and smooth noise
+            ["fract"] = v => v - Math.Floor(v), ["sat"] = Saturate, ["smooth"] = v => { v = Saturate(v); return v * v * (3 - 2 * v); },
+            ["rand"] = Random01, ["noise"] = Noise,
         };
+
+        private static double Saturate(double v) => double.IsNaN(v) ? 0 : Math.Clamp(v, 0, 1);
+
+        /// <summary>A number in [0, 1) that depends only on <paramref name="v"/> (the same in every frame and on every machine).</summary>
+        public static double Random01(double v)
+        {
+            if (!double.IsFinite(v)) return 0;
+            var h = (ulong)BitConverter.DoubleToInt64Bits(Math.Round(v, 6) + 0.0);
+            h ^= h >> 33; h *= 0xff51afd7ed558ccdUL; h ^= h >> 33; h *= 0xc4ceb9fe1a85ec53UL; h ^= h >> 33;
+            return (h >> 11) * (1.0 / (1UL << 53));
+        }
+
+        /// <summary>Smooth value noise in [0, 1): random at whole numbers, eased between them.</summary>
+        public static double Noise(double v)
+        {
+            if (!double.IsFinite(v)) return 0;
+            var i = Math.Floor(v);
+            var f = v - i;
+            f = f * f * (3 - 2 * f);
+            var a = Random01(i);
+            return a + (Random01(i + 1) - a) * f;
+        }
 
         private static readonly Dictionary<string, double> Constants = new(StringComparer.OrdinalIgnoreCase) { ["pi"] = Math.PI, ["π"] = Math.PI, ["e"] = Math.E, ["tau"] = Math.Tau };
 

@@ -168,6 +168,11 @@ public sealed record VideoElement
     /// parent's scale, rotation and opacity apply to it too. Hidden while the parent is.
     /// </summary>
     public string? Parent { get; init; }
+    /// <summary>
+    /// #1004: how many instances of this element are drawn (1 to <see cref="VideoProcedural.MaxRepeat"/>); its motions
+    /// see i, n and u, so each instance can sit, move and fade on its own. A repeated element is not a parent.
+    /// </summary>
+    public int Repeat { get; init; } = 1;
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -192,11 +197,15 @@ public sealed record VideoKeyframe
     public string Easing { get; init; } = "easeInOut";
 }
 
-/// <summary>Animation by a function of t (seconds in the scene), added to the property: "0.02*sin(2*pi*t)".</summary>
+/// <summary>
+/// Animation by a formula of t (seconds in the scene), added to the property: "0.02*sin(2*pi*t)". In a repeated element
+/// it also sees i, n and u (<see cref="VideoProcedural"/>); <see cref="Mode"/> "set" makes it the value instead.
+/// </summary>
 public sealed record VideoMotion
 {
     public string Property { get; init; } = "y";
     public string Expression { get; init; } = "0";
+    public string Mode { get; init; } = "add";
 }
 
 /// <summary>A sound file of the vault placed on the timeline: voice, music or effect.</summary>
@@ -270,12 +279,15 @@ public static class VideoCompositionRules
                         throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
                     if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
                 }
+                if (e.Repeat < 1 || e.Repeat > VideoProcedural.MaxRepeat)
+                    throw Bad("repeat de " + e.Id + " é " + e.Repeat + "; de 1 a " + VideoProcedural.MaxRepeat + " instâncias por elemento (mais delas: outro elemento)");
                 foreach (var m in e.Motions)
                 {
                     if (m is null || !VideoKeyframe.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512)
                         throw Bad("movimento de " + e.Id + ": propriedade \"" + m?.Property + "\" (animáveis: " + string.Join(", ", VideoKeyframe.Properties) + ") e expressão de até 512 caracteres");
-                    try { FunctionPlot.Expression.Parse(m.Expression, "t"); }
-                    catch (FormatException ex) { throw Bad("movimento " + m.Expression + ": " + ex.Message); }
+                    if (!VideoProcedural.Modes.Contains(m.Mode)) throw Bad("movimento de " + e.Id + ": mode \"" + m.Mode + "\"; use add (soma ao valor) ou set (vira o valor)");
+                    try { VideoProcedural.Check(m.Expression); }
+                    catch (FormatException ex) { throw Bad("movimento de " + e.Id + " \"" + m.Expression + "\": " + ex.Message + " (variáveis: t, i, n, u; funções: sin, cos, sqrt, abs, exp, floor, fract, sat, smooth, rand, noise…)"); }
                 }
             }
             // a parent is another element of the same scene, and following parents never comes back to the start
@@ -285,6 +297,8 @@ public static class VideoCompositionRules
                 var seen = new HashSet<string>(StringComparer.Ordinal) { e.Id };
                 for (var p = e.Parent; p is not null; p = byId[p].Parent)
                     if (!byId.ContainsKey(p) || !seen.Add(p)) throw Bad("o pai " + p + " de " + e.Id + " não existe na cena ou forma um ciclo");
+                if (e.Parent is { } parent && byId[parent].Repeat > 1)
+                    throw Bad("o pai " + parent + " de " + e.Id + " tem repeat: um elemento repetido não é pai (repita o filho, ou use um grupo como pai)");
             }
         }
         foreach (var clip in video.Audio)
