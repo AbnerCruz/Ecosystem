@@ -268,4 +268,32 @@ public sealed class VideoProceduralTests
         var error = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project)).Message;
         Assert.True(error.Contains("glow") || error.Contains("gradient"), error);
     }
+
+    [Fact]
+    public void ASceneCameraPansZoomsAndTurnsAndIsChecked()
+    {
+        var (catalog, project) = Scene(new VideoElement { Id = "a", Kind = "shape", Text = "rect" });
+        using var _ = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Camera = new VideoCamera
+            {
+                Keyframes = [new() { Property = "zoom", Time = 0, Value = 1 }, new() { Property = "zoom", Time = 2, Value = 2, Easing = "linear" }],
+                Motions = [new() { Property = "x", Expression = "0.1*t" }]
+            }
+        };
+        project = project with { Video = project.Video.WithScene(scene) };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.Null(timeline.Evaluate(0).Layers[0].Camera);   // at the start it is the whole frame
+        var cam = timeline.Evaluate(1).Layers[0].Camera!;
+        Assert.Equal((0.6, 0.5, 1.5, 0.0), (cam.X, cam.Y, cam.Zoom, cam.Rotation));
+        Assert.NotEqual(timeline.Evaluate(1).Layers[0].StateKey, timeline.Evaluate(1.5).Layers[0].StateKey);
+        Assert.NotNull(PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project)).Video!.Scenes[0].Camera);
+
+        var bad = project with { Video = project.Video.WithScene(scene with { Camera = new VideoCamera { Keyframes = [new() { Property = "scale", Time = 0, Value = 2 }] } }) };
+        Assert.Contains("câmera", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(bad)).Message);
+        var zero = project with { Video = project.Video.WithScene(scene with { Camera = new VideoCamera { Keyframes = [new() { Property = "zoom", Time = 0, Value = 0 }] } }) };
+        Assert.Contains("zoom", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(zero)).Message);
+    }
 }

@@ -85,6 +85,16 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawRect(0, 0, w, h, paint);
         }
         else canvas.Clear(Color(layer.Scene.Scene.Background, SKColors.Black));
+        // #1004 slice 4: the camera moves what is drawn after the background (which stays)
+        int cameraRestore = canvas.SaveCount;
+        if (layer.Camera is { } cam)
+        {
+            canvas.Save();
+            canvas.Translate(w / 2f, h / 2f);
+            canvas.Scale((float)cam.Zoom);
+            if (cam.Rotation != 0) canvas.RotateDegrees((float)-cam.Rotation);
+            canvas.Translate((float)(-cam.X * w), (float)(-cam.Y * h));
+        }
         foreach (var e in layer.Elements)
         {
             if (e.Opacity <= 0 || e.Scale <= 0) continue;
@@ -111,6 +121,7 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.Restore();
             FinishEffects(canvas, e, restoreTo, w, h);
         }
+        canvas.RestoreToCount(cameraRestore);
         return surface.Snapshot();
     }
 
@@ -321,7 +332,7 @@ public sealed class VideoFrameRenderer : IDisposable
             using var shader = SKShader.CreateLinearGradient(new SKPoint(0, cy - half), new SKPoint(0, cy + half),
                 [Color(e.Color, SKColors.White), Color(to, SKColors.White)], SKShaderTileMode.Clamp);
             using var paint = new SKPaint { Shader = shader, BlendMode = SKBlendMode.SrcIn };
-            canvas.DrawRect(0, 0, w, h, paint);
+            canvas.DrawPaint(paint);
         }
         canvas.RestoreToCount(restoreTo);
     }

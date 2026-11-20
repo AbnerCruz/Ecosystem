@@ -61,7 +61,14 @@ public sealed record VideoParentFrame(double X, double Y, double Scale, double R
 /// A scene drawn at one instant. <see cref="StateKey"/> is equal for two instants that look the same (a still
 /// scene, or one whose animations ended), so a rendered layer is reused instead of drawn again.
 /// </summary>
-public sealed record VideoLayer(VideoTimelineScene Scene, double Opacity, double LocalTime, IReadOnlyList<VideoElementState> Elements, string StateKey);
+public sealed record VideoLayer(VideoTimelineScene Scene, double Opacity, double LocalTime, IReadOnlyList<VideoElementState> Elements, string StateKey,
+    VideoCameraState? Camera = null);
+
+/// <summary>#1004 slice 4: the camera at one instant: the frame point at the centre, the zoom and the rotation.</summary>
+public sealed record VideoCameraState(double X, double Y, double Zoom, double Rotation)
+{
+    public bool IsStill => Math.Abs(X - 0.5) < 1e-9 && Math.Abs(Y - 0.5) < 1e-9 && Math.Abs(Zoom - 1) < 1e-9 && Math.Abs(Rotation) < 1e-9;
+}
 
 /// <summary>What the video shows at a time: scene layers bottom to top, and the subtitle over them.</summary>
 public sealed record VideoFrame(double Time, IReadOnlyList<VideoLayer> Layers, string? Subtitle);
@@ -167,7 +174,9 @@ public sealed class VideoTimeline
                   .Append(';').Append(F(s.Width)).Append(';').Append(F(s.Height));
                 if (s.Effects is { } fx) sb.Append(";fx").Append(F(fx.Glow)).Append(';').Append(F(fx.Shadow)).Append(';').Append(F(fx.Blur));
             }
-            layers.Add(new VideoLayer(scene, opacity, local, states, Hash(sb.ToString())));
+            var camera = Camera(scene.Scene.Camera, local);
+            if (camera is not null) sb.Append("|cam").Append(F(camera.X)).Append(';').Append(F(camera.Y)).Append(';').Append(F(camera.Zoom)).Append(';').Append(F(camera.Rotation));
+            layers.Add(new VideoLayer(scene, opacity, local, states, Hash(sb.ToString()), camera));
         }
         string? subtitle = BurnSubtitles ? Cues.LastOrDefault(c => t >= c.Start && t < c.End)?.Text : null;
         return new VideoFrame(t, layers, subtitle);
@@ -267,6 +276,26 @@ public sealed class VideoTimeline
             Effects = new VideoEffects(Math.Clamp(Value("glow", e.Glow), 0, 0.2), e.GlowColor, Math.Clamp(Value("shadow", e.Shadow), 0, 0.2),
                 Math.Clamp(Value("blur", e.Blur), 0, 0.2), e.Gradient) is { Any: true } fx ? fx : null
         };
+    }
+
+    /// <summary>The camera at <paramref name="local"/> seconds into its scene; null when it stays on the whole frame.</summary>
+    public static VideoCameraState? Camera(VideoCamera? camera, double local)
+    {
+        if (camera is null || camera.Keyframes.Count == 0 && camera.Motions.Count == 0) return null;
+        double Value(string property, double baseValue)
+        {
+            var frames = camera.Keyframes.Where(k => k.Property == property).OrderBy(k => k.Time).ToList();
+            var v = frames.Count == 0 ? baseValue : Interpolate(frames, local);
+            foreach (var m in camera.Motions)
+                if (m.Property == property)
+                {
+                    var x = VideoProcedural.Evaluate(m.Expression, local);
+                    v = m.Mode == "set" ? x : v + x;
+                }
+            return v;
+        }
+        var state = new VideoCameraState(Value("x", 0.5), Value("y", 0.5), Math.Clamp(Value("zoom", 1), 0.05, 50), Value("rotation", 0));
+        return state.IsStill ? null : state;
     }
 
     /// <summary>The value at <paramref name="t"/> between keyframes (held before the first and after the last).</summary>

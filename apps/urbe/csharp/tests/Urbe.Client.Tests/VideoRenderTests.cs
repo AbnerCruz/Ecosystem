@@ -502,4 +502,30 @@ public sealed class VideoRenderTests
             File.WriteAllBytes(Path.Combine(dir, "video-efeitos.png"), data.ToArray());
         }
     }
+
+    /// <summary>#1004 slice 4: zooming the camera on a box makes it fill more of the frame; panning moves it the other way.</summary>
+    [Fact]
+    public void TheCameraZoomsAndPans()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 1);
+        using var _c = catalog;
+        var box = new VideoElement { Id = "b", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.2, Height = 0.2, Color = "#ff0000" };
+        int RedWith(VideoCamera? camera, out SKBitmap frame)
+        {
+            var scene = project.Video!.Scenes[0] with { Background = "#000000", Elements = [box], Camera = camera };
+            using var r = new VideoFrameRenderer(VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog));
+            frame = r.Render(0.5);
+            int n = 0;
+            for (int x = 0; x < frame.Width; x++) for (int y = 0; y < frame.Height; y++) if (Reddish(frame.GetPixel(x, y))) n++;
+            return n;
+        }
+        int still = RedWith(null, out var a);
+        int zoomed = RedWith(new VideoCamera { Keyframes = [new() { Property = "zoom", Time = 0, Value = 2 }] }, out var b);
+        Assert.InRange(zoomed / (double)still, 3.5, 4.5);   // twice as close: four times the area
+        RedWith(new VideoCamera { Keyframes = [new() { Property = "x", Time = 0, Value = 0.7 }] }, out var c);
+        // looking right of the box moves it left
+        Assert.True(Reddish(c.GetPixel((int)(0.25 * c.Width), c.Height / 2)));
+        Assert.False(Reddish(c.GetPixel(c.Width / 2 + 5, c.Height / 2)));
+        a.Dispose(); b.Dispose(); c.Dispose();
+    }
 }

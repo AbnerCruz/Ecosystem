@@ -94,6 +94,8 @@ public sealed record VideoScene
     public VideoTransition Transition { get; init; } = new();
     public string Background { get; init; } = "#101418";
     public List<VideoElement> Elements { get; init; } = [];
+    /// <summary>#1004 slice 4: the scene's camera (pan, zoom, rotation over time); null is a still camera on the whole frame.</summary>
+    public VideoCamera? Camera { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -226,6 +228,18 @@ public sealed record VideoMotion
     public string Mode { get; init; } = "add";
 }
 
+/// <summary>
+/// #1004 slice 4: where a scene's camera looks — x and y (the frame point at the centre, 0.5 is the middle), zoom
+/// (1 is the whole frame, 2 twice as close) and rotation (degrees) — animated by keyframes and motions like an element.
+/// The background stays; the elements move under the camera.
+/// </summary>
+public sealed record VideoCamera
+{
+    public static readonly string[] Properties = ["x", "y", "zoom", "rotation"];
+    public List<VideoKeyframe> Keyframes { get; init; } = [];
+    public List<VideoMotion> Motions { get; init; } = [];
+}
+
 /// <summary>A sound file of the vault placed on the timeline: voice, music or effect.</summary>
 public sealed record VideoAudioClip
 {
@@ -316,6 +330,24 @@ public static class VideoCompositionRules
                     if (!VideoProcedural.Modes.Contains(m.Mode)) throw Bad("movimento de " + e.Id + ": mode \"" + m.Mode + "\"; use add (soma ao valor) ou set (vira o valor)");
                     try { VideoProcedural.Check(m.Expression); }
                     catch (FormatException ex) { throw Bad("movimento de " + e.Id + " \"" + m.Expression + "\": " + ex.Message + " (variáveis: t, i, n, u; funções: sin, cos, sqrt, abs, exp, floor, fract, sat, smooth, rand, noise…)"); }
+                }
+            }
+            if (scene.Camera is { } camera)
+            {
+                if (camera.Keyframes is null || camera.Motions is null || camera.Keyframes.Count > 1024 || camera.Motions.Count > 16) throw Bad("câmera da cena " + scene.Id);
+                foreach (var k in camera.Keyframes)
+                {
+                    if (k is null || !VideoCamera.Properties.Contains(k.Property))
+                        throw Bad("keyframe da câmera de " + scene.Id + " anima \"" + k?.Property + "\"; a câmera anima " + string.Join(", ", VideoCamera.Properties));
+                    if (!VideoKeyframe.IsEasing(k.Easing) || !Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe da câmera de " + scene.Id + ": tempo, valor e curva");
+                    if (k.Property == "zoom" && k.Value <= 0) throw Bad("zoom da câmera de " + scene.Id + " precisa ser maior que 0 (1 é o quadro inteiro)");
+                }
+                foreach (var m in camera.Motions)
+                {
+                    if (m is null || !VideoCamera.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512 || !VideoProcedural.Modes.Contains(m.Mode))
+                        throw Bad("movimento da câmera de " + scene.Id + ": propriedade (" + string.Join(", ", VideoCamera.Properties) + "), mode add|set e expressão de até 512 caracteres");
+                    try { VideoProcedural.Check(m.Expression); }
+                    catch (FormatException ex) { throw Bad("movimento da câmera de " + scene.Id + " \"" + m.Expression + "\": " + ex.Message); }
                 }
             }
             // a parent is another element of the same scene, and following parents never comes back to the start
