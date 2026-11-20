@@ -18,6 +18,7 @@
 
 - **Um elemento, muitas cópias.** Um elemento do vídeo pode se repetir até 2000 vezes. Cada cópia sabe o próprio número, e as fórmulas de movimento usam isso: estrelas espalhadas, partículas em órbita, grades, ondas e entradas uma depois da outra são um elemento com uma fórmula, e não dezenas de elementos montados à mão.
 - **Texto letra a letra.** Um título ou texto pode ser dividido em letras ou palavras: cada uma entra, sobe, gira ou some no seu tempo, sem sair do lugar dela na frase. É o efeito de tipografia animada dos vídeos de abertura, feito com uma fórmula.
+- **Brilho, sombra, desfoque e gradiente.** Qualquer elemento do vídeo pode brilhar numa cor, projetar sombra, ficar desfocado ou ser pintado em gradiente, e esses efeitos também se animam: um ponto de luz pulsando, um título que entra saindo do desfoque.
 - **Fórmulas mais capazes.** Números aleatórios que saem iguais em todo quadro e em todo aparelho, ruído suave, passos suaves e funções de dois ou três valores (mínimo, máximo, resto, mistura, limite). Uma fórmula pode somar ao movimento ou definir o valor por inteiro.
 - **O Assistente sabe usar.** As instruções de vídeo explicam as cópias e as fórmulas, com exemplo, e a lista de cenas mostra quantas cópias cada elemento tem.
 - **Revisão sem alarme falso.** Partículas que passam da borda de propósito não contam mais como erro; texto repetido continua revisado como texto.

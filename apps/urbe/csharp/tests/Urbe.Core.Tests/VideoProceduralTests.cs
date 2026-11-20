@@ -236,4 +236,36 @@ public sealed class VideoProceduralTests
         using var _ = catalog;
         Assert.Contains("split", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project)).Message);
     }
+
+    [Fact]
+    public void EffectsAreAnimatableAndCheckedAndChangeTheFramesKey()
+    {
+        var (catalog, project) = Scene(new VideoElement
+        {
+            Id = "sol", Kind = "shape", Text = "circle", Width = 0.1, Height = 0.18, Glow = 0.02, GlowColor = "#ffcc00", Gradient = "#ff0000",
+            Motions = [new() { Property = "glow", Expression = "0.02*sin(2*pi*t)" }]
+        });
+        using var _ = catalog;
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        var a = At(timeline, "sol", 0)[0].Effects!;
+        var b = At(timeline, "sol", 0.25)[0].Effects!;
+        Assert.Equal((0.02, "#ffcc00", "#ff0000"), (a.Glow, a.GlowColor, a.Gradient));
+        Assert.Equal(0.04, b.Glow, 9);
+        Assert.NotEqual(timeline.Evaluate(0).Layers[0].StateKey, timeline.Evaluate(0.25).Layers[0].StateKey);
+        var back = PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project)).Video!.Scenes[0].Elements[0];
+        Assert.Equal((0.02, "#ffcc00", "#ff0000"), (back.Glow, back.GlowColor, back.Gradient));
+    }
+
+    [Theory]
+    [InlineData(0.5, null)]
+    [InlineData(-0.1, null)]
+    [InlineData(0.01, "amarelo")]
+    public void ABadEffectIsRefusedSayingWhy(double glow, string? gradient)
+    {
+        var (catalog, project) = Scene(new VideoElement { Id = "s", Kind = "shape", Text = "rect", Glow = glow, Gradient = gradient });
+        using var _ = catalog;
+        var error = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project)).Message;
+        Assert.True(error.Contains("glow") || error.Contains("gradient"), error);
+    }
 }

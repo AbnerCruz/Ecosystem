@@ -450,4 +450,56 @@ public sealed class VideoRenderTests
         Assert.True(Red(half, 0, w / 2) > left * 0.6, "first letters drawn");
         Assert.True(Red(half, w / 2, w) < right * 0.3, "last letters not yet");
     }
+
+    /// <summary>#1004 slice 3: glow lights around the element, blur spreads it, a shadow falls below it, a gradient paints it.</summary>
+    [Fact]
+    public void GlowShadowBlurAndGradientAreDrawn()
+    {
+        var (catalog, project) = Project(resolution: 360, seconds: 1);
+        using var _c = catalog;
+        VideoTimeline Build(VideoElement e)
+        {
+            var scene = project.Video!.Scenes[0] with { Background = "#000000", Elements = [e] };
+            return VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog);
+        }
+        var plain = new VideoElement { Id = "c", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.2, Height = 0.3, Color = "#fefefe" };
+        SKColor At(VideoElement e, double fx, double fy)
+        {
+            using var r = new VideoFrameRenderer(Build(e));
+            using var b = r.Render(0.5);
+            return b.GetPixel((int)(fx * b.Width), (int)(fy * b.Height));
+        }
+        // just outside the right edge of the box: dark without effects, lit by the glow, grey with the blur
+        double edge = 0.5 + 0.1 + 0.02;
+        Assert.True(At(plain, edge, 0.5).Red < 20);
+        Assert.True(At(plain with { Glow = 0.05, GlowColor = "#00ff00" }, edge, 0.5).Green > 60);
+        Assert.True(At(plain with { Blur = 0.03 }, 0.5 + 0.1 + 0.005, 0.5).Red > 20);
+        // below the box and to the right, the shadow is darker than the background only over a light background
+        var light = plain with { Shadow = 0.06 };
+        var mid = At(light, 0.5, 0.5); Assert.True(mid.Red > 240, mid.ToString());
+        // a gradient from white (top) to red (bottom)
+        var g = plain with { Gradient = "#ff0000" };
+        var top = At(g, 0.5, 0.37);
+        var bottom = At(g, 0.5, 0.63);
+        Assert.True(top.Green > 180 && bottom.Green < 80 && bottom.Red > 200, top + " → " + bottom);
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            var scene = project.Video!.Scenes[0] with
+            {
+                Background = "#101018",
+                Elements =
+                [
+                    plain with { Id = "g", X = 0.2, Glow = 0.04, GlowColor = "#59c3ff", Color = "#bfe8ff" },
+                    plain with { Id = "b", X = 0.4, Blur = 0.02, Color = "#ffb347" },
+                    plain with { Id = "s", X = 0.6, Shadow = 0.05, Color = "#f5f5f5" },
+                    plain with { Id = "d", X = 0.8, Gradient = "#8a2be2", Color = "#ff6ec7" },
+                ]
+            };
+            using var r = new VideoFrameRenderer(VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog));
+            using var frame = r.Render(0.5);
+            using var data = frame.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(dir, "video-efeitos.png"), data.ToArray());
+        }
+    }
 }

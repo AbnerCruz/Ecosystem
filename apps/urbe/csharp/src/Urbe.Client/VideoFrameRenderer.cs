@@ -88,7 +88,9 @@ public sealed class VideoFrameRenderer : IDisposable
         foreach (var e in layer.Elements)
         {
             if (e.Opacity <= 0 || e.Scale <= 0) continue;
-            if (e.Split is not null && e.Instance >= 0) { DrawUnit(canvas, e, w, h); continue; }
+            // #1004 slice 3: the element is drawn in a layer of its own, and the layer gets its glow, shadow and blur
+            int restoreTo = e.Effects is { Any: true } fx ? Effects(canvas, e, fx, w, h) : -1;
+            if (e.Split is not null && e.Instance >= 0) { DrawUnit(canvas, e, w, h); FinishEffects(canvas, e, restoreTo, w, h); continue; }
             float bw = (float)(e.Width * w), bh = (float)(e.Height * h);
             canvas.Save();
             canvas.Translate((float)(e.X * w), (float)(e.Y * h));
@@ -107,6 +109,7 @@ public sealed class VideoFrameRenderer : IDisposable
                 default: DrawText(canvas, e.Text, box, (float)(e.FontSize * h), color, e.Kind == "title", e.Kind == "script" ? SKTextAlign.Left : SKTextAlign.Center, e.Progress); break;
             }
             canvas.Restore();
+            FinishEffects(canvas, e, restoreTo, w, h);
         }
         return surface.Snapshot();
     }
@@ -283,6 +286,44 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawText(line, x, y, align, font, paint);
             y += font.Spacing;
         }
+    }
+
+    /// <summary>Opens the element's effect layers; returns the save count to restore to.</summary>
+    private static int Effects(SKCanvas canvas, VideoElementState e, VideoEffects fx, int w, int h)
+    {
+        int restoreTo = canvas.SaveCount;
+        SKImageFilter? filter = null;
+        if (fx.Blur > 0) filter = SKImageFilter.CreateBlur((float)(fx.Blur * h), (float)(fx.Blur * h));
+        if (fx.Glow > 0)
+        {
+            var glow = Color(fx.GlowColor ?? e.Color, SKColors.White).WithAlpha((byte)Math.Round(Math.Clamp(e.Opacity, 0, 1) * 230));
+            // two halos, one tight and one wide, read as light rather than as a smudge
+            var tight = SKImageFilter.CreateDropShadow(0, 0, (float)(fx.Glow * h * 0.35), (float)(fx.Glow * h * 0.35), glow, filter);
+            filter = SKImageFilter.CreateDropShadow(0, 0, (float)(fx.Glow * h), (float)(fx.Glow * h), glow, tight);
+        }
+        if (fx.Shadow > 0)
+            filter = SKImageFilter.CreateDropShadow((float)(fx.Shadow * h * 0.4), (float)(fx.Shadow * h * 0.6), (float)(fx.Shadow * h * 0.6), (float)(fx.Shadow * h * 0.6),
+                new SKColor(0, 0, 0, (byte)Math.Round(Math.Clamp(e.Opacity, 0, 1) * 150)), filter);
+        using (var paint = new SKPaint { ImageFilter = filter }) canvas.SaveLayer(paint);
+        filter?.Dispose();
+        // the gradient is laid over what the element draws, in a layer under the effects
+        if (fx.Gradient is not null) canvas.SaveLayer();
+        return restoreTo;
+    }
+
+    /// <summary>Lays the gradient over the element (only where it drew) and closes its effect layers.</summary>
+    private static void FinishEffects(SKCanvas canvas, VideoElementState e, int restoreTo, int w, int h)
+    {
+        if (restoreTo < 0) return;
+        if (e.Effects?.Gradient is { } to)
+        {
+            float cy = (float)(e.Y * h), half = (float)(e.Height * h * Math.Max(0.001, e.Scale) / 2);
+            using var shader = SKShader.CreateLinearGradient(new SKPoint(0, cy - half), new SKPoint(0, cy + half),
+                [Color(e.Color, SKColors.White), Color(to, SKColors.White)], SKShaderTileMode.Clamp);
+            using var paint = new SKPaint { Shader = shader, BlendMode = SKBlendMode.SrcIn };
+            canvas.DrawRect(0, 0, w, h, paint);
+        }
+        canvas.RestoreToCount(restoreTo);
     }
 
     private sealed record UnitPlace(string Text, float X, float Y, float Size);

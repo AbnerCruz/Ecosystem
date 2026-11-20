@@ -33,7 +33,13 @@ public sealed record VideoTimelineScene(
 public sealed record VideoElementState(
     string Id, string Kind, string Text, string? Source, double X, double Y, double Width, double Height,
     double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize, VideoParentFrame? Parent = null,
-    int Instance = -1, string? Split = null);
+    int Instance = -1, string? Split = null, VideoEffects? Effects = null);
+
+/// <summary>#1004 slice 3: an element's effects at one instant (radii as fractions of the frame's height).</summary>
+public sealed record VideoEffects(double Glow, string? GlowColor, double Shadow, double Blur, string? Gradient)
+{
+    public bool Any => Glow > 0 || Shadow > 0 || Blur > 0 || Gradient is not null;
+}
 
 /// <summary>A parent's place at one instant and the frame's size: what turns a child's offset into frame coordinates.</summary>
 public sealed record VideoParentFrame(double X, double Y, double Scale, double Rotation, double Opacity, int Width, int Height)
@@ -155,9 +161,12 @@ public sealed class VideoTimeline
             var states = States(scene, local);
             var sb = new StringBuilder(scene.ContentKey);
             foreach (var s in states)
+            {
                 sb.Append('|').Append(s.Id).Append('#').Append(s.Instance).Append(';').Append(F(s.X)).Append(';').Append(F(s.Y)).Append(';').Append(F(s.Scale))
                   .Append(';').Append(F(s.Opacity)).Append(';').Append(F(s.Rotation)).Append(';').Append(F(s.Progress))
                   .Append(';').Append(F(s.Width)).Append(';').Append(F(s.Height));
+                if (s.Effects is { } fx) sb.Append(";fx").Append(F(fx.Glow)).Append(';').Append(F(fx.Shadow)).Append(';').Append(F(fx.Blur));
+            }
             layers.Add(new VideoLayer(scene, opacity, local, states, Hash(sb.ToString())));
         }
         string? subtitle = BurnSubtitles ? Cues.LastOrDefault(c => t >= c.Start && t < c.End)?.Text : null;
@@ -253,7 +262,11 @@ public sealed class VideoTimeline
         return new VideoElementState(e.Id, e.Kind, text, e.Source, Value("x", e.X), Value("y", e.Y), Math.Max(0.001, Value("width", e.Width)), Math.Max(0.001, Value("height", e.Height)),
             Math.Max(0, Value("scale", 1)), Math.Clamp(Value("opacity", 1), 0, 1), Value("rotation", 0),
             Math.Clamp(Value("progress", 1), 0, 1),
-            Theme is { } theme && string.Equals(e.Color, VideoThemes.DefaultColor, StringComparison.OrdinalIgnoreCase) ? theme.ColorFor(e.Kind) : e.Color, e.FontSize);
+            Theme is { } theme && string.Equals(e.Color, VideoThemes.DefaultColor, StringComparison.OrdinalIgnoreCase) ? theme.ColorFor(e.Kind) : e.Color, e.FontSize)
+        {
+            Effects = new VideoEffects(Math.Clamp(Value("glow", e.Glow), 0, 0.2), e.GlowColor, Math.Clamp(Value("shadow", e.Shadow), 0, 0.2),
+                Math.Clamp(Value("blur", e.Blur), 0, 0.2), e.Gradient) is { Any: true } fx ? fx : null
+        };
     }
 
     /// <summary>The value at <paramref name="t"/> between keyframes (held before the first and after the last).</summary>

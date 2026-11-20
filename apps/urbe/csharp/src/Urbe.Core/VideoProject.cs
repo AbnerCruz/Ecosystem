@@ -178,6 +178,19 @@ public sealed record VideoElement
     /// the text and moved by the motions with i, n and u, as a repeated element; null draws the text whole.
     /// </summary>
     public string? Split { get; init; }
+    /// <summary>
+    /// #1004 slice 3, effects: glow (a halo of <see cref="GlowColor"/>, or the element's colour), a soft shadow under it
+    /// and blur, each a radius as a fraction of the frame's height (0 is off, at most 0.2); <see cref="Gradient"/> paints
+    /// the element from its colour (top) to this one (bottom).
+    /// </summary>
+    public double Glow { get; init; }
+    public string? GlowColor { get; init; }
+    public double Shadow { get; init; }
+    public double Blur { get; init; }
+    public string? Gradient { get; init; }
+
+    public static bool IsHexColor(string? c) =>
+        c is { Length: 4 or 7 or 9 } && c[0] == '#' && c.Skip(1).All(Uri.IsHexDigit);
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -190,7 +203,7 @@ public sealed record VideoElement
 /// <summary>The value a property reaches at a time; <see cref="Easing"/> shapes the way from the previous keyframe.</summary>
 public sealed record VideoKeyframe
 {
-    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress", "width", "height"];
+    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress", "width", "height", "glow", "shadow", "blur"];
     /// <summary>Named curves; any CSS <c>cubic-bezier(x1, y1, x2, y2)</c> is accepted too (x in 0–1). "back" overshoots and settles.</summary>
     public static readonly string[] Easings = ["linear", "easeIn", "easeOut", "easeInOut", "step", "back"];
 
@@ -290,6 +303,10 @@ public static class VideoCompositionRules
                     if (e.Kind is not ("title" or "text")) throw Bad("split de " + e.Id + ": só title e text se dividem em letras ou palavras");
                     if (e.Repeat != 1) throw Bad("split de " + e.Id + ": o número de instâncias é o de letras ou palavras; tire repeat");
                 }
+                foreach (var (name, v) in new[] { ("glow", e.Glow), ("shadow", e.Shadow), ("blur", e.Blur) })
+                    if (!Finite(v) || v < 0 || v > 0.2) throw Bad(name + " de " + e.Id + " é " + v + "; use de 0 (sem) a 0.2 (fração da altura do quadro)");
+                foreach (var (name, c) in new[] { ("glowColor", e.GlowColor), ("gradient", e.Gradient) })
+                    if (c is not null && !VideoElement.IsHexColor(c)) throw Bad(name + " de " + e.Id + " é \"" + c + "\"; use uma cor #rrggbb");
                 if (e.Repeat < 1 || e.Repeat > VideoProcedural.MaxRepeat)
                     throw Bad("repeat de " + e.Id + " é " + e.Repeat + "; de 1 a " + VideoProcedural.MaxRepeat + " instâncias por elemento (mais delas: outro elemento)");
                 foreach (var m in e.Motions)
