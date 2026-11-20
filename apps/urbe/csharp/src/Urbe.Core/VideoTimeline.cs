@@ -33,7 +33,7 @@ public sealed record VideoTimelineScene(
 public sealed record VideoElementState(
     string Id, string Kind, string Text, string? Source, double X, double Y, double Width, double Height,
     double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize, VideoParentFrame? Parent = null,
-    int Instance = -1, string? Split = null, VideoEffects? Effects = null);
+    int Instance = -1, string? Split = null, VideoEffects? Effects = null, string? Clip = null);
 
 /// <summary>#1004 slice 3: an element's effects at one instant (radii as fractions of the frame's height).</summary>
 public sealed record VideoEffects(double Glow, string? GlowColor, double Shadow, double Blur, string? Gradient)
@@ -289,6 +289,7 @@ public sealed class VideoTimeline
             Math.Clamp(Value("progress", 1), 0, 1),
             Theme is { } theme && string.Equals(e.Color, VideoThemes.DefaultColor, StringComparison.OrdinalIgnoreCase) ? theme.ColorFor(e.Kind) : e.Color, e.FontSize)
         {
+            Clip = e.Clip,
             Effects = new VideoEffects(Math.Clamp(Value("glow", e.Glow), 0, 0.2), e.GlowColor, Math.Clamp(Value("shadow", e.Shadow), 0, 0.2),
                 Math.Clamp(Value("blur", e.Blur), 0, 0.2), e.Gradient) is { Any: true } fx ? fx : null
         };

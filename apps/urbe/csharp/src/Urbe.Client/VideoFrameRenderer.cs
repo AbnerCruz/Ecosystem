@@ -98,9 +98,18 @@ public sealed class VideoFrameRenderer : IDisposable
         foreach (var e in layer.Elements)
         {
             if (e.Opacity <= 0 || e.Scale <= 0) continue;
+            // #1004 slice 3b: an element clipped to a shape shows only inside it, where the shape is now
+            int clipRestore = canvas.SaveCount;
+            if (e.Clip is { } clipId && layer.Elements.FirstOrDefault(m => m.Id == clipId) is { } mask)
+            {
+                canvas.Save();
+                using var path = ClipPath(mask, w, h);
+                canvas.ClipPath(path, SKClipOperation.Intersect, antialias: true);
+            }
+            else if (e.Clip is not null) continue;   // the shape is not on screen now: nothing of the element shows
             // #1004 slice 3: the element is drawn in a layer of its own, and the layer gets its glow, shadow and blur
             int restoreTo = e.Effects is { Any: true } fx ? Effects(canvas, e, fx, w, h) : -1;
-            if (e.Split is not null && e.Instance >= 0) { DrawUnit(canvas, e, w, h); FinishEffects(canvas, e, restoreTo, w, h); continue; }
+            if (e.Split is not null && e.Instance >= 0) { DrawUnit(canvas, e, w, h); FinishEffects(canvas, e, restoreTo, w, h); canvas.RestoreToCount(clipRestore); continue; }
             float bw = (float)(e.Width * w), bh = (float)(e.Height * h);
             canvas.Save();
             canvas.Translate((float)(e.X * w), (float)(e.Y * h));
@@ -120,6 +129,7 @@ public sealed class VideoFrameRenderer : IDisposable
             }
             canvas.Restore();
             FinishEffects(canvas, e, restoreTo, w, h);
+            canvas.RestoreToCount(clipRestore);
         }
         canvas.RestoreToCount(cameraRestore);
         return surface.Snapshot();
@@ -297,6 +307,21 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawText(line, x, y, align, font, paint);
             y += font.Spacing;
         }
+    }
+
+    /// <summary>The outline of a clip shape at its current place, size, turn and progress (a growing rect reveals left to right).</summary>
+    private static SKPath ClipPath(VideoElementState m, int w, int h)
+    {
+        float bw = (float)(m.Width * w), bh = (float)(m.Height * h);
+        var box = new SKRect(-bw / 2, -bh / 2, -bw / 2 + bw * (float)Math.Clamp(m.Progress, 0, 1), bh / 2);
+        var path = new SKPath();
+        if ((m.Text ?? "").Trim().ToLowerInvariant() is "ellipse" or "elipse" or "circle" or "circulo" or "círculo") path.AddOval(box);
+        else path.AddRect(box);
+        var matrix = SKMatrix.CreateScale((float)m.Scale, (float)m.Scale);
+        if (m.Rotation != 0) matrix = matrix.PostConcat(SKMatrix.CreateRotationDegrees((float)m.Rotation));
+        matrix = matrix.PostConcat(SKMatrix.CreateTranslation((float)(m.X * w), (float)(m.Y * h)));
+        path.Transform(matrix);
+        return path;
     }
 
     /// <summary>Opens the element's effect layers; returns the save count to restore to.</summary>

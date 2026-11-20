@@ -185,11 +185,19 @@ public sealed record VideoElement
     /// and blur, each a radius as a fraction of the frame's height (0 is off, at most 0.2); <see cref="Gradient"/> paints
     /// the element from its colour (top) to this one (bottom).
     /// </summary>
+    /// <summary>
+    /// #1004 slice 3b: the id of a shape (rect, ellipse or circle) of the same scene: this element shows only inside it.
+    /// The shape keeps moving by its own keyframes and formulas, so an invisible one (opacity 0) that grows is a reveal.
+    /// </summary>
+    public string? Clip { get; init; }
     public double Glow { get; init; }
     public string? GlowColor { get; init; }
     public double Shadow { get; init; }
     public double Blur { get; init; }
     public string? Gradient { get; init; }
+
+    /// <summary>The shapes an element can be clipped to.</summary>
+    public static readonly string[] ClipShapes = ["rect", "retangulo", "retângulo", "ellipse", "elipse", "circle", "circulo", "círculo"];
 
     public static bool IsHexColor(string? c) =>
         c is { Length: 4 or 7 or 9 } && c[0] == '#' && c.Skip(1).All(Uri.IsHexDigit);
@@ -357,6 +365,13 @@ public static class VideoCompositionRules
                 var seen = new HashSet<string>(StringComparer.Ordinal) { e.Id };
                 for (var p = e.Parent; p is not null; p = byId[p].Parent)
                     if (!byId.ContainsKey(p) || !seen.Add(p)) throw Bad("o pai " + p + " de " + e.Id + " não existe na cena ou forma um ciclo");
+                if (e.Clip is { } clip)
+                {
+                    if (!byId.TryGetValue(clip, out var mask) || clip == e.Id)
+                        throw Bad("clip de " + e.Id + " é \"" + clip + "\": use o id de outra forma da mesma cena");
+                    if (mask.Kind != "shape" || !VideoElement.ClipShapes.Contains((mask.Text ?? "").Trim().ToLowerInvariant()) || mask.Repeat > 1)
+                        throw Bad("clip de " + e.Id + ": " + clip + " precisa ser uma forma rect, ellipse ou circle sem repeat");
+                }
                 if (e.Parent is { } parent && (byId[parent].Repeat > 1 || byId[parent].Split is not null))
                     throw Bad("o pai " + parent + " de " + e.Id + " tem repeat: um elemento repetido não é pai (repita o filho, ou use um grupo como pai)");
             }

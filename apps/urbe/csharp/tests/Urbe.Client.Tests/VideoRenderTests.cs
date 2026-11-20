@@ -528,4 +528,31 @@ public sealed class VideoRenderTests
         Assert.False(Reddish(c.GetPixel(c.Width / 2 + 5, c.Height / 2)));
         a.Dispose(); b.Dispose(); c.Dispose();
     }
+
+    /// <summary>#1004 slice 3b: an invisible rect that grows reveals a red bar from left to right; outside it nothing shows.</summary>
+    [Fact]
+    public void AClipRevealsTheElementOnlyInsideTheShape()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 2);
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Background = "#000000",
+            Elements =
+            [
+                new VideoElement { Id = "m", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.8, Height = 0.4, Color = "#00ff00",
+                    Keyframes = [new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 1, Value = 1, Easing = "linear" }] },
+                new VideoElement { Id = "barra", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.8, Height = 0.2, Color = "#ff0000", Clip = "m" }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        using var r = new VideoFrameRenderer(VideoTimeline.Build(project, catalog));
+        using var half = r.Render(0.5);
+        using var whole = r.Render(1.5);
+        int y = half.Height / 2;
+        Assert.True(Reddish(half.GetPixel((int)(0.2 * half.Width), y)));
+        Assert.False(Reddish(half.GetPixel((int)(0.8 * half.Width), y)));
+        Assert.True(Reddish(whole.GetPixel((int)(0.8 * whole.Width), y)));
+        Assert.False(half.GetPixel((int)(0.2 * half.Width), (int)(0.35 * half.Height)).Green > 100);   // the mask itself is invisible
+    }
 }

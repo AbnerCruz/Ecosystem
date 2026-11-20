@@ -329,4 +329,26 @@ public sealed class VideoProceduralTests
         var (x, y) = cam.Unapply(shown.X, shown.Y, timeline.Width, timeline.Height);
         Assert.Equal((0.5, 0.5), (Math.Round(x, 9), Math.Round(y, 9)));
     }
+
+    [Fact]
+    public void AClipIsAShapeOfTheSceneAndIsCarriedToTheFrame()
+    {
+        var (catalog, project) = Scene(
+            new VideoElement { Id = "mascara", Kind = "shape", Text = "rect", Width = 0.5, Height = 0.3 },
+            new VideoElement { Id = "titulo", Kind = "title", Clip = "mascara" });
+        using var _ = catalog;
+        PublicationProjectCodec.Validate(project);
+        Assert.Equal("mascara", At(VideoTimeline.Build(project, catalog), "titulo", 1)[0].Clip);
+        Assert.Equal("mascara", PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project)).Video!.Scenes[0].Elements[1].Clip);
+        foreach (var bad in new[]
+        {
+            Scene(new VideoElement { Id = "t", Kind = "title", Clip = "nada" }),
+            Scene(new VideoElement { Id = "t", Kind = "title", Clip = "t" }),
+            Scene(new VideoElement { Id = "seta", Kind = "shape", Text = "arrow" }, new VideoElement { Id = "t", Kind = "title", Clip = "seta" }),
+        })
+        {
+            using var c = bad.Catalog;
+            Assert.Contains("clip", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(bad.Project)).Message);
+        }
+    }
 }
