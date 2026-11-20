@@ -34,7 +34,8 @@
   ],
   "work_completed": [
     "#956 (qualidade visual): temas de vídeo prontos (noite, quadro, papel, neon, sobrio) com fundo em gradiente, cor de texto, duas cores de diagrama e legendas; aplicam-se ao que mantém a cor e o fundo padrão; a revisão de contraste mede contra o fundo do tema; Estúdio → Tema do vídeo; o schema do Assistente pede sempre um tema e o exemplo deixou de fixar cores; o vídeo de exemplo usa o tema Noite.",
-    "#956: layouts de cena compostos (abertura, topico, comparacao, numero, formula, grafico, citacao) com posições na área segura, acima da legenda, e entradas animadas escalonadas; edit_video_scene aceita layout + slots; a revisão de contraste mistura formas translúcidas com o fundo."
+    "#956: layouts de cena compostos (abertura, topico, comparacao, numero, formula, grafico, citacao) com posições na área segura, acima da legenda, e entradas animadas escalonadas; edit_video_scene aceita layout + slots; a revisão de contraste mistura formas translúcidas com o fundo.",
+    "Estúdio: Objeto → Cena pronta (layout) monta a cena com um layout e pede só o conteúdo (o título vem da nota); vídeos novos começam com o tema Noite."
   ],
   "verification": [
     {
@@ -54,6 +55,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "EveryLayoutPassesTheMeasuredReview: 7 layouts em 5 temas sem nenhum problema na revisão medida com o texto real."
+    },
+    {
+      "check": "Cena pronta pelo Estúdio",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PublicationVideo_ASceneIsComposedWithAReadyLayout: Objeto → Cena pronta → Número em destaque → conteúdo digitado → elementos titulo/numero/legenda na cena; captura estudio-cena-pronta.png."
     }
   ],
   "known_issues": [

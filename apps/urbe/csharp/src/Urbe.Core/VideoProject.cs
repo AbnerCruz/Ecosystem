@@ -51,7 +51,8 @@ public sealed record VideoComposition
     public static PublicationProject Synced(PublicationProject project, Func<PublicationSourceReference, string?>? script = null)
     {
         ArgumentNullException.ThrowIfNull(project);
-        var video = project.Video ?? new VideoComposition();
+        // a new video starts with a finished look (the person or the Assistente changes it); old ones keep theirs
+        var video = project.Video ?? new VideoComposition { Theme = "noite" };
         var byPlacement = new Dictionary<string, VideoScene>(StringComparer.Ordinal);
         foreach (var scene in video.Scenes)
             byPlacement.TryAdd(scene.PlacementId, scene);

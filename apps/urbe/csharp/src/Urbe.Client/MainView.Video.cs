@@ -49,6 +49,38 @@ public sealed partial class MainView
     private bool SameVideoDraft(PublicationDraft? draft) =>
         draft is not null && ReferenceEquals(_publicationDraft, draft) && ReferenceEquals(_store, draft.Store) && _publicationsStudio?.IsVisible == true;
 
+    /// <summary>
+    /// #956: a composed layout for a scene: the person chooses it and types only the content (the title starts as the
+    /// scene note's). It replaces the scene's objects; Desfazer brings them back.
+    /// </summary>
+    private async Task ApplyPublicationVideoLayoutAsync(string sceneId, PublicationDraft? draft)
+    {
+        var pick = await Dialogs.ChooseAsync("Cena pronta", VideoLayouts.All.Select(l => new DialogItem(l.Label, Detail: l.Description)).ToList());
+        if (pick is not { } i || !SameVideoDraft(draft)) return;
+        var layout = VideoLayouts.All[i];
+        var title = _publicationsStudio?.VideoPanel.Timeline?.Scenes.FirstOrDefault(s => s.Scene.Id == sceneId)?.Title;
+        static string Label(string slot) => slot switch
+        {
+            "titulo" => "Título", "subtitulo" => "Subtítulo", "texto" => "Texto", "esquerda" => "Lado esquerdo", "direita" => "Lado direito",
+            "numero" => "Número", "legenda" => "Legenda do número", "formula" => "Fórmula (TeX)", "nota" => "Nota", "grafico" => "Função (como y = sin(x))",
+            "autor" => "Autor", _ => slot
+        };
+        var slots = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var slot in layout.Required.Concat(layout.Optional))
+        {
+            bool required = layout.Required.Contains(slot);
+            var typed = await Dialogs.PromptAsync(new PromptOptions(layout.Label, Label: Label(slot) + (required ? "" : " (opcional)"),
+                Value: slot == "titulo" ? title ?? "" : "", Confirm: "Seguir",
+                Validate: v => required && string.IsNullOrWhiteSpace(v) ? "Escreva " + Label(slot).ToLowerInvariant() + "." :
+                    v.Length > AssistantPublicationTools.MaxOverlay ? "Na tela cabem até " + AssistantPublicationTools.MaxOverlay + " caracteres; o que é falado fica na nota." : null));
+            if (typed is null || !SameVideoDraft(draft)) return;
+            if (!string.IsNullOrWhiteSpace(typed)) slots[slot] = typed.Trim();
+        }
+        if (_publicationsStudio?.Project is not { Video: { } video } project || video.Scenes.FirstOrDefault(s => s.Id == sceneId) is not { } scene) return;
+        _publicationsStudio.UpdateProject(project with { Video = video.WithScene(scene with { Elements = VideoLayouts.Build(layout.Id, slots, sceneId) }) });
+        ShowLifeNotice("Cena montada com o layout " + layout.Label + ".");
+    }
+
     /// <summary>#956: strokes that draw themselves, the annotations of explainer videos (SVG path data, fitted to the box).</summary>
     internal static readonly (string Label, string Data)[] VideoStrokes =
     [
@@ -68,7 +100,8 @@ public sealed partial class MainView
             new DialogItem("Texto", Detail: "Uma frase na tela"), new DialogItem("Roteiro", Detail: "O texto da nota desta cena"),
             new DialogItem("Forma", Detail: "Retângulo ou elipse"), new DialogItem("Imagem do vault"),
             new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}"),
-            new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela")]);
+            new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela"),
+            new DialogItem("Cena pronta (layout)", Detail: "Abertura, tópico, comparação, número, fórmula, gráfico ou citação, já composta e animada")]);
         if (kind is not { } k) return;
         // every object enters with a short fade; keyframes and motions stay editable in the project
         var fadeIn = new List<VideoKeyframe> { new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "opacity", Time = 0.5, Value = 1, Easing = "easeOut" } };
@@ -114,6 +147,7 @@ public sealed partial class MainView
                     };
                 break;
         }
+        if (k == 7) { await ApplyPublicationVideoLayoutAsync(sceneId, draft); return; }
         if (element is null || !SameVideoDraft(draft) || _publicationsStudio.Project?.Video?.Scenes.FirstOrDefault(s => s.Id == sceneId) is not { } current) return;
         var updated = _publicationsStudio.Project!;
         _publicationsStudio.UpdateProject(updated with { Video = updated.Video!.WithScene(current with { Elements = [.. current.Elements, element] }) });
