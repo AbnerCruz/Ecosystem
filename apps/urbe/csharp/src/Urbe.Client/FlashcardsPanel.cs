@@ -33,7 +33,7 @@ public sealed class FlashcardsPanel : Border
     }
 
     private readonly IHost _host;
-    private readonly TextBlock _title = new() { FontSize = 20, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+    private readonly TextBlock _title = UrbeTokens.Type.Title.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
     private readonly Button _back;
     private readonly ContentControl _body = new();
     private string? _setId;
@@ -45,7 +45,7 @@ public sealed class FlashcardsPanel : Border
     public FlashcardsPanel(IHost host)
     {
         _host = host;
-        Background = UrbeTheme.Brush(UrbeTheme.Bg);
+        Background = UrbeTheme.Brush(UrbeTokens.Color.Background);
         Focusable = true;
         _back = IconButton(UrbeTheme.Icons.Back, "Voltar", () => GoBack());
         var close = IconButton(UrbeTheme.Icons.Close, "Fechar Flashcards", () => _host.Close());
@@ -165,14 +165,14 @@ public sealed class FlashcardsPanel : Border
         var page = new StackPanel { Spacing = 16, Margin = new Thickness(16, 24, 16, 24), MaxWidth = 640 };
         page.Children.Add(new Border
         {
-            Background = UrbeTheme.Brush(UrbeTheme.Surface), CornerRadius = new CornerRadius(12), Padding = new Thickness(20, 28), MinHeight = 160,
+            Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), CornerRadius = new CornerRadius(UrbeTokens.Radius.M), Padding = new Thickness(UrbeTokens.Space.L, UrbeTokens.Space.Xl), MinHeight = 160,
             Child = new StackPanel
             {
                 Spacing = 14,
                 Children =
                 {
-                    new SelectableTextBlock { Text = card.Front, FontSize = 22, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextAlignment = TextAlignment.Center },
-                    new SelectableTextBlock { Text = card.Back, FontSize = 18, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextAlignment = TextAlignment.Center, IsVisible = r.Shown, Name = "verso" },
+                    UrbeTokens.Type.Headline.Apply(new SelectableTextBlock { Text = card.Front, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary), TextAlignment = TextAlignment.Center }),
+                    UrbeTokens.Type.Body.Apply(new SelectableTextBlock { Text = card.Back, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextSecondary), TextAlignment = TextAlignment.Center, IsVisible = r.Shown, Name = "verso" }),
                 }
             }
         });
@@ -189,10 +189,10 @@ public sealed class FlashcardsPanel : Border
                 {
                     Content = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center, Children =
                     {
-                        new TextBlock { Text = names[g], FontWeight = FontWeight.SemiBold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(g == 0 ? UrbeTheme.Danger : UrbeTheme.Text) },
-                        new TextBlock { Text = when[g].Detail, FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
+                        UrbeTokens.Type.Label.Apply(new TextBlock { Text = names[g], HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(g == 0 ? UrbeTokens.Color.Danger : UrbeTokens.Color.TextPrimary) }),
+                        UrbeTokens.Type.Caption.Apply(new TextBlock { Text = when[g].Detail, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextTertiary) })
                     } },
-                    MinHeight = 56, Margin = new Thickness(3), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center
+                    MinHeight = 56, Margin = new Thickness(UrbeTokens.Space.Xxs), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center
                 };
                 Avalonia.Automation.AutomationProperties.SetName(b, names[g]);
                 b.Click += (_, _) => GradeCurrent(grade);
@@ -225,20 +225,20 @@ public sealed class FlashcardsPanel : Border
         Screen = "summary";
         _title.Text = r.Set.Title;
         var page = new StackPanel { Spacing = 12, Margin = new Thickness(16, 32), MaxWidth = 640 };
-        page.Children.Add(new TextBlock { Text = r.Done + (r.Done == 1 ? " cartão revisado" : " cartões revisados"), FontSize = 22, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center });
-        page.Children.Add(new TextBlock { Text = r.Right + " lembrados, " + (r.Done - r.Right) + " para rever", Foreground = UrbeTheme.Brush(UrbeTheme.Text2), HorizontalAlignment = HorizontalAlignment.Center });
+        page.Children.Add(UrbeTokens.Type.Headline.Apply(new TextBlock { Text = r.Done + (r.Done == 1 ? " cartão revisado" : " cartões revisados"), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary), HorizontalAlignment = HorizontalAlignment.Center }));
+        page.Children.Add(UrbeTokens.Type.Callout.Apply(new TextBlock { Text = r.Right + " lembrados, " + (r.Done - r.Right) + " para rever", Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextSecondary), HorizontalAlignment = HorizontalAlignment.Center }));
         page.Children.Add(Primary("Voltar ao conjunto", () => GoBack(), stretch: true));
         _body.Content = page;
     }
 
-    private static TextBlock Caption(string text) => new() { Text = text, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 2, 4, 8) };
+    private static TextBlock Caption(string text) => UrbeTokens.Type.Footnote.Apply(new TextBlock { Text = text, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextSecondary), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(UrbeTokens.Space.Xxs, 0, UrbeTokens.Space.Xxs, UrbeTokens.Space.Xs) });
 
     private static Button Primary(string label, Action click, bool stretch = false)
     {
         var b = new Button
         {
-            Content = new TextBlock { Text = label, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Bg) },
-            Background = UrbeTheme.Brush(UrbeTheme.Accent), MinHeight = 48, Padding = new Thickness(18, 10), Margin = new Thickness(0, 0, 8, 6), CornerRadius = new CornerRadius(10),
+            Content = UrbeTokens.Type.Button.Apply(new TextBlock { Text = label, Foreground = UrbeTheme.Brush(UrbeTokens.Color.OnPrimary) }),
+            Background = UrbeTheme.Brush(UrbeTokens.Color.Primary), MinHeight = UrbeTokens.MinTouch, Padding = new Thickness(UrbeTokens.Space.L, UrbeTokens.Space.S), Margin = new Thickness(0, 0, UrbeTokens.Space.Xs, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
             HorizontalAlignment = stretch ? HorizontalAlignment.Stretch : HorizontalAlignment.Left, HorizontalContentAlignment = HorizontalAlignment.Center
         };
         Avalonia.Automation.AutomationProperties.SetName(b, label);
@@ -250,8 +250,8 @@ public sealed class FlashcardsPanel : Border
     {
         var b = new Button
         {
-            Content = new TextBlock { Text = label, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }, Background = UrbeTheme.Brush(UrbeTheme.Surface2),
-            MinHeight = 48, Padding = new Thickness(16, 10), Margin = new Thickness(0, 0, 8, 6), CornerRadius = new CornerRadius(10)
+            Content = UrbeTokens.Type.Button.Apply(new TextBlock { Text = label, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary) }), Background = UrbeTheme.Brush(UrbeTokens.Color.SurfaceRaised),
+            MinHeight = UrbeTokens.MinTouch, Padding = new Thickness(UrbeTokens.Space.M, UrbeTokens.Space.S), Margin = new Thickness(0, 0, UrbeTokens.Space.Xs, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.M)
         };
         Avalonia.Automation.AutomationProperties.SetName(b, label);
         b.Click += (_, _) => click();
@@ -261,18 +261,18 @@ public sealed class FlashcardsPanel : Border
     private static Button Row(string title, string detail, string? icon, Action click, string name)
     {
         var text = new StackPanel { Spacing = 3 };
-        text.Children.Add(new TextBlock { Text = title, FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis });
-        text.Children.Add(new TextBlock { Text = detail, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis });
+        text.Children.Add(UrbeTokens.Type.BodyStrong.Apply(new TextBlock { Text = title, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary), TextTrimming = TextTrimming.CharacterEllipsis }));
+        text.Children.Add(UrbeTokens.Type.Footnote.Apply(new TextBlock { Text = detail, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextSecondary), TextTrimming = TextTrimming.CharacterEllipsis }));
         var content = new DockPanel();
         if (icon is not null)
         {
-            var glyph = UrbeTheme.Icon(icon, 20, UrbeTheme.Text2);
-            glyph.Margin = new Thickness(0, 0, 12, 0);
+            var glyph = UrbeTheme.Icon(icon, 20, UrbeTokens.Color.TextSecondary);
+            glyph.Margin = new Thickness(0, 0, UrbeTokens.Space.S, 0);
             DockPanel.SetDock(glyph, Dock.Left);
             content.Children.Add(glyph);
         }
         content.Children.Add(text);
-        var b = new Button { Content = content, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, Background = Brushes.Transparent, Padding = new Thickness(10, 8), MinHeight = 56 };
+        var b = new Button { Content = content, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, Background = Brushes.Transparent, Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), MinHeight = 56 };
         Avalonia.Automation.AutomationProperties.SetName(b, name);
         b.Click += (_, _) => click();
         return b;
@@ -280,7 +280,7 @@ public sealed class FlashcardsPanel : Border
 
     private static Button IconButton(string icon, string name, Action click)
     {
-        var b = new Button { Content = UrbeTheme.Icon(icon, 22), Width = 48, Height = 48, Background = Brushes.Transparent, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+        var b = new Button { Content = UrbeTheme.Icon(icon, 22), Width = UrbeTokens.MinTouch, Height = UrbeTokens.MinTouch, Background = Brushes.Transparent, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
         Avalonia.Automation.AutomationProperties.SetName(b, name);
         ToolTip.SetTip(b, name);
         b.Click += (_, _) => click();

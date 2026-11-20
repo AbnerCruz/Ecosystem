@@ -536,7 +536,8 @@ Issue [#1005](https://github.com/AbnerCruz/Ecosystem/issues/1005). Orientação 
 - [ ] Fatia 1, restante: criar/editar cartões ainda em diálogos, conversão de plugin de flashcards antigo (só com autorização), reexecução do prompt da beta.60 com modelo real e métricas comparadas.
 - [~] Fatia 2 — inventário estático de stores e arquivos ([DATA-INVENTORY-20261120.md](DATA-INVENTORY-20261120.md)): `.urbe/`, estado privado e o que o app cria visível no Explorer, com propostas P1–P5 (não decididas).
 - [ ] Fatia 2, restante: medir arquivos produzidos em uso real; P1 (narração fora do Explorer) e as demais propostas, cada uma com teste.
-- [ ] Fatia 3 — tokens do design system e componentes de painel compartilhados; navegação adaptativa.
+- [~] Fatia 3 (início): os tokens já existem (`UrbeTokens`, UC-69); a adoção é o problema (87 cores e 300 tamanhos de fonte escritos à mão no Client). O painel de Flashcards usa só tokens, e um teste-catraca (`DesignTokensRatchetTests`) impede que esses números cresçam.
+- [ ] Fatia 3, restante: levar os painéis aos tokens (baixando a catraca), componentes de painel compartilhados e navegação adaptativa.
 - [~] Fatia 4 (primeiro passo): verificador determinístico pedido × ferramenta (`AssistantIntent`): pedido de flashcards com o recurso nativo disponível recusa `write_plugin`/`plugin_guide` e aponta `create_flashcards`, exceto quando a pessoa pede plugin (`AModelThatReachesForAPluginIsSteeredToTheNativeTool`).
 - [ ] Fatia 4, restante: registry de capacidades e verificação do artefato final contra o pedido.
 - [ ] Validação no aparelho (NN-017): achar Flashcards a partir do Estudo, revisar com o dedo, reabrir o app.
