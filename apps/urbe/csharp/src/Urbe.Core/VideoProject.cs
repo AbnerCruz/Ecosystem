@@ -22,6 +22,8 @@ public sealed record VideoComposition
     public int Fps { get; init; } = 30;
     /// <summary>Subtitles from the script, burned into the frames (and exportable as SRT/VTT).</summary>
     public bool Subtitles { get; init; } = true;
+    /// <summary>A finished look for every scene (<see cref="VideoThemes"/>): noite, quadro, papel, neon or sobrio; null = none.</summary>
+    public string? Theme { get; init; }
     public List<VideoScene> Scenes { get; init; } = [];
     public List<VideoAudioClip> Audio { get; init; } = [];
     /// <summary>#956: what each scene showed in the last MP4 saved (scene ID → <see cref="VideoTimelineScene.ContentKey"/>).</summary>
@@ -230,6 +232,8 @@ public static class VideoCompositionRules
         if (video.Resolution is < VideoComposition.MinHeight or > VideoComposition.MaxHeight) throw Bad("resolução " + video.Resolution);
         if (video.Fps is < 1 or > VideoComposition.MaxFps) throw Bad("quadros por segundo " + video.Fps);
         if (video.Scenes is null || video.Audio is null || video.Scenes.Count > 4096 || video.Audio.Count > 1024) throw Bad("estrutura");
+        if (video.Theme is not null && VideoThemes.Find(video.Theme) is null)
+            throw Bad("tema \"" + video.Theme + "\"; temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)));
         var ids = new HashSet<string>(StringComparer.Ordinal);
         void Id(string? id) { if (string.IsNullOrWhiteSpace(id) || !ids.Add(id)) throw Bad("identidade ausente ou repetida"); }
         static bool Finite(double v) => double.IsFinite(v);

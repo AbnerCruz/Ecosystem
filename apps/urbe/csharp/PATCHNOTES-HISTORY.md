@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.60 — 20/11/2026
+- Painel de etapas da IA com X fixo e páginas (sem travar com centenas de etapas), resumo do raciocínio à vista, e a última nota e conversa voltam só na mesma sessão de uso.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.60
+
 ## 2.0.0-beta.59 — 19/11/2026
 - Integrais certas (a de (1+cos x)² em [0, 2π] dava 8π/3), sem limite de passos, resposta cortada continua sozinha, o Assistente pergunta o formato antes de produzir e monta vídeos cena por cena.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.59

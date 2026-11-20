@@ -26,6 +26,7 @@ public sealed partial class MainView
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
+        studio.VideoThemeRequested += () => _ = ChoosePublicationVideoThemeAsync();
         studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
     }
@@ -152,6 +153,20 @@ public sealed partial class MainView
     /// </summary>
     /// <summary>Plays or pauses the open video publication's preview (the panel's button; emulator tests use it too).</summary>
     public void PlayVideoPreview() => _publicationsStudio?.VideoPanel.TogglePlay();
+
+    /// <summary>#956: a finished look for every scene: background, text, diagram colours and subtitles, at once.</summary>
+    public async Task ChoosePublicationVideoThemeAsync()
+    {
+        var draft = _publicationDraft;
+        if (_publicationsStudio?.Project is not { Video: { } video } project) return;
+        var items = VideoThemes.All.Select(t => new DialogItem(t.Label + (t.Id == video.Theme ? " (atual)" : ""), Detail: "Fundo, texto, diagramas e legendas")).ToList();
+        items.Add(new DialogItem("Sem tema" + (video.Theme is null ? " (atual)" : ""), Detail: "Cada cena com as cores que tiver"));
+        var pick = await Dialogs.ChooseAsync("Tema do vídeo", items);
+        if (pick is not { } i || !SameVideoDraft(draft) || _publicationsStudio.Project is not { Video: { } current } now) return;
+        var theme = i < VideoThemes.All.Count ? VideoThemes.All[i].Id : null;
+        _publicationsStudio.UpdateProject(now with { Video = current with { Theme = theme } });
+        ShowLifeNotice(theme is null ? "Vídeo sem tema." : "Tema " + VideoThemes.All[i].Label + " aplicado às cenas; cores escolhidas à mão continuam.");
+    }
 
     public async Task NarratePublicationVideoAsync()
     {

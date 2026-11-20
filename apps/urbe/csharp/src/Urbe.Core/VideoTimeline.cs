@@ -68,10 +68,10 @@ public sealed class VideoTimeline
     private readonly Dictionary<string, FunctionPlot.Expression> _motions = new(StringComparer.Ordinal);
 
     private VideoTimeline(int width, int height, int fps, IReadOnlyList<VideoTimelineScene> scenes, IReadOnlyList<VideoCue> cues,
-        IReadOnlyList<VideoAudioClip> audio, IReadOnlyList<string> missing, bool subtitles)
+        IReadOnlyList<VideoAudioClip> audio, IReadOnlyList<string> missing, bool subtitles, VideoTheme? theme)
     {
         Width = width; Height = height; Fps = fps; Scenes = scenes; Cues = cues; Audio = audio; MissingDocumentIds = missing;
-        BurnSubtitles = subtitles;
+        BurnSubtitles = subtitles; Theme = theme;
         Duration = scenes.Count == 0 ? 0 : scenes[^1].End;
     }
 
@@ -80,6 +80,8 @@ public sealed class VideoTimeline
     public int Fps { get; }
     public double Duration { get; }
     public bool BurnSubtitles { get; }
+    /// <summary>The video's theme (colours and background of what keeps the defaults), or null.</summary>
+    public VideoTheme? Theme { get; }
     public int FrameCount => (int)Math.Ceiling(Duration * Fps - 1e-6);
     public IReadOnlyList<VideoTimelineScene> Scenes { get; }
     public IReadOnlyList<VideoCue> Cues { get; }
@@ -126,7 +128,7 @@ public sealed class VideoTimeline
             // a crossfade overlaps the previous scene; the first one fades in from black
             double overlap = i == 0 ? 0 : Math.Min(fade, scenes[^1].Duration / 2);
             double start = Math.Max(0, end - overlap);
-            var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height);
+            var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height + "\u0001" + video.Theme);
             var placed = new VideoTimelineScene(scene, placement, start, scene.Duration, fade, title, plain, key);
             scenes.Add(placed);
             // subtitles of a scene start after its entrance and end before the next one's — or with its narration, when known
@@ -135,7 +137,7 @@ public sealed class VideoTimeline
             cues.AddRange(VideoScript.Cues(plain, start + overlap, speechEnd));
             end = placed.End;
         }
-        return new VideoTimeline(width, height, video.Fps, scenes, cues, video.Audio.ToList(), missing, video.Subtitles);
+        return new VideoTimeline(width, height, video.Fps, scenes, cues, video.Audio.ToList(), missing, video.Subtitles, VideoThemes.Find(video.Theme));
     }
 
     public double FrameTime(int index) => index / (double)Fps;
@@ -224,7 +226,8 @@ public sealed class VideoTimeline
         };
         return new VideoElementState(e.Id, e.Kind, text, e.Source, Value("x", e.X), Value("y", e.Y), Math.Max(0.001, Value("width", e.Width)), Math.Max(0.001, Value("height", e.Height)),
             Math.Max(0, Value("scale", 1)), Math.Clamp(Value("opacity", 1), 0, 1), Value("rotation", 0),
-            Math.Clamp(Value("progress", 1), 0, 1), e.Color, e.FontSize);
+            Math.Clamp(Value("progress", 1), 0, 1),
+            Theme is { } theme && string.Equals(e.Color, VideoThemes.DefaultColor, StringComparison.OrdinalIgnoreCase) ? theme.ColorFor(e.Kind) : e.Color, e.FontSize);
     }
 
     private double Motion(string expression, double t)

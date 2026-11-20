@@ -92,7 +92,8 @@ public static class AssistantPublicationTools
         "para substituir um projeto existente, mantendo publicationId. " +
         "Layouts: article e book (capítulos, sumário); slides (cada nota/#/##/--- inicia slide; :::notas vira notas do apresentador); course (cada nota um módulo, " +
         "cada ## uma aula, blocos ```quiz viram questões); video (cada seção é uma cena; o texto da nota é o roteiro e a legenda). " +
-        "Vídeo: campo video {aspect:16:9|9:16|1:1, resolution:144–2160, fps:1–60, subtitles:bool, scenes:[{id, placementId (= id da seção), duration (s), " +
+        "Vídeo: campo video {aspect:16:9|9:16|1:1, resolution:144–2160, fps:1–60, subtitles:bool, theme:noite|quadro|papel|neon|sobrio (escolha sempre um: dá fundo em gradiente, " +
+        "cor de texto, duas cores de diagrama e legendas combinando; elementos sem color e cenas sem background seguem o tema), scenes:[{id, placementId (= id da seção), duration (s), " +
         "transition:{kind:cut|fade, seconds}, background:#rrggbb, elements:[{id, kind:title|text|script|shape|image|plot|math|path|group, text? (rótulo curto, até " +
         "160 caracteres; o roteiro é a nota; em plot a função, em math o TeX, em path os dados de path SVG \"M… L… C… Z\" ajustados à caixa), source? (imagem do vault), " +
         "x,y,width,height (0–1 do quadro), color, fontSize (em path, a espessura do traço), start, end?, parent? (id de outro elemento da cena: x,y viram deslocamento " +
@@ -107,10 +108,10 @@ public static class AssistantPublicationTools
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
         "Monte um vídeo em partes: 1) write_publication só com sources e design {layout:video} (o Urbe cria uma cena por fonte e devolve os ids); " +
         "2) edit_video_scene para cada cena, uma por chamada, com os elementos dela; 3) review_publication e look_at_video; 4) render_video. Nunca mande todas as cenas numa chamada só. " +
-        "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"background\":\"#0b1d33\",\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
+        "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
         "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
-        "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02,\"color\":\"#9ad1ff\"}," +
-        "{\"id\":\"pulso\",\"kind\":\"shape\",\"text\":\"circle\",\"x\":0.3,\"y\":0.6,\"width\":0.03,\"height\":0.053,\"color\":\"#ffd166\",\"motions\":[{\"property\":\"y\",\"expression\":\"0.12*sin(2*pi*t)\"}]}," +
+        "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02}," +
+        "{\"id\":\"pulso\",\"kind\":\"shape\",\"text\":\"circle\",\"x\":0.3,\"y\":0.6,\"width\":0.03,\"height\":0.053,\"motions\":[{\"property\":\"y\",\"expression\":\"0.12*sin(2*pi*t)\"}]}," +
         "{\"id\":\"seta\",\"kind\":\"shape\",\"text\":\"arrow\",\"x\":0.55,\"y\":0.5,\"width\":0.15,\"height\":0.015,\"keyframes\":[{\"property\":\"progress\",\"time\":1,\"value\":0},{\"property\":\"progress\",\"time\":2,\"value\":1}]}," +
         "{\"id\":\"g\",\"kind\":\"plot\",\"text\":\"y = 1/sqrt(1-x^2)\\nx: 0..0.95\\ny: 0..4\",\"x\":0.78,\"y\":0.5,\"width\":0.34,\"height\":0.36,\"keyframes\":[{\"property\":\"progress\",\"time\":1,\"value\":0},{\"property\":\"progress\",\"time\":4,\"value\":1,\"easing\":\"linear\"}]}," +
         "{\"id\":\"f\",\"kind\":\"math\",\"text\":\"\\\\gamma=\\\\frac{1}{\\\\sqrt{1-v^2/c^2}}\",\"x\":0.78,\"y\":0.82,\"width\":0.3,\"height\":0.1}]}. " +

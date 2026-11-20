@@ -67,7 +67,8 @@ public static class VideoInspection
                         else if (f.Scale < 0.5) Add(ReviewSeverity.Error, e.Id, "shrunk", local, Name(e) + " fica pequeno demais para ler: só cabe a " + Math.Round(f.Scale * 100) + " % do tamanho pedido.", "Aumente width/height do elemento ou encurte o texto.");
                         else if (f.Scale < 0.7) Add(ReviewSeverity.Warning, e.Id, "shrunk", local, Name(e) + " só cabe reduzido a " + Math.Round(f.Scale * 100) + " % do tamanho pedido.", "Aumente a caixa ou diminua fontSize para o tamanho real.");
                     }
-                    if (Text.Contains(e.Kind) && Contrast(e, visible.Take(i), layer.Scene.Scene.Background) is { } ratio && ratio < (e.Kind == "title" ? 3 : 4.5))
+                    if (Text.Contains(e.Kind) && Contrast(e, visible.Take(i), timeline.Theme is { } th && string.Equals(layer.Scene.Scene.Background, VideoThemes.DefaultBackground, StringComparison.OrdinalIgnoreCase)
+                        ? th.Bottom : layer.Scene.Scene.Background) is { } ratio && ratio < (e.Kind == "title" ? 3 : 4.5))
                         Add(ReviewSeverity.Warning, e.Id, "contrast", local, Name(e) + " tem contraste " + ratio.ToString("0.0", CultureInfo.GetCultureInfo("pt-BR")) + ":1 com o fundo, abaixo do legível (WCAG: " + (e.Kind == "title" ? "3" : "4,5") + ":1).", "Troque color ou o fundo por cores mais distantes em claridade.");
                     if (subtitle && Text.Contains(e.Kind) && Intersection(b, (0.07 * W, 0.80 * H, 0.93 * W, 0.95 * H)) > 0.02 * Area(b))
                         Add(ReviewSeverity.Warning, e.Id, "subtitle", local, Name(e) + " fica embaixo da legenda.", "Suba o elemento (y abaixo de 0,75) ou desligue subtitles.");
