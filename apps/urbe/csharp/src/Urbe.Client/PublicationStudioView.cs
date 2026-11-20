@@ -69,6 +69,7 @@ public sealed class PublicationStudioView : Border
             Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             if (IsVideo)
             {
+                Item("Tema do vídeo", () => VideoThemeRequested?.Invoke());
                 Item("Exportar vídeo MP4", () => VideoExportRequested?.Invoke());
                 Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke("srt"));
                 Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
@@ -171,6 +172,8 @@ public sealed class PublicationStudioView : Border
     public event Action? AdjustAudioRequested;
     /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
     public event Action? NarrateRequested;
+    /// <summary>#956: choose the video's finished look (VideoThemes).</summary>
+    public event Action? VideoThemeRequested;
     public bool CanNarrate { get; set; }
     public event Action<string>? AddVideoElementRequested;
 

@@ -10,6 +10,61 @@ namespace Urbe.Client.Tests;
 /// <summary>CST-170/209 in the studio: a video publication previewed, timed and exported as a verified MP4.</summary>
 public sealed partial class HeadlessUiTests
 {
+    /// <summary>#956: the person composes a scene with a ready layout from the Estúdio's Objeto button, typing only the content.</summary>
+    [Fact]
+    public async Task PublicationVideo_ASceneIsComposedWithAReadyLayout() =>
+        Assert.True(await Session.Dispatch(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-layout-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Cena.md"), "# Relógios no GPS\n\nOs relógios dos satélites adiantam.\n");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        async Task Pump() { for (int j = 0; j < 12; j++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(15); } }
+        async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
+        async Task Type(string? value, string confirm = "Seguir")
+        {
+            for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any(); j++) await Pump();
+            if (value is not null) view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = value;
+            ClickButtonWithText(view.Dialogs, confirm);
+            await Pump();
+        }
+        try
+        {
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            var create = view.CreatePublicationAsync("Cena.md");
+            Dispatcher.UIThread.RunJobs();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "GPS";
+            ClickButtonWithText(view.Dialogs, "Criar");
+            await create;
+            await Pump();
+            var studio = view.PublicationsStudio;
+            studio.UpdateProject(studio.Project! with { Design = studio.Project.Design with { Layout = "video" } });
+            await Pump();
+            var scene = Assert.Single(studio.Project!.Video!.Scenes);
+            var button = studio.GetLogicalDescendants().OfType<Button>().First(b => (Avalonia.Automation.AutomationProperties.GetName(b) ?? "").StartsWith("Adicionar objeto à cena", StringComparison.Ordinal));
+            button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Choose("Cena pronta (layout)");
+            await Choose("Número em destaque");
+            await Type("38 µs");                       // número
+            await Type("de diferença por dia");        // legenda
+            await Type(null);                          // título: the note's, as offered
+            for (int j = 0; j < 100 && studio.Project!.Video!.Scenes[0].Elements.Count < 3; j++) await Pump();
+            var elements = studio.Project!.Video!.Scenes[0].Elements;
+            Assert.Equal(["titulo", "numero", "legenda"], elements.Select(e => e.Id[(scene.Id.Length + 1)..]));
+            Assert.Equal("Relógios no GPS", elements[0].Text);
+            Assert.Equal("38 µs", elements[1].Text);
+            studio.VideoPanel.ShowAt(studio.VideoPanel.Timeline!.Scenes[0].Settled);
+            await Settle(window, view);
+            Snapshot(window, "estudio-cena-pronta.png");
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
+
     /// <summary>#956 (conversa da beta.57: "o vídeo não ficou pronto"): render_video speaks and encodes through the app, as the Estúdio exports.</summary>
     [Fact]
     public async Task PublicationVideo_TheAssistantGetsTheVoiceAndAVerifiedMp4() =>

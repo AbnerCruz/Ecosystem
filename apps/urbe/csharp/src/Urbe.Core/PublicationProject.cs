@@ -308,7 +308,16 @@ public static class PublicationProjectCodec
             throw new InvalidDataException("Projeto de publicação ausente ou grande demais.");
         PublicationProject result;
         try { result = JsonSerializer.Deserialize<PublicationProject>(json, Options) ?? throw new InvalidDataException("Projeto de publicação vazio."); }
-        catch (JsonException e) { throw new InvalidDataException("JSON de Publicações inválido.", e); }
+        catch (JsonException e)
+        {
+            // where it went wrong, so a person or the Assistente can fix that one field (a bare "inválido" made the model guess)
+            var where = string.IsNullOrEmpty(e.Path) || e.Path == "$" ? "" : " no campo " + e.Path.TrimStart('$', '.');
+            var line = e.LineNumber is { } l ? " (linha " + (l + 1) + ")" : "";
+            var why = e.Message.Contains("could not be converted", StringComparison.Ordinal) ? ": valor do tipo errado (número, texto, lista ou objeto)"
+                : e.Message.Contains("end of data", StringComparison.OrdinalIgnoreCase) || e.Message.Contains("incomplete", StringComparison.OrdinalIgnoreCase) ? ": o JSON termina antes da hora (cortado?)"
+                : ": sintaxe de JSON inválida";
+            throw new InvalidDataException("JSON de Publicações inválido" + where + line + why + ".", e);
+        }
         Validate(result);
         return result;
     }

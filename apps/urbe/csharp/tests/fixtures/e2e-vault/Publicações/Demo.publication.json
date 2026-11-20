@@ -11,7 +11,7 @@
   "design": {"theme": "ink", "layout": "video"},
   "formats": ["mp4"],
   "video": {
-    "aspect": "16:9", "resolution": 720, "fps": 30, "subtitles": true,
+    "aspect": "16:9", "resolution": 720, "fps": 30, "subtitles": true, "theme": "noite",
     "scenes": [
       {"id": "scene_abertura", "placementId": "abertura", "duration": 4, "transition": {"kind": "fade", "seconds": 0.5}, "background": "#101418",
        "elements": [

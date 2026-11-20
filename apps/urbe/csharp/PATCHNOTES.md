@@ -1,21 +1,23 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.60
+**Versão canônica preparada:** 2.0.0-beta.61
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-## Etapas da IA
+## Vídeos
 
-- **Painel de etapas.** Tocar na atividade do Assistente abre um painel que sobe da parte de baixo, com um X sempre visível no topo. Fechar o painel não interrompe a IA.
-- **Sem travar com muitas etapas.** O painel desenha só as etapas mais recentes, em ordem; "Ver anteriores" e "Ver mais recentes" andam pelo histórico, que fica inteiro, sem desenhar tudo de uma vez.
-- **O que o modelo está fazendo, à vista.** Enquanto a IA trabalha, o resumo de raciocínio que o modelo envia aparece no cartão da atividade e em cada etapa, sem precisar abrir nada.
+- **Temas prontos.** Noite, Quadro-negro, Papel, Neon e Sóbrio: cada tema dá ao vídeo inteiro um fundo em gradiente, a cor do texto, duas cores para diagramas e legendas combinando. No Estúdio, menu → Tema do vídeo. Cores escolhidas à mão continuam.
+- **O Assistente escolhe um tema** quando monta um vídeo, e o exemplo que ele segue não fixa mais cores, para o tema valer.
+- **Cenas compostas prontas.** Abertura, Tópico, Comparação, Número em destaque, Fórmula, Gráfico e Citação: o Assistente monta cada cena com um desses layouts, com posições conferidas (nada fora do quadro nem sob a legenda) e entradas animadas uma depois da outra; só o conteúdo muda.
+- **Cena pronta no Estúdio.** No botão Objeto de cada cena, "Cena pronta (layout)" monta a cena escolhida e pede só o conteúdo; o título já vem da nota.
+- **Vídeo novo já com tema.** Um vídeo novo começa no tema Noite; troque em Tema do vídeo.
+- **Contraste medido de verdade.** A revisão do vídeo considera a transparência das formas por trás do texto.
 
-## Abertura
+## Assistente
 
-- **Volta onde você estava só na mesma sessão.** Ao trocar de app ou voltar depois de pouco tempo, o Urbe continua na nota e na conversa em que você estava. Depois de uma pausa longa, abre na Área de trabalho e o Assistente começa uma conversa nova; a nota, os rascunhos e as conversas continuam salvos.
-- **Você escolhe a pausa.** Personalização → Editor → "Ao voltar ao Urbe": 5 minutos, 30 minutos (padrão), 2 horas, 1 dia ou sempre reabrir onde parou. Uma execução da IA em andamento mantém a sessão.
+- **Erros que dizem o que fazer.** Um id repetido no vídeo diz qual é e onde; um JSON quebrado diz o campo e a linha; regravar uma publicação diz a revisão a informar, e o id existente é mantido sozinho.
 
 ## Não testado no aparelho
 
-- Testado com testes automáticos (painel com 300 etapas, paginação, X, pausa curta e longa, reinício). O fechamento relatado no teste de motion graphics não foi reproduzido: falta o Relatório de erros do aparelho.
+- Testado com testes automáticos e quadros renderizados no computador.

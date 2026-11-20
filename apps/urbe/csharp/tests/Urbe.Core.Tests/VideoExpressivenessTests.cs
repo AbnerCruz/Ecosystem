@@ -151,4 +151,26 @@ public sealed class VideoExpressivenessTests
         Assert.All(VideoEditing.Curves, c => Assert.True(VideoKeyframe.IsEasing(c.Easing)));
         Assert.Throws<ArgumentException>(() => VideoEditing.SetEasing(scene, "a", 1, "bounce"));
     }
+
+    [Fact]
+    public void AThemeColoursWhatKeepsTheDefaultsAndLeavesChosenColoursAlone()
+    {
+        var (catalog, project) = Scene(
+            new VideoElement { Id = "t", Kind = "title" },
+            new VideoElement { Id = "f", Kind = "shape", Text = "rect" },
+            new VideoElement { Id = "s", Kind = "path", Text = "M 0 0 L 10 10" },
+            new VideoElement { Id = "mao", Kind = "text", Text = "x", Color = "#ff0000" });
+        using var _ = catalog;
+        var themed = project with { Video = project.Video! with { Theme = "papel" } };
+        var timeline = VideoTimeline.Build(themed, catalog);
+        var papel = VideoThemes.Find("papel")!;
+        Assert.Same(papel, timeline.Theme);
+        Assert.Equal(papel.Text, At(timeline, "t", 1).Color);
+        Assert.Equal(papel.Secondary, At(timeline, "f", 1).Color);
+        Assert.Equal(papel.Accent, At(timeline, "s", 1).Color);
+        Assert.Equal("#ff0000", At(timeline, "mao", 1).Color);
+        // changing the theme redraws the scenes (their content key changes)
+        Assert.NotEqual(VideoTimeline.Build(project, catalog).Scenes[0].ContentKey, timeline.Scenes[0].ContentKey);
+        Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project with { Video = project.Video with { Theme = "arco-iris" } }));
+    }
 }

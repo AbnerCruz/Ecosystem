@@ -76,7 +76,15 @@ public sealed class VideoFrameRenderer : IDisposable
         using var surface = SKSurface.Create(new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul))
             ?? throw new InvalidOperationException("Sem memória para desenhar o quadro.");
         var canvas = surface.Canvas;
-        canvas.Clear(Color(layer.Scene.Scene.Background, SKColors.Black));
+        // a theme paints the scenes that keep the default background with its gradient
+        if (_timeline.Theme is { } theme && string.Equals(layer.Scene.Scene.Background, VideoThemes.DefaultBackground, StringComparison.OrdinalIgnoreCase))
+        {
+            using var shader = SKShader.CreateLinearGradient(new SKPoint(0, 0), new SKPoint(w * 0.25f, h),
+                [Color(theme.Top, SKColors.Black), Color(theme.Bottom, SKColors.Black)], SKShaderTileMode.Clamp);
+            using var paint = new SKPaint { Shader = shader };
+            canvas.DrawRect(0, 0, w, h, paint);
+        }
+        else canvas.Clear(Color(layer.Scene.Scene.Background, SKColors.Black));
         foreach (var e in layer.Elements)
         {
             if (e.Opacity <= 0 || e.Scale <= 0) continue;
@@ -359,10 +367,10 @@ public sealed class VideoFrameRenderer : IDisposable
         using var font = new SKFont(SKTypeface.Default, size) { Edging = SKFontEdging.Antialias };
         var lines = Wrap(text, font, w * 0.86f);
         float lineHeight = font.Spacing, top = h * 0.93f - lines.Count * lineHeight;
-        using var back = new SKPaint { Color = new SKColor(0, 0, 0, 170), IsAntialias = true };
+        using var back = new SKPaint { Color = Color(_timeline.Theme?.SubtitleBox, new SKColor(0, 0, 0, 170)), IsAntialias = true };
         float widest = lines.Max(l => font.MeasureText(l));
         canvas.DrawRoundRect(new SKRect(w / 2f - widest / 2 - size * 0.5f, top - size * 0.25f, w / 2f + widest / 2 + size * 0.5f, top + lines.Count * lineHeight + size * 0.25f), size * 0.3f, size * 0.3f, back);
-        using var paint = new SKPaint { Color = SKColors.White, IsAntialias = true };
+        using var paint = new SKPaint { Color = Color(_timeline.Theme?.SubtitleText, SKColors.White), IsAntialias = true };
         float y = top - font.Metrics.Ascent;
         foreach (var line in lines) { canvas.DrawText(line, w / 2f, y, SKTextAlign.Center, font, paint); y += lineHeight; }
     }

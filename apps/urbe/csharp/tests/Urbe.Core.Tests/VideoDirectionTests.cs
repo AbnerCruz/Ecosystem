@@ -405,4 +405,41 @@ public sealed class VideoDirectionTests
         Assert.Contains("Vídeo pronto: V.mp4", result.Content);
         Assert.Contains("sem narração", result.Content);
     }
+
+    [Fact]
+    public void ARepeatedIdSaysWhichAndWhere()
+    {
+        var project = VideoComposition.Synced(PublicationProject.Create("V", "n1") with { Design = new PublicationDesign { Layout = "video" } });
+        var scene = project.Video!.Scenes[0] with { Elements = [new VideoElement { Id = "rotulo" }, new VideoElement { Id = "rotulo" }] };
+        var error = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project with { Video = project.Video.WithScene(scene) }));
+        Assert.Contains("\"rotulo\" aparece mais de uma vez", error.Message);
+        Assert.Contains(scene.Id, error.Message);
+    }
+
+    [Fact]
+    public void ABrokenProjectSaysWhereItBreaks()
+    {
+        var wrongType = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Parse("""{"schemaVersion":1,"title":"V","video":{"fps":"trinta"}}"""));
+        Assert.Contains("video.fps", wrongType.Message);
+        Assert.Contains("tipo errado", wrongType.Message);
+        var cut = Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Parse("""{"schemaVersion":1,"title":"V","video":{"scenes":[{"id":"a" """));
+        Assert.Contains("JSON de Publicações inválido", cut.Message);
+    }
+
+    [Fact]
+    public async Task RewritingAPublicationSaysTheRevisionAndKeepsItsId()
+    {
+        var host = new Host();
+        host.Documents.Upsert(new() { Path = "A.md", Content = "# A\n\nTexto." });
+        var write = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        JsonObject Spec() => JsonNode.Parse("""{"schemaVersion":1,"title":"V","design":{"layout":"video"},"sources":[{"documentId":"A.md"}]}""")!.AsObject();
+        await write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = Spec() }, host);
+        var id = PublicationProjectCodec.Parse(host.Documents.Get("V.publication.json")!.Content).PublicationId;
+        var error = await Assert.ThrowsAsync<AiToolException>(() => write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = Spec() }, host));
+        Assert.Contains("expected_revision: 1", error.Message);
+        Assert.Contains(id, error.Message);
+        // with the revision and no publicationId, the existing id is kept
+        await write.Run(new JsonObject { ["path"] = "V.publication.json", ["spec"] = Spec(), ["expected_revision"] = 1 }, host);
+        Assert.Equal(id, PublicationProjectCodec.Parse(host.Documents.Get("V.publication.json")!.Content).PublicationId);
+    }
 }

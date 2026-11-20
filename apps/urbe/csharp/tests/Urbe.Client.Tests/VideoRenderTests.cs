@@ -59,6 +59,79 @@ public sealed class VideoRenderTests
             "); as outras saíram iguais ao último MP4.", MainView.WhatChangedSinceLastMp4(timeline, rendered));
     }
 
+    /// <summary>#956: every composed layout passes the measured review (real text measure) in every theme: nothing cut,
+    /// out of the frame or under the subtitles, and its text readable on the theme's background.</summary>
+    [Fact]
+    public void EveryLayoutPassesTheMeasuredReview()
+    {
+        var (catalog, project) = Project();
+        using var _c = catalog;
+        var slots = new Dictionary<string, string>
+        {
+            ["titulo"] = "Relatividade do tempo", ["subtitulo"] = "Por que relógios discordam", ["texto"] = "Em movimento, o pulso de luz percorre um caminho mais longo.",
+            ["esquerda"] = "Parado: 1 tique por segundo", ["direita"] = "A 87% de c: 1 tique a cada 2 s", ["numero"] = "38 µs", ["legenda"] = "de diferença por dia no GPS",
+            ["formula"] = "\\gamma = \\frac{1}{\\sqrt{1 - v^2/c^2}}", ["nota"] = "cresce sem limite perto de c", ["grafico"] = "y = 1/sqrt(1-x^2)\nx: 0..0.95\ny: 0..4",
+            ["autor"] = "Albert Einstein"
+        };
+        var sheets = new List<(string Name, byte[] Png)>();
+        foreach (var theme in VideoThemes.All)
+            foreach (var layout in VideoLayouts.All)
+            {
+                var scene = project.Video!.Scenes[0] with { Background = VideoThemes.DefaultBackground, Duration = 6, Elements = VideoLayouts.Build(layout.Id, slots, "c") };
+                var built = project with { Video = project.Video with { Theme = theme.Id, Resolution = 360, Subtitles = true, Scenes = [scene] } };
+                PublicationProjectCodec.Validate(built);
+                var timeline = VideoTimeline.Build(built, catalog);
+                var issues = VideoInspection.Run(timeline, e => VideoFrameRenderer.Fit(e, timeline.Width, timeline.Height));
+                Assert.True(issues.Count == 0, theme.Id + "/" + layout.Id + ": " + string.Join(" | ", issues.Select(i => i.ElementId + " " + i.Message)));
+                if (theme.Id == "noite") { using var r = new VideoFrameRenderer(timeline); sheets.Add((layout.Id, r.RenderSheet([3.5]))); }
+            }
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            foreach (var (name, png) in sheets) File.WriteAllBytes(Path.Combine(dir, "layout-" + name + ".png"), png);
+        }
+    }
+
+    /// <summary>#956: a theme paints the default background as its gradient and the default text in its colour.</summary>
+    [Fact]
+    public void AThemePaintsTheBackgroundAndTheText()
+    {
+        var (catalog, project) = Project();
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with { Background = VideoThemes.DefaultBackground,
+            Elements = [new VideoElement { Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.3, Height = 0.3 }] };
+        project = project with { Video = project.Video with { Theme = "papel", Scenes = [scene] } };
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var renderer = new VideoFrameRenderer(timeline);
+        using var frame = renderer.Render(1);
+        var corner = frame.GetPixel(4, 4);
+        Assert.True(corner.Red > 220 && corner.Green > 215 && corner.Blue > 200, corner.ToString());   // the paper's light top
+        var middle = frame.GetPixel(160, 90);
+        Assert.Equal(SKColor.Parse(VideoThemes.Find("papel")!.Secondary), middle);                    // the shape in the theme's colour
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            // the same scene in every theme, for the owner to compare
+            Directory.CreateDirectory(dir);
+            var sample = scene with
+            {
+                Elements =
+                [
+                    new VideoElement { Kind = "title", Y = 0.2, Height = 0.16, FontSize = 0.08 },
+                    new VideoElement { Kind = "shape", Text = "rect", X = 0.25, Y = 0.55, Width = 0.22, Height = 0.3 },
+                    new VideoElement { Kind = "path", Text = "M 0 50 L 90 50 M 66 26 L 90 50 L 66 74", X = 0.5, Y = 0.55, Width = 0.12, Height = 0.12, FontSize = 0.05 },
+                    new VideoElement { Kind = "math", Text = "E = mc^2", X = 0.75, Y = 0.55, Width = 0.3, Height = 0.14 }
+                ]
+            };
+            foreach (var theme in VideoThemes.All)
+            {
+                var themed = project with { Video = project.Video with { Theme = theme.Id, Resolution = 360, Scenes = [sample] } };
+                var t = VideoTimeline.Build(themed, catalog);
+                using var r = new VideoFrameRenderer(t);
+                File.WriteAllBytes(Path.Combine(dir, "tema-" + theme.Id + ".png"), r.RenderSheet([1.5]));
+            }
+        }
+    }
+
     /// <summary>#956 P2: a path draws itself along its length; a group draws nothing and carries its child with it.</summary>
     [Fact]
     public void APathDrawsOnAndAGroupCarriesItsChild()
