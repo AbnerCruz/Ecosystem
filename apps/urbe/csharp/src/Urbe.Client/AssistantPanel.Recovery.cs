@@ -73,7 +73,7 @@ public sealed partial class AssistantPanel
             item.Children.Add(Wrap((journal.Finished ? "Trabalho concluído, conversa não guardada" : "Trabalho interrompido") + " · " + agent, 13, UrbeTheme.Text, FontWeight.SemiBold));
             item.Children.Add(Wrap(journal.Goal.Length > 160 ? journal.Goal[..158] + "…" : journal.Goal, 13, UrbeTheme.Text2));
             item.Children.Add(Wrap(done + " ações feitas e conferidas · " + notDone + " não feitas" + (uncertain.Count > 0 ? " · " + uncertain.Count + " precisam de você" : ""), 12, UrbeTheme.Text2));
-            foreach (var u in uncertain.Take(3)) item.Children.Add(Wrap("• " + u.Detail, 12, "#c0504d"));
+            foreach (var u in uncertain.Take(3)) item.Children.Add(Wrap("• " + u.Detail, 12, UrbeTokens.Color.Danger));
             if (journal.ModelCallCut) item.Children.Add(Wrap("Uma etapa do modelo foi cortada no meio e pode ter sido cobrada pelo provedor sem resposta.", 12, UrbeTheme.Text3));
             var actions = new WrapPanel();
             if (!journal.Finished && journal.Origin is null)
@@ -87,7 +87,7 @@ public sealed partial class AssistantPanel
             item.Children.Add(actions);
             box.Children.Add(item);
         }
-        var card = Card(box, uncertainAny(runs, documents) ? "#c0504d" : UrbeTheme.Accent);
+        var card = Card(box, uncertainAny(runs, documents) ? UrbeTokens.Color.Danger : UrbeTheme.Accent);
         Avalonia.Automation.AutomationProperties.SetName(card, "Trabalho interrompido");
         return _interruptedView = card;
 

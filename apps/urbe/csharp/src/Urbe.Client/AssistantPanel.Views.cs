@@ -150,7 +150,7 @@ public sealed partial class AssistantPanel
         var head = new DockPanel();
         Control mark = status is "running" or "pending" ? Label("…", 15, UrbeTheme.Accent, FontWeight.Bold)
             : status == "done" ? UrbeTheme.Icon(UrbeTheme.Icons.Check, 16, UrbeTheme.Accent, 2.2)
-            : Label(stTxt, 12, status == "error" ? "#c0504d" : UrbeTheme.Text3);
+            : Label(stTxt, 12, status == "error" ? UrbeTokens.Color.Danger : UrbeTheme.Text3);
         DockPanel.SetDock(mark, Dock.Right);
         head.Children.Add(mark);
         var ic = UrbeTheme.Icon(AccessIcon.GetValueOrDefault(tool?.Access ?? "", UrbeTheme.Icons.Layers), 16, UrbeTheme.Text2, 1.8);
@@ -479,7 +479,7 @@ public sealed partial class AssistantPanel
                 var (op, line) = ops[i];
                 lines.Children.Add(new Border
                 {
-                    Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
+                    Background = op == '+' ? UrbeTheme.Brush(UrbeTokens.Color.Success, .16) : op == '-' ? UrbeTheme.Brush(UrbeTokens.Color.Danger, .16) : Brushes.Transparent,
                     Padding = new Thickness(4, 1),
                     Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
                 });
@@ -495,7 +495,7 @@ public sealed partial class AssistantPanel
             Spacing = 4,
             Children =
             {
-                Row(Label("+" + add, 12, "#3a9a5b", FontWeight.Bold), Label("−" + del, 12, "#c0504d", FontWeight.Bold)),
+                Row(Label("+" + add, 12, UrbeTokens.Color.Success, FontWeight.Bold), Label("−" + del, 12, UrbeTokens.Color.Danger, FontWeight.Bold)),
                 new Border { Child = new ScrollViewer { Content = lines, MaxHeight = 320, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), Padding = new Thickness(4) }
             }
         };
@@ -510,8 +510,8 @@ public sealed partial class AssistantPanel
         var tail = new StackPanel { Spacing = 8 };
         Control Note(string text, string action, Action act, bool error = false)
         {
-            var row = new WrapPanel { Children = { Wrap(text, 13, error ? "#c0504d" : UrbeTheme.Text2), LinkButton(action, act) } };
-            return Card(row, error ? "#c0504d" : null);
+            var row = new WrapPanel { Children = { Wrap(text, 13, error ? UrbeTokens.Color.Danger : UrbeTheme.Text2), LinkButton(action, act) } };
+            return Card(row, error ? UrbeTokens.Color.Danger : null);
         }
         if (r.Error is { Length: > 0 }) tail.Children.Add(Note(r.Error, "Tentar de novo", () => CurrentRun = StartAsync(), error: true));
         else if (r.Stopped == "aborted") tail.Children.Add(Note("Interrompido.", "Continuar", () => Send("Continue de onde parou.")));
@@ -1402,12 +1402,12 @@ public sealed partial class AssistantPanel
                 var r = await Providers.TestAsync(p, m);
                 output.Text = "Funcionando · " + r.Model;
             }
-            output.Foreground = UrbeTheme.Brush("#3a9a5b");
+            output.Foreground = UrbeTheme.Brush(UrbeTokens.Color.Success);
         }
         catch (Exception e)
         {
             output.Text = e.Message;
-            output.Foreground = UrbeTheme.Brush("#c0504d");
+            output.Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger);
         }
     }
 
@@ -1461,7 +1461,7 @@ public sealed partial class AssistantPanel
             RenderAll();
             await PickModelAsync();
         };
-        void Fail(string text) { output.Text = text; output.Foreground = UrbeTheme.Brush("#c0504d"); }
+        void Fail(string text) { output.Text = text; output.Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger); }
         var cancel = TextButton("Cancelar", () => ShowSettings());
         cancel.Margin = new Thickness(0, 0, 8, 0);
         body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, save } });
@@ -1660,7 +1660,7 @@ public sealed partial class AssistantPanel
         void Paint()
         {
             list.Children.Clear();
-            if (loadError is not null) list.Children.Add(Wrap(loadError, 12, "#c0504d"));
+            if (loadError is not null) list.Children.Add(Wrap(loadError, 12, UrbeTokens.Color.Danger));
             var query = (search.Text ?? "").Trim();
             var filtered = models.Where(m => query.Length == 0 || (m.Id + " " + m.Name).Contains(query, StringComparison.OrdinalIgnoreCase))
                 .Take(image ? 24 : 150).ToList();
@@ -1860,7 +1860,7 @@ public sealed partial class AssistantPanel
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
                     Background = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Surface, on ? .14 : 1), BorderThickness = new Thickness(0),
-                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(detail, 12, m.Tools == false ? "#c0504d" : UrbeTheme.Text3) } }
+                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(detail, 12, m.Tools == false ? UrbeTokens.Color.Danger : UrbeTheme.Text3) } }
                 };
                 var id = m.Id;
                 b.Click += (_, _) => Choose(id);

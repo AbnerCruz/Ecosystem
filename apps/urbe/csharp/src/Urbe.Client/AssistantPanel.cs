@@ -1943,8 +1943,8 @@ public sealed partial class AssistantPanel : Border
         bool running = _running is not null;
         bool stopping = running && string.IsNullOrWhiteSpace(_input.Text);
         _attach.IsEnabled = !running;
-        _send.Content = UrbeTheme.Icon(stopping ? UrbeTheme.Icons.Close : UrbeTheme.Icons.ArrowUp, 20, "#ffffff", 2.2);
-        _send.Background = UrbeTheme.Brush(stopping ? "#c0504d" : UrbeTheme.Accent);
+        _send.Content = UrbeTheme.Icon(stopping ? UrbeTheme.Icons.Close : UrbeTheme.Icons.ArrowUp, 20, stopping ? UrbeTokens.Color.OnDanger : UrbeTokens.Color.OnPrimary, 2.2);
+        _send.Background = UrbeTheme.Brush(stopping ? UrbeTokens.Color.Danger : UrbeTheme.Accent);
         Avalonia.Automation.AutomationProperties.SetName(_send, stopping ? "Parar" : running ? "Enviar após a resposta atual" : "Enviar");
         var e = EditorInfo();
         if (e.Path is { Length: > 0 } path)
@@ -2260,8 +2260,8 @@ public sealed partial class AssistantPanel : Border
         var b = new Button
         {
             Content = text, MinHeight = UrbeTokens.MinTouch, Padding = new Thickness(14, 8), CornerRadius = new CornerRadius(10), FontSize = 14, FontWeight = FontWeight.SemiBold,
-            Background = primary ? UrbeTheme.Brush(UrbeTheme.Accent) : danger ? UrbeTheme.Brush("#c0504d") : UrbeTheme.Brush(UrbeTheme.Surface),
-            Foreground = UrbeTheme.Brush(primary || danger ? "#ffffff" : UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(primary || danger ? 0 : 1)
+            Background = primary ? UrbeTheme.Brush(UrbeTheme.Accent) : danger ? UrbeTheme.Brush(UrbeTokens.Color.Danger) : UrbeTheme.Brush(UrbeTheme.Surface),
+            Foreground = UrbeTheme.Brush(primary ? UrbeTokens.Color.OnPrimary : danger ? UrbeTokens.Color.OnDanger : UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(primary || danger ? 0 : 1)
         };
         b.Click += (_, _) => click();
         return b;
