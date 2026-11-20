@@ -208,7 +208,14 @@ public sealed class PublicationVideoPanel : StackPanel
         _dragBy = default;
         var picture = Picture();
         if (!commit || Math.Abs(by.X) + Math.Abs(by.Y) < 4 || picture.Width <= 0 || Current() is not { } c) { DrawOutline(); return; }
-        MoveSelected(c.State.X + by.X / picture.Width, c.State.Y + by.Y / picture.Height);
+        // #1004 slice 4: the finger moved the element on the screen; under a camera that is turned back into the scene
+        if (c.Camera is { } cam && _renderer is { } r)
+        {
+            var shown = cam.Apply(c.State, r.Timeline.Width, r.Timeline.Height);
+            var (x, y) = cam.Unapply(shown.X + by.X / picture.Width, shown.Y + by.Y / picture.Height, r.Timeline.Width, r.Timeline.Height);
+            MoveSelected(x, y);
+        }
+        else MoveSelected(c.State.X + by.X / picture.Width, c.State.Y + by.Y / picture.Height);
     }
 
     /// <summary>Resizes the selected object by <paramref name="factor"/> (the end of a pinch); a tiny change is a wobble, not a resize.</summary>
@@ -225,13 +232,13 @@ public sealed class PublicationVideoPanel : StackPanel
         if (Current() is { } c) SceneChanged?.Invoke(VideoEditing.Move(c.Scene.Scene, c.State.Id, c.Local, x, y, c.State.Parent));
     }
 
-    private (VideoTimelineScene Scene, VideoElementState State, double Local)? Current()
+    private (VideoTimelineScene Scene, VideoElementState State, double Local, VideoCameraState? Camera)? Current()
     {
         if (_selected is not { } sel || _renderer is not { } r) return null;
         var scene = r.Timeline.Scenes.FirstOrDefault(x => x.Scene.Id == sel.Scene);
         var layer = r.Timeline.Evaluate(CurrentTime).Layers.FirstOrDefault(l => ReferenceEquals(l.Scene, scene));
         var state = layer?.Elements.FirstOrDefault(e => e.Id == sel.Element);
-        return scene is null || state is null ? null : (scene, state, CurrentTime - scene.Start);
+        return scene is null || state is null ? null : (scene, state, CurrentTime - scene.Start, layer!.Camera);
     }
 
     private void Select((string Scene, string Element)? which)
@@ -243,8 +250,8 @@ public sealed class PublicationVideoPanel : StackPanel
     private void DrawOutline()
     {
         var picture = Picture();
-        if (Current() is not { } c || picture.Width <= 0) { _outline.IsVisible = false; return; }
-        var e = c.State;
+        if (Current() is not { } c || picture.Width <= 0 || _renderer is not { } r) { _outline.IsVisible = false; return; }
+        var e = c.Camera is { } cam ? cam.Apply(c.State, r.Timeline.Width, r.Timeline.Height) : c.State;
         double w = e.Width * e.Scale * _pinch * picture.Width, h = e.Height * e.Scale * _pinch * picture.Height;
         _outline.Width = Math.Max(8, w);
         _outline.Height = Math.Max(8, h);

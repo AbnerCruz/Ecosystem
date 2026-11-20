@@ -313,4 +313,20 @@ public sealed class VideoProceduralTests
         var at = cam.Apply(new VideoElementState("x", "shape", "", null, 0.5, 0.5, 0.1, 0.1, 1, 1, 0, 1, "#fff", 0.05), 1000, 500);
         Assert.Equal((0.8, 0.5, 3.0), (Math.Round(at.X, 9), at.Y, at.Scale));
     }
+
+    [Fact]
+    public void UnderACameraATapFindsTheElementWhereItIsShownAndADragGoesBackToTheScene()
+    {
+        var (catalog, project) = Scene(new VideoElement { Id = "alvo", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.1, Height = 0.1 });
+        using var _ = catalog;
+        var scene = project.Video!.Scenes[0] with { Camera = new VideoCamera { Keyframes = [new() { Property = "zoom", Time = 0, Value = 2 }, new() { Property = "x", Time = 0, Value = 0.4 }, new() { Property = "rotation", Time = 0, Value = 30 }] } };
+        var timeline = VideoTimeline.Build(project with { Video = project.Video.WithScene(scene) }, catalog);
+        var frame = timeline.Evaluate(1);
+        var cam = frame.Layers[0].Camera!;
+        var shown = cam.Apply(frame.Layers[0].Elements[0], timeline.Width, timeline.Height);
+        Assert.Equal("alvo", VideoEditing.HitTest(frame, shown.X, shown.Y, timeline.Width, timeline.Height)?.Element.Id);
+        Assert.Null(VideoEditing.HitTest(frame, 0.5, 0.5, timeline.Width, timeline.Height));   // where it would be without the camera: nothing
+        var (x, y) = cam.Unapply(shown.X, shown.Y, timeline.Width, timeline.Height);
+        Assert.Equal((0.5, 0.5), (Math.Round(x, 9), Math.Round(y, 9)));
+    }
 }

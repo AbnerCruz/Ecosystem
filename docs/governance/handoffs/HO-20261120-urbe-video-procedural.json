@@ -30,7 +30,7 @@
     "#1004 fatia 1 (instâncias procedurais): elemento com repeat 1–2000 vira N instâncias; motions veem t, i, n, u e têm modo add|set; funções fract, sat, smooth, rand (determinístico), noise e min/max/mod/pow/atan2/step/mix/lerp/clamp (vírgula separa argumentos dentro delas; fora, 0,5 continua decimal). Validação recusa repeat fora do intervalo, modo inválido, fórmula ilegível e elemento repetido como pai. Revisão medida não acusa borda em formas repetidas (campos de partículas); texto repetido segue revisado. Schema e exemplo para o Assistente; outline mostra instâncias. Linguagem fechada sem acesso a vault, rede ou segredos; WASM continua sob DEC-0066, não assumida.",
     "#1004 fatia 2 (tipografia cinética): split letters|words em title/text; uma instância por letra ou palavra (sem espaços, grafemas compostos juntos), desenhada na posição do layout do texto inteiro (cache) e transformada em torno do próprio centro; revisão mede o texto uma vez e não acusa sobreposição entre as letras do mesmo texto; schema e exemplo para o Assistente.",
     "#1004 fatia 3 (efeitos): glow (com glowColor), shadow e blur animáveis por keyframes/motions e gradient, numa camada por elemento com SKImageFilter (halo duplo para o brilho, sombra deslocada, desfoque gaussiano) e gradiente SrcIn só onde o elemento desenhou; a chave de cache do quadro inclui os efeitos.",
-    "#1004 fatia 4 (câmera): scene.camera com keyframes e motions em x, y, zoom e rotation, validada; estado por quadro na camada e na chave de cache; o renderizador aplica a câmera depois do fundo; a revisão medida avalia cada elemento onde a câmera o mostra (VideoCameraState.Apply)."
+    "#1004 fatia 4 (câmera): scene.camera com keyframes e motions em x, y, zoom e rotation, validada; estado por quadro na camada e na chave de cache; o renderizador aplica a câmera depois do fundo; a revisão medida avalia cada elemento onde a câmera o mostra (VideoCameraState.Apply); toque, contorno e arraste no Estúdio usam a câmera e Unapply devolve o ponto à cena."
   ],
   "verification": [
     { "check": "Urbe.Core.Tests (vídeo/gráfico)", "kind": "automated", "result": "passed", "evidence": "1837/1837 na suíte inteira; 120/120 no filtro Video|FunctionPlot|VideoProcedural, incluindo funções de vários argumentos, aridade errada e partículas fora da borda." },
@@ -39,10 +39,9 @@
   "known_issues": [
     "Não testado no aparelho (ADD-0035); desempenho de 2000 instâncias medido só no container, sem GPU.",
     "Não reexecutado com o modelo do proprietário.",
-    "Com câmera em movimento, o arraste no Estúdio usa a cena sem a câmera (VideoInspection já aplica a câmera).",
     "Fatias seguintes da #1004 (máscara/recorte, câmera, componentes, benchmark, TTS neural) não feitas."
   ],
-  "next_actions": [ "#1004 fatia 5: componentes reutilizáveis; revisão medida e arraste do Estúdio considerando a câmera; máscara/recorte." ],
+  "next_actions": [ "#1004 fatia 5: componentes reutilizáveis; máscara/recorte." ],
   "decisions_required": [],
   "normative_sources": [
     "AGENTS.md",

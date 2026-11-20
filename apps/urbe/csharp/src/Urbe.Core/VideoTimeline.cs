@@ -75,6 +75,14 @@ public sealed record VideoCameraState(double X, double Y, double Zoom, double Ro
         return e with { X = 0.5 + rx / width, Y = 0.5 + ry / height, Scale = e.Scale * Zoom, Rotation = e.Rotation - Rotation };
     }
 
+    /// <summary>The scene point (fractions) the camera shows at screen point (<paramref name="sx"/>, <paramref name="sy"/>).</summary>
+    public (double X, double Y) Unapply(double sx, double sy, int width, int height)
+    {
+        double rx = (sx - 0.5) * width, ry = (sy - 0.5) * height, a = Rotation * Math.PI / 180;
+        double dx = rx * Math.Cos(a) - ry * Math.Sin(a), dy = rx * Math.Sin(a) + ry * Math.Cos(a);
+        return (X + dx / (width * Zoom), Y + dy / (height * Zoom));
+    }
+
     public bool IsStill => Math.Abs(X - 0.5) < 1e-9 && Math.Abs(Y - 0.5) < 1e-9 && Math.Abs(Zoom - 1) < 1e-9 && Math.Abs(Rotation) < 1e-9;
 }
 
