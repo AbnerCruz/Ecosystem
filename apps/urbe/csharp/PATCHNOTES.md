@@ -23,6 +23,7 @@
 - **Revelar por dentro de uma forma.** Um elemento pode aparecer só dentro de um retângulo, elipse ou círculo da cena; com a forma invisível crescendo, o texto ou a imagem se revela aos poucos.
 - **Componentes reutilizáveis.** Um conjunto de elementos (um rótulo com caixa, um cartão de dado) é feito uma vez e usado em várias cenas, cada uso com seu próprio texto. No Estúdio, tocar num componente seleciona o componente inteiro.
 - **Câmera por cena.** Cada cena pode aproximar, afastar, deslizar e girar a câmera ao longo do tempo, com o fundo parado: um zoom lento numa fórmula, um passeio de uma parte do diagrama a outra. No Estúdio, tocar e arrastar acerta o elemento onde a câmera o mostra.
+- **Efeitos mais leves.** O brilho de formas simples é desenhado direto, e o efeito de cada letra de um título ocupa só a letra: uma cena com 600 partículas brilhando, câmera girando e título animado passou de 1,5 s para cerca de 60 ms por quadro, num computador.
 - **Fórmulas mais capazes.** Números aleatórios que saem iguais em todo quadro e em todo aparelho, ruído suave, passos suaves e funções de dois ou três valores (mínimo, máximo, resto, mistura, limite). Uma fórmula pode somar ao movimento ou definir o valor por inteiro.
 - **O Assistente sabe usar.** As instruções de vídeo explicam as cópias e as fórmulas, com exemplo, e a lista de cenas mostra quantas cópias cada elemento tem.
 - **Revisão sem alarme falso.** Partículas que passam da borda de propósito não contam mais como erro; texto repetido continua revisado como texto.

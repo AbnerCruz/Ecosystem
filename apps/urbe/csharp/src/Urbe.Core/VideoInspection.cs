@@ -58,7 +58,8 @@ public static class VideoInspection
                 {
                     var e = visible[i];
                     if (!Visual.Contains(e.Kind)) continue;
-                    var b = Box(e, W, H);
+                    // a split text's units scale and turn about their own centres; the text's box is the one laid out
+                    var b = Box(e.Split is not null ? e with { Scale = 1, Rotation = 0 } : e, W, H);
                     // #1004: instances of a repeated shape are a field (particles, stars, a grid) that may run past the
                     // edges on purpose; a repeated text is still read, so it is still checked
                     bool field = e.Instance >= 0 && !Text.Contains(e.Kind);
