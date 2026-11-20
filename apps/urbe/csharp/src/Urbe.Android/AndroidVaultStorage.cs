@@ -810,6 +810,9 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveNotesRecordAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanNotesRecordWrite(files, json), "O registro das notas", cancellationToken);
 
+    public Task SaveFlashcardsAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanFlashcardsWrite(files, json), "Os flashcards", cancellationToken);
+
     public Task SaveAreaLayoutAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanAreaLayoutWrite(files, json), "A aparência das caixas", cancellationToken);
 

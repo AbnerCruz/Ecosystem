@@ -193,6 +193,8 @@ public interface IAssistantHost
     /// <summary>CST-089: the run's agent's own earlier conversations in this vault, when the app keeps them.</summary>
     IAssistantConversations? Conversations => null;
     IAssistantForms? Forms => null;
+    /// <summary>#1005: the native study library (flashcards), when the app has one.</summary>
+    IAssistantStudy? Study => null;
     /// <summary>Only the current conversation may supply a received user attachment for extraction.</summary>
     IAssistantAttachmentExtractor? Attachments => this as IAssistantAttachmentExtractor;
     IAssistantDocumentFiles? DocumentFiles => this as IAssistantDocumentFiles;

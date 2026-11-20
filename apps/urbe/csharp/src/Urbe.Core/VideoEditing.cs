@@ -15,15 +15,29 @@ public static class VideoEditing
     {
         ArgumentNullException.ThrowIfNull(frame);
         foreach (var layer in frame.Layers.Reverse())
-            foreach (var e in layer.Elements.Reverse())
+            if (Hit(layer) is { } found)
             {
+                // #1004 slice 5: a part of a placed component selects the component (its "use", which is a group on screen)
+                if (layer.Scene.Scene.Elements.Any(x => x.Id == found.Id)) return (layer, found);
+                var root = found.Id[..Math.Max(0, found.Id.IndexOf('.'))];
+                if (layer.Elements.FirstOrDefault(x => x.Id == root) is { } use) return (layer, use);
+            }
+        return null;
+
+        VideoElementState? Hit(VideoLayer layer)
+        {
+            foreach (var placed in layer.Elements.Reverse())
+            {
+                // #1004 slice 4: what is tapped is the element where the camera shows it
+                var e = layer.Camera is { } cam ? cam.Apply(placed, width, height) : placed;
                 // a group has no drawing of its own: a tap goes to what is drawn
                 if (e.Opacity < 0.05 || e.Scale <= 0 || e.Kind == "group") continue;
                 double dx = (fx - e.X) * width, dy = (fy - e.Y) * height, a = -e.Rotation * Math.PI / 180;
                 double rx = dx * Math.Cos(a) - dy * Math.Sin(a), ry = dx * Math.Sin(a) + dy * Math.Cos(a);
-                if (Math.Abs(rx) <= e.Width * width * e.Scale / 2 && Math.Abs(ry) <= e.Height * height * e.Scale / 2) return (layer, e);
+                if (Math.Abs(rx) <= e.Width * width * e.Scale / 2 && Math.Abs(ry) <= e.Height * height * e.Scale / 2) return placed;
             }
-        return null;
+            return null;
+        }
     }
 
     /// <summary>

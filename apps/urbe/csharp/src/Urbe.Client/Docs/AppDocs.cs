@@ -17,6 +17,7 @@ public static partial class AppDocs
         new("Tutorial/Escrever/Explorer.md", Explorer),
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
+        new("Tutorial/Ferramentas/Flashcards.md", FlashcardsDoc),
         new("Tutorial/Ferramentas/Publicações.md", Paginas),
         new("Tutorial/Ferramentas/Código e prévia ao vivo.md", Codigo),
         new("Tutorial/Ferramentas/Assistente.md", Assistente),
@@ -25,6 +26,33 @@ public static partial class AppDocs
         new("Tutorial/Ajustes/Backups, exportar e restaurar.md", Backups),
         new("Tutorial/Ajustes/Atalhos.md", Atalhos),
     ];
+
+    private const string FlashcardsDoc = """
+        # Flashcards
+
+        Flashcards (cartões de memorização, cards de estudo) são um recurso **nativo** do Numa, com revisão espaçada: cada cartão volta no dia certo conforme você lembrou.
+
+        ## Onde ficam
+
+        Em **Estudo**, no alto da lista de fontes, a linha **Flashcards** mostra quantos conjuntos você tem e quantos cartões vencem hoje. Ali estão todos os conjuntos juntos:
+
+        - os **conjuntos** feitos no app, por você ou pelo Assistente;
+        - as notas que têm linhas `pergunta::resposta`, cada nota um conjunto. Os cartões continuam sendo o texto da nota: nada é copiado.
+
+        Conjuntos feitos no app ficam guardados dentro da pasta de notas (em `.urbe/estudo`, que o Explorer não mostra). Eles vão junto em backups e na cópia da pasta, e não criam notas nem plugins.
+
+        ## Criar
+
+        - **Novo conjunto**, na lista de Flashcards: um título e os cartões (frente e verso), um de cada vez.
+        - **Pelo Assistente**: peça, por exemplo, "faça dez flashcards sobre células a partir desta nota". Ele cria o conjunto de uma vez, e você o encontra em Flashcards.
+        - **Numa nota**: escreva `pergunta::resposta` numa linha.
+
+        ## Revisar
+
+        Abra um conjunto e toque em **Revisar**: aparece a frente; toque em **Mostrar resposta** e diga quanto lembrou (**Errei**, **Difícil**, **Bom**, **Fácil**). Cada botão mostra quando o cartão volta. O progresso é salvo a cada cartão.
+
+        Em **Ver os cartões** você vê todos, com o estado de cada um; num conjunto do app, toque num cartão para **editar** ou **excluir**. Mudar só a resposta mantém o progresso dele.
+        """;
 
     private const string AreaDeTrabalho = """
         # Área de trabalho

@@ -379,4 +379,180 @@ public sealed class VideoRenderTests
             File.WriteAllBytes(Path.Combine(dir, "video-expressividade.png"), renderer.RenderSheet([5.2, 7.0, 7.6, 8.1, 9.0, 10.5]));
         }
     }
+
+    /// <summary>#1004: 2000 instances of one element (the most allowed) at 720p, drawn and measured.</summary>
+    [Fact]
+    public void TwoThousandParticlesAt720pAreDrawnAndMeasured()
+    {
+        var (catalog, project) = Project(resolution: 720, seconds: 2);
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Elements =
+            [
+                new VideoElement { Id = "galaxia", Kind = "shape", Text = "circle", Width = 0.004, Height = 0.007, Color = "#ff0000", Repeat = VideoProcedural.MaxRepeat,
+                    Motions =
+                    [
+                        new() { Property = "x", Mode = "set", Expression = "0.5 + (0.05 + 0.35*rand(i))*cos(tau*rand(i + 0.5) + t*(0.3 + rand(i)))" },
+                        new() { Property = "y", Mode = "set", Expression = "0.5 + (0.05 + 0.35*rand(i))*sin(tau*rand(i + 0.5) + t*(0.3 + rand(i)))*1.6" },
+                        new() { Property = "opacity", Mode = "set", Expression = "0.4 + 0.6*noise(i + 3t)" },
+                    ] }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var renderer = new VideoFrameRenderer(timeline);
+        using var frame = new SKBitmap(timeline.Width, timeline.Height);
+        var clock = Stopwatch.StartNew();
+        const int frames = 20;
+        for (int i = 0; i < frames; i++) renderer.RenderInto(i / 30.0, frame);
+        double perFrame = clock.Elapsed.TotalMilliseconds / frames;
+        Console.WriteLine("video.particles720p " + VideoProcedural.MaxRepeat + " instances: " + perFrame.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " ms/frame");
+        int red = 0;
+        for (int y = 0; y < frame.Height; y += 2) for (int x = 0; x < frame.Width; x += 2) if (frame.GetPixel(x, y).Red > 120 && frame.GetPixel(x, y).Blue < 120) red++;
+        Assert.True(red > 300, "the particles are drawn: " + red);
+        Assert.True(perFrame < 1000, "a frame of 2000 instances took " + perFrame + " ms");
+        var clock2 = Stopwatch.StartNew();
+        VideoInspection.Run(timeline);
+        Assert.True(clock2.Elapsed.TotalSeconds < 20, "the review of 2000 instances took " + clock2.Elapsed);
+    }
+
+    /// <summary>#1004 slice 2: a title split into letters enters one letter after another, each in its place.</summary>
+    [Fact]
+    public void ASplitTitleEntersLetterByLetterInItsPlace()
+    {
+        var (catalog, project) = Project(resolution: 360, seconds: 3);
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Elements =
+            [
+                new VideoElement { Id = "t", Kind = "title", Text = "MMMMMMMMMM", Split = "letters", X = 0.5, Y = 0.5, Width = 0.9, Height = 0.3, FontSize = 0.12, Color = "#ff0000",
+                    Motions = [new() { Property = "opacity", Mode = "set", Expression = "step(0.1*i, t)" }, new() { Property = "y", Expression = "0.1*(1 - step(0.1*i, t))" }] }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var renderer = new VideoFrameRenderer(timeline);
+        int Red(SKBitmap b, int from, int to)
+        {
+            int n = 0;
+            for (int x = from; x < to; x++) for (int y = 0; y < b.Height; y++) if (Reddish(b.GetPixel(x, y))) n++;
+            return n;
+        }
+        int w = timeline.Width;
+        using var whole = renderer.Render(2.0);
+        using var half = renderer.Render(0.45);
+        int left = Red(whole, 0, w / 2), right = Red(whole, w / 2, w);
+        Assert.True(left > 50 && right > 50, "the whole title is drawn across its box: " + left + " / " + right);
+        Assert.InRange(left / (double)right, 0.7, 1.4);
+        // halfway through the entrance only the first letters are there, on the left, where they will stay
+        Assert.True(Red(half, 0, w / 2) > left * 0.6, "first letters drawn");
+        Assert.True(Red(half, w / 2, w) < right * 0.3, "last letters not yet");
+    }
+
+    /// <summary>#1004 slice 3: glow lights around the element, blur spreads it, a shadow falls below it, a gradient paints it.</summary>
+    [Fact]
+    public void GlowShadowBlurAndGradientAreDrawn()
+    {
+        var (catalog, project) = Project(resolution: 360, seconds: 1);
+        using var _c = catalog;
+        VideoTimeline Build(VideoElement e)
+        {
+            var scene = project.Video!.Scenes[0] with { Background = "#000000", Elements = [e] };
+            return VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog);
+        }
+        var plain = new VideoElement { Id = "c", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.2, Height = 0.3, Color = "#fefefe" };
+        SKColor At(VideoElement e, double fx, double fy)
+        {
+            using var r = new VideoFrameRenderer(Build(e));
+            using var b = r.Render(0.5);
+            return b.GetPixel((int)(fx * b.Width), (int)(fy * b.Height));
+        }
+        // just outside the right edge of the box: dark without effects, lit by the glow, grey with the blur
+        double edge = 0.5 + 0.1 + 0.02;
+        Assert.True(At(plain, edge, 0.5).Red < 20);
+        Assert.True(At(plain with { Glow = 0.05, GlowColor = "#00ff00" }, edge, 0.5).Green > 60);
+        Assert.True(At(plain with { Blur = 0.03 }, 0.5 + 0.1 + 0.005, 0.5).Red > 20);
+        // below the box and to the right, the shadow is darker than the background only over a light background
+        var light = plain with { Shadow = 0.06 };
+        var mid = At(light, 0.5, 0.5); Assert.True(mid.Red > 240, mid.ToString());
+        // a gradient from white (top) to red (bottom)
+        var g = plain with { Gradient = "#ff0000" };
+        var top = At(g, 0.5, 0.37);
+        var bottom = At(g, 0.5, 0.63);
+        Assert.True(top.Green > 180 && bottom.Green < 80 && bottom.Red > 200, top + " → " + bottom);
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            var scene = project.Video!.Scenes[0] with
+            {
+                Background = "#101018",
+                Elements =
+                [
+                    plain with { Id = "g", X = 0.2, Glow = 0.04, GlowColor = "#59c3ff", Color = "#bfe8ff" },
+                    plain with { Id = "b", X = 0.4, Blur = 0.02, Color = "#ffb347" },
+                    plain with { Id = "s", X = 0.6, Shadow = 0.05, Color = "#f5f5f5" },
+                    plain with { Id = "d", X = 0.8, Gradient = "#8a2be2", Color = "#ff6ec7" },
+                ]
+            };
+            using var r = new VideoFrameRenderer(VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog));
+            using var frame = r.Render(0.5);
+            using var data = frame.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(dir, "video-efeitos.png"), data.ToArray());
+        }
+    }
+
+    /// <summary>#1004 slice 4: zooming the camera on a box makes it fill more of the frame; panning moves it the other way.</summary>
+    [Fact]
+    public void TheCameraZoomsAndPans()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 1);
+        using var _c = catalog;
+        var box = new VideoElement { Id = "b", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.2, Height = 0.2, Color = "#ff0000" };
+        int RedWith(VideoCamera? camera, out SKBitmap frame)
+        {
+            var scene = project.Video!.Scenes[0] with { Background = "#000000", Elements = [box], Camera = camera };
+            using var r = new VideoFrameRenderer(VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog));
+            frame = r.Render(0.5);
+            int n = 0;
+            for (int x = 0; x < frame.Width; x++) for (int y = 0; y < frame.Height; y++) if (Reddish(frame.GetPixel(x, y))) n++;
+            return n;
+        }
+        int still = RedWith(null, out var a);
+        int zoomed = RedWith(new VideoCamera { Keyframes = [new() { Property = "zoom", Time = 0, Value = 2 }] }, out var b);
+        Assert.InRange(zoomed / (double)still, 3.5, 4.5);   // twice as close: four times the area
+        RedWith(new VideoCamera { Keyframes = [new() { Property = "x", Time = 0, Value = 0.7 }] }, out var c);
+        // looking right of the box moves it left
+        Assert.True(Reddish(c.GetPixel((int)(0.25 * c.Width), c.Height / 2)));
+        Assert.False(Reddish(c.GetPixel(c.Width / 2 + 5, c.Height / 2)));
+        a.Dispose(); b.Dispose(); c.Dispose();
+    }
+
+    /// <summary>#1004 slice 3b: an invisible rect that grows reveals a red bar from left to right; outside it nothing shows.</summary>
+    [Fact]
+    public void AClipRevealsTheElementOnlyInsideTheShape()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 2);
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Background = "#000000",
+            Elements =
+            [
+                new VideoElement { Id = "m", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.8, Height = 0.4, Color = "#00ff00",
+                    Keyframes = [new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 1, Value = 1, Easing = "linear" }] },
+                new VideoElement { Id = "barra", Kind = "shape", Text = "rect", X = 0.5, Y = 0.5, Width = 0.8, Height = 0.2, Color = "#ff0000", Clip = "m" }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        using var r = new VideoFrameRenderer(VideoTimeline.Build(project, catalog));
+        using var half = r.Render(0.5);
+        using var whole = r.Render(1.5);
+        int y = half.Height / 2;
+        Assert.True(Reddish(half.GetPixel((int)(0.2 * half.Width), y)));
+        Assert.False(Reddish(half.GetPixel((int)(0.8 * half.Width), y)));
+        Assert.True(Reddish(whole.GetPixel((int)(0.8 * whole.Width), y)));
+        Assert.False(half.GetPixel((int)(0.2 * half.Width), (int)(0.35 * half.Height)).Green > 100);   // the mask itself is invisible
+    }
 }

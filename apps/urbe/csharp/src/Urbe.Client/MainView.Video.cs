@@ -26,6 +26,7 @@ public sealed partial class MainView
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
+        studio.VoiceRequested += () => _ = ChooseNarrationVoiceAsync();
         studio.VideoThemeRequested += () => _ = ChoosePublicationVideoThemeAsync();
         studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
@@ -416,6 +417,63 @@ public sealed partial class MainView
             _videoExport = null;
             try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
+    }
+
+    /// <summary>Where the chosen narration voice is kept: on this device (voices are the device's), never in the vault.</summary>
+    public string? VoiceSettingPath { get; set; } = UrbeApp.LocalStatePath is { } p ? p + ".voice.txt" : null;
+
+    public void ReloadNarrationVoice() => LoadNarrationVoice();
+
+    private void LoadNarrationVoice()
+    {
+        try { PlatformAudio.PreferredVoice = VoiceSettingPath is { } path && File.Exists(path) ? File.ReadAllText(path).Trim() is { Length: > 0 } v ? v : null : null; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// <summary>What the voice says when it is tried: numbers, a name and a pause, like a narration.</summary>
+    public const string VoiceSample = "Olá! Esta é a voz que vai narrar seus vídeos. Em 1905, Einstein publicou quatro artigos; a luz viaja a 300 mil quilômetros por segundo.";
+
+    /// <summary>#1004: the device's Portuguese voices, the chosen one marked; the choice narrates scenes, podcasts and the Assistente's videos.</summary>
+    public async Task ChooseNarrationVoiceAsync()
+    {
+        var voices = PlatformAudio.Voices?.Invoke() ?? [];
+        if (voices.Count == 0)
+        {
+            await Dialogs.AlertAsync("Voz da narração", "Este aparelho não informou vozes em português. A narração usa a voz padrão do sistema; vozes novas se instalam nas configurações de texto para fala do aparelho.");
+            return;
+        }
+        var items = voices.Select(v => new DialogItem(v + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""))).Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
+        if (await Dialogs.ChooseAsync("Voz da narração", items, "Vale para narrar vídeos, podcasts e os vídeos do Assistente, neste aparelho.") is not int pick) return;
+        var before = PlatformAudio.PreferredVoice;
+        PlatformAudio.PreferredVoice = pick == 0 ? null : voices[pick - 1];
+        // a sample in the chosen voice, before keeping it
+        if (PlatformAudio.PlayWav is { } play && PlatformAudio.SynthesizeToWav is { } speak)
+        {
+            var sample = Path.Combine(Path.GetTempPath(), "urbe-voz-amostra-" + Guid.NewGuid().ToString("N") + ".wav");
+            try
+            {
+                using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                if (await speak(VoiceSample, 0, sample, stop.Token)) await play(sample, stop.Token);
+            }
+            catch (Exception e) when (e is IOException or OperationCanceledException or InvalidOperationException) { }
+            finally { try { File.Delete(sample); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+            if (!await Dialogs.ConfirmAsync("Voz da narração", "Usar " + (PlatformAudio.PreferredVoice ?? "a voz padrão do aparelho") + "?", "Usar esta voz", cancel: "Voltar"))
+            {
+                PlatformAudio.PreferredVoice = before;
+                return;
+            }
+        }
+        try
+        {
+            if (VoiceSettingPath is { } path)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                if (PlatformAudio.PreferredVoice is null) File.Delete(path); else File.WriteAllText(path, PlatformAudio.PreferredVoice);
+            }
+            ShowLifeNotice("Voz da narração: " + (PlatformAudio.PreferredVoice ?? "padrão do aparelho") + ".");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        { ShowLifeNotice("A voz foi escolhida, mas não pôde ser lembrada: " + e.Message, Ui.ToastKind.Warning); }
     }
 
     async Task<byte[]?> IAssistantApp.SpeakAsync(string text, CancellationToken cancel)

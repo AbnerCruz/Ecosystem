@@ -49,6 +49,8 @@ public interface IAssistantApp
     /// <summary>The vault's plugins (write_plugin turns them on).</summary>
     IAssistantPlugins? Plugins => null;
     IAssistantGraphs? Graphs => null;
+    /// <summary>#1005: the native study library (flashcards).</summary>
+    IAssistantStudy? Study => null;
     /// <summary>UC-80: an agent's change to the note open in the editor, shown there to accept or refuse; false when it cannot be.</summary>
     bool SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse) => false;
     /// <summary>UC-80: the suggestion in the note (if any) leaves the editor.</summary>
@@ -329,7 +331,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantVideoDirectionTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantVideoDirectionTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, .. AssistantStudyTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
         AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate, AssistantDataTools.Query, AssistantTools.StructureTool,
         .. AgentSkills.Tools(host => SkillsOf(host.Documents)),
         .. AssistantEvidenceTools.All,
@@ -1805,6 +1807,7 @@ public sealed partial class AssistantPanel : Border
         public IAssistantAppearance? Appearance => panel._app.Appearance;
         public IAssistantPlugins? Plugins => panel._app.Plugins;
         public IAssistantGraphs? Graphs => panel._app.Graphs;
+        public IAssistantStudy? Study => panel._app.Study;
     }
 
     private sealed class Undo(IAssistantApp app, DocumentStore documents) : IAssistantUndoHost
@@ -1940,8 +1943,8 @@ public sealed partial class AssistantPanel : Border
         bool running = _running is not null;
         bool stopping = running && string.IsNullOrWhiteSpace(_input.Text);
         _attach.IsEnabled = !running;
-        _send.Content = UrbeTheme.Icon(stopping ? UrbeTheme.Icons.Close : UrbeTheme.Icons.ArrowUp, 20, "#ffffff", 2.2);
-        _send.Background = UrbeTheme.Brush(stopping ? "#c0504d" : UrbeTheme.Accent);
+        _send.Content = UrbeTheme.Icon(stopping ? UrbeTheme.Icons.Close : UrbeTheme.Icons.ArrowUp, 20, stopping ? UrbeTokens.Color.OnDanger : UrbeTokens.Color.OnPrimary, 2.2);
+        _send.Background = UrbeTheme.Brush(stopping ? UrbeTokens.Color.Danger : UrbeTheme.Accent);
         Avalonia.Automation.AutomationProperties.SetName(_send, stopping ? "Parar" : running ? "Enviar após a resposta atual" : "Enviar");
         var e = EditorInfo();
         if (e.Path is { Length: > 0 } path)
@@ -2025,6 +2028,11 @@ public sealed partial class AssistantPanel : Border
                 if (!_generatedViews.TryGetValue(key, out var image)) _generatedViews[key] = image = GeneratedImagePreview(path);
                 desired.Add(image);
             }
+            // #1005: a deck made in this request is shown as what it is, a study object that opens in Flashcards
+            var decks = steps.SelectMany(m => m.Content).Where(b => b.Type == "tool_use" && b.Name == "create_flashcards")
+                .Select(b => ResultFor(b.Id) is { IsError: false } result ? AssistantStudyTools.Deck(result.Content) : null)
+                .OfType<(string Id, string Title, int Cards)>().GroupBy(d => d.Id).Select(g => g.Last()).ToList();
+            foreach (var deck in decks) desired.Add(DeckCard(deck.Id, deck.Title, deck.Cards));
             if (answer is not null) desired.Add(View(answer));
             i = end - 1;
         }
@@ -2252,8 +2260,8 @@ public sealed partial class AssistantPanel : Border
         var b = new Button
         {
             Content = text, MinHeight = UrbeTokens.MinTouch, Padding = new Thickness(14, 8), CornerRadius = new CornerRadius(10), FontSize = 14, FontWeight = FontWeight.SemiBold,
-            Background = primary ? UrbeTheme.Brush(UrbeTheme.Accent) : danger ? UrbeTheme.Brush("#c0504d") : UrbeTheme.Brush(UrbeTheme.Surface),
-            Foreground = UrbeTheme.Brush(primary || danger ? "#ffffff" : UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(primary || danger ? 0 : 1)
+            Background = primary ? UrbeTheme.Brush(UrbeTheme.Accent) : danger ? UrbeTheme.Brush(UrbeTokens.Color.Danger) : UrbeTheme.Brush(UrbeTheme.Surface),
+            Foreground = UrbeTheme.Brush(primary ? UrbeTokens.Color.OnPrimary : danger ? UrbeTokens.Color.OnDanger : UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(primary || danger ? 0 : 1)
         };
         b.Click += (_, _) => click();
         return b;

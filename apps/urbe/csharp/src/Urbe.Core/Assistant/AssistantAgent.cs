@@ -676,6 +676,7 @@ public static class AssistantAgent
         public IAssistantVideoFrames? VideoFrames => inner.VideoFrames;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
+        public IAssistantStudy? Study => inner.Study;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
         public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
         public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);
@@ -757,6 +758,9 @@ public static class AssistantAgent
         var gate = new object();
         var readCache = new Dictionary<string, TaskCompletionSource<Out>>(StringComparer.Ordinal);
         var cycles = new HashSet<string>(StringComparer.Ordinal);
+        // #1005: the person's request in this run, to keep the result class they asked for (AssistantIntent)
+        var request = string.Join("\n", messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?.Content
+            .Where(b => b.Type == "text").Select(b => b.Text) ?? []);
         // owner's report on long revisions: no whole rewrite from a stale or partial read, and no endless blind retries
         var coverage = new AiReadCoverage();
         var writeFailures = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -1057,6 +1061,8 @@ public static class AssistantAgent
         {
             byName.TryGetValue(call.Name, out var tool);
             if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
+            if (AssistantIntent.Refusal(request, call.Name, byName.ContainsKey("create_flashcards") && o.Host.Study is not null) is { } mismatch)
+                return new Out(mismatch, true, "error");
             if (call.Id == truncatedCall)
                 return new Out("Esta chamada foi cortada pelo limite de saída do modelo antes de terminar: os argumentos chegaram incompletos e nada foi feito. " +
                     "Não repita a mesma chamada inteira: divida o trabalho em chamadas menores (por exemplo, crie a publicação só com fontes e design e depois " +

@@ -36,7 +36,7 @@ public sealed class VideoFrameRenderer : IDisposable
 
     /// <summary>The vault paths of the images a timeline uses (to read before rendering).</summary>
     public static IReadOnlyList<string> FilesUsed(VideoTimeline timeline) => timeline.Scenes
-        .SelectMany(s => s.Scene.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!)
+        .SelectMany(s => s.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!)
         .Distinct(StringComparer.Ordinal).ToList();
 
     public SKBitmap RenderFrame(int index) => Render(_timeline.FrameTime(index));
@@ -85,9 +85,35 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawRect(0, 0, w, h, paint);
         }
         else canvas.Clear(Color(layer.Scene.Scene.Background, SKColors.Black));
+        // #1004 slice 4: the camera moves what is drawn after the background (which stays)
+        int cameraRestore = canvas.SaveCount;
+        if (layer.Camera is { } cam)
+        {
+            canvas.Save();
+            canvas.Translate(w / 2f, h / 2f);
+            canvas.Scale((float)cam.Zoom);
+            if (cam.Rotation != 0) canvas.RotateDegrees((float)-cam.Rotation);
+            canvas.Translate((float)(-cam.X * w), (float)(-cam.Y * h));
+        }
         foreach (var e in layer.Elements)
         {
             if (e.Opacity <= 0 || e.Scale <= 0) continue;
+            // #1004 slice 3b: an element clipped to a shape shows only inside it, where the shape is now
+            int clipRestore = canvas.SaveCount;
+            if (e.Clip is { } clipId && layer.Elements.FirstOrDefault(m => m.Id == clipId) is { } mask)
+            {
+                canvas.Save();
+                using var path = ClipPath(mask, w, h);
+                canvas.ClipPath(path, SKClipOperation.Intersect, antialias: true);
+            }
+            else if (e.Clip is not null) continue;   // the shape is not on screen now: nothing of the element shows
+            // #1004 slice 3: the element is drawn in a layer of its own, and the layer gets its glow, shadow and blur
+            // a plain shape that only glows draws its halo directly (no layer): fields of glowing particles stay cheap
+            bool halo = e.Kind == "shape" && e.Effects is { Glow: > 0, Blur: 0, Shadow: 0, Gradient: null } && e.Split is null &&
+                        (e.Text ?? "").Trim().ToLowerInvariant() is "circle" or "circulo" or "círculo" or "ellipse" or "elipse" or "rect" or "retangulo" or "retângulo";
+            // a split text opens its effect layer around each unit, in DrawUnit (the unit's place is known there)
+            if (e.Split is not null && e.Instance >= 0) { DrawUnit(canvas, e, w, h); canvas.RestoreToCount(clipRestore); continue; }
+            int restoreTo = !halo && e.Effects is { Any: true } fx ? Effects(canvas, e, fx, w, h) : -1;
             float bw = (float)(e.Width * w), bh = (float)(e.Height * h);
             canvas.Save();
             canvas.Translate((float)(e.X * w), (float)(e.Y * h));
@@ -97,16 +123,22 @@ public sealed class VideoFrameRenderer : IDisposable
             var color = Color(e.Color, SKColors.White).WithAlpha((byte)Math.Round(e.Opacity * 255));
             switch (e.Kind)
             {
-                case "shape": DrawShape(canvas, e, box, color); break;
+                case "shape":
+                    if (halo) DrawHalo(canvas, e, box, h);
+                    DrawShape(canvas, e, box, color);
+                    break;
                 case "image": DrawImage(canvas, e, box); break;
                 case "plot": DrawPlot(canvas, e, box, color); break;
                 case "math": DrawMath(canvas, e, box, color); break;
                 case "path": DrawPath(canvas, e, box, color, h); break;
                 case "group": break;   // only carries its children
-                default: DrawText(canvas, e.Text, box, (float)(e.FontSize * h), color, e.Kind == "title", e.Kind == "script" ? SKTextAlign.Left : SKTextAlign.Center, e.Progress); break;
+                default: DrawText(canvas, e.Text ?? "", box, (float)(e.FontSize * h), color, e.Kind == "title", e.Kind == "script" ? SKTextAlign.Left : SKTextAlign.Center, e.Progress); break;
             }
             canvas.Restore();
+            FinishEffects(canvas, e, restoreTo, w, h);
+            canvas.RestoreToCount(clipRestore);
         }
+        canvas.RestoreToCount(cameraRestore);
         return surface.Snapshot();
     }
 
@@ -282,6 +314,132 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawText(line, x, y, align, font, paint);
             y += font.Spacing;
         }
+    }
+
+    /// <summary>The glow of a plain shape: two blurred copies of it (wide and tight) under it, in the glow colour.</summary>
+    private static void DrawHalo(SKCanvas canvas, VideoElementState e, SKRect box, int h)
+    {
+        var fx = e.Effects!;
+        var glow = Color(fx.GlowColor ?? e.Color, SKColors.White).WithAlpha((byte)Math.Round(Math.Clamp(e.Opacity, 0, 1) * 230));
+        bool round = (e.Text ?? "").Trim().ToLowerInvariant() is "circle" or "circulo" or "círculo" or "ellipse" or "elipse";
+        float scale = (float)Math.Max(0.001, e.Scale);
+        foreach (var sigma in new[] { fx.Glow * h, fx.Glow * h * 0.35 })
+        {
+            using var blur = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, (float)sigma / scale);
+            using var paint = new SKPaint { Color = glow, IsAntialias = true, MaskFilter = blur };
+            if (round) canvas.DrawOval(box, paint); else canvas.DrawRect(box, paint);
+        }
+    }
+
+    /// <summary>The outline of a clip shape at its current place, size, turn and progress (a growing rect reveals left to right).</summary>
+    private static SKPath ClipPath(VideoElementState m, int w, int h)
+    {
+        float bw = (float)(m.Width * w), bh = (float)(m.Height * h);
+        var box = new SKRect(-bw / 2, -bh / 2, -bw / 2 + bw * (float)Math.Clamp(m.Progress, 0, 1), bh / 2);
+        var path = new SKPath();
+        if ((m.Text ?? "").Trim().ToLowerInvariant() is "ellipse" or "elipse" or "circle" or "circulo" or "círculo") path.AddOval(box);
+        else path.AddRect(box);
+        var matrix = SKMatrix.CreateScale((float)m.Scale, (float)m.Scale);
+        if (m.Rotation != 0) matrix = matrix.PostConcat(SKMatrix.CreateRotationDegrees((float)m.Rotation));
+        matrix = matrix.PostConcat(SKMatrix.CreateTranslation((float)(m.X * w), (float)(m.Y * h)));
+        path.Transform(matrix);
+        return path;
+    }
+
+    /// <summary>Opens the element's effect layers; returns the save count to restore to.</summary>
+    private static int Effects(SKCanvas canvas, VideoElementState e, VideoEffects fx, int w, int h, SKPoint? centre = null, float? size = null)
+    {
+        int restoreTo = canvas.SaveCount;
+        SKImageFilter? filter = null;
+        if (fx.Blur > 0) filter = SKImageFilter.CreateBlur((float)(fx.Blur * h), (float)(fx.Blur * h));
+        if (fx.Glow > 0)
+        {
+            var glow = Color(fx.GlowColor ?? e.Color, SKColors.White).WithAlpha((byte)Math.Round(Math.Clamp(e.Opacity, 0, 1) * 230));
+            // two halos, one tight and one wide, read as light rather than as a smudge
+            var tight = SKImageFilter.CreateDropShadow(0, 0, (float)(fx.Glow * h * 0.35), (float)(fx.Glow * h * 0.35), glow, filter);
+            filter = SKImageFilter.CreateDropShadow(0, 0, (float)(fx.Glow * h), (float)(fx.Glow * h), glow, tight);
+        }
+        if (fx.Shadow > 0)
+            filter = SKImageFilter.CreateDropShadow((float)(fx.Shadow * h * 0.4), (float)(fx.Shadow * h * 0.6), (float)(fx.Shadow * h * 0.6), (float)(fx.Shadow * h * 0.6),
+                new SKColor(0, 0, 0, (byte)Math.Round(Math.Clamp(e.Opacity, 0, 1) * 150)), filter);
+        // the layer covers the element and the reach of its effects, not the whole frame: a field of glowing
+        // particles is hundreds of small layers, not hundreds of full frames
+        float reach = (float)((fx.Glow * 3 + fx.Blur * 3 + fx.Shadow * 2) * h) + 2;
+        float half = (size ?? (float)(Math.Max(e.Width * w, e.Height * h) * Math.Max(0.001, e.Scale) * 0.75)) + reach;
+        var c = centre ?? new SKPoint((float)(e.X * w), (float)(e.Y * h));
+        var bounds = new SKRect(c.X - half, c.Y - half, c.X + half, c.Y + half);
+        using (var paint = new SKPaint { ImageFilter = filter }) canvas.SaveLayer(bounds, paint);
+        filter?.Dispose();
+        // the gradient is laid over what the element draws, in a layer under the effects
+        if (fx.Gradient is not null) canvas.SaveLayer(bounds, null);
+        return restoreTo;
+    }
+
+    /// <summary>Lays the gradient over the element (only where it drew) and closes its effect layers.</summary>
+    private static void FinishEffects(SKCanvas canvas, VideoElementState e, int restoreTo, int w, int h)
+    {
+        if (restoreTo < 0) return;
+        if (e.Effects?.Gradient is { } to)
+        {
+            float cy = (float)(e.Y * h), half = (float)(e.Height * h * Math.Max(0.001, e.Scale) / 2);
+            using var shader = SKShader.CreateLinearGradient(new SKPoint(0, cy - half), new SKPoint(0, cy + half),
+                [Color(e.Color, SKColors.White), Color(to, SKColors.White)], SKShaderTileMode.Clamp);
+            using var paint = new SKPaint { Shader = shader, BlendMode = SKBlendMode.SrcIn };
+            canvas.DrawPaint(paint);
+        }
+        canvas.RestoreToCount(restoreTo);
+    }
+
+    private sealed record UnitPlace(string Text, float X, float Y, float Size);
+    private readonly Dictionary<(string Text, string Split, float Size, float W, float H, bool Bold), List<UnitPlace>> _units = new();
+
+    /// <summary>
+    /// #1004 slice 2: one letter or word of a split text, where it sits when the whole text is laid out in its box,
+    /// turned and scaled about its own centre by its instance's state.
+    /// </summary>
+    private void DrawUnit(SKCanvas canvas, VideoElementState e, int w, int h)
+    {
+        bool bold = e.Kind == "title";
+        float bw = (float)(e.Width * w), bh = (float)(e.Height * h), size = (float)(e.FontSize * h);
+        var key = (e.Text, e.Split!, size, bw, bh, bold);
+        if (!_units.TryGetValue(key, out var places))
+        {
+            if (_units.Count > 256) _units.Clear();
+            places = [];
+            using var layoutFont = Font(bold, size);
+            var (lines, _) = Layout(e.Text, new SKRect(-bw / 2, -bh / 2, bw / 2, bh / 2), layoutFont);
+            float y = -lines.Count * layoutFont.Spacing / 2 - layoutFont.Metrics.Ascent;
+            float middle = (layoutFont.Metrics.Ascent + layoutFont.Metrics.Descent) / 2;
+            foreach (var line in lines)
+            {
+                float left = -layoutFont.MeasureText(line) / 2;
+                foreach (var (start, length) in VideoProcedural.Units(line, e.Split))
+                {
+                    var unit = line.Substring(start, length);
+                    float x = left + layoutFont.MeasureText(line[..start]) + layoutFont.MeasureText(unit) / 2;
+                    places.Add(new UnitPlace(unit, x, y + middle, layoutFont.Size));
+                }
+                y += layoutFont.Spacing;
+            }
+            _units[key] = places;
+        }
+        if (e.Instance >= places.Count) return;
+        var p = places[e.Instance];
+        int restoreTo = -1;
+        if (e.Effects is { Any: true } fx)
+        {
+            float half = p.Size * Math.Max(1, p.Text.Length) * (float)Math.Max(1, e.Scale);
+            restoreTo = Effects(canvas, e, fx, w, h, new SKPoint((float)(e.X * w) + p.X, (float)(e.Y * h) + p.Y), half);
+        }
+        using var font = Font(bold, p.Size);
+        using var paint = new SKPaint { Color = Color(e.Color, SKColors.White).WithAlpha((byte)Math.Round(e.Opacity * 255)), IsAntialias = true };
+        canvas.Save();
+        canvas.Translate((float)(e.X * w) + p.X, (float)(e.Y * h) + p.Y);
+        if (e.Rotation != 0) canvas.RotateDegrees((float)e.Rotation);
+        if (e.Scale != 1) canvas.Scale((float)e.Scale);
+        canvas.DrawText(p.Text, 0, -(font.Metrics.Ascent + font.Metrics.Descent) / 2, SKTextAlign.Center, font, paint);
+        canvas.Restore();
+        FinishEffects(canvas, e, restoreTo, w, h);
     }
 
     private static readonly SKTypeface Regular = Face(SKFontStyleWeight.Normal), Bold = Face(SKFontStyleWeight.Bold);

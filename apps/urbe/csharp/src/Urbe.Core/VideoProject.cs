@@ -26,6 +26,8 @@ public sealed record VideoComposition
     public string? Theme { get; init; }
     public List<VideoScene> Scenes { get; init; } = [];
     public List<VideoAudioClip> Audio { get; init; } = [];
+    /// <summary>#1004 slice 5: reusable groups of elements by name, placed in scenes by elements of kind "use".</summary>
+    public Dictionary<string, List<VideoElement>>? Components { get; init; }
     /// <summary>#956: what each scene showed in the last MP4 saved (scene ID → <see cref="VideoTimelineScene.ContentKey"/>).</summary>
     public Dictionary<string, string>? Rendered { get; init; }
 
@@ -94,6 +96,8 @@ public sealed record VideoScene
     public VideoTransition Transition { get; init; } = new();
     public string Background { get; init; } = "#101418";
     public List<VideoElement> Elements { get; init; } = [];
+    /// <summary>#1004 slice 4: the scene's camera (pan, zoom, rotation over time); null is a still camera on the whole frame.</summary>
+    public VideoCamera? Camera { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -168,6 +172,40 @@ public sealed record VideoElement
     /// parent's scale, rotation and opacity apply to it too. Hidden while the parent is.
     /// </summary>
     public string? Parent { get; init; }
+    /// <summary>
+    /// #1004: how many instances of this element are drawn (1 to <see cref="VideoProcedural.MaxRepeat"/>); its motions
+    /// see i, n and u, so each instance can sit, move and fade on its own. A repeated element is not a parent.
+    /// </summary>
+    public int Repeat { get; init; } = 1;
+    /// <summary>
+    /// #1004 slice 2 (kinetic typography): "letters" or "words" draws a text one unit per instance, each in its place in
+    /// the text and moved by the motions with i, n and u, as a repeated element; null draws the text whole.
+    /// </summary>
+    public string? Split { get; init; }
+    /// <summary>
+    /// #1004 slice 3, effects: glow (a halo of <see cref="GlowColor"/>, or the element's colour), a soft shadow under it
+    /// and blur, each a radius as a fraction of the frame's height (0 is off, at most 0.2); <see cref="Gradient"/> paints
+    /// the element from its colour (top) to this one (bottom).
+    /// </summary>
+    /// <summary>
+    /// #1004 slice 3b: the id of a shape (rect, ellipse or circle) of the same scene: this element shows only inside it.
+    /// The shape keeps moving by its own keyframes and formulas, so an invisible one (opacity 0) that grows is a reveal.
+    /// </summary>
+    public string? Clip { get; init; }
+    /// <summary>#1004 slice 5: for kind "use", the component placed and the values of its {{parameters}}.</summary>
+    public string? Component { get; init; }
+    public Dictionary<string, string>? Params { get; init; }
+    public double Glow { get; init; }
+    public string? GlowColor { get; init; }
+    public double Shadow { get; init; }
+    public double Blur { get; init; }
+    public string? Gradient { get; init; }
+
+    /// <summary>The shapes an element can be clipped to.</summary>
+    public static readonly string[] ClipShapes = ["rect", "retangulo", "retângulo", "ellipse", "elipse", "circle", "circulo", "círculo"];
+
+    public static bool IsHexColor(string? c) =>
+        c is { Length: 4 or 7 or 9 } && c[0] == '#' && c.Skip(1).All(Uri.IsHexDigit);
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -180,7 +218,7 @@ public sealed record VideoElement
 /// <summary>The value a property reaches at a time; <see cref="Easing"/> shapes the way from the previous keyframe.</summary>
 public sealed record VideoKeyframe
 {
-    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress", "width", "height"];
+    public static readonly string[] Properties = ["x", "y", "scale", "opacity", "rotation", "progress", "width", "height", "glow", "shadow", "blur"];
     /// <summary>Named curves; any CSS <c>cubic-bezier(x1, y1, x2, y2)</c> is accepted too (x in 0–1). "back" overshoots and settles.</summary>
     public static readonly string[] Easings = ["linear", "easeIn", "easeOut", "easeInOut", "step", "back"];
 
@@ -192,11 +230,27 @@ public sealed record VideoKeyframe
     public string Easing { get; init; } = "easeInOut";
 }
 
-/// <summary>Animation by a function of t (seconds in the scene), added to the property: "0.02*sin(2*pi*t)".</summary>
+/// <summary>
+/// Animation by a formula of t (seconds in the scene), added to the property: "0.02*sin(2*pi*t)". In a repeated element
+/// it also sees i, n and u (<see cref="VideoProcedural"/>); <see cref="Mode"/> "set" makes it the value instead.
+/// </summary>
 public sealed record VideoMotion
 {
     public string Property { get; init; } = "y";
     public string Expression { get; init; } = "0";
+    public string Mode { get; init; } = "add";
+}
+
+/// <summary>
+/// #1004 slice 4: where a scene's camera looks — x and y (the frame point at the centre, 0.5 is the middle), zoom
+/// (1 is the whole frame, 2 twice as close) and rotation (degrees) — animated by keyframes and motions like an element.
+/// The background stays; the elements move under the camera.
+/// </summary>
+public sealed record VideoCamera
+{
+    public static readonly string[] Properties = ["x", "y", "zoom", "rotation"];
+    public List<VideoKeyframe> Keyframes { get; init; } = [];
+    public List<VideoMotion> Motions { get; init; } = [];
 }
 
 /// <summary>A sound file of the vault placed on the timeline: voice, music or effect.</summary>
@@ -229,6 +283,8 @@ public static class VideoCompositionRules
     {
         ArgumentNullException.ThrowIfNull(video);
         static InvalidDataException Bad(string why) => new("Vídeo inválido: " + why);
+        // a component placed is checked as the elements it becomes
+        video = VideoComponents.Expand(video);
         if (!VideoComposition.Aspects.Contains(video.Aspect)) throw Bad("proporção " + video.Aspect);
         if (video.Resolution is < VideoComposition.MinHeight or > VideoComposition.MaxHeight) throw Bad("resolução " + video.Resolution);
         if (video.Fps is < 1 or > VideoComposition.MaxFps) throw Bad("quadros por segundo " + video.Fps);
@@ -270,12 +326,43 @@ public static class VideoCompositionRules
                         throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
                     if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
                 }
+                if (e.Split is { } split)
+                {
+                    if (!VideoProcedural.Splits.Contains(split)) throw Bad("split de " + e.Id + " é \"" + split + "\"; use letters (uma instância por letra) ou words (por palavra)");
+                    if (e.Kind is not ("title" or "text")) throw Bad("split de " + e.Id + ": só title e text se dividem em letras ou palavras");
+                    if (e.Repeat != 1) throw Bad("split de " + e.Id + ": o número de instâncias é o de letras ou palavras; tire repeat");
+                }
+                foreach (var (name, v) in new[] { ("glow", e.Glow), ("shadow", e.Shadow), ("blur", e.Blur) })
+                    if (!Finite(v) || v < 0 || v > 0.2) throw Bad(name + " de " + e.Id + " é " + v + "; use de 0 (sem) a 0.2 (fração da altura do quadro)");
+                foreach (var (name, c) in new[] { ("glowColor", e.GlowColor), ("gradient", e.Gradient) })
+                    if (c is not null && !VideoElement.IsHexColor(c)) throw Bad(name + " de " + e.Id + " é \"" + c + "\"; use uma cor #rrggbb");
+                if (e.Repeat < 1 || e.Repeat > VideoProcedural.MaxRepeat)
+                    throw Bad("repeat de " + e.Id + " é " + e.Repeat + "; de 1 a " + VideoProcedural.MaxRepeat + " instâncias por elemento (mais delas: outro elemento)");
                 foreach (var m in e.Motions)
                 {
                     if (m is null || !VideoKeyframe.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512)
                         throw Bad("movimento de " + e.Id + ": propriedade \"" + m?.Property + "\" (animáveis: " + string.Join(", ", VideoKeyframe.Properties) + ") e expressão de até 512 caracteres");
-                    try { FunctionPlot.Expression.Parse(m.Expression, "t"); }
-                    catch (FormatException ex) { throw Bad("movimento " + m.Expression + ": " + ex.Message); }
+                    if (!VideoProcedural.Modes.Contains(m.Mode)) throw Bad("movimento de " + e.Id + ": mode \"" + m.Mode + "\"; use add (soma ao valor) ou set (vira o valor)");
+                    try { VideoProcedural.Check(m.Expression); }
+                    catch (FormatException ex) { throw Bad("movimento de " + e.Id + " \"" + m.Expression + "\": " + ex.Message + " (variáveis: t, i, n, u; funções: sin, cos, sqrt, abs, exp, floor, fract, sat, smooth, rand, noise…)"); }
+                }
+            }
+            if (scene.Camera is { } camera)
+            {
+                if (camera.Keyframes is null || camera.Motions is null || camera.Keyframes.Count > 1024 || camera.Motions.Count > 16) throw Bad("câmera da cena " + scene.Id);
+                foreach (var k in camera.Keyframes)
+                {
+                    if (k is null || !VideoCamera.Properties.Contains(k.Property))
+                        throw Bad("keyframe da câmera de " + scene.Id + " anima \"" + k?.Property + "\"; a câmera anima " + string.Join(", ", VideoCamera.Properties));
+                    if (!VideoKeyframe.IsEasing(k.Easing) || !Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe da câmera de " + scene.Id + ": tempo, valor e curva");
+                    if (k.Property == "zoom" && k.Value <= 0) throw Bad("zoom da câmera de " + scene.Id + " precisa ser maior que 0 (1 é o quadro inteiro)");
+                }
+                foreach (var m in camera.Motions)
+                {
+                    if (m is null || !VideoCamera.Properties.Contains(m.Property) || m.Expression is null || m.Expression.Length > 512 || !VideoProcedural.Modes.Contains(m.Mode))
+                        throw Bad("movimento da câmera de " + scene.Id + ": propriedade (" + string.Join(", ", VideoCamera.Properties) + "), mode add|set e expressão de até 512 caracteres");
+                    try { VideoProcedural.Check(m.Expression); }
+                    catch (FormatException ex) { throw Bad("movimento da câmera de " + scene.Id + " \"" + m.Expression + "\": " + ex.Message); }
                 }
             }
             // a parent is another element of the same scene, and following parents never comes back to the start
@@ -285,6 +372,15 @@ public static class VideoCompositionRules
                 var seen = new HashSet<string>(StringComparer.Ordinal) { e.Id };
                 for (var p = e.Parent; p is not null; p = byId[p].Parent)
                     if (!byId.ContainsKey(p) || !seen.Add(p)) throw Bad("o pai " + p + " de " + e.Id + " não existe na cena ou forma um ciclo");
+                if (e.Clip is { } clip)
+                {
+                    if (!byId.TryGetValue(clip, out var mask) || clip == e.Id)
+                        throw Bad("clip de " + e.Id + " é \"" + clip + "\": use o id de outra forma da mesma cena");
+                    if (mask.Kind != "shape" || !VideoElement.ClipShapes.Contains((mask.Text ?? "").Trim().ToLowerInvariant()) || mask.Repeat > 1)
+                        throw Bad("clip de " + e.Id + ": " + clip + " precisa ser uma forma rect, ellipse ou circle sem repeat");
+                }
+                if (e.Parent is { } parent && (byId[parent].Repeat > 1 || byId[parent].Split is not null))
+                    throw Bad("o pai " + parent + " de " + e.Id + " tem repeat: um elemento repetido não é pai (repita o filho, ou use um grupo como pai)");
             }
         }
         foreach (var clip in video.Audio)

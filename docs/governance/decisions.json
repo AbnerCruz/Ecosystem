@@ -2383,6 +2383,42 @@
       ],
       "raisedBy": "claude-code-urbe-editor",
       "raisedAt": "2026-11-19"
+    },
+    {
+      "id": "DEC-0067",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: narração neural em pt-BR e a licença do fonemizador",
+      "context": "A #1004 pede narração neural natural, offline. Medido em 20/11/2026 (TTS-NEURAL-20261120.md): Kokoro-82M (Apache-2.0) e Piper pt-BR (dataset CC0) funcionam em pt-BR pelo sherpa-onnx 1.13.8, que embute o fonemizador espeak-ng; o sherpa-onnx 2.0 retirou o espeak-ng e exige fonemizador externo. O espeak-ng e o piper_phonemize são GPL-3.0. As amostras WAV foram entregues ao proprietário para escuta.",
+      "question": "Como o Urbe fonemiza o português para a voz neural local?",
+      "alternatives": [
+        {
+          "option": "A — espeak-ng (GPL-3.0) junto do modelo baixado",
+          "consequences": "Funciona já, com Kokoro ou Piper; o app passa a distribuir componente GPL-3.0 (no APK ou no download do modelo), com as obrigações dessa licença."
+        },
+        {
+          "option": "B — fonemizador pt-BR permissivo",
+          "consequences": "Sem GPL; precisa achar ou construir um G2P pt-BR (regras, léxico ou modelo pequeno) e provar a qualidade; a voz neural local atrasa."
+        },
+        {
+          "option": "C — só endpoint externo configurado pela pessoa",
+          "consequences": "Sem fonemizador no app; exige internet, conta ou chave e envio do texto ao serviço com autorização."
+        },
+        {
+          "option": "D — manter a voz do sistema por enquanto",
+          "consequences": "Nada novo a licenciar; a narração continua com o timbre do aparelho."
+        }
+      ],
+      "recommendation": "B como destino e D enquanto isso, com C opcional: o provedor único de síntese é feito agora com a voz do sistema; a voz neural local entra quando houver fonemizador permissivo ou se o proprietário aceitar A.",
+      "consequences": "Define se o Urbe distribui componente GPL e quando a voz neural local chega ao aparelho.",
+      "manifestCompatibility": "NN-016 (texto não sai do aparelho sem autorização) e NN-011 (decisão explícita); nenhum dado do vault muda.",
+      "related": [
+        "apps/urbe/docs/csharp/TTS-NEURAL-20261120.md",
+        "https://github.com/AbnerCruz/Ecosystem/issues/1004"
+      ],
+      "raisedBy": "claude-code-urbe-editor",
+      "raisedAt": "2026-11-20"
     }
   ]
 }

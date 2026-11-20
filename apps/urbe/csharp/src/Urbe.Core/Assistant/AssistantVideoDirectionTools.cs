@@ -120,7 +120,7 @@ public static class AssistantVideoDirectionTools
     public static string Outline(VideoTimeline timeline) => string.Join("\n", timeline.Scenes.Select((s, i) =>
         "Cena " + (i + 1) + " " + s.Scene.Id + " (" + N(s.Start) + "–" + N(s.End) + " s, " + (s.Title ?? "sem título") + "): " +
         (s.Scene.Elements.Count == 0 ? "sem elementos" : string.Join("; ", s.Scene.Elements.Select(e =>
-            e.Id + " " + e.Kind + " (x " + N(e.X) + ", y " + N(e.Y) + ", " + N(e.Width) + "×" + N(e.Height) + ")")))));
+            e.Id + " " + e.Kind + " (x " + N(e.X) + ", y " + N(e.Y) + ", " + N(e.Width) + "×" + N(e.Height) + (e.Repeat > 1 ? ", " + e.Repeat + " instâncias" : "") + ")")))));
 
     public static string Issues(IReadOnlyList<VideoIssue> issues, bool measured) =>
         (issues.Count == 0 ? "Revisão visual medida sem problemas." :

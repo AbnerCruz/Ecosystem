@@ -12,6 +12,12 @@ public sealed record VideoTimelineScene(
 {
     public double End => Start + Duration;
 
+    /// <summary>
+    /// #1004 slice 5: what the scene draws — its elements with every component placed expanded. <see cref="Scene"/>
+    /// stays as saved (a "use" stays one element), so an edit never writes the expansion back.
+    /// </summary>
+    public IReadOnlyList<VideoElement> Elements { get; init; } = Scene.Elements;
+
     /// <summary>When the scene looks formed: its entrance and every keyframe done, before its end (a poster frame).</summary>
     public double Settled
     {
@@ -32,7 +38,14 @@ public sealed record VideoTimelineScene(
 /// <param name="Parent">For an element that follows another, where its parent is (to turn a drag back into an offset).</param>
 public sealed record VideoElementState(
     string Id, string Kind, string Text, string? Source, double X, double Y, double Width, double Height,
-    double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize, VideoParentFrame? Parent = null);
+    double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize, VideoParentFrame? Parent = null,
+    int Instance = -1, string? Split = null, VideoEffects? Effects = null, string? Clip = null);
+
+/// <summary>#1004 slice 3: an element's effects at one instant (radii as fractions of the frame's height).</summary>
+public sealed record VideoEffects(double Glow, string? GlowColor, double Shadow, double Blur, string? Gradient)
+{
+    public bool Any => Glow > 0 || Shadow > 0 || Blur > 0 || Gradient is not null;
+}
 
 /// <summary>A parent's place at one instant and the frame's size: what turns a child's offset into frame coordinates.</summary>
 public sealed record VideoParentFrame(double X, double Y, double Scale, double Rotation, double Opacity, int Width, int Height)
@@ -54,7 +67,30 @@ public sealed record VideoParentFrame(double X, double Y, double Scale, double R
 /// A scene drawn at one instant. <see cref="StateKey"/> is equal for two instants that look the same (a still
 /// scene, or one whose animations ended), so a rendered layer is reused instead of drawn again.
 /// </summary>
-public sealed record VideoLayer(VideoTimelineScene Scene, double Opacity, double LocalTime, IReadOnlyList<VideoElementState> Elements, string StateKey);
+public sealed record VideoLayer(VideoTimelineScene Scene, double Opacity, double LocalTime, IReadOnlyList<VideoElementState> Elements, string StateKey,
+    VideoCameraState? Camera = null);
+
+/// <summary>#1004 slice 4: the camera at one instant: the frame point at the centre, the zoom and the rotation.</summary>
+public sealed record VideoCameraState(double X, double Y, double Zoom, double Rotation)
+{
+    /// <summary>The element as the camera shows it on a <paramref name="width"/>×<paramref name="height"/> frame.</summary>
+    public VideoElementState Apply(VideoElementState e, int width, int height)
+    {
+        double dx = (e.X - X) * width * Zoom, dy = (e.Y - Y) * height * Zoom, a = -Rotation * Math.PI / 180;
+        double rx = dx * Math.Cos(a) - dy * Math.Sin(a), ry = dx * Math.Sin(a) + dy * Math.Cos(a);
+        return e with { X = 0.5 + rx / width, Y = 0.5 + ry / height, Scale = e.Scale * Zoom, Rotation = e.Rotation - Rotation };
+    }
+
+    /// <summary>The scene point (fractions) the camera shows at screen point (<paramref name="sx"/>, <paramref name="sy"/>).</summary>
+    public (double X, double Y) Unapply(double sx, double sy, int width, int height)
+    {
+        double rx = (sx - 0.5) * width, ry = (sy - 0.5) * height, a = Rotation * Math.PI / 180;
+        double dx = rx * Math.Cos(a) - ry * Math.Sin(a), dy = rx * Math.Sin(a) + ry * Math.Cos(a);
+        return (X + dx / (width * Zoom), Y + dy / (height * Zoom));
+    }
+
+    public bool IsStill => Math.Abs(X - 0.5) < 1e-9 && Math.Abs(Y - 0.5) < 1e-9 && Math.Abs(Zoom - 1) < 1e-9 && Math.Abs(Rotation) < 1e-9;
+}
 
 /// <summary>What the video shows at a time: scene layers bottom to top, and the subtitle over them.</summary>
 public sealed record VideoFrame(double Time, IReadOnlyList<VideoLayer> Layers, string? Subtitle);
@@ -65,8 +101,6 @@ public sealed record VideoFrame(double Time, IReadOnlyList<VideoLayer> Layers, s
 /// </summary>
 public sealed class VideoTimeline
 {
-    private readonly Dictionary<string, FunctionPlot.Expression> _motions = new(StringComparer.Ordinal);
-
     private VideoTimeline(int width, int height, int fps, IReadOnlyList<VideoTimelineScene> scenes, IReadOnlyList<VideoCue> cues,
         IReadOnlyList<VideoAudioClip> audio, IReadOnlyList<string> missing, bool subtitles, VideoTheme? theme)
     {
@@ -128,8 +162,11 @@ public sealed class VideoTimeline
             // a crossfade overlaps the previous scene; the first one fades in from black
             double overlap = i == 0 ? 0 : Math.Min(fade, scenes[^1].Duration / 2);
             double start = Math.Max(0, end - overlap);
-            var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height + "\u0001" + video.Theme);
-            var placed = new VideoTimelineScene(scene, placement, start, scene.Duration, fade, title, plain, key);
+            var key = Hash(JsonSerializer.Serialize(scene) + "\u0001" + (video.Components is { Count: > 0 } && scene.Elements.Any(e => e.Kind == "use") ? JsonSerializer.Serialize(video.Components) : "") + "\u0001" + title + "\u0001" + plain + "\u0001" + width + "x" + height + "\u0001" + video.Theme);
+            var placed = new VideoTimelineScene(scene, placement, start, scene.Duration, fade, title, plain, key)
+            {
+                Elements = VideoComponents.ExpandScene(scene, video.Components).Elements
+            };
             scenes.Add(placed);
             // subtitles of a scene start after its entrance and end before the next one's — or with its narration, when known
             var voice = video.Audio.FirstOrDefault(a => a.Kind == "voice" && a.Length is not null && Math.Abs(a.Start - start) < 0.05);
@@ -156,10 +193,15 @@ public sealed class VideoTimeline
             var states = States(scene, local);
             var sb = new StringBuilder(scene.ContentKey);
             foreach (var s in states)
-                sb.Append('|').Append(s.Id).Append(';').Append(F(s.X)).Append(';').Append(F(s.Y)).Append(';').Append(F(s.Scale))
+            {
+                sb.Append('|').Append(s.Id).Append('#').Append(s.Instance).Append(';').Append(F(s.X)).Append(';').Append(F(s.Y)).Append(';').Append(F(s.Scale))
                   .Append(';').Append(F(s.Opacity)).Append(';').Append(F(s.Rotation)).Append(';').Append(F(s.Progress))
                   .Append(';').Append(F(s.Width)).Append(';').Append(F(s.Height));
-            layers.Add(new VideoLayer(scene, opacity, local, states, Hash(sb.ToString())));
+                if (s.Effects is { } fx) sb.Append(";fx").Append(F(fx.Glow)).Append(';').Append(F(fx.Shadow)).Append(';').Append(F(fx.Blur));
+            }
+            var camera = Camera(scene.Scene.Camera, local);
+            if (camera is not null) sb.Append("|cam").Append(F(camera.X)).Append(';').Append(F(camera.Y)).Append(';').Append(F(camera.Zoom)).Append(';').Append(F(camera.Rotation));
+            layers.Add(new VideoLayer(scene, opacity, local, states, Hash(sb.ToString()), camera));
         }
         string? subtitle = BurnSubtitles ? Cues.LastOrDefault(c => t >= c.Start && t < c.End)?.Text : null;
         return new VideoFrame(t, layers, subtitle);
@@ -178,42 +220,69 @@ public sealed class VideoTimeline
     /// <summary>The visible elements of a scene, each placed through its parents (validation rules out cycles).</summary>
     private List<VideoElementState> States(VideoTimelineScene scene, double local)
     {
-        var own = new Dictionary<string, VideoElementState?>(StringComparer.Ordinal);
-        foreach (var e in scene.Scene.Elements) own[e.Id] = State(scene, e, local);
+        // a parent is never repeated (validation): it has at most one state
         var placed = new Dictionary<string, VideoElementState?>(StringComparer.Ordinal);
-        VideoElementState? Placed(VideoElement e)
+        VideoElementState? ParentState(string id)
         {
-            if (placed.TryGetValue(e.Id, out var done)) return done;
-            var state = own[e.Id];
-            if (state is not null && e.Parent is { } parentId)
-            {
-                var parent = Placed(scene.Scene.Elements.First(p => p.Id == parentId));
-                if (parent is null) state = null;
-                else
-                {
-                    var frame = new VideoParentFrame(parent.X, parent.Y, parent.Scale, parent.Rotation, parent.Opacity, Width, Height);
-                    var (x, y) = frame.ToFrame(state.X, state.Y);
-                    state = state with
-                    {
-                        X = x, Y = y, Scale = state.Scale * parent.Scale, Rotation = state.Rotation + parent.Rotation,
-                        Opacity = state.Opacity * parent.Opacity, Parent = frame
-                    };
-                }
-            }
-            return placed[e.Id] = state;
+            if (placed.TryGetValue(id, out var done)) return done;
+            var e = scene.Elements.First(p => p.Id == id);
+            var own = State(scene, e, local, 0, 1);
+            return placed[id] = own is null ? null : Place(own, e);
         }
-        return scene.Scene.Elements.Select(Placed).Where(s => s is not null).Select(s => s!).ToList();
+        VideoElementState? Place(VideoElementState state, VideoElement e)
+        {
+            if (e.Parent is not { } parentId) return state;
+            var parent = ParentState(parentId);
+            if (parent is null) return null;
+            var frame = new VideoParentFrame(parent.X, parent.Y, parent.Scale, parent.Rotation, parent.Opacity, Width, Height);
+            var (x, y) = frame.ToFrame(state.X, state.Y);
+            return state with
+            {
+                X = x, Y = y, Scale = state.Scale * parent.Scale, Rotation = state.Rotation + parent.Rotation,
+                Opacity = state.Opacity * parent.Opacity, Parent = frame
+            };
+        }
+        var states = new List<VideoElementState>();
+        foreach (var e in scene.Elements)
+        {
+            int n = Math.Clamp(e.Repeat, 1, VideoProcedural.MaxRepeat);
+            if (e.Split is not null)
+            {
+                // one instance per letter or word of the text as it is shown (the note's title for a title)
+                if (State(scene, e, local, 0, 1) is not { } whole) continue;
+                n = Math.Min(VideoProcedural.MaxRepeat, VideoProcedural.Units(whole.Text, e.Split).Count);
+                for (int i = 0; i < n; i++)
+                    if (State(scene, e, local, i, n) is { } unit && Place(unit with { Instance = i, Split = e.Split }, e) is { } at) states.Add(at);
+                continue;
+            }
+            if (n == 1)
+            {
+                if (placed.TryGetValue(e.Id, out var done)) { if (done is not null) states.Add(done); continue; }
+                if (State(scene, e, local, 0, 1) is { } one && Place(one, e) is { } at) states.Add(placed[e.Id] = at);
+                else placed[e.Id] = null;
+                continue;
+            }
+            for (int i = 0; i < n; i++)
+                if (State(scene, e, local, i, n) is { } instance && Place(instance with { Instance = i }, e) is { } at) states.Add(at);
+        }
+        return states;
     }
 
-    private VideoElementState? State(VideoTimelineScene scene, VideoElement e, double local)
+    private VideoElementState? State(VideoTimelineScene scene, VideoElement e, double local, int index, int count)
     {
         if (local < e.Start || e.End is { } end && local >= end) return null;
         double Value(string property, double baseValue)
         {
-            var frames = e.Keyframes.Where(k => k.Property == property).OrderBy(k => k.Time).ToList();
-            var v = frames.Count == 0 ? baseValue : Interpolate(frames, local);
+            List<VideoKeyframe>? frames = null;
+            foreach (var k in e.Keyframes)
+                if (k.Property == property) (frames ??= []).Add(k);
+            var v = frames is null ? baseValue : Interpolate(frames.Count > 1 ? frames.OrderBy(k => k.Time).ToList() : frames, local);
             foreach (var motion in e.Motions)
-                if (motion.Property == property) v += Motion(motion.Expression, local);
+                if (motion.Property == property)
+                {
+                    var m = VideoProcedural.Evaluate(motion.Expression, local, index, count);
+                    v = motion.Mode == "set" ? m : v + m;
+                }
             return v;
         }
         var text = e.Kind switch
@@ -227,15 +296,32 @@ public sealed class VideoTimeline
         return new VideoElementState(e.Id, e.Kind, text, e.Source, Value("x", e.X), Value("y", e.Y), Math.Max(0.001, Value("width", e.Width)), Math.Max(0.001, Value("height", e.Height)),
             Math.Max(0, Value("scale", 1)), Math.Clamp(Value("opacity", 1), 0, 1), Value("rotation", 0),
             Math.Clamp(Value("progress", 1), 0, 1),
-            Theme is { } theme && string.Equals(e.Color, VideoThemes.DefaultColor, StringComparison.OrdinalIgnoreCase) ? theme.ColorFor(e.Kind) : e.Color, e.FontSize);
+            Theme is { } theme && string.Equals(e.Color, VideoThemes.DefaultColor, StringComparison.OrdinalIgnoreCase) ? theme.ColorFor(e.Kind) : e.Color, e.FontSize)
+        {
+            Clip = e.Clip,
+            Effects = new VideoEffects(Math.Clamp(Value("glow", e.Glow), 0, 0.2), e.GlowColor, Math.Clamp(Value("shadow", e.Shadow), 0, 0.2),
+                Math.Clamp(Value("blur", e.Blur), 0, 0.2), e.Gradient) is { Any: true } fx ? fx : null
+        };
     }
 
-    private double Motion(string expression, double t)
+    /// <summary>The camera at <paramref name="local"/> seconds into its scene; null when it stays on the whole frame.</summary>
+    public static VideoCameraState? Camera(VideoCamera? camera, double local)
     {
-        if (!_motions.TryGetValue(expression, out var parsed))
-            _motions[expression] = parsed = FunctionPlot.Expression.Parse(expression, "t");
-        var v = parsed.Evaluate(t);
-        return double.IsFinite(v) ? v : 0;
+        if (camera is null || camera.Keyframes.Count == 0 && camera.Motions.Count == 0) return null;
+        double Value(string property, double baseValue)
+        {
+            var frames = camera.Keyframes.Where(k => k.Property == property).OrderBy(k => k.Time).ToList();
+            var v = frames.Count == 0 ? baseValue : Interpolate(frames, local);
+            foreach (var m in camera.Motions)
+                if (m.Property == property)
+                {
+                    var x = VideoProcedural.Evaluate(m.Expression, local);
+                    v = m.Mode == "set" ? x : v + x;
+                }
+            return v;
+        }
+        var state = new VideoCameraState(Value("x", 0.5), Value("y", 0.5), Math.Clamp(Value("zoom", 1), 0.05, 50), Value("rotation", 0));
+        return state.IsStill ? null : state;
     }
 
     /// <summary>The value at <paramref name="t"/> between keyframes (held before the first and after the last).</summary>

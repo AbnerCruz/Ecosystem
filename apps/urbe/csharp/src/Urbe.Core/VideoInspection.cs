@@ -39,7 +39,7 @@ public static class VideoInspection
             {
                 if (seen.Add(id + "|" + element + "|" + kind)) issues.Add(new(severity, s, id, element, t, message, fix));
             }
-            foreach (var e in scene.Scene.Elements)
+            foreach (var e in scene.Elements)
             {
                 if (e.Start >= scene.Duration) Add(ReviewSeverity.Warning, e.Id, "never", e.Start, "Começa em " + N(e.Start) + " s, depois do fim da cena (" + N(scene.Duration) + " s): nunca aparece.", "Diminua start ou aumente a duração da cena.");
                 if (e.Kind == "image" && fileExists is not null && e.Source is { } src && !fileExists(src))
@@ -50,17 +50,26 @@ public static class VideoInspection
                 var t = scene.Start + local;
                 var frame = timeline.Evaluate(t);
                 if (frame.Layers.FirstOrDefault(l => ReferenceEquals(l.Scene, scene)) is not { } layer) continue;
-                var visible = layer.Elements.Where(e => e.Opacity >= 0.1 && e.Scale > 0).ToList();
+                // #1004 slice 4: measured where the camera shows them
+                var shown = layer.Camera is { } cam ? layer.Elements.Select(e => cam.Apply(e, timeline.Width, timeline.Height)) : layer.Elements;
+                var visible = shown.Where(e => e.Opacity >= 0.1 && e.Scale > 0).ToList();
                 bool subtitle = frame.Subtitle is not null;
                 for (int i = 0; i < visible.Count; i++)
                 {
                     var e = visible[i];
                     if (!Visual.Contains(e.Kind)) continue;
-                    var b = Box(e, W, H);
-                    if (b.L < -0.01 * W || b.T < -0.01 * H || b.R > 1.01 * W || b.B > 1.01 * H)
+                    // a split text's units scale and turn about their own centres; the text's box is the one laid out
+                    var b = Box(e.Split is not null ? e with { Scale = 1, Rotation = 0 } : e, W, H);
+                    // #1004: instances of a repeated shape are a field (particles, stars, a grid) that may run past the
+                    // edges on purpose; a repeated text is still read, so it is still checked
+                    bool field = e.Instance >= 0 && !Text.Contains(e.Kind);
+                    if (field) { }
+                    else if (b.L < -0.01 * W || b.T < -0.01 * H || b.R > 1.01 * W || b.B > 1.01 * H)
                         Add(ReviewSeverity.Error, e.Id, "out", local, Name(e) + " sai do quadro.", "Aproxime x/y do centro ou reduza width/height/scale (posições são do centro, de 0 a 1).");
                     else if (b.L < SafeMargin * W || b.T < SafeMargin * H || b.R > (1 - SafeMargin) * W || b.B > (1 - SafeMargin) * H)
                         Add(ReviewSeverity.Warning, e.Id, "safe", local, Name(e) + " encosta na borda (fora dos 90 % seguros do quadro); pode ser cortado em telas e players.", "Mantenha a caixa entre 0,05 e 0,95 do quadro.");
+                    // a split text is one text: measured once, by its first unit
+                    if (e.Split is not null && e.Instance > 0) continue;
                     if (Text.Contains(e.Kind) && fit is not null && e.Text.Trim().Length > 0 && fit(e) is var f)
                     {
                         if (f.Cut) Add(ReviewSeverity.Error, e.Id, "cut", local, Name(e) + " não cabe na caixa: o texto termina em reticências.", "Aumente width/height do elemento, diminua fontSize ou encurte o texto.");
@@ -75,6 +84,7 @@ public static class VideoInspection
                     for (int j = 0; j < i; j++)
                     {
                         var o = visible[j];
+                        if (o.Id == e.Id && e.Split is not null) continue;   // the letters of one text share its box
                         if (!Visual.Contains(o.Kind) || !(Text.Contains(e.Kind) || Text.Contains(o.Kind))) continue;
                         var c = Box(o, W, H);
                         if (Intersection(b, c) > 0.05 * Math.Min(Area(b), Area(c)))
@@ -104,7 +114,7 @@ public static class VideoInspection
         var d = scene.Duration;
         var times = new SortedSet<double> { Math.Min(scene.FadeIn, d * 0.99), d * 0.99 };
         for (double t = 0.5; t < d; t += 0.5) times.Add(t);
-        foreach (var e in scene.Scene.Elements)
+        foreach (var e in scene.Elements)
         {
             times.Add(e.Start);
             if (e.End is { } end) times.Add(end - 0.01);

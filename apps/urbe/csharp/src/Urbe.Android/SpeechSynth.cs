@@ -26,6 +26,7 @@ internal sealed class SpeechSynth : UtteranceProgressListener
     public static void Install(Context context)
     {
         SpeechSynth? synth = null;
+        PlatformAudio.PlayWav = PlayAsync;
         PlatformAudio.SynthesizeToWav = (text, voice, target, cancel) => (synth ??= new SpeechSynth(context)).SpeakAsync(text, voice, target, cancel);
     }
 
@@ -38,12 +39,37 @@ internal sealed class SpeechSynth : UtteranceProgressListener
         }
     }
 
+    private List<Voice> _portuguese = [];
+
     private void ChooseVoices()
     {
         _tts.SetLanguage(Java.Util.Locale.ForLanguageTag("pt-BR"));
-        var pt = _tts.Voices?.Where(v => v.Locale?.Language == "pt" && !v.IsNetworkConnectionRequired)
+        _portuguese = _tts.Voices?.Where(v => v.Locale?.Language == "pt" && !v.IsNetworkConnectionRequired)
             .OrderBy(v => v.Locale?.Country == "BR" ? 0 : 1).ThenBy(v => v.Name).ToList() ?? [];
-        _voices = [pt.FirstOrDefault(), pt.Skip(1).FirstOrDefault()];
+        PlatformAudio.Voices = () => _portuguese.Select(v => v.Name ?? "").Where(n => n.Length > 0).ToList();
+        Prefer();
+    }
+
+    /// <summary>The person's voice first (when the device has it), then the next one for the podcast's second host.</summary>
+    private void Prefer()
+    {
+        var first = _portuguese.FirstOrDefault(v => v.Name == PlatformAudio.PreferredVoice) ?? _portuguese.FirstOrDefault();
+        _voices = [first, _portuguese.FirstOrDefault(v => v != first)];
+    }
+
+    /// <summary>Plays a WAV to its end with the media player; cancelling stops it.</summary>
+    private static async Task PlayAsync(string path, CancellationToken cancel)
+    {
+        using var player = new Android.Media.MediaPlayer();
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        player.Completion += (_, _) => done.TrySetResult();
+        player.Error += (_, _) => done.TrySetResult();
+        player.SetDataSource(path);
+        player.Prepare();
+        player.Start();
+        using (cancel.Register(() => { try { player.Stop(); } catch (Java.Lang.IllegalStateException) { } done.TrySetResult(); }))
+            await done.Task;
+        player.Release();
     }
 
     private async Task<bool> SpeakAsync(string text, int voice, string target, CancellationToken cancel)
@@ -52,6 +78,7 @@ internal sealed class SpeechSynth : UtteranceProgressListener
         await _one.WaitAsync(cancel);
         try
         {
+            Prefer();
             if (_voices[voice] is { } chosen) { _tts.SetVoice(chosen); _tts.SetPitch(1f); }
             else { if (_voices[0] is { } first) _tts.SetVoice(first); _tts.SetPitch(voice == 0 ? 1f : 0.8f); }
             _utterance = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
