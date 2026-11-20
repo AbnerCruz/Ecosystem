@@ -416,4 +416,38 @@ public sealed class VideoRenderTests
         VideoInspection.Run(timeline);
         Assert.True(clock2.Elapsed.TotalSeconds < 20, "the review of 2000 instances took " + clock2.Elapsed);
     }
+
+    /// <summary>#1004 slice 2: a title split into letters enters one letter after another, each in its place.</summary>
+    [Fact]
+    public void ASplitTitleEntersLetterByLetterInItsPlace()
+    {
+        var (catalog, project) = Project(resolution: 360, seconds: 3);
+        using var _c = catalog;
+        var scene = project.Video!.Scenes[0] with
+        {
+            Elements =
+            [
+                new VideoElement { Id = "t", Kind = "title", Text = "MMMMMMMMMM", Split = "letters", X = 0.5, Y = 0.5, Width = 0.9, Height = 0.3, FontSize = 0.12, Color = "#ff0000",
+                    Motions = [new() { Property = "opacity", Mode = "set", Expression = "step(0.1*i, t)" }, new() { Property = "y", Expression = "0.1*(1 - step(0.1*i, t))" }] }
+            ]
+        };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var renderer = new VideoFrameRenderer(timeline);
+        int Red(SKBitmap b, int from, int to)
+        {
+            int n = 0;
+            for (int x = from; x < to; x++) for (int y = 0; y < b.Height; y++) if (Reddish(b.GetPixel(x, y))) n++;
+            return n;
+        }
+        int w = timeline.Width;
+        using var whole = renderer.Render(2.0);
+        using var half = renderer.Render(0.45);
+        int left = Red(whole, 0, w / 2), right = Red(whole, w / 2, w);
+        Assert.True(left > 50 && right > 50, "the whole title is drawn across its box: " + left + " / " + right);
+        Assert.InRange(left / (double)right, 0.7, 1.4);
+        // halfway through the entrance only the first letters are there, on the left, where they will stay
+        Assert.True(Red(half, 0, w / 2) > left * 0.6, "first letters drawn");
+        Assert.True(Red(half, w / 2, w) < right * 0.3, "last letters not yet");
+    }
 }

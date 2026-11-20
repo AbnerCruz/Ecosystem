@@ -88,6 +88,7 @@ public sealed class VideoFrameRenderer : IDisposable
         foreach (var e in layer.Elements)
         {
             if (e.Opacity <= 0 || e.Scale <= 0) continue;
+            if (e.Split is not null && e.Instance >= 0) { DrawUnit(canvas, e, w, h); continue; }
             float bw = (float)(e.Width * w), bh = (float)(e.Height * h);
             canvas.Save();
             canvas.Translate((float)(e.X * w), (float)(e.Y * h));
@@ -282,6 +283,51 @@ public sealed class VideoFrameRenderer : IDisposable
             canvas.DrawText(line, x, y, align, font, paint);
             y += font.Spacing;
         }
+    }
+
+    private sealed record UnitPlace(string Text, float X, float Y, float Size);
+    private readonly Dictionary<(string Text, string Split, float Size, float W, float H, bool Bold), List<UnitPlace>> _units = new();
+
+    /// <summary>
+    /// #1004 slice 2: one letter or word of a split text, where it sits when the whole text is laid out in its box,
+    /// turned and scaled about its own centre by its instance's state.
+    /// </summary>
+    private void DrawUnit(SKCanvas canvas, VideoElementState e, int w, int h)
+    {
+        bool bold = e.Kind == "title";
+        float bw = (float)(e.Width * w), bh = (float)(e.Height * h), size = (float)(e.FontSize * h);
+        var key = (e.Text, e.Split!, size, bw, bh, bold);
+        if (!_units.TryGetValue(key, out var places))
+        {
+            if (_units.Count > 256) _units.Clear();
+            places = [];
+            using var layoutFont = Font(bold, size);
+            var (lines, _) = Layout(e.Text, new SKRect(-bw / 2, -bh / 2, bw / 2, bh / 2), layoutFont);
+            float y = -lines.Count * layoutFont.Spacing / 2 - layoutFont.Metrics.Ascent;
+            float middle = (layoutFont.Metrics.Ascent + layoutFont.Metrics.Descent) / 2;
+            foreach (var line in lines)
+            {
+                float left = -layoutFont.MeasureText(line) / 2;
+                foreach (var (start, length) in VideoProcedural.Units(line, e.Split))
+                {
+                    var unit = line.Substring(start, length);
+                    float x = left + layoutFont.MeasureText(line[..start]) + layoutFont.MeasureText(unit) / 2;
+                    places.Add(new UnitPlace(unit, x, y + middle, layoutFont.Size));
+                }
+                y += layoutFont.Spacing;
+            }
+            _units[key] = places;
+        }
+        if (e.Instance >= places.Count) return;
+        var p = places[e.Instance];
+        using var font = Font(bold, p.Size);
+        using var paint = new SKPaint { Color = Color(e.Color, SKColors.White).WithAlpha((byte)Math.Round(e.Opacity * 255)), IsAntialias = true };
+        canvas.Save();
+        canvas.Translate((float)(e.X * w) + p.X, (float)(e.Y * h) + p.Y);
+        if (e.Rotation != 0) canvas.RotateDegrees((float)e.Rotation);
+        if (e.Scale != 1) canvas.Scale((float)e.Scale);
+        canvas.DrawText(p.Text, 0, -(font.Metrics.Ascent + font.Metrics.Descent) / 2, SKTextAlign.Center, font, paint);
+        canvas.Restore();
     }
 
     private static readonly SKTypeface Regular = Face(SKFontStyleWeight.Normal), Bold = Face(SKFontStyleWeight.Bold);

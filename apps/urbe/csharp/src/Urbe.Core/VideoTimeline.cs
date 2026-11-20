@@ -33,7 +33,7 @@ public sealed record VideoTimelineScene(
 public sealed record VideoElementState(
     string Id, string Kind, string Text, string? Source, double X, double Y, double Width, double Height,
     double Scale, double Opacity, double Rotation, double Progress, string Color, double FontSize, VideoParentFrame? Parent = null,
-    int Instance = -1);
+    int Instance = -1, string? Split = null);
 
 /// <summary>A parent's place at one instant and the frame's size: what turns a child's offset into frame coordinates.</summary>
 public sealed record VideoParentFrame(double X, double Y, double Scale, double Rotation, double Opacity, int Width, int Height)
@@ -203,6 +203,15 @@ public sealed class VideoTimeline
         foreach (var e in scene.Scene.Elements)
         {
             int n = Math.Clamp(e.Repeat, 1, VideoProcedural.MaxRepeat);
+            if (e.Split is not null)
+            {
+                // one instance per letter or word of the text as it is shown (the note's title for a title)
+                if (State(scene, e, local, 0, 1) is not { } whole) continue;
+                n = Math.Min(VideoProcedural.MaxRepeat, VideoProcedural.Units(whole.Text, e.Split).Count);
+                for (int i = 0; i < n; i++)
+                    if (State(scene, e, local, i, n) is { } unit && Place(unit with { Instance = i, Split = e.Split }, e) is { } at) states.Add(at);
+                continue;
+            }
             if (n == 1)
             {
                 if (placed.TryGetValue(e.Id, out var done)) { if (done is not null) states.Add(done); continue; }

@@ -51,4 +51,32 @@ public static class VideoProcedural
         var v = c.Expression.Evaluate(t);
         return double.IsFinite(v) ? v : 0;
     }
+
+    /// <summary>#1004 slice 2: "letters" or "words" — a text drawn one unit per instance (kinetic typography).</summary>
+    public static readonly string[] Splits = ["letters", "words"];
+
+    /// <summary>
+    /// The units of a split text, each with where it starts in the text: letters are every visible character, words
+    /// the runs between spaces. Spaces are never a unit (they would be instances that draw nothing).
+    /// </summary>
+    public static IReadOnlyList<(int Start, int Length)> Units(string text, string? split)
+    {
+        var units = new List<(int, int)>();
+        if (string.IsNullOrEmpty(text) || split is null) return units;
+        if (split == "letters")
+        {
+            var e = System.Globalization.StringInfo.GetTextElementEnumerator(text);
+            while (e.MoveNext())
+                if (!string.IsNullOrWhiteSpace(e.GetTextElement())) units.Add((e.ElementIndex, e.GetTextElement().Length));
+            return units;
+        }
+        for (int i = 0; i < text.Length;)
+        {
+            while (i < text.Length && char.IsWhiteSpace(text[i])) i++;
+            int start = i;
+            while (i < text.Length && !char.IsWhiteSpace(text[i])) i++;
+            if (i > start) units.Add((start, i - start));
+        }
+        return units;
+    }
 }

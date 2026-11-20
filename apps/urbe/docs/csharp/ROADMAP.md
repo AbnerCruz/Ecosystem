@@ -517,7 +517,8 @@ Issue [#948](https://github.com/AbnerCruz/Ecosystem/issues/948); branch `ccr-c71
 Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f022efc2-0vtff7`, PR #1006. Linguagem de fórmulas fechada em C# (sem acesso a vault, rede ou segredos); execução de código geral (WASM) segue sob a DEC-0066, não assumida.
 
 - [~] Fatia 1, instâncias procedurais: `repeat` 1–2000, fórmulas de `t`, `i`, `n`, `u`, modo `add|set`, `rand`/`noise` determinísticos e funções de vários argumentos (`VideoProceduralTests`, `TwoThousandParticlesAt720pAreDrawnAndMeasured`).
-- [ ] Fatia 2, tipografia cinética por letra/palavra. Fatia 3, efeitos (glow, sombra, desfoque, gradiente, máscara). Fatia 4, câmera por cena. Fatia 5, componentes reutilizáveis. Fatia 6, benchmark com os três prompts da issue. Narração neural (adendos da issue).
+- [~] Fatia 2, tipografia cinética: `split: letters|words` em title/text; cada parte é instância com `i`, `n`, `u`, desenhada no seu lugar do texto e girada/escalada em torno do próprio centro (`ASplitTextIsOneInstancePerLetterOrWordWithoutSpaces`, `ASplitTitleEntersLetterByLetterInItsPlace`).
+- [ ] Fatia 3, efeitos (glow, sombra, desfoque, gradiente, máscara). Fatia 4, câmera por cena. Fatia 5, componentes reutilizáveis. Fatia 6, benchmark com os três prompts da issue. Narração neural (adendos da issue).
 - [ ] Validação no aparelho (NN-017): render de 2000 instâncias no Android de referência.
 
 ## Reorganização da experiência: dados, painéis e IA nativa — #1005 (20/11/2026)

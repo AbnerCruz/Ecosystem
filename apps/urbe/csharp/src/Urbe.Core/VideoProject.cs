@@ -173,6 +173,11 @@ public sealed record VideoElement
     /// see i, n and u, so each instance can sit, move and fade on its own. A repeated element is not a parent.
     /// </summary>
     public int Repeat { get; init; } = 1;
+    /// <summary>
+    /// #1004 slice 2 (kinetic typography): "letters" or "words" draws a text one unit per instance, each in its place in
+    /// the text and moved by the motions with i, n and u, as a repeated element; null draws the text whole.
+    /// </summary>
+    public string? Split { get; init; }
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; init; }
@@ -279,6 +284,12 @@ public static class VideoCompositionRules
                         throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
                     if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
                 }
+                if (e.Split is { } split)
+                {
+                    if (!VideoProcedural.Splits.Contains(split)) throw Bad("split de " + e.Id + " é \"" + split + "\"; use letters (uma instância por letra) ou words (por palavra)");
+                    if (e.Kind is not ("title" or "text")) throw Bad("split de " + e.Id + ": só title e text se dividem em letras ou palavras");
+                    if (e.Repeat != 1) throw Bad("split de " + e.Id + ": o número de instâncias é o de letras ou palavras; tire repeat");
+                }
                 if (e.Repeat < 1 || e.Repeat > VideoProcedural.MaxRepeat)
                     throw Bad("repeat de " + e.Id + " é " + e.Repeat + "; de 1 a " + VideoProcedural.MaxRepeat + " instâncias por elemento (mais delas: outro elemento)");
                 foreach (var m in e.Motions)
@@ -297,7 +308,7 @@ public static class VideoCompositionRules
                 var seen = new HashSet<string>(StringComparer.Ordinal) { e.Id };
                 for (var p = e.Parent; p is not null; p = byId[p].Parent)
                     if (!byId.ContainsKey(p) || !seen.Add(p)) throw Bad("o pai " + p + " de " + e.Id + " não existe na cena ou forma um ciclo");
-                if (e.Parent is { } parent && byId[parent].Repeat > 1)
+                if (e.Parent is { } parent && (byId[parent].Repeat > 1 || byId[parent].Split is not null))
                     throw Bad("o pai " + parent + " de " + e.Id + " tem repeat: um elemento repetido não é pai (repita o filho, ou use um grupo como pai)");
             }
         }

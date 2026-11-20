@@ -65,6 +65,8 @@ public static class VideoInspection
                         Add(ReviewSeverity.Error, e.Id, "out", local, Name(e) + " sai do quadro.", "Aproxime x/y do centro ou reduza width/height/scale (posições são do centro, de 0 a 1).");
                     else if (b.L < SafeMargin * W || b.T < SafeMargin * H || b.R > (1 - SafeMargin) * W || b.B > (1 - SafeMargin) * H)
                         Add(ReviewSeverity.Warning, e.Id, "safe", local, Name(e) + " encosta na borda (fora dos 90 % seguros do quadro); pode ser cortado em telas e players.", "Mantenha a caixa entre 0,05 e 0,95 do quadro.");
+                    // a split text is one text: measured once, by its first unit
+                    if (e.Split is not null && e.Instance > 0) continue;
                     if (Text.Contains(e.Kind) && fit is not null && e.Text.Trim().Length > 0 && fit(e) is var f)
                     {
                         if (f.Cut) Add(ReviewSeverity.Error, e.Id, "cut", local, Name(e) + " não cabe na caixa: o texto termina em reticências.", "Aumente width/height do elemento, diminua fontSize ou encurte o texto.");
@@ -79,6 +81,7 @@ public static class VideoInspection
                     for (int j = 0; j < i; j++)
                     {
                         var o = visible[j];
+                        if (o.Id == e.Id && e.Split is not null) continue;   // the letters of one text share its box
                         if (!Visual.Contains(o.Kind) || !(Text.Contains(e.Kind) || Text.Contains(o.Kind))) continue;
                         var c = Box(o, W, H);
                         if (Intersection(b, c) > 0.05 * Math.Min(Area(b), Area(c)))

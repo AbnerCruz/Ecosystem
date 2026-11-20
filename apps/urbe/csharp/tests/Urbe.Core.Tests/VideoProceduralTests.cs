@@ -199,4 +199,41 @@ public sealed class VideoProceduralTests
         Assert.DoesNotContain(issues, i => i.ElementId == "chuva");
         Assert.Contains(issues, i => i.ElementId == "rotulos" && i.Severity == ReviewSeverity.Error);
     }
+
+    [Fact]
+    public void ASplitTextIsOneInstancePerLetterOrWordWithoutSpaces()
+    {
+        Assert.Equal([(0, 1), (1, 1), (3, 1)], VideoProcedural.Units("ab c", "letters"));
+        Assert.Equal([(0, 3), (5, 2)], VideoProcedural.Units("Olá  mã", "words"));
+        Assert.Equal(2, VideoProcedural.Units("e\u0301x", "letters").Count);   // é written as e + accent is one letter
+
+        var (catalog, project) = Scene(new VideoElement
+        {
+            Id = "titulo", Kind = "text", Text = "Olá mundo", Split = "letters", Width = 0.8, Height = 0.2,
+            Motions = [new() { Property = "opacity", Mode = "set", Expression = "sat((t - 0.1*i)/0.2)" }]
+        });
+        using var _ = catalog;
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        var letters = At(timeline, "titulo", 0.35);
+        Assert.Equal(8, letters.Count);
+        Assert.All(letters, l => Assert.Equal("letters", l.Split));
+        Assert.Equal(1, letters[0].Opacity, 9);
+        Assert.Equal(0, letters[7].Opacity, 9);
+        // the review measures the text once and never calls its own letters overlapping
+        Assert.DoesNotContain(VideoInspection.Run(timeline), i => i.ElementId?.Contains("titulo+titulo") == true);
+        var back = PublicationProjectCodec.Parse(PublicationProjectCodec.Serialize(project));
+        Assert.Equal("letters", back.Video!.Scenes[0].Elements[0].Split);
+    }
+
+    [Theory]
+    [InlineData("shape", "letters", 1)]
+    [InlineData("text", "sílabas", 1)]
+    [InlineData("text", "words", 3)]
+    public void ABadSplitIsRefusedSayingWhy(string kind, string split, int repeat)
+    {
+        var (catalog, project) = Scene(new VideoElement { Id = "t", Kind = kind, Text = kind == "shape" ? "rect" : "abc", Split = split, Repeat = repeat });
+        using var _ = catalog;
+        Assert.Contains("split", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(project)).Message);
+    }
 }
