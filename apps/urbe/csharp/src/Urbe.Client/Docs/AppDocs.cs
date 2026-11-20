@@ -29,9 +29,9 @@ public static partial class AppDocs
     private const string AreaDeTrabalho = """
         # Área de trabalho
 
-        A Área de trabalho é a tela de base do Urbe. Cada **projeto** (uma pasta no topo da sua pasta de notas) é uma caixa de vidro na sua cor, com as notas e os arquivos mais recentes à vista; as notas soltas na raiz ficam em **Soltas**.
+        A Área de trabalho é a tela de base do Numa. Cada **projeto** (uma pasta no topo da sua pasta de notas) é uma caixa de vidro na sua cor, com as notas e os arquivos mais recentes à vista; as notas soltas na raiz ficam em **Soltas**.
 
-        Ao voltar ao Urbe depois de pouco tempo, ele continua na nota e na conversa em que você estava. Depois de uma pausa longa, abre aqui, na Área de trabalho, e o Assistente começa uma conversa nova; nada se perde. A pausa se escolhe em Personalização → Editor → **Ao voltar ao Urbe** (30 minutos, se você não mudar).
+        Ao voltar ao Numa depois de pouco tempo, ele continua na nota e na conversa em que você estava. Depois de uma pausa longa, abre aqui, na Área de trabalho, e o Assistente começa uma conversa nova; nada se perde. A pausa se escolhe em Personalização → Editor → **Ao voltar ao Numa** (30 minutos, se você não mudar).
 
         ## Abrir e procurar
 
@@ -61,18 +61,18 @@ public static partial class AppDocs
     private const string ComeceAqui = """
         # Comece aqui
 
-        Bem-vindo ao **Urbe**. Suas notas são arquivos Markdown (`.md`) numa pasta sua: você escreve, organiza em pastas e liga uma ideia à outra com `[[links]]`. O Urbe também produz páginas, sites e livros a partir delas.
+        Bem-vindo ao **Numa**. Suas notas são arquivos Markdown (`.md`) numa pasta sua: você escreve, organiza em pastas e liga uma ideia à outra com `[[links]]`. O Numa também produz páginas, sites e livros a partir delas.
 
         ## O primeiro passo: a pasta
 
-        O Urbe guarda tudo em arquivos `.md` comuns, numa pasta do aparelho que você escolhe. Abra **Configurações** (a engrenagem no alto) → **Pasta no dispositivo** e escolha uma pasta, vazia ou com notas que você já tem. Sem uma pasta aberta, nada é gravado.
+        O Numa guarda tudo em arquivos `.md` comuns, numa pasta do aparelho que você escolhe. Abra **Configurações** (a engrenagem no alto) → **Pasta no dispositivo** e escolha uma pasta, vazia ou com notas que você já tem. Sem uma pasta aberta, nada é gravado.
 
         ## A tela
 
         - **A Área de trabalho** ocupa a tela. Cada projeto (uma pasta no topo do vault) é uma caixa de vidro com a sua cor: dá para ver através dela as notas e os arquivos mais recentes, e tocar na caixa abre o catálogo do projeto. **+ Novo projeto** cria uma caixa nova. A busca no alto procura em todos os projetos, ou só no projeto aberto.
         - **O Explorer** é a árvore de pastas e notas: no computador fica ao lado da Área de trabalho; no celular abre pelo botão **Pastas**. No alto dele: o nome da sua pasta, com um ponto que mostra se está tudo salvo (verde), gravando (amarelo) ou com erro (vermelho); depois **Nova**, **Mais opções** e **Configurações**.
         - **Embaixo:** **Notas** e **Assistente**.
-        - Ao abrir, o Urbe volta direto para a nota em que você estava.
+        - Ao abrir, o Numa volta direto para a nota em que você estava.
 
         ## Por onde seguir
 
@@ -85,11 +85,11 @@ public static partial class AppDocs
 
         As **Propriedades** da nota (o bloco `---` do começo) têm um formulário no alto da nota, em Visual e em Fonte: toque em **Propriedades** para abrir. **Aliases** são outros nomes da nota: um link `[[apelido]]` leva a ela, aparece nas conexões e funciona em `![[apelido]]`. **Tags** aceitam as do vault com um toque. Texto, número, data, sim/não e listas têm campo próprio, e **Adicionar propriedade** cria outras. O que o formulário não entende fica como estava.
 
-        **Tags do projeto.** As tags escritas nas propriedades da **nota da pasta** (a nota com o nome da pasta, dentro dela: `Droerni/Droerni.md`) valem para tudo o que está nessa pasta e nas subpastas, sem ser escritas nas outras notas. Elas aparecem em **herdadas**, com a origem (`#worldbuilding` de Droerni), e contam na busca por tag, nos filtros da Área de trabalho, nas consultas das páginas e para o Assistente. Mover uma nota para outro projeto troca as herdadas na hora. Para uma nota não herdar uma tag, toque no × dela (o Urbe escreve `sem-tags: [worldbuilding]`); para não herdar nenhuma, use `herdar: false`. Fora do Urbe, as tags herdadas não aparecem nas outras notas.
+        **Tags do projeto.** As tags escritas nas propriedades da **nota da pasta** (a nota com o nome da pasta, dentro dela: `Droerni/Droerni.md`) valem para tudo o que está nessa pasta e nas subpastas, sem ser escritas nas outras notas. Elas aparecem em **herdadas**, com a origem (`#worldbuilding` de Droerni), e contam na busca por tag, nos filtros da Área de trabalho, nas consultas das páginas e para o Assistente. Mover uma nota para outro projeto troca as herdadas na hora. Para uma nota não herdar uma tag, toque no × dela (o Numa escreve `sem-tags: [worldbuilding]`); para não herdar nenhuma, use `herdar: false`. Fora do Numa, as tags herdadas não aparecem nas outras notas.
 
         O **modo leitura** (o botão **Edição/Leitura** no rodapé do editor, ou **Mais ações → Modo leitura**) vale para Visual e Fonte: nada é alterado sem querer, a barra de formatação some e as propriedades só são mostradas. Links, comentários e cartões continuam funcionando.
 
-        Para atualizar: **Configurações → Verificar atualização** procura uma versão mais nova do Urbe (só quando você pede). O arquivo abre no navegador: no Android, instale por cima do Urbe atual; no Windows, extraia o .zip por cima da pasta do Urbe. Suas notas ficam onde estão.
+        Para atualizar: **Configurações → Verificar atualização** procura uma versão mais nova do Numa (só quando você pede). O arquivo abre no navegador: no Android, instale por cima do Numa atual; no Windows, extraia o .zip por cima da pasta do Numa. Suas notas ficam onde estão.
 
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.
         """;
@@ -99,7 +99,7 @@ public static partial class AppDocs
 
         O **Explorer** mostra a pasta como uma árvore de arquivos e pastas. No computador ele fica ao lado da Área de trabalho; no celular, abre pelo botão **Pastas** e fecha ao escolher uma nota.
 
-        O Urbe é a sua pasta, um para um: o que está nela é o que aparece aqui. Uma pasta ou nota apagada, criada ou editada por outro app (o gerenciador de arquivos, uma sincronização) aparece assim quando você volta ao Urbe. Se a nota aberta for movida fora do app, o editor a acompanha; se for apagada, o Urbe avisa e, ao salvar, cria a nota de novo com o que você escreveu. Cada pasta mostra quantas notas tem, contando as subpastas.
+        O Numa é a sua pasta, um para um: o que está nela é o que aparece aqui. Uma pasta ou nota apagada, criada ou editada por outro app (o gerenciador de arquivos, uma sincronização) aparece assim quando você volta ao Numa. Se a nota aberta for movida fora do app, o editor a acompanha; se for apagada, o Numa avisa e, ao salvar, cria a nota de novo com o que você escreveu. Cada pasta mostra quantas notas tem, contando as subpastas.
 
         ## Navegar
 
@@ -115,9 +115,9 @@ public static partial class AppDocs
         - **Nova nota**, na pasta selecionada.
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
         - **Nova pasta**, na pasta selecionada.
-        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app: toque para começar e toque de novo (ou na notificação, que mostra o tempo) para terminar. Pausas para pensar não encerram a nota; ela só para sozinha depois de 45 segundos de silêncio ou aos 15 minutos, com aviso no último minuto. Dá para gravar a próxima enquanto a anterior ainda está sendo salva. No Windows, **Ctrl+Alt+N** (de qualquer programa) ou o ícone do Urbe na bandeja abrem a caixa da nota rápida: escreva, ou aperte **Win+H** para o ditado do Windows escrever o que você fala. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia; cada uma entra como tarefa com o horário, `- [ ] 08:11 — texto`, venha de você, do widget ou de um agente.
-        - **Transcrever em nota** (Android 13 ou mais novo): no menu de um áudio do vault (uma aula, uma reunião; importe o arquivo ou grave com o gravador do celular), o Urbe transcreve no próprio aparelho, em trechos cortados nas pausas, e cria ao lado a nota **Nome — transcrição**, com o áudio, o texto e o horário de cada trecho, para revisar. O andamento aparece no alto, com **Cancelar**; parar não deixa nada. Pronta a nota, **Organizar com o Assistente** abre o Assistente com o pedido escrito, para você escolher o agente e enviar.
-        - **Novo grafo**: um canvas livre (`Nome.grafo.json`) com cartões, notas e arquivos do vault, ligações (linha ou seta), formas, grupos e desenhos, com desfazer e refazer. **⋯ → Grafos** lista os grafos e gera a estrutura do vault (pastas, arquivos, notas e links). Renomear ou mover uma nota, um arquivo ou uma pasta pelo Urbe atualiza os cartões em todos os grafos; um cartão cuja nota foi excluída aparece como **não encontrada**. Um grafo incorporado numa nota (`![[Mapa]]`) não prende a rolagem: um dedo rola a nota, **dois dedos** movem e aproximam o grafo (no computador, Ctrl+roda), e tocar num cartão abre a nota, o arquivo ou a pasta. O Assistente também lê, cria e altera grafos (por exemplo, "faça um grafo da família real com as notas dos personagens"): a mudança aparece em texto para você aprovar.
+        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Numa: nota rápida** na tela inicial, que grava sem abrir o app: toque para começar e toque de novo (ou na notificação, que mostra o tempo) para terminar. Pausas para pensar não encerram a nota; ela só para sozinha depois de 45 segundos de silêncio ou aos 15 minutos, com aviso no último minuto. Dá para gravar a próxima enquanto a anterior ainda está sendo salva. No Windows, **Ctrl+Alt+N** (de qualquer programa) ou o ícone do Numa na bandeja abrem a caixa da nota rápida: escreva, ou aperte **Win+H** para o ditado do Windows escrever o que você fala. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia; cada uma entra como tarefa com o horário, `- [ ] 08:11 — texto`, venha de você, do widget ou de um agente.
+        - **Transcrever em nota** (Android 13 ou mais novo): no menu de um áudio do vault (uma aula, uma reunião; importe o arquivo ou grave com o gravador do celular), o Numa transcreve no próprio aparelho, em trechos cortados nas pausas, e cria ao lado a nota **Nome — transcrição**, com o áudio, o texto e o horário de cada trecho, para revisar. O andamento aparece no alto, com **Cancelar**; parar não deixa nada. Pronta a nota, **Organizar com o Assistente** abre o Assistente com o pedido escrito, para você escolher o agente e enviar.
+        - **Novo grafo**: um canvas livre (`Nome.grafo.json`) com cartões, notas e arquivos do vault, ligações (linha ou seta), formas, grupos e desenhos, com desfazer e refazer. **⋯ → Grafos** lista os grafos e gera a estrutura do vault (pastas, arquivos, notas e links). Renomear ou mover uma nota, um arquivo ou uma pasta pelo Numa atualiza os cartões em todos os grafos; um cartão cuja nota foi excluída aparece como **não encontrada**. Um grafo incorporado numa nota (`![[Mapa]]`) não prende a rolagem: um dedo rola a nota, **dois dedos** movem e aproximam o grafo (no computador, Ctrl+roda), e tocar num cartão abre a nota, o arquivo ou a pasta. O Assistente também lê, cria e altera grafos (por exemplo, "faça um grafo da família real com as notas dos personagens"): a mudança aparece em texto para você aprovar.
 
         ## Selecionar e mover
 
@@ -129,11 +129,11 @@ public static partial class AppDocs
 
         ## Mais opções
 
-        O botão **⋯** do Explorer: **Buscar notas e comandos**, **Recentes**, **Favoritos**, **Importar arquivos**, **Exportar tudo (.zip)**, **Lixeira** e **Pasta do Urbe no dispositivo**.
+        O botão **⋯** do Explorer: **Buscar notas e comandos**, **Recentes**, **Favoritos**, **Importar arquivos**, **Exportar tudo (.zip)**, **Lixeira** e **Pasta do Numa no dispositivo**.
 
         ## Lixeira
 
-        O que você exclui vai para a lixeira: **Restaurar** devolve a nota, **Restaurar tudo** devolve todas de uma vez (cada uma para onde estava, recriando a pasta se for preciso), **Excluir de vez** apaga e **Esvaziar** limpa tudo. Se o lugar de uma nota já estiver ocupado, ela fica na Lixeira e o Urbe avisa: nada é sobrescrito.
+        O que você exclui vai para a lixeira: **Restaurar** devolve a nota, **Restaurar tudo** devolve todas de uma vez (cada uma para onde estava, recriando a pasta se for preciso), **Excluir de vez** apaga e **Esvaziar** limpa tudo. Se o lugar de uma nota já estiver ocupado, ela fica na Lixeira e o Numa avisa: nada é sobrescrito.
         """;
 
     private const string Editor = """
@@ -146,7 +146,7 @@ public static partial class AppDocs
         - **Visual** mostra a nota formatada; toque num trecho para editar aquele bloco.
         - **Fonte** mostra o Markdown puro. Numa nota longa (mais de 8.000 caracteres), o Fonte edita um bloco por vez, para a digitação continuar rápida; a busca na nota volta ao texto inteiro.
         - O modo inicial fica em **Personalização → Editor**.
-        - **Horário de cada bloco** (Personalização → Editor) mostra, à direita de cada bloco, quando ele mudou pela última vez. Vem das **Versões anteriores**: um bloco só movido mantém o horário, um bloco dividido, juntado, colado ou desfeito ganha o da mudança, e um bloco mais antigo que as versões guardadas mostra o dia em que a nota foi criada, quando o Urbe o conhece.
+        - **Horário de cada bloco** (Personalização → Editor) mostra, à direita de cada bloco, quando ele mudou pela última vez. Vem das **Versões anteriores**: um bloco só movido mantém o horário, um bloco dividido, juntado, colado ou desfeito ganha o da mudança, e um bloco mais antigo que as versões guardadas mostra o dia em que a nota foi criada, quando o Numa o conhece.
 
         ## A barra
 
@@ -162,7 +162,7 @@ public static partial class AppDocs
 
         - Digite `[[` e escolha a nota nas sugestões. As duas notas ficam ligadas: **Mais ações → Conexões** mostra a nota no meio de um céu calmo, com as que ela cita e as que a citam. Tocar num ponto abre aquela nota.
         - A **Constelação** (a estrela no alto da Área de trabalho, ou ⋯ do Explorer) mostra todas as notas como um céu: cada projeto é uma névoa na sua cor. Arraste para passear, aproxime com a pinça ou a roda; toque numa estrela para ver as ligações dela e toque de novo para abrir. As posições ficam em `.urbe/constelacao.json`.
-        - Tocar num link abre a nota. Se ela ainda não existe, o Urbe pergunta se quer **criar nota**. Um link para um arquivo que não é nota (`[[foto.png]]`) abre o visualizador.
+        - Tocar num link abre a nota. Se ela ainda não existe, o Numa pergunta se quer **criar nota**. Um link para um arquivo que não é nota (`[[foto.png]]`) abre o visualizador.
         - As sugestões de `[[` e `![[` trazem as notas e qualquer arquivo do vault: imagens, PDF, áudio, vídeo, código, páginas e grafos.
         - `[[Plano#Metas]]` leva direto ao título **Metas** da nota (aparece como “Plano › Metas”), `[[Plano#^meta]]` ao trecho que termina com ` ^meta`, e `[[#Metas]]` a um título da própria nota. O sumário também leva ao título no modo Visual.
 
@@ -191,7 +191,7 @@ public static partial class AppDocs
 
         - Digite um endereço ou uma pesquisa. **Voltar**, **Avançar** e **Recarregar** ficam no alto.
         - **Adicionar seleção à nota** cita o trecho selecionado com o endereço; **Perguntar à IA** leva o trecho ao Assistente.
-        - Em **⋯**: **Modo leitura** mostra só o texto principal da página, no tema do Urbe (sem menus, anúncios nem a tela branca à noite); **Salvar página como nota** cria uma nota com esse texto, o endereço (`source`) e o dia (`captured`), sem sair da página. Também **Salvar referência na nota**, **Copiar endereço** e **Abrir no navegador do sistema**.
+        - Em **⋯**: **Modo leitura** mostra só o texto principal da página, no tema do Numa (sem menus, anúncios nem a tela branca à noite); **Salvar página como nota** cria uma nota com esse texto, o endereço (`source`) e o dia (`captured`), sem sair da página. Também **Salvar referência na nota**, **Copiar endereço** e **Abrir no navegador do sistema**.
         - Num vídeo do YouTube, que toca no player oficial, **Anotar instante** cria na nota um link para o momento em que o vídeo está, como “Vídeo em 3:25”. O campo do instante serve para ajustar à mão.
         - Nada da página é guardado sem você pedir, e a página não tem acesso às suas notas.
 
@@ -272,7 +272,7 @@ public static partial class AppDocs
         y: 0..6
         ```
 
-        ## Marcas do Urbe
+        ## Marcas do Numa
 
         São texto comum no arquivo, então a nota continua legível em qualquer editor:
 
@@ -326,7 +326,7 @@ public static partial class AppDocs
         - `{{titulo}}` vira o nome da nota nova.
         - `{{data}}` vira a data de hoje.
         - Qualquer outro campo, como `{{cliente}}`, é perguntado depois do nome.
-        - Texto entre colchetes, como `[Nome]`, **não** vira pergunta. Ao usar um modelo assim, o Urbe oferece **Converter em campos**, que troca cada `[Texto]` por `{{Texto}}`. Links `[[…]]`, tarefas `- [ ]` e código ficam como estão.
+        - Texto entre colchetes, como `[Nome]`, **não** vira pergunta. Ao usar um modelo assim, o Numa oferece **Converter em campos**, que troca cada `[Texto]` por `{{Texto}}`. Links `[[…]]`, tarefas `- [ ]` e código ficam como estão.
 
         ## Usar
 
@@ -336,7 +336,7 @@ public static partial class AppDocs
     private const string Codigo = """
         # Código e prévia ao vivo
 
-        O Urbe abre e edita os arquivos de código do vault como abre as notas: toque num arquivo no Explorer ou na Área de trabalho, e ele abre no editor. O que você escreve é salvo no próprio arquivo, com a mesma verificação das notas: nada é gravado por cima de uma mudança feita fora do Urbe, e um texto que não foi salvo nunca se perde.
+        O Numa abre e edita os arquivos de código do vault como abre as notas: toque num arquivo no Explorer ou na Área de trabalho, e ele abre no editor. O que você escreve é salvo no próprio arquivo, com a mesma verificação das notas: nada é gravado por cima de uma mudança feita fora do Numa, e um texto que não foi salvo nunca se perde.
 
         ## Linguagens
 
@@ -350,7 +350,7 @@ public static partial class AppDocs
 
         No leitor de PDF, livro ou documento, selecione um trecho e escolha **Destacar**, **Comentar**, **Adicionar seleção à nota** ou **Marcador**. O trecho vai para uma nota de verdade, com o link de volta ao lugar exato da fonte e à versão do arquivo. O destino aparece antes: **esta nota**, **outra nota** (as recentes ou pela busca do nome), **uma nota nova** ou **Copiar com a referência**. Mandar o mesmo trecho de novo para a mesma nota não o duplica.
         - **⋯ → Anotações desta fonte** lista tudo o que as notas guardam sobre o arquivo: tipo, página ou capítulo, o trecho e a nota. Toque para **abrir na nota** (na linha certa) ou **ir à fonte**.
-        - Se o arquivo mudou depois da anotação, ela aparece como **fonte mudou: revise**. O Urbe não procura uma frase parecida para colocar o destaque no lugar: você confere.
+        - Se o arquivo mudou depois da anotação, ela aparece como **fonte mudou: revise**. O Numa não procura uma frase parecida para colocar o destaque no lugar: você confere.
         - **Exportar anotações** salva um JSON no padrão W3C Web Annotation, com o trecho, o contexto antes e depois e a página. Nem o arquivo nem as notas mudam.
 
         ## Escrever código
@@ -370,7 +370,7 @@ public static partial class AppDocs
         Num arquivo `.html`, o seletor do topo do editor passa a ser **Prévia | Código**. Em **Prévia**, a página aparece ao lado do código (numa tela larga) ou no lugar dele (no celular), e acompanha o que você escreve: cada mudança aparece um instante depois, sem salvar e sem atualizar.
 
         - A página usa os arquivos do vault a que o HTML se refere: folhas de estilo (`<link rel="stylesheet">`, com os `url()` delas), scripts (`<script src>`), módulos (`import` entre arquivos), imagens, áudio e vídeo. Caminhos relativos partem da pasta do HTML; os que começam com `/` partem da raiz do vault.
-        - O que vale é o texto como está no editor, salvo ou não. Um CSS ou JS aberto no Urbe entra como está escrito.
+        - O que vale é o texto como está no editor, salvo ou não. Um CSS ou JS aberto no Numa entra como está escrito.
         - `fetch()` e `XMLHttpRequest` de um arquivo de texto da pasta do HTML (um JSON, um CSV) recebem esse arquivo.
         - Endereços da internet (`https://…`) continuam como estão.
         - **Erros do código** (do JavaScript, de uma promessa rejeitada ou de `console.error`) aparecem num quadro vermelho dentro da própria página. O editor e os arquivos não são afetados por eles.
@@ -409,17 +409,17 @@ public static partial class AppDocs
 
         - As imagens das notas (inclusive `![[foto.png]]`) vão **dentro** do arquivo, que abre sozinho, sem internet. Uma imagem que falta é dita no lugar dela.
         - O **pacote ZIP** leva a publicação, os áudios e vídeos em `media/` e um manifesto que confere cada arquivo.
-        - Antes de salvar, o Urbe **abre o arquivo gerado e confere** se ele está inteiro; se não estiver, nada é salvo e você vê o motivo.
-        - O que um formato não guarda como no Urbe (uma fórmula que vira texto, um gráfico que vira imagem) é dito ao salvar. Dados que parecem pessoais são mostrados antes de compartilhar, para você decidir.
+        - Antes de salvar, o Numa **abre o arquivo gerado e confere** se ele está inteiro; se não estiver, nada é salvo e você vê o motivo.
+        - O que um formato não guarda como no Numa (uma fórmula que vira texto, um gráfico que vira imagem) é dito ao salvar. Dados que parecem pessoais são mostrados antes de compartilhar, para você decidir.
         - O estúdio diz o que mudou nas notas desde a última exportação.
         - Toque duplo num parágrafo da prévia abre a nota de origem exatamente nele.
         - **Ordenar as notas** (no ⋯) põe as notas pelo título, pela data ou agrupadas por pasta; a capa continua primeiro.
-        - Numa publicação feita de uma tag, pasta ou busca, ao abrir o Urbe oferece as notas novas que combinam e avisa das que deixaram de combinar, para você tirar ou manter.
+        - Numa publicação feita de uma tag, pasta ou busca, ao abrir o Numa oferece as notas novas que combinam e avisa das que deixaram de combinar, para você tirar ou manter.
 
         ## Vídeo
 
         - Tocar numa publicação no Explorer abre o estúdio. A prévia começa na primeira cena já formada, e tocar numa cena leva ao momento em que ela está pronta.
-        - Tocar num objeto da prévia seleciona ele. Arrastar muda o lugar; a pinça com dois dedos, **Maior** e **Menor** mudam o tamanho; **Quadro-chave aqui** guarda como ele está neste instante. Para animar, marque um quadro-chave, mude o tempo e mova o objeto: o Urbe faz o caminho entre os dois.
+        - Tocar num objeto da prévia seleciona ele. Arrastar muda o lugar; a pinça com dois dedos, **Maior** e **Menor** mudam o tamanho; **Quadro-chave aqui** guarda como ele está neste instante. Para animar, marque um quadro-chave, mude o tempo e mova o objeto: o Numa faz o caminho entre os dois.
         - A faixa da linha do tempo mostra as cenas no tamanho que duram, as trilhas de som e os quadros-chave do objeto escolhido. Tocar nela leva àquele instante; puxar a borda direita de uma cena muda quanto ela dura.
         - **Narrar o roteiro** usa a voz do aparelho para ler o texto de cada cena e põe a fala no começo dela. Se a fala for mais longa que a cena, a cena cresce para caber, e as legendas acompanham a fala.
         - O Assistente que monta um vídeo confere o que fez: mede cada cena (texto cortado, objeto fora do quadro, sobreposição, contraste e legenda cobrindo algo), olha os quadros reais quando o modelo enxerga imagens, e corrige só a cena com problema. No fim ele narra o roteiro, gera o MP4 conferido e as legendas dentro do vault, ao lado da publicação, e diz onde estão; nada que já existe é substituído. Com o agente em autônomo, olhar os quadros não pede autorização a cada vez.
@@ -427,7 +427,7 @@ public static partial class AppDocs
         - O Assistente monta as cenas com layouts prontos (abertura, tópico, comparação, número em destaque, fórmula, gráfico, citação), já compostos e animados; você pede o conteúdo e ele preenche.
         - **Tema do vídeo** (no menu do Estúdio) dá ao vídeo inteiro um visual pronto: Noite, Quadro-negro, Papel, Neon ou Sóbrio. O tema pinta o fundo das cenas, o texto, os diagramas e as legendas; o que você coloriu à mão continua como está.
         - **Ajustar áudios do vídeo** muda o volume, a entrada e a saída de cada trilha (a música entra em 1 s e sai em 2 s por padrão).
-        - Antes de gerar o MP4, o Urbe confere se há espaço livre suficiente e, se não houver, diz quanto falta e não começa. Durante a exportação ele mostra quanto tempo ainda falta, e **Cancelar** não deixa arquivo pela metade.
+        - Antes de gerar o MP4, o Numa confere se há espaço livre suficiente e, se não houver, diz quanto falta e não começa. Durante a exportação ele mostra quanto tempo ainda falta, e **Cancelar** não deixa arquivo pela metade.
 
         ## Páginas antigas
 
@@ -452,10 +452,10 @@ public static partial class AppDocs
         - **Recusar** descarta.
         - Exclusões pedem **Excluir**, e plugins pedem **Ligar plugin**.
         - Mudar `Personalização/AGENTS.md` (as instruções de todos os agentes) sempre pede a sua aprovação, mesmo com o agente em automático ou depois de **Aprovar todas**.
-        - Uma página da internet não manda no agente: o que ela disser é tratado como conteúdo. O Urbe recusa enviar para fora um trecho das suas notas copiado numa pesquisa ou num endereço, e abre normalmente um endereço que você guardou numa nota.
+        - Uma página da internet não manda no agente: o que ela disser é tratado como conteúdo. O Numa recusa enviar para fora um trecho das suas notas copiado numa pesquisa ou num endereço, e abre normalmente um endereço que você guardou numa nota.
         - Depois de uma mudança, **Desfazer** volta atrás.
 
-        Cada bloco que o Assistente cria ou reescreve (título, parágrafo, item de lista, citação, tabela ou código) ganha um selo pequeno com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor. O Urbe cuida dos selos sozinho:
+        Cada bloco que o Assistente cria ou reescreve (título, parágrafo, item de lista, citação, tabela ou código) ganha um selo pequeno com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor. O Numa cuida dos selos sozinho:
 
         - Correções de ortografia, pontuação ou poucas palavras mantêm o autor original. Seu texto corrigido continua sendo seu.
         - Quando a IA reescreve um bloco, o selo antigo é trocado pelo do modelo atual, sem acumular.
@@ -463,7 +463,7 @@ public static partial class AppDocs
         - No modo Fonte o selo não pode ser apagado ou alterado sozinho.
         - Os agentes não veem os selos e não conseguem removê-los. Se você pedir, eles explicam que a autoria é mantida pelo aplicativo.
 
-        **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Uma mensagem leva até 20 anexos, somando até 30 MB, o que os provedores aceitam juntos. Fotos grandes ou deitadas vão de pé e reduzidas (2000 px, JPEG), em vez de serem recusadas. PDFs vão até 20 MB e textos até 384 KB por arquivo, tanto do aparelho quanto do vault. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
+        **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Uma mensagem leva até 20 anexos, somando até 30 MB, o que os provedores aceitam juntos. Fotos grandes ou deitadas vão de pé e reduzidas (2000 px, JPEG), em vez de serem recusadas. PDFs vão até 20 MB e textos até 384 KB por arquivo, tanto do aparelho quanto do vault. O Numa não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
 
         **Etapas:** o cartão de atividade mostra as últimas etapas e, enquanto a IA trabalha, o resumo do que o modelo diz estar fazendo. Tocar nele abre o painel de etapas, que sobe da parte de baixo: as mais recentes primeiro na tela, "Ver anteriores" e "Ver mais recentes" para andar pelo histórico, e o X no topo para fechar. Fechar o painel não interrompe a IA.
 
@@ -475,11 +475,11 @@ public static partial class AppDocs
 
         **Preços de imagens:** a lista de modelos mostra valores em dólares **por imagem, por megapixel ou por 1 milhão de tokens**, com fonte consultável. Para OpenRouter, a consulta utiliza o endpoint de preços do modelo escolhido; para modelos específicos OpenAI e Gemini, são exibidas referências públicas com data de verificação. Preço ausente aparece como **não informado**, nunca como gratuito. Os valores são referências ou mínimos, não previsão exata de cobrança: entrada, qualidade, resolução e rota podem alterar a fatura.
 
-        **Despertador, agenda e e-mail:** em Assistente → Conexões → Aparelho você liga, um por um, o que os agentes podem fazer no aparelho. Tudo começa desligado. Com o despertador ligado, peça “me acorde às 6h45 de segunda a sexta” e o relógio do aparelho abre com o alarme pronto; dá para perguntar qual é o próximo despertador. Com a agenda ligada, o agente cria eventos (o app de agenda abre para você salvar) e consulta os da semana; no Android, o sistema pergunta uma vez se o Urbe pode ler a agenda. Com o e-mail ligado, o agente prepara a mensagem no seu app de e-mail e quem envia é você; o Urbe não lê sua caixa de entrada. Cada ação que muda algo pede sua aprovação antes. No computador, o e-mail e o evento abrem nos apps do sistema; despertador e consulta da agenda só existem no celular.
+        **Despertador, agenda e e-mail:** em Assistente → Conexões → Aparelho você liga, um por um, o que os agentes podem fazer no aparelho. Tudo começa desligado. Com o despertador ligado, peça “me acorde às 6h45 de segunda a sexta” e o relógio do aparelho abre com o alarme pronto; dá para perguntar qual é o próximo despertador. Com a agenda ligada, o agente cria eventos (o app de agenda abre para você salvar) e consulta os da semana; no Android, o sistema pergunta uma vez se o Numa pode ler a agenda. Com o e-mail ligado, o agente prepara a mensagem no seu app de e-mail e quem envia é você; o Numa não lê sua caixa de entrada. Cada ação que muda algo pede sua aprovação antes. No computador, o e-mail e o evento abrem nos apps do sistema; despertador e consulta da agenda só existem no celular.
 
         **Prévia de imagem no chat:** quando `generate_image` termina, a imagem salva no vault aparece diretamente no cartão da conversa, com o botão **Abrir** para a visualização nativa em tamanho maior. Não é uma nova cópia nem uma URL externa. Nas conversas anteriores, imagens concluídas continuam à vista mesmo com os passos do agente recolhidos.
 
-        **De onde veio a imagem:** a imagem gerada guarda dentro do próprio arquivo (PNG ou JPEG) que foi feita por IA, com o modelo, a descrição usada e a data, no padrão de metadados IPTC que outros programas também leem. Ao abrir a imagem, o Urbe mostra “gerada por IA” e o modelo; a descrição vira o texto alternativo. Isso vai junto quando você move a imagem ou a usa numa publicação.
+        **De onde veio a imagem:** a imagem gerada guarda dentro do próprio arquivo (PNG ou JPEG) que foi feita por IA, com o modelo, a descrição usada e a data, no padrão de metadados IPTC que outros programas também leem. Ao abrir a imagem, o Numa mostra “gerada por IA” e o modelo; a descrição vira o texto alternativo. Isso vai junto quando você move a imagem ou a usa numa publicação.
 
         ## Skills
 
@@ -497,7 +497,7 @@ public static partial class AppDocs
         - O Assistente vê só o **nome e a descrição** de cada skill e carrega as instruções quando o pedido combina com ela; arquivos da pasta (como `checklist.md`) são lidos quando a skill manda.
         - O `name` usa letras minúsculas, números e hífens, igual ao nome da pasta. Uma skill com problema no cabeçalho não aparece.
         - Uma skill **não dá permissões** e **nada nela é executado**: scripts são só texto. As aprovações continuam as mesmas.
-        - O Urbe já traz skills de apresentação, livro e cálculo; uma sua com o mesmo nome toma o lugar da do app.
+        - O Numa já traz skills de apresentação, livro e cálculo; uma sua com o mesmo nome toma o lugar da do app.
 
         ## Ajustar
 
@@ -508,7 +508,7 @@ public static partial class AppDocs
         - **Fontes de uma pesquisa**: o painel de fontes diz se o agente leu a página inteira, só uma parte (**Leitura parcial**) ou só viu o resultado da busca.
         - **Exportar conversa ou memória**: uma chave sua que tenha ido parar no chat sai como “[chave removida]”.
         - **Conversas anteriores**: cada agente consulta as próprias conversas deste vault (o pedido, a resposta, os arquivos alterados e, se precisar, a conversa inteira), por exemplo quando você diz "continue aquilo de ontem". Ele nunca vê as conversas de outro agente nem o que ficou oculto.
-        - **Permissões do agente** (somente leitura, com aprovação, automático): mudar para uma mais restrita enquanto ele trabalha já vale a partir da próxima ação; mudar para uma mais livre vale a partir da próxima resposta. O Urbe avisa qual dos dois aconteceu.
+        - **Permissões do agente** (somente leitura, com aprovação, automático): mudar para uma mais restrita enquanto ele trabalha já vale a partir da próxima ação; mudar para uma mais livre vale a partir da próxima resposta. O Numa avisa qual dos dois aconteceu.
         - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa. Numa consulta, o especialista nunca tem menos aprovações que o agente que pediu: se ele está em automático e o que pediu não, as mudanças dele pedem a sua aprovação na conversa que pediu.
         - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
         - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente, com **Pôr na nota** para guardá-la como citação logo abaixo da linha. Essas linhas não aparecem nas páginas.
@@ -521,17 +521,17 @@ public static partial class AppDocs
 
         A parte **Geral** vale sempre; uma parte com nome vale quando todas as palavras do nome estão no modelo em uso. Títulos `## Claude 5` também funcionam.
 
-        **Quando instruções divergem**, vale a mais específica: o que você pede agora; depois o papel e os blocos do agente; depois o `AGENTS.md` (a parte do modelo antes da Geral); por último as orientações do Urbe. Segurança, permissões, aprovações e selos de autoria valem sempre, mesmo que uma instrução peça o contrário.
+        **Quando instruções divergem**, vale a mais específica: o que você pede agora; depois o papel e os blocos do agente; depois o `AGENTS.md` (a parte do modelo antes da Geral); por último as orientações do Numa. Segurança, permissões, aprovações e selos de autoria valem sempre, mesmo que uma instrução peça o contrário.
 
         ## Servidores MCP
 
-        Em **Configurações → Pesquisa → Servidores MCP**, adicione um servidor pelo endereço (e a chave, se ele pedir). O Urbe mostra as ferramentas que o servidor oferece; cada uma começa **desligada**. No computador também dá para adicionar um **servidor local** (um programa, com aviso antes). Libere cada ferramenta como **Leitura** (o Assistente usa sem perguntar, como uma pesquisa na web) ou **Escrita** (pergunta antes de cada uso). O que o servidor responde é tratado como dado de terceiros, não como ordem.
+        Em **Configurações → Pesquisa → Servidores MCP**, adicione um servidor pelo endereço (e a chave, se ele pedir). O Numa mostra as ferramentas que o servidor oferece; cada uma começa **desligada**. No computador também dá para adicionar um **servidor local** (um programa, com aviso antes). Libere cada ferramenta como **Leitura** (o Assistente usa sem perguntar, como uma pesquisa na web) ou **Escrita** (pergunta antes de cada uso). O que o servidor responde é tratado como dado de terceiros, não como ordem.
         """;
 
     private const string Plugins = """
         # Plugins
 
-        Plugins acrescentam ferramentas ao Urbe. Eles ficam em **Personalização → Plugins**.
+        Plugins acrescentam ferramentas ao Numa. Eles ficam em **Personalização → Plugins**.
 
         ## Relógio
 
@@ -540,7 +540,7 @@ public static partial class AppDocs
         ## Plugins da sua pasta
 
         - Plugins `.plugin.json` ficam em `Personalização/plugins`. **Novo plugin** cria um a partir de um modelo; o Assistente também cria plugins.
-        - Antes de **Ligar**, o Urbe mostra o que o plugin pode fazer. Ele só faz o que declara.
+        - Antes de **Ligar**, o Numa mostra o que o plugin pode fazer. Ele só faz o que declara.
         - Se o arquivo mudar, o plugin desliga até você revisar (**Revisei, ligar**).
         - Os plugins `.js` da versão 1.8.4 não rodam no app nativo; aqui você só os vê e aprova.
         - **Modo seguro** desliga todos os plugins e estilos sem apagar nada.
@@ -552,7 +552,7 @@ public static partial class AppDocs
     private const string Personalizacao = """
         # Personalização
 
-        **Configurações → Personalização** muda a aparência do Urbe. As escolhas ficam em `Personalização/tema.json`, na sua pasta.
+        **Configurações → Personalização** muda a aparência do Numa. As escolhas ficam em `Personalização/tema.json`, na sua pasta.
 
         - **Aparência:** tema (escuro, meia-noite, floresta, oceano, vinho, claro, sépia, alto contraste), cor de destaque, cores, cantos, densidade e animações.
         - **Texto:** fonte e tamanho da interface e das notas, altura da linha.
@@ -568,7 +568,7 @@ public static partial class AppDocs
     private const string Backups = """
         # Backups, exportar e restaurar
 
-        Suas notas são arquivos comuns na pasta que você escolheu. O Urbe confere cada gravação e guarda cópias antes de mudanças grandes.
+        Suas notas são arquivos comuns na pasta que você escolheu. O Numa confere cada gravação e guarda cópias antes de mudanças grandes.
 
         ## Exportar
 
@@ -576,19 +576,19 @@ public static partial class AppDocs
 
         ## Importar e restaurar
 
-        **Configurações → Importar arquivos** (ou **⋯ → Importar arquivos** no Explorer) traz **arquivos** ou uma **pasta inteira**: notas, pastas ou `.zip`. Imagens, PDFs, áudios e vídeos vêm junto com as notas (um arquivo que já existe na pasta fica como está). O Urbe confere os arquivos antes. Se o `.zip` for um export ou backup do Urbe, ele oferece restaurar; o que for substituído é guardado antes em backup.
+        **Configurações → Importar arquivos** (ou **⋯ → Importar arquivos** no Explorer) traz **arquivos** ou uma **pasta inteira**: notas, pastas ou `.zip`. Imagens, PDFs, áudios e vídeos vêm junto com as notas (um arquivo que já existe na pasta fica como está). O Numa confere os arquivos antes. Se o `.zip` for um export ou backup do Numa, ele oferece restaurar; o que for substituído é guardado antes em backup.
 
         ## Backups automáticos
 
-        Antes de migrar ou importar, o Urbe guarda um backup em `.urbe/backup`. Para ver e restaurar: **Ctrl+K → Backups do vault**.
+        Antes de migrar ou importar, o Numa guarda um backup em `.urbe/backup`. Para ver e restaurar: **Ctrl+K → Backups do vault**.
 
-        ## Quando a pasta muda fora do Urbe
+        ## Quando a pasta muda fora do Numa
 
-        Outro aplicativo ou uma sincronização pode mudar os arquivos enquanto o Urbe está aberto. O Urbe nunca grava por cima do que mudou lá: ao salvar, ele lê a pasta de novo, e as mudanças de fora aparecem. Se a própria nota que você está escrevendo foi mudada lá fora, as duas versões ficam: a de fora continua na nota, e a sua é salva ao lado como **Nome (conflito data hora)**, que segue aberta no editor para você juntar o que quiser.
+        Outro aplicativo ou uma sincronização pode mudar os arquivos enquanto o Numa está aberto. O Numa nunca grava por cima do que mudou lá: ao salvar, ele lê a pasta de novo, e as mudanças de fora aparecem. Se a própria nota que você está escrevendo foi mudada lá fora, as duas versões ficam: a de fora continua na nota, e a sua é salva ao lado como **Nome (conflito data hora)**, que segue aberta no editor para você juntar o que quiser.
 
         ## Texto não salvo
 
-        O Urbe salva sozinho logo depois de uma pausa na escrita. Se o app for fechado de repente antes disso (o sistema encerrou o app, a bateria acabou), o que você digitou fica guardado à parte, só neste aparelho. Ao abrir a nota de novo, o Urbe pergunta: **Recuperar** põe o texto de volta (e dá para desfazer), **Descartar** fica com a nota como estava. Ele avisa se a nota também mudou nesse meio-tempo.
+        O Numa salva sozinho logo depois de uma pausa na escrita. Se o app for fechado de repente antes disso (o sistema encerrou o app, a bateria acabou), o que você digitou fica guardado à parte, só neste aparelho. Ao abrir a nota de novo, o Numa pergunta: **Recuperar** põe o texto de volta (e dá para desfazer), **Descartar** fica com a nota como estava. Ele avisa se a nota também mudou nesse meio-tempo.
 
         ## Versões e lixeira
 
@@ -615,7 +615,7 @@ public static partial class AppDocs
         | Ctrl+Shift+M (no editor) | Fórmula em destaque |
         | Esc | Fechar a busca ou terminar de editar o bloco |
 
-        **Abrir comandos** (Ctrl+K) lista tudo o que o Urbe faz: backups, painel dividido, restaurar versão, plugins e mais.
+        **Abrir comandos** (Ctrl+K) lista tudo o que o Numa faz: backups, painel dividido, restaurar versão, plugins e mais.
 
         **Seus atalhos:** Configurações → Atalhos lista todos e **Editar meus atalhos** abre `Personalização/atalhos.json`, por exemplo `"Mod+Shift+K": "ui.constellation"` (Mod é Ctrl). Um atalho seu vale por cima do padrão; `""` desliga um padrão. Os nomes dos comandos (como `ui.workspace`, `ui.sidebar.toggle`) aparecem no próprio arquivo de exemplo.
 

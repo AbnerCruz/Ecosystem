@@ -18,7 +18,7 @@ public static class PlatformVideo
     /// <summary>Why no encoder is available, for the person.</summary>
     public static string Unavailable => OperatingSystem.IsAndroid()
         ? "Este aparelho não oferece o codificador de vídeo H.264."
-        : "Para exportar MP4 no computador, instale o ffmpeg (ffmpeg.org) e deixe-o no PATH; o Urbe o encontra sozinho.";
+        : "Para exportar MP4 no computador, instale o ffmpeg (ffmpeg.org) e deixe-o no PATH; o Numa o encontra sozinho.";
 
     /// <summary>The head's encoder, else ffmpeg on a computer, else null.</summary>
     public static IVideoEncoder? Encoder() =>

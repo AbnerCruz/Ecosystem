@@ -20,9 +20,9 @@ namespace Urbe.AndroidHost;
 internal static class AppInfo
 {
 #if URBE_BETA
-    public const string Name = "Urbe";
+    public const string Name = "Numa";
 #else
-    public const string Name = "Urbe nativo (prévia)";
+    public const string Name = "Numa (prévia)";
 #endif
 }
 

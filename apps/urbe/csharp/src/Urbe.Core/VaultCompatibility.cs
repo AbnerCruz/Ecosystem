@@ -62,7 +62,7 @@ public static class VaultCompatibility
                 string? reason = null;
                 var required = minWriter.GetString()!;
                 if (AppUpdate.Parts(installedVersion) is null || AppUpdate.Newer(required, installedVersion))
-                    reason = "Requer Urbe " + required + " ou posterior para editar com segurança.";
+                    reason = "Requer Numa " + required + " ou posterior para editar com segurança.";
                 if (!entry.TryGetProperty("features", out var features) ||
                     features.ValueKind != JsonValueKind.Array)
                     return new Assessment(true, blocked);

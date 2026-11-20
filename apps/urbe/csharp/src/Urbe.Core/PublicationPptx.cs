@@ -132,7 +132,7 @@ public static class PublicationPptx
                 ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "ppt/presentation.xml", false),
                 ("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml", false)));
             Xml(zip, "docProps/core.xml", new XElement(CP + "coreProperties", new XAttribute(XNamespace.Xmlns + "cp", CP), new XAttribute(XNamespace.Xmlns + "dc", DC),
-                new XElement(DC + "title", PublicationOffice.XmlSafe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(DC + "creator", "Urbe")));
+                new XElement(DC + "title", PublicationOffice.XmlSafe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(DC + "creator", "Numa")));
 
             var presentationRels = new List<(string, string, string, bool)>
             {
@@ -402,14 +402,14 @@ public static class PublicationPptx
         XElement Solid() => new(A + "solidFill", new XElement(A + "schemeClr", new XAttribute("val", "phClr")));
         XElement Ln(int w) => new(A + "ln", new XAttribute("w", w), Solid());
         XElement Fonts(string kind, string face) => new(A + kind, new XElement(A + "latin", new XAttribute("typeface", face)), new XElement(A + "ea", new XAttribute("typeface", "")), new XElement(A + "cs", new XAttribute("typeface", "")));
-        return new XElement(A + "theme", new XAttribute(XNamespace.Xmlns + "a", A), new XAttribute("name", "Urbe"),
+        return new XElement(A + "theme", new XAttribute(XNamespace.Xmlns + "a", A), new XAttribute("name", "Numa"),
             new XElement(A + "themeElements",
-                new XElement(A + "clrScheme", new XAttribute("name", "Urbe"),
+                new XElement(A + "clrScheme", new XAttribute("name", "Numa"),
                     new XElement(A + "dk1", new XElement(A + "srgbClr", new XAttribute("val", "25272C"))), new XElement(A + "lt1", new XElement(A + "srgbClr", new XAttribute("val", "FFFFFF"))),
                     Color("dk2", "3B3328"), Color("lt2", "F3F1EC"), Color("accent1", "6B4F2A"), Color("accent2", "075985"), Color("accent3", "312E81"),
                     Color("accent4", "9C7B45"), Color("accent5", "4D7C0F"), Color("accent6", "B45309"), Color("hlink", "0563C1"), Color("folHlink", "954F72")),
-                new XElement(A + "fontScheme", new XAttribute("name", "Urbe"), Fonts("majorFont", "Calibri"), Fonts("minorFont", "Calibri")),
-                new XElement(A + "fmtScheme", new XAttribute("name", "Urbe"),
+                new XElement(A + "fontScheme", new XAttribute("name", "Numa"), Fonts("majorFont", "Calibri"), Fonts("minorFont", "Calibri")),
+                new XElement(A + "fmtScheme", new XAttribute("name", "Numa"),
                     new XElement(A + "fillStyleLst", Solid(), Solid(), Solid()),
                     new XElement(A + "lnStyleLst", Ln(6350), Ln(12700), Ln(19050)),
                     new XElement(A + "effectStyleLst", new XElement(A + "effectStyle", new XElement(A + "effectLst")), new XElement(A + "effectStyle", new XElement(A + "effectLst")), new XElement(A + "effectStyle", new XElement(A + "effectLst"))),

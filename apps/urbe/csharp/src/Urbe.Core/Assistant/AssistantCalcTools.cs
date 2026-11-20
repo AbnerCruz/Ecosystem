@@ -16,12 +16,12 @@ public static class AssistantCalcTools
     public static AiTool Calculate { get; } = new()
     {
         Name = Name, Access = "read",
-        Description = "Calcula com o motor matemático do Urbe (exato e determinístico; nada é executado como código). Use SEMPRE que a resposta depender de conta, " +
+        Description = "Calcula com o motor matemático do Numa (exato e determinístico; nada é executado como código). Use SEMPRE que a resposta depender de conta, " +
                       "em vez de calcular de cabeça. Uma linha por pergunta; as linhas de cima valem para as de baixo. Aceita: valores (2,5*4; 20% * 150; 5!; media(3; 5; 8); " +
                       "desvio([..]); det([[1; 2]; [3; 4]])), definições (a = 3; f(x) = x^2 + 1), unidades com conversão (100 km/h em m/s; 37 °C em °F), " +
                       "'derivada de …', 'simplificar …', 'expandir …', 'resolver … = … [para t]', 'integral de …' e 'integral de … de a até b'. " +
                       "Vírgula decimal (1,5); separe argumentos com ';'. Resultados com ≈ são aproximados: diga isso ao usuário. " +
-                      "Para deixar a conta viva na nota, escreva as mesmas linhas num bloco ```calculo (o Urbe mostra os resultados ao lado de cada linha).",
+                      "Para deixar a conta viva na nota, escreva as mesmas linhas num bloco ```calculo (o Numa mostra os resultados ao lado de cada linha).",
         Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"lines":{"type":"string","description":"Uma ou mais linhas de cálculo, separadas por quebra de linha"}},"required":["lines"],"additionalProperties":false}""")!,
         Label = i => "Calculando" + ((string?)i["lines"] is { Length: > 0 } l ? ": " + AssistantTools.Clip(l.Split('\n')[0], 60) : ""),
         Run = (i, _) => Task.FromResult(new AiToolOutput(Answer((string?)i["lines"] ?? "")))

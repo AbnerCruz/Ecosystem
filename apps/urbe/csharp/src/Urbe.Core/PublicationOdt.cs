@@ -95,7 +95,7 @@ public static class PublicationOdt
             new XElement(Office + "body", text));
         var styles = new XElement(Office + "document-styles", Namespaces(), new XAttribute(Office + "version", "1.3"), CommonStyles(doc.Accent), PageLayout());
         var meta = new XElement(Office + "document-meta", Namespaces(), new XAttribute(Office + "version", "1.3"),
-            new XElement(Office + "meta", new XElement(DC + "title", Safe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(Meta + "generator", "Urbe")));
+            new XElement(Office + "meta", new XElement(DC + "title", Safe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(Meta + "generator", "Numa")));
         var manifest = new XElement(Manifest + "manifest", new XAttribute(XNamespace.Xmlns + "manifest", Manifest), new XAttribute(Manifest + "version", "1.3"),
             FileEntry("/", Mime), FileEntry("content.xml", "text/xml"), FileEntry("styles.xml", "text/xml"), FileEntry("meta.xml", "text/xml"),
             pictures.Select(p => FileEntry(p.Path, p.Mime)),

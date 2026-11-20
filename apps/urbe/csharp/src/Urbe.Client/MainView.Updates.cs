@@ -61,21 +61,21 @@ public sealed partial class MainView
     public async Task ShowVersionCenterAsync()
     {
         if (UpdateAsset is not { } asset) return;
-        var action = await Dialogs.ChooseAsync("Versões do Urbe",
+        var action = await Dialogs.ChooseAsync("Versões do Numa",
         [
             new DialogItem("Notas da versão instalada", Detail: "Versão " + (InstalledVersion ?? "desconhecida") + " · disponível offline"),
             new DialogItem("Histórico compacto (offline)", Detail: "Resumo das versões anteriores"),
             new DialogItem("Todas as versões disponíveis", Detail: "Consultar GitHub, comparar versões e selecionar um download")
-        ], "Instalada: " + (InstalledVersion ?? "desconhecida") + ". O Urbe não altera a versão nem o vault automaticamente.");
+        ], "Instalada: " + (InstalledVersion ?? "desconhecida") + ". O Numa não altera a versão nem o vault automaticamente.");
         if (action is null) return;
         if (action == 0)
         {
-            await Dialogs.AlertAsync("Novidades — " + (InstalledVersion ?? "Urbe"), CurrentPatchnotes());
+            await Dialogs.AlertAsync("Novidades — " + (InstalledVersion ?? "Numa"), CurrentPatchnotes());
             return;
         }
         if (action == 1)
         {
-            await Dialogs.AlertAsync("Histórico do Urbe", HistoricPatchnotes());
+            await Dialogs.AlertAsync("Histórico do Numa", HistoricPatchnotes());
             return;
         }
 
@@ -95,7 +95,7 @@ public sealed partial class MainView
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException or IOException)
         {
-            await Dialogs.AlertAsync("Versões do Urbe", "Não foi possível consultar o catálogo completo: " + e.Message);
+            await Dialogs.AlertAsync("Versões do Numa", "Não foi possível consultar o catálogo completo: " + e.Message);
             return;
         }
         releases = releases.GroupBy(r => r.Version, StringComparer.Ordinal).Select(g => g.First())
@@ -103,7 +103,7 @@ public sealed partial class MainView
                 AppUpdate.Newer(x, y) ? 1 : AppUpdate.Newer(y, x) ? -1 : string.CompareOrdinal(x, y))).ToList();
         if (releases.Count == 0)
         {
-            await Dialogs.AlertAsync("Versões do Urbe", "Não foi encontrada uma release do cliente nativo com um arquivo compatível com este dispositivo.");
+            await Dialogs.AlertAsync("Versões do Numa", "Não foi encontrada uma release do cliente nativo com um arquivo compatível com este dispositivo.");
             return;
         }
         var latest = releases[0].Version;
@@ -119,15 +119,15 @@ public sealed partial class MainView
         var selection = releases[chosen.Value];
         bool downgrade = AppUpdate.Newer(installed, selection.Version);
         var warning = downgrade
-            ? "Esta versão é anterior à instalada. O Android normalmente não aceita instalar APKs com versionCode menor por cima de outro.\n\nDesinstalar o Urbe pode apagar conversas, memórias, configurações e outros dados privados. Exporte esses dados e faça backup do vault antes de considerar qualquer reinstalação. Nunca presuma compatibilidade de escrita de arquivos novos com uma versão antiga."
-            : "O download será aberto no navegador. O Urbe não instala APKs automaticamente nem modifica o vault nesta operação. Faça backup antes de mudar de versão.";
-        if (!await Dialogs.ConfirmAsync("Baixar Urbe " + selection.Version,
+            ? "Esta versão é anterior à instalada. O Android normalmente não aceita instalar APKs com versionCode menor por cima de outro.\n\nDesinstalar o Numa pode apagar conversas, memórias, configurações e outros dados privados. Exporte esses dados e faça backup do vault antes de considerar qualquer reinstalação. Nunca presuma compatibilidade de escrita de arquivos novos com uma versão antiga."
+            : "O download será aberto no navegador. O Numa não instala APKs automaticamente nem modifica o vault nesta operação. Faça backup antes de mudar de versão.";
+        if (!await Dialogs.ConfirmAsync("Baixar Numa " + selection.Version,
                 "Instalada: " + installed + "\nMais recente: " + latest + "\n\n" + warning,
                 "Abrir download", danger: downgrade, cancel: "Cancelar")) return;
         var uri = new Uri(selection.Url);
         if (OpenDownload is not null) { await OpenDownload(uri); return; }
         if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.Launcher is not { } launcher || !await launcher.LaunchUriAsync(uri))
-            await Dialogs.AlertAsync("Versões do Urbe", "Não consegui abrir o navegador. Baixe em:\n" + selection.Url);
+            await Dialogs.AlertAsync("Versões do Numa", "Não consegui abrir o navegador. Baixe em:\n" + selection.Url);
     }
 
     private static bool HasFullReleasePage(string json)
@@ -170,8 +170,8 @@ public sealed partial class MainView
         }
         var notes = release.Notes.Trim();
         if (notes.Length > 600) notes = notes[..600].TrimEnd() + "…";
-        var how = OperatingSystem.IsAndroid() ? "O arquivo abre no navegador; instale por cima do Urbe atual (suas notas ficam onde estão)."
-            : "O arquivo abre no navegador; extraia por cima da pasta do Urbe (suas notas ficam onde estão).";
+        var how = OperatingSystem.IsAndroid() ? "O arquivo abre no navegador; instale por cima do Numa atual (suas notas ficam onde estão)."
+            : "O arquivo abre no navegador; extraia por cima da pasta do Numa (suas notas ficam onde estão).";
         if (!await Dialogs.ConfirmAsync("Versão " + release.Version + " disponível",
                 "Versão instalada: " + (installed ?? "desconhecida") + "\n\n" + (notes.Length > 0 ? notes + "\n\n" : "") + how, "Baixar", cancel: "Agora não"))
             return;

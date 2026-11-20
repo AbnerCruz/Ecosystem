@@ -136,7 +136,7 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto, tema sépia."}}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Revisei a personalização salva."}}]}"""));
-                panel.Send("Deixe o Urbe em sépia");
+                panel.Send("Deixe o Numa em sépia");
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal(("set_appearance", "Personalização/tema.json"), (panel.PendingApproval!.Call.Name, panel.PendingApproval.Preview!.Path));
                 Assert.False(File.Exists(Path.Combine(vault, "Personalização", "tema.json")));

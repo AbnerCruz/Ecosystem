@@ -430,7 +430,7 @@ public static class PublicationPdf
                     pieces.Add(new Piece(run.Text, fonts.Get(size), color, (float)sz.Width * scale, Svg: m.Svg, Height: (float)sz.Height * scale));
                     continue;
                 }
-                if (run.Math) limitations.Add("Fórmulas que o Urbe não conseguiu desenhar saem como TeX.");
+                if (run.Math) limitations.Add("Fórmulas que o Numa não conseguiu desenhar saem como TeX.");
                 var face = fonts.Face(run.Bold, run.Italic || run.Math, run.Code);
                 var ink = run.Href is not null ? Link : color;
                 var runSize = run.Code ? size * .9f : size;

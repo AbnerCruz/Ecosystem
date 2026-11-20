@@ -87,7 +87,7 @@ public static class AssistantPublicationTools
     public const string Schema =
         "Publicações usam .publication.json, schemaVersion=1. Campos: publicationId (estável), title, objective, audience, sources [{documentId,fragment?}], " +
         "sections [{id,source:{documentId,fragment?},role}], design:{theme:paper|ocean|ink, layout:article|book|slides|course|video}, formats:[html,epub,…]. " +
-        "Em documentId use o caminho da nota (como list_notes/search_notes mostram), o título ou o id; o Urbe guarda o id. sections pode faltar: uma seção por fonte, na ordem. Fragmentos são títulos únicos ou ^id existente; ausência ou ambiguidade é erro. " +
+        "Em documentId use o caminho da nota (como list_notes/search_notes mostram), o título ou o id; o Numa guarda o id. sections pode faltar: uma seção por fonte, na ordem. Fragmentos são títulos únicos ou ^id existente; ausência ou ambiguidade é erro. " +
         "Escreva/adapte conteúdo em notas Markdown reais pelas ferramentas de notas; reordenação/layout nunca modifica notas. write_publication requer expected_revision " +
         "para substituir um projeto existente, mantendo publicationId. " +
         "Layouts: article e book (capítulos, sumário); slides (cada nota/#/##/--- inicia slide; :::notas vira notas do apresentador); course (cada nota um módulo, " +
@@ -106,7 +106,7 @@ public static class AssistantPublicationTools
         // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
-        "Monte um vídeo em partes: 1) write_publication só com sources e design {layout:video} (o Urbe cria uma cena por fonte e devolve os ids); " +
+        "Monte um vídeo em partes: 1) write_publication só com sources e design {layout:video} (o Numa cria uma cena por fonte e devolve os ids); " +
         "2) edit_video_scene para cada cena, uma por chamada, de preferência com layout e slots (abertura, topico, comparacao, numero, formula, grafico, citacao: " +
         "composições prontas com entradas animadas), acrescentando elementos só quando o layout não basta; 3) review_publication e look_at_video; 4) render_video. Nunca mande todas as cenas numa chamada só. " +
         "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +

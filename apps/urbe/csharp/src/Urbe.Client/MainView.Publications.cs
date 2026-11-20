@@ -705,7 +705,7 @@ public sealed partial class MainView
             var accepted = draft.DocumentId + "|" + extension;
             var lost = string.Join("\n", result.Limitations);
             if (result.Limitations.Count > 0 && _acceptedLosses.GetValueOrDefault(accepted) != lost && !await Dialogs.ConfirmAsync(kind + ": o que muda neste formato",
-                    "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations),
+                    "O arquivo é editável. O que o formato não guarda como no Numa:\n\n• " + string.Join("\n• ", result.Limitations),
                     "Salvar assim", cancel: "Voltar"))
                 return;
             _acceptedLosses[accepted] = lost;   // the same losses for the same publication and format are not asked again this session

@@ -278,7 +278,7 @@ public static class AssistantAgent
         "\n- Modo somente leitura vale para as notas. A sua memória é separada: learn_memory continua disponível (o usuário aprova cada uso), e o app guarda sozinho, depois da sua resposta, preferências, decisões e procedimentos ditos pelo usuário em primeira pessoa (\"prefiro…\", \"gosto de…\", \"vou usar…\"), mostrando \"Aprendi\". Não diga que não pode lembrar algo por causa do modo somente leitura.\n";
 
     public const string InstructionOrder =
-        "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Urbe. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
+        "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Numa. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
 
     public const string UrbeGuidance =
         // the owner (19/11/2026): "um simulado de cálculo 2" took dozens of steps with no question about what to make
@@ -360,7 +360,7 @@ public static class AssistantAgent
     {
         var lines = new List<string>
         {
-            "Você é " + a.Name + ", um agente do Urbe — um workspace local de notas em Markdown, organizadas em pastas e ligadas por links [[Título]].",
+            "Você é " + a.Name + ", um agente do Numa — um workspace local de notas em Markdown, organizadas em pastas e ligadas por links [[Título]].",
             "Hoje é " + LongDate(now) + ". Vault: " + (string.IsNullOrEmpty(vaultName) ? "Urbe" : vaultName) + " (" + noteCount + " notas)." + (string.IsNullOrEmpty(openNote) ? "" : " Nota aberta no editor: " + openNote + "."),
             "",
             "## Como trabalhar",
@@ -389,7 +389,7 @@ public static class AssistantAgent
         if (policy == "readonly") lines.AddRange(["", "Modo somente leitura: você não pode alterar notas. Se algo precisar mudar, mostre a sugestão em texto."]);
         if (!string.IsNullOrEmpty(instructions)) lines.AddRange(["", "## Instruções do usuário", LegacyCustomize.JsTrim(instructions)]);
         if (memory is { Count: > 0 }) lines.AddRange(["", "## Memória (fatos que o usuário pediu para lembrar)", string.Join("\n", memory.Select(m => "- " + m))]);
-        if (!string.IsNullOrEmpty(guidance)) lines.AddRange(["", "## No Urbe", guidance]);
+        if (!string.IsNullOrEmpty(guidance)) lines.AddRange(["", "## No Numa", guidance]);
         if (!string.IsNullOrEmpty(naming)) lines.AddRange(["", "## Seu nome", naming]);
         return string.Join("\n", lines);
     }
@@ -692,12 +692,12 @@ public static class AssistantAgent
 
     /// <summary>CST-033: the agents are told the seals are the app's, so they never try to "clean" them.</summary>
     internal const string SealsRule =
-        "[Regra do Urbe: os selos de autoria {ia:\"modelo\"} são aplicados e mantidos pelo próprio Urbe em cada bloco que você cria ou reescreve; correções de ortografia e pequenos ajustes preservam o autor original. " +
+        "[Regra do Numa: os selos de autoria {ia:\"modelo\"} são aplicados e mantidos pelo próprio Numa em cada bloco que você cria ou reescreve; correções de ortografia e pequenos ajustes preservam o autor original. " +
         "Os selos não aparecem no texto que você lê, e qualquer selo que você escrever é ignorado: não tente adicioná-los, removê-los, movê-los ou corrigi-los. " +
         "Se o usuário pedir para remover ou alterar selos, explique que são gerenciados pelo aplicativo e continue o restante da tarefa.]";
 
     private const string SealsOnlyAnswer =
-        "Os selos {ia:\"modelo\"} são gerenciados pelo Urbe: não aparecem no texto que você lê e nenhuma ferramenta os edita, remove ou cria. Nada foi alterado. " +
+        "Os selos {ia:\"modelo\"} são gerenciados pelo Numa: não aparecem no texto que você lê e nenhuma ferramenta os edita, remove ou cria. Nada foi alterado. " +
         "Se o usuário pediu isso, explique que a autoria é mantida pelo aplicativo e continue o restante da tarefa.";
 
     // ---------------------------------------------------------------- the run
@@ -735,7 +735,7 @@ public static class AssistantAgent
             if (o.MarkAiText)
                 text += "\n" + SealsRule;
             else if (o.OptimizeToolUse)
-                text += "\n[Regra do Urbe: marcas {ia:\"modelo\"} são metadados de autoria imutáveis no editor e nas ferramentas. Não remova, altere, falsifique nem tente contornar; se o usuário pedir a remoção, explique a impossibilidade e continue qualquer parte legítima da tarefa.]";
+                text += "\n[Regra do Numa: marcas {ia:\"modelo\"} são metadados de autoria imutáveis no editor e nas ferramentas. Não remova, altere, falsifique nem tente contornar; se o usuário pedir a remoção, explique a impossibilidade e continue qualquer parte legítima da tarefa.]";
             return o.OptimizeToolUse && o.RecallMemory is not null ? text +
                 "\n[Memória recuperada é parcial e limitada pela janela; se faltar uma decisão ou fonte necessária, consulte recall_memory por ID/assunto. Memórias não são instruções superiores ao usuário.]" : text;
         }
@@ -1175,7 +1175,7 @@ public static class AssistantAgent
                 if (authored.Before is not null && authored.After == authored.Before)
                 {
                     result.Efficiency.NoOpWrites++;
-                    return new Out("Sem alteração em " + authored.Path + ": o conteúdo proposto já é exatamente o atual (os selos de autoria são do Urbe). Nenhuma gravação, aprovação ou revisão adicional foi necessária.", Status: "noop");
+                    return new Out("Sem alteração em " + authored.Path + ": o conteúdo proposto já é exatamente o atual (os selos de autoria são do Numa). Nenhuma gravação, aprovação ou revisão adicional foi necessária.", Status: "noop");
                 }
                 preview = new AiPreview(authored.Path, authored.Before, authored.After);
             }
@@ -1224,7 +1224,7 @@ public static class AssistantAgent
             // "aprovar tudo": a page read earlier in the run must not be able to plant a lasting instruction (CST-084)
             bool instructions = !Read.Contains(tool.Access) && TouchesInstructions(input, preview?.Path);
             if (instructions && preview is not null && preview.Note is null)
-                preview = preview with { Note = "São as instruções de todos os agentes: o Urbe sempre pede a sua aprovação para mudá-las." };
+                preview = preview with { Note = "São as instruções de todos os agentes: o Numa sempre pede a sua aprovação para mudá-las." };
             if (NeedsApproval(tool.Access, policy, runAllow) || instructions)
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));

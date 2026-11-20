@@ -59,7 +59,7 @@ public static class VoiceNoteQueue
         if (root is not JsonObject obj || obj["notes"] is not JsonArray notes)
             throw new InvalidDataException("Fila de notas de voz sem a lista \"notes\".");
         if (obj["version"] is JsonValue v && v.TryGetValue<int>(out var version) && version > Version)
-            throw new InvalidDataException("Fila de notas de voz de uma versão mais nova do Urbe.");
+            throw new InvalidDataException("Fila de notas de voz de uma versão mais nova do Numa.");
         var list = new List<VoiceNoteEntry>();
         foreach (var n in notes)
         {

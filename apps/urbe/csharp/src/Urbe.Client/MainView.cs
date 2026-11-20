@@ -667,14 +667,14 @@ public sealed partial class MainView : Grid
         if (known is not null && _contents.TryGetValue(note.Path, out var onDisk) && onDisk == known)
         {
             await SaveNoteAsync(note, expectedUndoContent: null);
-            Editor.Notify("A pasta mudou fora do Urbe: ela foi lida de novo, e a nota foi salva.");
+            Editor.Notify("A pasta mudou fora do Numa: ela foi lida de novo, e a nota foi salva.");
             return;
         }
         var copy = ConflictCopyPath(note.Path, DateTimeOffset.Now);
         await WriteVaultFileAsync(copy, note.Content, exists: false);
         await SaveHistoryAsync();
         if (Editor.Current?.Path == note.Path) Editor.Renamed(copy);
-        ShowLifeNotice("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” foi alterada fora do Urbe. As duas versões ficaram: " +
+        ShowLifeNotice("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” foi alterada fora do Numa. As duas versões ficaram: " +
             "a de fora na nota, a sua em “" + System.IO.Path.GetFileNameWithoutExtension(copy) + "”.", Ui.ToastKind.Warning);
     }
 
@@ -709,7 +709,7 @@ public sealed partial class MainView : Grid
             // A verified inverse of the exact previous AI transaction is permitted.
             // This cannot authorize a generic replacement or stale restoration.
             !string.Equals(previous, expectedUndoContent, StringComparison.Ordinal))
-            throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Urbe. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
+            throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Numa. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
         // CST-101: the open note was deleted outside the Urbe: it is created again, never lost
         if (await RecreateIfGoneAsync(note)) return;
         try { await _vault.SaveExistingTextFileAsync(note.Path, note.Content); }
@@ -785,7 +785,7 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, editor, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
-            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Numa faz", Run: ShowTutorialMenuAsync),
             new("Atalhos", UrbeTheme.Icons.List, "Os atalhos de teclado, e os seus em atalhos.json", Run: ShowShortcutsAsync),
             new("Barra do editor e menu /", UrbeTheme.Icons.Pencil, "Quais botões e em que ordem, em editor.json", Run: EditEditorLayoutAsync),
             new("Configuração inicial", UrbeTheme.Icons.Select, "Pasta, aparência e Assistente, passo a passo", Run: () => { ShowFirstRun(); return Task.CompletedTask; })
@@ -803,7 +803,7 @@ public sealed partial class MainView : Grid
             items.Add(new("Compatibilidade do vault", UrbeTheme.Icons.Storage,
                 "Arquivos protegidos e opções de cópia ou exclusão consciente", Run: ShowVaultCompatibilityAsync));
         if (CrashLog.Read().Length > 0)
-            items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Urbe registrou neste aparelho", Run: ShowErrorReportAsync));
+            items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Numa registrou neste aparelho", Run: ShowErrorReportAsync));
         return Dialogs.MenuAsync("Configurações", items);
     }
 
@@ -1096,7 +1096,7 @@ public sealed partial class MainView : Grid
         }
         if (_trashReadOnly)
         {
-            await Dialogs.AlertAsync("Excluir", "A lixeira deste vault é de outra versão do Urbe e foi preservada; nada é excluído.");
+            await Dialogs.AlertAsync("Excluir", "A lixeira deste vault é de outra versão do Numa e foi preservada; nada é excluído.");
             return false;
         }
         if (!confirmed && !await Dialogs.ConfirmAsync("Mover para a lixeira?",
@@ -1544,7 +1544,7 @@ public sealed partial class MainView : Grid
         int n = _trash.Items.Count;
         return Dialogs.MenuAsync("Explorer",
         [
-            new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
+            new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Numa faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
             new DialogItem("Ordenar notas", UrbeTheme.Icons.Layers, ExplorerState.Sort switch { "modificadas" => "Modificadas por último primeiro", "criadas" => "Criadas por último primeiro", _ => "Por nome" },
@@ -1556,7 +1556,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
                 Run: () => { ShowTrashView(); return Task.CompletedTask; }),
             .. (_vault is null ? Array.Empty<DialogItem>() :
-                [new DialogItem("Pasta do Urbe no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
+                [new DialogItem("Pasta do Numa no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
         ]);
     }
 
@@ -1586,7 +1586,7 @@ public sealed partial class MainView : Grid
     {
         if (_vault is not { IsConnected: true } vault || _snapshot is null)
         {
-            ShowLifeNotice("Abra o Urbe antes de exportar.");
+            ShowLifeNotice("Abra o Numa antes de exportar.");
             return;
         }
         try
@@ -1833,7 +1833,7 @@ public sealed partial class MainView : Grid
     {
         problem = !VaultWritable || _store is null
             ? "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para usar a lixeira."
-            : _trashReadOnly ? "A lixeira deste vault é de outra versão do Urbe e foi preservada." : null;
+            : _trashReadOnly ? "A lixeira deste vault é de outra versão do Numa e foi preservada." : null;
         return problem is null;
     }
 

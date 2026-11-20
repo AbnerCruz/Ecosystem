@@ -184,7 +184,7 @@ public static class AssistantDeviceTools
     public static AiTool ComposeEmail { get; } = new()
     {
         Name = "compose_email", Access = "write",
-        Description = "Prepara um e-mail no app de e-mail do aparelho (destinatários, assunto, texto). Quem envia é a pessoa, no app de e-mail; o Urbe não lê a caixa de entrada.",
+        Description = "Prepara um e-mail no app de e-mail do aparelho (destinatários, assunto, texto). Quem envia é a pessoa, no app de e-mail; o Numa não lê a caixa de entrada.",
         Parameters = Schema("""{"type":"object","properties":{"to":{"type":"array","items":{"type":"string"}},"subject":{"type":"string"},"body":{"type":"string"}},"required":["to","subject","body"],"additionalProperties":false}"""),
         Label = i => "E-mail: " + Str(i, "subject"),
         Preview = (i, _) => new AiPreview("E-mail", null, Str(i, "body"), "Preparar e-mail para " + string.Join(", ", Recipients(i)) + " — " + Str(i, "subject") + ". Você envia no app de e-mail."),

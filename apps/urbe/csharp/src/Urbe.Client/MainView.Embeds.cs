@@ -310,7 +310,7 @@ public sealed partial class MainView
     {
         var ext = Path.GetExtension(path).ToLowerInvariant();
         var kind = ext.Length > 1 ? "arquivos " + ext : "este arquivo";
-        return "O Urbe não mostra " + kind + " dentro da nota, mas o link continua valendo: toque no título para abrir no app do aparelho.";
+        return "O Numa não mostra " + kind + " dentro da nota, mas o link continua valendo: toque no título para abrir no app do aparelho.";
     }
 
     private static void SetMeta(Border card, string meta)

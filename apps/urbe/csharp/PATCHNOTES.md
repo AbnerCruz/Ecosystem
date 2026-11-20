@@ -1,23 +1,15 @@
-# Urbe — Notas da versão atual
+# Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.61
-**Canal:** Urbe 2.0 nativo, Android e Windows
+**Versão canônica preparada:** 2.0.0-beta.62
+**Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-## Vídeos
+## O Urbe agora se chama Numa
 
-- **Temas prontos.** Noite, Quadro-negro, Papel, Neon e Sóbrio: cada tema dá ao vídeo inteiro um fundo em gradiente, a cor do texto, duas cores para diagramas e legendas combinando. No Estúdio, menu → Tema do vídeo. Cores escolhidas à mão continuam.
-- **O Assistente escolhe um tema** quando monta um vídeo, e o exemplo que ele segue não fixa mais cores, para o tema valer.
-- **Cenas compostas prontas.** Abertura, Tópico, Comparação, Número em destaque, Fórmula, Gráfico e Citação: o Assistente monta cada cena com um desses layouts, com posições conferidas (nada fora do quadro nem sob a legenda) e entradas animadas uma depois da outra; só o conteúdo muda.
-- **Cena pronta no Estúdio.** No botão Objeto de cada cena, "Cena pronta (layout)" monta a cena escolhida e pede só o conteúdo; o título já vem da nota.
-- **Vídeo novo já com tema.** Um vídeo novo começa no tema Noite; troque em Tema do vídeo.
-- **Contraste medido de verdade.** A revisão do vídeo considera a transparência das formas por trás do texto.
-
-## Assistente
-
-- **Erros que dizem o que fazer.** Um id repetido no vídeo diz qual é e onde; um JSON quebrado diz o campo e a linha; regravar uma publicação diz a revisão a informar, e o id existente é mantido sozinho.
+- **Nome novo, mesmo app.** Como decidido em DEC-0060, o app aparece como **Numa** no ícone do celular, na janela do computador, nas telas, no guia e no que o Assistente diz. A atualização instala por cima: suas notas, pastas, conversas e configurações continuam onde estão, e nada no seu vault muda.
+- **O símbolo novo ainda não entrou.** O estudo do logo aprovado está no seu vault (Páginas/Identidade Numa — estudo de logo), fora do repositório; o ícone muda quando esse estudo, ou o desenho final, for enviado.
 
 ## Não testado no aparelho
 
-- Testado com testes automáticos e quadros renderizados no computador.
+- Testado com testes automáticos; o rótulo do ícone no Android não foi conferido num aparelho.

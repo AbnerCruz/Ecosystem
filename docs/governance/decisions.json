@@ -2183,7 +2183,7 @@
       "decision": "Alternativa A — A — Adotar Numa agora no app (recomendada só se o risco for aceito) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/866).",
       "decidedAt": "2026-10-30",
       "record": "docs/governance/responses/DEC-0060.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0061",

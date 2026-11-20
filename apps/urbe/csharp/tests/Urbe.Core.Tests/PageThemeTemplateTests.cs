@@ -100,7 +100,7 @@ public sealed class PageThemeTemplateTests
 
             var html = PageRenderer.Render(page, documents);
             Assert.StartsWith("<!doctype html>", html, StringComparison.Ordinal);
-            Assert.Contains("<meta name='generator' content='Urbe'>", html, StringComparison.Ordinal);
+            Assert.Contains("<meta name='generator' content='Numa'>", html, StringComparison.Ordinal);
             Assert.True(html.Length > 3000, template.Id + " HTML curto demais: " + html.Length);
             if (template.Id != "empty")
                 Assert.NotEmpty(page.Sections);

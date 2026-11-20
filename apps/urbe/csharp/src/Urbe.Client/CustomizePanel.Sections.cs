@@ -359,7 +359,7 @@ public sealed partial class CustomizePanel
             Toggle(Customization.BlockTimes, "Horário de cada bloco", "Mostra, ao lado de cada bloco, quando ele mudou pela última vez (pelas Versões anteriores)",
                 v => { Customization.BlockTimes = v; return Task.CompletedTask; }),
             // AbnerCruz/Urbe#51: after a pause this long, the Urbe opens on the Área de trabalho; nothing is lost
-            Row("Ao voltar ao Urbe", "Depois de uma pausa maior que esta, o Urbe abre na Área de trabalho; antes disso, volta à nota e à conversa onde você estava",
+            Row("Ao voltar ao Numa", "Depois de uma pausa maior que esta, o Numa abre na Área de trabalho; antes disso, volta à nota e à conversa onde você estava",
                 Seg(SessionPauseValue(Customization.SessionPause), ProductionSession.Choices.Select(c => (SessionPauseValue(c.Pause), c.Label)).ToArray(),
                     v => { Customization.SessionPause = ProductionSession.Choices.First(c => SessionPauseValue(c.Pause) == v).Pause; return Task.CompletedTask; }))));
         _body.Children.Add(BarBlock());
@@ -460,7 +460,7 @@ public sealed partial class CustomizePanel
         var c = Customization.Config;
         var list = Customization.Styles();
         if (Customization.SafeMode) _body.Children.Add(Banner("warn", "Modo seguro ligado: estilos e plugins estão desativados."));
-        _body.Children.Add(Banner("warn", "O app nativo não tem CSS: os estilos e o CSS rápido ficam guardados no tema.json e valem na versão web do Urbe (1.8.4). Aqui eles não mudam a aparência; use Aparência, Texto e Editor."));
+        _body.Children.Add(Banner("warn", "O app nativo não tem CSS: os estilos e o CSS rápido ficam guardados no tema.json e valem na versão web do Numa (1.8.4). Aqui eles não mudam a aparência; use Aparência, Texto e Editor."));
         var items = new List<Control>();
         if (list.Count == 0) items.Add(Help("Nenhum estilo ainda. Estilos são arquivos .css na pasta Personalização/estilos que mudam qualquer detalhe visual."));
         foreach (var s in list)
@@ -502,7 +502,7 @@ public sealed partial class CustomizePanel
         try
         {
             if (!Customization.Documents.ContainsKey(p))
-                await Customization.UpsertAsync(p, "/* " + name.Trim() + " — estilo do Urbe.\n   Variáveis: --ui-accent, --ui-bg, --ui-surface, --ui-text, --ui-font, --ui-editor-font, --ui-r-m...\n   Veja o Tutorial, em Personalização. */\n\n/* títulos das notas na cor de destaque */\n#renderedPreview h1 { color: var(--ui-accent); }\n");
+                await Customization.UpsertAsync(p, "/* " + name.Trim() + " — estilo do Numa.\n   Variáveis: --ui-accent, --ui-bg, --ui-surface, --ui-text, --ui-font, --ui-editor-font, --ui-r-m...\n   Veja o Tutorial, em Personalização. */\n\n/* títulos das notas na cor de destaque */\n#renderedPreview h1 { color: var(--ui-accent); }\n");
             await Set("estilos", new JsonObject { [p] = true });
             Toast("Estilo criado e ligado");
         }
@@ -518,7 +518,7 @@ public sealed partial class CustomizePanel
             ["aprovado"] = ("Aprovado · não executa no nativo", "warn"), ["desligado"] = ("Desligado", ""), ["mudou"] = ("Código mudou", "warn"), ["seguro"] = ("Modo seguro", "warn"),
             ["invalido"] = ("Com erros", "err")
         };
-        _body.Children.Add(Banner("warn", "Plugins são programas: podem ler e mudar suas notas. Só ligue código que você entende ou que veio de alguém de confiança. Se o arquivo mudar, o Urbe desliga o plugin até você revisar."));
+        _body.Children.Add(Banner("warn", "Plugins são programas: podem ler e mudar suas notas. Só ligue código que você entende ou que veio de alguém de confiança. Se o arquivo mudar, o Numa desliga o plugin até você revisar."));
         // the native plugins (ADD-0021): each declares what it may do, and nothing else is allowed
         if (NativePlugins?.Invoke() is { Count: > 0 } natives)
         {

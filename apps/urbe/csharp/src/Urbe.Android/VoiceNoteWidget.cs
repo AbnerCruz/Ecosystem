@@ -10,7 +10,7 @@ namespace Urbe.AndroidHost;
 /// opening the app; a second tap stops it. Before the microphone is allowed, the tap opens the tiny
 /// <see cref="VoicePermissionActivity"/> instead, which asks once and then starts recording.
 /// </summary>
-[BroadcastReceiver(Label = "Urbe: nota rápida", Exported = true)]
+[BroadcastReceiver(Label = "Numa: nota rápida", Exported = true)]
 [IntentFilter(new[] { AppWidgetManager.ActionAppwidgetUpdate })]
 [MetaData(AppWidgetManager.MetaDataAppwidgetProvider, Resource = "@xml/urbe_voice_widget")]
 public sealed class VoiceNoteWidget : AppWidgetProvider

@@ -101,7 +101,7 @@ public static class PublicationDocx
                 Relationship("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml")));
             Xml(zip, "docProps/core.xml", new XElement(CP + "coreProperties",
                 new XAttribute(XNamespace.Xmlns + "cp", CP), new XAttribute(XNamespace.Xmlns + "dc", DC), new XAttribute(XNamespace.Xmlns + "dcterms", DCTerms), new XAttribute(XNamespace.Xmlns + "xsi", Xsi),
-                new XElement(DC + "title", PublicationOffice.XmlSafe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(DC + "creator", "Urbe")));
+                new XElement(DC + "title", PublicationOffice.XmlSafe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(DC + "creator", "Numa")));
             Xml(zip, "word/document.xml", document.Root!);
             Xml(zip, "word/styles.xml", Styles(doc.Accent.TrimStart('#').ToUpperInvariant()));
             Xml(zip, "word/numbering.xml", Numbering(lists));

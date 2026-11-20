@@ -27,7 +27,7 @@ public sealed record ImageProvenance(string Model, string Provider, string Promp
             new XAttribute(XNamespace.Xmlns + "xmp", XmpNs), new XAttribute(XNamespace.Xmlns + "dc", Dc),
             new XAttribute(XNamespace.Xmlns + "Iptc4xmpExt", Ext), new XAttribute(XNamespace.Xmlns + "urbe", Urbe),
             new XElement(Ext + "DigitalSourceType", TrainedAlgorithmicMedia),
-            new XElement(XmpNs + "CreatorTool", "Urbe"),
+            new XElement(XmpNs + "CreatorTool", "Numa"),
             new XElement(XmpNs + "CreateDate", Created.ToString("yyyy-MM-ddTHH:mm:sszzz", System.Globalization.CultureInfo.InvariantCulture)),
             new XElement(Dc + "description", new XElement(Rdf + "Alt", new XElement(Rdf + "li", new XAttribute(XNamespace.Xml + "lang", "x-default"), Prompt))),
             new XElement(Urbe + "model", Model),

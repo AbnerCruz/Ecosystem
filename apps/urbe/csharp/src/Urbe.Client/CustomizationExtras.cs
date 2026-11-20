@@ -192,7 +192,7 @@ public sealed partial class Customization
         catch (JsonException) { return []; }
     }
 
-    private static string ApprovalKey(string path) => "Urbe::" + path;
+    private static string ApprovalKey(string path) => "Numa::" + path;
 
     /// <summary>lista(): the plugin files with their state. The native app cannot run them: "aprovado" only records the owner's approval of this exact code.</summary>
     public IReadOnlyList<PluginEntry> Plugins()

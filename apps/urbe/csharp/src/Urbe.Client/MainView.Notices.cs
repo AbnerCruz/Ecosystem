@@ -20,13 +20,13 @@ public sealed partial class MainView
         if (_identityNotice is { } recognized) ShowLifeNotice(recognized);
         if (snapshot.IsReadOnly && snapshot.FormatState == VaultFormatState.Future)
         {
-            var msg = "Este vault foi criado por uma versão mais nova do Urbe (formato " + snapshot.VaultFormatVersion + "). Para não corromper nada, ele está aberto somente para leitura. Atualize o Urbe para editar.";
+            var msg = "Este vault foi criado por uma versão mais nova do Numa (formato " + snapshot.VaultFormatVersion + "). Para não corromper nada, ele está aberto somente para leitura. Atualize o Numa para editar.";
             Dispatcher.UIThread.Post(() => _ = Dialogs.AlertAsync("Vault somente leitura", msg), DispatcherPriority.Background);
             return;
         }
         var foreign = snapshot.FutureFiles.Where(p => p != ".urbe/vault.json").ToList();
         if (foreign.Count > 0)
-            ShowLifeNotice("Arquivos de uma versão mais nova do Urbe foram preservados sem alteração: " + string.Join(", ", foreign.Select(p => p.StartsWith(".urbe/", StringComparison.Ordinal) ? p[6..] : p)) + ".");
+            ShowLifeNotice("Arquivos de uma versão mais nova do Numa foram preservados sem alteração: " + string.Join(", ", foreign.Select(p => p.StartsWith(".urbe/", StringComparison.Ordinal) ? p[6..] : p)) + ".");
     }
 
     // ---------------------------------------------------------------- identity.js (REQ-042)

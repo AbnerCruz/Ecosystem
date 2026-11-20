@@ -68,7 +68,7 @@ public static partial class AgentSkills
         else if (!NameRule().IsMatch(name)) problems.Add("name deve ter até 64 letras minúsculas, números e hífens (ex.: revisar-livro).");
         if (description.Length == 0) problems.Add("Falta description: diga o que a skill faz e quando usar.");
         else if (description.Length > 1024) problems.Add("description passa de 1024 caracteres.");
-        if (fields.ContainsKey("allowed-tools")) problems.Add("allowed-tools é ignorado: uma skill não concede permissões no Urbe.");
+        if (fields.ContainsKey("allowed-tools")) problems.Add("allowed-tools é ignorado: uma skill não concede permissões no Numa.");
         if (origin == "vault" && name != folderName && name.Length > 0) problems.Add("O nome da pasta (" + folderName + ") difere de name (" + name + ").");
         return new AgentSkill(name, description, folder, origin, body.Trim(), files ?? [], fields.GetValueOrDefault("license"),
             fields.GetValueOrDefault("version"), problems.Count > 0 ? problems : null);
@@ -114,7 +114,7 @@ public static partial class AgentSkills
     {
         var skill = skills.FirstOrDefault(s => s.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase));
         if (skill is null || !Usable(skill)) return "Não há skill \"" + name + "\". Catálogo: " + string.Join(", ", skills.Where(Usable).Select(s => s.Name)) + ".";
-        var sb = new StringBuilder("# Skill: " + skill.Name + (skill.Origin == "app" ? " (do Urbe)" : " (" + skill.Folder + ")") + "\n\n" + skill.Body);
+        var sb = new StringBuilder("# Skill: " + skill.Name + (skill.Origin == "app" ? " (do Numa)" : " (" + skill.Folder + ")") + "\n\n" + skill.Body);
         if (skill.Files.Count > 0) sb.Append("\n\nArquivos de apoio (" + ReadFileName + "): ").Append(string.Join(", ", skill.Files));
         if (skill.Problems is { Count: > 0 } p) sb.Append("\n\nAvisos: ").Append(string.Join(" ", p));
         return sb.ToString();
@@ -143,11 +143,11 @@ public static partial class AgentSkills
         Parse("""
             ---
             name: apresentacao-urbe
-            description: Preparar notas para virar apresentação no Urbe (PPTX editável ou apresentação HTML) — divisão em slides, títulos, notas do apresentador e o que cabe num slide.
+            description: Preparar notas para virar apresentação no Numa (PPTX editável ou apresentação HTML) — divisão em slides, títulos, notas do apresentador e o que cabe num slide.
             ---
             # Apresentação a partir de notas
 
-            No Urbe uma apresentação é uma Publicação com layout **Slides**, feita das notas reais (nunca de cópias).
+            No Numa uma apresentação é uma Publicação com layout **Slides**, feita das notas reais (nunca de cópias).
 
             1. Cada nota começa um slide; dentro dela, cada título `#` ou `##` começa um slide e é o título dele; uma linha `---` (com linha em branco antes) começa um slide sem título.
             2. Um slide comporta cerca de 8 a 10 linhas de texto de 20 pt. Prefira tópicos curtos. O que não cabe continua num slide marcado "(cont.)" — melhor dividir com `##`.
@@ -161,7 +161,7 @@ public static partial class AgentSkills
         Parse("""
             ---
             name: livro-urbe
-            description: Organizar um livro ou apostila no Urbe — capítulos como notas, publicação em layout Livro e exportação EPUB, Word, ODT ou PDF.
+            description: Organizar um livro ou apostila no Numa — capítulos como notas, publicação em layout Livro e exportação EPUB, Word, ODT ou PDF.
             ---
             # Livro a partir de notas
 
@@ -183,7 +183,7 @@ public static partial class AgentSkills
             - Vírgula decimal (1,5); argumentos separados por `;` (media(3; 5; 8)).
             - Unidades: escreva o número com a unidade e converta com `em` (100 km/h em m/s). Dimensões diferentes dão erro de propósito.
             - Comandos: `derivada de …`, `simplificar …`, `expandir …`, `resolver … = … [para t]`, `integral de … [de a até b]`.
-            - Para deixar a conta na nota, escreva as linhas num bloco ```calculo: o Urbe mostra o resultado ao lado de cada linha e recalcula sozinho; não escreva os resultados como texto fixo.
+            - Para deixar a conta na nota, escreva as linhas num bloco ```calculo: o Numa mostra o resultado ao lado de cada linha e recalcula sozinho; não escreva os resultados como texto fixo.
             """, "app/calculo-urbe", "app"),
     ];
 }

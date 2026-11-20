@@ -98,7 +98,7 @@ public sealed class VideoDirectionTests
     public async Task TheAgentFindsACutTitleFixesOnlyThatSceneAndLooksAgain()
     {
         var host = new Host();
-        host.Documents.Upsert(new() { Path = "Roteiro/Abertura.md", Content = "# Abertura\n\nO Urbe faz vídeos a partir das notas." });
+        host.Documents.Upsert(new() { Path = "Roteiro/Abertura.md", Content = "# Abertura\n\nO Numa faz vídeos a partir das notas." });
         host.Documents.Upsert(new() { Path = "Roteiro/Fim.md", Content = "# Fim\n\nObrigado." });
         var write = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
         var spec = JsonNode.Parse("""{"schemaVersion":1,"title":"Demo","sources":[{"documentId":"Roteiro/Abertura.md"},{"documentId":"Roteiro/Fim.md"}],"design":{"layout":"video"},"formats":["mp4"]}""")!.AsObject();
@@ -209,7 +209,7 @@ public sealed class VideoDirectionTests
         string Last(AiRequest request) => request.Messages.SelectMany(m => m.Content).LastOrDefault(b => b.Type == "tool_result")?.Content ?? "";
         static AiResult Use(string name, JsonObject input) => new([AiBlock.ToolUse("t" + Guid.NewGuid().ToString("N")[..6], name, input)], "", "tool_use", new(1, 1, null), "test");
         string? scene = null;
-        List<AiChatMessage> messages = [new() { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("Faça um motion graphics curto mostrando que o Urbe faz vídeos das notas.")] }];
+        List<AiChatMessage> messages = [new() { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("Faça um motion graphics curto mostrando que o Numa faz vídeos das notas.")] }];
         await AssistantAgent.RunAsync(new()
         {
             Host = host, Model = "test", Provider = new("p", "openai"), Policy = "ask", Tools = tools,
@@ -220,7 +220,7 @@ public sealed class VideoDirectionTests
                 var last = Last(request);
                 AiResult next = ++step switch
                 {
-                    1 => Use("create_note", new JsonObject { ["path"] = "Roteiros/Demo.md", ["content"] = "# Vídeos das suas notas\n\nO Urbe transforma notas em vídeos editáveis." }),
+                    1 => Use("create_note", new JsonObject { ["path"] = "Roteiros/Demo.md", ["content"] = "# Vídeos das suas notas\n\nO Numa transforma notas em vídeos editáveis." }),
                     2 => Use("write_publication", new JsonObject
                     {
                         ["path"] = "Publicações/Demo.publication.json",
@@ -231,7 +231,7 @@ public sealed class VideoDirectionTests
                     {
                         ["path"] = "Publicações/Demo.publication.json", ["expected_revision"] = host.Documents.Get("Publicações/Demo.publication.json")!.Revision,
                         ["scene_id"] = scene = System.Text.RegularExpressions.Regex.Match(last, @"Cena 1 (\S+)").Groups[1].Value,
-                        ["elements"] = new JsonArray(new JsonObject { ["id"] = "selo", ["kind"] = "text", ["text"] = "Feito no Urbe com notas reais", ["x"] = 0.5, ["y"] = 0.72, ["width"] = 0.8, ["height"] = 0.1 })
+                        ["elements"] = new JsonArray(new JsonObject { ["id"] = "selo", ["kind"] = "text", ["text"] = "Feito no Numa com notas reais", ["x"] = 0.5, ["y"] = 0.72, ["width"] = 0.8, ["height"] = 0.1 })
                     }),
                     5 => Use("look_at_video", new JsonObject { ["path"] = "Publicações/Demo.publication.json" }),
                     _ => new([AiBlock.TextBlock("Pronto: o vídeo está em Publicações/Demo.publication.json. Revisei a geometria e olhei os quadros; exporte o MP4 no Estúdio.")], "", "end_turn", new(1, 1, null), "test")
@@ -249,7 +249,7 @@ public sealed class VideoDirectionTests
         var saved = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Demo.publication.json")!.Content);
         Assert.Equal("video", saved.Design.Layout);
         Assert.Contains(saved.Video!.Scenes.Single(x => x.Id == scene).Elements, e => e.Id == "selo");
-        Assert.Equal("# Vídeos das suas notas\n\nO Urbe transforma notas em vídeos editáveis.", host.Documents.Get("Roteiros/Demo.md")!.Content);
+        Assert.Equal("# Vídeos das suas notas\n\nO Numa transforma notas em vídeos editáveis.", host.Documents.Get("Roteiros/Demo.md")!.Content);
         Assert.Single(host.Sheets);
     }
 

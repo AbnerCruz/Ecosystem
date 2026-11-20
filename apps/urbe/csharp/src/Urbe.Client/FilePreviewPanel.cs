@@ -795,7 +795,7 @@ public sealed class FilePreviewPanel : Grid
         if (kind == VaultFileKinds.Pdf && bytes is not null && await Task.Run(() => Urbe.Core.Assistant.PdfLock.IsLocked(bytes)))
         {
             if (version != _version) return;
-            ShowInfo(name, read.Size, kind, signature, "Este PDF está protegido por senha. O Urbe ainda não abre PDFs com senha; use Abrir em outro app. O arquivo continua como está.");
+            ShowInfo(name, read.Size, kind, signature, "Este PDF está protegido por senha. O Numa ainda não abre PDFs com senha; use Abrir em outro app. O arquivo continua como está.");
             return;
         }
         if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
@@ -858,11 +858,11 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         ShowInfo(name, read.Size, kind, signature, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
-            ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
+            ? "Este aparelho ainda não tem o visualizador deste formato dentro do Numa."
             : FormatSupportMatrix.For(name) is { Open: SupportLevel.External }
-                ? "O Urbe não abre este formato. Use Abrir em outro app; o original não é modificado."
+                ? "O Numa não abre este formato. Use Abrir em outro app; o original não é modificado."
                 : kind == VaultFileKinds.Image
-                    ? "O conteúdo não é uma imagem que o Urbe consiga desenhar."
+                    ? "O conteúdo não é uma imagem que o Numa consiga desenhar."
                     : "Sem visualização nativa para este formato.");
     }
 

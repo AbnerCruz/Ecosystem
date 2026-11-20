@@ -88,7 +88,7 @@ public static class ImportPipeline
         {
             var parsed = VaultExportManifestCodec.Parse(manifestFile.Bytes);
             if (parsed.State != VaultExportManifestState.Current || parsed.Manifest is null || parsed.Manifest.FormatVersion != 1)
-                throw new InvalidDataException("Este manifesto não é reconhecido. Atualize o Urbe se o backup for mais recente.");
+                throw new InvalidDataException("Este manifesto não é reconhecido. Atualize o Numa se o backup for mais recente.");
             manifest = parsed.Manifest;
             foreach (var listed in manifest.Files)
                 if (SafePath(listed.Path) != listed.Path) throw new InvalidDataException("Caminho inválido no manifesto.");

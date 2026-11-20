@@ -47,7 +47,7 @@ public sealed class UrbeApp : Application
                 var view = CreateMainView();
                 var window = new Window
                 {
-                    Title = "Urbe",
+                    Title = "Numa",
                     Width = 1280,
                     Height = 800,
                     Background = UrbeTheme.Brush(UrbeTheme.Bg),
@@ -88,7 +88,7 @@ public sealed class UrbeApp : Application
             if (typed && !await view.Editor.SaveAsync() &&
                 !await view.Dialogs.ConfirmAsync("A nota não foi salva",
                     "O que foi escrito desde a última gravação de “" + System.IO.Path.GetFileNameWithoutExtension(view.Editor.Current!.Path) +
-                    "” não está no vault. Se fechar agora, esse texto se perde.", "Fechar sem salvar", danger: true, cancel: "Continuar no Urbe"))
+                    "” não está no vault. Se fechar agora, esse texto se perde.", "Fechar sem salvar", danger: true, cancel: "Continuar no Numa"))
                 return;
             try { await view.FlushPendingAsync(); }
             catch { /* the error state was shown; closing must not be blocked forever */ }

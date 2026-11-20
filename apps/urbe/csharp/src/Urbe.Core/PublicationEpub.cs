@@ -92,7 +92,7 @@ public static class PublicationEpub
         accessibility.AddRange(features.Select(f => new XElement(Opf + "meta", new XAttribute("property", "schema:accessibilityFeature"), f)));
         accessibility.Add(new(Opf + "meta", new XAttribute("property", "schema:accessibilityHazard"), "none"));
         accessibility.Add(new(Opf + "meta", new XAttribute("property", "schema:accessibilitySummary"),
-            "Livro gerado pelo Urbe a partir de notas: capítulos com títulos, sumário e marcos de navegação, texto que se reorganiza conforme a tela" +
+            "Livro gerado pelo Numa a partir de notas: capítulos com títulos, sumário e marcos de navegação, texto que se reorganiza conforme a tela" +
             (pictures == 0 ? "." : described ? "; todas as imagens, gráficos e fórmulas têm descrição em texto." : "; " + undescribed.Count + " de " + pictures + " imagens não têm descrição em texto.")));
         var manifest = new XElement(Opf + "manifest",
             new XElement(Opf + "item", new XAttribute("id", "nav"), new XAttribute("href", "nav.xhtml"), new XAttribute("media-type", "application/xhtml+xml"), new XAttribute("properties", "nav")),
