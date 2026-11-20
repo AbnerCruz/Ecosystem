@@ -1822,27 +1822,40 @@ public sealed partial class AssistantPanel : Border
     private void Schedule(AiChatMessage m)
     {
         _dirty.Add(m);
-        if (_renderPosted) return;
-        _renderPosted = true;
         // #1000: a stream sends dozens of tokens a second; each one rendered the chat (and the steps) again, so the
-        // more steps, the less the app answered. Renders now come at most every RenderEvery: the text still flows,
-        // and the touch, the scroll and the typing get the time between them
+        // more steps, the less the app answered. Streamed tokens now render at most every RenderEvery: the text still
+        // flows, and the touch, the scroll and the typing get the time between them. Anything else (a tool's result,
+        // an approval, a question, the end) renders at once, taking the place of a token's render still waiting
+        bool token = m.Meta?.Streaming == true && _running is not null;
+        if (_renderPosted)
+        {
+            if (token || _renderTimer is null) return;
+            _renderTimer.Dispose();
+            _renderTimer = null;
+            Dispatcher.UIThread.Post(RenderDirty, DispatcherPriority.Background);
+            return;
+        }
+        _renderPosted = true;
         var wait = RenderEvery - (Environment.TickCount64 - _renderedAt);
-        if (wait > 0 && _running is not null)
-            DispatcherTimer.RunOnce(RenderDirty, TimeSpan.FromMilliseconds(wait), DispatcherPriority.Background);
+        if (token && wait > 0) _renderTimer = DispatcherTimer.RunOnce(RenderDirty, TimeSpan.FromMilliseconds(wait), DispatcherPriority.Background);
         else Dispatcher.UIThread.Post(RenderDirty, DispatcherPriority.Background);
     }
+
+    private IDisposable? _renderTimer;
 
     /// <summary>The least time between two renders of the chat while the agent works (#1000).</summary>
     public const int RenderEvery = 90;
     private long _renderedAt = long.MinValue / 2;
 
     /// <summary>Renders at once what a streamed token changed in a message (what each render costs while the agent works; tests).</summary>
-    public void RenderChanged(AiChatMessage m) { _dirty.Add(m); RenderDirty(); }
+    public void RenderChanged(AiChatMessage m) { _dirty.Add(m); _renderPosted = true; RenderDirty(); }
 
     private void RenderDirty()
     {
+        if (!_renderPosted) return;   // a token's render already done by an event that came before its time
         _renderPosted = false;
+        _renderTimer?.Dispose();
+        _renderTimer = null;
         _renderedAt = Environment.TickCount64;
         // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
         bool near = _followChatTail && NearEnd();
