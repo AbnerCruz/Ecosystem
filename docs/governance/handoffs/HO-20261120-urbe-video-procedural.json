@@ -40,7 +40,7 @@
     { "check": "Urbe.Client.Tests (VideoRender)", "kind": "automated", "result": "passed", "evidence": "702/702 na suíte inteira; TwoThousandParticlesAt720pAreDrawnAndMeasured desenha 2000 instâncias a 720p abaixo de 1 s/quadro e revisa em menos de 20 s." }
   ],
   "known_issues": [
-    "Não testado no aparelho (ADD-0035); desempenho de 2000 instâncias medido só no container, sem GPU.",
+    "Não testado no aparelho (ADD-0035); desempenho medido só no container, sem GPU. O projeto Android compila (Debug, Android SDK 36), sem execução em emulador ou aparelho.",
     "Não reexecutado com o modelo do proprietário.",
     "Fatias seguintes da #1004 (máscara por imagem/gradiente, câmera, componentes, benchmark, TTS neural) não feitas."
   ],

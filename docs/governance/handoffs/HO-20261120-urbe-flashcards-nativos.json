@@ -45,7 +45,7 @@
     { "check": "Urbe.Client.Tests", "kind": "automated", "result": "passed", "evidence": "709/709; Flashcards_ADeckIsNativeDurableAndLeavesNoResidue: flashcards.json gravado, conjunto de arquivos visíveis igual antes e depois, conjunto volta após reabrir o app, linha no Estudo; AppDocsGuideTests: 5 consultas (inclui o pedido da beta.60) acham Flashcards primeiro e uma consulta sem cobertura responde 'Nada no guia'." }
   ],
   "known_issues": [
-    "Não testado no aparelho (ADD-0035); Android compilado só por paridade de código com SaveAreaLayoutAsync, sem build Android aqui.",
+    "Não testado no aparelho (ADD-0035). O projeto Android compila (dotnet build Debug com Android SDK 36 instalado no container), mas não foi executado em emulador nem aparelho.",
     "Prompt da beta.60 não reexecutado com modelo real; métricas comparadas (chamadas, tempo) pendentes.",
     "Painel próprio feito (FlashcardsPanel); criar/editar cartões ainda em diálogos; cartão do conjunto no chat feito (Abrir); sem migração de plugin de flashcards antigo."
   ],
