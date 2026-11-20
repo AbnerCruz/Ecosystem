@@ -1,15 +1,15 @@
 # Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.62
+**Versão canônica preparada:** 2.0.0-beta.63
 **Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-## O Urbe agora se chama Numa
+## Vídeos
 
-- **Nome novo, mesmo app.** Como decidido em DEC-0060, o app aparece como **Numa** no ícone do celular, na janela do computador, nas telas, no guia e no que o Assistente diz. A atualização instala por cima: suas notas, pastas, conversas e configurações continuam onde estão, e nada no seu vault muda.
-- **O símbolo novo ainda não entrou.** O estudo do logo aprovado está no seu vault (Páginas/Identidade Numa — estudo de logo), fora do repositório; o ícone muda quando esse estudo, ou o desenho final, for enviado.
+- **Um vídeo numa chamada.** O Assistente cria o vídeo inteiro de uma vez: uma nota por cena com a fala, a publicação com o tema e cada cena composta por um layout. Tudo é conferido antes de gravar, então um erro custa uma correção, não um vídeo pela metade. Depois ele olha os quadros e gera o MP4: são três passos onde antes eram dezenas.
+- **Atividade com nomes claros.** A linha de atividade diz "Criando o vídeo", "Olhando os quadros do vídeo", "Ajustando uma cena" e "Gerando o MP4".
 
 ## Não testado no aparelho
 
-- Testado com testes automáticos; o rótulo do ícone no Android não foi conferido num aparelho.
+- Testado com testes automáticos e um modelo simulado; não reexecutei um pedido real de vídeo com o seu modelo.
