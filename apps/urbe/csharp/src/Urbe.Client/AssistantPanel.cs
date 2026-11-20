@@ -2028,6 +2028,11 @@ public sealed partial class AssistantPanel : Border
                 if (!_generatedViews.TryGetValue(key, out var image)) _generatedViews[key] = image = GeneratedImagePreview(path);
                 desired.Add(image);
             }
+            // #1005: a deck made in this request is shown as what it is, a study object that opens in Flashcards
+            var decks = steps.SelectMany(m => m.Content).Where(b => b.Type == "tool_use" && b.Name == "create_flashcards")
+                .Select(b => ResultFor(b.Id) is { IsError: false } result ? AssistantStudyTools.Deck(result.Content) : null)
+                .OfType<(string Id, string Title, int Cards)>().GroupBy(d => d.Id).Select(g => g.Last()).ToList();
+            foreach (var deck in decks) desired.Add(DeckCard(deck.Id, deck.Title, deck.Cards));
             if (answer is not null) desired.Add(View(answer));
             i = end - 1;
         }

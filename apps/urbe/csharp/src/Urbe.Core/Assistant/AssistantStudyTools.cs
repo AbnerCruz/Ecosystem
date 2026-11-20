@@ -103,6 +103,12 @@ public static class AssistantStudyTools
 
     public static IReadOnlyList<AiTool> All { get; } = [Create, List, Open];
 
+    private static readonly System.Text.RegularExpressions.Regex Made = new(@"^Conjunto ""(?<title>.*)"" \(deck_id (?<id>[^)\s]+)\) salvo na biblioteca de Estudo com (?<n>\d+) cart", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>The deck a create_flashcards result names (id, title, cards), for the chat to show it as a study object.</summary>
+    public static (string Id, string Title, int Cards)? Deck(string? result) =>
+        result is not null && Made.Match(result) is { Success: true } m ? (m.Groups["id"].Value, m.Groups["title"].Value, int.Parse(m.Groups["n"].Value, System.Globalization.CultureInfo.InvariantCulture)) : null;
+
     private static List<(string Front, string Back)> Cards(JsonObject input) =>
         (input["cards"] as JsonArray ?? throw new AiToolException("Mande cards: [{front, back}]."))
             .Select((n, k) => n is JsonObject o ? ((string?)o["front"] ?? "", (string?)o["back"] ?? "") : throw new AiToolException("O cartão " + (k + 1) + " não é {front, back}."))

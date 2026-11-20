@@ -11,6 +11,7 @@
 - **Tela própria.** A biblioteca abre em tela cheia: a lista de conjuntos, cada conjunto com seus cartões e o estado de cada um, e a revisão com o cartão grande, **Mostrar resposta** e os quatro botões dizendo quando o cartão volta. No fim, um resumo de quantos você lembrou.
 - **Criar, revisar e editar.** Crie um conjunto escrevendo os cartões, revise com Errei, Difícil, Bom e Fácil (a mesma revisão espaçada de antes, com o progresso que você já tinha) e edite ou exclua cartões. Mudar só a resposta mantém o progresso.
 - **O Assistente usa a ferramenta certa.** "Faça dois flashcards sobre animais" vira um conjunto da biblioteca numa chamada só. Ele não cria mais plugin, nota ou pasta para isso, e quando a biblioteca não está disponível ele diz isso em vez de improvisar.
+- **O conjunto aparece na conversa.** Quando o Assistente cria flashcards, a conversa mostra o conjunto, com quantos cartões tem e o botão **Abrir**, que leva direto a ele na biblioteca.
 - **Nada sobra no Explorer.** Os conjuntos ficam guardados dentro da sua pasta de notas, numa área que o Explorer não mostra; vão junto em backups e na cópia da pasta.
 - **O guia acha o que se pergunta.** Há um artigo de Flashcards no guia. A busca entende "cartões", "cards" e "memorização" e, quando o guia não cobre um assunto, diz isso em vez de trazer páginas sobre outra coisa.
 

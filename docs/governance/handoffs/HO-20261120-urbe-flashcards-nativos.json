@@ -47,9 +47,9 @@
   "known_issues": [
     "Não testado no aparelho (ADD-0035); Android compilado só por paridade de código com SaveAreaLayoutAsync, sem build Android aqui.",
     "Prompt da beta.60 não reexecutado com modelo real; métricas comparadas (chamadas, tempo) pendentes.",
-    "Painel próprio feito (FlashcardsPanel); criar/editar cartões ainda em diálogos; sem cartão de artefato tipado no chat; sem migração de plugin de flashcards antigo."
+    "Painel próprio feito (FlashcardsPanel); criar/editar cartões ainda em diálogos; cartão do conjunto no chat feito (Abrir); sem migração de plugin de flashcards antigo."
   ],
-  "next_actions": [ "Cartão de artefato tipado no chat; depois fatia 2 (inventário de stores)." ],
+  "next_actions": [ "Depois fatia 2 (inventário de stores)." ],
   "decisions_required": [],
   "normative_sources": [
     "AGENTS.md",

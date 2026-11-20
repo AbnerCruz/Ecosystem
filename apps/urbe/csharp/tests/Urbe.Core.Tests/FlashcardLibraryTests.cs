@@ -122,6 +122,8 @@ public sealed class FlashcardLibraryTests
         Assert.Equal(2, deck.Cards.Count);
         Assert.Contains("deck_id animais", output.Content);
         Assert.Contains("Nenhuma nota ou plugin", output.Content);
+        Assert.Equal(("animais", "Animais", 2), AssistantStudyTools.Deck(output.Content));   // the chat shows it as a deck
+        Assert.Null(AssistantStudyTools.Deck("Nota criada."));
         Assert.Empty(host.Documents.List());
         Assert.Null(output.Changes);
         // the tool's description sends flashcards here and the plugin tools away from them

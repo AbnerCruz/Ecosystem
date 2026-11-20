@@ -189,6 +189,31 @@ public sealed partial class AssistantPanel
         return border;
     }
 
+    /// <summary>#1005: a flashcard deck the Assistente made, with what opens it in the study library.</summary>
+    private Control DeckCard(string deckId, string title, int cards)
+    {
+        var info = new StackPanel { Spacing = 2, Children =
+        {
+            Label(title, 14, UrbeTheme.Text, FontWeight.SemiBold),
+            Label("Flashcards · " + cards + (cards == 1 ? " cartão" : " cartões") + " · na biblioteca de Estudo", 12, UrbeTheme.Text2)
+        } };
+        void Open() { Close(); _app.Study?.OpenStudy("deck:" + deckId); }
+        var open = TextButton("Abrir", Open);
+        Avalonia.Automation.AutomationProperties.SetName(open, "Abrir os flashcards " + title);
+        var row = new DockPanel();
+        var icon = UrbeTheme.Icon(UrbeTheme.Icons.Book, 22, UrbeTheme.Accent);
+        icon.Margin = new Thickness(0, 0, 10, 0);
+        DockPanel.SetDock(icon, Dock.Left);
+        DockPanel.SetDock(open, Dock.Right);
+        row.Children.Add(icon);
+        row.Children.Add(open);
+        row.Children.Add(info);
+        var card = Card(row, null);
+        card.Padding = new Thickness(12, 10);
+        card.Tag = "flashcards:" + deckId;
+        return card;
+    }
+
     /// <summary>Load the saved vault image (not a temporary provider URL) as an inline, tappable result.</summary>
     private Control GeneratedImagePreview(string path)
     {
