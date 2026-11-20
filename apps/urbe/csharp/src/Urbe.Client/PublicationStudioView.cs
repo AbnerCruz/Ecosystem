@@ -76,6 +76,7 @@ public sealed class PublicationStudioView : Border
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
                 if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
                 if (CanNarrate) Item("Narrar o roteiro com a voz do aparelho", () => NarrateRequested?.Invoke());
+                if (CanNarrate) Item("Voz da narração", () => VoiceRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
             Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
@@ -172,6 +173,8 @@ public sealed class PublicationStudioView : Border
     public event Action? AdjustAudioRequested;
     /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
     public event Action? NarrateRequested;
+    /// <summary>#1004: choosing the device voice that narrates.</summary>
+    public event Action? VoiceRequested;
     /// <summary>#956: choose the video's finished look (VideoThemes).</summary>
     public event Action? VideoThemeRequested;
     public bool CanNarrate { get; set; }

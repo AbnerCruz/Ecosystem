@@ -524,7 +524,7 @@ Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f
 - [~] Fatia 4, câmera por cena: `scene.camera` com keyframes/motions em x, y, zoom e rotation; fundo fixo (`ASceneCameraPansZoomsAndTurnsAndIsChecked`, `TheCameraZoomsAndPans`). A revisão medida mede o que a câmera mostra (`TheReviewMeasuresWhatTheCameraShows`). Toque e arraste no Estúdio também (`UnderACameraATapFindsTheElementWhereItIsShownAndADragGoesBackToTheScene`).
 - [~] Fatia 3b, recorte: `clip` = id de uma forma rect/ellipse/circle da cena, que segue animada; forma invisível que cresce faz a revelação (`AClipIsAShapeOfTheSceneAndIsCarriedToTheFrame`, `AClipRevealsTheElementOnlyInsideTheShape`). Máscara por imagem/gradiente fica para depois.
 - [ ] Narração neural (adendos da issue).
-- [~] Narração neural: medição de Kokoro e Piper em pt-BR via sherpa-onnx ([TTS-NEURAL-20261120.md](TTS-NEURAL-20261120.md)); o fonemizador pt-BR disponível é GPL-3.0 (espeak-ng) → decisão pendente **DEC-0067**. Independente da decisão: provedor único de síntese com a voz do sistema.
+- [~] Narração neural: medição de Kokoro e Piper em pt-BR via sherpa-onnx ([TTS-NEURAL-20261120.md](TTS-NEURAL-20261120.md)); o fonemizador pt-BR disponível é GPL-3.0 (espeak-ng) → decisão pendente **DEC-0067**. Feito, independente da decisão: escolha da voz do aparelho (`PlatformAudio.Voices`/`PreferredVoice`, Android e Windows) guardada no aparelho e usada pela narração, podcast e Assistente (`Narration_TheChosenVoiceIsKeptOnTheDevice`). Falta: prévia audível da voz.
 - [ ] Validação no aparelho (NN-017): render de 2000 instâncias no Android de referência.
 
 ## Reorganização da experiência: dados, painéis e IA nativa — #1005 (20/11/2026)

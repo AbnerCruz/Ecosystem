@@ -67,6 +67,7 @@ public sealed partial class MainView : Grid
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
         Editor.Pinned.ContinueReading = () => ContinueReading();
         Editor.Pinned.FlashcardsSummary = FlashcardsSummary;
+        LoadNarrationVoice();
         Editor.Pinned.OpenFlashcards = () => _ = ShowFlashcardsAsync(null);
         Editor.Pinned.NoteText = path => ArtifactModel.IsNote(path) ? _contents.GetValueOrDefault(path) : null;
         FilePreview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);

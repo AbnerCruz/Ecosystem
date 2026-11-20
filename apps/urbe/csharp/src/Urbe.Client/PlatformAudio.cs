@@ -21,5 +21,14 @@ public static class PlatformAudio
     /// </summary>
     public static Func<string, int, string, CancellationToken, Task<bool>>? SynthesizeToWav { get; set; }
 
+    /// <summary>
+    /// #1004 (narration): the device's Portuguese voices by name, for the person to choose; null where the platform
+    /// cannot list them. The list is read when asked (voices can be installed while the app runs).
+    /// </summary>
+    public static Func<IReadOnlyList<string>>? Voices { get; set; }
+
+    /// <summary>The voice the person chose for narration (a name from <see cref="Voices"/>); null is the platform's choice.</summary>
+    public static string? PreferredVoice { get; set; }
+
     public static bool Available => DecodeToWav is not null && TranscribeWav is not null;
 }
