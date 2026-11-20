@@ -338,9 +338,15 @@ public sealed partial class AssistantPanel : Border
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
     public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) => Tools;
 
-    private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
-        ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
-        ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
+    // #1000: looked up for every step on every render (1000 steps × ~90 tools per streamed token); an index, made once
+    private static readonly Dictionary<string, AiTool> ToolIndex = BuildToolIndex();
+    private static Dictionary<string, AiTool> BuildToolIndex()
+    {
+        var index = new Dictionary<string, AiTool>(StringComparer.Ordinal);
+        foreach (var t in Tools.Concat(AssistantWebTools.All).Append(AssistantAgent.Delegate)) index.TryAdd(t.Name, t);   // the first wins, as before
+        return index;
+    }
+    private static AiTool? ToolByName(string name) => ToolIndex.GetValueOrDefault(name);
 
     /// <summary>The HTTP layer (tests replace the handler).</summary>
     public AssistantProviders Providers { get; set; } = new();
@@ -1816,20 +1822,49 @@ public sealed partial class AssistantPanel : Border
     private void Schedule(AiChatMessage m)
     {
         _dirty.Add(m);
-        if (_renderPosted) return;
-        _renderPosted = true;
-        Dispatcher.UIThread.Post(() =>
+        // #1000: a stream sends dozens of tokens a second; each one rendered the chat (and the steps) again, so the
+        // more steps, the less the app answered. Streamed tokens now render at most every RenderEvery: the text still
+        // flows, and the touch, the scroll and the typing get the time between them. Anything else (a tool's result,
+        // an approval, a question, the end) renders at once, taking the place of a token's render still waiting
+        bool token = m.Meta?.Streaming == true && _running is not null;
+        if (_renderPosted)
         {
-            _renderPosted = false;
-            // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
-            bool near = _followChatTail && NearEnd();
-            foreach (var d in _dirty) ForgetView(d);
-            _dirty.Clear();
-            RenderLog();
-            RenderChrome();
-            NotifyCompactChanged();
-            if (near) ScrollEnd();
-        }, DispatcherPriority.Background);
+            if (token || _renderTimer is null) return;
+            _renderTimer.Dispose();
+            _renderTimer = null;
+            Dispatcher.UIThread.Post(RenderDirty, DispatcherPriority.Background);
+            return;
+        }
+        _renderPosted = true;
+        var wait = RenderEvery - (Environment.TickCount64 - _renderedAt);
+        if (token && wait > 0) _renderTimer = DispatcherTimer.RunOnce(RenderDirty, TimeSpan.FromMilliseconds(wait), DispatcherPriority.Background);
+        else Dispatcher.UIThread.Post(RenderDirty, DispatcherPriority.Background);
+    }
+
+    private IDisposable? _renderTimer;
+
+    /// <summary>The least time between two renders of the chat while the agent works (#1000).</summary>
+    public const int RenderEvery = 90;
+    private long _renderedAt = long.MinValue / 2;
+
+    /// <summary>Renders at once what a streamed token changed in a message (what each render costs while the agent works; tests).</summary>
+    public void RenderChanged(AiChatMessage m) { _dirty.Add(m); _renderPosted = true; RenderDirty(); }
+
+    private void RenderDirty()
+    {
+        if (!_renderPosted) return;   // a token's render already done by an event that came before its time
+        _renderPosted = false;
+        _renderTimer?.Dispose();
+        _renderTimer = null;
+        _renderedAt = Environment.TickCount64;
+        // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
+        bool near = _followChatTail && NearEnd();
+        foreach (var d in _dirty) ForgetView(d);
+        _dirty.Clear();
+        RenderLog();
+        RenderChrome();
+        NotifyCompactChanged();
+        if (near) ScrollEnd();
     }
 
     private double ChatEndGap => Math.Max(0, _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height);

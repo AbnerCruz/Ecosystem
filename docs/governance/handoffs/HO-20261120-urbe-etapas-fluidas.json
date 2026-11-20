@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261120-urbe-etapas-fluidas",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-20T11:22:34Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-77",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "e6a0d770cfc4e449c0dc5508cab7a4474b18a043",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StepsRenderUiTests.cs",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "docs/governance/handoffs/HO-20261120-urbe-etapas-fluidas.json"
+  ],
+  "work_completed": [
+    "#1000 (P0 do proprietário: painel de etapas trava o app). Medido com 1000 etapas e o modelo transmitindo: com o painel aberto cada token esvaziava e remontava a lista (53 ms/token no computador; a 30 tokens/s passa de 1 s de trabalho por segundo). Agora a etapa que mudou é trocada no lugar e as demais não saem da lista; a linha da atividade só é refeita quando suas palavras mudam (o resumo do raciocínio muda só o texto; a barra de progresso é uma por execução); busca de ferramenta por índice; assinaturas só das etapas da janela; renders do chat no máximo a cada 90 ms enquanto a IA trabalha. Depois: 15 ms/token aberto, 11 ms fechado."
+  ],
+  "verification": [
+    {
+      "check": "Steps_ARenderWithAThousandStepsIsCheap",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Falha no código antigo (20 etapas saíam e voltavam da lista a cada token) e passa no novo; BENCH antes 13/53 ms, depois 11/15 ms (fechado/aberto), headless sem GPU."
+    }
+  ],
+  "known_issues": [
+    "Fluidez não medida no Android do proprietário (ADD-0035); os números são de computador headless."
+  ],
+  "next_actions": [
+    "Fechar #1000 depois da integração da beta.63, se o proprietário não relatar travamento."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Nada declarado como testado no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Regressão com teste que falhava antes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-steps-render",
+      "status": "product-specific",
+      "rationale": "Painel do Assistente do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção de desempenho dentro do Urbe."
+  },
+  "blockers": []
+}

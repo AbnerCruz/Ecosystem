@@ -45,6 +45,22 @@ public static class AssistantVideoDirectionTools
         },
         new AiTool
         {
+            Name = "create_video", Access = "write",
+            Description = "Cria um vídeo inteiro numa chamada: uma nota por cena (a fala, que vira narração e legenda), a publicação de vídeo com o tema " +
+                          "e cada cena já composta por um layout. Depois: look_at_video para conferir e render_video para o MP4. " +
+                          "scenes: [{title, narration (o que é dito, 1–3 frases), layout, slots}]. Layouts: " +
+                          string.Join("; ", VideoLayouts.All.Select(l => l.Id + " (" + string.Join(", ", l.Required) + (l.Optional.Length > 0 ? "; opcional " + string.Join(", ", l.Optional) : "") + ")")) +
+                          ". Textos dos slots são curtos (o que aparece na tela); a explicação vai na narration. Temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".",
+            Parameters = JsonNode.Parse("""
+                {"type":"object","properties":{"title":{"type":"string"},"theme":{"type":"string"},"aspect":{"type":"string","enum":["16:9","9:16","1:1"]},"folder":{"type":"string"},
+                 "scenes":{"type":"array","minItems":1,"items":{"type":"object","properties":{"title":{"type":"string"},"narration":{"type":"string"},"layout":{"type":"string"},
+                 "slots":{"type":"object","additionalProperties":{"type":"string"}}},"required":["title","narration","layout","slots"]}}},"required":["title","scenes"],"additionalProperties":false}
+                """)!.AsObject(),
+            Label = i => "Criando o vídeo " + ((string?)i["title"] ?? ""),
+            Run = CreateVideoAsync
+        },
+        new AiTool
+        {
             Name = "render_video", Access = "write",
             Description = "Entrega o vídeo pronto: narra o roteiro de cada cena com a voz do aparelho (narrate, padrão sim quando o vídeo não tem voz), " +
                           "alonga as cenas que ficariam curtas para a fala, gera o MP4 H.264 verificado e as legendas SRT dentro do vault, ao lado da publicação, " +
@@ -142,6 +158,82 @@ public static class AssistantVideoDirectionTools
         var issues = Inspect(Load(path, host).Timeline, host);
         return new AiToolOutput(path + " · revisão " + doc.Revision + " · " + timeline.Scenes.Count + " cenas, " + N(timeline.Duration) + " s\n" + legend +
             "\n\nO que o modelo visual viu:\n" + seen + "\n\n" + Issues(issues, true) + "\n\n" + Outline(timeline));
+    }
+
+    /// <summary>
+    /// #956 (owner: "demorou muito, muitos passos"): the whole video in one call — the notes with what each scene says,
+    /// the publication with its theme, and every scene composed by a layout. Everything is checked before anything is
+    /// written, so a mistake costs one corrected call, not a half-made video.
+    /// </summary>
+    private static async Task<AiToolOutput> CreateVideoAsync(JsonObject input, IAssistantHost host)
+    {
+        var title = ((string?)input["title"] ?? "").Trim();
+        if (title.Length == 0) throw new AiToolException("Dê um título ao vídeo.");
+        var theme = (string?)input["theme"] ?? "noite";
+        if (VideoThemes.Find(theme) is null) throw new AiToolException("Tema " + theme + " não existe; temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".");
+        var aspect = (string?)input["aspect"] ?? "16:9";
+        if (!VideoComposition.Aspects.Contains(aspect)) throw new AiToolException("Proporção " + aspect + "; use 16:9, 9:16 ou 1:1.");
+        var name = ArtifactModel.SafeName(title);
+        var folder = ((string?)input["folder"] ?? "Publicações/" + name).Trim().Trim('/');
+        if (!VideoScript.IsVaultPath(folder + "/x.md")) throw new AiToolException("Pasta inválida: " + folder + ".");
+        var pubPath = folder + ".publication.json";
+        if (host.Documents.Get(pubPath) is not null) throw new AiToolException(pubPath + " já existe: para mudá-lo use edit_video_scene, ou dê outro título.");
+        var scenes = (input["scenes"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+        if (scenes.Count == 0) throw new AiToolException("Envie ao menos uma cena.");
+
+        // everything checked first: layouts, slots and texts; nothing is written on a mistake
+        var plans = new List<(string Title, string Narration, string Layout, Dictionary<string, string> Slots)>();
+        for (int i = 0; i < scenes.Count; i++)
+        {
+            var sc = scenes[i];
+            var st = ((string?)sc["title"] ?? "").Trim();
+            var narration = ((string?)sc["narration"] ?? "").Trim();
+            var layout = (string?)sc["layout"] ?? "";
+            if (st.Length == 0 || narration.Length == 0) throw new AiToolException("Cena " + (i + 1) + ": title e narration são obrigatórios.");
+            var slots = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (key, value) in sc["slots"] as JsonObject ?? [])
+            {
+                var text = value is JsonValue v && v.TryGetValue<string>(out var str) ? str : value?.ToJsonString() ?? "";
+                if (text.Length > AssistantPublicationTools.MaxOverlay)
+                    throw new AiToolException("Cena " + (i + 1) + ", " + key + ": " + text.Length + " caracteres; na tela vão até " + AssistantPublicationTools.MaxOverlay + ". O que é dito vai na narration.");
+                slots[key] = text;
+            }
+            try { VideoLayouts.Build(layout, slots, "x"); }
+            catch (ArgumentException e) { throw new AiToolException("Cena " + (i + 1) + ": " + e.Message); }
+            plans.Add((st, narration, layout, slots));
+        }
+
+        var changes = new List<AiChange>();
+        var docs = new List<UrbeDocument>();
+        for (int i = 0; i < plans.Count; i++)
+        {
+            var notePath = folder + "/" + (i + 1).ToString("00", CultureInfo.InvariantCulture) + " — " + ArtifactModel.SafeName(plans[i].Title) + ".md";
+            for (int n = 2; host.Documents.Get(notePath) is not null; n++) notePath = notePath[..^3] + " (" + n + ").md";
+            var doc = await host.CreateNoteAsync(notePath, "# " + plans[i].Title + "\n\n" + plans[i].Narration + "\n");
+            docs.Add(doc);
+            changes.Add(new AiChange(doc.Id, null, new AiNoteSnap(doc.Path, doc.Content)));
+        }
+        var project = PublicationProject.Create(title, docs[0].Id) with { Design = new PublicationDesign { Layout = "video" } };
+        foreach (var d in docs.Skip(1)) project = project.AddSource(d.Id);
+        project = VideoComposition.Synced(project, r => host.Documents.Get(r.DocumentId)?.Content);
+        var video = project.Video! with
+        {
+            Theme = theme, Aspect = aspect,
+            Scenes = project.Video!.Scenes.Select((scene, i) => scene with
+            {
+                Background = VideoThemes.DefaultBackground,
+                Elements = VideoLayouts.Build(plans[i].Layout, plans[i].Slots, scene.Id)
+            }).ToList()
+        };
+        project = project with { Video = video };
+        PublicationProjectCodec.Validate(project);
+        var saved = await host.CreateNoteAsync(pubPath, PublicationProjectCodec.Serialize(project));
+        changes.Add(new AiChange(saved.Id, null, new AiNoteSnap(saved.Path, saved.Content)));
+        var (_, _, timeline) = Load(pubPath, host);
+        var issues = Inspect(timeline, host);
+        return new AiToolOutput("Vídeo criado: " + pubPath + " · revisão " + saved.Revision + " · " + timeline.Scenes.Count + " cenas, " + N(timeline.Duration) + " s, tema " + theme +
+            ". Falas nas notas de " + folder + "/.\n" + Issues(issues, host.VideoFrames is not null) + "\n" + Outline(timeline) +
+            "\nPróximo: look_at_video para conferir os quadros e render_video para o MP4 com narração.", changes);
     }
 
     /// <summary>
