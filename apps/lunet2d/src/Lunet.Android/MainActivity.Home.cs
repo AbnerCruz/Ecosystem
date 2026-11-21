@@ -260,4 +260,5 @@ public sealed partial class MainActivity
         root.AddView(scroll, Fill(1));
         root.AddView(BuildLauncherNavigation("studios"));
         SetContentView(root);
-    }}
+     }
+}
