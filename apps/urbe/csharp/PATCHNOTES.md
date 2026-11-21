@@ -1,14 +1,15 @@
 # Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.68
+**Versão canônica preparada:** 2.0.0-beta.69
 **Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-- A seleção de voz mostra o preço disponível e permite ouvir uma amostra antes de salvar. A síntese da amostra pode ser cobrada pelo provedor.
-- A seleção de vídeo mostra as tarifas divulgadas por segundo, resolução ou token e abre a página do provedor para consultar exemplos.
-- O formulário aceita tema, fontes selecionadas ou ambos. Sem fontes informadas, o agente é orientado a pesquisar conforme suas permissões. Podcast e vídeo oferecem duração Curto, Médio, Longo ou Flexível.
-- Publicações tem a opção Novo podcast. O Estúdio permite editar o roteiro, gerar áudio com a voz do agente e voltar para ouvir o resultado.
-- Flashcards pode ser aberto pelo menu principal ou por Estudo, mesmo com a biblioteca vazia.
-- A prévia de vídeo mostra quando falta áudio e oferece ações para narrar o roteiro, escolher a voz ou adicionar uma faixa. No Android, o player lê a trilha temporária por um descritor de arquivo do app.
-- Publicações ocultam o selo de autoria da IA no Estúdio e no conteúdo exportado. A narração do podcast também ignora os selos do roteiro.
+- Assistente: corrigido o crash `Argument_AddingDuplicate` ao exibir planos de execução contendo propriedades JSON repetidas; ferramentas e histórico fazem normalização defensiva.
+- Painel de etapas: corrigido o crash por reutilização de `StackPanel` já pertencente a outro contêiner visual ao abrir o painel novamente.
+- Navegador de estudo no Android: descarte do `WebView` protegido contra callbacks tardios e `ObjectDisposedException` durante fechamento e navegação.
+- IA: evita reconstruir o histórico completo quando o Assistente está oculto; a atualização visual de respostas no Android tem cadência ajustada para reduzir travamentos.
+- Popup compacto: conversas longas mantêm todas as mensagens, mas renderizam o Markdown progressivamente à medida que se aproxima da área visível.
+- Publicações: adia a montagem de capítulos e prévias grandes, reduzindo trabalho síncrono e engasgos ao abrir o Estúdio.
+- Incluídos testes de regressão para planos malformados, reabertura de etapas, centenas de mensagens e publicações grandes.
+- Ainda é necessária validação de estresse no aparelho físico: encerramentos silenciosos do processo Android não foram reproduzidos e não podem ser declarados eliminados.
