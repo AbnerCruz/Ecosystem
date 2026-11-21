@@ -34,13 +34,14 @@ public sealed partial class HeadlessUiTests
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m2", Text = "O projeto se chama Droerni", Kind = "fact", Scope = "vault", Vault = key });
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m3", Text = "Revisar só ortografia", Kind = "procedure", Scope = "agent", AgentId = "two", Vault = key });
             panel.ShowSettings();
-            ClickNamed(panel, "Configurações: Contexto");
+            ClickNamed(panel, "Configurações: Agentes");
+            ClickButtonWithText(panel, "Configurar");
             ClickButtonWithText(panel, "Gerenciar memórias");
             Dispatcher.UIThread.RunJobs();
             List<string?> Texts() => [.. panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text)];
             Assert.Contains(Texts(), t => t?.StartsWith("Preferência · só Assistente (privada) · ", StringComparison.Ordinal) == true);
             Assert.Contains(Texts(), t => t?.StartsWith("Fato · compartilhada · todos os agentes deste vault · ", StringComparison.Ordinal) == true);
-            Assert.Contains(Texts(), t => t?.StartsWith("Procedimento · só Revisora (privada) · ", StringComparison.Ordinal) == true);
+            Assert.DoesNotContain("Revisar só ortografia", Texts());
 
             ClickButtonWithText(panel, "Privadas de Assistente");
             Dispatcher.UIThread.RunJobs();

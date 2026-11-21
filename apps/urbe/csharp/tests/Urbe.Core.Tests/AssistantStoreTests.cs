@@ -21,8 +21,8 @@ public sealed class AssistantStoreTests
         Assert.Equal(new AiModelChoice("provider", "text"), saved.ModelFor(new AiConversation { AgentId = "alice", Model = "old-cached-model" }));
         Assert.Equal(config.AgentImages["geral"], saved.ImageFor("alice"));
         Assert.Null(saved.ImageFor("beto"));
-        Assert.Equal(new AiAgentMediaProfile(false, "alex", ""), saved.MediaFor("alice"));
-        Assert.Equal(new AiAgentMediaProfile(true, "dora", "provider", "video"), saved.MediaFor("beto"));
+        Assert.Equal(new AiAgentMediaProfile(false, "alex", "", CaptureMemory: true, ReplyLanguage: ""), saved.MediaFor("alice"));
+        Assert.Equal(new AiAgentMediaProfile(true, "dora", "provider", "video", true, ""), saved.MediaFor("beto"));
         saved.AgentMedia["geral"] = saved.AgentMedia["geral"] with { Voice = "faber" };
         Assert.Equal("faber", saved.MediaFor("beto").Voice);
         Assert.Equal("alex", saved.MediaFor("alice").Voice);

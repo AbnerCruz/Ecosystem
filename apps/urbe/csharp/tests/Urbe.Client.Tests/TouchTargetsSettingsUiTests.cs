@@ -34,7 +34,7 @@ public sealed partial class HeadlessUiTests
         view.Customize.Close();
         view.Assistant.Open();
         view.Assistant.ShowSettings();
-        foreach (var cat in new[] { "Configurações: Modelos", "Configurações: Agentes", "Configurações: Contexto", "Configurações: Conexões" })
+        foreach (var cat in new[] { "Configurações: Modelos", "Configurações: Agentes", "Configurações: Conexões" })
         {
             try { ClickNamed(view.Assistant, cat); } catch (Exception) { report.Add("sem " + cat); continue; }
             Scan("assistente/" + cat, view.Assistant);

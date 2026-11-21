@@ -25,9 +25,8 @@ public sealed partial class AssistantPanel
     }
 
     /// <summary>Only this agent's scoped memory; no cross-agent or global/vault records.</summary>
-    private async Task ExportAgentMemoryAsync()
+    private async Task ExportAgentMemoryAsync(string agentId)
     {
-        var agentId = _conv.AgentId;
         var chosen = await _app.Dialogs.ChooseAsync("Exportar memória do agente",
         [
             new DialogItem("Leve (.md)", Detail: "Lembranças individuais em Markdown, com tipo e estado."),

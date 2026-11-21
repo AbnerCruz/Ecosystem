@@ -64,9 +64,9 @@ public sealed partial class MainView
             }
             Local("Progresso dos flashcards", state + ".study.v1.json", "Quando cada cartão volta (revisão espaçada).");
             Local("Posições de leitura", state + ".readers.v1.json", "Onde você parou em cada PDF, livro ou vídeo.");
-            Local("Voz da narração", state + ".voice.txt", "A voz escolhida para narrar.");
+            Local("Preferência antiga de voz", state + ".voice.txt", "Preferência da voz do aparelho de versões anteriores.");
             Local("Rascunhos não salvos", Path.Combine(dir, "rascunhos"), "Texto digitado antes de o app fechar, para recuperar.");
-            Local("Vozes naturais baixadas", Path.Combine(dir, "vozes"), "Modelos de voz (Kokoro, Piper) e suas licenças; podem ser baixados de novo.");
+            Local("Vozes naturais baixadas", Path.Combine(dir, "vozes"), "Modelos de voz de versões anteriores. A narração atual usa o provedor do agente.");
         }
         if (UrbeApp.AssistantFolder is { } assistant && Directory.Exists(assistant))
         {
@@ -93,12 +93,27 @@ public sealed partial class MainView
     /// <summary>The list, grouped, read-only: choosing an item says where it is and what it is for.</summary>
     public async Task ShowAppDataAsync()
     {
-        var items = await AppDataAsync();
-        if (items.Count == 0) { await Dialogs.AlertAsync("Dados do aplicativo", "Nada guardado ainda."); return; }
-        var rows = items.Select(i => new DialogItem(i.Name, i.Group.StartsWith("No vault", StringComparison.Ordinal) ? UrbeTheme.Icons.Storage : i.Group.StartsWith("Só", StringComparison.Ordinal) ? UrbeTheme.Icons.Clock : UrbeTheme.Icons.Folder,
-            i.Group + " · " + (i.Files > 1 ? i.Files + " arquivos" + (i.Bytes is not null ? ", " : "") : "") + Size(i.Bytes))).ToList();
-        while (await Dialogs.ChooseAsync("Dados do aplicativo", rows, "O que o Numa guarda e onde. Nada aqui é apagado ou movido.") is int pick)
+        while (true)
         {
+            var items = await AppDataAsync();
+            if (items.Count == 0) { await Dialogs.AlertAsync("Dados do aplicativo", "Nada guardado ainda."); return; }
+            var rows = items.Select(i => new DialogItem(i.Name, UrbeTheme.Icons.Storage,
+                i.Group + " · " + (i.Files > 1 ? i.Files + " arquivos · " : "") + Size(i.Bytes))).ToList();
+            var legacy = items.FirstOrDefault(i => i.Name == "Vozes naturais baixadas");
+            if (legacy is not null) rows.Add(new DialogItem("Remover modelos de voz antigos", Detail: Size(legacy.Bytes), Danger: true));
+            if (await Dialogs.ChooseAsync("Dados do aplicativo", rows, "O que o Numa guarda e onde.") is not int pick) return;
+            if (pick == items.Count && legacy is not null)
+            {
+                if (await Dialogs.ConfirmAsync("Remover modelos de voz antigos?",
+                    "Libera " + Size(legacy.Bytes) + " no aparelho. Os WAVs já gerados nas publicações continuam no vault.",
+                    "Remover modelos", danger: true))
+                {
+                    try { Directory.Delete(legacy.Where, recursive: true); }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                    { await Dialogs.AlertAsync("Remover modelos de voz", e.Message); }
+                }
+                continue;
+            }
             var it = items[pick];
             await Dialogs.AlertAsync(it.Name, it.Purpose + "\n\n" + it.Group + ": " + it.Where +
                 (it.Group == "Só neste aparelho" ? "\n\nFica fora da pasta de notas: não vai junto em cópias da pasta e some se o app for desinstalado." : ""));

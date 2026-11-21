@@ -9,10 +9,6 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
     <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
     <PackageReference Include="PdfPig.Rendering.Skia" Version="0.1.16.6" />
-    <!-- DEC-0067 A: on-device neural voices (sherpa-onnx 1.13.x still carries espeak-ng for Portuguese) and the
-         .tar.bz2 the models come in -->
-    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.8" />
-    <PackageReference Include="SharpCompress" Version="0.50.10" />
   </ItemGroup>
   <ItemGroup>
     <!-- Conteúdo da prévia UC-33: a pasta Tutorial da 1.8.4, somente leitura. -->

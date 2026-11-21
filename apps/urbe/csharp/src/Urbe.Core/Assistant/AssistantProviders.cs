@@ -882,6 +882,80 @@ public sealed class AssistantProviders
     }
 
     /// <summary>listModels(cfg).</summary>
+    public static bool SupportsSpeech(AiProviderConfig provider) =>
+        provider.Preset is "openai" or "openrouter" or "custom" && Resolve(provider).Kind == "openai" &&
+        Uri.TryCreate(Resolve(provider).BaseUrl, UriKind.Absolute, out var uri) && uri.Scheme == "https" && !uri.IsLoopback;
+
+    public static bool IsSpeechModel(AiProviderConfig provider, AiModelInfo model) =>
+        model.Id.StartsWith("tts-", StringComparison.OrdinalIgnoreCase) ||
+        model.Id.Contains("-tts", StringComparison.OrdinalIgnoreCase) ||
+        provider.Preset == "custom" && model.OutputModalities?.Contains("audio", StringComparer.OrdinalIgnoreCase) == true;
+
+    public static IReadOnlyList<string> SpeechVoices(string model) =>
+        model.StartsWith("tts-1", StringComparison.OrdinalIgnoreCase)
+            ? ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+            : ["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"];
+
+    public async Task<IReadOnlyList<AiSpeechModel>> ListSpeechModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
+    {
+        if (!SupportsSpeech(cfg)) return [];
+        if (cfg.Preset != "openrouter")
+        {
+            return (await ListModelsAsync(cfg, cancel)).Where(m => IsSpeechModel(cfg, m))
+                .Select(m => new AiSpeechModel(m.Id, m.Name,
+                    cfg.Preset == "custom" ? [] : SpeechVoices(m.Id), "wav")).ToList();
+        }
+
+        var provider = Resolve(cfg);
+        var url = Join(provider.BaseUrl, "/audio/speech/models");
+        using var response = await RequestAsync(provider, url, () => Get(url, OpenAiHeaders(provider)), cancel);
+        var json = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel));
+        var result = new List<AiSpeechModel>();
+        foreach (var model in (json?["data"] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            if ((string?)model["id"] is not { Length: > 0 } id) continue;
+            var parameters = (model["output_modalities"] as JsonArray ?? []).OfType<JsonObject>()
+                .FirstOrDefault(m => (string?)m["type"] == "speech")?["supported_parameters"];
+            var voices = (parameters?["voice"]?["values"] as JsonArray ?? []).Select(v => (string?)v)
+                .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+            var formats = (parameters?["response_format"]?["values"] as JsonArray ?? []).Select(v => (string?)v).ToList();
+            var format = formats.Contains("wav") ? "wav" : formats.Contains("pcm") && KnownPcmRate(id) > 0 ? "pcm" :
+                formats.Contains("mp3") ? "mp3" : null;
+            if (voices.Count > 0 && format is not null)
+                result.Add(new(id, (string?)model["name"] ?? id, voices, format));
+        }
+        return result;
+    }
+
+    private static int KnownPcmRate(string model) => model.StartsWith("google/gemini-", StringComparison.Ordinal) ||
+        model.StartsWith("microsoft/mai-voice-", StringComparison.Ordinal) ? 24000 : 0;
+
+    public async Task<byte[]> GenerateSpeechAsync(AiProviderConfig cfg, AiSpeechChoice choice, string text, CancellationToken cancel = default)
+    {
+        if (choice.ProviderId != cfg.Id || !SupportsSpeech(cfg))
+            throw new AiProviderException("Selecione um provedor de voz conectado no perfil do agente.");
+        var provider = Resolve(cfg);
+        var url = Join(provider.BaseUrl, "/audio/speech");
+        var input = new JsonObject { ["model"] = choice.Model, ["voice"] = choice.Voice,
+            ["input"] = text, ["response_format"] = choice.Format };
+        using var response = await RequestAsync(provider, url, () => Post(url, input, OpenAiHeaders(provider)), cancel);
+        var bytes = await response.Content.ReadAsByteArrayAsync(cancel);
+        if (choice.Format == "pcm" && KnownPcmRate(choice.Model) is > 0 and var rate &&
+            bytes.Length > 0 && bytes.Length % 2 == 0)
+        {
+            using var wav = new MemoryStream();
+            VideoAudio.WriteWavHeader(wav, 1, rate, bytes.Length);
+            wav.Write(bytes);
+            return wav.ToArray();
+        }
+        if (choice.Format == "mp3" && response.Content.Headers.ContentType?.MediaType == "audio/mpeg" && bytes.Length > 0)
+            return bytes;
+        using var stream = new MemoryStream(bytes, writable: false);
+        if (VideoAudio.ReadWavInfo(stream) is not { Frames: > 0 })
+            throw new AiProviderException("O provedor não retornou uma faixa WAV PCM válida.");
+        return bytes;
+    }
+
     public Task<List<AiModelInfo>> ListModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
     {
         var p = Resolve(cfg);
