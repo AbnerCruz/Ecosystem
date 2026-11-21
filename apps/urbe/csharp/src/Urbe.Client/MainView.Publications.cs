@@ -41,6 +41,19 @@ public sealed partial class MainView
         await Dialogs.ChooseAsync("Formato da publicação",
             PublicationKinds.Select(k => new DialogItem(k.Name, Detail: k.Detail)).ToList());
 
+    // Entry point used by the Publicações library and the "Nova publicação" workspace action.
+    public async Task CreateNewPublicationAsync()
+    {
+        if (!VaultWritable || _store is null)
+        {
+            await Dialogs.AlertAsync("Publicações", NoVaultMessage);
+            return;
+        }
+        var kind = await ChoosePublicationKindAsync();
+        if (kind is { } selected)
+            await CreatePublicationAsync(layout: PublicationKinds[selected].Layout);
+    }
+
     public PublicationStudioView PublicationsStudio => _publicationsStudio ??= MakePublicationsStudio();
 
     private PublicationStudioView MakePublicationsStudio()
@@ -432,12 +445,7 @@ public sealed partial class MainView
             "Artigo, livro, apresentação, curso, vídeo ou podcast"));
         var chosen = await Dialogs.ChooseAsync("Publicações", options);
         if (chosen is not { } index) return;
-        if (index == projects.Count)
-        {
-            var kind = await ChoosePublicationKindAsync();
-            if (kind is { } selected)
-                await CreatePublicationAsync(layout: PublicationKinds[selected].Layout);
-        }
+        if (index == projects.Count) await CreateNewPublicationAsync();
         else await OpenPublicationAsync(projects[index].Path);
     }
 
