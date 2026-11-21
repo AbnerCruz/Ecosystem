@@ -11,7 +11,7 @@ public sealed class LunetAiPromptSpeedTests
     [InlineData("Explique a diferença entre Update e Draw")]
     public void GeneralTeachingQuestion_UsesCompactContext(string prompt)
     {
-        var editor = new LunetAiEditorContext("Game.cs", null, 42, [], []);
+        var editor = LunetAiEditorContext.Empty;
         Assert.True(LunetAiSession.IsGeneralExplanation(prompt, LunetAiMode.Teach, editor, null));
     }
 
@@ -30,6 +30,8 @@ public sealed class LunetAiPromptSpeedTests
     public void CodeChanges_NeverUseCompactContext()
     {
         var editor = new LunetAiEditorContext("Game.cs", null, 1, [], []);
+        Assert.False(LunetAiSession.IsGeneralExplanation("O que é o SpriteBatch?",
+            LunetAiMode.Teach, editor, null));
         Assert.False(LunetAiSession.IsGeneralExplanation("Crie NPC e um diálogo",
             LunetAiMode.Do, editor, null));
         Assert.False(LunetAiSession.IsGeneralExplanation("Explique este método",
