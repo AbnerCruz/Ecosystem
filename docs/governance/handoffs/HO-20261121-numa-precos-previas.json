@@ -31,6 +31,8 @@
     "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationSources.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Study/Podcast.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FlashcardsLibraryUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
@@ -38,6 +40,10 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SpeechProviderFixture.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantSpeechProviderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/GenerativeVideoTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NestedContainersExportTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PodcastTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261121-numa-precos-previas.json"
   ],
@@ -48,7 +54,8 @@
     "Briefing aceita tema, fontes selecionadas ou ambos. A orientação de pesquisa sem fontes segue as permissões do agente. Vídeo e podcast têm duração selecionável.",
     "Publicações oferece Novo podcast e ações visíveis para editar o roteiro, gerar a fala por provedor e ouvir o WAV salvo.",
     "Flashcards tem entrada no menu principal e fica acessível em Estudo com a biblioteca vazia.",
-    "O vídeo informa quando falta áudio e oferece ações para narrar, escolher voz e adicionar faixa. O player Android abre a trilha temporária por descritor de arquivo."
+    "O vídeo informa quando falta áudio e oferece ações para narrar, escolher voz e adicionar faixa. O player Android abre a trilha temporária por descritor de arquivo.",
+    "O selo visível de autoria fica fora do conteúdo de Publicações e da narração do podcast. A nota original e o manifesto de pacote preservam a proveniência."
   ],
   "verification": [
     {
@@ -74,6 +81,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Cinco testes focados do cliente. A prévia recebe WAV com amostras PCM não silenciosas no player simulado. Consistência: 22 checks passaram."
+    },
+    {
+      "check": "Selo de autoria nas Publicações",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "72 testes do Core cobrem Publicações, formatos exportados, podcast e vídeo. O teste de exportação preserva texto e omite o selo nos seis formatos verificados."
     }
   ],
   "known_issues": [

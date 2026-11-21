@@ -683,3 +683,7 @@
 - Estado: correções de Publicações e Flashcards na branch codex/numa-model-previews, PR #1014.
 - Feito: Novo podcast no menu de Publicações, roteiro Markdown ligado ao projeto e reprodução do WAV pelo visualizador existente. Atalho de Flashcards no menu principal e no Estudo vazio. Ações de voz e áudio visíveis no vídeo e acesso à trilha da prévia por descritor no Android.
 - Verificação: testes de cliente cobrem descoberta, criação e reabertura do podcast, biblioteca vazia e PCM entregue ao player simulado. Validação de som no aparelho físico pendente.
+
+### 2026-11-21 — Codex — CST-151 / CST-184 / beta.68
+- Feito: a projeção de notas para Publicações remove os selos visíveis de autoria. O parser de falas do podcast aplica a mesma limpeza. A nota original e a proveniência do manifesto de pacote preservam a autoria.
+- Entrega: PR #1014, com teste de saída HTML e roteiro de podcast.

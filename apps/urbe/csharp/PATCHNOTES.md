@@ -11,3 +11,4 @@
 - Publicações tem a opção Novo podcast. O Estúdio permite editar o roteiro, gerar áudio com a voz do agente e voltar para ouvir o resultado.
 - Flashcards pode ser aberto pelo menu principal ou por Estudo, mesmo com a biblioteca vazia.
 - A prévia de vídeo mostra quando falta áudio e oferece ações para narrar o roteiro, escolher a voz ou adicionar uma faixa. No Android, o player lê a trilha temporária por um descritor de arquivo do app.
+- Publicações ocultam o selo de autoria da IA no Estúdio e no conteúdo exportado. A narração do podcast também ignora os selos do roteiro.
