@@ -38,7 +38,7 @@ public sealed partial class MainView
     {
         if (_publicationsStudio?.Project?.Video is not { } video || _vault is not { } vault) return;
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var path in video.Scenes.SelectMany(s => s.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!).Distinct())
+        foreach (var path in video.Scenes.SelectMany(s => s.Elements).SelectMany(VideoElement.Images).Distinct())
             try { if ((await vault.ReadFileAsync(path, 64L << 20))?.Bytes is { } bytes) files[path] = bytes; }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException) { }
         if (_publicationsStudio is { } studio && files.Count > 0 && !files.Keys.All(studio.VideoFiles.ContainsKey))

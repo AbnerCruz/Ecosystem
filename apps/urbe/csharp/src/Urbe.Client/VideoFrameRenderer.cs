@@ -36,7 +36,7 @@ public sealed class VideoFrameRenderer : IDisposable
 
     /// <summary>The vault paths of the images a timeline uses (to read before rendering).</summary>
     public static IReadOnlyList<string> FilesUsed(VideoTimeline timeline) => timeline.Scenes
-        .SelectMany(s => s.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!)
+        .SelectMany(s => s.Elements).SelectMany(VideoElement.Images)
         .Distinct(StringComparer.Ordinal).ToList();
 
     public SKBitmap RenderFrame(int index) => Render(_timeline.FrameTime(index));
@@ -401,6 +401,17 @@ public sealed class VideoFrameRenderer : IDisposable
                         fill.Dispose(); stroke.Dispose();
                         (fill, stroke, doFill, doStroke, alpha) = s;
                         canvas.Restore();
+                        break;
+                    case "image":
+                        var list = VideoElement.Images(new VideoElement { Kind = "code", Source = e.Source });
+                        int index = (int)a[0];
+                        if (index < 0 || index >= list.Count) break;
+                        var path = list[index];
+                        if (!_images.TryGetValue(path, out var picture))
+                            _images[path] = picture = _files.TryGetValue(path, out var bytes) ? SKImage.FromEncodedData(bytes) : null;
+                        if (picture is null) break;
+                        using (var paint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(255 * alpha * opacity / 255.0)), BlendMode = fill.BlendMode })
+                            canvas.DrawImage(picture, new SKRect(F(1), F(2), F(1) + F(3), F(2) + F(4)), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear), paint);
                         break;
                     case "arc":
                         using (var arc = new SKPath())

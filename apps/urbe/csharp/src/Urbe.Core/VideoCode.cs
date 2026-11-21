@@ -29,7 +29,7 @@ public static class VideoCode
     public const string Help =
         "draw(ctx, t, info): t = segundos da cena, info = {width, height, frame, fps}. ctx desenha em pixels da caixa do elemento (0,0 no canto superior esquerdo; ctx.width × ctx.height). " +
         "Cor e traço: fill(cor) stroke(cor, largura) noFill() noStroke() alpha(0..1) blend(\"normal|add|screen|multiply|overlay|lighten|darken\") dash(traço, vão, deslocamento) (dash(0) volta ao contínuo) gradient(x1,y1,x2,y2,cor1,cor2) glow(raio, cor) noGlow(). " +
-        "Formas: circle(x,y,r) ellipse(x,y,rx,ry) rect(x,y,w,h,raio?) arc(x,y,r,grauInicial,grauFinal) line(x1,y1,x2,y2) poly([x,y,…], fechar?) path(\"M… L… C… Z\") text(texto,x,y,tamanho,\"left|center|right\"?, negrito?). " +
+        "Formas: circle(x,y,r) ellipse(x,y,rx,ry) rect(x,y,w,h,raio?) arc(x,y,r,grauInicial,grauFinal) line(x1,y1,x2,y2) poly([x,y,…], fechar?) path(\"M… L… C… Z\") text(texto,x,y,tamanho,\"left|center|right\"?, negrito?) image(i,x,y,largura,altura) (a imagem i da lista em source, \"a.png; b.jpg\", do vault). " +
         "Transformações: save() restore() translate(x,y) rotate(graus) scale(s, sy?). Também: lerp(a,b,u), clamp(v,a,b), ease(u) (suave 0..1), noise(x), Math.random() determinístico. " +
         "Simulação com estado: s = simulate(\"nome\", function(){ return estadoInicial }, function(s, dt, tempo){ avança s }, t, dt?) dá o estado em t, avançado em passos fixos (o mesmo t dá sempre o mesmo estado); dentro do passo use noise(), não Math.random(). " +
         "Sem acesso a arquivos, rede, notas ou tempo real: tudo vem de t.";
@@ -177,6 +177,7 @@ public static class VideoCode
                 pts[len] = a.Length > 1 && TypeConverter.ToBoolean(a[1]) ? 1 : 0;
                 return new("poly", pts);
             });
+            Op("image", 5, a => new("image", [N(a, 0), N(a, 1), N(a, 2), N(a, 3), N(a, 4)]));
             Op("arc", 5, a => new("arc", Nums(a, 5)));
             Op("blend", 1, a => S(a, 0) is var m && m is "normal" or "add" or "screen" or "multiply" or "overlay" or "lighten" or "darken"
                 ? new("blend", [], Text: m) : throw new JavaScriptException(engine.Intrinsics.TypeError, "ctx.blend: normal, add, screen, multiply, overlay, lighten ou darken"));

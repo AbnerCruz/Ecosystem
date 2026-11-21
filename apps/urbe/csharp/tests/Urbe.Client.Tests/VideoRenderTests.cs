@@ -626,4 +626,28 @@ public sealed class VideoRenderTests
         Assert.True(f.GetPixel(250, 130).Blue > 150);    // the arc's lower quarter (0° to 90°, clockwise from the right)
         Assert.True(f.GetPixel(250, 50).Blue < 60);      // its upper part is not drawn
     }
+
+    /// <summary>#1004: a program draws the vault images its element declares, by index, and nothing else.</summary>
+    [Fact]
+    public void AProgramDrawsTheImagesItsElementDeclares()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 1);
+        using var _c = catalog;
+        using var red = new SKBitmap(8, 8);
+        red.Erase(SKColors.Red);
+        using var png = SKImage.FromBitmap(red).Encode(SKEncodedImageFormat.Png, 100);
+        var scene = project.Video!.Scenes[0] with { Background = "#000000",
+            Elements = [new VideoElement { Id = "foto", Kind = "code", Source = "Imagens/vermelho.png", X = 0.5, Y = 0.5, Width = 1, Height = 1,
+                Text = "function draw(ctx){ ctx.image(0, 10, 10, 60, 60); ctx.image(5, 100, 10, 60, 60); }" }] };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.Equal(["Imagens/vermelho.png"], VideoFrameRenderer.FilesUsed(timeline));
+        using var r = new VideoFrameRenderer(timeline, new Dictionary<string, byte[]> { ["Imagens/vermelho.png"] = png.ToArray() });
+        using var f = r.Render(0.5);
+        Assert.True(Reddish(f.GetPixel(40, 40)));
+        Assert.False(Reddish(f.GetPixel(130, 40)));   // index 5 is not in the list: nothing
+        var outside = project with { Video = project.Video with { Scenes = [scene with { Elements = [scene.Elements[0] with { Source = "../fora.png" }] }] } };
+        Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(outside));
+    }
 }

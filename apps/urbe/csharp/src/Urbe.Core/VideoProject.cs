@@ -201,6 +201,17 @@ public sealed record VideoElement
     public double Blur { get; init; }
     public string? Gradient { get; init; }
 
+    /// <summary>
+    /// The vault images an element draws: an image's source, or the list a code element declares in its source
+    /// ("a.png; b.jpg"), which its program reaches by index with ctx.image(i, …) — and nothing else of the vault.
+    /// </summary>
+    public static IReadOnlyList<string> Images(VideoElement e) => e.Kind switch
+    {
+        "image" when e.Source is { Length: > 0 } s => [s],
+        "code" when e.Source is { Length: > 0 } s => s.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+        _ => []
+    };
+
     /// <summary>The shapes an element can be clipped to.</summary>
     public static readonly string[] ClipShapes = ["rect", "retangulo", "retângulo", "ellipse", "elipse", "circle", "circulo", "círculo"];
 
@@ -328,6 +339,8 @@ public static class VideoCompositionRules
                 }
                 if (e.Kind == "code")
                 {
+                    foreach (var img in VideoElement.Images(e))
+                        if (!VideoScript.IsVaultPath(img)) throw Bad("imagem \"" + img + "\" de " + e.Id + ": use caminhos do vault separados por ;");
                     try { VideoCode.Check(e.Text ?? ""); }
                     catch (VideoCodeException ex) { throw Bad("código de " + e.Id + ": " + ex.Message); }
                 }
