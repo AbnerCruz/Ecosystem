@@ -17,7 +17,7 @@ public sealed class PinnedPanel : Border
 {
     private readonly TextBlock _from = new()
     {
-        FontSize = 12,
+        FontSize = UrbeTokens.Type.Caption.Size,
         FontWeight = FontWeight.SemiBold,
         Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
         TextTrimming = TextTrimming.CharacterEllipsis,
@@ -81,7 +81,7 @@ public sealed class PinnedPanel : Border
             var text = new StackPanel { Spacing = 3 };
             text.Children.Add(new TextBlock { Text = "Flashcards", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
             text.Children.Add(new TextBlock { Text = (c.Sets == 1 ? "1 conjunto" : c.Sets + " conjuntos") + " · " + (c.Due == 0 ? "nada para hoje" : c.Due == 1 ? "1 cartão para hoje" : c.Due + " cartões para hoje"),
-                FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+                FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
             var row = new Button { Content = text, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, Padding = new Thickness(8, 6), MinHeight = 48 };
             Avalonia.Automation.AutomationProperties.SetName(row, "Flashcards");
             row.Click += (_, _) => open();
@@ -95,7 +95,7 @@ public sealed class PinnedPanel : Border
             string name = System.IO.Path.GetFileName(item.Path);
             var text = new StackPanel { Spacing = 3 };
             text.Children.Add(new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis });
-            text.Children.Add(new TextBlock { Text = item.Progress.Position + " · " + item.LastRead, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis });
+            text.Children.Add(new TextBlock { Text = item.Progress.Position + " · " + item.LastRead, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis });
             // the bar only when the format has a known total; it is reading progress, not a checklist
             if (item.Progress.Fraction is { } fraction)
             {

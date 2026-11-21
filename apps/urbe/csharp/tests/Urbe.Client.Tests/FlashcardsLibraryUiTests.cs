@@ -1,3 +1,4 @@
+using Avalonia.LogicalTree;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Urbe.Client;
@@ -56,8 +57,36 @@ public sealed partial class HeadlessUiTests
             Assert.NotNull(panel);
             Assert.Equal("list", panel!.Screen);
             Snapshot(window, "native-flashcards-list.png");
+            // a set made from the list opens ready for its first card
+            var titleBox = panel.GetLogicalDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Título do novo conjunto");
+            titleBox.Text = "Plantas";
+            ClickButtonWithText(panel, "Criar conjunto");
+            for (int i = 0; i < 200 && panel.Screen != "set"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal("set", panel.Screen);
+            Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => Avalonia.Automation.AutomationProperties.GetName(t) == "Frente do novo cartão");
+            Assert.Contains(study.Sets(), x => x.Set.Title == "Plantas" && x.Set.Cards.Count == 0);
             panel.ShowSet("deck:animais");
             Assert.Equal("set", panel.Screen);
+            // a card typed right in the set, without dialogs; a repeated front is refused there, saying why
+            TextBox Named(string name) => panel.GetLogicalDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == name);
+            Named("Frente do novo cartão").Text = "Maior ave?";
+            Named("Verso do novo cartão").Text = "Avestruz";
+            ClickButtonWithText(panel, "Adicionar cartão");
+            for (int i = 0; i < 200 && study.Sets()[0].Set.Cards.Count < 3; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal(3, study.Sets()[0].Set.Cards.Count);
+            // a card edited in its place: changing only the back keeps the card (and its progress)
+            var idBefore = study.Sets()[0].Set.Cards[2].Id;
+            ClickButtonWithText(panel, "Cartão Maior ave?");
+            Named("Verso do cartão").Text = "Avestruz (Struthio camelus)";
+            ClickButtonWithText(panel, "Salvar");
+            for (int i = 0; i < 200 && study.Sets()[0].Set.Cards[2].Back != "Avestruz (Struthio camelus)"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal(("Avestruz (Struthio camelus)", idBefore), (study.Sets()[0].Set.Cards[2].Back, study.Sets()[0].Set.Cards[2].Id));
+            Named("Frente do novo cartão").Text = "Maior ave?";
+            Named("Verso do novo cartão").Text = "Outra";
+            ClickButtonWithText(panel, "Adicionar cartão");
+            for (int i = 0; i < 200 && !panel.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.IsVisible && (t.Text ?? "").Contains("repete")); i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.IsVisible && (t.Text ?? "").Contains("repete"));
+            Assert.Equal(3, study.Sets()[0].Set.Cards.Count);
             panel.StartReview(study.Sets()[0].Set, all: false);
             Assert.Equal("review", panel.Screen);
             panel.Reveal();
@@ -67,9 +96,11 @@ public sealed partial class HeadlessUiTests
             panel.GradeCurrent(Recall.Bom);   // not shown yet: ignored
             panel.Reveal();
             panel.GradeCurrent(Recall.Errei);
+            panel.Reveal();
+            panel.GradeCurrent(Recall.Bom);   // the card added in the set
             Assert.Equal("summary", panel.Screen);
             Assert.Equal(1, study.Sets()[0].Progress.Due);      // the one forgotten is due again today
-            Assert.Equal(2, study.Sets()[0].Progress.Reviewed);
+            Assert.Equal(3, study.Sets()[0].Progress.Reviewed);
             Assert.True(panel.GoBack());
             view.CloseFlashcards();
             Assert.Null(view.FlashcardsView);
@@ -82,8 +113,9 @@ public sealed partial class HeadlessUiTests
             await reopened.OpenVaultAsync();
             await Settle(again, reopened);
             var back = ((IAssistantStudy)reopened).Sets();
-            Assert.Equal(["Maior mamífero?", "Animal terrestre mais rápido?"], back[0].Set.Cards.Select(c => c.Front));
-            Assert.Equal(2, back[0].Progress.Reviewed);   // the review's progress came back too
+            Assert.Equal(["Maior mamífero?", "Animal terrestre mais rápido?", "Maior ave?"], back.Single(x => x.Set.Id == "deck:animais").Set.Cards.Select(c => c.Front));
+            Assert.Contains(back, x => x.Set.Title == "Plantas");
+            Assert.Equal(3, back.Single(x => x.Set.Id == "deck:animais").Progress.Reviewed);   // the review's progress came back too
             Assert.Equal(before, Visible());
             again.Close();
             return true;

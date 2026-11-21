@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.64 — 21/11/2026
+- Flashcards nativos com biblioteca própria (#1005) e movimento procedural nos vídeos: cópias por fórmula, texto letra a letra, brilho/sombra/desfoque/gradiente, recorte, componentes, câmera por cena e escolha da voz da narração.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.64
+
 ## 2.0.0-beta.63 — 20/11/2026
 - Painel de etapas sem travar com muitas etapas (#1000) e create_video: o vídeo inteiro numa chamada.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.63

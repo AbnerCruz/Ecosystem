@@ -22,12 +22,12 @@ public sealed class PublicationVideoPanel : StackPanel
     public const int PreviewResolution = 360;
     private readonly Image _frame = new() { Stretch = Stretch.Uniform, MaxHeight = 420 };
     private readonly Slider _scrubber = new() { Minimum = 0, Maximum = 1, MinHeight = 44 };
-    private readonly TextBlock _time = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _time = new() { FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _play = new() { Content = "▶ Reproduzir", MinHeight = 44, Padding = new Thickness(12, 4) };
     private readonly Ui.UrbeButton _export = new("Exportar MP4", Ui.ButtonKind.Primary, UrbeTheme.Icons.Download) { MinHeight = 44 };
     private readonly Ui.UrbeButton _cancel = new("Cancelar", Ui.ButtonKind.Danger) { MinHeight = 44, IsVisible = false };
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, IsVisible = false, Height = 6 };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel _scenes = new() { Spacing = 6 };
     private readonly DispatcherTimer _timer = new();
     private readonly System.Diagnostics.Stopwatch _clock = new();
@@ -40,7 +40,7 @@ public sealed class PublicationVideoPanel : StackPanel
     private readonly Border _outline = new() { BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(3), IsVisible = false };
     private readonly Grid _stage = new() { Background = Brushes.Black };
     private readonly StackPanel _inspector = new() { Spacing = 6, IsVisible = false };
-    private readonly TextBlock _hint = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
+    private readonly TextBlock _hint = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
     private (string Scene, string Element)? _selected;
     private Point? _dragFrom;
     private Point _dragBy;
@@ -110,7 +110,7 @@ public sealed class PublicationVideoPanel : StackPanel
         Children.Add(exportRow);
         Children.Add(_progress);
         Children.Add(_status);
-        Children.Add(new TextBlock { Text = "Cenas", FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 8, 0, 0) });
+        Children.Add(new TextBlock { Text = "Cenas", FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 8, 0, 0) });
         Children.Add(_scenes);
         DetachedFromVisualTree += (_, _) => Stop();
     }
@@ -119,6 +119,8 @@ public sealed class PublicationVideoPanel : StackPanel
     public event Action? CancelRequested;
     /// <summary>The scene, in the project, changed by the timing controls.</summary>
     public event Action<VideoScene>? SceneChanged;
+    /// <summary>#1004: the person asked to edit a code element's program.</summary>
+    public event Action<VideoScene, VideoElement>? CodeEditRequested;
     public event Action<string>? AddElementRequested;
 
     public VideoTimeline? Timeline => _renderer?.Timeline;
@@ -280,7 +282,7 @@ public sealed class PublicationVideoPanel : StackPanel
             b.Click += (_, _) => run();
             return b;
         }
-        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", _ => "Texto" };
+        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", "code" => "Código", _ => "Texto" };
         _inspector.Children.Add(new TextBlock
         {
             Text = kind + (c is null ? " · fora da cena neste instante" : " · " + Clock(c.Value.Local) + " da cena"),
@@ -288,7 +290,9 @@ public sealed class PublicationVideoPanel : StackPanel
         });
         bool keyed = c is { } now && VideoEditing.HasKeyframe(element, now.Local);
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
-        foreach (var b in new[]
+        var buttons = new List<Button>();
+        if (element.Kind == "code") buttons.Add(Action("Editar código", "Editar o programa que desenha este objeto", () => CodeEditRequested?.Invoke(scene.Scene, element)));
+        foreach (var b in buttons.Concat(new Button[]
         {
             Action(keyed ? "◆ Tirar quadro-chave" : "◇ Quadro-chave aqui", keyed ? "Tirar o quadro-chave deste instante" : "Marcar quadro-chave neste instante",
                 () => { if (Current() is { } x) SceneChanged?.Invoke(VideoEditing.ToggleKeyframe(x.Scene.Scene, x.State.Id, x.Local, x.State)); }, c is not null),
@@ -296,7 +300,7 @@ public sealed class PublicationVideoPanel : StackPanel
             Action("Menor", "Diminuir o objeto", () => SceneChanged?.Invoke(VideoEditing.Resize(scene.Scene, element.Id, 1 / 1.15))),
             Action("Remover", "Remover o objeto da cena", () => { Select(null); SceneChanged?.Invoke(VideoEditing.Remove(scene.Scene, element.Id)); }),
             Action("Pronto", "Terminar de editar o objeto", () => Select(null))
-        })
+        }))
         {
             b.Margin = new Thickness(0, 0, 6, 6);
             actions.Children.Add(b);
@@ -306,7 +310,7 @@ public sealed class PublicationVideoPanel : StackPanel
         if (c is { } at && VideoEditing.EasingAt(element, at.Local) is { } easing)
         {
             var curves = new WrapPanel { Orientation = Orientation.Horizontal };
-            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             foreach (var (label, value) in VideoEditing.Curves)
             {
                 var chosen = value == easing;
@@ -321,7 +325,7 @@ public sealed class PublicationVideoPanel : StackPanel
         if (times.Count > 0)
         {
             var row = new WrapPanel { Orientation = Orientation.Horizontal };
-            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             foreach (var t in times)
             {
                 var jump = Action("◆ " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s", "Ir ao quadro-chave de " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s",
@@ -331,7 +335,7 @@ public sealed class PublicationVideoPanel : StackPanel
             }
             _inspector.Children.Add(row);
         }
-        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
     }
 
     private Control SceneRow(VideoTimelineScene placed, string label)

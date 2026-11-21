@@ -25,11 +25,15 @@ public sealed class FlashcardsPanel : Border
         IReadOnlyList<(string Label, string Detail)> When(Flashcard card);
         void Grade(Flashcard card, Recall grade);
         string StateOf(Flashcard card);
-        Task NewSetAsync();
         Task SetMenuAsync(StudySet set);
-        Task CardMenuAsync(StudySet set, Flashcard card);
         void OpenNote(string path);
         void Close();
+        /// <summary>Adds one card to a deck; null when it was added, else what is wrong (a repeated front, an empty side…).</summary>
+        Task<string?> AddCardAsync(string deckId, string front, string back);
+        /// <summary>Makes an empty set; its set id ("deck:…"), or the reason it could not.</summary>
+        Task<(string? SetId, string? Problem)> CreateSetAsync(string title);
+        /// <summary>Changes a card's text (null when done, else why not); removes it when <paramref name="remove"/>.</summary>
+        Task<string?> EditCardAsync(string deckId, string cardId, string front, string back, bool remove);
     }
 
     private readonly IHost _host;
@@ -103,7 +107,7 @@ public sealed class FlashcardsPanel : Border
         var list = new StackPanel { Spacing = 2, Margin = new Thickness(12, 4, 12, 24), MaxWidth = 760 };
         int due = sets.Sum(s => s.Progress.Due);
         list.Children.Add(Caption(sets.Count == 0 ? "Nenhum conjunto ainda." : (due == 0 ? "Nada para revisar hoje." : due + (due == 1 ? " cartão para hoje" : " cartões para hoje")) + " · " + sets.Count + (sets.Count == 1 ? " conjunto" : " conjuntos")));
-        list.Children.Add(Primary("Novo conjunto", () => _ = NewAsync()));
+        list.Children.Add(NewSetForm());
         if (sets.Count == 0)
             list.Children.Add(Caption("Crie um aqui, peça ao Assistente (\"faça flashcards sobre…\") ou escreva pergunta::resposta numa linha de uma nota."));
         foreach (var (set, p) in sets)
@@ -113,10 +117,27 @@ public sealed class FlashcardsPanel : Border
         _body.Content = list;
     }
 
-    private async Task NewAsync()
+    /// <summary>A title typed in the list makes the set and opens it, ready for its first card.</summary>
+    private Control NewSetForm()
     {
-        await _host.NewSetAsync();
-        ShowList();
+        var title = new TextBox
+        {
+            PlaceholderText = "Novo conjunto: título (ex.: Animais)", MinHeight = UrbeTokens.MinTouch, FontSize = UrbeTokens.Type.Body.Size,
+            Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary),
+            Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(title, "Título do novo conjunto");
+        var error = UrbeTokens.Type.Footnote.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger), TextWrapping = TextWrapping.Wrap, IsVisible = false });
+        async Task Create()
+        {
+            error.IsVisible = false;
+            var (setId, problem) = await _host.CreateSetAsync(title.Text ?? "");
+            if (setId is null) { error.Text = problem ?? ""; error.IsVisible = true; return; }
+            ShowSet(setId);
+        }
+        title.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; _ = Create(); } };
+        var create = Primary("Criar conjunto", () => _ = Create());
+        return new StackPanel { Spacing = UrbeTokens.Space.Xs, Margin = new Thickness(0, 0, 0, UrbeTokens.Space.S), Children = { title, error, create } };
     }
 
     public void ShowSet(string setId)
@@ -137,14 +158,87 @@ public sealed class FlashcardsPanel : Border
             else _ = MenuAsync(set);
         }));
         list.Children.Add(actions);
+        if (set.Kind == "deck" && set.DeckId is { } deckId) list.Children.Add(NewCardForm(set.Id, deckId));
         foreach (var card in set.Cards)
-            list.Children.Add(Row(card.Front, card.Back + " · " + _host.StateOf(card), null,
-                () => { if (set.Kind == "deck") _ = CardAsync(set, card); }, "Cartão " + card.Front));
+        {
+            var at = list.Children.Count;
+            list.Children.Add(Row(card.Front, card.Back + " · " + _host.StateOf(card), null, () =>
+            {
+                // a deck's card opens its editor in its place; a note's card is edited in the note
+                if (set.DeckId is not { } id || list.Children.OfType<Border>().Any(b => b.Tag as string == "editar:" + card.Id)) return;
+                list.Children.Insert(at + 1, CardEditor(set.Id, id, card));
+            }, "Cartão " + card.Front));
+        }
         _body.Content = list;
     }
 
+    /// <summary>The front and the back typed right in the set, added with one button (no dialogs one after another).</summary>
+    private Control NewCardForm(string setId, string deckId)
+    {
+        TextBox Field(string hint) => new()
+        {
+            PlaceholderText = hint, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false, MinHeight = UrbeTokens.MinTouch,
+            FontSize = UrbeTokens.Type.Body.Size, Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary),
+            Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+        };
+        var front = Field("Frente: pergunta ou termo");
+        var back = Field("Verso: resposta");
+        Avalonia.Automation.AutomationProperties.SetName(front, "Frente do novo cartão");
+        Avalonia.Automation.AutomationProperties.SetName(back, "Verso do novo cartão");
+        var error = UrbeTokens.Type.Footnote.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger), TextWrapping = TextWrapping.Wrap, IsVisible = false });
+        async Task Add()
+        {
+            error.IsVisible = false;
+            if (await _host.AddCardAsync(deckId, front.Text ?? "", back.Text ?? "") is { } problem) { error.Text = problem; error.IsVisible = true; return; }
+            ShowSet(setId);
+            if (_body.Content is StackPanel page && page.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "novo-cartao") is { } form &&
+                form.Child is StackPanel inner && inner.Children.OfType<TextBox>().FirstOrDefault() is { } next) next.Focus();
+        }
+        back.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; _ = Add(); } };
+        front.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; back.Focus(); } };
+        var add = Primary("Adicionar cartão", () => _ = Add());
+        return new Border
+        {
+            Tag = "novo-cartao", Background = UrbeTheme.Brush(UrbeTokens.Color.SurfaceRaised), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            Padding = new Thickness(UrbeTokens.Space.S), Margin = new Thickness(0, 0, 0, UrbeTokens.Space.S),
+            Child = new StackPanel { Spacing = UrbeTokens.Space.Xs, Children = { front, back, error, add } }
+        };
+    }
+
+    private Control CardEditor(string setId, string deckId, Flashcard card)
+    {
+        TextBox Field(string text, string name)
+        {
+            var box = new TextBox
+            {
+                Text = text, TextWrapping = TextWrapping.Wrap, MinHeight = UrbeTokens.MinTouch, FontSize = UrbeTokens.Type.Body.Size,
+                Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary),
+                Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(box, name);
+            return box;
+        }
+        var front = Field(card.Front, "Frente do cartão");
+        var back = Field(card.Back, "Verso do cartão");
+        var error = UrbeTokens.Type.Footnote.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger), TextWrapping = TextWrapping.Wrap, IsVisible = false });
+        async Task Done(bool remove)
+        {
+            if (await _host.EditCardAsync(deckId, card.Id, front.Text ?? "", back.Text ?? "", remove) is { } problem) { error.Text = problem; error.IsVisible = true; return; }
+            ShowSet(setId);
+        }
+        var buttons = new WrapPanel();
+        buttons.Children.Add(Primary("Salvar", () => _ = Done(false)));
+        buttons.Children.Add(Secondary("Excluir cartão", () => _ = Done(true)));
+        buttons.Children.Add(Secondary("Fechar", () => ShowSet(setId)));
+        return new Border
+        {
+            Tag = "editar:" + card.Id, Background = UrbeTheme.Brush(UrbeTokens.Color.SurfaceRaised), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            Padding = new Thickness(UrbeTokens.Space.S), Margin = new Thickness(0, 0, 0, UrbeTokens.Space.Xs),
+            Child = new StackPanel { Spacing = UrbeTokens.Space.Xs, Children = { Caption("Mudar só o verso mantém o progresso do cartão."), front, back, error, buttons } }
+        };
+    }
+
     private async Task MenuAsync(StudySet set) { await _host.SetMenuAsync(set); if (_host.Sets().Any(s => s.Set.Id == set.Id)) ShowSet(set.Id); else ShowList(); }
-    private async Task CardAsync(StudySet set, Flashcard card) { await _host.CardMenuAsync(set, card); ShowSet(set.Id); }
 
     public void StartReview(StudySet set, bool all)
     {

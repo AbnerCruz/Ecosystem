@@ -27,6 +27,7 @@ public sealed partial class MainView
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
         studio.VoiceRequested += () => _ = ChooseNarrationVoiceAsync();
+        studio.CodeEditRequested += (scene, element) => _ = EditVideoCodeAsync(studio, scene, element);
         studio.VideoThemeRequested += () => _ = ChoosePublicationVideoThemeAsync();
         studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
@@ -37,7 +38,7 @@ public sealed partial class MainView
     {
         if (_publicationsStudio?.Project?.Video is not { } video || _vault is not { } vault) return;
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-        foreach (var path in video.Scenes.SelectMany(s => s.Elements).Where(e => e.Kind == "image" && e.Source is not null).Select(e => e.Source!).Distinct())
+        foreach (var path in video.Scenes.SelectMany(s => s.Elements).SelectMany(VideoElement.Images).Distinct())
             try { if ((await vault.ReadFileAsync(path, 64L << 20))?.Bytes is { } bytes) files[path] = bytes; }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or NotSupportedException) { }
         if (_publicationsStudio is { } studio && files.Count > 0 && !files.Keys.All(studio.VideoFiles.ContainsKey))
@@ -102,7 +103,8 @@ public sealed partial class MainView
             new DialogItem("Forma", Detail: "Retângulo ou elipse"), new DialogItem("Imagem do vault"),
             new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}"),
             new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela"),
-            new DialogItem("Cena pronta (layout)", Detail: "Abertura, tópico, comparação, número, fórmula, gráfico ou citação, já composta e animada")]);
+            new DialogItem("Cena pronta (layout)", Detail: "Abertura, tópico, comparação, número, fórmula, gráfico ou citação, já composta e animada"),
+            new DialogItem("Programa (código)", Detail: "JavaScript que desenha a cena a cada quadro: partículas, simulações, o que você inventar")]);
         if (kind is not { } k) return;
         // every object enters with a short fade; keyframes and motions stay editable in the project
         var fadeIn = new List<VideoKeyframe> { new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "opacity", Time = 0.5, Value = 1, Easing = "easeOut" } };
@@ -146,6 +148,12 @@ public sealed partial class MainView
                         Kind = "path", Text = VideoStrokes[st].Data, Width = 0.3, Height = 0.2, Color = "#ffd166", FontSize = 0.06,
                         Keyframes = [new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0.8, Value = 1, Easing = "easeOut" }]
                     };
+                break;
+            case 8:
+                var program = await Dialogs.PromptAsync(new PromptOptions("Programa da cena", "draw(ctx, t, info)", VideoCodeStarter, Confirm: "Adicionar", Code: true,
+                    Hint: "Desenha a cena inteira, a cada quadro. Sem acesso a arquivos, rede ou notas.",
+                    Validate: v => { try { VideoCode.Check(v); VideoCode.Run(v, 0, 320, 180); return null; } catch (VideoCodeException e) { return e.Message; } }));
+                if (program is not null) element = new VideoElement { Kind = "code", Text = program, X = 0.5, Y = 0.5, Width = 1, Height = 1 };
                 break;
         }
         if (k == 7) { await ApplyPublicationVideoLayoutAsync(sceneId, draft); return; }
@@ -419,6 +427,32 @@ public sealed partial class MainView
         }
     }
 
+    /// <summary>A program that works as it is and shows the parts of the drawing API.</summary>
+    public const string VideoCodeStarter = """
+        function draw(ctx, t, info) {
+          // estrelas que giram devagar em volta do centro
+          var cx = ctx.width / 2, cy = ctx.height / 2;
+          for (var i = 0; i < 120; i++) {
+            var r = 20 + Math.random() * Math.min(cx, cy);
+            var a = Math.random() * Math.PI * 2 + t * 0.3;
+            ctx.alpha(0.4 + 0.6 * noise(i + t));
+            ctx.fill('#cfe8ff');
+            ctx.circle(cx + r * Math.cos(a), cy + r * Math.sin(a), 1.5);
+          }
+        }
+        """;
+
+    /// <summary>#1004: the program of a code element, edited by hand; it is checked before it replaces the old one.</summary>
+    public async Task EditVideoCodeAsync(PublicationStudioView studio, VideoScene scene, VideoElement element)
+    {
+        var code = await Dialogs.PromptAsync(new PromptOptions("Código do objeto", "draw(ctx, t, info)", element.Text ?? "", Confirm: "Salvar", Code: true,
+            Hint: "JavaScript que desenha cada quadro. Sem acesso a arquivos, rede ou notas.",
+            Validate: v => { try { VideoCode.Check(v); VideoCode.Run(v, 0, 320, 180); return null; } catch (VideoCodeException e) { return e.Message; } }));
+        if (code is null) return;
+        var elements = scene.Elements.Select(e => e.Id == element.Id ? e with { Text = code } : e).ToList();
+        studio.ApplyVideoScene(scene with { Elements = elements });
+    }
+
     /// <summary>Where the chosen narration voice is kept: on this device (voices are the device's), never in the vault.</summary>
     public string? VoiceSettingPath { get; set; } = UrbeApp.LocalStatePath is { } p ? p + ".voice.txt" : null;
 
@@ -426,8 +460,24 @@ public sealed partial class MainView
 
     private void LoadNarrationVoice()
     {
+        // natural voices are kept beside the app's local state, never in the vault
+        if (NeuralSpeech.Shared is null && UrbeApp.LocalStatePath is { } state && Path.GetDirectoryName(state) is { } dir)
+            NeuralSpeech.Attach(new NeuralSpeech(Path.Combine(dir, "vozes")));
         try { PlatformAudio.PreferredVoice = VoiceSettingPath is { } path && File.Exists(path) ? File.ReadAllText(path).Trim() is { Length: > 0 } v ? v : null : null; }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// <summary>
+    /// DEC-0067 A (GPL-3.0 of espeak-ng): the licences of every natural voice, installed or not, readable at any time,
+    /// with where the source of espeak-ng is.
+    /// </summary>
+    public async Task ShowVoiceLicencesAsync()
+    {
+        var lines = Urbe.Core.Voice.NeuralVoices.Models.Select(m =>
+            (NeuralSpeech.Shared?.IsInstalled(m) == true ? "Instalada — " : "Não baixada — ") + m.Folder + "\n" + m.Licences);
+        await Dialogs.AlertAsync("Licenças das vozes naturais", string.Join("\n\n", lines) +
+            "\n\nO espeak-ng é software livre sob a GPL-3.0: você pode obter, estudar, mudar e redistribuir o código-fonte dele em https://github.com/espeak-ng/espeak-ng. " +
+            "Ele vem sem garantia. As vozes ficam numa pasta própria do app e podem ser apagadas a qualquer momento.");
     }
 
     /// <summary>What the voice says when it is tried: numbers, a name and a pause, like a narration.</summary>
@@ -442,10 +492,51 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Voz da narração", "Este aparelho não informou vozes em português. A narração usa a voz padrão do sistema; vozes novas se instalam nas configurações de texto para fala do aparelho.");
             return;
         }
-        var items = voices.Select(v => new DialogItem(v + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""))).Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
+        string Label(string v) => Urbe.Core.Voice.NeuralVoices.Find(v)?.Name ?? v;
+        string? Detail(string v) => Urbe.Core.Voice.NeuralVoices.Find(v) is { } n
+            ? (NeuralSpeech.Shared?.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(n)) == true ? "Natural · já baixada, funciona sem internet" : n.Detail)
+            : "Voz do aparelho";
+        var items = voices.Select(v => new DialogItem(Label(v) + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""), Detail: Detail(v)))
+            .Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
+        items.Add(new DialogItem("Licenças das vozes naturais", Detail: "O que cada voz baixada usa e sob qual licença"));
+        var installed = Urbe.Core.Voice.NeuralVoices.Models.Where(m => NeuralSpeech.Shared?.IsInstalled(m) == true).ToList();
+        if (installed.Count > 0) items.Add(new DialogItem("Apagar vozes baixadas", Detail: "Libera o espaço; podem ser baixadas de novo", Danger: true));
         if (await Dialogs.ChooseAsync("Voz da narração", items, "Vale para narrar vídeos, podcasts e os vídeos do Assistente, neste aparelho.") is not int pick) return;
+        int licences = voices.Count + 1;
+        if (pick == licences) { await ShowVoiceLicencesAsync(); return; }
+        if (pick == licences + 1)
+        {
+            var which = await Dialogs.ChooseAsync("Apagar vozes baixadas", installed.Select(m => new DialogItem(m.Folder, Detail: Size(m.Bytes) + " baixados")).ToList());
+            if (which is int w && NeuralSpeech.Shared is { } shared)
+            {
+                shared.Remove(installed[w]);
+                if (Urbe.Core.Voice.NeuralVoices.Find(PlatformAudio.PreferredVoice) is { } current && current.Model == installed[w].Id)
+                    PlatformAudio.PreferredVoice = null;   // its voice is gone: back to the device's
+                ShowLifeNotice("Voz apagada.");
+            }
+            return;
+        }
         var before = PlatformAudio.PreferredVoice;
-        PlatformAudio.PreferredVoice = pick == 0 ? null : voices[pick - 1];
+        var picked = pick == 0 ? null : voices[pick - 1];
+        // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
+        if (Urbe.Core.Voice.NeuralVoices.Find(picked) is { } natural && NeuralSpeech.Shared is { } speech && !speech.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(natural)))
+        {
+            var model = Urbe.Core.Voice.NeuralVoices.ModelOf(natural);
+            if (!await Dialogs.ConfirmAsync("Baixar " + natural.Name, "São " + Size(model.Bytes) + ", uma vez; depois a voz funciona sem internet.\n\nLicenças: " + model.Licences, "Baixar")) return;
+            ShowLifeNotice("Baixando a voz " + natural.Name + "…");
+            try
+            {
+                var last = 0;
+                await speech.InstallAsync(model, new Progress<double>(p => { var pct = (int)(p * 100); if (pct >= last + 10) { last = pct; ShowLifeNotice("Baixando a voz: " + pct + "%"); } }), CancellationToken.None);
+                ShowLifeNotice("Voz " + natural.Name + " instalada.");
+            }
+            catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException or UnauthorizedAccessException)
+            {
+                await Dialogs.AlertAsync("Voz natural", "A voz não foi instalada: " + e.Message);
+                return;
+            }
+        }
+        PlatformAudio.PreferredVoice = picked;
         // a sample in the chosen voice, before keeping it
         if (PlatformAudio.PlayWav is { } play && PlatformAudio.SynthesizeToWav is { } speak)
         {

@@ -32,7 +32,7 @@ public sealed class FilePreviewPanel : Grid
 
     private readonly Border _card = new();
     private readonly TextBlock _title = new() { FontSize = 18, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _meta = new() { FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+    private readonly TextBlock _meta = new() { FontSize = UrbeTokens.Type.Footnote.Size, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
     private readonly ComboBox _choose = new() { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private readonly ContentControl _body = new() { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch, Margin = new Thickness(0, 14, 0, 0) };
     private readonly Button _open = Action("Abrir em outro app", primary: true);
@@ -78,7 +78,7 @@ public sealed class FilePreviewPanel : Grid
     private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 2, IsVisible = false };
     private readonly Button _pdfPrevious = new Ui.UrbeIconButton(UrbeTheme.Icons.Back, "Página anterior");
     private readonly Button _pdfNext = new Ui.UrbeIconButton(UrbeTheme.Icons.Forward, "Próxima página");
-    private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, MinWidth = 52, TextAlignment = TextAlignment.Center };
+    private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Footnote.Size, MinWidth = 52, TextAlignment = TextAlignment.Center };
     private readonly Button _pdfTextToggle = new Ui.UrbeIconButton(UrbeTheme.Icons.TextLayer, "Texto selecionável", 21);
     private bool _readerMode;
     private readonly WrapPanel _actions = new() { Margin = new Thickness(0, 16, 0, 0) };
@@ -121,9 +121,9 @@ public sealed class FilePreviewPanel : Grid
         head.Children.Add(close);
         head.Children.Add(more);
         head.Children.Add(_readerButton);
-        _title.FontSize = 16;
+        _title.FontSize = UrbeTokens.Type.Body.Size;
         _title.FontWeight = FontWeight.SemiBold;
-        _meta.FontSize = 12;
+        _meta.FontSize = UrbeTokens.Type.Caption.Size;
         _meta.Margin = new Thickness(0, 1, 0, 0);
         _meta.TextWrapping = TextWrapping.NoWrap;
         _meta.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -1143,7 +1143,7 @@ public sealed class FilePreviewPanel : Grid
 
     private static Button Chip(string text) => new()
     {
-        Content = text, Height = 34, Padding = new Thickness(14, 0), CornerRadius = new CornerRadius(17), FontSize = 13, FontWeight = FontWeight.SemiBold,
+        Content = text, Height = 34, Padding = new Thickness(14, 0), CornerRadius = new CornerRadius(17), FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight,
         VerticalContentAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1)
     };
 
@@ -1194,15 +1194,15 @@ public sealed class FilePreviewPanel : Grid
     private static Control Empty(string title, string? message = null)
     {
         var box = new StackPanel { Spacing = 6, Margin = new Thickness(0, 24), HorizontalAlignment = HorizontalAlignment.Center };
-        box.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
+        box.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
         if (message is not null)
-            box.Children.Add(new TextBlock { Text = message, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 420 });
+            box.Children.Add(new TextBlock { Text = message, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 420 });
         return box;
     }
 
     private static Button Action(string text, bool primary) => new()
     {
-        Content = text, Height = 48, CornerRadius = new CornerRadius(12), FontSize = 15, FontWeight = FontWeight.SemiBold,
+        Content = text, Height = 48, CornerRadius = new CornerRadius(12), FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight,
         HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
         Background = UrbeTheme.Brush(primary ? UrbeTheme.Accent : UrbeTheme.Surface2),
         Foreground = UrbeTheme.Brush(primary ? UrbeTheme.AccentInk : UrbeTheme.Text),

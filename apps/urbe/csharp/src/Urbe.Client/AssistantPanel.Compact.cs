@@ -199,7 +199,7 @@ public sealed partial class AssistantPanel
                 {
                     var textBlock = new SelectableTextBlock
                     {
-                        Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap,
+                        Text = text, FontSize = UrbeTokens.Type.Callout.Size, TextWrapping = TextWrapping.Wrap,
                         Foreground = UrbeTheme.Brush(UrbeTheme.Text)
                     };
                     Ui.TextActions.Attach(textBlock);
@@ -255,7 +255,7 @@ public sealed partial class AssistantPanel
         var compactInput = new TextBox
         {
             Text = _input.Text ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-            MinHeight = 44, MaxHeight = 120, FontSize = 15,
+            MinHeight = 44, MaxHeight = 120, FontSize = UrbeTokens.Type.Callout.Size,
             PlaceholderText = "Pergunte ao Assistente…",
             CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8)
         };

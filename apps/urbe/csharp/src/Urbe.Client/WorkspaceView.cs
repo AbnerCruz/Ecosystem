@@ -66,7 +66,7 @@ public sealed class WorkspaceView : Grid
 
         _search = new TextBox
         {
-            PlaceholderText = "Buscar em todos os projetos", FontSize = 15, MinHeight = 44, CornerRadius = new CornerRadius(14),
+            PlaceholderText = "Buscar em todos os projetos", FontSize = UrbeTokens.Type.Callout.Size, MinHeight = 44, CornerRadius = new CornerRadius(14),
             Padding = new Thickness(40, 10, 12, 10), VerticalContentAlignment = VerticalAlignment.Center,
             Background = UrbeTheme.Brush(UrbeTheme.Surface2), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2)
         };
@@ -331,7 +331,7 @@ public sealed class WorkspaceView : Grid
         var parts = Folder.Split('/');
         for (int i = 0; i < parts.Length; i++)
         {
-            _crumbs.Children.Add(new TextBlock { Text = "›", FontSize = 16, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0) });
+            _crumbs.Children.Add(new TextBlock { Text = "›", FontSize = UrbeTokens.Type.Body.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0) });
             _crumbs.Children.Add(Crumb(parts[i], string.Join("/", parts[..(i + 1)]), i == parts.Length - 1));
         }
     }
@@ -420,7 +420,7 @@ public sealed class WorkspaceView : Grid
             Content = new StackPanel
             {
                 Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center,
-                Children = { UrbeTheme.Icon(UrbeTheme.Icons.Plus, 18, UrbeTheme.Text2, 2), new TextBlock { Text = "Novo projeto", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center } }
+                Children = { UrbeTheme.Icon(UrbeTheme.Icons.Plus, 18, UrbeTheme.Text2, 2), new TextBlock { Text = "Novo projeto", FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center } }
             },
             HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center, Padding = new Thickness(16, 18),
             CornerRadius = new CornerRadius(18), Background = Brushes.Transparent, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1.5)
@@ -471,13 +471,13 @@ public sealed class WorkspaceView : Grid
         {
             var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
             foreach (var s in subs.Take(6)) wrap.Children.Add(SubfolderChip(_index.Box(s)));
-            if (subs.Count > 6) wrap.Children.Add(new TextBlock { Text = "+" + (subs.Count - 6), FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 6) });
+            if (subs.Count > 6) wrap.Children.Add(new TextBlock { Text = "+" + (subs.Count - 6), FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 6) });
             content.Children.Add(wrap);
         }
         int cardCols = Bounds.Width / Columns(Bounds.Width) >= 520 ? 3 : 2;
         var recent = _index.Recent(box.Folder, cardCols * 3);
         if (recent.Count > 0) content.Children.Add(Cards(recent, cardCols));
-        else if (subs.Count == 0) content.Children.Add(new TextBlock { Text = "Vazio por enquanto.", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+        else if (subs.Count == 0) content.Children.Add(new TextBlock { Text = "Vazio por enquanto.", FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
         if (box.Count > recent.Count)
         {
             var all = Plain(new TextBlock { Text = "Ver tudo (" + box.Count + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
@@ -491,8 +491,8 @@ public sealed class WorkspaceView : Grid
 
     private Control LooseBox(IReadOnlyList<WorkspaceItem> loose)
     {
-        var head = new TextBlock { Text = "Soltas", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
-        var hint = new TextBlock { Text = "Na raiz do vault, fora dos projetos", FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) };
+        var head = new TextBlock { Text = "Soltas", FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
+        var hint = new TextBlock { Text = "Na raiz do vault, fora dos projetos", FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) };
         int cardCols = Bounds.Width / Columns(Bounds.Width) >= 520 ? 3 : 2;
         var content = new StackPanel { Spacing = 10, Children = { new StackPanel { Spacing = 2, Children = { head, hint } }, Cards(loose.Take(cardCols * 2).ToList(), cardCols) } };
         if (loose.Count > cardCols * 2)
@@ -561,13 +561,13 @@ public sealed class WorkspaceView : Grid
         }
         if (subs.Count == 0 && items.Count == 0)
         {
-            var add = Plain(new TextBlock { Text = "Nova nota aqui", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
+            var add = Plain(new TextBlock { Text = "Nova nota aqui", FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             add.HorizontalAlignment = HorizontalAlignment.Center;
             add.Click += (_, _) => NewNoteRequested?.Invoke(Folder);
             content.Children.Add(new StackPanel
             {
                 Spacing = 6, Margin = new Thickness(0, 24),
-                Children = { new TextBlock { Text = "Pasta vazia", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center }, Ui.UrbeMotion.Pressable(add) }
+                Children = { new TextBlock { Text = "Pasta vazia", FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center }, Ui.UrbeMotion.Pressable(add) }
             });
         }
         _body.Children.Add(Glass(box.Folder, content));
@@ -599,7 +599,7 @@ public sealed class WorkspaceView : Grid
             var list = group.ToList();
             int cardCols = Bounds.Width / Columns(Bounds.Width) >= 520 ? 3 : 2;
             var content = new StackPanel { Spacing = 10 };
-            if (group.Key.Length == 0) content.Children.Add(new TextBlock { Text = "Soltas", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+            if (group.Key.Length == 0) content.Children.Add(new TextBlock { Text = "Soltas", FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
             else content.Children.Add(BoxHead(_index.Box(group.Key), open: true, count: list.Count));
             content.Children.Add(ItemsView(list.Take(12).ToList(), cardCols));
             if (list.Count > 12)
@@ -620,7 +620,7 @@ public sealed class WorkspaceView : Grid
 
     private static Control Nothing(string query) => new TextBlock
     {
-        Text = query.Length > 0 ? "Nada com “" + query + "”." : "Nada com esse filtro.", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 40)
+        Text = query.Length > 0 ? "Nada com “" + query + "”." : "Nada com esse filtro.", FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 40)
     };
 
     private int CardColumns() => Math.Clamp((int)((Bounds.Width - 32 - 28) / 180), 2, 6);
@@ -687,8 +687,8 @@ public sealed class WorkspaceView : Grid
             Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0),
             Children =
             {
-                new TextBlock { Text = box.Name, FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
-                new TextBlock { Text = meta, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
+                new TextBlock { Text = box.Name, FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
+                new TextBlock { Text = meta, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
             }
         };
         var menu = HeaderButton(UrbeTheme.Icons.MoreUi, "Opções de " + box.Name);
@@ -730,8 +730,8 @@ public sealed class WorkspaceView : Grid
                 Children =
                 {
                     UrbeTheme.Icon(UrbeTheme.Icons.Folder, 14, hex, 1.8),
-                    new TextBlock { Text = box.Name, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center, MaxWidth = 180, TextTrimming = TextTrimming.CharacterEllipsis },
-                    new TextBlock { Text = box.Count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center }
+                    new TextBlock { Text = box.Name, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center, MaxWidth = 180, TextTrimming = TextTrimming.CharacterEllipsis },
+                    new TextBlock { Text = box.Count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center }
                 }
             },
             Padding = new Thickness(10, 6), MinHeight = 40, Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(10),
@@ -756,7 +756,7 @@ public sealed class WorkspaceView : Grid
                 {
                     UrbeTheme.Icon(UrbeTheme.Icons.Folder, 22, hex, 1.8),
                     new TextBlock { Text = box.Name, FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
-                    new TextBlock { Text = box.Count == 1 ? "1 item" : box.Count + " itens", FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
+                    new TextBlock { Text = box.Count == 1 ? "1 item" : box.Count + " itens", FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
                 }
             },
             HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Top,
@@ -783,7 +783,7 @@ public sealed class WorkspaceView : Grid
         var line = new DockPanel { LastChildFill = true };
         if (item.Modified is { } m && When(m) is { } when)
         {
-            var date = new TextBlock { Text = when, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+            var date = new TextBlock { Text = when, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
             DockPanel.SetDock(date, Dock.Right);
             line.Children.Add(date);
         }
@@ -797,7 +797,7 @@ public sealed class WorkspaceView : Grid
             Children =
             {
                 new TextBlock { Text = item.Title, FontSize = 15, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
-                new TextBlock { Text = item.Folder.Length == 0 ? "Soltas" : item.Folder, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
+                new TextBlock { Text = item.Folder.Length == 0 ? "Soltas" : item.Folder, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
             }
         });
         var b = new Button
@@ -841,7 +841,7 @@ public sealed class WorkspaceView : Grid
         if (item.Snippet.Length > 0)
             stack.Children.Add(new TextBlock { Text = item.Snippet, FontSize = 12, LineHeight = 17, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis });
         else if (!item.IsNote)
-            stack.Children.Add(new TextBlock { Text = KindName(item.Kind), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            stack.Children.Add(new TextBlock { Text = KindName(item.Kind), FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = stack, Height = 118, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
@@ -945,7 +945,7 @@ public sealed class WorkspaceView : Grid
                 Child = new StackPanel
                 {
                     Orientation = Orientation.Horizontal, Spacing = 6,
-                    Children = { UrbeTheme.Icon(icon, 14, UrbeTheme.Text2, 1.8), new TextBlock { Text = title, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text), MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis } }
+                    Children = { UrbeTheme.Icon(icon, 14, UrbeTheme.Text2, 1.8), new TextBlock { Text = title, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text), MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis } }
                 }
             };
             SetRowSpan(_ghost, 4);

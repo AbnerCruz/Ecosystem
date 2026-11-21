@@ -18,8 +18,8 @@ public sealed class PublicationStudioView : Border
     private readonly StackPanel _sources = new() { Spacing = 8 };
     private readonly StackPanel _preview = new() { Spacing = 20, Margin = new Thickness(18, 14, 18, 32) };
     private readonly TextBlock _title = new() { FontSize = 20, FontWeight = FontWeight.Bold };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
-    private readonly TextBlock _saveStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _saveStatus = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
     private readonly Button _retry = new() { Content = "Tentar salvar novamente", MinHeight = 44, IsVisible = false };
     private readonly Button _print;
     private PublicationSourceCatalog? _catalog;
@@ -100,7 +100,7 @@ public sealed class PublicationStudioView : Border
         sourcesHead.Children.Add(add);
         sourcesHead.Children.Add(new TextBlock
         {
-            Text = "Notas da publicação", FontSize = 16, FontWeight = FontWeight.SemiBold,
+            Text = "Notas da publicação", FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight,
             VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
         });
         _saveStatus.Margin = new Thickness(16, 0, 16, 4);
@@ -192,14 +192,21 @@ public sealed class PublicationStudioView : Border
         panel.ExportRequested += () => VideoExportRequested?.Invoke();
         panel.CancelRequested += () => VideoCancelRequested?.Invoke();
         panel.AddElementRequested += id => AddVideoElementRequested?.Invoke(id);
-        panel.SceneChanged += scene =>
-        {
-            if (_project is not { } p) return;
-            var synced = VideoComposition.Synced(p, ReadScript);
-            UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
-        };
+        panel.SceneChanged += ApplyVideoScene;
+        panel.CodeEditRequested += (scene, element) => CodeEditRequested?.Invoke(scene, element);
         return panel;
     }
+
+    /// <summary>A scene of the video changed (the panel's edits, or the host's code editor), saved like any change.</summary>
+    public void ApplyVideoScene(VideoScene scene)
+    {
+        if (_project is not { } p) return;
+        var synced = VideoComposition.Synced(p, ReadScript);
+        UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
+    }
+
+    /// <summary>#1004: editing a code element's program (the host has the dialogs).</summary>
+    public event Action<VideoScene, VideoElement>? CodeEditRequested;
 
     private string? ReadScript(PublicationSourceReference reference)
     {
@@ -326,7 +333,7 @@ public sealed class PublicationStudioView : Border
         catch (NotSupportedException) { origin = null; }
         var panel = new StackPanel { Spacing = 4, Margin = new Thickness(14, 8, 14, 0) };
         var name = origin is null ? "uma nota que não existe mais" : System.IO.Path.GetFileNameWithoutExtension(origin.Path);
-        panel.Children.Add(new TextBlock { Text = link.Kind + " de " + name, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+        panel.Children.Add(new TextBlock { Text = link.Kind + " de " + name, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
         if (origin is null) return panel;
         var actions = new WrapPanel();
         var open = new Ui.UrbeButton("Abrir a origem", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
@@ -334,7 +341,7 @@ public sealed class PublicationStudioView : Border
         actions.Children.Add(open);
         if (EditorialNotes.IsBehind(link, origin.Markdown))
         {
-            panel.Children.Add(new TextBlock { Text = "A origem mudou desde esta adaptação. Confira e marque como revisada.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            panel.Children.Add(new TextBlock { Text = "A origem mudou desde esta adaptação. Confira e marque como revisada.", TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
             var reviewed = new Ui.UrbeButton("Marcar como revisada", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
             reviewed.Click += (_, _) => AdaptationReviewed?.Invoke(adaptation.DocumentId, link.OriginId);
             actions.Children.Add(reviewed);
@@ -455,7 +462,7 @@ public sealed class PublicationStudioView : Border
                         Children =
                         {
                             // the note's name, only when its first heading does not already say it
-                            new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                            new TextBlock { Text = label, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
                                 IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(), label, StringComparison.CurrentCultureIgnoreCase) },
                             new MarkdownReader { Selectable = true, ProgressContextMarkdown = source.Markdown,
                                 ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown }.BuildMarkdown(text)

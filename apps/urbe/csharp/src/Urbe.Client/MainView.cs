@@ -1559,6 +1559,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
                 Run: () => { ShowTrashView(); return Task.CompletedTask; }),
+            new DialogItem("Dados do aplicativo", UrbeTheme.Icons.Storage, "O que o Numa guarda e onde", Run: () => ShowAppDataAsync()),
             .. (_vault is null ? Array.Empty<DialogItem>() :
                 [new DialogItem("Pasta do Numa no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
         ]);

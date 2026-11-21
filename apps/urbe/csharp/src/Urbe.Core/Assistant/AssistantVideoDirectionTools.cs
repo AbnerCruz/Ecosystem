@@ -48,13 +48,14 @@ public static class AssistantVideoDirectionTools
             Name = "create_video", Access = "write",
             Description = "Cria um vídeo inteiro numa chamada: uma nota por cena (a fala, que vira narração e legenda), a publicação de vídeo com o tema " +
                           "e cada cena já composta por um layout. Depois: look_at_video para conferir e render_video para o MP4. " +
-                          "scenes: [{title, narration (o que é dito, 1–3 frases), layout, slots}]. Layouts: " +
+                          "scenes: [{title, narration (o que é dito, 1–3 frases), layout, slots, code?}]. code é um programa JavaScript draw(ctx, t, info) que desenha o quadro inteiro, " +
+                          "atrás do layout (sem layout, a cena é só o programa): use para o que layouts não fazem — simulações, partículas, fractais, dados animados. " + VideoCode.Help + " Layouts: " +
                           string.Join("; ", VideoLayouts.All.Select(l => l.Id + " (" + string.Join(", ", l.Required) + (l.Optional.Length > 0 ? "; opcional " + string.Join(", ", l.Optional) : "") + ")")) +
                           ". Textos dos slots são curtos (o que aparece na tela); a explicação vai na narration. Temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".",
             Parameters = JsonNode.Parse("""
                 {"type":"object","properties":{"title":{"type":"string"},"theme":{"type":"string"},"aspect":{"type":"string","enum":["16:9","9:16","1:1"]},"folder":{"type":"string"},
                  "scenes":{"type":"array","minItems":1,"items":{"type":"object","properties":{"title":{"type":"string"},"narration":{"type":"string"},"layout":{"type":"string"},
-                 "slots":{"type":"object","additionalProperties":{"type":"string"}}},"required":["title","narration","layout","slots"]}}},"required":["title","scenes"],"additionalProperties":false}
+                 "slots":{"type":"object","additionalProperties":{"type":"string"}},"code":{"type":"string"}},"required":["title","narration"]}}},"required":["title","scenes"],"additionalProperties":false}
                 """)!.AsObject(),
             Label = i => "Criando o vídeo " + ((string?)i["title"] ?? ""),
             Run = CreateVideoAsync
@@ -182,7 +183,7 @@ public static class AssistantVideoDirectionTools
         if (scenes.Count == 0) throw new AiToolException("Envie ao menos uma cena.");
 
         // everything checked first: layouts, slots and texts; nothing is written on a mistake
-        var plans = new List<(string Title, string Narration, string Layout, Dictionary<string, string> Slots)>();
+        var plans = new List<(string Title, string Narration, string Layout, Dictionary<string, string> Slots, string? Code)>();
         for (int i = 0; i < scenes.Count; i++)
         {
             var sc = scenes[i];
@@ -198,9 +199,20 @@ public static class AssistantVideoDirectionTools
                     throw new AiToolException("Cena " + (i + 1) + ", " + key + ": " + text.Length + " caracteres; na tela vão até " + AssistantPublicationTools.MaxOverlay + ". O que é dito vai na narration.");
                 slots[key] = text;
             }
-            try { VideoLayouts.Build(layout, slots, "x"); }
-            catch (ArgumentException e) { throw new AiToolException("Cena " + (i + 1) + ": " + e.Message); }
-            plans.Add((st, narration, layout, slots));
+            var code = ((string?)sc["code"])?.Trim() is { Length: > 0 } c ? c : null;
+            if (code is not null)
+            {
+                // checked and run once before anything is written: a program that cannot draw costs one corrected call
+                try { VideoCode.Check(code); VideoCode.Run(code, 0, 1280, 720); }
+                catch (VideoCodeException e) { throw new AiToolException("Cena " + (i + 1) + ", code: " + e.Message); }
+            }
+            if (layout.Length == 0 && code is null) throw new AiToolException("Cena " + (i + 1) + ": dê um layout com slots, ou um code que desenhe a cena.");
+            if (layout.Length > 0)
+            {
+                try { VideoLayouts.Build(layout, slots, "x"); }
+                catch (ArgumentException e) { throw new AiToolException("Cena " + (i + 1) + ": " + e.Message); }
+            }
+            plans.Add((st, narration, layout, slots, code));
         }
 
         var changes = new List<AiChange>();
@@ -222,7 +234,9 @@ public static class AssistantVideoDirectionTools
             Scenes = project.Video!.Scenes.Select((scene, i) => scene with
             {
                 Background = VideoThemes.DefaultBackground,
-                Elements = VideoLayouts.Build(plans[i].Layout, plans[i].Slots, scene.Id)
+                Elements = [
+                    .. plans[i].Code is { } code ? [new VideoElement { Id = scene.Id + "_codigo", Kind = "code", Text = code, X = 0.5, Y = 0.5, Width = 1, Height = 1 }] : Array.Empty<VideoElement>(),
+                    .. plans[i].Layout.Length > 0 ? VideoLayouts.Build(plans[i].Layout, plans[i].Slots, scene.Id) : []]
             }).ToList()
         };
         project = project with { Video = video };

@@ -15,7 +15,7 @@ public sealed record DialogItem(string Label, string? Icon = null, string? Detai
 
 /// <summary>Options of UrbeDialogs.prompt.</summary>
 public sealed record PromptOptions(string Title, string? Label = null, string Value = "", string Placeholder = "", string? Hint = null,
-    string Confirm = "Confirmar", string Cancel = "Cancelar", Func<string, string?>? Validate = null, bool Required = true);
+    string Confirm = "Confirmar", string Cancel = "Cancelar", Func<string, string?>? Validate = null, bool Required = true, bool Code = false);
 
 /// <summary>
 /// src/ui/dialogs.js natively: one dialog at a time (the next ones wait), a bottom sheet on a
@@ -137,7 +137,7 @@ public sealed partial class UrbeDialogs : Grid
         head.Children.Add(t);
         var box = new StackPanel { Children = { head } };
         if (!string.IsNullOrEmpty(message))
-            box.Children.Add(new TextBlock { Text = message, FontFamily = UrbeTheme.UiFont, FontSize = 15, LineHeight = 22.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 16) });
+            box.Children.Add(new TextBlock { Text = message, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Callout.Size, LineHeight = UrbeTokens.Type.Callout.LineHeight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 16) });
         return box;
     }
 
@@ -163,7 +163,19 @@ public sealed partial class UrbeDialogs : Grid
         input.Resources["TextControlBackgroundFocused"] = UrbeTheme.Brush(UrbeTheme.Bg);
         input.Resources["TextControlBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTheme.Bg);
         input.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
-        var error = new TextBlock { IsVisible = false, Foreground = UrbeTheme.Brush(UrbeTheme.Danger), FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.Medium, Margin = new Thickness(2, 6, 2, 0), TextWrapping = TextWrapping.Wrap };
+        if (o.Code)
+        {
+            // #1004: a program: several lines, monospaced, Enter is a new line (the button saves)
+            input.AcceptsReturn = true;
+            input.AcceptsTab = true;
+            input.TextWrapping = TextWrapping.NoWrap;
+            input.MinHeight = 220;
+            input.MaxHeight = 420;
+            input.FontFamily = new FontFamily("Consolas, Menlo, monospace");
+            input.FontSize = UrbeTokens.Type.Footnote.Size;
+            input.FontWeight = FontWeight.Normal;
+        }
+        var error = new TextBlock { IsVisible = false, Foreground = UrbeTheme.Brush(UrbeTheme.Danger), FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, FontWeight = FontWeight.Medium, Margin = new Thickness(2, 6, 2, 0), TextWrapping = TextWrapping.Wrap };
         void ShowError(string t) { error.Text = t; error.IsVisible = true; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Danger); if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) input.Focus(); }
         input.TextChanged += (_, _) => { error.IsVisible = false; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2); };
         void Submit()
@@ -175,7 +187,7 @@ public sealed partial class UrbeDialogs : Grid
         }
         var field = new StackPanel { Margin = new Thickness(0, 12, 0, 4) };
         if (o.Label is not null)
-            field.Children.Add(new TextBlock { Text = o.Label, FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Margin = new Thickness(0, 0, 0, 8) });
+            field.Children.Add(new TextBlock { Text = o.Label, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Margin = new Thickness(0, 0, 0, 8) });
         field.Children.Add(input);
         var cancel = Action(o.Cancel, false);
         cancel.Click += (_, _) => finish(null);
@@ -187,10 +199,10 @@ public sealed partial class UrbeDialogs : Grid
         actions.Children.Add(ok);
         var body = new StackPanel { Children = { Head(o.Title, null, () => finish(null)), field, error } };
         if (o.Hint is not null)
-            body.Children.Add(new TextBlock { Text = o.Hint, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 8, 2, 0) });
+            body.Children.Add(new TextBlock { Text = o.Hint, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 8, 2, 0) });
         body.Children.Add(actions);
         // selectName: the base name selected, without the extension
-        Dispatcher.UIThread.Post(() =>
+        if (!o.Code) Dispatcher.UIThread.Post(() =>
         {
             var v = input.Text ?? "";
             int dot = v.LastIndexOf('.');
@@ -218,7 +230,7 @@ public sealed partial class UrbeDialogs : Grid
         {
             var at = i;
             var card = new StackPanel { Spacing = 4 };
-            card.Children.Add(new SelectableTextBlock { Text = comments[i], TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            card.Children.Add(new SelectableTextBlock { Text = comments[i], TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
             if (editable)
             {
                 Button Small(string label, Action run)
@@ -251,7 +263,7 @@ public sealed partial class UrbeDialogs : Grid
         input = new TextBox
         {
             PlaceholderText = "Escreva um comentário", MinHeight = 50, Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12),
-            FontFamily = UrbeTheme.UiFont, FontSize = 16, AcceptsReturn = false, TextWrapping = TextWrapping.Wrap,
+            FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Body.Size, AcceptsReturn = false, TextWrapping = TextWrapping.Wrap,
             Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 12, 0, 0),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
         };
@@ -306,7 +318,7 @@ public sealed partial class UrbeDialogs : Grid
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(new TextBlock { Text = x.Label, FontFamily = UrbeTheme.UiFont, FontSize = 16, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(x.Danger ? UrbeTheme.Danger : UrbeTheme.Text) });
             if (x.Detail is not null)
-                text.Children.Add(new TextBlock { Text = x.Detail, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis });
+                text.Children.Add(new TextBlock { Text = x.Detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis });
             // icon | text: a grid (not a horizontal stack), so the detail line wraps within the sheet's width
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 14 };
             Grid.SetColumn(text, 1);
@@ -333,7 +345,7 @@ public sealed partial class UrbeDialogs : Grid
         var search = new TextBox
         {
             PlaceholderText = "Buscar", MinHeight = 44, Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 12, 0, 0),
-            FontFamily = UrbeTheme.UiFont, FontSize = 15, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+            FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Callout.Size, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
         };
         Avalonia.Automation.AutomationProperties.SetName(search, "Buscar");
@@ -388,11 +400,11 @@ public sealed partial class UrbeDialogs : Grid
         TextBox NewField(string value, bool multi) => new()
         {
             Text = value, MinHeight = multi ? 76 : 50, AcceptsReturn = multi, TextWrapping = multi ? TextWrapping.Wrap : TextWrapping.NoWrap,
-            Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12), FontFamily = UrbeTheme.UiFont, FontSize = 16,
+            Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12), FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Body.Size,
             Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
         };
-        TextBlock Label(string text) => new() { Text = text, FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Margin = new Thickness(0, 12, 0, 8) };
+        TextBlock Label(string text) => new() { Text = text, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Margin = new Thickness(0, 12, 0, 8) };
         var nameBox = Field(name, false);
         var descBox = Field(description, true);
         var chosen = colors.Contains(color, StringComparer.OrdinalIgnoreCase) ? color : colors.Count > 0 ? colors[0] : color;
@@ -441,7 +453,7 @@ public sealed partial class UrbeDialogs : Grid
             var cell = new StackPanel { Spacing = 4, Children =
             {
                 image,
-                new TextBlock { Text = label, FontFamily = UrbeTheme.UiFont, FontSize = 12, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
+                new TextBlock { Text = label, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, FontWeight = UrbeTokens.Type.Caption.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
                     HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 84 }
             } };
             var b = new Button
