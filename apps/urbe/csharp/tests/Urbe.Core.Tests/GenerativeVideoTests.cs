@@ -20,7 +20,7 @@ public sealed class GenerativeVideoTests
         {
             Calls.Add(request.Method + " " + request.RequestUri!.AbsolutePath);
             if (router && request.RequestUri.AbsolutePath.EndsWith("/videos/models", StringComparison.Ordinal))
-                return Json("""{"data":[{"id":"google/veo-3.1","name":"Veo","supported_durations":[8]}]}""");
+                return Json("""{"data":[{"id":"google/veo-3.1","name":"Veo","supported_durations":[8],"pricing_skus":{"duration_seconds_720p":"0.04","video_tokens":"0.000007"}}]}""");
             if (request.Method == HttpMethod.Post)
             {
                 var form = await request.Content!.ReadAsStringAsync(cancel);
@@ -55,7 +55,9 @@ public sealed class GenerativeVideoTests
         var service = new AssistantProviders(server, (_, _) => Task.CompletedTask);
         var provider = new AiProviderConfig("router", "openrouter", ApiKey: "test");
         var model = Assert.Single(await service.ListVideoModelsAsync(provider, cancel));
-        Assert.Equal(("google/veo-3.1", "Veo"), model);
+        Assert.Equal(("google/veo-3.1", "Veo"), (model.Id, model.Name));
+        Assert.Contains("US$ 0,04 por segundo em 720p", model.Price);
+        Assert.Contains("US$ 0,000007 por token de vídeo", model.Price);
         Assert.Equal(Convert.FromBase64String(Mp4),
             await service.GenerateVideoAsync(provider, "Farol", model.Id, 8, "1280x720", cancel: cancel));
         Assert.Equal(model.Id, server.Model);
@@ -134,7 +136,7 @@ public sealed class GenerativeVideoTests
         var input = new JsonObject { ["prompt"] = "Ondas quebrando ao amanhecer", ["seconds"] = 8 };
         var videos = new Videos(true);
         var preview = tool.Preview!(input, new Host(videos)).Note!;
-        Assert.Contains("cobra por segundo", preview);
+        Assert.Contains("cobra conforme", preview);
         Assert.Contains("sora-2", preview);
         var output = await tool.Run(input, new Host(videos));
         var saved = Assert.Single(videos.Saved);

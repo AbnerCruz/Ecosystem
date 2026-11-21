@@ -8,7 +8,7 @@ public sealed class PodcastTests
     [Fact]
     public void TurnsAlternateVoicesBySpeaker()
     {
-        var turns = Podcast.Turns("# Podcast\n\n**Ana:** Olá.\n\n**Beto:** Oi, Ana.\n\nTexto solto.\n\n**ana:** De novo.\n\n**Beto:**\n");
+        var turns = Podcast.Turns("# Podcast\n\n**Ana:** Olá. {ia:\"modelo\"}\n\n**Beto:** Oi, Ana.\n\nTexto solto.\n\n**ana:** De novo.\n\n**Beto:**\n");
         Assert.Equal(["Olá.", "Oi, Ana.", "De novo."], turns.Select(t => t.Text));
         Assert.Equal([0, 1, 0], turns.Select(t => t.Voice));
     }

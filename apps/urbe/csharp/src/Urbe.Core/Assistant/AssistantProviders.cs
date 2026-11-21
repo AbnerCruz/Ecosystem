@@ -807,13 +807,14 @@ public sealed class AssistantProviders
 
     public static bool SupportsVideo(AiProviderConfig cfg) => cfg.Preset is "openai" or "openrouter";
 
-    public async Task<IReadOnlyList<(string Id, string Name)>> ListVideoModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
+    public async Task<IReadOnlyList<(string Id, string Name, string Price)>> ListVideoModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
     {
         if (!SupportsVideo(cfg)) return [];
         if (cfg.Preset != "openrouter")
             return (await ListModelsAsync(cfg, cancel)).Where(m =>
                 m.OutputModalities?.Contains("video", StringComparer.OrdinalIgnoreCase) == true ||
-                m.Id.StartsWith("sora-", StringComparison.OrdinalIgnoreCase)).Select(m => (m.Id, m.Name)).ToList();
+                m.Id.StartsWith("sora-", StringComparison.OrdinalIgnoreCase)).Select(m => (m.Id, m.Name, m.Id switch
+                { "sora-2" => "US$ 0,10 por segundo em 720p", "sora-2-pro" => "US$ 0,30 por segundo em 720p", _ => "Preço indisponível" })).ToList();
 
         var provider = Resolve(cfg);
         var url = Join(provider.BaseUrl, "/videos/models");
@@ -821,7 +822,62 @@ public sealed class AssistantProviders
         var catalog = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel));
         return (catalog?["data"] as JsonArray ?? []).OfType<JsonObject>()
             .Where(m => m["supported_durations"] is JsonArray && (string?)m["id"] is { Length: > 0 })
-            .Select(m => ((string)m["id"]!, (string?)m["name"] ?? (string)m["id"]!)).ToList();
+            .Select(m => ((string)m["id"]!, (string?)m["name"] ?? (string)m["id"]!, VideoCatalogPrice(m["pricing_skus"] as JsonObject))).ToList();
+    }
+
+    private static string VideoCatalogPrice(JsonObject? pricing)
+    {
+        var rates = new List<string>();
+        foreach (var (key, value) in pricing ?? new JsonObject())
+        {
+            if (!decimal.TryParse(value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var rate) || rate < 0) continue;
+            var unit = key switch
+            {
+                "duration_seconds" => "segundo",
+                "video_tokens" => "token de vídeo",
+                "video_tokens_without_audio" => "token de vídeo sem áudio",
+                "video_tokens_with_video_input" => "token de vídeo com entrada de vídeo",
+                _ when key.StartsWith("duration_seconds_", StringComparison.Ordinal) => "segundo em " + key["duration_seconds_".Length..],
+                _ => null
+            };
+            if (unit is not null) rates.Add(Usd(rate) + " por " + unit);
+        }
+        return rates.Count > 0 ? string.Join(" · ", rates) : "Preço indisponível";
+    }
+
+    private static string Usd(decimal amount) => "US$ " + amount.ToString("0.##########", CultureInfo.GetCultureInfo("pt-BR"));
+
+    public async Task<string> SpeechPriceAsync(AiProviderConfig cfg, string model, CancellationToken cancel = default)
+    {
+        const string unavailable = "Preço indisponível neste catálogo";
+        if (cfg.Preset == "openai") return model switch
+        {
+            "tts-1" => "US$ 15 por 1 milhão de caracteres",
+            "tts-1-hd" => "US$ 30 por 1 milhão de caracteres",
+            _ when model.StartsWith("gpt-4o-mini-tts", StringComparison.Ordinal) =>
+                "US$ 0,60 por 1 milhão de tokens de texto e US$ 12 por 1 milhão de tokens de áudio",
+            _ => unavailable
+        };
+        if (cfg.Preset != "openrouter" || !AssistantImagePricing.ValidOpenRouterSlug(model)) return unavailable;
+        var provider = Resolve(cfg);
+        var url = Join(provider.BaseUrl, "/models/" + model + "/endpoints");
+        try
+        {
+            using var response = await RequestAsync(provider, url, () => Get(url, OpenAiHeaders(provider)), cancel);
+            var catalog = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel));
+            var rates = new List<string>();
+            foreach (var endpoint in (catalog?["data"]?["endpoints"] as JsonArray ?? []).OfType<JsonObject>())
+            {
+                if (endpoint["pricing"] is not JsonObject prices) continue;
+                var parts = new List<string>();
+                foreach (var (key, label) in new[] { ("prompt", "entrada"), ("completion", "saída") })
+                    if (decimal.TryParse(prices[key]?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var price) && price >= 0 && price < 1000)
+                        parts.Add(Usd(price * 1_000_000) + " por 1 milhão de tokens de " + label);
+                if (parts.Count > 0) rates.Add(string.Join(" · ", parts));
+            }
+            return rates.Count switch { 0 => unavailable, 1 => rates[0], _ when rates.Distinct().Count() == 1 => rates[0], _ => "O preço varia conforme a rota do OpenRouter" };
+        }
+        catch (Exception error) when (error is AiProviderException or JsonException or InvalidOperationException) { return unavailable; }
     }
 
     /// <summary>How long a generation may take before the Urbe stops waiting (it is cancelled at the provider too).</summary>

@@ -174,6 +174,8 @@ public sealed class PublicationStudioView : Border
     /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
     public event Action? NarrateRequested;
     public event Action<string>? PodcastAudioRequested;
+    public event Action<string>? PlayPodcastRequested;
+    public Func<string, string?>? FindPodcastAudio { get; set; }
     /// <summary>#1004: choosing the device voice that narrates.</summary>
     public event Action? VoiceRequested;
     /// <summary>#956: choose the video's finished look (VideoThemes).</summary>
@@ -192,6 +194,9 @@ public sealed class PublicationStudioView : Border
         var panel = new PublicationVideoPanel();
         panel.ExportRequested += () => VideoExportRequested?.Invoke();
         panel.CancelRequested += () => VideoCancelRequested?.Invoke();
+        panel.AddAudioRequested += () => AddAudioRequested?.Invoke();
+        panel.NarrateRequested += () => NarrateRequested?.Invoke();
+        panel.VoiceRequested += () => VoiceRequested?.Invoke();
         panel.AddElementRequested += id => AddVideoElementRequested?.Invoke(id);
         panel.SceneChanged += ApplyVideoScene;
         panel.CodeEditRequested += (scene, element) => CodeEditRequested?.Invoke(scene, element);
@@ -405,10 +410,19 @@ public sealed class PublicationStudioView : Border
             if (CanNarrate && source?.Path is { } podcastPath &&
                 podcastPath.EndsWith(Urbe.Core.Study.Podcast.Suffix, StringComparison.OrdinalIgnoreCase))
             {
-                var speak = ActionButton(UrbeTheme.Icons.File, "Gerar áudio do podcast");
-                speak.Click += (_, _) => PodcastAudioRequested?.Invoke(podcastPath);
-                DockPanel.SetDock(speak, Dock.Right);
-                item.Children.Add(speak);
+                var actions = new WrapPanel();
+                AddAction("Editar roteiro", () => EditSourceRequested?.Invoke(documentId));
+                AddAction("Gerar áudio do podcast", () => PodcastAudioRequested?.Invoke(podcastPath));
+                if (FindPodcastAudio?.Invoke(podcastPath) is { } audio)
+                    AddAction("Ouvir podcast", () => PlayPodcastRequested?.Invoke(audio));
+                _preview.Children.Add(actions);
+
+                void AddAction(string label, Action run)
+                {
+                    var button = new Ui.UrbeButton(label, Ui.ButtonKind.Ghost);
+                    button.Click += (_, _) => run();
+                    actions.Children.Add(button);
+                }
             }
             // one way where it can move: the first goes down, the others up (a button that does nothing is not shown);
             // the cover stays at the start, so it has none and the piece after it counts as the first

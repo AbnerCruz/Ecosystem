@@ -18,7 +18,7 @@ public static partial class Podcast
     {
         var speakers = new List<string>();
         var turns = new List<Turn>();
-        foreach (Match m in TurnLine().Matches(markdown))
+        foreach (Match m in TurnLine().Matches(AiAuthorship.Strip(markdown)))
         {
             var who = m.Groups[1].Value.Trim();
             var text = m.Groups[2].Value.Trim();

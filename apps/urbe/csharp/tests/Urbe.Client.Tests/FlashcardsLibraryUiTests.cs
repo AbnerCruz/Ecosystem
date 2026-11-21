@@ -19,7 +19,7 @@ public sealed partial class HeadlessUiTests
     {
         var dir = Path.Combine(Path.GetTempPath(), "urbe-flashcards-" + Guid.NewGuid().ToString("N"));
         var vault = WorkspaceVault(dir);
-        File.WriteAllText(Path.Combine(vault, "Células.md"), "# Células\n\nMitocôndria::usina da célula\n");
+        File.WriteAllText(Path.Combine(vault, "Células.md"), "# Células\n");
         var previous = UrbeApp.LocalStatePath;
         UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
         try
@@ -31,9 +31,19 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
+            await view.StartStudyAsync();
+            Dispatcher.UIThread.RunJobs();
+            Assert.NotNull(view.Editor.Pinned.FlashcardsRow);
+            ClickButtonWithText(view.Editor.Pinned, "Flashcards");
+            Assert.True(view.FlashcardsView!.IsVisible);
+            Assert.Equal("list", view.FlashcardsView.Screen);
+            view.CloseFlashcards();
             var before = Visible();
 
             IAssistantStudy study = view;
+            Assert.Empty(study.Sets());
+            var app = (IAssistantApp)view;
+            await app.SaveNoteAsync(view.Documents!.Get("Células.md")!, "# Células\n\nMitocôndria::usina da célula\n");
             var deck = await study.CreateDeckAsync("Animais", [("Maior mamífero?", "Baleia-azul"), ("Animal terrestre mais rápido?", "Guepardo")], null);
             Assert.Equal(2, deck.Cards.Count);
             var file = Path.Combine(vault, ".urbe", "estudo", "flashcards.json");

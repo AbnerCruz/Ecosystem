@@ -143,6 +143,10 @@ public sealed partial class HeadlessUiTests
             var scene = Assert.Single(studio.Project!.Video!.Scenes);
             Assert.NotNull(studio.VideoPanel.Frame);
             Assert.Equal((640, 360), (studio.VideoPanel.Timeline!.Width, studio.VideoPanel.Timeline.Height));
+            Assert.Contains(studio.VideoPanel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.StartsWith("Vídeo sem áudio.") == true);
+            Assert.NotNull(Named("Narrar roteiro"));
+            Assert.NotNull(Named("Escolher voz"));
+            Assert.NotNull(Named("Adicionar áudio"));
 
             var target = Path.Combine(vault, "Publicações", "Filme.publication.json");
             Click(Named("Alongar cena Cena"));
@@ -211,6 +215,32 @@ public sealed partial class HeadlessUiTests
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Audio = [new VideoAudioClip { Path = "trilha.wav", Kind = "music" }] } });
             await Pump();
             async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
+            var previousPreview = PlatformAudio.StartPreview;
+            var preview = new PreviewClock { Position = 0.25 };
+            string? mixedPath = null;
+            bool hasAudio = false;
+            PlatformAudio.StartPreview = (path, _, _) =>
+            {
+                mixedPath = path;
+                using var wav = File.OpenRead(path);
+                var info = VideoAudio.ReadWavInfo(wav)!;
+                wav.Position = info.DataOffset;
+                using var pcm = new BinaryReader(wav);
+                hasAudio = Enumerable.Range(0, 128).Any(_ => pcm.ReadInt16() != 0);
+                return Task.FromResult<IPreviewAudio>(preview);
+            };
+            try
+            {
+                panel.ShowAt(0);
+                panel.TogglePlay();
+                for (int j = 0; j < 50 && !panel.IsPlaying; j++) await Pump();
+                Assert.True(panel.IsPlaying);
+                Assert.True(hasAudio);
+                panel.TogglePlay();
+                Assert.True(preview.Disposed);
+                Assert.False(File.Exists(mixedPath));
+            }
+            finally { PlatformAudio.StartPreview = previousPreview; }
             var adjust = view.AdjustPublicationAudioAsync();
             await Choose("trilha.wav");
             for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains('█') == true); j++) await Pump();
