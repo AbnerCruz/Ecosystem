@@ -2351,7 +2351,7 @@
     },
     {
       "id": "DEC-0066",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Urbe: como executar código escrito pela IA com isolamento (ADR-0051)",
@@ -2382,7 +2382,11 @@
         "docs/adr/0051-urbe-execucao-de-codigo-isolada.md"
       ],
       "raisedBy": "claude-code-urbe-editor",
-      "raisedAt": "2026-11-19"
+      "raisedAt": "2026-11-19",
+      "decision": "Alternativa B — A2 — Wasmtime (nativo) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/1007).",
+      "decidedAt": "2026-11-21",
+      "record": "docs/governance/responses/DEC-0066.md",
+      "consequencesApplied": false
     },
     {
       "id": "DEC-0067",
