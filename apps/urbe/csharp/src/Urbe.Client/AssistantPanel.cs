@@ -139,7 +139,7 @@ public sealed partial class AssistantPanel : Border
     private string _effortMode = "medium";
     /// <summary>The preferred inference effort for new turns in this app session.</summary>
     public string EffortMode => _effortMode;
-    private readonly TextBlock _usage = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+    private readonly TextBlock _usage = new() { FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
     private readonly StackPanel _log = new() { Spacing = 12, Margin = new Thickness(14, 10, 14, 16) };
     private readonly ScrollViewer _scroll;
     private bool _followChatTail = true;
@@ -261,13 +261,13 @@ public sealed partial class AssistantPanel : Border
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
 
         _latestMessage.Content = "Ir à última mensagem ↓";
-        _latestMessage.FontSize = 12;
+        _latestMessage.FontSize = UrbeTokens.Type.Caption.Size;
         _latestMessage.IsVisible = false;
         _latestMessage.HorizontalAlignment = HorizontalAlignment.Right;
         _latestMessage.Click += (_, _) => FollowLatestMessage();
         _input = new TextBox
         {
-            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 180, MinHeight = 44, FontSize = 15, PlaceholderText = "Peça algo ao Assistente…",
+            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 180, MinHeight = 44, FontSize = UrbeTokens.Type.Callout.Size, PlaceholderText = "Peça algo ao Assistente…",
             VerticalContentAlignment = VerticalAlignment.Center, CornerRadius = new CornerRadius(14), Padding = new Thickness(12, 10)
         };
         Avalonia.Automation.AutomationProperties.SetName(_input, "Mensagem para o Assistente");

@@ -41,9 +41,9 @@ public sealed class PptxReaderView : DockPanel, IDisposable
     private readonly Image _image = new() { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     private readonly ScrollViewer _scroll;
     private readonly Border _stage;
-    private readonly TextBlock _counter = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, MinWidth = 110, TextAlignment = TextAlignment.Center };
-    private readonly TextBlock _percent = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, MinWidth = 44, TextAlignment = TextAlignment.Center };
-    private readonly TextBlock _notice = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _counter = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Footnote.Size, MinWidth = 110, TextAlignment = TextAlignment.Center };
+    private readonly TextBlock _percent = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Caption.Size, MinWidth = 44, TextAlignment = TextAlignment.Center };
+    private readonly TextBlock _notice = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
     private readonly Border _noticeRow;
     private readonly TextBlock _problem = new() { TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 420, IsVisible = false };
     private readonly SelectableTextBlock _notes = new() { FontSize = 14, TextWrapping = TextWrapping.Wrap };
@@ -52,7 +52,7 @@ public sealed class PptxReaderView : DockPanel, IDisposable
     private readonly ListBox _thumbs;
     private readonly Border _thumbsPanel;
     private readonly TextBox _query = new() { PlaceholderText = "Buscar nos slides e notas", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _searchStatus = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
+    private readonly TextBlock _searchStatus = new() { FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly ListBox _results = new() { MaxHeight = 180, IsVisible = false };
     private readonly Border _searchPanel;
     private readonly Ui.UrbeIconButton _previous = new(UrbeTheme.Icons.Back, "Slide anterior");

@@ -32,7 +32,7 @@ public sealed partial class AssistantPanel
                 .Concat(m.Content.Where(b => b.Hidden && b.Type == "text" && b.Text?.StartsWith("[Arquivo anexado pelo usuário:", StringComparison.Ordinal) == true)
                     .Select(b => b.Text!.Split('\n')[0].Trim('[', ']'))).ToList();
             if (files.Count > 0) stack.Children.Add(Wrap("Anexos: " + string.Join(", ", files), 11, UrbeTheme.Text2));
-            var bubble = new SelectableTextBlock { Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
+            var bubble = new SelectableTextBlock { Text = text, FontSize = UrbeTokens.Type.Callout.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
             Ui.TextActions.Attach(bubble); // native range selection, contextual copy and select-all
             stack.Children.Add(new Border { Child = bubble, Padding = new Thickness(12, 9), CornerRadius = new CornerRadius(16, 16, 4, 16), Background = UrbeTheme.Brush(UrbeTheme.Accent, .16) });
             var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
@@ -386,7 +386,7 @@ public sealed partial class AssistantPanel
                 editor = new TextBox
                 {
                     Text = _approvalDrafts.GetValueOrDefault(p.Call.Id, editable ?? ""), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
-                    FontFamily = UrbeTheme.MonoFont, FontSize = 13, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+                    FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
                     CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
                 };
                 Avalonia.Automation.AutomationProperties.SetName(editor, "Texto proposto");
@@ -481,7 +481,7 @@ public sealed partial class AssistantPanel
                 {
                     Background = op == '+' ? UrbeTheme.Brush(UrbeTokens.Color.Success, .16) : op == '-' ? UrbeTheme.Brush(UrbeTokens.Color.Danger, .16) : Brushes.Transparent,
                     Padding = new Thickness(4, 1),
-                    Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+                    Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
                 });
             }
             int left = 0;

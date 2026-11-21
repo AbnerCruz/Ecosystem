@@ -84,7 +84,7 @@ public sealed class OcrStudyView : Grid, IDisposable
         _language.VerticalAlignment = VerticalAlignment.Center;
         _run.MinHeight = 40;
         var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { back, _run, compare, rotate, ask, _language } };
-        _status.FontSize = 12;
+        _status.FontSize = UrbeTokens.Type.Caption.Size;
         _status.Margin = new Thickness(4, 6, 4, 2);
         _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         var header = new StackPanel { Children = { new Border

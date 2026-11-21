@@ -148,7 +148,7 @@ public sealed partial class CustomizePanel
     private Border RangeRow(string path, double value, double min, double max, double step, string label, string unit)
     {
         string Show(double v) => LegacyCustomize.JsNumber(Math.Round(v, 2)) + unit;
-        var output = new TextBlock { Text = Show(value), FontFamily = UrbeTheme.MonoFont, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
+        var output = new TextBlock { Text = Show(value), FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
         var slider = new Slider { Minimum = min, Maximum = max, Value = value, TickFrequency = step, IsSnapToTickEnabled = true, SmallChange = step, LargeChange = step * 2, MinHeight = 28 };
         AutomationName(slider, label);
         bool committed = true;
@@ -208,7 +208,7 @@ public sealed partial class CustomizePanel
         var name_ = new DockPanel();
         if (on) { var ck = UrbeTheme.Icon(Icons.Check, 16, UrbeTheme.Accent); DockPanel.SetDock(ck, Dock.Right); name_.Children.Add(ck); }
         name_.Children.Add(Label(name, 13.5, FontWeight.SemiBold));
-        var stack = new StackPanel { Spacing = 6, Children = { card, name_, new TextBlock { Text = light ? "claro" : "escuro", FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(0, -4, 0, 0) } } };
+        var stack = new StackPanel { Spacing = 6, Children = { card, name_, new TextBlock { Text = light ? "claro" : "escuro", FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(0, -4, 0, 0) } } };
         var b = new Button
         {
             Content = stack, Padding = new Thickness(8), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface), HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -289,13 +289,13 @@ public sealed partial class CustomizePanel
             bool on = value == f.Id;
             var content = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             content.Children.Add(new TextBlock { Text = "Aa", FontFamily = UrbeAppearance.ToFamily(f.Css), FontSize = 24, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center });
-            content.Children.Add(new TextBlock { Text = f.Name, FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
+            content.Children.Add(new TextBlock { Text = f.Name, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
             grid.Children.Add(FontTile(content, on, async () => await Set(path, JsonValue.Create(f.Id)), f.Name));
         }
         bool custom = !LegacyCustomizeTheme.FontData.Any(f => f.Id == value);
         var other = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         other.Children.Add(UrbeTheme.Icon(Icons.Plus, 22, UrbeTheme.Text));
-        other.Children.Add(new TextBlock { Text = custom ? value : "Outra…", FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
+        other.Children.Add(new TextBlock { Text = custom ? value : "Outra…", FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
         grid.Children.Add(FontTile(other, custom, async () =>
         {
             var v = await Dialogs.PromptAsync(new PromptOptions("Outra fonte", "Nome da fonte instalada", "", Hint: "Ex.: Inter, Georgia, \"Fira Sans\". Ela precisa existir no aparelho."));
@@ -467,7 +467,7 @@ public sealed partial class CustomizePanel
         {
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(Label(s.Name, 14.5, FontWeight.SemiBold));
-            text.Children.Add(new TextBlock { Text = s.Path, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock { Text = s.Path, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
             var act = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
             act.Children.Add(Mini(Icons.Edit, "Editar", () => { Close(); RequestOpen(s.Path); }));
             var sw = Switch(s.On);
@@ -485,7 +485,7 @@ public sealed partial class CustomizePanel
         _body.Children.Add(Block("Estilos", [.. items]));
         var css = new TextBox
         {
-            Text = S(c, "css"), AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 7 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = 13, PlaceholderText = "/* suas regras */",
+            Text = S(c, "css"), AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 7 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size, PlaceholderText = "/* suas regras */",
             Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12)
         };
         var apply = SmallButton("Aplicar", true);
@@ -545,8 +545,8 @@ public sealed partial class CustomizePanel
             var (label, kind) = native && p.Status == "aprovado" ? ("Ligado", "ok") : states.GetValueOrDefault(p.Status, ("Desligado", ""));
             var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             name.Children.Add(Label(p.Name, 14.5, FontWeight.SemiBold));
-            if (p.Version.Length > 0) name.Children.Add(new TextBlock { Text = "v" + p.Version, FontFamily = UrbeTheme.MonoFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
-            var text = new StackPanel { Spacing = 2, Children = { name, new TextBlock { Text = p.Description.Length > 0 ? p.Description : p.Path, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap } } };
+            if (p.Version.Length > 0) name.Children.Add(new TextBlock { Text = "v" + p.Version, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
+            var text = new StackPanel { Spacing = 2, Children = { name, new TextBlock { Text = p.Description.Length > 0 ? p.Description : p.Path, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap } } };
             var head = new DockPanel();
             var pill = Pill(label, kind);
             DockPanel.SetDock(pill, Dock.Right);

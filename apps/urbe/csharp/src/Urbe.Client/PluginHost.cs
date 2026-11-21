@@ -286,7 +286,7 @@ public sealed partial class MainView
             var head = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
             DockPanel.SetDock(close, Dock.Right);
             head.Children.Add(close);
-            head.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center });
+            head.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center });
             Child = new StackPanel { Children = { head, content } };
         }
 

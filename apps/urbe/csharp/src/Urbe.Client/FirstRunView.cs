@@ -45,7 +45,7 @@ public sealed class FirstRunView : Grid
     {
         _step = step;
         _body.Children.Clear();
-        _body.Children.Add(new TextBlock { Text = "Passo " + (step + 1) + " de 3", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+        _body.Children.Add(new TextBlock { Text = "Passo " + (step + 1) + " de 3", FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
         switch (step)
         {
             case 0:
@@ -103,7 +103,7 @@ public sealed class FirstRunView : Grid
         _body.Children.Add(new TextBlock { Text = text, FontSize = 28, FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
 
     private void Text(string text) =>
-        _body.Children.Add(new TextBlock { Text = text, FontSize = 16, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), LineHeight = 24 });
+        _body.Children.Add(new TextBlock { Text = text, FontSize = UrbeTokens.Type.Body.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), LineHeight = 24 });
 
     private void Buttons(params (string Label, bool Primary, Func<Task> Run)[] buttons)
     {
@@ -112,7 +112,7 @@ public sealed class FirstRunView : Grid
         {
             var b = new Button
             {
-                Content = label, MinHeight = 46, Padding = new Thickness(18, 10), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(0), FontSize = 15,
+                Content = label, MinHeight = 46, Padding = new Thickness(18, 10), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(0), FontSize = UrbeTokens.Type.Callout.Size,
                 Background = primary ? UrbeTheme.Brush(UrbeTheme.Accent) : UrbeTheme.Brush(UrbeTheme.Surface2),
                 Foreground = primary ? UrbeTheme.Brush(UrbeTheme.Bg) : UrbeTheme.Brush(UrbeTheme.Text)
             };

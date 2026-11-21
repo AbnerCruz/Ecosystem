@@ -17,7 +17,7 @@ namespace Urbe.Client;
 public sealed class TextFindBar : DockPanel
 {
     public TextBox Box { get; } = Ui.SoftField.Style(new TextBox { PlaceholderText = "Buscar no texto" });
-    private readonly TextBlock _count = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Margin = new Thickness(8, 0), MinWidth = 64 };
+    private readonly TextBlock _count = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(8, 0), MinWidth = 64 };
     public event Action<string>? QueryChanged;
     public event Action<int>? Step;
 
@@ -61,7 +61,7 @@ public sealed class TextReaderView : DockPanel
     private readonly string _text;
     private readonly StackPanel _parts = new();
     private readonly ScrollViewer _scroll;
-    private readonly TextBlock _status = new() { FontSize = 12, Margin = new Thickness(12, 0, 12, 6), TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(12, 0, 12, 6), TextWrapping = TextWrapping.Wrap };
     private readonly Button _earlier = new() { Margin = new Thickness(12, 0, 12, 8), HorizontalAlignment = HorizontalAlignment.Left, Content = "Mostrar anterior" };
     private readonly Button _more = new() { Margin = new Thickness(12, 8), HorizontalAlignment = HorizontalAlignment.Left };
     private readonly List<(int Start, int End, SelectableTextBlock Block)> _shown = [];
@@ -87,7 +87,7 @@ public sealed class TextReaderView : DockPanel
         _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         var top = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
         foreach (var notice in notices ?? [])
-            top.Children.Add(new TextBlock { Text = notice, FontSize = 12, Margin = new Thickness(12, 0, 12, 6), TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Warn) });
+            top.Children.Add(new TextBlock { Text = notice, FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(12, 0, 12, 6), TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Warn) });
         top.Children.Add(Find);
         top.Children.Add(_status);
         SetDock(top, Dock.Top);
@@ -299,13 +299,13 @@ public sealed class CsvTableView : DockPanel
         _widths = Enumerable.Range(0, columns).Select(c => Math.Clamp(sample.Max(r => c < r.Length ? Math.Min(r[c].Length, 60) : 0) * 7.5 + 20, 56, 360)).ToArray();
         var top = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
         foreach (var notice in notices ?? [])
-            top.Children.Add(new TextBlock { Text = notice, FontSize = 12, Margin = new Thickness(12, 0, 12, 6), TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Warn) });
+            top.Children.Add(new TextBlock { Text = notice, FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(12, 0, 12, 6), TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Warn) });
         top.Children.Add(Find);
         top.Children.Add(new TextBlock
         {
             Text = RowCount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) + (RowCount == 1 ? " linha" : " linhas") + " × " + columns + (columns == 1 ? " coluna" : " colunas")
                 + " · separador " + (table.Delimiter == '\t' ? "tabulação" : "“" + table.Delimiter + "”"),
-            FontSize = 12, Margin = new Thickness(12, 0, 12, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
+            FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(12, 0, 12, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
         });
         SetDock(top, Dock.Top);
         Children.Add(top);

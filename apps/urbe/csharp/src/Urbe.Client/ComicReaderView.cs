@@ -28,13 +28,13 @@ public sealed class ComicReaderView : DockPanel, IDisposable
     private int _shownIndex = -1;
     private readonly Image _image = new() { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     private readonly ScrollViewer _scroll;
-    private readonly TextBlock _counter = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, MinWidth = 120, TextAlignment = TextAlignment.Center };
+    private readonly TextBlock _counter = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Footnote.Size, MinWidth = 120, TextAlignment = TextAlignment.Center };
     private readonly TextBlock _problem = new() { TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 420, IsVisible = false };
     private readonly Slider _slider;
     private readonly Ui.UrbeIconButton _previous = new(UrbeTheme.Icons.Back, "Página anterior");
     private readonly Ui.UrbeIconButton _next = new(UrbeTheme.Icons.Forward, "Próxima página");
     private readonly Ui.UrbeIconButton _fit = new(UrbeTheme.Icons.Expand, "Ajustar à largura", 21);
-    private readonly TextBlock _percent = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 12, MinWidth = 44, TextAlignment = TextAlignment.Center };
+    private readonly TextBlock _percent = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Caption.Size, MinWidth = 44, TextAlignment = TextAlignment.Center };
     private bool _syncingSlider, _disposed;
     private double _pinch = 1;
     private (Point At, long Ms)? _press;
