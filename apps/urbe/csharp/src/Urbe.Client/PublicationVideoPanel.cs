@@ -22,12 +22,12 @@ public sealed class PublicationVideoPanel : StackPanel
     public const int PreviewResolution = 360;
     private readonly Image _frame = new() { Stretch = Stretch.Uniform, MaxHeight = 420 };
     private readonly Slider _scrubber = new() { Minimum = 0, Maximum = 1, MinHeight = 44 };
-    private readonly TextBlock _time = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _time = new() { FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _play = new() { Content = "▶ Reproduzir", MinHeight = 44, Padding = new Thickness(12, 4) };
     private readonly Ui.UrbeButton _export = new("Exportar MP4", Ui.ButtonKind.Primary, UrbeTheme.Icons.Download) { MinHeight = 44 };
     private readonly Ui.UrbeButton _cancel = new("Cancelar", Ui.ButtonKind.Danger) { MinHeight = 44, IsVisible = false };
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, IsVisible = false, Height = 6 };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel _scenes = new() { Spacing = 6 };
     private readonly DispatcherTimer _timer = new();
     private readonly System.Diagnostics.Stopwatch _clock = new();
@@ -40,7 +40,7 @@ public sealed class PublicationVideoPanel : StackPanel
     private readonly Border _outline = new() { BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(3), IsVisible = false };
     private readonly Grid _stage = new() { Background = Brushes.Black };
     private readonly StackPanel _inspector = new() { Spacing = 6, IsVisible = false };
-    private readonly TextBlock _hint = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
+    private readonly TextBlock _hint = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
     private (string Scene, string Element)? _selected;
     private Point? _dragFrom;
     private Point _dragBy;
@@ -110,7 +110,7 @@ public sealed class PublicationVideoPanel : StackPanel
         Children.Add(exportRow);
         Children.Add(_progress);
         Children.Add(_status);
-        Children.Add(new TextBlock { Text = "Cenas", FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 8, 0, 0) });
+        Children.Add(new TextBlock { Text = "Cenas", FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 8, 0, 0) });
         Children.Add(_scenes);
         DetachedFromVisualTree += (_, _) => Stop();
     }
@@ -310,7 +310,7 @@ public sealed class PublicationVideoPanel : StackPanel
         if (c is { } at && VideoEditing.EasingAt(element, at.Local) is { } easing)
         {
             var curves = new WrapPanel { Orientation = Orientation.Horizontal };
-            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             foreach (var (label, value) in VideoEditing.Curves)
             {
                 var chosen = value == easing;
@@ -325,7 +325,7 @@ public sealed class PublicationVideoPanel : StackPanel
         if (times.Count > 0)
         {
             var row = new WrapPanel { Orientation = Orientation.Horizontal };
-            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             foreach (var t in times)
             {
                 var jump = Action("◆ " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s", "Ir ao quadro-chave de " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s",
@@ -335,7 +335,7 @@ public sealed class PublicationVideoPanel : StackPanel
             }
             _inspector.Children.Add(row);
         }
-        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
     }
 
     private Control SceneRow(VideoTimelineScene placed, string label)

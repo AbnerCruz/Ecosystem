@@ -57,7 +57,7 @@ public sealed class PropertiesPanel : Border
             Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center
         };
         Grid.SetColumn(title, 1);
-        _summary.FontSize = 12;
+        _summary.FontSize = UrbeTokens.Type.Caption.Size;
         _summary.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _summary.VerticalAlignment = VerticalAlignment.Center;
         _summary.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -182,8 +182,8 @@ public sealed class PropertiesPanel : Border
     {
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("112,*,Auto"), MinHeight = 38, Margin = new Thickness(0, 1) };
         var key = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 9, 8, 0) };
-        key.Children.Add(new TextBlock { Text = glyph, Width = 18, FontSize = 12, TextAlignment = TextAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontWeight = FontWeight.SemiBold });
-        key.Children.Add(new TextBlock { Text = name, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 80 });
+        key.Children.Add(new TextBlock { Text = glyph, Width = 18, FontSize = UrbeTokens.Type.Caption.Size, TextAlignment = TextAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontWeight = FontWeight.SemiBold });
+        key.Children.Add(new TextBlock { Text = name, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 80 });
         grid.Children.Add(key);
         Grid.SetColumn(value, 1);
         value.VerticalAlignment = VerticalAlignment.Center;
@@ -192,7 +192,7 @@ public sealed class PropertiesPanel : Border
         {
             var x = new Button
             {
-                Content = new TextBlock { Text = "×", FontSize = 16, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(10, 0), MinHeight = 38, MinWidth = 0,
+                Content = new TextBlock { Text = "×", FontSize = UrbeTokens.Type.Body.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(10, 0), MinHeight = 38, MinWidth = 0,
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0)
             };
             Avalonia.Automation.AutomationProperties.SetName(x, "Remover " + name);
@@ -280,7 +280,7 @@ public sealed class PropertiesPanel : Border
 
     private static Button MiniButton(string text) => new()
     {
-        Content = new TextBlock { Text = text, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
+        Content = new TextBlock { Text = text, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
         Padding = new Thickness(10, 6), Margin = new Thickness(6, 0, 0, 0), CornerRadius = new CornerRadius(8), MinHeight = 0,
         Background = UrbeTheme.Brush(UrbeTheme.Accent, .1), BorderThickness = new Thickness(0), VerticalAlignment = VerticalAlignment.Center
     };
@@ -291,7 +291,7 @@ public sealed class PropertiesPanel : Border
         void Save(IEnumerable<string> next) => Apply(n => n.SetList(key, next), rebuild: true);
         foreach (var item in items)
         {
-            var text = new TextBlock { Text = (tags ? "#" : "") + item, FontSize = 13, Foreground = UrbeTheme.Brush(tags ? UrbeTheme.Accent : UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
+            var text = new TextBlock { Text = (tags ? "#" : "") + item, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(tags ? UrbeTheme.Accent : UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
             var line = new StackPanel { Orientation = Orientation.Horizontal, Children = { text } };
             if (!_readOnly)
             {
@@ -347,7 +347,7 @@ public sealed class PropertiesPanel : Border
                 {
                     var chip = new Button
                     {
-                        Content = new TextBlock { Text = "+ #" + tag, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(9, 4), Margin = new Thickness(0, 0, 6, 4),
+                        Content = new TextBlock { Text = "+ #" + tag, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(9, 4), Margin = new Thickness(0, 0, 6, 4),
                         CornerRadius = new CornerRadius(999), Background = Brushes.Transparent, BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), MinHeight = 0
                     };
                     var captured = tag;
@@ -372,10 +372,10 @@ public sealed class PropertiesPanel : Border
         foreach (var tag in inherited)
         {
             // × on the right; when the row is narrow the folder's name gives way first, then the tag (both trimmed, never cut)
-            var name = new TextBlock { Text = "#" + tag.Tag, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+            var name = new TextBlock { Text = "#" + tag.Tag, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
             var from = new TextBlock
             {
-                Text = "de " + ProjectTags.FolderName(tag), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center,
+                Text = "de " + ProjectTags.FolderName(tag), FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(6, 0, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis
             };
             var words = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
