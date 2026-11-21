@@ -58,3 +58,16 @@ Com isso, a opção A passa a ter duas variantes: **A1 — WACS (C# puro)**, igu
 ## Decisão pendente
 
 O proprietário escolhe em DEC-0066 (portal). Até a decisão, nenhum código de execução é escrito.
+
+## Alternativa E — interpretador JavaScript em C# (Jint), só para desenho de vídeo
+
+Registro de 21/11/2026, ligado à issue #1004 (o proprietário pediu código livre no vídeo, como no ChatGPT/Claude). **Não é a resposta à DEC-0066** e não muda o status deste ADR.
+
+- **Escopo restrito:** só o elemento `code` do vídeo. O JavaScript escrito pelo Assistente roda a cada quadro e só desenha. O motor recebe um objeto de desenho (canvas) e os parâmetros de tempo e instância (`t`, `i`, `n`, `u` e afins). Não há acesso ao vault, a arquivos, à rede, a segredos, ao CLR (`AllowClr` desligado) nem a qualquer outra API do host.
+- **Limites por execução** (opções do Jint): `TimeoutInterval` (tempo por quadro), `MemoryLimit` (memória alocada), `MaxStatements` (número de instruções) e `LimitRecursion` (profundidade de chamadas). Estourar um limite interrompe só aquele elemento, com erro visível na revisão; o app e os dados seguem intactos.
+- **Determinismo:** `Math.random` é substituído por um gerador com semente (da cena/elemento), para que o mesmo quadro saia igual na prévia, no render e na revisão medida.
+- **Licença (verificada no nuget.org em 21/11/2026):** `Jint` 4.18.0 (última estável) — BSD-2-Clause; depende de `Acornima` 1.9.1 (parser, sucessor do Esprima no Jint 4.x) — BSD-3-Clause; esta depende de `System.Memory`/`System.Runtime.CompilerServices.Unsafe` (MIT, só em alvos antigos). Todas permissivas, compatíveis com distribuição do app.
+- **Android/AOT:** código gerenciado puro, sem binário nativo; não aumenta o APK com bibliotecas por ABI e roda igual no Android e no Windows. Interpretado (sem geração de IL em tempo de execução), compatível com trimming/AOT, com cuidado de preservar os tipos expostos ao script.
+- **Limite de segurança reconhecido:** como já dito em "Alternativas rejeitadas", um interpretador no mesmo processo não é fronteira de isolamento geral. Aqui ele é aceitável porque a superfície exposta é só a de desenho e os limites acima cortam CPU, memória e recursão; nada além disso é oferecido ao script.
+
+A execução de código geral pelo Assistente (CST-201–212: arquivos, análise de dados, saída como dado) **continua pendente na DEC-0066**; esta alternativa não a decide nem a antecipa.
