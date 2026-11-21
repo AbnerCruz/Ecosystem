@@ -7,6 +7,24 @@ namespace Urbe.Core.Tests;
 public sealed class AssistantStoreTests
 {
     [Fact]
+    public void MediaProfilesRoundTripIndependentlyAndRespectGlobalPrivacy()
+    {
+        var config = new AiConfig { GenerativeVideo = true };
+        config.AgentMedia["alice"] = new AiAgentMediaProfile(Research: false, Voice: "dora",
+            VideoProviderId: "openai-a", VideoModel: "sora-2-pro");
+        config.AgentMedia["beto"] = new AiAgentMediaProfile(Voice: "alex", VideoProviderId: "");
+
+        var restored = AssistantStore.ConfigFromJson(AssistantStore.ConfigToJson(config));
+        Assert.Equal(config.MediaFor("alice"), restored.MediaFor("alice"));
+        Assert.Equal(config.MediaFor("beto"), restored.MediaFor("beto"));
+        Assert.False(restored.AllowsResearch("alice"));
+        Assert.True(restored.AllowsResearch("beto"));
+        Assert.True(restored.AllowsResearch("agent-with-old-config"));
+        restored.Web.Enabled = false;
+        Assert.False(restored.AllowsResearch("beto"));
+    }
+
+    [Fact]
     public void ConfigurationAndConversationsRoundTrip()
     {
         var storage = new MemoryAssistantStorage();

@@ -753,6 +753,7 @@ public sealed partial class AssistantPanel
             _store.DeleteAgentConversationsVerified(agent.Id);
             _cfg.CustomAgents.RemoveAll(a => a.Id == agent.Id);
             _cfg.AgentModels.Remove(agent.Id);
+            _cfg.AgentMedia.Remove(agent.Id);
             _cfg.AgentImages.Remove(agent.Id);
             _cfg.AgentPolicies.Remove(agent.Id);
             _cfg.AgentToolScopes.Remove(agent.Id);
@@ -1058,10 +1059,9 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "web")
         {
-            body.Children.Add(Section("Pesquisa na internet",
-                Hint(_cfg.Web.Enabled ? "Disponível para todos os agentes · " + (_cfg.Web.Provider == "brave" ? "Brave (opcional)" : "sem chave") : "Desativada pela preferência de privacidade"),
-                TextButton("Privacidade e pesquisa", ShowWebSettings),
-                Hint("Peça para pesquisar no chat. Sem configurar provedor nem permissão individual.")));
+            body.Children.Add(Section("Privacidade da pesquisa",
+                Hint("A autorização de cada agente fica no perfil dele."),
+                TextButton("Configurações globais da pesquisa", ShowWebSettings)));
             // the device's alarm clock, calendar and e-mail: each off until the person turns it on (NN-016)
             Button DeviceSwitch(string key, string name) => TextButton(name + ": " + (_cfg.DeviceAccess.Contains(key) ? "ligado" : "desligado"), () =>
             {
@@ -1069,9 +1069,6 @@ public sealed partial class AssistantPanel
                 SaveConfig();
                 ShowSettings();
             });
-            body.Children.Add(Section("Vídeo generativo",
-                Hint("Clipes curtos feitos por um modelo externo (OpenAI Sora), pagos por segundo ao provedor; só a descrição é enviada. O vídeo explicativo editável das Publicações não depende disto."),
-                TextButton("Vídeo generativo: " + (_cfg.GenerativeVideo ? "ligado" : "desligado"), () => { _cfg.GenerativeVideo = !_cfg.GenerativeVideo; SaveConfig(); ShowSettings(); })));
             body.Children.Add(Section("Aparelho",
                 Hint("O que os agentes podem fazer no aparelho. Cada ação que muda algo pede sua aprovação; a agenda e o e-mail abrem no app deles para você confirmar ou enviar."),
                 DeviceSwitch(AssistantDeviceTools.Alarm, "Despertador (marcar e ver o próximo)"),
@@ -1794,10 +1791,51 @@ public sealed partial class AssistantPanel
             Wrap(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
             Wrap(ModelPriceFor(selected ?? _cfg.ModelFor(new AiConversation { AgentId = agent.Id })), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
+        var media = _cfg.MediaFor(agent.Id);
+        void SaveMedia(AiAgentMediaProfile updated)
+        {
+            SaveBlocks();
+            _cfg.AgentMedia[agent.Id] = updated;
+            SaveConfig();
+            EditAgentProfile(agent);
+        }
+        body.Children.Add(Section("Pesquisa na internet",
+            Hint(!_cfg.Web.Enabled ? "Desativada nas preferências globais de privacidade." : "Apenas consultas e páginas públicas."),
+            TextButton(media.Research ? "Pesquisa permitida · desativar" : "Pesquisa desativada · permitir",
+                () => SaveMedia(media with { Research = !media.Research }))));
+        var voiceName = Urbe.Core.Voice.NeuralVoices.Find(media.Voice)?.Name ?? media.Voice ?? "Padrão do aparelho";
+        body.Children.Add(Section("Voz da narração", Hint(voiceName), TextButton("Selecionar voz", async () =>
+        {
+            var picked = await PickVoiceAsync(media.Voice);
+            if (picked is { } selectedVoice) SaveMedia(media with { Voice = selectedVoice.Id });
+        })));
+        var videoChoice = media.VideoProviderId switch
+        {
+            "" => "Desativado",
+            null => _cfg.GenerativeVideo ? "Preferência anterior do Assistente" : "Desativado",
+            _ => media.VideoModel ?? "Modelo padrão do provedor"
+        };
+        body.Children.Add(Section("Vídeo generativo", Hint(videoChoice + " · clipes externos cobrados pelo provedor."),
+            TextButton("Selecionar provedor e modelo de vídeo", async () =>
+            {
+                var providers = _cfg.Providers.Where(p => AssistantProviders.VideoModel(p.Preset) is not null &&
+                    !string.IsNullOrWhiteSpace(p.ApiKey)).ToList();
+                var choices = providers.Select(p => new DialogItem(p.Name ?? p.Id)).Prepend(new DialogItem("Desativar vídeo generativo")).ToList();
+                if (await _app.Dialogs.ChooseAsync("Vídeo generativo deste agente", choices) is not int index) return;
+                if (index == 0) { SaveMedia(media with { VideoProviderId = "", VideoModel = null }); return; }
+                var videoProvider = providers[index - 1];
+                var model = await _app.Dialogs.PromptAsync(new PromptOptions("Modelo de vídeo", "ID do modelo",
+                    (media.VideoProviderId == videoProvider.Id ? media.VideoModel : AssistantProviders.VideoModel(videoProvider.Preset)) ?? ""));
+                if (!string.IsNullOrWhiteSpace(model))
+                    SaveMedia(media with { VideoProviderId = videoProvider.Id, VideoModel = model.Trim() });
+            })));
         body.Children.Add(blocksEditor);
         var save = TextButton("Salvar instruções", () => { SaveBlocks(); ShowSettings(); }, primary: true);
         body.Children.Add(save);
     }
+
+    private Task<NarrationVoiceChoice?> PickVoiceAsync(string? current) =>
+        _app.PickNarrationVoiceAsync(current);
 
     /// <summary>pickModel(): the provider's models (cached 6 h), search, price, the "sem ferramentas" warning, and a typed id.</summary>
     public async Task PickModelAsync()

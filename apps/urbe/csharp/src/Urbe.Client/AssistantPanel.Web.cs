@@ -8,7 +8,7 @@ namespace Urbe.Client;
 
 /// <summary>
 /// Web research works out of the box. Only the opt-out and optional advanced provider are user-facing.
-/// The source of truth remains AssistantStore; agent-specific grants from old configs are ignored.
+/// The global switch sets the maximum permission allowed for each agent.
 /// </summary>
 public sealed partial class AssistantPanel
 {
@@ -18,8 +18,7 @@ public sealed partial class AssistantPanel
         var body = OpenView("Pesquisa na internet", () => ShowSettings());
         body.Children.Add(Wrap("Peça para pesquisar. O Numa faz o resto.", 18,
             UrbeTheme.Text, FontWeight.SemiBold));
-        body.Children.Add(Hint("Qualquer agente pode procurar informações públicas, abrir fontes e citar os links. " +
-            "Não é preciso cadastrar chave, escolher provedor ou dar permissões por agente."));
+        body.Children.Add(Hint("Cada perfil define quais agentes podem procurar informações públicas, abrir fontes e citar links."));
 
         var enabled = new CheckBox
         {

@@ -75,7 +75,7 @@ public sealed class PublicationStudioView : Border
                 Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
                 if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
-                if (CanNarrate) Item("Narrar o roteiro com a voz do aparelho", () => NarrateRequested?.Invoke());
+                if (CanNarrate) Item("Narrar o roteiro", () => NarrateRequested?.Invoke());
                 if (CanNarrate) Item("Voz da narração", () => VoiceRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());

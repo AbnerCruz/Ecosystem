@@ -27,7 +27,7 @@ public sealed partial class MainView
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
-        studio.VoiceRequested += () => _ = ChooseNarrationVoiceAsync();
+        studio.VoiceRequested += () => _ = ChoosePublicationVoiceAsync();
         studio.CodeEditRequested += (scene, element) => _ = EditVideoCodeAsync(studio, scene, element);
         studio.VideoThemeRequested += () => _ = ChoosePublicationVideoThemeAsync();
         studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
@@ -184,8 +184,9 @@ public sealed partial class MainView
     public async Task NarratePublicationVideoAsync()
     {
         var draft = _publicationDraft;
-        if (PlatformAudio.SynthesizeToWav is not { } speak || draft is null || await PrepareVideoAsync(draft) is not { } prepared) return;
+        if (PlatformAudio.SynthesizeToWav is null || draft is null || await PrepareVideoAsync(draft) is not { } prepared) return;
         var (project, timeline) = prepared;
+        var voice = project.Video?.NarrationVoice;
         var scenes = timeline.Scenes.Where(s => s.Script.Trim().Length > 0).ToList();
         if (scenes.Count == 0) { await Dialogs.AlertAsync("Narrar o roteiro", "As notas das cenas ainda não têm texto para narrar."); return; }
         var folder = "Narração/" + ArtifactModel.SafeName(project.Title) + "/";
@@ -199,10 +200,10 @@ public sealed partial class MainView
             {
                 _notice.Show("Narrando a cena " + (i + 1) + " de " + scenes.Count, TimeSpan.FromHours(1), "Cancelar", cancel.Cancel);
                 var wav = System.IO.Path.Combine(temp, i + ".wav");
-                if (!await speak(scenes[i].Script.Trim(), 0, wav, cancel.Token))
+                if (!await PlatformAudio.NarrateAsync(scenes[i].Script.Trim(), voice, wav, cancel.Token))
                 {
                     _notice.Hide();
-                    await Dialogs.AlertAsync("Narrar o roteiro", "A voz do aparelho não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
+                    await Dialogs.AlertAsync("Narrar o roteiro", "A voz escolhida não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
                     return;
                 }
                 double seconds;
@@ -453,6 +454,31 @@ public sealed partial class MainView
     /// <summary>What the voice says when it is tried: numbers, a name and a pause, like a narration.</summary>
     public const string VoiceSample = "Olá! Esta é a voz que vai narrar seus vídeos. Em 1905, Einstein publicou quatro artigos; a luz viaja a 300 mil quilômetros por segundo.";
 
+    private async Task ChoosePublicationVoiceAsync()
+    {
+        var draft = _publicationDraft;
+        if (_publicationsStudio?.Project?.Video is not { } video) return;
+        var choice = await PickNarrationVoiceAsync(video.NarrationVoice);
+        if (choice is null || !SameVideoDraft(draft) || _publicationsStudio.Project is not { Video: { } current } project)
+            return;
+        _publicationsStudio.UpdateProject(project with { Video = current with { NarrationVoice = choice.Id } });
+        ShowLifeNotice("Voz escolhida para esta publicação. Use Narrar o roteiro para gerar a nova faixa.");
+    }
+
+    Task<NarrationVoiceChoice?> IAssistantApp.PickNarrationVoiceAsync(string? current) => PickNarrationVoiceAsync(current);
+
+    private async Task<NarrationVoiceChoice?> PickNarrationVoiceAsync(string? current)
+    {
+        var voices = PlatformAudio.Voices?.Invoke() ?? [];
+        var items = voices.Select(id =>
+            new DialogItem((Urbe.Core.Voice.NeuralVoices.Find(id)?.Name ?? id) + (id == current ? " (atual)" : "")))
+            .Prepend(new DialogItem("Padrão do aparelho" + (current is null ? " (atual)" : ""))).ToList();
+        if (await Dialogs.ChooseAsync("Voz da narração", items) is not int index) return null;
+        var picked = index == 0 ? null : voices[index - 1];
+        if (!await EnsureNarrationVoiceAsync(picked)) return null;
+        return new NarrationVoiceChoice(picked);
+    }
+
     /// <summary>#1004: the device's Portuguese voices, the chosen one marked; the choice narrates scenes, podcasts and the Assistente's videos.</summary>
     public async Task ChooseNarrationVoiceAsync()
     {
@@ -488,24 +514,7 @@ public sealed partial class MainView
         }
         var before = PlatformAudio.PreferredVoice;
         var picked = pick == 0 ? null : voices[pick - 1];
-        // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
-        if (Urbe.Core.Voice.NeuralVoices.Find(picked) is { } natural && NeuralSpeech.Shared is { } speech && !speech.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(natural)))
-        {
-            var model = Urbe.Core.Voice.NeuralVoices.ModelOf(natural);
-            if (!await Dialogs.ConfirmAsync("Baixar " + natural.Name, "São " + Size(model.Bytes) + ", uma vez; depois a voz funciona sem internet.\n\nLicenças: " + model.Licences, "Baixar")) return;
-            ShowLifeNotice("Baixando a voz " + natural.Name + "…");
-            try
-            {
-                var last = 0;
-                await speech.InstallAsync(model, new Progress<double>(p => { var pct = (int)(p * 100); if (pct >= last + 10) { last = pct; ShowLifeNotice("Baixando a voz: " + pct + "%"); } }), CancellationToken.None);
-                ShowLifeNotice("Voz " + natural.Name + " instalada.");
-            }
-            catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException or UnauthorizedAccessException)
-            {
-                await Dialogs.AlertAsync("Voz natural", "A voz não foi instalada: " + e.Message);
-                return;
-            }
-        }
+        if (!await EnsureNarrationVoiceAsync(picked)) return;
         PlatformAudio.PreferredVoice = picked;
         // a sample in the chosen voice, before keeping it
         if (PlatformAudio.PlayWav is { } play && PlatformAudio.SynthesizeToWav is { } speak)
@@ -535,6 +544,29 @@ public sealed partial class MainView
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         { ShowLifeNotice("A voz foi escolhida, mas não pôde ser lembrada: " + e.Message, Ui.ToastKind.Warning); }
+    }
+
+    private async Task<bool> EnsureNarrationVoiceAsync(string? picked)
+    {
+        // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
+        if (Urbe.Core.Voice.NeuralVoices.Find(picked) is { } natural && NeuralSpeech.Shared is { } speech && !speech.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(natural)))
+        {
+            var model = Urbe.Core.Voice.NeuralVoices.ModelOf(natural);
+            if (!await Dialogs.ConfirmAsync("Baixar " + natural.Name, "São " + Size(model.Bytes) + ", uma vez; depois a voz funciona sem internet.\n\nLicenças: " + model.Licences, "Baixar")) return false;
+            ShowLifeNotice("Baixando a voz " + natural.Name + "…");
+            try
+            {
+                var last = 0;
+                await speech.InstallAsync(model, new Progress<double>(p => { var pct = (int)(p * 100); if (pct >= last + 10) { last = pct; ShowLifeNotice("Baixando a voz: " + pct + "%"); } }), CancellationToken.None);
+                ShowLifeNotice("Voz " + natural.Name + " instalada.");
+            }
+            catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException or UnauthorizedAccessException)
+            {
+                await Dialogs.AlertAsync("Voz natural", "A voz não foi instalada: " + e.Message);
+                return false;
+            }
+        }
+        return true;
     }
 
     async Task<byte[]?> IAssistantApp.SpeakAsync(string text, CancellationToken cancel)

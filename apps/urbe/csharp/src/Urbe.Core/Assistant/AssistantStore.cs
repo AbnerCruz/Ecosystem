@@ -175,6 +175,8 @@ public sealed class AiMcpToolInfo
     public string Schema { get; set; } = "{\"type\":\"object\"}";
 }
 
+public sealed record AiAgentMediaProfile(bool Research = true, string? Voice = null, string? VideoProviderId = null, string? VideoModel = null);
+
 public sealed class AiConfig
 {
     public int Version { get; set; } = 1;
@@ -208,6 +210,9 @@ public sealed class AiConfig
     public string? ImageProviderId { get; set; }
     public string ImageModel { get; set; } = "";
     /// <summary>Agent-specific overrides; no entry means inherit the conversation/default model.</summary>
+    public Dictionary<string, AiAgentMediaProfile> AgentMedia { get; set; } = new(StringComparer.Ordinal);
+    public AiAgentMediaProfile MediaFor(string id) => AgentMedia.GetValueOrDefault(id) ?? new();
+    public bool AllowsResearch(string id) => Web.Allowed(id) && MediaFor(id).Research;
     public Dictionary<string, AiModelChoice> AgentModels { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, List<AiInstructionBlock>> AgentInstructionBlocks { get; set; } = new(StringComparer.Ordinal);
     public string Policy { get; set; } = "readonly";
@@ -573,6 +578,11 @@ public sealed class AssistantStore(IAssistantStorage storage)
         {
             ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
             ["generativeVideo"] = c.GenerativeVideo,
+            ["agentMedia"] = new JsonObject(c.AgentMedia.Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)new JsonObject
+            {
+                ["research"] = pair.Value.Research, ["voice"] = pair.Value.Voice,
+                ["videoProviderId"] = pair.Value.VideoProviderId, ["videoModel"] = pair.Value.VideoModel
+            }))),
             ["deviceAccess"] = new JsonArray(c.DeviceAccess.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()),
             ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
@@ -647,6 +657,12 @@ public sealed class AssistantStore(IAssistantStorage storage)
             if (w["agentAccess"] is JsonObject grants)
                 foreach (var (id, grant) in grants) c.Web.AgentAccess[id] = (bool?)grant ?? false;
         }
+        if (o["agentMedia"] is JsonObject media)
+            foreach (var (id, value) in media)
+                if (value is JsonObject profile)
+                    c.AgentMedia[id] = new AiAgentMediaProfile(
+                        (bool?)profile["research"] ?? true, (string?)profile["voice"],
+                        (string?)profile["videoProviderId"], (string?)profile["videoModel"]);
         if (o["agentModels"] is JsonObject models)
             foreach (var (id, value) in models)
                 if (value is JsonObject choice && Str(choice["providerId"]).Length > 0 && Str(choice["model"]).Length > 0)

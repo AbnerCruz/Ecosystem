@@ -26,6 +26,7 @@ public sealed record VideoComposition
     public string? Theme { get; init; }
     public List<VideoScene> Scenes { get; init; } = [];
     public List<VideoAudioClip> Audio { get; init; } = [];
+    public string? NarrationVoice { get; init; }
     /// <summary>#1004 slice 5: reusable groups of elements by name, placed in scenes by elements of kind "use".</summary>
     public Dictionary<string, List<VideoElement>>? Components { get; init; }
     /// <summary>#956: what each scene showed in the last MP4 saved (scene ID → <see cref="VideoTimelineScene.ContentKey"/>).</summary>

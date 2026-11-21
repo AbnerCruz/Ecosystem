@@ -6,6 +6,8 @@ namespace Urbe.Core.Assistant;
 /// <summary>#956: the renderer the preview and the MP4 use, lent to the agent so it sees what it made.</summary>
 public interface IAssistantVideoFrames
 {
+    string? NarrationVoice => null;
+    IReadOnlyList<string> AvailableNarrationVoices => [];
     /// <summary>How a text element fits its box when drawn at <paramref name="width"/>×<paramref name="height"/>.</summary>
     VideoTextFit Fit(VideoElementState element, int width, int height);
     /// <summary>The frames at <paramref name="times"/> side by side in one PNG, each labelled with its number.</summary>
@@ -51,7 +53,7 @@ public static class AssistantVideoDirectionTools
                           "Depois confira com review_publication e, quando disponível, look_at_video. Entregue a publicação para edição no Estúdio. " +
                           VideoCode.Help + " Temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".",
             Parameters = JsonNode.Parse("""
-                {"type":"object","properties":{"title":{"type":"string"},"theme":{"type":"string"},"aspect":{"type":"string","enum":["16:9","9:16","1:1"]},"folder":{"type":"string"},
+                {"type":"object","properties":{"title":{"type":"string"},"theme":{"type":"string"},"aspect":{"type":"string","enum":["16:9","9:16","1:1"]},"folder":{"type":"string"},"voice":{"type":"string"},
                  "scenes":{"type":"array","minItems":1,"items":{"type":"object","properties":{"title":{"type":"string"},"narration":{"type":"string"},"code":{"type":"string"}},"required":["title","narration","code"]}}},"required":["title","scenes"],"additionalProperties":false}
                 """)!.AsObject(),
             Label = i => "Criando o vídeo " + ((string?)i["title"] ?? ""),
@@ -171,6 +173,11 @@ public static class AssistantVideoDirectionTools
         if (VideoThemes.Find(theme) is null) throw new AiToolException("Tema " + theme + " não existe; temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".");
         var aspect = (string?)input["aspect"] ?? "16:9";
         if (!VideoComposition.Aspects.Contains(aspect)) throw new AiToolException("Proporção " + aspect + "; use 16:9, 9:16 ou 1:1.");
+        var frames = host.VideoFrames;
+        var voice = frames?.NarrationVoice;
+        if (voice is null && (string?)input["voice"] is { Length: > 0 } requestedVoice &&
+            frames?.AvailableNarrationVoices.Contains(requestedVoice, StringComparer.Ordinal) == true)
+            voice = requestedVoice;
         var name = ArtifactModel.SafeName(title);
         var folder = ((string?)input["folder"] ?? "Publicações/" + name).Trim().Trim('/');
         if (!VideoScript.IsVaultPath(folder + "/x.md")) throw new AiToolException("Pasta inválida: " + folder + ".");
@@ -211,7 +218,7 @@ public static class AssistantVideoDirectionTools
         project = VideoComposition.Synced(project, r => host.Documents.Get(r.DocumentId)?.Content);
         var video = project.Video! with
         {
-            Theme = theme, Aspect = aspect,
+            Theme = theme, Aspect = aspect, NarrationVoice = voice,
             Scenes = project.Video!.Scenes.Select((scene, i) => scene with
             {
                 Background = VideoThemes.DefaultBackground,

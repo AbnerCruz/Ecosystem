@@ -31,6 +31,8 @@ internal static class WindowsSpeech
             using var stop = cancel.Register(() => PlaySound(null, IntPtr.Zero, 0));
             PlaySound(path, IntPtr.Zero, SndFilename | SndNoDefault);   // synchronous: returns at the end or when stopped
         }, cancel);
+        PlatformAudio.SynthesizeWithVoice = (text, voice, target, cancel) =>
+            Task.Run(() => OperatingSystem.IsWindows() && Speak(voiceType, streamType, text, 0, target, voice), cancel);
         PlatformAudio.Voices = () => OperatingSystem.IsWindows() ? Names(voiceType) : [];
         PlatformAudio.SynthesizeToWav = (text, voice, target, cancel) => Task.Run(() => OperatingSystem.IsWindows() && Speak(voiceType, streamType, text, voice, target), cancel);
     }
@@ -99,7 +101,7 @@ internal static class WindowsSpeech
         finally { if (voice is not null) Marshal.FinalReleaseComObject(voice); }
     }
 
-    private static bool Speak(Type voiceType, Type streamType, string text, int host, string target)
+    private static bool Speak(Type voiceType, Type streamType, string text, int host, string target, string? exactVoice = null)
     {
         dynamic? voice = null, file = null;
         try
@@ -111,8 +113,10 @@ internal static class WindowsSpeech
             if (count == 0) { voices = voice.GetVoices("", ""); count = voices.Count; }
             // the person's voice speaks first; the podcast's second host takes the next one
             int preferred = -1;
-            for (int i = 0; i < count && PlatformAudio.PreferredVoice is { } name; i++)
+            var requested = exactVoice ?? PlatformAudio.PreferredVoice;
+            for (int i = 0; i < count && requested is { } name; i++)
                 if ((string)voices.Item(i).GetDescription() == name) { preferred = i; break; }
+            if (exactVoice is not null && preferred < 0) return false;
             int at = preferred < 0 ? Math.Min(host, count - 1) : host == 0 ? preferred : (preferred + 1) % Math.Max(1, count);
             if (count > 0) voice.Voice = voices.Item(at);
             file.Format.Type = Wav22kHz16BitMono;

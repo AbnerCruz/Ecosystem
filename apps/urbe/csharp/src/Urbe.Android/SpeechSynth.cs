@@ -28,6 +28,8 @@ internal sealed class SpeechSynth : UtteranceProgressListener
         SpeechSynth? synth = null;
         PlatformAudio.PlayWav = PlayAsync;
         PlatformAudio.StartPreview = StartPreviewAsync;
+        PlatformAudio.SynthesizeWithVoice = (text, voice, target, cancel) =>
+            (synth ??= new SpeechSynth(context)).SpeakAsync(text, 0, target, cancel, voice);
         PlatformAudio.SynthesizeToWav = (text, voice, target, cancel) => (synth ??= new SpeechSynth(context)).SpeakAsync(text, voice, target, cancel);
     }
 
@@ -129,14 +131,16 @@ internal sealed class SpeechSynth : UtteranceProgressListener
         }
     }
 
-    private async Task<bool> SpeakAsync(string text, int voice, string target, CancellationToken cancel)
+    private async Task<bool> SpeakAsync(string text, int voice, string target, CancellationToken cancel, string? exactVoice = null)
     {
         if (!await _ready.Task) return false;
         await _one.WaitAsync(cancel);
         try
         {
             Prefer();
-            if (_voices[voice] is { } chosen) { _tts.SetVoice(chosen); _tts.SetPitch(1f); }
+            var selected = exactVoice is null ? _voices[voice] : _portuguese.FirstOrDefault(v => v.Name == exactVoice);
+            if (exactVoice is not null && selected is null) return false;
+            if (selected is { } chosen) { _tts.SetVoice(chosen); _tts.SetPitch(1f); }
             else { if (_voices[0] is { } first) _tts.SetVoice(first); _tts.SetPitch(voice == 0 ? 1f : 0.8f); }
             _utterance = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var file = new Java.IO.File(target);
