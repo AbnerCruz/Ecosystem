@@ -233,10 +233,7 @@ public sealed partial class MainActivity
         SetContentView(root);
     }
 
-    /// <summary>
-    /// Enquanto o LUNET-511 não separar os workspaces, a navegação seleciona um projeto real.
-    /// Não apresenta uma falsa Library global, nem cria um projeto temporário escondido.
-    /// </summary>
+    /// <summary>Studios do Lunet não exigem escolher nem abrir um jogo.</summary>
     private void ShowLauncherStudios()
     {
         EnterLauncherSurface("studios");
@@ -245,33 +242,22 @@ public sealed partial class MainActivity
         root.SetBackgroundColor(LunetUi.Background);
         root.AddView(LunetUi.Label(this, "Studios", LunetUi.TextHero, LunetUi.Text, bold: true));
         root.AddView(LunetUi.Label(this,
-            "A Biblioteca pessoal funciona sem projeto. Para editar nos Studios atuais, escolha um jogo.",
+            "Crie e edite sem projeto aberto. Guarde no Studio, publique na Biblioteca ou envie uma cópia para qualquer jogo.",
             LunetUi.TextBody, LunetUi.TextMuted));
         var scroll = new ScrollView(this);
         var list = LunetUi.Column(this, 10);
         list.SetPadding(0, Dp(16), 0, Dp(8));
-        AddHomeAction(list, "Biblioteca pessoal", "Publicar e reutilizar assets entre projetos", ShowReusableAssetLibrary);
-        var names = _store.List().OrderByDescending(name => _launcherPreferences?.IsPinned(name) == true)
-            .ThenByDescending(ProjectTouched).ToArray();
-        foreach (var name in names)
-        {
-            var selected = name;
-            AddHomeAction(list, selected, "Abrir ferramentas de criação deste projeto", () =>
-            {
-                OpenProject(selected);
-                if (_project is not null) ShowStudioHub();
-            });
-        }
-        if (names.Length == 0)
-        {
-            list.AddView(LunetUi.Label(this, "Para usar os Studios atuais, crie um projeto.",
-                LunetUi.TextBody, LunetUi.TextMuted));
-            list.AddView(LunetUi.Button(this, "＋ Criar projeto", AskForProjectName, ButtonStyle.Primary),
-                LunetUi.FillWidth(Dp(52)));
-        }
+        AddHomeAction(list, "Sprite Studio", "Pixel art editável · salvar PNG e fonte na biblioteca", NewStandaloneSprite);
+        AddHomeAction(list, "Music Studio", "Compor e exportar música sem projeto aberto", NewStandaloneMusic);
+        AddHomeAction(list, "Sound Designer", "Efeitos sintetizados e editáveis", () =>
+            OpenSoundDesigner(null, Lunet.Studio.Music.SoundDesigner.Generate("coin", Environment.TickCount)));
+        AddHomeAction(list, "Minhas criações", "Retomar rascunhos e publicar para reutilizar", ShowStandaloneDrafts);
+        AddHomeAction(list, "Biblioteca pessoal", "Versões de assets · Usar em qualquer projeto · exportar ZIP", ShowReusableAssetLibrary);
+        list.AddView(LunetUi.Label(this,
+            "Tile, paleta, partículas e dados ainda precisam de adaptação ao workspace global; não é necessário criar um jogo para usar os Studios disponíveis acima.",
+            LunetUi.TextCaption, LunetUi.TextMuted));
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
         root.AddView(BuildLauncherNavigation("studios"));
         SetContentView(root);
-    }
-}
+    }}
