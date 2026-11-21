@@ -40,6 +40,7 @@ public interface IAssistantApp
         WriteBackAsync(current, path, before);
     /// <summary>Opens a note by path or title; false when there is none.</summary>
     bool OpenReference(string reference);
+    Task OpenAssistantPublicationAsync(string path) => Task.CompletedTask;
     UrbeDialogs Dialogs { get; }
     void Notify(string text);
     /// <summary>A notice with an action (UC-80: "Desfazer" after an agent changed the note).</summary>
@@ -331,7 +332,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantVideoDirectionTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, .. AssistantStudyTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantVideoDirectionTools.All.Where(t => t.Name != "render_video"), .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, .. AssistantStudyTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantVideoTools.Tool, .. AssistantDeviceTools.All, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantDelegateTools.DelegateTo, AssistantQuickNoteTools.Add,
         AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate, AssistantDataTools.Query, AssistantTools.StructureTool,
         .. AgentSkills.Tools(host => SkillsOf(host.Documents)),
         .. AssistantEvidenceTools.All,
@@ -1318,6 +1319,19 @@ public sealed partial class AssistantPanel : Border
             };
             PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(kind, agentName, conv.Id));
             cts.Dispose();
+        }
+
+        if (run.Stopped == "end" && run.Error is null && conv.OriginConversationId is null &&
+            ReferenceEquals(conv, _conv) && IsVisible && ReferenceEquals(documents, _app.Documents))
+        {
+            // Use the final path of a newly created publication, even if the agent renamed it during review.
+            var publications = run.Changes.GroupBy(change => change.Id)
+                .Where(group => group.First().Before is null && group.Last().After is { } after &&
+                    after.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase))
+                .Select(group => group.Last().After!.Path)
+                .ToList();
+            if (publications.Count == 1)
+                await _app.OpenAssistantPublicationAsync(publications[0]);
         }
     }
 

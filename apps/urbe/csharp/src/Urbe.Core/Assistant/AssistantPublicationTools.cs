@@ -111,14 +111,14 @@ public static class AssistantPublicationTools
         "escalonar: opacity set sat((t - 0.1*i)/0.4). Tipografia cinética: title com split letters e motions opacity set sat((t-0.05*i)/0.3), y add 0.05*(1-smooth((t-0.05*i)/0.3)) (cada letra sobe e aparece em sequência); words para revelar palavra a palavra com a fala. Componentes: o que se repete com conteúdo diferente (um rótulo com caixa, um cartão de dado, um ícone com legenda) é um componente usado várias vezes, não cópias escritas à mão. Revelar com clip: uma forma rect invisível (opacity 0) com progress 0→1 revela o texto da esquerda para a direita; um circle que cresce (scale) abre uma imagem a partir do centro. Câmera com propósito: aproximar devagar (zoom 1→1.15 na cena toda) dá vida a uma cena parada; pan de um ponto a outro conduz o olhar entre partes de um diagrama. Efeitos com propósito: glow em pontos de luz, partículas e destaques; shadow para separar cartões do fundo; blur em planos de fundo ou para entrar desfocado (blur keyframes 0.03→0); gradient em formas grandes. Formas repetidas podem passar da borda; texto repetido é revisado como texto. " +
         "components? ({nome: [elementos]}: grupos feitos uma vez; dentro deles x e y são deslocamentos do centro, 0,0 é o centro), audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT. " +
-        "Um vídeo pedido a você termina em render_video, que narra, gera o MP4 e as legendas no vault. Não crie .page.json; esse editor foi substituído. " +
+        "Entregue a publicação editável e informe seu caminho. O Numa abre a publicação nova no Estúdio, onde a pessoa decide quando narrar ou exportar em MP4. Use .publication.json. " +
         // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
-        "Vídeo novo: create_video numa chamada só (título, tema e, por cena, a fala, o layout e os textos curtos da tela), depois look_at_video e render_video. " +
+        "Vídeo novo: create_video numa chamada só (título, tema e, por cena, a fala, o layout e os textos curtos da tela), depois revise com review_publication e, quando disponível, look_at_video. " +
         "Para mudar um vídeo existente, ou montar a partir de notas que já existem: 1) write_publication só com sources e design {layout:video} (o app cria uma cena por fonte e devolve os ids); " +
         "2) edit_video_scene para cada cena, uma por chamada, de preferência com layout e slots (abertura, topico, comparacao, numero, formula, grafico, citacao: " +
-        "composições prontas com entradas animadas), acrescentando elementos só quando o layout não basta; 3) review_publication e look_at_video; 4) render_video. Nunca mande os elementos detalhados de todas as cenas num write_publication só (a resposta é cortada pelo limite de saída); o roteiro compacto do create_video cabe. " +
+        "composições prontas com entradas animadas), acrescentando elementos só quando o layout não basta; 3) review_publication e look_at_video; 4) entregue a publicação editável. Nunca mande os elementos detalhados de todas as cenas num write_publication só (a resposta é cortada pelo limite de saída); o roteiro compacto do create_video cabe. " +
         "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
         "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
         "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02}," +
@@ -139,7 +139,7 @@ public static class AssistantPublicationTools
         "referências; 3) roteiro — a ordem das seções e o que cada uma diz, antes de escrever; 4) composição — texto nas notas, layout no projeto; " +
         "5) revisão — review_publication e correção nas notas; 6) entrega — diga o que foi revisado e o que não foi. Decisões de rumo (público, tom, cortes) são da pessoa. " +
         "Vídeo, depois de montar: review_publication mede cada cena (fora do quadro, texto cortado, sobreposição, contraste) e lista os ids; " +
-        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa; por fim render_video. " +
+        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa; por fim, informe o caminho da publicação editável. " +
         "Um especialista (consult_agent) só quando ele sabe algo que você não sabe; não divida em vários agentes o que um faz bem.";
 
     /// <summary>

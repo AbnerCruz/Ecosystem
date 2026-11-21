@@ -47,7 +47,7 @@ public static class AssistantVideoDirectionTools
         {
             Name = "create_video", Access = "write",
             Description = "Cria um vídeo inteiro numa chamada: uma nota por cena (a fala, que vira narração e legenda), a publicação de vídeo com o tema " +
-                          "e cada cena já composta por um layout. Depois: look_at_video para conferir e render_video para o MP4. " +
+                          "e cada cena já composta por um layout. Depois: review_publication e, quando disponível, look_at_video. Entregue a publicação editável para a pessoa abrir no Estúdio. " +
                           "scenes: [{title, narration (o que é dito, 1–3 frases), layout, slots, code?}]. code é um programa JavaScript draw(ctx, t, info) que desenha o quadro inteiro, " +
                           "atrás do layout (sem layout, a cena é só o programa): use para o que layouts não fazem — simulações, partículas, fractais, dados animados. " + VideoCode.Help + " Layouts: " +
                           string.Join("; ", VideoLayouts.All.Select(l => l.Id + " (" + string.Join(", ", l.Required) + (l.Optional.Length > 0 ? "; opcional " + string.Join(", ", l.Optional) : "") + ")")) +
@@ -247,7 +247,7 @@ public static class AssistantVideoDirectionTools
         var issues = Inspect(timeline, host);
         return new AiToolOutput("Vídeo criado: " + pubPath + " · revisão " + saved.Revision + " · " + timeline.Scenes.Count + " cenas, " + N(timeline.Duration) + " s, tema " + theme +
             ". Falas nas notas de " + folder + "/.\n" + Issues(issues, host.VideoFrames is not null) + "\n" + Outline(timeline) +
-            "\nPróximo: look_at_video para conferir os quadros e render_video para o MP4 com narração.", changes);
+            "\nPróximo: confira a revisão e entregue a publicação editável. A pessoa decide no Estúdio se quer narrar ou exportar.", changes);
     }
 
     /// <summary>
