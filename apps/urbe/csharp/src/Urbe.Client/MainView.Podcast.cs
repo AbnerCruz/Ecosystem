@@ -4,7 +4,7 @@ using Urbe.Core.Study;
 
 namespace Urbe.Client;
 
-/// <summary>#956: the session's podcast. The agent writes the script in a note; the device's voices speak it into one WAV.</summary>
+/// <summary>#956: the session's podcast. The agent writes the script in a note; the chosen voice provider speaks it into one WAV.</summary>
 public sealed partial class MainView
 {
     private async Task CreatePodcastScriptAsync(string sessionPath, StudySession session, IEnumerable<string> sources)
@@ -17,6 +17,22 @@ public sealed partial class MainView
 
     public bool CanSpeakPodcast(string? path) =>
         VaultWritable && path?.EndsWith(Podcast.Suffix, StringComparison.OrdinalIgnoreCase) == true;
+
+    private string? FindPodcastAudio(string scriptPath)
+    {
+        var stem = scriptPath[..^3];
+        string? latest = null;
+        int last = 0;
+        foreach (var path in _attachments)
+        {
+            if (path.Length < stem.Length + 4 || !path.StartsWith(stem, StringComparison.OrdinalIgnoreCase) ||
+                !path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) continue;
+            var suffix = path.AsSpan(stem.Length, path.Length - stem.Length - 4);
+            int version = suffix.IsEmpty ? 1 : suffix[0] == ' ' && int.TryParse(suffix[1..], out int number) ? number : 0;
+            if (version > last) { latest = path; last = version; }
+        }
+        return latest;
+    }
 
     /// <summary>Speaks the open podcast script into <c>Nome.podcast.wav</c> beside it and opens the audio.</summary>
     public async Task<string?> SpeakPodcastAsync(string path)
@@ -59,7 +75,8 @@ public sealed partial class MainView
             Podcast.JoinWav(parts, joined);
             await ((IAssistantApp)this).CreateBinaryFileAsync(target, await File.ReadAllBytesAsync(joined, cancel.Token));
             await SaveHistoryAsync();
-            _notice.Show("Podcast pronto: " + Path.GetFileName(target), TimeSpan.FromSeconds(8), "Ouvir", () => _ = Editor.Pinned.OpenFileAsync(target), Ui.ToastKind.Success);
+            if (_publicationsStudio?.IsVisible == true) _publicationsStudio.Refresh();
+            _notice.Show("Podcast pronto: " + Path.GetFileName(target), TimeSpan.FromSeconds(8), "Ouvir", () => _ = _publicationsStudio?.IsVisible == true ? ShowFileAsync(target) : Editor.Pinned.OpenFileAsync(target), Ui.ToastKind.Success);
             return target;
         }
         catch (OperationCanceledException) { _notice.Show("Podcast parado; nada foi criado."); return null; }

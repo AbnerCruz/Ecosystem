@@ -1,11 +1,14 @@
 # Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.67
+**Versão canônica preparada:** 2.0.0-beta.68
 **Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-- Narração e podcast usam modelos de voz do provedor. Escolha provedor, modelo e voz na ficha do agente. Uma publicação pode usar outra escolha.
-- O Numa retirou o motor de voz neural local e o download de modelos. Dados do aplicativo permite remover os antigos modelos armazenados. Os áudios já produzidos continuam nas publicações.
-- Instruções e memória ficam na ficha de cada agente. As instruções compartilhadas e o idioma padrão ficam na ficha do Assistente geral.
-- A seleção de vídeo generativo usa os modelos compatíveis informados pelos catálogos da OpenAI e do OpenRouter.
+- A seleção de voz mostra o preço disponível e permite ouvir uma amostra antes de salvar. A síntese da amostra pode ser cobrada pelo provedor.
+- A seleção de vídeo mostra as tarifas divulgadas por segundo, resolução ou token e abre a página do provedor para consultar exemplos.
+- O formulário aceita tema, fontes selecionadas ou ambos. Sem fontes informadas, o agente é orientado a pesquisar conforme suas permissões. Podcast e vídeo oferecem duração Curto, Médio, Longo ou Flexível.
+- Publicações tem a opção Novo podcast. O Estúdio permite editar o roteiro, gerar áudio com a voz do agente e voltar para ouvir o resultado.
+- Flashcards pode ser aberto pelo menu principal ou por Estudo, mesmo com a biblioteca vazia.
+- A prévia de vídeo mostra quando falta áudio e oferece ações para narrar o roteiro, escolher a voz ou adicionar uma faixa. No Android, o player lê a trilha temporária por um descritor de arquivo do app.
+- Publicações ocultam o selo de autoria da IA no Estúdio e no conteúdo exportado. A narração do podcast também ignora os selos do roteiro.

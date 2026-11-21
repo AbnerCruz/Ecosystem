@@ -54,13 +54,21 @@ public sealed partial class AssistantPanel
             reading?.Cancel();
             CloseView();
         });
-        var focus = new TextBox { PlaceholderText = "Assunto, objetivo e público", Text = _input.Text };
+        var focus = new TextBox { PlaceholderText = "Tema, objetivo ou público", Text = _input.Text };
+        bool timed = kind is "Podcast" or "Vídeo";
+        var duration = new ComboBox
+        {
+            ItemsSource = new[] { "Curto", "Médio", "Longo", "Flexível" },
+            SelectedIndex = 3,
+            MinHeight = UrbeTokens.MinTouch
+        };
+        Avalonia.Automation.AutomationProperties.SetName(duration, "Duração da produção");
         var options = new TextBox
         {
             PlaceholderText = kind switch
             {
-                "Podcast" => "Duração, estilo e apresentadores",
-                "Vídeo" => "Duração, proporção e estilo visual",
+                "Podcast" => "Estilo e apresentadores",
+                "Vídeo" => "Proporção e estilo visual",
                 _ => "Quantidade, dificuldade e tópicos"
             }
         };
@@ -83,7 +91,9 @@ public sealed partial class AssistantPanel
             if (selected.Count == 0) sourceList.Children.Add(Hint("Nenhum arquivo selecionado."));
         }
 
-        body.Children.Add(Section("O que você quer criar?", focus, options, language));
+        body.Children.Add(Section("O que você quer criar?", focus,
+            Hint("Informe um tema, selecione fontes ou combine os dois."), options, language));
+        if (timed) body.Children.Add(Section("Duração", duration));
         body.Children.Add(Section("Fontes", sourceList, TextButton("Anexar arquivos", async () =>
         {
             await AttachDeviceFileAsync();
@@ -97,9 +107,13 @@ public sealed partial class AssistantPanel
         submit.Click += async (_, _) =>
         {
             if (!ReferenceEquals(conversation, _conv) || ConversationBusy(conversation.Id)) return;
-            if (string.IsNullOrWhiteSpace(focus.Text))
+            var requestedFocus = focus.Text?.Trim();
+            var requestedLinks = kind == "Vídeo" ? referenceLinks.Text?.Trim() : null;
+            var included = selected.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToList();
+            bool hasSources = included.Count > 0 || !string.IsNullOrEmpty(requestedLinks);
+            if (string.IsNullOrEmpty(requestedFocus) && !hasSources)
             {
-                status.Text = "Informe o assunto e o objetivo.";
+                status.Text = "Informe um tema ou selecione uma fonte.";
                 focus.Focus();
                 return;
             }
@@ -108,11 +122,16 @@ public sealed partial class AssistantPanel
                 status.Text = "Configure um modelo de conversa para este agente antes de gerar.";
                 return;
             }
-            var requestedFocus = focus.Text.Trim();
             var requestedOptions = options.Text?.Trim();
             var requestedLanguage = language.Text?.Trim();
-            var requestedLinks = referenceLinks.Text?.Trim();
-            var included = selected.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToList();
+            var requestedDuration = timed ? duration.SelectedItem as string ?? "Flexível" : null;
+            var sourceInstruction = hasSources
+                ? string.IsNullOrEmpty(requestedFocus)
+                    ? "Use as fontes selecionadas para inferir o tema e produzir. Informe lacunas se uma fonte não estiver legível."
+                    : "Use as fontes selecionadas como base para o tema. Informe lacunas se uma fonte não estiver legível."
+                : _cfg.AllowsResearch(conversation.AgentId)
+                    ? "Pesquise o tema antes de produzir. Use web_search para encontrar fontes e web_fetch para verificar as melhores. Cite as fontes consultadas. Se a pesquisa falhar, procure nas notas do vault e informe o que ficou sem verificação."
+                    : "Procure fontes sobre o tema com search_notes e leia as notas relevantes antes de produzir. A pesquisa web está indisponível. Se não houver fontes, informe a limitação e prossiga com o que puder sustentar.";
             var excluded = _pendingAttachments.Where(source => !included.Contains(source)).ToList();
             var instructions = kind switch
             {
@@ -160,9 +179,13 @@ public sealed partial class AssistantPanel
                 if (!ReferenceEquals(conversation, _conv) || ViewTitle != "Gerar " + kind) return;
                 _pendingAttachments.Clear();
                 _pendingAttachments.AddRange(prepared);
-                Send(instructions + "\nUse as fontes marcadas. Informe lacunas se uma fonte não estiver legível.\n" +
-                    "Assunto, objetivo e público: " + requestedFocus + "\nPreferências: " + requestedOptions +
-                    "\nIdioma: " + requestedLanguage + (string.IsNullOrEmpty(requestedLinks) ? "" : "\nReferências de vídeo: " + requestedLinks));
+                Send(instructions + "\nO briefing já foi confirmado. " + sourceInstruction +
+                    (string.IsNullOrEmpty(requestedFocus) ? "" : "\nTema, objetivo ou público: " + requestedFocus) +
+                    (requestedDuration is null ? "" : "\nDuração: " + requestedDuration +
+                        (requestedDuration == "Flexível" ? " — ajuste ao conteúdo e ao objetivo." : "")) +
+                    (string.IsNullOrEmpty(requestedOptions) ? "" : "\nPreferências: " + requestedOptions) +
+                    (string.IsNullOrEmpty(requestedLanguage) ? "" : "\nIdioma: " + requestedLanguage) +
+                    (string.IsNullOrEmpty(requestedLinks) ? "" : "\nReferências de vídeo: " + requestedLinks));
                 _pendingAttachments.AddRange(excluded);
                 RefreshAttachments();
             }

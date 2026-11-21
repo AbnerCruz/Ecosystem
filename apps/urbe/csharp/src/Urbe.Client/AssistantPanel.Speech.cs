@@ -76,12 +76,55 @@ public sealed partial class AssistantPanel
                 var picked = await _app.Dialogs.ChooseAsync("Voz gerada por IA", voices.Select(v => new DialogItem(v)).ToList());
                 voice = picked is int i ? voices[i] : null;
             }
-            return string.IsNullOrWhiteSpace(voice) ? null : new(new AiSpeechChoice(provider.Id, model.Id, voice.Trim(), model.Format).Reference);
+            if (string.IsNullOrWhiteSpace(voice)) return null;
+            var choice = new AiSpeechChoice(provider.Id, model.Id, voice.Trim(), model.Format);
+            using var priceTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            string price;
+            try { price = await Providers.SpeechPriceAsync(provider, model.Id, priceTimeout.Token); }
+            catch (OperationCanceledException) { price = "Preço indisponível neste catálogo"; }
+            while (true)
+            {
+                var action = await _app.Dialogs.ChooseAsync("Voz · " + choice.Voice,
+                    [new DialogItem("Usar esta voz"), new DialogItem("Ouvir prévia", Detail: "A síntese pode ser cobrada pelo provedor.")],
+                    model.Name + "\n" + price);
+                if (action is null) return null;
+                if (action == 0) return new(choice.Reference);
+                await PreviewProviderVoiceAsync(choice);
+            }
         }
         catch (AiProviderException e)
         {
             await _app.Dialogs.AlertAsync("Voz da narração", e.Message);
             return null;
+        }
+    }
+
+    private async Task PreviewProviderVoiceAsync(AiSpeechChoice choice)
+    {
+        if (PlatformAudio.StartPreview is not { } play)
+        {
+            await _app.Dialogs.AlertAsync("Prévia de voz", "A reprodução da prévia está indisponível neste aparelho.");
+            return;
+        }
+        using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+        var directory = Directory.CreateTempSubdirectory("numa-voice-preview-");
+        try
+        {
+            var bytes = await SynthesizeSpeechAsync(choice,
+                "Olá! Esta é uma amostra da voz que pode narrar suas publicações no Numa.", cancel.Token);
+            var path = Path.Combine(directory.FullName, "previa.wav");
+            await File.WriteAllBytesAsync(path, bytes, cancel.Token);
+            using var playback = await play(path, 0, cancel.Token);
+            await _app.Dialogs.AlertAsync("Prévia de voz", "Reproduzindo a amostra de " + choice.Voice + ". Feche para voltar à seleção.");
+        }
+        catch (Exception error) when (error is AiProviderException or IOException or OperationCanceledException or InvalidOperationException)
+        {
+            await _app.Dialogs.AlertAsync("Prévia de voz",
+                error is OperationCanceledException ? "A síntese excedeu o tempo da prévia." : error.Message);
+        }
+        finally
+        {
+            try { directory.Delete(true); } catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
         }
     }
 

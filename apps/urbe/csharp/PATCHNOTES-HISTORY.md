@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.67 — 21/11/2026
+- Narração por provedor, remoção do motor de voz baixável, catálogo de vídeo remoto e configuração de memória, idioma e permissões na ficha do agente.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.67
+
 ## 2.0.0-beta.66 — 21/11/2026
 - Publicações são entregues por link no chat, com cenas programadas, prévia com áudio e referência visual por quadros. Seleção única de fontes e perfis de agente com herança.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.66

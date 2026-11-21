@@ -45,13 +45,14 @@ internal static class SpeechSynth
                 _prepared.TrySetResult();
                 _seeked.TrySetResult();
             };
-            _player.SetDataSource(path);
+            using (var source = new Java.IO.FileInputStream(path))
+                _player.SetDataSource(source.FD);
             _player.PrepareAsync();
-            await _prepared.Task.WaitAsync(cancel);
+            await _prepared.Task.WaitAsync(TimeSpan.FromSeconds(10), cancel);
             if (!Failed && start > 0)
             {
                 _player.SeekTo((int)(start * 1000));
-                await _seeked.Task.WaitAsync(cancel);
+                await _seeked.Task.WaitAsync(TimeSpan.FromSeconds(10), cancel);
             }
             cancel.ThrowIfCancellationRequested();
             if (Failed) throw new IOException("O Android não conseguiu reproduzir a trilha.");

@@ -5,12 +5,55 @@ using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
 using Urbe.Core;
+using Urbe.Core.Assistant;
 
 namespace Urbe.Client.Tests;
 
 /// <summary>CST-150/151/158: real vault creation, live editorial sources and real file export.</summary>
 public sealed partial class HeadlessUiTests
 {
+    [Fact]
+    public async Task PublicationsCanCreateAndReopenAPodcast() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "numa-publication-podcast-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var create = view.ShowPublicationsAsync();
+                ClickButtonWithText(view.Dialogs, "Novo podcast");
+                view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Single().Text = "Ciência";
+                ClickButtonWithText(view.Dialogs, "Criar");
+                await create;
+                var studio = view.PublicationsStudio;
+                var path = Assert.IsType<string>(studio.ProjectPath);
+                var script = view.Documents!.Get(Assert.Single(studio.Project!.Sources).DocumentId)!;
+                Assert.EndsWith(".podcast.md", script.Path);
+                Assert.Contains(studio.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Editar roteiro"));
+                Assert.Contains(studio.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Gerar áudio do podcast"));
+
+                IAssistantApp app = view;
+                await app.SaveNoteAsync(script, "# Ciência\n\n**Ana:** Bem-vindos ao podcast.\n");
+                var speech = ConfigureSpeechProvider(view);
+                var audio = await view.SpeakPodcastAsync(script.Path);
+                Assert.NotNull(audio);
+                Assert.Equal("Bem-vindos ao podcast.", Assert.Single(speech.Requests).Text);
+                studio.Close();
+                await view.OpenPublicationAsync(path);
+                ClickButtonWithText(studio, "Ouvir podcast");
+                Assert.True(view.FilePreview.IsVisible);
+                Assert.Equal(audio, view.FilePreview.Current);
+                return true;
+            }
+            finally { window.Close(); Directory.Delete(dir, true); }
+        }, TestContext.Current.CancellationToken));
+
     [Fact]
     public async Task Publications_FolderCreationSelectsRealNotesAndLegacyNewActionRoutesToPublications() =>
         Assert.True(await Session.Dispatch<bool>(async () =>

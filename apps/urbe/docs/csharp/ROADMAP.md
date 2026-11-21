@@ -519,6 +519,7 @@ Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f
 - [~] Criação de motion graphics por programa por cena e entrega da publicação editável no Estúdio. O fluxo do Assistente conclui na publicação. A exportação MP4 fica com o botão do Estúdio. Os layouts gravados anteriormente continuam legíveis.
 - [~] Prévia audível com mixagem compartilhada com o MP4 e posição do player nativo como relógio. Perfil por agente para voz, pesquisa e vídeo generativo. Publicações permite escolher a voz e recalcular a duração ao narrar novamente.
 - [~] #956: seletor único do dispositivo e briefing confirmado no chat para podcast, vídeo e flashcards. Mídia permanece no aparelho e a transcrição é enviada com o pedido quando disponível. Faltam escuta, verificação do seletor SAF e jornada com fontes multimídia em aparelho.
+- O briefing aceita tema, fontes ou ambos. Sem fontes, orienta pesquisa web ou no vault conforme permissões. Duração de vídeo e podcast usa Curto, Médio, Longo e Flexível.
 - [~] Referências visuais amostradas de arquivos ou links públicos diretos e herança por campo do perfil padrão. Vídeo de plataformas sem URL de mídia direta pode ser anexado como arquivo.
 - [~] Beta.67: voz de provedor configurada na ficha, com retirada dos downloads e do motor de síntese local. Instruções, memória, idioma e permissões do aparelho na ficha de agente.
 

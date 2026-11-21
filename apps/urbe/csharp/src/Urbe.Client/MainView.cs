@@ -800,6 +800,7 @@ public sealed partial class MainView : Grid
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Publicações", UrbeTheme.Icons.Page, "Livros, artigos e páginas feitos de notas reais", Run: ShowPublicationsAsync));
+        items.Add(new("Flashcards", UrbeTheme.Icons.Book, "Biblioteca de cartões de estudo", Run: () => ShowFlashcardsAsync(null)));
         items.Add(new("Diagnóstico de teclado e toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Registrar foco, rolagem, IME e toques; desligado por padrão", Run: ToggleTouchDebugAsync));
         if (UpdateItem() is { } update) items.Add(update);
         if (_snapshot is { FutureFiles.Count: > 0 })
