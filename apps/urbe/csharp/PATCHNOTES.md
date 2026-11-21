@@ -1,15 +1,11 @@
 # Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.66
+**Versão canônica preparada:** 2.0.0-beta.67
 **Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-- Uma publicação criada pelo Assistente recebe um link no chat. Ao clicar, você abre o Estúdio. Lá você pode revisar, narrar e decidir se quer exportar o MP4.
-- O Assistente programa cada nova cena de motion graphics. O Estúdio continua abrindo publicações antigas com cenas montadas a partir de layouts.
-- A prévia de vídeo em Publicações usa a mesma mixagem do MP4 e segue a posição do áudio ao reproduzir e retomar.
-- O perfil de cada agente reúne os modelos, a permissão de pesquisa, a voz e o provedor de vídeo generativo. Publicações permite escolher outra voz e recriar a trilha com a duração medida da nova fala.
-- Agentes podem herdar os campos de mídia e modelos do perfil padrão e sobrescrever cada escolha na própria ficha.
-- O menu do chat tem um seletor de arquivos e abre briefings para podcast, vídeo e flashcards. O envio das configurações inicia a criação com as fontes marcadas.
-- Para modelos com entrada de imagem reconhecida, vídeos anexados e links públicos diretos podem fornecer quadros com instantes para orientar a produção.
-- A abertura ao concluir uma criação ainda não foi verificada em aparelho físico.
+- Narração e podcast usam modelos de voz do provedor. Escolha provedor, modelo e voz na ficha do agente. Uma publicação pode usar outra escolha.
+- O Numa retirou o motor de voz neural local e o download de modelos. Dados do aplicativo permite remover os antigos modelos armazenados. Os áudios já produzidos continuam nas publicações.
+- Instruções e memória ficam na ficha de cada agente. As instruções compartilhadas e o idioma padrão ficam na ficha do Assistente geral.
+- A seleção de vídeo generativo usa os modelos compatíveis informados pelos catálogos da OpenAI e do OpenRouter.

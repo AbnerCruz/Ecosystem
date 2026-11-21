@@ -175,7 +175,7 @@ public sealed class AiMcpToolInfo
     public string Schema { get; set; } = "{\"type\":\"object\"}";
 }
 
-public sealed record AiAgentMediaProfile(bool? Research = null, string? Voice = null, string? VideoProviderId = null, string? VideoModel = null);
+public sealed record AiAgentMediaProfile(bool? Research = null, string? Voice = null, string? VideoProviderId = null, string? VideoModel = null, bool? CaptureMemory = null, string? ReplyLanguage = null);
 
 public sealed class AiConfig
 {
@@ -189,6 +189,10 @@ public sealed class AiConfig
     public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
     /// <summary>The device capabilities the person allowed the agents (alarme, agenda, email); none by default (NN-016).</summary>
     public HashSet<string> DeviceAccess { get; set; } = new(StringComparer.Ordinal);
+    public Dictionary<string, HashSet<string>> AgentDeviceAccess { get; set; } = new(StringComparer.Ordinal);
+    public IReadOnlySet<string> DeviceAccessFor(string id) =>
+        AgentDeviceAccess.GetValueOrDefault(id) ?? DeviceAccess;
+
     /// <summary>CST-173: external generative video (paid per second) is off until the person turns it on.</summary>
     public bool GenerativeVideo { get; set; }
     /// <summary>
@@ -217,7 +221,9 @@ public sealed class AiConfig
         var defaults = AgentMedia.GetValueOrDefault("geral") ?? new();
         return new(own.Research ?? defaults.Research ?? true, own.Voice ?? defaults.Voice,
             own.VideoProviderId ?? defaults.VideoProviderId,
-            own.VideoProviderId is null ? defaults.VideoModel : own.VideoModel);
+            own.VideoProviderId is null ? defaults.VideoModel : own.VideoModel,
+            own.CaptureMemory ?? defaults.CaptureMemory ?? AutoCaptureEpisodes,
+            own.ReplyLanguage ?? defaults.ReplyLanguage ?? Language);
     }
 
     public AiModelChoice? ImageFor(string id)
@@ -595,9 +601,11 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ["agentMedia"] = new JsonObject(c.AgentMedia.Select(pair => KeyValuePair.Create(pair.Key, (JsonNode?)new JsonObject
             {
                 ["research"] = pair.Value.Research, ["voice"] = pair.Value.Voice,
-                ["videoProviderId"] = pair.Value.VideoProviderId, ["videoModel"] = pair.Value.VideoModel
+                ["videoProviderId"] = pair.Value.VideoProviderId, ["videoModel"] = pair.Value.VideoModel, ["captureMemory"] = pair.Value.CaptureMemory, ["replyLanguage"] = pair.Value.ReplyLanguage
             }))),
             ["deviceAccess"] = new JsonArray(c.DeviceAccess.Order(StringComparer.Ordinal).Select(x => (JsonNode)x).ToArray()),
+            ["agentDeviceAccess"] = new JsonObject(c.AgentDeviceAccess.Select(pair => KeyValuePair.Create(pair.Key,
+                (JsonNode?)new JsonArray(pair.Value.Order(StringComparer.Ordinal).Select(value => (JsonNode)value).ToArray())))),
             ["mcpServers"] = mcp, ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
@@ -671,12 +679,17 @@ public sealed class AssistantStore(IAssistantStorage storage)
             if (w["agentAccess"] is JsonObject grants)
                 foreach (var (id, grant) in grants) c.Web.AgentAccess[id] = (bool?)grant ?? false;
         }
+        if (o["agentDeviceAccess"] is JsonObject deviceByAgent)
+            foreach (var (id, value) in deviceByAgent)
+                if (value is JsonArray permissions)
+                    c.AgentDeviceAccess[id] = permissions.Select(p => Str(p)).Where(p => p is AssistantDeviceTools.Alarm or
+                        AssistantDeviceTools.Calendar or AssistantDeviceTools.Email).ToHashSet(StringComparer.Ordinal);
         if (o["agentMedia"] is JsonObject media)
             foreach (var (id, value) in media)
                 if (value is JsonObject profile)
                     c.AgentMedia[id] = new AiAgentMediaProfile(
                         (bool?)profile["research"], (string?)profile["voice"],
-                        (string?)profile["videoProviderId"], (string?)profile["videoModel"]);
+                        (string?)profile["videoProviderId"], (string?)profile["videoModel"], (bool?)profile["captureMemory"], (string?)profile["replyLanguage"]);
         if (o["agentModels"] is JsonObject models)
             foreach (var (id, value) in models)
                 if (value is JsonObject choice && Str(choice["providerId"]).Length > 0 && Str(choice["model"]).Length > 0)

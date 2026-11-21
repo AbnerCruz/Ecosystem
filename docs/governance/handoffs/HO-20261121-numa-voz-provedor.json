@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261121-numa-voz-provedor",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-21T12:41:05Z",
+  "agent": {
+    "id": "codex-numa",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "codex/numa-voice-provider",
+  "base_commit": "969c7e3de0f0b998f542173ec5c34a27a1762918",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1013",
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/SpeechSynth.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Export.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Speech.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AppData.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Podcast.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Video.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NeuralSpeech.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PlatformAudio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Urbe.Client.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AiSpeechChoice.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoEncoding.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Voice/NeuralVoices.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/WindowsSpeech.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/MemoryScopesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NarrationVoiceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NeuralSpeechTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PodcastUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SpeechProviderFixture.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchTargetsSettingsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantSpeechProviderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/GenerativeVideoTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261121-numa-voz-provedor.json"
+  ],
+  "work_completed": [
+    "Narração e podcast usam modelos TTS de provedores. Catálogo do OpenRouter e modelos compatíveis da OpenAI ou de API HTTPS personalizada. Publicação guarda a referência, sem credenciais, e a timeline usa a duração da faixa.",
+    "Retirada de sherpa-onnx, SharpCompress e das rotas de download e síntese local. Os pacotes antigos podem ser removidos em Dados do aplicativo mediante confirmação. O áudio existente permanece no vault.",
+    "Instruções, memória, idioma e permissões de aparelho na ficha de cada agente. Padrões anteriores respeitados. Catálogo de vídeo por provedor, incluindo modelos do OpenRouter que a API do Numa consegue solicitar.",
+    "Beta.67 preparada sobre a beta.66 integrada."
+  ],
+  "verification": [
+    {
+      "check": "Casos de provedor e perfis",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "16 testes focados do Core: síntese, catálogo, vídeo generativo, persistência e dispositivo. HTTP simulado. A consulta pública aos catálogos OpenRouter confirmou os campos usados."
+    }
+  ],
+  "known_issues": [
+    "Nenhuma síntese ou geração foi executada com uma credencial real de provedor.",
+    "A narração remota ainda não foi verificada em aparelho físico.",
+    "O catálogo inclui formatos que o cliente pode normalizar. No Desktop, MP3 usa o decodificador existente quando disponível."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar os checks do GitHub e integrar pelo fluxo oficial do Ecosystem."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Credenciais ficam na configuração do provedor. Permissões de aparelho resolvidas por agente. Áudios existentes não são removidos ao limpar modelos antigos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Casos automatizados e validação em aparelho identificados separadamente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "voz-provedor-numa",
+      "status": "product-specific",
+      "rationale": "Reusa clientes HTTP, configuração e pipeline WAV do app."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution",
+      "user-data"
+    ],
+    "reason": "Dependências do aplicativo e novos campos aditivos para configuração por agente."
+  }
+}

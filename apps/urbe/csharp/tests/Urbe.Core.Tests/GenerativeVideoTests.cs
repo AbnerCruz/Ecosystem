@@ -11,7 +11,7 @@ public sealed class GenerativeVideoTests
     private const string Mp4 = "AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMXbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAAMgAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAkF0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAAMgAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAEAAAAAkAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAADIAAAAAAABAAAAAAG5bWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAACABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABZG1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAASRzdGJsAAAAwHN0c2QAAAAAAAAAAQAAALBhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAEAAJABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAANmF2Y0MBZAAK/+EAGWdkAAqs2UR/nwEQAAADABAAAAMAoPEiWWABAAZo6+PLIsD9+PgAAAAAEHBhc3AAAAABAAAAAQAAABRidHJ0AAAAAAAAccAAAHHAAAAAGHN0dHMAAAAAAAAAAQAAAAEAAAgAAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAABAAAAAQAAABRzdHN6AAAAAAAAAtgAAAABAAAAFHN0Y28AAAAAAAAAAQAAA0cAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjYwLjE2LjEwMAAAAAhmcmVlAAAC4G1kYXQAAAKtBgX//6ncRem95tlIt5Ys2CDZI+7veDI2NCAtIGNvcmUgMTY0IHIzMTA4IDMxZTE5ZjkgLSBILjI2NC9NUEVHLTQgQVZDIGNvZGVjIC0gQ29weWxlZnQgMjAwMy0yMDIzIC0gaHR0cDovL3d3dy52aWRlb2xhbi5vcmcveDI2NC5odG1sIC0gb3B0aW9uczogY2FiYWM9MSByZWY9MyBkZWJsb2NrPTE6MDowIGFuYWx5c2U9MHgzOjB4MTEzIG1lPWhleCBzdWJtZT03IHBzeT0xIHBzeV9yZD0xLjAwOjAuMDAgbWl4ZWRfcmVmPTEgbWVfcmFuZ2U9MTYgY2hyb21hX21lPTEgdHJlbGxpcz0xIDh4OGRjdD0xIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PS0yIHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTMgYl9weXJhbWlkPTIgYl9hZGFwdD0xIGJfYmlhcz0wIGRpcmVjdD0xIHdlaWdodGI9MSBvcGVuX2dvcD0wIHdlaWdodHA9MiBrZXlpbnQ9MjUwIGtleWludF9taW49NSBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTQwIHJjPWNyZiBtYnRyZWU9MSBjcmY9MjMuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAACNliIQAP//+5nX4FNjyHpLEBiCpwrFXKecBbOdNDh9VKAxncw==";
 
     /// <summary>A Videos API: queued, then in progress, then done; the content is a real MP4 (or what the test gives).</summary>
-    private sealed class Server(string final = "completed", byte[]? content = null) : HttpMessageHandler
+    private sealed class Server(string final = "completed", byte[]? content = null, bool router = false) : HttpMessageHandler
     {
         public List<string> Calls { get; } = [];
         public string? Model { get; private set; }
@@ -19,9 +19,18 @@ public sealed class GenerativeVideoTests
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancel)
         {
             Calls.Add(request.Method + " " + request.RequestUri!.AbsolutePath);
+            if (router && request.RequestUri.AbsolutePath.EndsWith("/videos/models", StringComparison.Ordinal))
+                return Json("""{"data":[{"id":"google/veo-3.1","name":"Veo","supported_durations":[8]}]}""");
             if (request.Method == HttpMethod.Post)
             {
                 var form = await request.Content!.ReadAsStringAsync(cancel);
+                if (router)
+                {
+                    var input = JsonNode.Parse(form)!;
+                    Model = (string?)input["model"];
+                    Assert.Equal(8, (int?)input["duration"]);
+                    return Json("""{"id":"video_1","status":"pending"}""");
+                }
                 Model = form.Contains("sora-2") ? "sora-2" : null;
                 return Json("""{"id":"video_1","status":"queued","progress":0}""");
             }
@@ -37,6 +46,21 @@ public sealed class GenerativeVideoTests
     }
 
     private static readonly AiProviderConfig OpenAi = new("p1", "openai", "OpenAI", "sk-test-0000000000");
+
+    [Fact]
+    public async Task OpenRouterListsItsVideoModelsAndDownloadsTheSelectedJob()
+    {
+        var cancel = TestContext.Current.CancellationToken;
+        var server = new Server(router: true);
+        var service = new AssistantProviders(server, (_, _) => Task.CompletedTask);
+        var provider = new AiProviderConfig("router", "openrouter", ApiKey: "test");
+        var model = Assert.Single(await service.ListVideoModelsAsync(provider, cancel));
+        Assert.Equal(("google/veo-3.1", "Veo"), model);
+        Assert.Equal(Convert.FromBase64String(Mp4),
+            await service.GenerateVideoAsync(provider, "Farol", model.Id, 8, "1280x720", cancel: cancel));
+        Assert.Equal(model.Id, server.Model);
+        Assert.Contains("GET /api/v1/videos/video_1/content", server.Calls);
+    }
 
     [Fact]
     public async Task TheJobIsFollowedToAVerifiedMp4()

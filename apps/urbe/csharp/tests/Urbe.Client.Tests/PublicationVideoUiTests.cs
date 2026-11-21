@@ -76,17 +76,16 @@ public sealed partial class HeadlessUiTests
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
         var window = new Window { Width = 412, Height = 860, Content = view };
         window.Show();
-        var voice = PlatformAudio.SynthesizeToWav;
         try
         {
             await view.OpenVaultAsync();
             await Settle(window, view);
             IAssistantApp app = view;
-            PlatformAudio.SynthesizeToWav = (_, _, target, _) => { File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
+            ConfigureSpeechProvider(view);
             var wav = await app.SpeakAsync("Uma frase.", CancellationToken.None);
             Assert.NotNull(wav);
             Assert.True(VideoAudio.ReadWavInfo(new MemoryStream(wav!)) is { Frames: 800 });
-            PlatformAudio.SynthesizeToWav = null;
+            view.Assistant.Config.AgentMedia.Remove("geral");
             Assert.Null(await app.SpeakAsync("Uma frase.", CancellationToken.None));
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is checked where ffmpeg exists
             var store = new DocumentStore();
@@ -103,7 +102,6 @@ public sealed partial class HeadlessUiTests
         }
         finally
         {
-            PlatformAudio.SynthesizeToWav = voice;
             window.Close();
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
@@ -228,14 +226,10 @@ public sealed partial class HeadlessUiTests
             await Choose("Tirar do vídeo");
             await remove;
             Assert.Empty(studio.Project!.Video!.Audio);
-            // CST-172: the device's voice narrates each scene's script, placed at the scene's start
-            var voice = PlatformAudio.SynthesizeToWav;
-            var spoken = new List<string>();
-            PlatformAudio.SynthesizeToWav = (text, _, target, _) => { spoken.Add(text); File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
-            try { await view.NarratePublicationVideoAsync(); }
-            finally { PlatformAudio.SynthesizeToWav = voice; }
+            var speech = ConfigureSpeechProvider(view);
+            await view.NarratePublicationVideoAsync();
             await Pump();
-            Assert.Contains(spoken, t => t.Contains("Uma frase do roteiro."));
+            Assert.Contains(speech.Requests, t => t.Text.Contains("Uma frase do roteiro."));
             var narration = Assert.Single(studio.Project!.Video!.Audio, a => a.Kind == "voice");
             Assert.Equal(("Narração/Filme/Cena 1.wav", 0.0), (narration.Path, narration.Start));
             Assert.True(File.Exists(Path.Combine(vault, "Narração", "Filme", "Cena 1.wav")));

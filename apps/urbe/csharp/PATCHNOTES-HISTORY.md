@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.66 — 21/11/2026
+- Publicações são entregues por link no chat, com cenas programadas, prévia com áudio e referência visual por quadros. Seleção única de fontes e perfis de agente com herança.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.66
+
 ## 2.0.0-beta.65 — 21/11/2026
 - Cenas JavaScript editáveis no Estúdio, transições entre cenas, vozes naturais locais (Kokoro e Piper), tela Dados do aplicativo e melhorias na biblioteca de Flashcards.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.65
