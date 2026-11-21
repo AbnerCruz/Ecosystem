@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261121-urbe-video-codigo-livre",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-21T05:22:17Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "b15ce196c4a0bbcdca6e43ec31ff19a8ba496a12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoFrameRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/VideoCode.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoInspection.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DesignTokensRatchetTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteDraftUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoBenchmarkTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoCodeTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
+    "docs/governance/handoffs/HO-20261120-urbe-video-procedural.json",
+    "docs/governance/handoffs/HO-20261121-urbe-video-codigo-livre.json"
+  ],
+  "work_completed": [
+    "#1004: novo tipo de elemento de vídeo \"code\": a IA escreve um programa JavaScript draw(ctx, t, info) executado por quadro no Jint 4.18.0 (C# puro, BSD-2), com API só de desenho (fill/stroke/gradient/glow/circle/rect/poly/path/text/save/restore/translate/rotate/scale).",
+    "Limites por quadro: 500 ms, 5M instruções, recursão 256, 64 MB, 60k comandos; Math.random semeado; sem CLR, arquivos, rede ou vault. A revisão (review_publication) informa a linha que falhou.",
+    "ADR-0051 alternativa E (Jint) e linha no ROADMAP.",
+    "Diálogos com tokens de design para tamanho de fonte; VideoBenchmarkTests sem paralelismo; corrida no teste de rascunhos corrigida.",
+    "beta.65 preparada: versão 2.0.0-beta.65 / 2000065, PATCHNOTES e histórico."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1878/1878, incluindo VideoCodeTests (sandbox, limites, determinismo)."
+    },
+    {
+      "check": "Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "721/721; AProgramDrawsTheFrame: 1800 círculos com rastro, 24 ms/quadro a 360p na CPU do container."
+    },
+    {
+      "check": "Build Android Release",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Compila; não executado em aparelho nem emulador."
+    }
+  ],
+  "known_issues": [
+    "Não testado no aparelho (ADD-0035); desempenho medido só no container, sem GPU.",
+    "DEC-0066 (execução geral de código) segue pendente; este elemento usa só desenho.",
+    "Não reexecutado com o modelo do proprietário."
+  ],
+  "next_actions": [
+    "Pedir vídeos com código ao Assistente com modelo real e medir qualidade e tempo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Programa só com API de desenho; sem CLR, arquivos, rede ou vault; limites por quadro."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada declarado como testado no aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-video-code",
+      "status": "product-specific",
+      "rationale": "Motor de vídeo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature autorizada (#1004) dentro do Urbe."
+  },
+  "blockers": []
+}
