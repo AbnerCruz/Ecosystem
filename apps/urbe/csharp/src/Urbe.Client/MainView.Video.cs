@@ -103,7 +103,8 @@ public sealed partial class MainView
             new DialogItem("Forma", Detail: "Retângulo ou elipse"), new DialogItem("Imagem do vault"),
             new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}"),
             new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela"),
-            new DialogItem("Cena pronta (layout)", Detail: "Abertura, tópico, comparação, número, fórmula, gráfico ou citação, já composta e animada")]);
+            new DialogItem("Cena pronta (layout)", Detail: "Abertura, tópico, comparação, número, fórmula, gráfico ou citação, já composta e animada"),
+            new DialogItem("Programa (código)", Detail: "JavaScript que desenha a cena a cada quadro: partículas, simulações, o que você inventar")]);
         if (kind is not { } k) return;
         // every object enters with a short fade; keyframes and motions stay editable in the project
         var fadeIn = new List<VideoKeyframe> { new() { Property = "opacity", Time = 0, Value = 0 }, new() { Property = "opacity", Time = 0.5, Value = 1, Easing = "easeOut" } };
@@ -147,6 +148,12 @@ public sealed partial class MainView
                         Kind = "path", Text = VideoStrokes[st].Data, Width = 0.3, Height = 0.2, Color = "#ffd166", FontSize = 0.06,
                         Keyframes = [new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0.8, Value = 1, Easing = "easeOut" }]
                     };
+                break;
+            case 8:
+                var program = await Dialogs.PromptAsync(new PromptOptions("Programa da cena", "draw(ctx, t, info)", VideoCodeStarter, Confirm: "Adicionar", Code: true,
+                    Hint: "Desenha a cena inteira, a cada quadro. Sem acesso a arquivos, rede ou notas.",
+                    Validate: v => { try { VideoCode.Check(v); VideoCode.Run(v, 0, 320, 180); return null; } catch (VideoCodeException e) { return e.Message; } }));
+                if (program is not null) element = new VideoElement { Kind = "code", Text = program, X = 0.5, Y = 0.5, Width = 1, Height = 1 };
                 break;
         }
         if (k == 7) { await ApplyPublicationVideoLayoutAsync(sceneId, draft); return; }
@@ -419,6 +426,21 @@ public sealed partial class MainView
             try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
     }
+
+    /// <summary>A program that works as it is and shows the parts of the drawing API.</summary>
+    public const string VideoCodeStarter = """
+        function draw(ctx, t, info) {
+          // estrelas que giram devagar em volta do centro
+          var cx = ctx.width / 2, cy = ctx.height / 2;
+          for (var i = 0; i < 120; i++) {
+            var r = 20 + Math.random() * Math.min(cx, cy);
+            var a = Math.random() * Math.PI * 2 + t * 0.3;
+            ctx.alpha(0.4 + 0.6 * noise(i + t));
+            ctx.fill('#cfe8ff');
+            ctx.circle(cx + r * Math.cos(a), cy + r * Math.sin(a), 1.5);
+          }
+        }
+        """;
 
     /// <summary>#1004: the program of a code element, edited by hand; it is checked before it replaces the old one.</summary>
     public async Task EditVideoCodeAsync(PublicationStudioView studio, VideoScene scene, VideoElement element)

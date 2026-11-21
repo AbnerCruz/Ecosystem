@@ -42,4 +42,12 @@ public sealed partial class HeadlessUiTests
         window.Close();
         return true;
     }, CancellationToken.None));
+
+    /// <summary>The program the Estúdio starts a new code element with draws as it is.</summary>
+    [Fact]
+    public void VideoCode_TheStarterProgramDraws()
+    {
+        VideoCode.Check(MainView.VideoCodeStarter);
+        Assert.Equal(120, VideoCode.Run(MainView.VideoCodeStarter, 1, 640, 360).Count(c => c.Op == "circle"));
+    }
 }
