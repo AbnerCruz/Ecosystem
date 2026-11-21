@@ -402,6 +402,23 @@ public sealed class VideoFrameRenderer : IDisposable
                         (fill, stroke, doFill, doStroke, alpha) = s;
                         canvas.Restore();
                         break;
+                    case "arc":
+                        using (var arc = new SKPath())
+                        {
+                            float rr = Math.Max(0, F(2));
+                            arc.AddArc(new SKRect(F(0) - rr, F(1) - rr, F(0) + rr, F(1) + rr), F(3), F(4) - F(3));
+                            canvas.DrawPath(arc, doStroke ? stroke : fill);
+                        }
+                        break;
+                    case "blend":
+                        var mode = c.Text switch { "add" => SKBlendMode.Plus, "screen" => SKBlendMode.Screen, "multiply" => SKBlendMode.Multiply, "overlay" => SKBlendMode.Overlay,
+                            "lighten" => SKBlendMode.Lighten, "darken" => SKBlendMode.Darken, _ => SKBlendMode.SrcOver };
+                        fill.BlendMode = mode; stroke.BlendMode = mode;
+                        break;
+                    case "dash":
+                        stroke.PathEffect?.Dispose();
+                        stroke.PathEffect = a[0] > 0 ? SKPathEffect.CreateDash([F(0), Math.Max(0.1f, F(1))], F(2)) : null;
+                        break;
                     case "translate": canvas.Translate(F(0), F(1)); break;
                     case "rotate": canvas.RotateDegrees(F(0)); break;
                     case "scale": canvas.Scale(F(0), F(1)); break;

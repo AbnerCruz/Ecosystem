@@ -602,4 +602,28 @@ public sealed class VideoRenderTests
             File.AppendAllText(Path.Combine(dir, "video-codigo.txt"), "1800 círculos por código: " + ms + " ms/quadro a 360p\n");
         }
     }
+
+    /// <summary>#1004: light adds up — red and green drawn with blend('add') make yellow where they meet; an arc draws only its part.</summary>
+    [Fact]
+    public void AProgramAddsLightAndDrawsArcs()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 1);
+        using var _c = catalog;
+        const string code = """
+            function draw(ctx) {
+              ctx.blend('add');
+              ctx.fill('#ff0000'); ctx.circle(100, 90, 50);
+              ctx.fill('#00ff00'); ctx.circle(140, 90, 50);
+              ctx.blend('normal'); ctx.noFill(); ctx.stroke('#0000ff', 8); ctx.arc(250, 90, 40, 0, 90);
+            }
+            """;
+        var scene = project.Video!.Scenes[0] with { Background = "#000000",
+            Elements = [new VideoElement { Id = "luz", Kind = "code", Text = code, X = 0.5, Y = 0.5, Width = 1, Height = 1 }] };
+        using var r = new VideoFrameRenderer(VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog));
+        using var f = r.Render(0.5);
+        var both = f.GetPixel(120, 90);
+        Assert.True(both.Red > 200 && both.Green > 200 && both.Blue < 60, both.ToString());   // yellow where the lights overlap
+        Assert.True(f.GetPixel(250, 130).Blue > 150);    // the arc's lower quarter (0° to 90°, clockwise from the right)
+        Assert.True(f.GetPixel(250, 50).Blue < 60);      // its upper part is not drawn
+    }
 }

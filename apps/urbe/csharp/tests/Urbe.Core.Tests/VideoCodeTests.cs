@@ -82,4 +82,14 @@ public sealed class VideoCodeTests
         // every instant is a new frame of a program (nothing cached as still)
         Assert.NotEqual(timeline.Evaluate(0.2).Layers[0].StateKey, timeline.Evaluate(0.3).Layers[0].StateKey);
     }
+
+    [Fact]
+    public void ArcsBlendModesAndDashesAreRecordedAndABadModeSaysWhich()
+    {
+        var cmds = VideoCode.Run("function draw(ctx){ ctx.blend('add'); ctx.stroke('#fff', 4); ctx.dash(8, 4, 2); ctx.arc(50, 50, 20, -90, 180); }", 0, 100, 100);
+        Assert.Equal(["blend", "stroke", "dash", "arc"], cmds.Select(c => c.Op));
+        Assert.Equal("add", cmds[0].Text);
+        Assert.Equal([50.0, 50, 20, -90, 180], cmds[3].Args);
+        Assert.Contains("multiply", Assert.Throws<VideoCodeException>(() => VideoCode.Run("function draw(ctx){ ctx.blend('soma'); }", 0, 10, 10)).Message);
+    }
 }
