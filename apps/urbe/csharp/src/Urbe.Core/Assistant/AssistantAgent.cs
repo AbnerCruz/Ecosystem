@@ -104,7 +104,11 @@ public sealed class AiChatBlock
                 o["mime"] = MimeType; o["name"] = FileName; o["data"] = Content;
                 break;
             case "tool_use":
-                o["id"] = Id; o["name"] = Name; o["input"] = NormalizeToolInput(Input);
+                o["id"] = Id; o["name"] = Name;
+                // Most inputs were normalized at the model/history boundary. Do not
+                // parse every past tool call again on EVERY conversation save.
+                try { o["input"] = Input?.DeepClone(); }
+                catch (ArgumentException) { o["input"] = NormalizeToolInput(Input); }
                 if (Pending) o["_pending"] = true;
                 if (Partial is not null) o["_partial"] = Partial;
                 break;
