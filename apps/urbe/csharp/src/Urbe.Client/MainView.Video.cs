@@ -460,6 +460,9 @@ public sealed partial class MainView
 
     private void LoadNarrationVoice()
     {
+        // natural voices are kept beside the app's local state, never in the vault
+        if (NeuralSpeech.Shared is null && UrbeApp.LocalStatePath is { } state && Path.GetDirectoryName(state) is { } dir)
+            NeuralSpeech.Attach(new NeuralSpeech(Path.Combine(dir, "vozes")));
         try { PlatformAudio.PreferredVoice = VoiceSettingPath is { } path && File.Exists(path) ? File.ReadAllText(path).Trim() is { Length: > 0 } v ? v : null : null; }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
     }
@@ -476,10 +479,34 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Voz da narração", "Este aparelho não informou vozes em português. A narração usa a voz padrão do sistema; vozes novas se instalam nas configurações de texto para fala do aparelho.");
             return;
         }
-        var items = voices.Select(v => new DialogItem(v + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""))).Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
+        string Label(string v) => Urbe.Core.Voice.NeuralVoices.Find(v)?.Name ?? v;
+        string? Detail(string v) => Urbe.Core.Voice.NeuralVoices.Find(v) is { } n
+            ? (NeuralSpeech.Shared?.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(n)) == true ? "Natural · já baixada, funciona sem internet" : n.Detail)
+            : "Voz do aparelho";
+        var items = voices.Select(v => new DialogItem(Label(v) + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""), Detail: Detail(v)))
+            .Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
         if (await Dialogs.ChooseAsync("Voz da narração", items, "Vale para narrar vídeos, podcasts e os vídeos do Assistente, neste aparelho.") is not int pick) return;
         var before = PlatformAudio.PreferredVoice;
-        PlatformAudio.PreferredVoice = pick == 0 ? null : voices[pick - 1];
+        var picked = pick == 0 ? null : voices[pick - 1];
+        // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
+        if (Urbe.Core.Voice.NeuralVoices.Find(picked) is { } natural && NeuralSpeech.Shared is { } speech && !speech.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(natural)))
+        {
+            var model = Urbe.Core.Voice.NeuralVoices.ModelOf(natural);
+            if (!await Dialogs.ConfirmAsync("Baixar " + natural.Name, "São " + Size(model.Bytes) + ", uma vez; depois a voz funciona sem internet.\n\nLicenças: " + model.Licences, "Baixar")) return;
+            ShowLifeNotice("Baixando a voz " + natural.Name + "…");
+            try
+            {
+                var last = 0;
+                await speech.InstallAsync(model, new Progress<double>(p => { var pct = (int)(p * 100); if (pct >= last + 10) { last = pct; ShowLifeNotice("Baixando a voz: " + pct + "%"); } }), CancellationToken.None);
+                ShowLifeNotice("Voz " + natural.Name + " instalada.");
+            }
+            catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException or UnauthorizedAccessException)
+            {
+                await Dialogs.AlertAsync("Voz natural", "A voz não foi instalada: " + e.Message);
+                return;
+            }
+        }
+        PlatformAudio.PreferredVoice = picked;
         // a sample in the chosen voice, before keeping it
         if (PlatformAudio.PlayWav is { } play && PlatformAudio.SynthesizeToWav is { } speak)
         {
