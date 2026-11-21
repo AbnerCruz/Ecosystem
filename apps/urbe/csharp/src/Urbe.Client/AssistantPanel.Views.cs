@@ -168,7 +168,7 @@ public sealed partial class AssistantPanel
             AssistantImageTools.SavedImagePath(r.Content) is { } generatedPath)
             card.Children.Add(GeneratedImagePreview(generatedPath));
         // only the latest plan shows open, as a checklist
-        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && (b.Input as JsonObject)?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
+        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && ActivityProperty(b.Input, "steps") is JsonArray steps) card.Children.Add(Plan(steps));
         if (b.Name == "ask_user" && r is { IsError: false } && _running is null &&
             _conv.Runs.LastOrDefault()?.Stopped == "needs_input" &&
             _conv.Messages.SelectMany(msg => msg.Content).LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Id == b.Id)
@@ -342,12 +342,12 @@ public sealed partial class AssistantPanel
         foreach (var item in steps)
         {
             if (item is not JsonObject x) { list.Children.Add(Hint("Etapa inválida recebida do modelo. Consulte os parâmetros abaixo.")); continue; }
-            var s = JsonText(x["status"]) ?? "pending";
+            var s = JsonText(ActivityProperty(x, "status")) ?? "pending";
             var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
             var description = new StackPanel { Spacing = 2 };
-            description.Children.Add(Wrap(JsonText(x["step"]) ?? "Etapa sem descrição", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
-            if (JsonText(x["details"]) is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
-            if (JsonText(x["acceptance"]) is { Length: > 0 } acceptance)
+            description.Children.Add(Wrap(JsonText(ActivityProperty(x, "step")) ?? "Etapa sem descrição", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
+            if (JsonText(ActivityProperty(x, "details")) is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
+            if (JsonText(ActivityProperty(x, "acceptance")) is { Length: > 0 } acceptance)
                 description.Children.Add(Wrap("Concluído quando: " + acceptance, 11, UrbeTheme.Text3));
             list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), description));
         }

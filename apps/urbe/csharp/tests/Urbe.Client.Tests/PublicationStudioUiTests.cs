@@ -13,6 +13,31 @@ namespace Urbe.Client.Tests;
 public sealed partial class HeadlessUiTests
 {
     [Fact]
+    public async Task LongPublicationDoesNotBuildEveryMarkdownPreviewOnOpening() =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+        {
+            var store = new DocumentStore();
+            var project = PublicationProject.Create("Publicação extensa");
+            for (var i = 0; i < 8; i++)
+            {
+                var note = store.Upsert(new DocumentInput
+                {
+                    Path = "Capítulo " + i + ".md",
+                    Content = "# Capítulo " + i + "\n\n" + new string('x', 5000)
+                });
+                project = project.AddSource(note.Id);
+            }
+            using var catalog = new PublicationSourceCatalog(store);
+            var studio = new PublicationStudioView();
+            studio.Open("Publicações/Extensa.publication.json", project, catalog);
+            var previews = studio.GetLogicalDescendants().OfType<Ui.Deferred>().ToList();
+            Assert.Equal(8, previews.Count);
+            Assert.All(previews, p => Assert.False(p.IsMade));
+            studio.Close();
+            return Task.FromResult(true);
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task PublicationsCanCreateAndReopenAPodcast() =>
         Assert.True(await Session.Dispatch(async () =>
         {
