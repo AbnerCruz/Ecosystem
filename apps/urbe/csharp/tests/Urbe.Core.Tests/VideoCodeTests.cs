@@ -40,7 +40,9 @@ public sealed class VideoCodeTests
     public void AProgramThatRunsAwayOrBreaksIsStoppedSayingWhy(string code, string reason)
     {
         var error = Assert.Throws<VideoCodeException>(() => VideoCode.Run(code, 0, 10, 10));
-        Assert.Contains(reason, error.Message);
+        // an endless loop is stopped by whichever limit comes first: the statements or the frame's time
+        if (reason == "instruções") Assert.True(error.Message.Contains("instruções") || error.Message.Contains("ms"), error.Message);
+        else Assert.Contains(reason, error.Message);
     }
 
     [Theory]
