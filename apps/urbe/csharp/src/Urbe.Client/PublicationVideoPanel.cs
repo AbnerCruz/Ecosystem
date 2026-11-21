@@ -27,6 +27,10 @@ public sealed class PublicationVideoPanel : StackPanel
     private readonly Ui.UrbeButton _export = new("Exportar MP4", Ui.ButtonKind.Primary, UrbeTheme.Icons.Download) { MinHeight = 44 };
     private readonly Ui.UrbeButton _cancel = new("Cancelar", Ui.ButtonKind.Danger) { MinHeight = 44, IsVisible = false };
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, IsVisible = false, Height = 6 };
+    private readonly TextBlock _audioStatus = new()
+    {
+        FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
+    };
     private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel _scenes = new() { Spacing = 6 };
     private readonly DispatcherTimer _timer = new();
@@ -113,6 +117,19 @@ public sealed class PublicationVideoPanel : StackPanel
         Children.Add(_hint);
         Children.Add(_inspector);
         Children.Add(controls);
+        var audioActions = new WrapPanel();
+        AudioAction("Narrar roteiro", () => NarrateRequested?.Invoke());
+        AudioAction("Escolher voz", () => VoiceRequested?.Invoke());
+        AudioAction("Adicionar áudio", () => AddAudioRequested?.Invoke());
+        Children.Add(new StackPanel { Spacing = 3, Children = { _audioStatus, audioActions } });
+
+        void AudioAction(string label, Action run)
+        {
+            var button = new Ui.UrbeButton(label, Ui.ButtonKind.Ghost);
+            button.Click += (_, _) => run();
+            audioActions.Children.Add(button);
+        }
+
         Children.Add(_strip);
         Children.Add(exportRow);
         Children.Add(_progress);
@@ -122,6 +139,9 @@ public sealed class PublicationVideoPanel : StackPanel
         DetachedFromVisualTree += (_, _) => Stop();
     }
 
+    public event Action? NarrateRequested;
+    public event Action? VoiceRequested;
+    public event Action? AddAudioRequested;
     public event Action? ExportRequested;
     public event Action? CancelRequested;
     /// <summary>The scene, in the project, changed by the timing controls.</summary>
@@ -150,6 +170,9 @@ public sealed class PublicationVideoPanel : StackPanel
         _scrubber.Value = Math.Min(at, timeline.Duration);
         _scrubbing = false;
         ShowAt(_scrubber.Value);
+        _audioStatus.Text = timeline.Audio.Count == 0
+            ? "Vídeo sem áudio. Narre o roteiro ou adicione uma faixa para ouvir na prévia."
+            : timeline.Audio.Count == 1 ? "1 faixa de áudio" : timeline.Audio.Count + " faixas de áudio";
         if (!IsExporting)
             _status.Text = timeline.FrameCount == 0 ? "Adicione notas: cada nota vira uma cena, e o texto dela é o roteiro e a legenda."
                 : timeline.Scenes.Count + (timeline.Scenes.Count == 1 ? " cena" : " cenas") + " · " + Clock(timeline.Duration) + " · " + timeline.Fps + " qps";

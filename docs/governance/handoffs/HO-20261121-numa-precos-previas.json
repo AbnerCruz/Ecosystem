@@ -15,15 +15,26 @@
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1014",
   "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/SpeechSynth.cs",
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Creation.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Speech.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Podcast.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FlashcardsLibraryUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SpeechProviderFixture.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantSpeechProviderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/GenerativeVideoTests.cs",
@@ -34,7 +45,10 @@
     "Beta.68 mostra preços com unidade no seletor de voz e vídeo. Onde o catálogo não informa a tarifa, mostra indisponibilidade.",
     "Prévia de voz solicitada pelo usuário, com texto de exemplo, aviso de cobrança e reprodução nativa. Salvar a voz não gera áudio.",
     "Vídeo usa tarifas do catálogo e abre a página do provedor para consultar exemplos.",
-    "Briefing aceita tema, fontes selecionadas ou ambos. A orientação de pesquisa sem fontes segue as permissões do agente. Vídeo e podcast têm duração selecionável."
+    "Briefing aceita tema, fontes selecionadas ou ambos. A orientação de pesquisa sem fontes segue as permissões do agente. Vídeo e podcast têm duração selecionável.",
+    "Publicações oferece Novo podcast e ações visíveis para editar o roteiro, gerar a fala por provedor e ouvir o WAV salvo.",
+    "Flashcards tem entrada no menu principal e fica acessível em Estudo com a biblioteca vazia.",
+    "O vídeo informa quando falta áudio e oferece ações para narrar, escolher voz e adicionar faixa. O player Android abre a trilha temporária por descritor de arquivo."
   ],
   "verification": [
     {
@@ -54,11 +68,18 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Cinco casos no cliente, cobrindo tema, anexos, ambos, pesquisa bloqueada, confirmação e as quatro durações. Modelo simulado."
+    },
+    {
+      "check": "Podcast, Flashcards e prévia de vídeo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Cinco testes focados do cliente. A prévia recebe WAV com amostras PCM não silenciosas no player simulado. Consistência: 22 checks passaram."
     }
   ],
   "known_issues": [
     "Reprodução de amostra não testada em aparelho físico.",
-    "Prévias de vídeo são os exemplos da página externa. Não há clipe gerado pelo seletor."
+    "Prévias de vídeo são os exemplos da página externa. Não há clipe gerado pelo seletor.",
+    "Saída de áudio das Publicações em aparelho físico pendente."
   ],
   "blockers": [],
   "next_actions": [
