@@ -94,4 +94,22 @@ public sealed class VideoCodeTests
         Assert.Equal([50.0, 50, 20, -90, 180], cmds[3].Args);
         Assert.Contains("multiply", Assert.Throws<VideoCodeException>(() => VideoCode.Run("function draw(ctx){ ctx.blend('soma'); }", 0, 10, 10)).Message);
     }
+
+    [Fact]
+    public void ASimulationGivesTheSameStateAtATimeInOrderOrOutOfOrder()
+    {
+        const string code = """
+            function draw(ctx, t) {
+              var s = simulate('queda', function () { return { y: 0, v: 0 }; },
+                function (s, dt) { s.v += 9.8 * dt; s.y += s.v * dt; if (s.y > 100) { s.y = 100; s.v = -s.v * 0.8; } }, t, 1 / 120);
+              ctx.circle(50, s.y, 5);
+            }
+            """;
+        double Y(double t) => VideoCode.Run(code, t, 100, 100).Single().Args[1];
+        var inOrder = new[] { 0.5, 1.0, 2.0, 3.0 }.Select(Y).ToList();
+        var jumped = new[] { 3.0, 0.5, 2.0, 1.0 }.Select(t => (t, Y(t))).OrderBy(x => x.t).Select(x => x.Item2).ToList();
+        Assert.Equal(inOrder, jumped);
+        Assert.Equal(0.5 * 9.8 * 0.25, inOrder[0], 0);   // free fall at 0.5 s, about 1.2 units
+        Assert.True(inOrder.All(y => y <= 100));           // it bounced off the floor
+    }
 }

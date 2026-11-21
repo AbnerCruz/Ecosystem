@@ -31,6 +31,7 @@ public static class VideoCode
         "Cor e traço: fill(cor) stroke(cor, largura) noFill() noStroke() alpha(0..1) blend(\"normal|add|screen|multiply|overlay|lighten|darken\") dash(traço, vão, deslocamento) (dash(0) volta ao contínuo) gradient(x1,y1,x2,y2,cor1,cor2) glow(raio, cor) noGlow(). " +
         "Formas: circle(x,y,r) ellipse(x,y,rx,ry) rect(x,y,w,h,raio?) arc(x,y,r,grauInicial,grauFinal) line(x1,y1,x2,y2) poly([x,y,…], fechar?) path(\"M… L… C… Z\") text(texto,x,y,tamanho,\"left|center|right\"?, negrito?). " +
         "Transformações: save() restore() translate(x,y) rotate(graus) scale(s, sy?). Também: lerp(a,b,u), clamp(v,a,b), ease(u) (suave 0..1), noise(x), Math.random() determinístico. " +
+        "Simulação com estado: s = simulate(\"nome\", function(){ return estadoInicial }, function(s, dt, tempo){ avança s }, t, dt?) dá o estado em t, avançado em passos fixos (o mesmo t dá sempre o mesmo estado); dentro do passo use noise(), não Math.random(). " +
         "Sem acesso a arquivos, rede, notas ou tempo real: tudo vem de t.";
 
     private sealed class Prepared(Engine engine, JsValue draw, Recorder recorder)
@@ -118,6 +119,15 @@ public static class VideoCode
         function ease(u) { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
         function __hash(x) { var s = Math.sin(x * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
         function noise(x) { var i = Math.floor(x), f = x - i; f = f * f * (3 - 2 * f); return lerp(__hash(i), __hash(i + 1), f); }
+        var __sim = {};
+        function simulate(key, init, step, t, dt) {
+          dt = dt || 1 / 60;
+          var c = __sim[key];
+          if (!c || c.t > t + 1e-9) c = { t: 0, s: init() };
+          while (c.t + dt <= t + 1e-9) { step(c.s, dt, c.t); c.t += dt; }
+          __sim[key] = c;
+          return c.s;
+        }
         """;
 
     private sealed class VideoCodeLimit(string message) : Exception(message);
