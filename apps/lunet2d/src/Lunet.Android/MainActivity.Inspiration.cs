@@ -158,7 +158,19 @@ public sealed partial class MainActivity
                 if (!string.IsNullOrWhiteSpace(item.Url))
                     card.AddView(LunetUi.Button(this, item.Curated ? "Pesquisar gameplay" : "Abrir página da referência", () =>
                     {
-                        StartActivity(new Intent(Intent.ActionView, global::Android.Net.Uri.Parse(item.Url)));
+                        try
+                        {
+                            var intent = new Intent(Intent.ActionView, global::Android.Net.Uri.Parse(item.Url));
+                            StartActivity(intent);
+                        }
+                        catch (ActivityNotFoundException)
+                        {
+                            Toast.MakeText(this, "Nenhum aplicativo disponível para abrir este link.", ToastLength.Long)?.Show();
+                        }
+                        catch (Java.Lang.SecurityException)
+                        {
+                            Toast.MakeText(this, "O Android bloqueou a abertura deste link.", ToastLength.Long)?.Show();
+                        }
                     }, ButtonStyle.Quiet));
                 if (!string.IsNullOrWhiteSpace(item.ProjectName) &&
                     _store.List().Contains(item.ProjectName, StringComparer.Ordinal))
