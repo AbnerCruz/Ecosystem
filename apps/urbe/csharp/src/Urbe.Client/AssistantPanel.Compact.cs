@@ -179,7 +179,7 @@ public sealed partial class AssistantPanel
                 (message.Role == "user" && message.Meta?.ToolResults == true))
                 continue;
 
-            var text = string.Join("\\n\\n", message.Content
+            var text = string.Join("\n\n", message.Content
                 .Where(b => b.Type == "text" && !b.Hidden && !string.IsNullOrWhiteSpace(b.Text))
                 .Select(b => b.Text));
             var files = message.Content.Where(b => b.Type == "attachment" && !string.IsNullOrWhiteSpace(b.FileName))
