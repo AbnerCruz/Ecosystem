@@ -398,6 +398,14 @@ public sealed partial class MainView : IAssistantApp
         _contents.Keys.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase)) ||
         _attachments.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
 
+    async Task IAssistantApp.OpenAssistantPublicationAsync(string path)
+    {
+        await OpenPublicationAsync(path);
+        if (AssistantOpen && _publicationsStudio is { IsVisible: true } &&
+            _publicationDraft is { } draft && _store?.Get(path)?.Id == draft.DocumentId)
+            ToggleAssistant();
+    }
+
     bool IAssistantApp.OpenReference(string reference)
     {
         if (_store is null || reference.Length == 0) return false;

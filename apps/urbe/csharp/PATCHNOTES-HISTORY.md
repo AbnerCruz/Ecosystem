@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.65 — 21/11/2026
+- Cenas JavaScript editáveis no Estúdio, transições entre cenas, vozes naturais locais (Kokoro e Piper), tela Dados do aplicativo e melhorias na biblioteca de Flashcards.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.65
+
 ## 2.0.0-beta.64 — 21/11/2026
 - Flashcards nativos com biblioteca própria (#1005) e movimento procedural nos vídeos: cópias por fórmula, texto letra a letra, brilho/sombra/desfoque/gradiente, recorte, componentes, câmera por cena e escolha da voz da narração.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.64

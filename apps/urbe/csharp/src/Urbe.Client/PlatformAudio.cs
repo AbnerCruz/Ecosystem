@@ -33,5 +33,33 @@ public static class PlatformAudio
     /// <summary>#1004: plays a WAV file to the end (or until cancelled); null where the platform cannot play one here.</summary>
     public static Func<string, CancellationToken, Task>? PlayWav { get; set; }
 
+    /// <summary>Starts a local WAV at the requested timeline position and reports the media clock.</summary>
+    public static Func<string, double, CancellationToken, Task<IPreviewAudio>>? StartPreview { get; set; }
+
+    public static Func<string, string, string, CancellationToken, Task<bool>>? SynthesizeWithVoice { get; set; }
+
+    public static IReadOnlyList<string> InstalledNarrationVoices() =>
+        (Voices?.Invoke() ?? []).Where(id => Urbe.Core.Voice.NeuralVoices.Find(id) is not { } voice ||
+            NeuralSpeech.Shared?.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(voice)) == true).ToList();
+
+    public static async Task<bool> NarrateAsync(string text, string? voice, string target, CancellationToken cancel)
+    {
+        if (string.IsNullOrEmpty(voice))
+            return SynthesizeToWav is { } fallback && await fallback(text, 0, target, cancel);
+        if (Urbe.Core.Voice.NeuralVoices.Find(voice) is { } chosen)
+            return NeuralSpeech.Shared is { } neural && await neural.SpeakAsync(chosen, text, target, cancel);
+        return SynthesizeWithVoice is { } named && await named(text, voice, target, cancel);
+    }
+
     public static bool Available => DecodeToWav is not null && TranscribeWav is not null;
 }
+
+
+public interface IPreviewAudio : IDisposable
+{
+    double Position { get; }
+    bool Ended { get; }
+    bool Failed { get; }
+}
+
+public sealed record NarrationVoiceChoice(string? Id);

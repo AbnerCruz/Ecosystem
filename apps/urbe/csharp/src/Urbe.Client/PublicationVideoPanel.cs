@@ -34,6 +34,9 @@ public sealed class PublicationVideoPanel : StackPanel
     private VideoFrameRenderer? _renderer;
     private WriteableBitmap? _bitmap;
     private double _playFrom;
+    private CancellationTokenSource? _startingAudio;
+    private IPreviewAudio? _audio;
+    public Func<VideoTimeline, double, CancellationToken, Task<IPreviewAudio?>>? StartAudioAsync { get; set; }
     private bool _scrubbing;
     // #956 P2: the object selected on the preview, its outline, the inspector, and a drag under way
     private readonly Canvas _overlay = new() { IsHitTestVisible = false };
@@ -59,7 +62,8 @@ public sealed class PublicationVideoPanel : StackPanel
         _scrubber.PropertyChanged += (_, e) =>
         {
             if (e.Property != Avalonia.Controls.Primitives.RangeBase.ValueProperty || _scrubbing) return;
-            if (!_timer.IsEnabled) ShowAt(_scrubber.Value);
+            Stop();
+            ShowAt(_scrubber.Value);
         };
         _play.Click += (_, _) => TogglePlay();
         _export.Click += (_, _) => ExportRequested?.Invoke();
@@ -67,7 +71,10 @@ public sealed class PublicationVideoPanel : StackPanel
         _timer.Tick += (_, _) =>
         {
             if (_renderer is null) { Stop(); return; }
-            Advance(_playFrom + _clock.Elapsed.TotalSeconds);
+            if (_audio is { Failed: true }) { Stop(); _status.Text = "O áudio da prévia foi interrompido."; return; }
+            Advance(_audio is { } audio
+                ? audio.Ended ? _renderer.Timeline.Duration : audio.Position
+                : _playFrom + _clock.Elapsed.TotalSeconds);
         };
         var controls = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(_play, Dock.Left);
@@ -134,6 +141,7 @@ public sealed class PublicationVideoPanel : StackPanel
     {
         // the first look is the first scene formed, not the black of its fade-in
         var at = _renderer is null ? Poster(timeline) : _scrubber.Value;
+        Stop();
         _renderer?.Dispose();
         _renderer = new VideoFrameRenderer(timeline, files, 48L << 20);
         _timer.Interval = TimeSpan.FromSeconds(1.0 / Math.Clamp(timeline.Fps, 1, 30));
@@ -378,12 +386,36 @@ public sealed class PublicationVideoPanel : StackPanel
         return row;
     }
 
-    public void TogglePlay()
+    public void TogglePlay() => _ = TogglePlayAsync();
+
+    private async Task TogglePlayAsync()
     {
-        if (_timer.IsEnabled) { Stop(); return; }
-        if (_renderer is null || _renderer.Timeline.FrameCount == 0) return;
-        // playing from the poster starts the video from its beginning
-        _playFrom = _scrubber.Value >= _renderer.Timeline.Duration - 0.01 || Math.Abs(_scrubber.Value - Poster(_renderer.Timeline)) < 1e-6 ? 0 : _scrubber.Value;
+        if (_timer.IsEnabled || _startingAudio is not null) { Stop(); return; }
+        if (_renderer is not { } renderer || renderer.Timeline.FrameCount == 0) return;
+        var timeline = renderer.Timeline;
+        _playFrom = _scrubber.Value >= timeline.Duration - 0.01 || Math.Abs(_scrubber.Value - Poster(timeline)) < 1e-6 ? 0 : _scrubber.Value;
+        if (timeline.Audio.Count > 0 && StartAudioAsync is { } startAudio)
+        {
+            using var pending = new CancellationTokenSource();
+            _startingAudio = pending;
+            _play.Content = "Cancelar prévia";
+            try
+            {
+                var audio = await startAudio(timeline, _playFrom, pending.Token);
+                if (!ReferenceEquals(_startingAudio, pending)) { audio?.Dispose(); return; }
+                _audio = audio;
+                if (audio is null) _status.Text = "A prévia de áudio está indisponível neste aparelho.";
+            }
+            catch (OperationCanceledException) when (pending.IsCancellationRequested) { return; }
+            catch (Exception error)
+            {
+                if (!ReferenceEquals(_startingAudio, pending)) return;
+                _status.Text = "Não foi possível tocar a trilha. " + error.Message;
+                _play.Content = "▶ Reproduzir";
+                return;
+            }
+            finally { if (ReferenceEquals(_startingAudio, pending)) _startingAudio = null; }
+        }
         _clock.Restart();
         _timer.Start();
         _play.Content = "❚❚ Pausar";
@@ -391,8 +423,13 @@ public sealed class PublicationVideoPanel : StackPanel
 
     public void Stop()
     {
+        var pending = _startingAudio;
+        _startingAudio = null;
+        pending?.Cancel();
         _timer.Stop();
         _clock.Stop();
+        _audio?.Dispose();
+        _audio = null;
         _play.Content = "▶ Reproduzir";
     }
 

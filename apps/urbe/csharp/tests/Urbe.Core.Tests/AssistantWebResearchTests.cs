@@ -33,6 +33,28 @@ public sealed class AssistantWebResearchTests
     { Content = new StringContent(html, Encoding.UTF8, "text/html") };
 
     [Fact]
+    public async Task VideoReferenceAcceptsDirectMediaAndRejectsWebPagesAndPrivateRedirects()
+    {
+        var video = new byte[] { 1, 2, 3 };
+        var handler = new Handler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/watch") return Html("<html>player</html>");
+            if (request.RequestUri.AbsolutePath == "/redirect")
+                return new HttpResponseMessage(HttpStatusCode.Redirect)
+                { Headers = { Location = new Uri("http://127.0.0.1/file.mp4") } };
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            { Content = new ByteArrayContent(video) { Headers = { ContentType = new("video/mp4") } } };
+        });
+        using var web = new AssistantWebSession(Config(), handler: handler, resolver: PublicDns);
+        using var destination = new MemoryStream();
+        await web.DownloadReferenceVideoAsync("https://example.org/file.mp4", destination);
+        Assert.Equal(video, destination.ToArray());
+        await Assert.ThrowsAsync<AiToolException>(() => web.DownloadReferenceVideoAsync("https://example.org/watch", destination));
+        await Assert.ThrowsAsync<AiToolException>(() => web.DownloadReferenceVideoAsync("https://example.org/redirect", destination));
+        Assert.All(handler.Requested, url => Assert.Equal("example.org", url.Host));
+    }
+
+    [Fact]
     public async Task SearchReturnsIndependentResultsDeduplicatedWithProvenanceAndFilters()
     {
         var handler = new Handler(request =>

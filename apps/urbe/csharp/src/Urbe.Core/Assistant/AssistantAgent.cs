@@ -19,6 +19,7 @@ public sealed class AiChatBlock
     /// <summary>Selected files are local to this private conversation; never copied into the vault.</summary>
     public string MimeType { get; set; } = "";
     public string FileName { get; set; } = "";
+    public string? LocalSourceId { get; set; }
     public bool IsError { get; set; }
     public bool Pending { get; set; }
     public string? Partial { get; set; }
@@ -45,6 +46,11 @@ public sealed class AiChatBlock
             case "text":
                 o["text"] = Text;
                 if (Hidden) o["_hidden"] = true;
+                if (LocalSourceId is not null)
+                {
+                    o["local_source_id"] = LocalSourceId;
+                    o["source_name"] = FileName;
+                }
                 if (Hidden && FileName.Length > 0 && Content.Length > 0)
                 {
                     o["source_name"] = FileName;
@@ -73,7 +79,7 @@ public sealed class AiChatBlock
         var type = (string?)n["type"] ?? "text";
         return type switch
         {
-            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h), FileName = (string?)n["source_name"] ?? "", Content = (string?)n["source_bytes"] ?? "" },
+            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h), FileName = (string?)n["source_name"] ?? "", Content = (string?)n["source_bytes"] ?? "", LocalSourceId = (string?)n["local_source_id"] },
             "tool_use" => new() { Type = "tool_use", Id = (string?)n["id"] ?? "", Name = (string?)n["name"] ?? "", Input = n["input"]?.DeepClone(), Pending = n["_pending"] is JsonValue p && Urbe.Core.Pages.PageEngine.Truthy(p), Partial = (string?)n["_partial"] },
             "attachment" => new() { Type = "attachment", MimeType = (string?)n["mime"] ?? "",
                 FileName = (string?)n["name"] ?? "", Content = (string?)n["data"] ?? "" },

@@ -516,6 +516,11 @@ Issue [#948](https://github.com/AbnerCruz/Ecosystem/issues/948); branch `ccr-c71
 
 Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f022efc2-0vtff7`, PR #1006. Linguagem de fórmulas fechada em C# (sem acesso a vault, rede ou segredos); execução de código geral decidida na DEC-0066 (alternativa B, Wasmtime nativo; ver ADR-0051); o elemento `code` do vídeo segue no Jint, só desenho.
 
+- [~] Criação de motion graphics por programa por cena e entrega da publicação editável no Estúdio. O fluxo do Assistente conclui na publicação. A exportação MP4 fica com o botão do Estúdio. Os layouts gravados anteriormente continuam legíveis.
+- [~] Prévia audível com mixagem compartilhada com o MP4 e posição do player nativo como relógio. Perfil por agente para voz, pesquisa e vídeo generativo. Publicações permite escolher a voz e recalcular a duração ao narrar novamente.
+- [~] #956: seletor único do dispositivo e briefing confirmado no chat para podcast, vídeo e flashcards. Mídia permanece no aparelho e a transcrição é enviada com o pedido quando disponível. Faltam escuta, verificação do seletor SAF e jornada com fontes multimídia em aparelho.
+- [~] Referências visuais amostradas de arquivos ou links públicos diretos e herança por campo do perfil padrão. Vídeo de plataformas sem URL de mídia direta pode ser anexado como arquivo.
+
 - [~] Fatia 1, instâncias procedurais: `repeat` 1–2000, fórmulas de `t`, `i`, `n`, `u`, modo `add|set`, `rand`/`noise` determinísticos e funções de vários argumentos (`VideoProceduralTests`, `TwoThousandParticlesAt720pAreDrawnAndMeasured`).
 - [~] Fatia 2, tipografia cinética: `split: letters|words` em title/text; cada parte é instância com `i`, `n`, `u`, desenhada no seu lugar do texto e girada/escalada em torno do próprio centro (`ASplitTextIsOneInstancePerLetterOrWordWithoutSpaces`, `ASplitTitleEntersLetterByLetterInItsPlace`).
 - [~] Fatia 3, efeitos: `glow` (+`glowColor`), `shadow`, `blur` animáveis (keyframes e motions) e `gradient`, numa camada por elemento com filtros do SkiaSharp (`EffectsAreAnimatableAndCheckedAndChangeTheFramesKey`, `GlowShadowBlurAndGradientAreDrawn`). Máscara/recorte ficam para depois.

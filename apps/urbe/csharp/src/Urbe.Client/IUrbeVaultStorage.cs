@@ -172,6 +172,10 @@ public interface IUrbeVaultStorage
     /// </summary>
     Task<string?> ReaderRevisionAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult<string?>(null);
 
+    /// <summary>Opens a vault file read-only. The caller owns the returned stream.</summary>
+    Task<Stream?> OpenReaderStreamAsync(string path, CancellationToken cancellationToken = default) =>
+        Task.FromResult<Stream?>(null);
+
     Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default) =>
         Task.FromResult<VaultFileRead?>(null);
 

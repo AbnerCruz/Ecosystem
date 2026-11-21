@@ -48,6 +48,7 @@ public sealed partial class MainView
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
         WirePublicationVideo(studio);
+        studio.PodcastAudioRequested += path => _ = SpeakPodcastAsync(path);
         studio.Closed += () =>
         {
             ReleaseSavedPublicationDraft(_publicationDraft);

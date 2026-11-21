@@ -75,7 +75,7 @@ public sealed class PublicationStudioView : Border
                 Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
                 if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
-                if (CanNarrate) Item("Narrar o roteiro com a voz do aparelho", () => NarrateRequested?.Invoke());
+                if (CanNarrate) Item("Narrar o roteiro", () => NarrateRequested?.Invoke());
                 if (CanNarrate) Item("Voz da narração", () => VoiceRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
@@ -173,6 +173,7 @@ public sealed class PublicationStudioView : Border
     public event Action? AdjustAudioRequested;
     /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
     public event Action? NarrateRequested;
+    public event Action<string>? PodcastAudioRequested;
     /// <summary>#1004: choosing the device voice that narrates.</summary>
     public event Action? VoiceRequested;
     /// <summary>#956: choose the video's finished look (VideoThemes).</summary>
@@ -401,6 +402,14 @@ public sealed class PublicationStudioView : Border
             remove.Click += (_, _) => { if (_project is { } p) UpdateProject(p.RemovePlacement(piece.Id)); };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
+            if (CanNarrate && source?.Path is { } podcastPath &&
+                podcastPath.EndsWith(Urbe.Core.Study.Podcast.Suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                var speak = ActionButton(UrbeTheme.Icons.File, "Gerar áudio do podcast");
+                speak.Click += (_, _) => PodcastAudioRequested?.Invoke(podcastPath);
+                DockPanel.SetDock(speak, Dock.Right);
+                item.Children.Add(speak);
+            }
             // one way where it can move: the first goes down, the others up (a button that does nothing is not shown);
             // the cover stays at the start, so it has none and the piece after it counts as the first
             int head = project.Cover is null ? 0 : 1;

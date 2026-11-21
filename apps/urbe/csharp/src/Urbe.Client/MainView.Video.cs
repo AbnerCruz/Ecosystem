@@ -20,13 +20,14 @@ public sealed partial class MainView
 
     private void WirePublicationVideo(PublicationStudioView studio)
     {
+        studio.VideoPanel.StartAudioAsync = StartPublicationPreviewAudioAsync;
         studio.VideoExportRequested += () => _ = ExportPublicationVideoAsync();
         studio.VideoCancelRequested += () => _videoExport?.Cancel();
         studio.SubtitlesRequested += format => _ = ExportPublicationSubtitlesAsync(format);
         studio.AddAudioRequested += () => _ = AddPublicationAudioAsync();
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
-        studio.VoiceRequested += () => _ = ChooseNarrationVoiceAsync();
+        studio.VoiceRequested += () => _ = ChoosePublicationVoiceAsync();
         studio.CodeEditRequested += (scene, element) => _ = EditVideoCodeAsync(studio, scene, element);
         studio.VideoThemeRequested += () => _ = ChoosePublicationVideoThemeAsync();
         studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
@@ -55,35 +56,6 @@ public sealed partial class MainView
     /// #956: a composed layout for a scene: the person chooses it and types only the content (the title starts as the
     /// scene note's). It replaces the scene's objects; Desfazer brings them back.
     /// </summary>
-    private async Task ApplyPublicationVideoLayoutAsync(string sceneId, PublicationDraft? draft)
-    {
-        var pick = await Dialogs.ChooseAsync("Cena pronta", VideoLayouts.All.Select(l => new DialogItem(l.Label, Detail: l.Description)).ToList());
-        if (pick is not { } i || !SameVideoDraft(draft)) return;
-        var layout = VideoLayouts.All[i];
-        var title = _publicationsStudio?.VideoPanel.Timeline?.Scenes.FirstOrDefault(s => s.Scene.Id == sceneId)?.Title;
-        static string Label(string slot) => slot switch
-        {
-            "titulo" => "Título", "subtitulo" => "Subtítulo", "texto" => "Texto", "esquerda" => "Lado esquerdo", "direita" => "Lado direito",
-            "numero" => "Número", "legenda" => "Legenda do número", "formula" => "Fórmula (TeX)", "nota" => "Nota", "grafico" => "Função (como y = sin(x))",
-            "autor" => "Autor", _ => slot
-        };
-        var slots = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var slot in layout.Required.Concat(layout.Optional))
-        {
-            bool required = layout.Required.Contains(slot);
-            var typed = await Dialogs.PromptAsync(new PromptOptions(layout.Label, Label: Label(slot) + (required ? "" : " (opcional)"),
-                Value: slot == "titulo" ? title ?? "" : "", Confirm: "Seguir",
-                Validate: v => required && string.IsNullOrWhiteSpace(v) ? "Escreva " + Label(slot).ToLowerInvariant() + "." :
-                    v.Length > AssistantPublicationTools.MaxOverlay ? "Na tela cabem até " + AssistantPublicationTools.MaxOverlay + " caracteres; o que é falado fica na nota." : null));
-            if (typed is null || !SameVideoDraft(draft)) return;
-            if (!string.IsNullOrWhiteSpace(typed)) slots[slot] = typed.Trim();
-        }
-        if (_publicationsStudio?.Project is not { Video: { } video } project || video.Scenes.FirstOrDefault(s => s.Id == sceneId) is not { } scene) return;
-        _publicationsStudio.UpdateProject(project with { Video = video.WithScene(scene with { Elements = VideoLayouts.Build(layout.Id, slots, sceneId) }) });
-        ShowLifeNotice("Cena montada com o layout " + layout.Label + ".");
-    }
-
-    /// <summary>#956: strokes that draw themselves, the annotations of explainer videos (SVG path data, fitted to the box).</summary>
     internal static readonly (string Label, string Data)[] VideoStrokes =
     [
         ("Seta", "M 0 50 L 90 50 M 66 26 L 90 50 L 66 74"),
@@ -103,7 +75,6 @@ public sealed partial class MainView
             new DialogItem("Forma", Detail: "Retângulo ou elipse"), new DialogItem("Imagem do vault"),
             new DialogItem("Gráfico", Detail: "Uma função, como y = sin(x), traçada durante a cena"), new DialogItem("Fórmula", Detail: "TeX, como \\frac{a}{b}"),
             new DialogItem("Traço", Detail: "Seta, sublinhado, visto ou círculo que se desenha na tela"),
-            new DialogItem("Cena pronta (layout)", Detail: "Abertura, tópico, comparação, número, fórmula, gráfico ou citação, já composta e animada"),
             new DialogItem("Programa (código)", Detail: "JavaScript que desenha a cena a cada quadro: partículas, simulações, o que você inventar")]);
         if (kind is not { } k) return;
         // every object enters with a short fade; keyframes and motions stay editable in the project
@@ -149,14 +120,13 @@ public sealed partial class MainView
                         Keyframes = [new() { Property = "progress", Time = 0, Value = 0 }, new() { Property = "progress", Time = 0.8, Value = 1, Easing = "easeOut" }]
                     };
                 break;
-            case 8:
+            case 7:
                 var program = await Dialogs.PromptAsync(new PromptOptions("Programa da cena", "draw(ctx, t, info)", VideoCodeStarter, Confirm: "Adicionar", Code: true,
                     Hint: "Desenha a cena inteira, a cada quadro. Sem acesso a arquivos, rede ou notas.",
                     Validate: v => { try { VideoCode.Check(v); VideoCode.Run(v, 0, 320, 180); return null; } catch (VideoCodeException e) { return e.Message; } }));
                 if (program is not null) element = new VideoElement { Kind = "code", Text = program, X = 0.5, Y = 0.5, Width = 1, Height = 1 };
                 break;
         }
-        if (k == 7) { await ApplyPublicationVideoLayoutAsync(sceneId, draft); return; }
         if (element is null || !SameVideoDraft(draft) || _publicationsStudio.Project?.Video?.Scenes.FirstOrDefault(s => s.Id == sceneId) is not { } current) return;
         var updated = _publicationsStudio.Project!;
         _publicationsStudio.UpdateProject(updated with { Video = updated.Video!.WithScene(current with { Elements = [.. current.Elements, element] }) });
@@ -214,8 +184,9 @@ public sealed partial class MainView
     public async Task NarratePublicationVideoAsync()
     {
         var draft = _publicationDraft;
-        if (PlatformAudio.SynthesizeToWav is not { } speak || draft is null || await PrepareVideoAsync(draft) is not { } prepared) return;
+        if (PlatformAudio.SynthesizeToWav is null || draft is null || await PrepareVideoAsync(draft) is not { } prepared) return;
         var (project, timeline) = prepared;
+        var voice = project.Video?.NarrationVoice;
         var scenes = timeline.Scenes.Where(s => s.Script.Trim().Length > 0).ToList();
         if (scenes.Count == 0) { await Dialogs.AlertAsync("Narrar o roteiro", "As notas das cenas ainda não têm texto para narrar."); return; }
         var folder = "Narração/" + ArtifactModel.SafeName(project.Title) + "/";
@@ -229,10 +200,10 @@ public sealed partial class MainView
             {
                 _notice.Show("Narrando a cena " + (i + 1) + " de " + scenes.Count, TimeSpan.FromHours(1), "Cancelar", cancel.Cancel);
                 var wav = System.IO.Path.Combine(temp, i + ".wav");
-                if (!await speak(scenes[i].Script.Trim(), 0, wav, cancel.Token))
+                if (!await PlatformAudio.NarrateAsync(scenes[i].Script.Trim(), voice, wav, cancel.Token))
                 {
                     _notice.Hide();
-                    await Dialogs.AlertAsync("Narrar o roteiro", "A voz do aparelho não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
+                    await Dialogs.AlertAsync("Narrar o roteiro", "A voz escolhida não conseguiu falar a cena " + (i + 1) + ". Nada foi mudado no vídeo.");
                     return;
                 }
                 double seconds;
@@ -483,6 +454,31 @@ public sealed partial class MainView
     /// <summary>What the voice says when it is tried: numbers, a name and a pause, like a narration.</summary>
     public const string VoiceSample = "Olá! Esta é a voz que vai narrar seus vídeos. Em 1905, Einstein publicou quatro artigos; a luz viaja a 300 mil quilômetros por segundo.";
 
+    private async Task ChoosePublicationVoiceAsync()
+    {
+        var draft = _publicationDraft;
+        if (_publicationsStudio?.Project?.Video is not { } video) return;
+        var choice = await PickNarrationVoiceAsync(video.NarrationVoice);
+        if (choice is null || !SameVideoDraft(draft) || _publicationsStudio.Project is not { Video: { } current } project)
+            return;
+        _publicationsStudio.UpdateProject(project with { Video = current with { NarrationVoice = choice.Id } });
+        ShowLifeNotice("Voz escolhida para esta publicação. Use Narrar o roteiro para gerar a nova faixa.");
+    }
+
+    Task<NarrationVoiceChoice?> IAssistantApp.PickNarrationVoiceAsync(string? current) => PickNarrationVoiceAsync(current);
+
+    private async Task<NarrationVoiceChoice?> PickNarrationVoiceAsync(string? current)
+    {
+        var voices = PlatformAudio.Voices?.Invoke() ?? [];
+        var items = voices.Select(id =>
+            new DialogItem((Urbe.Core.Voice.NeuralVoices.Find(id)?.Name ?? id) + (id == current ? " (atual)" : "")))
+            .Prepend(new DialogItem("Padrão do aparelho" + (string.IsNullOrEmpty(current) ? " (atual)" : ""))).ToList();
+        if (await Dialogs.ChooseAsync("Voz da narração", items) is not int index) return null;
+        var picked = index == 0 ? null : voices[index - 1];
+        if (!await EnsureNarrationVoiceAsync(picked)) return null;
+        return new NarrationVoiceChoice(picked);
+    }
+
     /// <summary>#1004: the device's Portuguese voices, the chosen one marked; the choice narrates scenes, podcasts and the Assistente's videos.</summary>
     public async Task ChooseNarrationVoiceAsync()
     {
@@ -518,24 +514,7 @@ public sealed partial class MainView
         }
         var before = PlatformAudio.PreferredVoice;
         var picked = pick == 0 ? null : voices[pick - 1];
-        // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
-        if (Urbe.Core.Voice.NeuralVoices.Find(picked) is { } natural && NeuralSpeech.Shared is { } speech && !speech.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(natural)))
-        {
-            var model = Urbe.Core.Voice.NeuralVoices.ModelOf(natural);
-            if (!await Dialogs.ConfirmAsync("Baixar " + natural.Name, "São " + Size(model.Bytes) + ", uma vez; depois a voz funciona sem internet.\n\nLicenças: " + model.Licences, "Baixar")) return;
-            ShowLifeNotice("Baixando a voz " + natural.Name + "…");
-            try
-            {
-                var last = 0;
-                await speech.InstallAsync(model, new Progress<double>(p => { var pct = (int)(p * 100); if (pct >= last + 10) { last = pct; ShowLifeNotice("Baixando a voz: " + pct + "%"); } }), CancellationToken.None);
-                ShowLifeNotice("Voz " + natural.Name + " instalada.");
-            }
-            catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException or UnauthorizedAccessException)
-            {
-                await Dialogs.AlertAsync("Voz natural", "A voz não foi instalada: " + e.Message);
-                return;
-            }
-        }
+        if (!await EnsureNarrationVoiceAsync(picked)) return;
         PlatformAudio.PreferredVoice = picked;
         // a sample in the chosen voice, before keeping it
         if (PlatformAudio.PlayWav is { } play && PlatformAudio.SynthesizeToWav is { } speak)
@@ -565,6 +544,29 @@ public sealed partial class MainView
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         { ShowLifeNotice("A voz foi escolhida, mas não pôde ser lembrada: " + e.Message, Ui.ToastKind.Warning); }
+    }
+
+    private async Task<bool> EnsureNarrationVoiceAsync(string? picked)
+    {
+        // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
+        if (Urbe.Core.Voice.NeuralVoices.Find(picked) is { } natural && NeuralSpeech.Shared is { } speech && !speech.IsInstalled(Urbe.Core.Voice.NeuralVoices.ModelOf(natural)))
+        {
+            var model = Urbe.Core.Voice.NeuralVoices.ModelOf(natural);
+            if (!await Dialogs.ConfirmAsync("Baixar " + natural.Name, "São " + Size(model.Bytes) + ", uma vez; depois a voz funciona sem internet.\n\nLicenças: " + model.Licences, "Baixar")) return false;
+            ShowLifeNotice("Baixando a voz " + natural.Name + "…");
+            try
+            {
+                var last = 0;
+                await speech.InstallAsync(model, new Progress<double>(p => { var pct = (int)(p * 100); if (pct >= last + 10) { last = pct; ShowLifeNotice("Baixando a voz: " + pct + "%"); } }), CancellationToken.None);
+                ShowLifeNotice("Voz " + natural.Name + " instalada.");
+            }
+            catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or TaskCanceledException or UnauthorizedAccessException)
+            {
+                await Dialogs.AlertAsync("Voz natural", "A voz não foi instalada: " + e.Message);
+                return false;
+            }
+        }
+        return true;
     }
 
     async Task<byte[]?> IAssistantApp.SpeakAsync(string text, CancellationToken cancel)
@@ -610,6 +612,51 @@ public sealed partial class MainView
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var path in VideoFrameRenderer.FilesUsed(timeline))
             if (vault is not null && (await vault.ReadFileAsync(path, 64L << 20, cancel))?.Bytes is { } bytes) files[path] = bytes;
+        var soundtrack = await MixPublicationSoundtrackAsync(timeline, temp, skipped, cancel);
+        using var renderer = new VideoFrameRenderer(timeline, files);
+        return await VideoExport.RunAsync(renderer, encoder, target, soundtrack, progress, cancel);
+    }
+
+    private async Task<IPreviewAudio?> StartPublicationPreviewAudioAsync(VideoTimeline timeline, double start, CancellationToken cancel)
+    {
+        if (PlatformAudio.StartPreview is not { } play) return null;
+        var temp = Directory.CreateTempSubdirectory("numa-video-preview-");
+        bool started = false;
+        try
+        {
+            var skipped = new List<string>();
+            var wav = await MixPublicationSoundtrackAsync(timeline, temp.FullName, skipped, cancel);
+            if (wav is null) throw new IOException("Nenhuma faixa da publicação pôde ser reproduzida.");
+            var audio = await play(wav, start, cancel);
+            started = true;
+            if (skipped.Count > 0) ShowLifeNotice("Não foi possível reproduzir: " + string.Join(", ", skipped));
+            return new TemporaryPreviewAudio(audio, temp);
+        }
+        finally { if (!started) DeletePreviewFiles(temp); }
+    }
+
+    private sealed class TemporaryPreviewAudio(IPreviewAudio audio, DirectoryInfo temp) : IPreviewAudio
+    {
+        public double Position => audio.Position;
+        public bool Ended => audio.Ended;
+        public bool Failed => audio.Failed;
+
+        public void Dispose()
+        {
+            try { audio.Dispose(); }
+            finally { DeletePreviewFiles(temp); }
+        }
+    }
+
+    private static void DeletePreviewFiles(DirectoryInfo temp)
+    {
+        try { temp.Delete(true); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
+    private async Task<string?> MixPublicationSoundtrackAsync(VideoTimeline timeline, string temp, List<string> skipped, CancellationToken cancel)
+    {
+        var vault = _vault;
         string? soundtrack = null;
         if (timeline.Audio.Count > 0)
         {
@@ -619,12 +666,13 @@ public sealed partial class MainView
                 int n = 0;
                 foreach (var clip in timeline.Audio)
                 {
-                    var read = vault is null ? null : await vault.ReadFileAsync(clip.Path, 1L << 30, cancel);
-                    if (read?.Bytes is not { } bytes) { skipped.Add(clip.Path); continue; }
+                    await using var input = vault is null ? null : await vault.OpenReaderStreamAsync(clip.Path, cancel);
+                    if (input is null) { skipped.Add(clip.Path); continue; }
                     // the original and its WAV never share a name (a .wav track was copied onto itself and the export failed)
                     var source = System.IO.Path.Combine(temp, "origem" + n + System.IO.Path.GetExtension(clip.Path));
                     var wav = System.IO.Path.Combine(temp, "a" + n++ + ".wav");
-                    await File.WriteAllBytesAsync(source, bytes, cancel);
+                    await using (var copy = File.Create(source))
+                        await input.CopyToAsync(copy, cancel);
                     if (await PlatformVideo.ToWavAsync(source, wav, cancel)) decoded.Add((clip, File.OpenRead(wav)));
                     else skipped.Add(clip.Path);
                 }
@@ -636,8 +684,7 @@ public sealed partial class MainView
             }
             finally { foreach (var (_, wav) in decoded) wav.Dispose(); }
         }
-        using var renderer = new VideoFrameRenderer(timeline, files);
-        return await VideoExport.RunAsync(renderer, encoder, target, soundtrack, progress, cancel);
+        return soundtrack;
     }
 
     /// <summary>

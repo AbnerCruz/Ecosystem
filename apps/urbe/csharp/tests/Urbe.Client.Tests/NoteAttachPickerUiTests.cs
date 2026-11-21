@@ -1,42 +1,58 @@
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
-using Avalonia.Threading;
 using Urbe.Client;
+using Urbe.Core.Assistant;
 
 namespace Urbe.Client.Tests;
 
-/// <summary>DEC-0059: "Nota do vault" in the chat reaches every note; it showed only the first 60 matches.</summary>
 public sealed partial class HeadlessUiTests
 {
     [Fact]
-    public async Task Chat_EveryNoteOfTheVaultCanBeAttached() => Assert.True(await Session.Dispatch<bool>(async () =>
+    public async Task Chat_CreationWaitsUntilTheUserSubmitsTheBrief() => Assert.True(await Session.Dispatch(async () =>
     {
-        var folder = Path.Combine(Path.GetTempPath(), "urbe-attach-note-" + Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(Path.GetTempPath(), "numa-creation-brief-" + Guid.NewGuid().ToString("N"));
         var vault = Path.Combine(folder, "vault");
         Directory.CreateDirectory(vault);
-        for (int i = 1; i <= 70; i++) File.WriteAllText(Path.Combine(vault, $"Nota {i:00}.md"), $"# Nota {i:00}\n");
         var before = UrbeApp.AssistantFolder;
         UrbeApp.AssistantFolder = Path.Combine(folder, "assistente");
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(folder, "sel.json")));
-        var window = new Window { Width = 412, Height = 900, Content = view };
-        window.Show();
         try
         {
             await view.OpenVaultAsync();
-            view.Assistant.Open();
-            Dispatcher.UIThread.RunJobs();
-            var open = view.Assistant.GetLogicalDescendants().OfType<Button>().First(b => AutomationProperties.GetName(b) == "Nota do vault");
-            open.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
-            int Listed() => view.Assistant.GetLogicalDescendants().OfType<TextBlock>().Count(t => (t.Text ?? "").StartsWith("Nota ", StringComparison.Ordinal) && t.Text!.Length == 7);
-            Assert.Equal(60, Listed());
-            ClickButtonWithText(view.Assistant, "Mostrar mais (10 restantes)");
-            Dispatcher.UIThread.RunJobs();
-            Assert.Equal(70, Listed());
-            Assert.Contains(view.Assistant.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nota 70");
+            var panel = view.Assistant;
+            panel.Open();
+            panel.SelectAgent("geral");
+            var model = new ScriptedModel();
+            panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+            panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "teste"));
+            panel.Conversation.ProviderId = "openrouter";
+            panel.Conversation.Model = "org/m";
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Recebi o briefing."},"finish_reason":"stop"}]}"""));
+
+            var menu = panel.GetLogicalDescendants().OfType<Button>().ToList();
+            Assert.Single(menu, button => AutomationProperties.GetName(button) == "Anexar arquivos");
+            Assert.DoesNotContain(menu, button => AutomationProperties.GetName(button) == "Nota do vault");
+            menu.Single(b => AutomationProperties.GetName(b) == "Gerar flashcards")
+                .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal("Gerar Flashcards", panel.ViewTitle);
+            Assert.Empty(model.Sent);
+
+            var fields = panel.GetLogicalDescendants().OfType<TextBox>().ToList();
+            fields.Single(box => box.PlaceholderText == "Assunto, objetivo e público").Text = "Física para o ensino médio";
+            fields.Single(box => box.PlaceholderText == "Quantidade, dificuldade e tópicos").Text = "Dois cartões sobre órbitas";
+            ClickButtonWithText(panel, "Enviar configurações e gerar");
+            await panel.CurrentRun!;
+            var prompt = panel.Conversation.Messages.First(message => message.Role == "user").Content[0].Text;
+            Assert.Contains("Física para o ensino médio", prompt);
+            Assert.Contains("Dois cartões sobre órbitas", prompt);
+            Assert.NotEmpty(model.Sent);
             return true;
         }
-        finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); } catch (IOException) { } }
+        finally
+        {
+            UrbeApp.AssistantFolder = before;
+            try { Directory.Delete(folder, true); } catch (IOException) { }
+        }
     }, CancellationToken.None));
 }
