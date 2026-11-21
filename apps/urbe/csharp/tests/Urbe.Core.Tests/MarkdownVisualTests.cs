@@ -147,6 +147,6 @@ public sealed class MarkdownVisualTests
         }
 
         throw new DirectoryNotFoundException(
-            "Execute os testes dentro do checkout do Urbe.");
+            "Execute os testes dentro do checkout do Numa.");
     }
 }

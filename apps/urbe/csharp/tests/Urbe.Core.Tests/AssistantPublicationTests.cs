@@ -87,4 +87,59 @@ public sealed class AssistantPublicationTests
         Assert.Contains("layout:article|book|slides|course|video", schema);
         Assert.Contains("placementId", schema);
     }
+
+    /// <summary>CST-178: the agent reviews its publication as the Estúdio does before handing it over, and is told what the review does not check.</summary>
+    [Fact]
+    public async Task TheAgentReviewsThePublicationBeforeDelivering()
+    {
+        var host = new Host();
+        var note = host.Documents.Upsert(new() { Path = "A.md", Content = "# Capítulo\n\n#### Pulei níveis\n\n![](foto.png)\n" });
+        var project = PublicationProject.Create("Livro", note.Id);
+        var path = "Publicações/Livro.publication.json";
+        host.Documents.Upsert(new() { Path = path, Content = PublicationProjectCodec.Serialize(project) });
+        var tool = AssistantPublicationTools.All.Single(t => t.Name == "review_publication");
+        Assert.Equal("read", tool.Access);
+        var text = (await tool.Run(new JsonObject { ["path"] = path }, host)).Content;
+        Assert.Contains("a corrigir", text);
+        Assert.Contains("A.md", text);
+        Assert.Contains("pula do nível", text);
+        Assert.Contains("Não conferido", text);
+        // fixed in the note, the review is clean and still says what it did not look at
+        host.Documents.Upsert(new() { Id = note.Id, Path = note.Path, Content = "# Capítulo\n\nTexto.\n" });
+        text = (await tool.Run(new JsonObject { ["path"] = path }, host)).Content;
+        Assert.StartsWith("Revisão automática sem problemas em 1 seção.", text);
+        Assert.Contains("se os fatos estão certos", text);
+        await Assert.ThrowsAsync<AiToolException>(() => tool.Run(new JsonObject { ["path"] = "Nada.publication.json" }, host));
+        // the method is in the contract the agent reads
+        Assert.Contains("review_publication", AssistantPublicationTools.Schema);
+        Assert.Contains("briefing", AssistantPublicationTools.Schema);
+    }
+
+    /// <summary>#986: the agent writes a video publication from the note it just created, naming it by path or title (it never sees the id); no loop of id errors.</summary>
+    [Fact]
+    public async Task AVideoPublicationAcceptsTheNoteByPathOrTitleAndSaysWhatIsWrong()
+    {
+        var host = new Host();
+        var note = host.Documents.Upsert(new() { Path = "Roteiros/Demo.md", Content = "# Demo\n\nCena um.\n" });
+        var tool = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        var spec = JsonNode.Parse("""{"schemaVersion":1,"title":"Demo","sources":[{"documentId":"Roteiros/Demo.md"}],"design":{"layout":"video"},"formats":["mp4"]}""")!.AsObject();
+        var result = await tool.Run(new JsonObject { ["path"] = "Publicações/Demo.publication.json", ["spec"] = spec }, host);
+        var saved = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Demo.publication.json")!.Content);
+        Assert.Equal(note.Id, Assert.Single(saved.Sources).DocumentId);
+        Assert.Equal(note.Id, Assert.Single(saved.Sections).Source.DocumentId);   // the section is made from the source
+        Assert.Equal("video", saved.Design.Layout);
+        Assert.Contains(note.Id, result.Content);   // the ids are told back for the next edit
+        using (var catalog = new PublicationSourceCatalog(host.Documents))
+        {
+            var timeline = VideoTimeline.Build(saved, catalog);
+            Assert.True(timeline.IsComplete);
+            Assert.Equal("Demo", Assert.Single(timeline.Scenes).Title);
+            Assert.True(timeline.FrameCount > 0);
+        }
+        // by title too; a name that matches nothing says which one and how to find it
+        spec["sources"] = JsonNode.Parse("""[{"documentId":"Demo"},{"documentId":"Inexistente"}]""");
+        var e = Assert.Throws<AiToolException>(() => tool.Preview!(new JsonObject { ["path"] = "Publicações/Outra.publication.json", ["spec"] = spec.DeepClone() }, host));
+        Assert.Contains("\"Inexistente\"", e.Message);
+        Assert.Contains("list_notes", e.Message);
+    }
 }

@@ -370,9 +370,9 @@ public sealed class GraphDocument
         try { data = JsonSerializer.Deserialize<Persisted>(raw, Json); }
         catch (JsonException e) { throw new InvalidDataException("Grafo JSON inválido.", e); }
         if (data is null || data.Type != TypeName || data.Version < 1)
-            throw new InvalidDataException("Este arquivo não é um grafo Urbe válido.");
+            throw new InvalidDataException("Este arquivo não é um grafo Numa válido.");
         if (data.Version > CurrentVersion)
-            throw new NotSupportedException("Este grafo foi criado por uma versão mais recente do Urbe.");
+            throw new NotSupportedException("Este grafo foi criado por uma versão mais recente do Numa.");
         if (string.IsNullOrWhiteSpace(data.Id) || string.IsNullOrWhiteSpace(data.Title) ||
             data.Nodes is null || data.Edges is null)
             throw new InvalidDataException("Estrutura de grafo incompleta.");

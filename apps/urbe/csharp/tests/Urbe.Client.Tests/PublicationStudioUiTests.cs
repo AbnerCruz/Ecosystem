@@ -30,7 +30,6 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(new[] { "Bairro/Sub/Dois.md", "Bairro/Um.md" },
                 project.Sources.Select(s => view.Documents!.Get(s.DocumentId)!.Path));
             Assert.DoesNotContain("Fonte aninhada", File.ReadAllText(Path.Combine(vault, "Publicações", "Do bairro.publication.json")));
-            Assert.False(view.Studio.IsVisible);
             view.PublicationsStudio.Close();
 
             // Existing shortcut ID stays valid but cannot resurrect the retired editor.
@@ -40,7 +39,6 @@ public sealed partial class HeadlessUiTests
             Assert.True(view.Dialogs.IsOpen);
             Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
             view.Dialogs.Cancel();
-            Assert.False(view.Studio.IsVisible);
 
             view.ShowPages();
             var create = view.Pages.GetLogicalDescendants().OfType<Button>()
@@ -160,6 +158,29 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Texto REVISADO", body.ReadToEnd());
                 Assert.Empty(view.LastOfficeLimitations);
             }
+            // CST-191: what the format does not keep is said BEFORE saving; "Voltar" saves nothing
+            var notePath = view.Documents!.List().First(d => d.Content.Contains("Texto REVISADO")).Path;
+            var linked = view.Documents.Get(notePath)!;
+            await ((IAssistantApp)view).SaveNoteAsync(linked, linked.Content + "\n\nVer [[Outra nota]].\n");
+            await Settle(window, view);
+            (string Name, byte[] Bytes)? declined = null;
+            view.SavePageFile = (name, bytes) => { declined = (name, bytes); return Task.FromResult<bool?>(true); };
+            var asking = view.ExportPublicationOfficeAsync("docx");
+            for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Ligações [[entre notas]] viram texto") == true);
+            ClickButtonWithText(view.Dialogs, "Voltar");
+            await asking;
+            Assert.Null(declined);
+            asking = view.ExportPublicationOfficeAsync("docx");   // asked again (it was not accepted); this time saved
+            for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            ClickButtonWithText(view.Dialogs, "Salvar assim");
+            await asking;
+            Assert.NotNull(declined);
+            declined = null;
+            await view.ExportPublicationOfficeAsync("docx");   // the same losses, accepted: not asked again
+            Assert.NotNull(declined);
+            await ((IAssistantApp)view).SaveNoteAsync(view.Documents.Get(notePath)!, linked.Content);   // back as it was for the PDF below
+            await Settle(window, view);
             (string Name, byte[] Bytes)? pdfFile = null;
             view.SavePageFile = (name, bytes) => { pdfFile = (name, bytes); return Task.FromResult<bool?>(true); };
             await view.ExportPublicationOfficeAsync("pdf");

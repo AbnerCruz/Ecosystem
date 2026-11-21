@@ -69,7 +69,7 @@ public sealed partial class HeadlessUiTests
             var copy = Directory.GetFiles(vault, "Ideias (conflito *.md").Single();
             Assert.Equal("# Ideias\n\nUma.\n\nEscrita no celular.\n", File.ReadAllText(copy));
             Assert.Equal(Path.GetFileName(copy), view.Editor.Current!.Path);
-            Assert.Contains("alterada fora do Urbe", view.Editor.NoticeText ?? view.NoticeText ?? "");
+            Assert.Contains("alterada fora do Numa", view.Editor.NoticeText ?? view.NoticeText ?? "");
             return true;
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }

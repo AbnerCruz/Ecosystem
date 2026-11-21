@@ -15,7 +15,11 @@ public sealed class LegacyHistory
     public const int Limit = 40;
     public const long WindowMs = 5000;
 
-    public sealed record Revision(long Timestamp, string Path, string Content, bool Removed);
+    /// <summary>
+    /// A kept text. <paramref name="By"/> (CST-154): who made the change that replaced it — an agent's name — or null when
+    /// it was the person (and in files written before this).
+    /// </summary>
+    public sealed record Revision(long Timestamp, string Path, string Content, bool Removed, string? By = null);
 
     private readonly List<(string Id, List<JsonObject> Revisions)> _byDoc = [];
     private readonly Dictionary<string, long> _last = new(StringComparer.Ordinal);
@@ -43,16 +47,19 @@ public sealed class LegacyHistory
     /// 5 s ago and something is already kept; the time of this change becomes the last one. False when the text did
     /// not change.
     /// </summary>
-    public bool Capture(string id, string previousPath, string previousContent, string content, long nowMs)
+    public bool Capture(string id, string previousPath, string previousContent, string content, long nowMs, string? by = null)
     {
         ArgumentNullException.ThrowIfNull(id);
         if (string.Equals(previousContent, content, StringComparison.Ordinal)) return false;
         var revisions = Revisions(id);
-        bool recent = _last.TryGetValue(id, out var last) && last != 0 && nowMs - last < WindowMs && revisions.Count > 0;
+        // an agent's change is always its own version: never merged into the person's typing just before
+        bool recent = by is null && _last.TryGetValue(id, out var last) && last != 0 && nowMs - last < WindowMs && revisions.Count > 0;
         bool kept = false;
         if (!recent)
         {
-            revisions.Add(new JsonObject { ["timestamp"] = nowMs, ["path"] = previousPath, ["content"] = previousContent });
+            var revision = new JsonObject { ["timestamp"] = nowMs, ["path"] = previousPath, ["content"] = previousContent };
+            if (by is not null) revision["by"] = by;
+            revisions.Add(revision);
             kept = true;
         }
         if (revisions.Count > Limit) revisions.RemoveRange(0, revisions.Count - Limit);
@@ -76,7 +83,7 @@ public sealed class LegacyHistory
         if (i < 0) return [];
         return _byDoc[i].Revisions.AsEnumerable().Reverse().Select(r => new Revision(
             Timestamp(r["timestamp"]),
-            Str(r["path"]) ?? "", Str(r["content"]) ?? "", r["removed"] is JsonValue v && v.TryGetValue<bool>(out var b) && b)).ToList();
+            Str(r["path"]) ?? "", Str(r["content"]) ?? "", r["removed"] is JsonValue v && v.TryGetValue<bool>(out var b) && b, Str(r["by"]))).ToList();
     }
 
     /// <summary>

@@ -42,7 +42,7 @@ public sealed partial class MainView
         {
             var mode = await Dialogs.ChooseAsync("O que deseja importar?",
             [
-                new DialogItem("Arquivos", UrbeTheme.Icons.Upload, "Selecione um ou vários arquivos. O Urbe identifica automaticamente o conteúdo."),
+                new DialogItem("Arquivos", UrbeTheme.Icons.Upload, "Selecione um ou vários arquivos. O Numa identifica automaticamente o conteúdo."),
                 new DialogItem("Pasta inteira", UrbeTheme.Icons.Folder, "Selecione um vault ou uma pasta com seus documentos.")
             ]);
             if (mode is null) return;
@@ -104,7 +104,7 @@ public sealed partial class MainView
         var plan = ImportDocuments.Plan(inspection, _contents, folder is { Length: > 0 } ? folder : null, _attachments);
         var description = $"{inspection.DocumentCount} documento(s) e {inspection.AssetCount} arquivo(s). Os documentos serão incorporados ao vault atual, mantendo suas pastas e referências."
             + (plan.Attachments.Count > 0 ? $" {plan.Attachments.Count} anexo(s) (imagens, PDFs, áudio, vídeo) vêm junto." : "")
-            + (plan.Skipped.Count > 0 ? $" {plan.Skipped.Count} arquivo(s) de tipos que o Urbe não grava (ou metadados) ficam de fora." : "")
+            + (plan.Skipped.Count > 0 ? $" {plan.Skipped.Count} arquivo(s) de tipos que o Numa não grava (ou metadados) ficam de fora." : "")
             + (plan.Kept.Count > 0 ? $" {plan.Kept.Count} arquivo(s) já existem com conteúdo diferente e serão mantidos como estão." : "");
         if (await Dialogs.ChooseAsync("Documentos para incorporar", [new DialogItem("Continuar")], description) is null)
         {
@@ -256,7 +256,7 @@ public sealed partial class MainView
         }
         if (backups.Count == 0)
         {
-            ShowLifeNotice("Nenhum backup neste vault. O Urbe guarda um backup em .urbe/backup antes de migrar ou importar.");
+            ShowLifeNotice("Nenhum backup neste vault. O Numa guarda um backup em .urbe/backup antes de migrar ou importar.");
             return;
         }
         backups.Sort((x, y) => string.CompareOrdinal(y.At, x.At));

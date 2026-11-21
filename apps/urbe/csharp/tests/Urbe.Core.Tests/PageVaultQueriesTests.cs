@@ -51,18 +51,4 @@ public sealed class PageVaultQueriesTests
         Assert.Equal(["Bran", "Cora", "Lia", "Vale"], Titles(Render(new JsonObject { ["source"] = "folder", ["folder"] = "Mundo" })));
         Assert.Equal(["Bran", "Cora", "Lia"], Titles(Render(new JsonObject { ["source"] = "folder", ["folder"] = "Mundo", ["subfolders"] = false })));
     }
-
-    [Fact]
-    public void TheStudioOffersTheNewSourcesOnlyWithUrbeMarks()
-    {
-        static JsonArray Fields(bool urbe) => new PageEngine(2026) { UrbeMarks = urbe }.Blocks.First(b => b.Type == "notes").Fields;
-        var on = Fields(true);
-        Assert.Contains(on, f => (string?)f!["key"] == "query");
-        Assert.Contains("search", on.First(f => (string?)f!["key"] == "source")!["options"]!.AsArray().Select(o => (string?)o));
-        // off (the 1.8.4 and its oracles): the section is the 1.8.4's, and an Urbe source falls back to its default
-        var off = Fields(false);
-        Assert.DoesNotContain(off, f => (string?)f!["key"] == "query");
-        Assert.DoesNotContain("search", off.First(f => (string?)f!["key"] == "source")!["options"]!.AsArray().Select(o => (string?)o));
-        Assert.Equal(["Bran", "Cora", "Lia", "Vale"], Titles(Render(new JsonObject { ["source"] = "search", ["query"] = "dragão", ["folder"] = "Mundo" }, urbe: false)));
-    }
 }

@@ -75,6 +75,12 @@ collect() {
     local sha st
     sha="$(jq -r '.headRefOid' <<<"$pr")"
     st="$(gh api "repos/${repo}/commits/${sha}/status" --jq "[.statuses[] | select(.context==\"${CONTEXT}\")][0] // null")"
+    # Requeue only when this head's checks turn green. Leave the stored status intact
+    # so an interrupted planning run can retry the same candidate next time.
+    if [[ "$(jq -r '.description // ""' <<<"$st")" == aguarda-checks\ * ]] &&
+       HEAD_SHA="$sha" guard_all_checks; then
+      st="$(jq '.description |= sub("^aguarda-checks "; "testando ")' <<<"$st")"
+    fi
     local reviews ready=false
     reviews="$(gh api "repos/${repo}/pulls/$(jq -r .number <<<"$pr")/reviews" --paginate --jq '.[]' | jq -s .)"
     printf '%s' "$reviews" > /tmp/owner-reviews.json
@@ -257,8 +263,9 @@ land() {
     comment "$PR" "$body"; return 0
   fi
   if ! guard_all_checks; then
-    status "$HEAD_SHA" pending testando "$MAIN" "$COMBINED" "$CRITICALITY" "checks adicionais do head pendentes ou falhos"
+    status "$HEAD_SHA" pending aguarda-checks "$MAIN" "$COMBINED" "$CRITICALITY" "checks adicionais do head pendentes ou falhos"
     echo "Checks adicionais pendentes/falhos; a main não avança. A conclusão do CI ou o agendamento reavalia."
+    [ "${MORE}" = "true" ] && redispatch
     return 0
   fi
   if ! git push -q origin "${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}"; then

@@ -9,16 +9,18 @@
     <SupportedOSPlatformVersion>24</SupportedOSPlatformVersion>
     <OutputType>Exe</OutputType>
     <RootNamespace>Urbe.AndroidHost</RootNamespace>
-    <ApplicationTitle>Urbe nativo (prévia)</ApplicationTitle>
+    <ApplicationTitle>Numa (prévia)</ApplicationTitle>
     <ApplicationId>app.urbe.nativepreview</ApplicationId>
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
-    <!-- só arm64: o motor da IA no aparelho pesa ~60 MB por arquitetura, e x86_64 é emulador -->
+    <!-- só arm64: os celulares de hoje; x86_64 é emulador -->
     <!-- O RID do emulador deve ser definido apenas neste host: -p:RuntimeIdentifiers global
          impunha android-x64 também ao Urbe.Core net10.0 e falhava ao copiar Urbe.Core.dll. -->
     <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' != 'true'">android-arm64</RuntimeIdentifiers>
     <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' == 'true'">android-x64</RuntimeIdentifiers>
+    <!-- CI emulator only: an adb-pushed example vault opens by itself and adb can open a file (MainActivity) -->
+    <DefineConstants Condition="'$(UrbeEmulatorBuild)' == 'true'">$(DefineConstants);URBE_EMULATOR</DefineConstants>
     <!--
       DEC-0048 / ADD-0025 — canal beta do Urbe C# no Android ("Urbe Beta 2.0"): única fonte da versão publicada.
       urbe-csharp-mobile-release.yml compila com -p:UrbeChannel=beta; sem isso o APK é a prévia acima.
@@ -30,8 +32,8 @@
          After owner-authorized integration, the trusted integrator explicitly
          dispatches urbe-csharp-mobile-release: GITHUB_TOKEN push cannot trigger
          a second on:push workflow. Do not change the signed beta certificate. -->
-    <UrbeBetaVersion>2.0.0-beta.55</UrbeBetaVersion>
-    <UrbeBetaVersionCode>2000055</UrbeBetaVersionCode>
+    <UrbeBetaVersion>2.0.0-beta.64</UrbeBetaVersion>
+    <UrbeBetaVersionCode>2000064</UrbeBetaVersionCode>
     <!-- Corte oficial da beta.27: UC-88 Grafos (PR #748), assistente contextual/FAB (#747)
          e pesquisa publica sem chave (#750) integrados na main.
          A identidade app.urbe.csharp e o certificado beta estavel permanecem.
@@ -49,19 +51,20 @@
     <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(UrbeChannel)' == 'beta'">
-    <ApplicationTitle>Urbe</ApplicationTitle>
+    <ApplicationTitle>Numa</ApplicationTitle>
     <ApplicationId>app.urbe.csharp</ApplicationId>
     <ApplicationDisplayVersion>$(UrbeBetaVersion)</ApplicationDisplayVersion>
     <ApplicationVersion>$(UrbeBetaVersionCode)</ApplicationVersion>
     <DefineConstants>$(DefineConstants);URBE_BETA</DefineConstants>
   </PropertyGroup>
+  <!-- #963: a preview build (the CI's APK) says the version it comes from, never a fixed 0.1.0 in exports and diagnosis -->
+  <PropertyGroup Condition="'$(UrbeChannel)' != 'beta'">
+    <ApplicationDisplayVersion>$(UrbeBetaVersion)-previa</ApplicationDisplayVersion>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
-    <!-- a IA que responde sem internet: o motor (llama.cpp) para CPU de celular, só arm64-v8a (os celulares de hoje) -->
-    <PackageReference Include="LLamaSharp.Backend.Cpu.Android" Version="0.30.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Urbe.Client/Urbe.Client.csproj" />
-    <ProjectReference Include="../Urbe.LocalAi/Urbe.LocalAi.csproj" />
   </ItemGroup>
 </Project>

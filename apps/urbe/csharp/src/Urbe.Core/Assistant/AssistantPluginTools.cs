@@ -59,7 +59,7 @@ public static class AssistantPluginTools
         new AiTool
         {
             Name = "plugin_guide", Access = "read",
-            Description = "Como criar plugins do Urbe (arquivos .plugin.json em Personalização/plugins/): formato completo, itens do painel, ações, funções, permissões e um exemplo; lista também os plugins deste vault. Chame antes de criar ou mudar um plugin; depois use write_plugin.",
+            Description = "Como criar plugins do Numa (arquivos .plugin.json em Personalização/plugins/): formato completo, itens do painel, ações, funções, permissões e um exemplo; lista também os plugins deste vault. Chame antes de criar ou mudar um plugin; depois use write_plugin. Não é para flashcards, cartões de estudo ou revisão: eles são nativos (create_flashcards).",
             Parameters = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject(), ["additionalProperties"] = false },
             Label = _ => "Lendo o guia de plugins",
             Run = (_, host) =>
@@ -73,7 +73,7 @@ public static class AssistantPluginTools
         new AiTool
         {
             Name = "write_plugin", Access = "plugin",
-            Description = "Cria ou substitui um plugin do Urbe (Personalização/plugins/<nome>.plugin.json) e o liga depois que o usuário aprovar o código. Valida antes e devolve os erros se houver. Qualquer ideia de plugin cabe aqui: painéis, cronômetros, contadores, listas, botões na cidade ou no editor, comandos, anotações em notas, eventos. Chame plugin_guide antes.",
+            Description = "Cria ou substitui um plugin do Numa (Personalização/plugins/<nome>.plugin.json) e o liga depois que o usuário aprovar o código. Valida antes e devolve os erros se houver. Qualquer ideia de plugin cabe aqui: painéis, cronômetros, contadores, listas, botões no editor, comandos, anotações em notas, eventos. Só quando a pessoa pede um plugin ou o Numa não tem o recurso; flashcards são nativos (create_flashcards). Chame plugin_guide antes.",
             Parameters = new JsonObject
             {
                 ["type"] = "object",

@@ -1,48 +1,36 @@
-# Urbe — Notas da versão atual
+# Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.55
-**Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
-**Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
+**Versão canônica preparada:** 2.0.0-beta.64
+**Canal:** Numa 2.0 nativo, Android e Windows
+**Publicação:** pelo workflow oficial depois da integração.
+**Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-## O app é a sua pasta, 1:1 — e tudo responde na hora (beta.55)
+## Flashcards nativos (#1005)
 
-- **O que está no aparelho é o que aparece no app.** Uma pasta apagada no aparelho (pelo gerenciador de arquivos ou por outro app) some do Urbe; uma pasta criada lá aparece, mesmo vazia. Ao voltar para o app, ele relê a pasta e mostra o que mudou fora dele: notas apagadas, criadas ou editadas e pastas. Não é sincronização: o app não guarda uma cópia, mostra a pasta.
-- **Excluir, Lixeira, mover e salvar sem espera, no celular e no computador.** Cada gravação agora confere e relê só os arquivos que ela mexe. Antes, cada uma lia o vault inteiro duas vezes, e a demora crescia com o vault. Num vault de 2.000 notas no computador, mover 30 notas caiu de 2,1 s para 0,8 s. Restaurar, excluir de vez e esvaziar a Lixeira também ficaram imediatos, e a Lixeira com muitos itens abre rápido.
-- **Excluir várias notas pergunta na hora.** Antes de mostrar a confirmação, o app lia o vault inteiro uma vez para cada nota escolhida, para avisar o que depende dela. Agora lê uma vez só para todas.
-- **A nota aberta não se perde quando muda fora do app.** Se ela for movida pelo gerenciador de arquivos enquanto está aberta, o editor acompanha a nota no novo lugar. Se for apagada, o app avisa na hora, o texto continua no editor e, ao salvar, a nota é criada de novo com o que você escreveu.
-- **Voltar do Android dentro de Notas:** primeiro desfaz a seleção, depois sai da Lixeira, de Favoritos ou da busca, e só então fecha Notas. Antes, Voltar fechava Notas no meio de uma seleção.
-- **Restaurar tudo, na Lixeira.** Uma pasta ou uma seleção apagada por engano volta inteira com um toque: cada nota vai para onde estava, e a pasta é criada de novo se for preciso. Se o lugar de uma nota já estiver ocupado, ela fica na Lixeira e o app avisa. Nada é sobrescrito.
-- **Uma mudança feita fora do app não trava mais o Urbe.** Antes, se qualquer arquivo do vault mudava fora do app (uma pasta apagada no aparelho, por exemplo), todas as gravações eram recusadas com "a pasta foi modificada fora do Urbe" até reabrir o vault. Agora só se recusa gravar por cima de um arquivo que mudou fora do app, que é o caso em que algo se perderia.
-- **Multi-seleção para organizar o vault:**
-  - cada toque marca ou desmarca a nota na hora, sem redesenhar a lista inteira;
-  - a seleção não se perde quando o app salva ou relê a pasta;
-  - o novo botão **Selecionar tudo** marca todas as notas e arquivos mostrados (as pastas abertas ou todos os resultados de uma busca), para mover, agrupar ou excluir de uma vez;
-  - a barra de seleção ficou mais clara: a contagem e **Selecionar tudo** em cima e, embaixo, todas as ações visíveis com nome (Mover, Nova pasta, Duplicar, Lixeira, Abrir, Renomear, Favoritar, Publicação). Antes eram só ícones, que ficavam cortados ou escondidos atrás do botão redondo flutuante;
-  - enquanto você seleciona, o botão flutuante sai da frente;
-  - cada pasta da árvore mostra quantas notas tem, contando as subpastas, para você ver onde o vault está crescendo;
-  - **Ordenar notas** (no ⋯ do Explorer): por nome, modificadas por último ou criadas por último, dentro de cada pasta. As pastas ficam sempre primeiro, e a escolha fica guardada no aparelho;
-  - **imagens, PDFs e áudios entram na seleção junto com as notas**: "Selecionar" no menu do arquivo começa a seleção, e os toques seguintes marcam outros arquivos e notas. Mover leva tudo para a pasta, atualizando os links. Excluir apaga os arquivos de vez, e a pergunta avisa que arquivos não vão para a Lixeira.
-- **Nova conversa (Assistente)** sempre responde: funciona mesmo com uma execução em andamento, que continua na conversa dela, e fecha a tela de Conversas ou de Configurações se ela estiver aberta.
-- **Nenhum botão falha em silêncio.** Quando uma ação dava erro (gravar no vault, por exemplo), o app não fechava, mas também não avisava nada, e parecia que o botão não funcionava. Agora aparece um aviso dizendo o que não deu certo.
-- **Personalização**: tema, cor de destaque e os outros botões aplicam na hora e gravam logo depois. Se a gravação falhar, a aparência anterior volta e o motivo aparece. Antes, o botão esperava a gravação e, se ela falhasse, nada acontecia.
-- **Texto da nota na largura inteira da tela.** Com o horário dos blocos ligado, cada bloco perdia um terço da largura para a coluna dos horários e o texto ficava espremido. Agora o horário fica pequeno no canto de cima de cada bloco, sem ocupar largura, e o texto usa a tela toda. Ao tocar para escrever, o bloco também não muda mais de largura.
-- **Parágrafos sem recuo indevido.** Espaços digitados antes do texto de um parágrafo apareciam como recuo; agora ficam fora do desenho, como no Obsidian. O arquivo continua com o que você escreveu.
-- **Texto maior no Assistente sobre a nota**: a conversa no popup usa 15 px, com a mesma formatação da conversa completa (antes eram 13 px, em texto simples), e o popup ficou mais alto.
-- **Fórmulas largas** só diminuem até 85 % para caber; as maiores que isso rolam para o lado e continuam legíveis (antes podiam diminuir até 60 %).
+- **Uma biblioteca de Flashcards.** Em Estudo, no alto da lista de fontes, a linha **Flashcards** mostra seus conjuntos e quantos cartões vencem hoje. Ali ficam juntos os conjuntos feitos no app e as notas com linhas `pergunta::resposta`; os cartões das notas continuam sendo o texto delas, sem cópia.
+- **Tela própria.** A biblioteca abre em tela cheia: a lista de conjuntos, cada conjunto com seus cartões e o estado de cada um, e a revisão com o cartão grande, **Mostrar resposta** e os quatro botões dizendo quando o cartão volta. No fim, um resumo de quantos você lembrou.
+- **Criar, revisar e editar.** Crie um conjunto escrevendo os cartões, revise com Errei, Difícil, Bom e Fácil (a mesma revisão espaçada de antes, com o progresso que você já tinha) e edite ou exclua cartões. Mudar só a resposta mantém o progresso.
+- **O Assistente usa a ferramenta certa.** "Faça dois flashcards sobre animais" vira um conjunto da biblioteca numa chamada só. Ele não cria mais plugin, nota ou pasta para isso, e quando a biblioteca não está disponível ele diz isso em vez de improvisar.
+- **O conjunto aparece na conversa.** Quando o Assistente cria flashcards, a conversa mostra o conjunto, com quantos cartões tem e o botão **Abrir**, que leva direto a ele na biblioteca.
+- **O pedido manda.** Se você pede flashcards e o modelo tenta criar um plugin, o app recusa a tentativa e aponta a ferramenta nativa, a menos que você tenha pedido um plugin.
+- **Nada sobra no Explorer.** Os conjuntos ficam guardados dentro da sua pasta de notas, numa área que o Explorer não mostra; vão junto em backups e na cópia da pasta.
+- **O guia acha o que se pergunta.** Há um artigo de Flashcards no guia. A busca entende "cartões", "cards" e "memorização" e, quando o guia não cobre um assunto, diz isso em vez de trazer páginas sobre outra coisa.
 
-Tudo foi testado automaticamente. No aparelho, falta confirmar:
-- apagar uma pasta pelo gerenciador de arquivos e voltar ao app;
-- excluir várias notas e usar a Lixeira, com Restaurar tudo;
-- a multi-seleção com o dedo, com notas e fotos;
-- a nota aberta na largura inteira, com o horário dos blocos ligado;
-- mover ou apagar uma nota enquanto ela está aberta;
-- o Voltar dentro de Notas.
+## Vídeos: movimento procedural (#1004)
 
-## O que continua pendente
+- **Um elemento, muitas cópias.** Um elemento do vídeo pode se repetir até 2000 vezes. Cada cópia sabe o próprio número, e as fórmulas de movimento usam isso: estrelas espalhadas, partículas em órbita, grades, ondas e entradas uma depois da outra são um elemento com uma fórmula, e não dezenas de elementos montados à mão.
+- **Texto letra a letra.** Um título ou texto pode ser dividido em letras ou palavras: cada uma entra, sobe, gira ou some no seu tempo, sem sair do lugar dela na frase. É o efeito de tipografia animada dos vídeos de abertura, feito com uma fórmula.
+- **Brilho, sombra, desfoque e gradiente.** Qualquer elemento do vídeo pode brilhar numa cor, projetar sombra, ficar desfocado ou ser pintado em gradiente, e esses efeitos também se animam: um ponto de luz pulsando, um título que entra saindo do desfoque.
+- **Revelar por dentro de uma forma.** Um elemento pode aparecer só dentro de um retângulo, elipse ou círculo da cena; com a forma invisível crescendo, o texto ou a imagem se revela aos poucos.
+- **Componentes reutilizáveis.** Um conjunto de elementos (um rótulo com caixa, um cartão de dado) é feito uma vez e usado em várias cenas, cada uso com seu próprio texto. No Estúdio, tocar num componente seleciona o componente inteiro.
+- **Câmera por cena.** Cada cena pode aproximar, afastar, deslizar e girar a câmera ao longo do tempo, com o fundo parado: um zoom lento numa fórmula, um passeio de uma parte do diagrama a outra. No Estúdio, tocar e arrastar acerta o elemento onde a câmera o mostra.
+- **Efeitos mais leves.** O brilho de formas simples é desenhado direto, e o efeito de cada letra de um título ocupa só a letra: uma cena com 600 partículas brilhando, câmera girando e título animado passou de 1,5 s para cerca de 60 ms por quadro, num computador.
+- **Escolha da voz da narração.** No Estúdio, em **Voz da narração**, você escolhe entre as vozes em português do aparelho; antes de ficar com uma, você ouve uma frase de amostra nela. A escolha vale para narrar vídeos, podcasts e os vídeos do Assistente, e fica guardada neste aparelho. Vozes neurais mais naturais estão em estudo: as amostras foram enviadas para você ouvir e há uma decisão de licença pendente (DEC-0067).
+- **Fórmulas mais capazes.** Números aleatórios que saem iguais em todo quadro e em todo aparelho, ruído suave, passos suaves e funções de dois ou três valores (mínimo, máximo, resto, mistura, limite). Uma fórmula pode somar ao movimento ou definir o valor por inteiro.
+- **O Assistente sabe usar.** As instruções de vídeo explicam as cópias e as fórmulas, com exemplo, e a lista de cenas mostra quantas cópias cada elemento tem.
+- **Revisão sem alarme falso.** Partículas que passam da borda de propósito não contam mais como erro; texto repetido continua revisado como texto.
 
-Esta versão sai com o que foi verificado, sem esperar o plano inteiro:
-- **Plano de consolidação 2.6:** os demais itens seguem para as próximas versões, entre eles Publicações, a IA nativa, Leitura e Estudo, a identidade Numa, a acessibilidade revisada e as medições no aparelho.
-- **"Modificadas por último":** ordena pelo dia em que a nota mudou. Notas do mesmo dia ficam por nome.
-- **Arquivos (imagens, PDFs, áudio):** não têm Lixeira. Excluir apaga de vez, e o app avisa antes.
-- **Releitura da pasta ao voltar ao app:** num vault muito grande, ela leva o tempo de uma abertura em segundo plano, sem travar a tela nem as gravações.
+## Não testado no aparelho
+
+- Testado com testes automáticos num computador: 2000 partículas a 720p são desenhadas e medidas, abaixo de 1 s por quadro no limite do teste; não medi no seu Android.
+- Não reexecutei um pedido real de vídeo nem de flashcards com o seu modelo; o caso da beta.60 foi provado com testes automáticos, não medido de novo com o modelo.

@@ -91,7 +91,7 @@ public sealed partial class HeadlessUiTests
             {
                 surface.SetText("Uma palavra{\"primeiro\"} aqui.\n");
                 IReadOnlyList<string>? shown = null;
-                surface.AskComment = list => { shown = list; return Task.FromResult<string?>("segundo \"x\""); };
+                surface.AskComment = list => { shown = list; return Task.FromResult<CommentChange?>(new(null, "segundo \"x\"")); };
                 await Pump(60);
                 // the mark is a run of the text (never a control in it, which clipped the words around it)
                 var line = surface.GetLogicalDescendants().OfType<TextBlock>().Single(t => t.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text?.Contains("💬") == true));
@@ -102,6 +102,17 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("Uma palavra{\"primeiro\"}{\"segundo \\\"x\\\"\"} aqui.\n", surface.Text);
                 Assert.Empty(surface.GetLogicalDescendants().OfType<TextBox>());   // the block stays rendered
                 Assert.Contains(surface.GetLogicalDescendants().OfType<TextBlock>(), t => t.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text?.Contains("💬2") == true));
+                // CST-022: a comment rewritten, then one removed; the word and the other comment stay
+                surface.AskComment = _ => Task.FromResult<CommentChange?>(new(0, "primeiro, revisto"));
+                line = surface.GetLogicalDescendants().OfType<TextBlock>().Single(t => t.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text?.Contains("💬") == true));
+                Assert.True(MarkdownReader.TapCommentMark(line, 0));
+                await Pump(60);
+                Assert.Equal("Uma palavra{\"primeiro, revisto\"}{\"segundo \\\"x\\\"\"} aqui.\n", surface.Text);
+                surface.AskComment = _ => Task.FromResult<CommentChange?>(new(1, null));
+                line = surface.GetLogicalDescendants().OfType<TextBlock>().Single(t => t.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text?.Contains("💬") == true));
+                Assert.True(MarkdownReader.TapCommentMark(line, 0));
+                await Pump(60);
+                Assert.Equal("Uma palavra{\"primeiro, revisto\"} aqui.\n", surface.Text);
                 return true;
             }
             finally { window.Close(); }
@@ -122,7 +133,7 @@ public sealed partial class HeadlessUiTests
             {
                 surface.SetText("Uma palavra aqui.\n");
                 IReadOnlyList<string>? shown = null;
-                surface.AskComment = list => { shown = list; return Task.FromResult<string?>("ver depois"); };
+                surface.AskComment = list => { shown = list; return Task.FromResult<CommentChange?>(new(null, "ver depois")); };
                 await Pump(60);
                 var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
                 typeof(VisualSurface).GetMethod("Edit", flags)!.Invoke(surface, [0]);
@@ -134,7 +145,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal([], shown);
                 // no selection: the word at the caret
                 box.SelectionStart = box.SelectionEnd = box.Text!.IndexOf("aqui", StringComparison.Ordinal) + 2;
-                surface.AskComment = list => { shown = list; return Task.FromResult<string?>("lugar"); };
+                surface.AskComment = list => { shown = list; return Task.FromResult<CommentChange?>(new(null, "lugar")); };
                 surface.Run("wordComment");
                 await Pump(60);
                 surface.FinishEdit();

@@ -8,6 +8,9 @@ using Avalonia.Threading;
 namespace Urbe.Client;
 
 /// <summary>A choice of a 1.8.4 menu (UrbeDialogs.menu / abrirMenuExplorer).</summary>
+/// <summary>What the comments window did: a comment added (no index), one rewritten, or one removed (no text).</summary>
+public sealed record CommentChange(int? Index, string? Text);
+
 public sealed record DialogItem(string Label, string? Icon = null, string? Detail = null, bool Danger = false, Func<Task>? Run = null);
 
 /// <summary>Options of UrbeDialogs.prompt.</summary>
@@ -201,20 +204,51 @@ public sealed partial class UrbeDialogs : Grid
     /// The comments on a word (<c>{"…"}</c>, UC-49): all of them, to scroll and read, and a box to write one more.
     /// Returns the new comment, or null when closed without one.
     /// </summary>
-    public Task<string?> CommentsAsync(string title, IReadOnlyList<string> comments) => Open<string?>(finish =>
+    public async Task<string?> CommentsAsync(string title, IReadOnlyList<string> comments) =>
+        await CommentsEditAsync(title, comments, editable: false) is { Index: null } added ? added.Text : null;
+
+    /// <summary>CST-022: the same window, where each comment can also be edited (in the box) or removed.</summary>
+    public Task<CommentChange?> CommentsEditAsync(string title, IReadOnlyList<string> comments, bool editable = true) => Open<CommentChange?>(finish =>
     {
         var list = new StackPanel { Spacing = 8 };
-        foreach (var c in comments)
+        int? editing = null;
+        TextBox input = null!;
+        Button add = null!;
+        for (int i = 0; i < comments.Count; i++)
+        {
+            var at = i;
+            var card = new StackPanel { Spacing = 4 };
+            card.Children.Add(new SelectableTextBlock { Text = comments[i], TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            if (editable)
+            {
+                Button Small(string label, Action run)
+                {
+                    var b = new Button { Content = label, MinHeight = 40, Padding = new Thickness(10, 0), Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalContentAlignment = VerticalAlignment.Center };
+                    Avalonia.Automation.AutomationProperties.SetName(b, label + " comentário " + (at + 1));
+                    b.Click += (_, _) => run();
+                    return b;
+                }
+                card.Children.Add(new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Children =
+                    {
+                        Small("Editar", () => { editing = at; input.Text = comments[at]; input.CaretIndex = input.Text.Length; add.Content = "Salvar"; input.Focus(); }),
+                        Small("Excluir", () => finish(new CommentChange(at, null)))
+                    }
+                });
+            }
             list.Children.Add(new Border
             {
                 Background = UrbeTheme.Brush(UrbeTheme.Bg), CornerRadius = new CornerRadius(12), Padding = new Thickness(12, 10),
                 BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
-                Child = new SelectableTextBlock { Text = c, TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+                Child = card
             });
+        }
         // no sideways scroll: with it the text gets unbounded width, never wraps and is cut at the edge
         var scroll = new ScrollViewer { Content = list, MaxHeight = 280, Margin = new Thickness(0, 12, 0, 0), IsVisible = comments.Count > 0,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        var input = new TextBox
+        input = new TextBox
         {
             PlaceholderText = "Escreva um comentário", MinHeight = 50, Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12),
             FontFamily = UrbeTheme.UiFont, FontSize = 16, AcceptsReturn = false, TextWrapping = TextWrapping.Wrap,
@@ -224,10 +258,10 @@ public sealed partial class UrbeDialogs : Grid
         Avalonia.Automation.AutomationProperties.SetName(input, "Novo comentário");
         input.Resources["TextControlBackgroundFocused"] = UrbeTheme.Brush(UrbeTheme.Bg);
         input.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
-        void Submit() { var v = (input.Text ?? "").Trim(); finish(v.Length > 0 ? v : null); }
+        void Submit() { var v = (input.Text ?? "").Trim(); finish(v.Length > 0 ? new CommentChange(editing, v) : null); }
         var close = Action("Fechar", false);
         close.Click += (_, _) => finish(null);
-        var add = Action("Adicionar", true);
+        add = Action("Adicionar", true);
         add.Click += (_, _) => Submit();
         var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*"), Margin = new Thickness(0, 16, 0, 0) };
         Grid.SetColumn(add, 2);

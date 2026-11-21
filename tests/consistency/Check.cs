@@ -631,6 +631,9 @@ static class Checks
 
             var state = h.Str("state");
             var ver = h.Arr("verification").ToList();
+            // ADD-0035: from 19/11/2026 no task waits for a human validation; untested on device is said, never queued
+            if (string.CompareOrdinal(h.Str("timestamp") ?? "", "2026-11-19T12") >= 0 && ver.Any(v => v.Str("kind") == "human" && v.Str("result") == "pending"))
+                c.R.Fail(id, $"{file}: validação humana pendente — o proprietário tirou essa etapa (ADD-0035); diga em known_issues o que não foi testado no aparelho");
             foreach (var v in ver.Where(v => v.Str("kind") == "human" && v.Str("result") == "pending"))
             {
                 // DEC-0007: validação humana pendente sempre acompanhada do objeto a validar.
@@ -1091,6 +1094,13 @@ static class Checks
         "docs/contracts/schemas/integration-policy.schema.json", "docs/governance/addenda/ADD-9999-qualquer.md",
     ];
 
+    // ADD-0035: only "extreme" waits for the owner, so the gate itself must be there — else one PR could switch the gate off
+    static readonly string[] MustNeedOwner =
+    [
+        ".github/workflows/integrate.yml", ".github/workflows/consistency.yml", ".github/integrator/integrate.sh",
+        "tests/consistency/Check.cs", "docs/governance/integration-policy.json", "docs/contracts/schemas/integration-policy.schema.json",
+    ];
+
     static void Integration(Context c)
     {
         const string id = "CHK-INTEGRATION";
@@ -1105,6 +1115,9 @@ static class Checks
             var zones = p.Arr("classes").SelectMany(x => x.Arr("paths")).Select(x => x.GetString() ?? "").ToList();
             foreach (var f in MustBeProtected.Where(f => !zones.Any(z => IntegrationQueue.Glob(z, f))))
                 c.R.Fail(id, $"{IntegrationQueue.PolicyFile}: '{f}' fora das zonas críticas — um PR poderia mudá-lo e se autoaprovar");
+            var extreme = p.Arr("classes").Where(x => x.Str("id") == "extreme").SelectMany(x => x.Arr("paths")).Select(x => x.GetString() ?? "").ToList();
+            foreach (var f in MustNeedOwner.Where(f => !extreme.Any(z => IntegrationQueue.Glob(z, f))))
+                c.R.Fail(id, $"{IntegrationQueue.PolicyFile}: '{f}' fora da classe extreme — o portão integraria sozinho e um PR poderia desligá-lo (ADD-0035)");
             foreach (var r in p.Arr("classes").SelectMany(x => x.Arr("rules")).Select(x => x.Str("rule") ?? ""))
                 if (!IntegrationQueue.KnownRules.Contains(r)) c.R.Fail(id, $"{IntegrationQueue.PolicyFile}: regra '{r}' sem implementação no checker confiável");
             if (!(p.TryGetProperty("authorization", out var a) && a.Arr("authorizers").Any()))
@@ -1318,16 +1331,8 @@ static class Checks
                 c.R.Fail(id, $"{rel}: '{pid}.validation.state' ({v.Str("state")}) diverge do registro canônico de validação ({expectedState})");
         }
 
-        // Validações humanas pendentes: último handoff de cada tarefa ainda não encerrado.
-        var expected = c.Handoffs()
-            .Select(h => h.Doc.RootElement)
-            .GroupBy(h => h.Str("task_id"))
-            .Select(g => g.OrderBy(h => h.Str("timestamp"), StringComparer.Ordinal).Last())
-            .Where(h => h.Str("state") is not ("done" or "cancelled" or "failed"))
-            .SelectMany(h => h.Arr("verification")
-                .Where(v => v.Str("kind") == "human" && v.Str("result") == "pending")
-                .Select(v => $"{h.Str("task_id")}|{v.Str("check")}|{!(v.TryGetProperty("critical", out var cv) && cv.ValueKind == JsonValueKind.False)}"))
-            .ToHashSet();
+        // ADD-0035: não há mais fila de validações humanas no portal; ela precisa vir vazia.
+        var expected = new HashSet<string>();
         var actual = p.Arr("pendingValidations").Select(v => $"{v.Str("taskId")}|{v.Str("check")}|{!(v.TryGetProperty("critical", out var cv) && cv.ValueKind == JsonValueKind.False)}").ToHashSet();
         if (!actual.SetEquals(expected))
             c.R.Fail(id, $"{rel}: validações pendentes divergem dos handoffs");
@@ -1892,6 +1897,7 @@ static class IntegrationQueue
         if (p.HeadRef.StartsWith("dependabot/", StringComparison.Ordinal)) return ("skip", "Dependabot");
         var st = ParseStatus(p.StatusDescription);
         if (st is null) return ("evaluate", "nunca avaliado");
+        if (st.Result == "aguarda-checks") return ("wait", "checks adicionais do head ainda não passaram");
         if (!SameSha(st.Main, mainSha)) return ("evaluate", $"a main mudou desde a avaliação ({st.Main[..Math.Min(12, st.Main.Length)]})");
         return st.Result switch
         {
@@ -2259,16 +2265,9 @@ static class IntegrationQueue
         { reviewErrors = [$"revisão da mudança não pôde ser analisada ({e.GetType().Name}; falha fechada)"]; }
         if (reviewErrors.Count > 0) { ok = false; reason = string.Join("; ", reviewErrors); }
         var criticality = findings.Count > 0 ? "critical" : "routine";
-        // ADD-0034: criticality remains visible; product changes no longer require a label.
-        // Only the trusted main may grant this. Governance/control-plane changes never inherit product autonomy.
-        var productAutomatic = policy is not null && policy.RootElement.TryGetProperty("automaticProductChanges", out var automatic)
-            && automatic.ValueKind == JsonValueKind.True
-            && !changed.Any(f => f is "MANIFEST.md" or "AGENTS.md" or "ecosystem.json" || f.EndsWith("/AGENTS.md", StringComparison.Ordinal)
-                || f.StartsWith(".github/", StringComparison.Ordinal) || f.StartsWith("docs/contracts/", StringComparison.Ordinal)
-                || f.StartsWith("tests/consistency/", StringComparison.Ordinal)
-                || (f.StartsWith("docs/governance/", StringComparison.Ordinal) && !f.StartsWith("docs/governance/handoffs/", StringComparison.Ordinal)))
-            ;
-        var requiresOwner = (criticality == "critical" && !productAutomatic) || routinePolicy != "automatic";
+        // ADD-0035: criticality stays visible, but only the "extreme" class (the gate itself, signing keys) waits for the
+        // owner; every other class integrates when the combined state is green. The class comes from the trusted main's policy.
+        var requiresOwner = findings.Any(f => f.Class == "extreme") || routinePolicy != "automatic";
         return new GateResult(ok, reason, [.. touched], products, criticality, requiresOwner, [.. findings], [.. handoffs]);
     }
 
@@ -2996,7 +2995,7 @@ static class SelfTest
         new("política de integração ausente", "CHK-INTEGRATION",
             r => File.Delete(Path.Combine(r, "docs", "governance", "integration-policy.json"))),
         new("control plane fora das zonas críticas (o checker poderia se autoaprovar)", "CHK-INTEGRATION",
-            r => Replace(r, "docs/governance/integration-policy.json", "        \"tests/consistency/**\",\n", "")),
+            r => Replace(r, "docs/governance/integration-policy.json", "        \"tests/consistency/Check.cs\",\n", "")),
         new("regra de criticidade sem implementação no checker confiável", "CHK-INTEGRATION",
             r => Replace(r, "docs/governance/integration-policy.json", "{ \"rule\": \"manifest-structure\",", "{ \"rule\": \"regra-inventada\",")),
         new("segunda autoridade de política (mergePolicy de volta no manifest)", "CHK-INTEGRATION",
@@ -3352,11 +3351,16 @@ static class SelfTest
                 File.WriteAllText(Path.Combine(hdir, n["message_id"]!.GetValue<string>() + ".json"), n.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
             Save(Make("HO-99990101-teste-validacao", "P9-9", "2026-10-01T19:01:00Z", "review"));
             Save(Make("HO-99990102-teste-validacao-2", "P9-8", "2026-10-01T19:02:00Z", "review"));
-            RunGenerator(tmp);
-            using var proj = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
-            var val = proj.RootElement.Arr("pendingValidations").First(v => v.Str("taskId") == "P9-9");
-            var approve = val.GetProperty("approve"); var reject = val.GetProperty("reject");
-            string title = approve.Str("issueTitle")!, body = approve.Str("issueBody")!;
+            // ADD-0035: o portal não projeta mais validações; o aplicador ainda responde registros antigos, no mesmo formato.
+            (string Title, string Body) Answer(string task, string handoff, bool approve)
+            {
+                var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                    "Validação de teste\n" + "docs/governance/handoffs/" + handoff + ".json"))).ToLowerInvariant()[..12];
+                string result = approve ? "passed" : "failed", verb = approve ? "aprovada" : "reprovada";
+                return ($"Validação {task}: {verb}", "<!-- ecosystem-validation:v1 -->\n" + $"validation: {task}\nhandoff: {handoff}\ncheck-hash: {hash}\nresult: {result}\n\ncomment:\n");
+            }
+            var (title, body) = Answer("P9-9", "HO-99990101-teste-validacao", true);
+            var (rejectTitle, rejectBody) = Answer("P9-9", "HO-99990101-teste-validacao", false);
             var path = Path.Combine(hdir, "HO-99990101-teste-validacao.json");
             var before = File.ReadAllText(path);
             // Regressão #114: evidência pending do build já referencia o handoff.
@@ -3407,26 +3411,25 @@ static class SelfTest
             var replayVal = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
             Report(replayVal.Code == 0 && replayVal.Outcome == "already-registered" && File.ReadAllText(path) == handoffRegistered, "reprocessar a mesma validação é idempotente (nada alterado)");
             Report(WorkflowVerdict(replayVal) == 0 && File.ReadAllText(buildPath) == buildRegistered, "repetição idempotente sem commit permanece verde e sem divergência de build");
-            var opposite = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            var opposite = RunApplier(tmp, "AbnerCruz", "OWNER", rejectTitle, rejectBody);
             Report(opposite.Code == 3 && opposite.Outcome == "rejected" && File.ReadAllText(path) == handoffRegistered, "resposta oposta a uma validação já respondida é recusada e não sobrescreve");
 
             Report(WorkflowVerdict(opposite) != 0, "resposta conflitante termina workflow vermelho");
             // Restaura SOMENTE a fixture isolada para exercitar pending → failed.
             File.WriteAllText(path, before); build["state"] = "HUMAN_VALIDATION_PENDING"; File.WriteAllText(buildPath, build.ToJsonString());
-            var rejectedValidation = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            var rejectedValidation = RunApplier(tmp, "AbnerCruz", "OWNER", rejectTitle, rejectBody);
             RunGenerator(tmp); var negativeConsistent = Checks.RunAll(tmp);
             if (negativeConsistent.Failed) negativeConsistent.Print(Console.Out);
             Report(rejectedValidation.Code == 0 && rejectedValidation.Outcome == "registered" && !negativeConsistent.Failed
                 && WorkflowVerdict(rejectedValidation, "0", "true") == 0, "reprovação válida registra failed, conserva consistência e termina workflow verde");
             Report(File.ReadAllText(buildPath).Contains("IMPLEMENTED"), "build reprovado não permanece validado nem verificado automaticamente");
-            var negativeReplay = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            var negativeReplay = RunApplier(tmp, "AbnerCruz", "OWNER", rejectTitle, rejectBody);
             Report(negativeReplay.Outcome == "already-registered" && WorkflowVerdict(negativeReplay) == 0, "reprovação repetida também é idempotente e verde");
 
             // Reprovação e handoff substituído por um mais recente da mesma tarefa.
-            using var proj2 = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
-            var other = proj2.RootElement.Arr("pendingValidations").First(v => v.Str("taskId") == "P9-8");
+            var other = Answer("P9-8", "HO-99990102-teste-validacao-2", false);
             Save(Make("HO-99990103-teste-validacao-3", "P9-8", "2026-10-01T19:03:00Z", "review"));
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", other.GetProperty("reject").Str("issueTitle")!, other.GetProperty("reject").Str("issueBody")!).Code == 3,
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", other.Title, other.Body).Code == 3,
                 "recusa handoff que não é mais o mais recente da tarefa");
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
@@ -3573,6 +3576,10 @@ static class SelfTest
         Report(d.Action == "none", "conflito ou check vermelho contra a main atual: aguarda nova versão do PR (sem laço)");
         d = IntegrationQueue.Plan(main, [P(9, "pending", $"testando main={main} combined={comb} routine")]);
         Report(d.Action == "evaluate", "avaliação interrompida ou obsoleta é retomada");
+        d = IntegrationQueue.Plan(main, [P(9, "pending", $"aguarda-checks main={old} combined={comb} routine"), P(10)]);
+        Report(d.Action == "evaluate" && d.Pr == 10 && !d.More, "checks pendentes de um head não bloqueiam o próximo PR, mesmo após avanço da main");
+        d = IntegrationQueue.Plan(main, [P(9, "pending", $"aguarda-checks main={main} combined={comb} routine")]);
+        Report(d.Action == "none", "a fila não repete a avaliação combinada enquanto os checks do head estiverem pendentes");
         var ps = IntegrationQueue.ParseStatus($"pronto main={main} combined={comb} critical: aguardando autorização");
         Report(ps is { Result: "pronto", Combined: comb, Criticality: "critical" } && ps.Main == main, "status persiste main, commit combinado exato e classificação");
 
@@ -3608,7 +3615,14 @@ static class SelfTest
             g = Case(c => W(c, "apps/lunet2d/src/Lunet.Editor/X.cs", "class X {}"), "apps/lunet2d/src/Lunet.Editor/X.cs").G;
             Report(Routine(g) && g.Products.SequenceEqual(["lunet2d"]), "rotina Lunet2D: integra sozinha");
             g = Case(c => W(c, ".github/workflows/integrate.yml", "x"), ".github/workflows/integrate.yml").G;
-            Report(Critical(g, "control-plane"), "control plane: PR que muda integrate.yml é crítico e não entra sozinho");
+            Report(Critical(g, "control-plane") && g.RequiresOwner, "control plane: PR que muda integrate.yml é crítico e não entra sozinho");
+            // ADD-0035: critical but not extreme integrates when green; only the gate, keys and stage wait for the owner
+            g = Case(c => W(c, ".github/workflows/urbe-checks.yml", "x"), ".github/workflows/urbe-checks.yml").G;
+            Report(Critical(g, "control-plane") && !g.RequiresOwner, "ADD-0035: workflow de CI de um produto é crítico visível, mas integra sozinho");
+            g = Case(c => W(c, "MANIFEST.md", "# x"), "MANIFEST.md").G;
+            Report(g.Criticality == "critical" && !g.RequiresOwner, "ADD-0035: mudança na constituição integra sozinha quando verde");
+            g = Case(c => W(c, "apps/urbe/release.keystore", "x"), "apps/urbe/release.keystore").G;
+            Report(g.RequiresOwner, "ADD-0035: chave de assinatura espera o proprietário");
             g = Case(c => W(c, "tests/consistency/Check.cs", R(c, "tests/consistency/Check.cs").Replace("        \"CHK-INTEGRATION\",\n", "")), "tests/consistency/Check.cs").G;
             Report(Critical(g, "control-plane", "remove checks: CHK-INTEGRATION"), "checker: PR que remove fiscalização do Check.cs é crítico e o checker da main aponta o que foi removido");
             g = Case(c => W(c, IntegrationQueue.PolicyFile, R(c, IntegrationQueue.PolicyFile).Replace("        \"tests/consistency/**\",\n", "")), IntegrationQueue.PolicyFile).G;

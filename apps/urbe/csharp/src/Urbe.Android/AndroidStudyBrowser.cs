@@ -10,7 +10,7 @@ using Urbe.Core;
 
 namespace Urbe.AndroidHost;
 
-internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, IStudyWebView, IReaderActivity
+internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, IStudyWebView, IReaderActivity, IReaderMediaPosition
 {
     private WebView? _web;
     public string Address { get; private set; } = address;
@@ -44,7 +44,7 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
     }
     private void LoadAddress(WebView web)
     {
-        if (ReaderUris.YouTube(Address) is not null && new Uri(Address).AbsolutePath.StartsWith("/embed/", StringComparison.Ordinal))
+        if (ReaderUris.IsYouTubeEmbed(Address))
             web.LoadUrl(Address, new Dictionary<string, string> { ["Referer"] = "https://" + (web.Context?.PackageName ?? "app.urbe.nativepreview") + "/" });
         else web.LoadUrl(Address);
     }
@@ -64,6 +64,27 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
         var done = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         web.EvaluateJavascript(script, new Selection(done));
         return done.Task.WaitAsync(TimeSpan.FromSeconds(3));
+    }
+
+    public async Task<string> PageHtmlAsync()
+    {
+        if (_web is null) return "";
+        try { return await ReadStringAsync(_web, StudyPageScripts.Html); }
+        catch (TimeoutException) { return ""; }
+    }
+
+    /// <summary>The second the page's player is at (the official YouTube player included), or null without one.</summary>
+    public async Task<double?> ReadMediaSecondAsync()
+    {
+        if (_web is null) return null;
+        try { return double.TryParse(await ReadStringAsync(_web, "String(" + MediaPositionScripts.Read + ")"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var s) ? s : null; }
+        catch (TimeoutException) { return null; }
+    }
+
+    public Task SeekMediaAsync(double seconds)
+    {
+        if (_web is not null && double.IsFinite(seconds) && seconds >= 0) _web.EvaluateJavascript(MediaPositionScripts.Seek(seconds), null);
+        return Task.CompletedTask;
     }
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)

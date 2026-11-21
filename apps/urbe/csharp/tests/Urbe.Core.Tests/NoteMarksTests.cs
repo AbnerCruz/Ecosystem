@@ -93,6 +93,38 @@ public sealed class NoteMarksTests
         Assert.Equal("Uma palavra no texto. `codigo{\"não\"}` fim\n", NoteMarks.StripComments(md));
     }
 
+    /// <summary>
+    /// CST-022: hard comments go in and come back exactly, follow their word through edits elsewhere, and changing or
+    /// removing one never touches the word, its other comments or the rest of the text.
+    /// </summary>
+    [Theory]
+    [InlineData("fecha \"} aqui")]
+    [InlineData("barra no fim \\")]
+    [InlineData("um {\"falso\"} dentro")]
+    [InlineData("ação 😀 e %% e ** e ``")]
+    [InlineData("duas\nlinhas")]
+    public void HardCommentsRoundTripAndFollowTheirWord(string comment)
+    {
+        var text = "Antes. A casa azul. Depois.";
+        var at = text.IndexOf("casa", StringComparison.Ordinal) + "casa".Length;
+        var withOne = text.Insert(at, NoteMarks.Quote("primeiro"));
+        var group = NoteMarks.CommentGroups(withOne).Single();
+        var withTwo = NoteMarks.AddComment(withOne, group, comment);
+        var expected = comment.Replace('\n', ' ').Trim();
+        Assert.Equal(["primeiro", expected], NoteMarks.CommentGroups(withTwo).Single().Comments);
+        // other edits before and after: the comments stay right after "casa"
+        var edited = "Novo começo. " + withTwo.Replace("Depois.", "Depois, bem depois.");
+        var moved = NoteMarks.CommentGroups(edited).Single();
+        Assert.Equal("casa", edited[(moved.Start - 4)..moved.Start]);
+        Assert.Equal(["primeiro", expected], moved.Comments);
+        // change the first, remove the second: the word and the text around are untouched
+        var changed = NoteMarks.ChangeComment(edited, moved, 0, "mudado");
+        Assert.Equal(["mudado", expected], NoteMarks.CommentGroups(changed).Single().Comments);
+        var removed = NoteMarks.ChangeComment(changed, NoteMarks.CommentGroups(changed).Single(), 1, null);
+        Assert.Equal(["mudado"], NoteMarks.CommentGroups(removed).Single().Comments);
+        Assert.Equal("Novo começo. Antes. A casa azul. Depois, bem depois.", NoteMarks.StripComments(removed));
+    }
+
     [Fact]
     public void AiMark_IsAddedOnceAndRenderedAsAModelMark()
     {

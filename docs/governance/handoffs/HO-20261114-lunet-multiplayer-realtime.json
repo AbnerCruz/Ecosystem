@@ -55,9 +55,10 @@
     {
       "check": "Dois aparelhos na mesma rede jogando o exemplo do guia (host/cliente, LAN, versões, sinal fraco, APK exportado)",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/multiplayer.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/974); registro em docs/governance/responses/VAL-HO-20261114-lunet-multiplayer-realtime-a81518d9db23.md."
     }
   ],
   "known_issues": [

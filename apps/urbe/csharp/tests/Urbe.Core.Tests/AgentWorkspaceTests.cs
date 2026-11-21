@@ -5,30 +5,20 @@ namespace Urbe.Core.Tests;
 
 public sealed class AgentWorkspaceTests
 {
-    private sealed class Runtime : ILocalTextRuntime
-    {
-        public LocalModel Recommended => new("real-runtime-id", "Runtime model", "", "model.gguf", "https://example.test/model", 10, "", 4096, 1000, true);
-        public IReadOnlyList<LocalModel> Models => [Recommended];
-        public bool IsInstalled(LocalModel model) => false;
-        public Task InstallAsync(LocalModel model, IProgress<(long Done, long Total)>? progress, CancellationToken cancel) => Task.CompletedTask;
-        public void Remove(LocalModel model) { }
-        public Task<AiResult> ChatAsync(LocalModel model, AiRequest request, Action<AiStreamEvent> onEvent, CancellationToken cancel) => throw new NotSupportedException();
-    }
-
     [Fact]
-    public void NewInstallOnlyHasAssistantWithRuntimeModelNoImagesAndReadOnly()
+    public void NewInstallOnlyHasAssistantNoModelNoImagesAndReadOnly()
     {
         var storage = new MemoryAssistantStorage();
-        var config = new AssistantStore(storage).InitializeAgentWorkspaces(new Runtime());
+        var config = new AssistantStore(storage).InitializeAgentWorkspaces();
         Assert.Equal("geral", Assert.Single(AgentNames.All(config)).Id);
-        Assert.Equal(new AiModelChoice("device", "real-runtime-id"), config.AgentModels["geral"]);
+        Assert.Empty(config.AgentModels); // no model is chosen for the person: they connect one
         Assert.Empty(config.AgentImages);
         Assert.Equal("readonly", config.PolicyFor("geral"));
         Assert.Equal("readonly", config.PolicyFor("new-agent"));
         Assert.False(AssistantAgent.AllowTool(AssistantAgent.Agents[0], config.PolicyFor("geral"), "write"));
         Assert.True(AssistantAgent.NeedsApproval("destructive", "auto", true));
         Assert.True(AssistantAgent.NeedsApproval("plugin", "auto", true));
-        var loaded = new AssistantStore(storage).InitializeAgentWorkspaces(null);
+        var loaded = new AssistantStore(storage).InitializeAgentWorkspaces();
         Assert.Equal(config.AgentModels, loaded.AgentModels);
         Assert.Empty(loaded.AgentImages);
     }
@@ -42,7 +32,7 @@ public sealed class AgentWorkspaceTests
         var conversation = """{"id":"legacy","title":"Mixed legacy","agentId":"escritor","vault":"v","policy":"auto","messages":[{"id":"m","role":"user","content":[{"type":"text","text":"keep me"}]}]}""";
         storage.Write("conversa-legacy.json", conversation);
         var store = new AssistantStore(storage);
-        var config = store.InitializeAgentWorkspaces(new Runtime());
+        var config = store.InitializeAgentWorkspaces();
         Assert.Equal(fixture, storage.Read("config-before-agent-workspaces.json"));
         Assert.Equal(conversation, storage.Read("conversa-legacy.json"));
         Assert.Equal(["geral", "escritor"], AgentNames.All(config).Select(a => a.Id));
@@ -52,7 +42,7 @@ public sealed class AgentWorkspaceTests
         Assert.Equal("visual", config.AgentImages["geral"].Model);
         Assert.Equal("readonly", config.PolicyFor("escritor")); // a conversation's auto is not an agent grant
         var first = storage.Read("config.json");
-        store.InitializeAgentWorkspaces(new Runtime());
+        store.InitializeAgentWorkspaces();
         Assert.Equal(first, storage.Read("config.json"));
         Assert.Single(store.ConversationsFor("escritor", "v"));
         Assert.Empty(store.ConversationsFor("geral", "v"));
@@ -60,33 +50,11 @@ public sealed class AgentWorkspaceTests
     }
 
     [Fact]
-    public void AnUnconfiguredLegacyAssistantGetsTheLocalDefaultWithoutReplacingExplicitChoices()
-    {
-        var storage = new MemoryAssistantStorage();
-        var original = "{\"version\":1,\"instructions\":\"Keep these\",\"providers\":[{\"id\":\"device\",\"preset\":\"openai\"}]}";
-        storage.Write("config.json", original);
-        var config = new AssistantStore(storage).InitializeAgentWorkspaces(new Runtime());
-        Assert.Equal("Keep these", config.Instructions);
-        Assert.Equal("openai", config.Providers.First(p => p.Id == "device").Preset);
-        var choice = config.AgentModels["geral"];
-        Assert.Equal("device", config.Providers.First(p => p.Id == choice.ProviderId).Preset);
-        Assert.NotEqual("device", choice.ProviderId); // no collision with an existing provider identity
-        Assert.Equal("real-runtime-id", choice.Model);
-        Assert.Equal(original, storage.Read("config-before-agent-workspaces.json"));
-
-        var other = new MemoryAssistantStorage();
-        other.Write("config.json", "{\"version\":1,\"model\":\"chosen-before\"}");
-        var kept = new AssistantStore(other).InitializeAgentWorkspaces(new Runtime());
-        Assert.Equal("chosen-before", kept.Model);
-        Assert.False(kept.AgentModels.ContainsKey("geral"));
-    }
-
-    [Fact]
     public void AgentSettingsRoundTripIndependentlyAndMissingProviderDoesNotSubstitute()
     {
         var storage = new MemoryAssistantStorage();
         var store = new AssistantStore(storage);
-        var c = store.InitializeAgentWorkspaces(null);
+        var c = store.InitializeAgentWorkspaces();
         c.AgentPolicies["one"] = "ask";
         c.AgentPolicies["two"] = "auto";
         c.AgentModels["one"] = new("removed", "model-one");
@@ -109,7 +77,7 @@ public sealed class AgentWorkspaceTests
     public void PermissionScopeActuallyReachesRuntimeAndPersists()
     {
         var store = new AssistantStore(new MemoryAssistantStorage());
-        var config = store.InitializeAgentWorkspaces(null);
+        var config = store.InitializeAgentWorkspaces();
         var agent = new AiAgentDef("writer", "Writer", "edit", "", "read", false, "Write notes");
         Assert.False(AssistantAgent.AllowTool(config.AgentWithInstructions(agent), config.PolicyFor(agent.Id), "write"));
         config.AgentToolScopes[agent.Id] = "write";
@@ -194,7 +162,7 @@ public sealed class AgentWorkspaceTests
     {
         var storage = new MemoryAssistantStorage();
         storage.Write("config.json", original);
-        Assert.Throws<IOException>(() => new AssistantStore(storage).InitializeAgentWorkspaces(new Runtime()));
+        Assert.Throws<IOException>(() => new AssistantStore(storage).InitializeAgentWorkspaces());
         Assert.Equal(original, storage.Read("config.json"));
     }
 
@@ -216,11 +184,11 @@ public sealed class AgentWorkspaceTests
         storage.Write("config.json", original);
         storage.Fail = true;
         var store = new AssistantStore(storage);
-        Assert.Throws<IOException>(() => store.InitializeAgentWorkspaces(null));
+        Assert.Throws<IOException>(() => store.InitializeAgentWorkspaces());
         Assert.Equal(original, storage.Read("config.json"));
         Assert.Equal(original, storage.Read("config-before-agent-workspaces.json"));
         storage.Fail = false;
-        Assert.Equal("preserved", store.InitializeAgentWorkspaces(null).Model);
+        Assert.Equal("preserved", store.InitializeAgentWorkspaces().Model);
     }
 
     private sealed class BrokenStorage : IAssistantStorage
@@ -232,5 +200,5 @@ public sealed class AgentWorkspaceTests
     }
 
     [Fact]
-    public void FailedBackupStopsMigration() => Assert.Throws<IOException>(() => new AssistantStore(new BrokenStorage()).InitializeAgentWorkspaces(null));
+    public void FailedBackupStopsMigration() => Assert.Throws<IOException>(() => new AssistantStore(new BrokenStorage()).InitializeAgentWorkspaces());
 }

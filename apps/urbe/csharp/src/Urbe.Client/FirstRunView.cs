@@ -49,7 +49,7 @@ public sealed class FirstRunView : Grid
         switch (step)
         {
             case 0:
-                Title("Bem-vindo ao Urbe");
+                Title("Bem-vindo ao Numa");
                 Text("Suas notas são arquivos Markdown numa pasta sua, que você pode abrir em qualquer programa. Escolha a pasta das notas, ou crie uma nova pelo seletor.");
                 Text("Dica: guarde uma cópia da pasta de vez em quando (Configurações → Exportar tudo).");
                 Buttons(("Escolher pasta", true, async () =>

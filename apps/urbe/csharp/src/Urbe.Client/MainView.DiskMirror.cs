@@ -72,10 +72,10 @@ public sealed partial class MainView
         if (moved.Count == 1)
         {
             Editor.Renamed(moved[0]);
-            Editor.Notify("“" + name + "” foi movida fora do Urbe para “" + moved[0] + "”. O editor acompanhou.");
+            Editor.Notify("“" + name + "” foi movida fora do Numa para “" + moved[0] + "”. O editor acompanhou.");
             return;
         }
-        Editor.Notify("“" + name + "” foi apagada fora do Urbe. O texto continua aqui; se você salvar, a nota é criada de novo.");
+        Editor.Notify("“" + name + "” foi apagada fora do Numa. O texto continua aqui; se você salvar, a nota é criada de novo.");
     }
 
     /// <summary>The open note is not in the vault any more (deleted outside): saving it creates it again, with the
@@ -91,7 +91,7 @@ public sealed partial class MainView
         NotesChanged();
         RefreshNotes();
         await SaveHistoryAsync();
-        Editor.Notify("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” tinha sido apagada fora do Urbe e foi criada de novo com o seu texto.");
+        Editor.Notify("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” tinha sido apagada fora do Numa e foi criada de novo com o seu texto.");
         return true;
     }
 }

@@ -59,22 +59,29 @@ public static partial class CrashLog
 
     public static void Write(Exception error, string where)
     {
-        lock (Gate)
-        {
-            Count++;
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-                var entry = "== " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) + " · " + where + "\n" + Private(error.ToString()) + "\n\n";
-                var old = File.Exists(FilePath) ? Recent(File.ReadAllText(FilePath), DateTime.Now) : "";
-                var all = old + entry;
-                if (all.Length > MaxBytes) all = all[^MaxBytes..];   // the most recent errors
-                File.WriteAllText(FilePath, all);
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
-        }
+        lock (Gate) { Count++; Append(where, Private(error.ToString())); }
         try { Dispatcher.UIThread.Post(() => Reported?.Invoke(error)); }
         catch (Exception) { }
+    }
+
+    /// <summary>CST-011: a fact for the report that is not an error (a stall); written without telling the person.</summary>
+    public static void Note(string where, string text)
+    {
+        lock (Gate) Append(where, Private(text));
+    }
+
+    private static void Append(string where, string text)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+            var entry = "== " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) + " · " + where + "\n" + text + "\n\n";
+            var old = File.Exists(FilePath) ? Recent(File.ReadAllText(FilePath), DateTime.Now) : "";
+            var all = old + entry;
+            if (all.Length > MaxBytes) all = all[^MaxBytes..];   // the most recent errors
+            File.WriteAllText(FilePath, all);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
     }
 
     /// <summary>The log's text, or "" when nothing was written.</summary>

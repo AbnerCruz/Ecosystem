@@ -101,8 +101,6 @@ public sealed class AssistantProviders
         ["anthropic"] = new("anthropic", "Anthropic", "https://api.anthropic.com/v1", true, false, "sk-ant-…", "https://console.anthropic.com/settings/keys", ["claude-opus-5-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]),
         ["openai"] = new("openai", "OpenAI", "https://api.openai.com/v1", true, true, "sk-…", "https://platform.openai.com/api-keys"),
         ["gemini"] = new("openai", "Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai", true, false, "AIza…", "https://aistudio.google.com/apikey"),
-        // 24/10/2026: the model that lives on the device and answers without the internet (ILocalTextRuntime, set by the head)
-        ["device"] = new("local", "IA no aparelho", "local://aparelho", false, false, "não precisa"),
         ["ollama"] = new("openai", "Ollama (local)", "http://localhost:11434/v1", false, false, "não precisa"),
         ["custom"] = new("openai", "Compatível com OpenAI", "", false, false, "se o servidor exigir")
     };
@@ -381,7 +379,7 @@ public sealed class AssistantProviders
     {
         var h = new List<(string, string)> { ("Content-Type", "application/json") };
         if (p.ApiKey.Length > 0) h.Add(("Authorization", "Bearer " + p.ApiKey));
-        if (p.Preset == "openrouter") h.Add(("X-Title", "Urbe"));
+        if (p.Preset == "openrouter") h.Add(("X-Title", "Numa"));
         return h;
     }
 
@@ -483,7 +481,8 @@ public sealed class AssistantProviders
             output2.Add(AiBlock.ToolUse(c.Id.Length > 0 ? c.Id : "call_" + Base36(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) + "_" + i, c.Name, ParseJsonLoose(c.Args.ToString())));
         }
         var hasTools = output2.Any(b => b.Type == "tool_use");
-        return new AiResult(output2, reasoning.ToString(), hasTools ? "tool_use" : finish == "length" ? "max_tokens" : "end", new AiUsage(input, output, cost, cacheRead, cacheCreation, reasoningOutput, cost is null ? "unknown" : "reported"), model);
+        // a reply cut by the output limit is "max_tokens" even with tool calls: the last call's arguments are incomplete
+        return new AiResult(output2, reasoning.ToString(), finish == "length" ? "max_tokens" : hasTools ? "tool_use" : "end", new AiUsage(input, output, cost, cacheRead, cacheCreation, reasoningOutput, cost is null ? "unknown" : "reported"), model);
     }
 
     private async Task<List<AiModelInfo>> OpenAiModelsAsync(Resolved p, CancellationToken cancel)
@@ -639,18 +638,8 @@ public sealed class AssistantProviders
         {
             "openai" => OpenAiStreamAsync(p, req, onEvent, cancel),
             "anthropic" => AnthropicStreamAsync(p, req, onEvent, cancel),
-            "local" => LocalStreamAsync(req, onEvent, cancel),
             _ => throw new AiProviderException("Tipo de provedor desconhecido: " + p.Kind)
         };
-    }
-
-    /// <summary>The on-device model: the one named by the request, or the one chosen for this device.</summary>
-    private static Task<AiResult> LocalStreamAsync(AiRequest req, Action<AiStreamEvent> onEvent, CancellationToken cancel)
-    {
-        var runtime = LocalAi.Text ?? throw new AiProviderException("A IA no aparelho não está disponível neste aparelho.");
-        var model = runtime.Models.FirstOrDefault(m => m.Id == req.Model) ?? runtime.Recommended;
-        if (!runtime.IsInstalled(model)) throw new AiProviderException("A IA no aparelho ainda não foi baixada. Baixe-a em Assistente → Configurações → IA no aparelho.");
-        return runtime.ChatAsync(model, req, onEvent, cancel);
     }
 
     // ---------------------------------------------------------------- images (UC-63)
@@ -813,6 +802,85 @@ public sealed class AssistantProviders
         return bytes;
     }
 
+    /// <summary>CST-173: the generative video models this app knows how to call, by provider preset.</summary>
+    public static string? VideoModel(string preset) => preset == "openai" ? "sora-2" : null;
+
+    /// <summary>How long a generation may take before the Urbe stops waiting (it is cancelled at the provider too).</summary>
+    public static TimeSpan VideoTimeout { get; set; } = TimeSpan.FromMinutes(20);
+
+    /// <summary>
+    /// CST-173: a video made by a generative model (OpenAI Videos API: create the job, follow it, download the MP4).
+    /// Cancelled or timed out, the job is deleted at the provider so it stops; the bytes are returned only when they are
+    /// an MP4 with a video track. Paid per second of video: the tool says so before asking.
+    /// </summary>
+    public async Task<byte[]> GenerateVideoAsync(AiProviderConfig cfg, string prompt, string? model, int seconds, string size,
+        IProgress<int>? progress = null, CancellationToken cancel = default)
+    {
+        var p = Resolve(cfg);
+        if (VideoModel(p.Preset) is not { } preset) throw new AiProviderException(p.Name + " não gera vídeos pela API configurada. Use um provedor OpenAI.");
+        if (p.ApiKey.Length == 0) throw new AiProviderException("Configure a chave de " + p.Name + " nas configurações do Assistente.");
+        if (string.IsNullOrWhiteSpace(prompt)) throw new AiProviderException("Descreva o vídeo.");
+        var m = string.IsNullOrWhiteSpace(model) ? preset : model.Trim();
+        var root = Join(p.BaseUrl, "/videos");
+        HttpRequestMessage Create()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, root)
+            {
+                Content = new MultipartFormDataContent
+                {
+                    { new StringContent(m), "model" }, { new StringContent(prompt), "prompt" },
+                    { new StringContent(seconds.ToString(CultureInfo.InvariantCulture)), "seconds" }, { new StringContent(size), "size" }
+                }
+            };
+            foreach (var (k, v) in OpenAiHeaders(p)) if (k != "Content-Type") request.Headers.TryAddWithoutValidation(k, v);
+            return request;
+        }
+        static (string Id, string Status, int Progress, string? Error) Job(string json)
+        {
+            JsonNode? j;
+            try { j = JsonNode.Parse(json); }
+            catch (JsonException) { throw new AiProviderException("O provedor devolveu uma resposta que não é JSON."); }
+            var id = (string?)j?["id"] ?? throw new AiProviderException("O provedor não devolveu o trabalho de vídeo.");
+            return (id, (string?)j?["status"] ?? "", j?["progress"] is JsonValue pr && pr.TryGetValue<int>(out var n) ? n : 0, (string?)j?["error"]?["message"]);
+        }
+        (string Id, string Status, int Progress, string? Error) job;
+        using (var created = await RequestAsync(p, root, Create, cancel)) job = Job(await created.Content.ReadAsStringAsync(cancel));
+        var started = DateTime.UtcNow;
+        try
+        {
+            while (job.Status is "queued" or "in_progress")
+            {
+                progress?.Report(job.Progress);
+                if (DateTime.UtcNow - started > VideoTimeout) throw new AiProviderException("O vídeo passou de " + (int)VideoTimeout.TotalMinutes + " minutos sem ficar pronto; o pedido foi cancelado no provedor.");
+                await _delay(TimeSpan.FromSeconds(5), cancel);
+                var at = root + "/" + Uri.EscapeDataString(job.Id);
+                using var state = await RequestAsync(p, at, () => Get(at, OpenAiHeaders(p)), cancel);
+                job = Job(await state.Content.ReadAsStringAsync(cancel));
+            }
+            if (job.Status != "completed") throw new AiProviderException("O vídeo não foi gerado: " + (job.Error ?? job.Status) + ".");
+            progress?.Report(100);
+            var content = root + "/" + Uri.EscapeDataString(job.Id) + "/content";
+            using var file = await RequestAsync(p, content, () => Get(content, OpenAiHeaders(p)), cancel);
+            var bytes = await file.Content.ReadAsByteArrayAsync(cancel);
+            using var check = new MemoryStream(bytes, writable: false);
+            if (Mp4Inspection.Read(check) is not { Video: not null }) throw new AiProviderException("O provedor devolveu algo que não é um vídeo MP4.");
+            return bytes;
+        }
+        catch (Exception e) when (e is OperationCanceledException || e is AiProviderException && job.Status is "queued" or "in_progress")
+        {
+            // stop the paid job at the provider; whatever happens here, the cancellation is what the person sees
+            try
+            {
+                var at = root + "/" + Uri.EscapeDataString(job.Id);
+                using var delete = new HttpRequestMessage(HttpMethod.Delete, at);
+                foreach (var (k, v) in OpenAiHeaders(p)) if (k != "Content-Type") delete.Headers.TryAddWithoutValidation(k, v);
+                using var gone = await _http.SendAsync(delete, CancellationToken.None);
+            }
+            catch (HttpRequestException) { }
+            throw;
+        }
+    }
+
     /// <summary>listModels(cfg).</summary>
     public Task<List<AiModelInfo>> ListModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
     {
@@ -821,7 +889,6 @@ public sealed class AssistantProviders
         {
             "openai" => OpenAiModelsAsync(p, cancel),
             "anthropic" => AnthropicModelsAsync(p, cancel),
-            "local" => Task.FromResult((LocalAi.Text?.Models ?? []).Where(m => LocalAi.Text!.IsInstalled(m)).Select(m => new AiModelInfo(m.Id, m.Name, m.Context, null, m.Tools)).ToList()),
             _ => throw new AiProviderException("Tipo de provedor desconhecido: " + p.Kind)
         };
     }

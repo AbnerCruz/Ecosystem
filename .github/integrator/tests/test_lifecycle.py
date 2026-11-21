@@ -13,11 +13,19 @@ class LifecycleTests(unittest.TestCase):
     def test_invalid_versions_fail_closed(self):
         for v in ['foo', '1.2', '1.0.0-beta;echo bad', '1.0.0-1']:
             with self.assertRaises(ValueError): m.increment(v)
-    def test_scope_cannot_grant_governance(self):
-        p = {'automaticProductChanges':True}
-        self.assertFalse(m.protected(['apps/urbe/csharp/src/Test.cs']))
-        for path in ['AGENTS.md', '.github/workflows/a.yml', 'docs/governance/integration-policy.json', 'apps/urbe/AGENTS.md']:
-            self.assertTrue(m.protected([path]))
+    def test_who_waits_for_the_owner_is_the_policy_alone(self):
+        # ADD-0035: governance, ADRs and agent instructions integrate when green; only the 'extreme' class of the main's
+        # integration-policy.json (the gate itself, signing keys) waits for the owner, and Check.cs applies it.
+        # The release step adds only a stage change; it keeps no second list of paths (NN-001).
+        import tempfile
+        from unittest.mock import patch
+        self.assertFalse(hasattr(m, 'protected'))
+        cfg = m.config()['urbe']; original = (m.ROOT / cfg['versionFile']).read_text()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); path = root / cfg['versionFile']; path.parent.mkdir(parents=True); path.write_text(original)
+            with patch.object(m, 'git', return_value=original):
+                _, owner = m.prepare(root, 'base', 'head', ['apps/urbe/csharp/src/Test.cs', 'docs/governance/decisions.json', 'docs/adr/0051-x.md', 'AGENTS.md'])
+            self.assertFalse(owner)
     def test_review_bound_to_head_and_owner(self):
         review = {'user':{'login':'AbnerCruz'},'commit_id':'abc','state':'APPROVED','submitted_at':'2026-11-15T12:00:00Z'}
         self.assertTrue(m.owner_approved([review], 'AbnerCruz', 'abc'))

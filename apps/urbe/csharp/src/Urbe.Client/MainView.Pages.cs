@@ -9,7 +9,8 @@ namespace Urbe.Client;
 /// <summary>
 /// Páginas (pages.home, studio.js): the vault's .page.json files listed in their own panel and each shown inside the
 /// Urbe as the 1.8.4's page engine writes it (PageEngine, ported and proved byte for byte); "⋯" has Ver página, Abrir
-/// como texto (JSON) and Mover para a lixeira. A card opens the page in the studio (MainView.Studio.cs).
+/// como texto (JSON), Converter em publicação and Mover para a lixeira. CST-061: the old page studio is gone; a page is
+/// shown, exported or converted, never edited in its own editor (new work is a Publication).
 /// </summary>
 public sealed partial class MainView
 {
@@ -202,8 +203,8 @@ public sealed partial class MainView
             FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType("HTML") { Patterns = ["*.html"], MimeTypes = ["text/html"] }]
         });
         if (file is null) return null;
-        await using var stream = await file.OpenWriteAsync();
-        await stream.WriteAsync(bytes);
+        // a longer HTML saved over before used to leave its end in the file: now cut, written and read back (CST-180)
+        await ExportFiles.WriteAndCheckAsync(file, bytes);
         return true;
     }
 
@@ -258,7 +259,8 @@ public sealed partial class MainView
         var name = path[(path.LastIndexOf('/') + 1)..];
         return Dialogs.MenuAsync(name,
         [
-            new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Urbe.", Run: () => ShowPageAsync(path)),
+            new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Numa.", Run: () => ShowPageAsync(path)),
+            new DialogItem("Converter em publicação", UrbeTheme.Icons.Page, "Os textos viram notas; a página antiga fica como está.", Run: () => ConvertPageToPublicationAsync(path)),
             new DialogItem("Imprimir ou salvar PDF", UrbeTheme.Icons.Page, "Pela impressão do sistema", Run: () => PrintPageAsync(path)),
             new DialogItem("Baixar HTML", UrbeTheme.Icons.Download, "Arquivo único, funciona em qualquer hospedagem", Run: () => DownloadPageHtmlAsync(path)),
             new DialogItem("Salvar HTML no vault", UrbeTheme.Icons.Storage, "Ao lado desta página", Run: () => SavePageHtmlInVaultAsync(path)),
@@ -278,5 +280,30 @@ public sealed partial class MainView
                 if (Pages.IsVisible) Pages.Show(PageCards(), CompositionPlan()?.Creates.Count ?? 0);
             })
         ]);
+    }
+
+    /// <summary>pages.open from the palette: the page chosen among the vault's pages is shown.</summary>
+    public async Task ChoosePageAsync()
+    {
+        var pages = PageCards();
+        if (pages.Count == 0) { ShowPages(); return; }
+        var pick = await Dialogs.ChooseAsync("Ver página antiga", pages.Select(p => new DialogItem(p.Icon + "  " + p.Title, Detail: p.Path)).ToList());
+        if (pick is not null) await ShowPageAsync(pages[pick.Value].Path);
+    }
+
+    /// <summary>printPdf(): the page's export HTML to the system's print ("Salvar como PDF" saves the file).</summary>
+    public async Task PrintPageAsync(string path)
+    {
+        if (_store?.Get(path) is not { } page || await PageHtmlAsync(path) is not { } html) return;
+        var layout = (JsonObject)_pageEngine.Normalize(page.Content).Spec["layout"]!;
+        var settings = PagePrintSettings.FromLayout(layout);
+        if (ContentViewers.Printer is not { } print) { ShowLifeNotice("Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
+        try
+        {
+            ShowLifeNotice("Preparando o PDF…");
+            await print(PageFileBase(path), html, settings);
+            ShowLifeNotice("Escolha “Salvar como PDF” para gerar o arquivo.");
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ShowLifeNotice("Não consegui gerar o PDF: " + ex.Message); }
     }
 }

@@ -43,7 +43,7 @@ internal sealed class AtlasMapJavascriptBridge : Java.Lang.Object
                     if(!item) return;
                     pending.delete(message.id);
                     if(message.ok === true) item.resolve(message.result);
-                    else item.reject(new Error(message.error || 'O Urbe não confirmou a operação'));
+                    else item.reject(new Error(message.error || 'O Numa não confirmou a operação'));
                   };
                   function invoke(op, request) {
                     return new Promise((resolve, reject) => {

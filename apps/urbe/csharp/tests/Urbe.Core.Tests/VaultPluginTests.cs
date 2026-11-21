@@ -153,3 +153,97 @@ public sealed class VaultPluginTests
         Assert.NotNull(JsonNode.Parse(VaultPluginSpec.ExampleTimer));
     }
 }
+
+/// <summary>CST-146: a plugin asks an agent only with a declared permission and a delimited scope.</summary>
+public sealed class VaultPluginAgentTests
+{
+    private sealed class AgentHost : IVaultPluginHost
+    {
+        public List<(string? Agent, string Task, IReadOnlyList<string> Scope, string Plugin)> Asked { get; } = [];
+        public DateTime Now => new(2026, 11, 17, 9, 0, 0);
+        public string? OpenNotePath => "Projetos/Plano.md";
+        public IReadOnlyList<string> Notes(string? folder) => [];
+        public string? ReadNote(string path) => null;
+        public void Notice(string text) { }
+        public void Panel(string how) { }
+        public Task WriteNoteAsync(string path, string content, bool append) => Task.CompletedTask;
+        public void InsertText(string text) { }
+        public void OpenNote(string path) { }
+        public string? LoadData(string key) => null;
+        public void SaveData(string key, string json) { }
+        public string? Answer { get; set; }
+        public bool Structured { get; private set; }
+        public Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin, bool structured = false)
+        { Asked.Add((agentId, task, scope, plugin)); Structured = structured; return Task.FromResult(Answer); }
+        public bool Exists(string path) => path is "Projetos/Site/Plano.md" or "Projetos/Site/Tarefas.md" or "Outro/Segredo.md";
+    }
+
+    private static string Plugin(string permissions, string action) =>
+        "{\"urbe-plugin\": 1, \"nome\": \"Revisor\", \"versao\": \"1.0\", \"permissoes\": [" + permissions + "], " +
+        "\"comandos\": [{\"titulo\": \"Revisar\", \"acoes\": [" + action + "]}]}";
+
+    [Fact]
+    public async Task TheAgentGetsTheTaskAndOnlyTheDelimitedScope()
+    {
+        var spec = VaultPluginSpec.Parse("Personalização/plugins/Revisor.plugin.json", Plugin("\"comandos\", \"agentes\"",
+            "{\"perguntarAgente\": \"Revise {notaAberta}\", \"escopo\": [\"{notaAberta}\", \"Projetos/Anexos/\"], \"agente\": \"revisor\"}"));
+        Assert.Empty(spec.Errors);
+        var host = new AgentHost();
+        var runtime = new VaultPluginRuntime(spec.Spec!, host);
+        await runtime.RunAsync((JsonArray)spec.Spec!.Commands[0]!["acoes"]!);
+        var asked = Assert.Single(host.Asked);
+        Assert.Equal(("revisor", "Revise Projetos/Plano.md", "Revisor"), (asked.Agent, asked.Task, asked.Plugin));
+        Assert.Equal(["Projetos/Plano.md", "Projetos/Anexos/"], asked.Scope);
+    }
+
+    [Fact]
+    public void WithoutAScopeOrThePermissionThePluginIsRefused()
+    {
+        Assert.Contains(VaultPluginSpec.Parse("Personalização/plugins/Revisor.plugin.json", Plugin("\"comandos\", \"agentes\"", "{\"perguntarAgente\": \"Faça algo\"}")).Errors, e => e.Contains("escopo"));
+        Assert.Contains(VaultPluginSpec.Parse("Personalização/plugins/Revisor.plugin.json", Plugin("\"comandos\", \"agentes\"", "{\"perguntarAgente\": \"x\", \"escopo\": []}")).Errors, e => e.Contains("escopo"));
+        Assert.Contains("agentes", VaultPluginSpec.Guide());
+    }
+
+    /// <summary>
+    /// CST-146, the "Próxima tarefa" plugin of the criterion: the agent's recommendation comes back to the plugin in parts
+    /// (action, why, steps, done-criterion, sources, uncertainties); a source outside the scope or missing is not a fact.
+    /// </summary>
+    [Fact]
+    public async Task TheNextTaskPluginReceivesTheRecommendationInPartsWithItsSourcesChecked()
+    {
+        const string Plugin = """
+        {"urbe-plugin": 1, "nome": "Próxima tarefa", "versao": "1.0", "permissoes": ["comandos", "agentes"],
+         "estado": {"rec": "", "rec_acao": "", "rec_passos": [], "rec_fontes": [], "rec_incertezas": [], "rec_estado": ""},
+         "comandos": [{"titulo": "Sugerir", "acoes": [{"perguntarAgente": "Qual a próxima tarefa do projeto?", "escopo": ["Projetos/Site/"], "resposta": "rec"}]}]}
+        """;
+        var spec = VaultPluginSpec.Parse("Personalização/plugins/Proxima.plugin.json", Plugin);
+        Assert.Empty(spec.Errors);
+        var host = new AgentHost
+        {
+            Answer = "O protótipo está pronto; falta publicar.\n```json\n{\"acao\": \"Publicar a página inicial\", \"justificativa\": \"As outras páginas dependem dela\", " +
+                     "\"passos\": [\"Revisar textos\", \"Exportar HTML\"], \"criterio\": \"Página aberta no navegador\", " +
+                     "\"fontes\": [\"Projetos/Site/Plano.md\", \"[[Projetos/Site/Tarefas.md]]\", \"Outro/Segredo.md\", \"Projetos/Site/Inventada.md\"], \"incertezas\": [\"Data de entrega não está nas notas\"]}\n```"
+        };
+        var runtime = new VaultPluginRuntime(spec.Spec!, host);
+        await runtime.RunAsync((JsonArray)spec.Spec!.Commands[0]!["acoes"]!);
+        Assert.True(host.Structured);
+        Assert.Equal("O protótipo está pronto; falta publicar.", runtime.Vars["rec"]);
+        Assert.Equal("Publicar a página inicial", runtime.Vars["rec_acao"]);
+        Assert.Equal("concluido", runtime.Vars["rec_estado"]);
+        Assert.Equal(["Revisar textos", "Exportar HTML"], (List<object?>)runtime.Vars["rec_passos"]!);
+        Assert.Equal(["Projetos/Site/Plano.md", "Projetos/Site/Tarefas.md"], (List<object?>)runtime.Vars["rec_fontes"]!);
+        var doubts = ((List<object?>)runtime.Vars["rec_incertezas"]!).Cast<string>().ToList();
+        Assert.Contains("Data de entrega não está nas notas", doubts);
+        Assert.Contains(doubts, d => d.Contains("fora do escopo") && d.Contains("Outro/Segredo.md"));
+        Assert.Contains(doubts, d => d.Contains("não existe") && d.Contains("Inventada.md"));
+        Assert.False(runtime.Vars.ContainsKey("rec_justificativa"));   // not declared: not set
+
+        host.Answer = null;   // the person declined
+        await runtime.RunAsync((JsonArray)spec.Spec!.Commands[0]!["acoes"]!);
+        Assert.Equal("recusado", runtime.Vars["rec_estado"]);
+        Assert.Equal("", runtime.Vars["rec_acao"]);
+        host.Answer = "Só texto, sem bloco.";
+        await runtime.RunAsync((JsonArray)spec.Spec!.Commands[0]!["acoes"]!);
+        Assert.Equal(("sem estrutura", "Só texto, sem bloco."), (runtime.Vars["rec_estado"], runtime.Vars["rec"]));
+    }
+}

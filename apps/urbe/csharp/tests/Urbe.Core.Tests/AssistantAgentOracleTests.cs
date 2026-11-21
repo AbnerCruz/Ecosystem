@@ -78,10 +78,17 @@ public sealed class AssistantAgentOracleTests
         ["reasoning"] = string.IsNullOrEmpty(m.Meta?.Reasoning) ? null : m.Meta.Reasoning
     };
 
+    /// <summary>
+    /// Behaviours of the 1.8.4 the Urbe changed on purpose (ADD-0033: its oracles change with the improvements), each
+    /// covered by its own tests now: a reply cut by the output limit no longer ends the run (AssistantOutputLimitTests).
+    /// </summary>
+    private static readonly HashSet<string> Superseded = ["max-tokens", "max-tokens-text"];
+
     public static TheoryData<string> Scenarios()
     {
         var data = new TheoryData<string>();
-        foreach (var s in Fixture()["scenarios"]!.AsArray()) data.Add((string)s!["name"]!);
+        foreach (var s in Fixture()["scenarios"]!.AsArray())
+            if (!Superseded.Contains((string)s!["name"]!)) data.Add((string)s["name"]!);
         return data;
     }
 

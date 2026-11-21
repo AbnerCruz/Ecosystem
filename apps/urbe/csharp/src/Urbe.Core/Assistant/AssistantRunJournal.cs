@@ -351,6 +351,16 @@ public sealed class AssistantRunJournal
         if (tool == "generate_image")
             return new AiRunEffect(call, tool, path, AiRunEffect.Uncertain,
                 "a imagem pode ter sido gerada e cobrada pelo provedor sem ser guardada; confira a pasta " + (path ?? AssistantImageTools.Folder) + " antes de gerar outra");
+        // effects outside the vault: never repeated by themselves; the person is told where to look first
+        var outside = tool switch
+        {
+            "generate_video" => "o vídeo pode ter sido gerado e cobrado pelo provedor sem ser guardado; confira a pasta " + (path ?? AssistantVideoTools.Folder) + " antes de gerar outro",
+            "set_alarm" => "o despertador pode ter sido marcado; confira o relógio do aparelho antes de marcar de novo",
+            "add_calendar_event" => "o evento pode ter sido salvo; confira a agenda antes de criar de novo",
+            "compose_email" => "a mensagem pode ter ficado pronta no app de e-mail; confira lá (o Numa não envia nada) antes de preparar outra",
+            _ => null
+        };
+        if (outside is not null) return new AiRunEffect(call, tool, path, AiRunEffect.Uncertain, outside);
         if (path is null)
             return new AiRunEffect(call, tool, null, AiRunEffect.Uncertain, "o efeito desta ação fica fora do vault e não pode ser conferido daqui");
         string? Now(string? p) => p is null ? null : documents.Get(p) is { } d ? Sha(d.Content) : null;

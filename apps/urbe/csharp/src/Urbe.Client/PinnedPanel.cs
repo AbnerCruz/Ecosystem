@@ -63,11 +63,31 @@ public sealed class PinnedPanel : Border
         FilterFiles();
     }
 
+    /// <summary>#1005: the study library's line (sets and cards due today); null hides it.</summary>
+    public Func<(int Sets, int Due)?>? FlashcardsSummary { get; set; }
+    public Action? OpenFlashcards { get; set; }
+    /// <summary>The "Flashcards" row shown, when the library has sets (tests and automation).</summary>
+    public Button? FlashcardsRow { get; private set; }
+
     private void ShowContinueReading()
     {
         _continue.Children.Clear();
+        FlashcardsRow = null;
         var items = ContinueReading?.Invoke() ?? [];
-        _continue.IsVisible = items.Count > 0;
+        var cards = FlashcardsSummary?.Invoke();
+        _continue.IsVisible = items.Count > 0 || cards is not null;
+        if (cards is { } c && OpenFlashcards is { } open)
+        {
+            var text = new StackPanel { Spacing = 3 };
+            text.Children.Add(new TextBlock { Text = "Flashcards", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            text.Children.Add(new TextBlock { Text = (c.Sets == 1 ? "1 conjunto" : c.Sets + " conjuntos") + " · " + (c.Due == 0 ? "nada para hoje" : c.Due == 1 ? "1 cartão para hoje" : c.Due + " cartões para hoje"),
+                FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+            var row = new Button { Content = text, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, Padding = new Thickness(8, 6), MinHeight = 48 };
+            Avalonia.Automation.AutomationProperties.SetName(row, "Flashcards");
+            row.Click += (_, _) => open();
+            FlashcardsRow = row;
+            _continue.Children.Add(row);
+        }
         if (items.Count == 0) return;
         _continue.Children.Add(new TextBlock { Text = "Continuar lendo", FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(2, 0, 0, 2) });
         foreach (var item in items)
@@ -143,7 +163,7 @@ public sealed class PinnedPanel : Border
         var close = new Button
         {
             Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 16, UrbeTheme.Text2, 1.8),
-            Width = 32, Height = 32, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Width = UrbeTokens.MinTouch, Height = UrbeTokens.MinTouch, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
@@ -159,7 +179,7 @@ public sealed class PinnedPanel : Border
         var choose = new Button
         {
             Content = UrbeTheme.Icon(UrbeTheme.Icons.File, 16, UrbeTheme.Text2, 1.8),
-            Width = 32, Height = 32, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Width = UrbeTokens.MinTouch, Height = UrbeTokens.MinTouch, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };

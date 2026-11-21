@@ -238,7 +238,7 @@ public sealed partial class MainView
     {
         if (_vault is null || !VaultWritable || _areaReadOnly)
         {
-            await Dialogs.AlertAsync("Aparência das caixas", _areaReadOnly ? "A aparência das caixas foi gravada por uma versão mais nova do Urbe e não é alterada aqui." : NoVaultMessage);
+            await Dialogs.AlertAsync("Aparência das caixas", _areaReadOnly ? "A aparência das caixas foi gravada por uma versão mais nova do Numa e não é alterada aqui." : NoVaultMessage);
             return false;
         }
         try { await _vault.SaveAreaLayoutAsync(_area.Serialize()); }

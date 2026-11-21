@@ -79,7 +79,7 @@ public static partial class EmbedFragments
         var code = CodeLines(lines);
         var found = new List<string>();
         for (int i = 0; i < lines.Length; i++)
-            if (!code[i] && HeadingRegex().Match(lines[i]) is { Success: true } h && h.Groups[2].Value.Trim() is { Length: > 0 } title) found.Add(title);
+            if (!code[i] && HeadingRegex().Match(lines[i]) is { Success: true } h && Title(h) is { Length: > 0 } title) found.Add(title);
         return found;
     }
 
@@ -97,6 +97,36 @@ public static partial class EmbedFragments
     [GeneratedRegex(@"[ \t]+\^([A-Za-z0-9-]+)(?=(?:[ \t]*\{ia:""[^""\n]*""\})*[ \t]*$)")]
     private static partial Regex BlockIdMarkRegex();
 
+    /// <summary>
+    /// CST-135: the block (paragraph or list item run) at <paramref name="offset"/> gets a <c>^id</c> marker at its last
+    /// line, as Obsidian's block links do, so a publication can reference just that passage. A block that already has
+    /// one keeps it. Null where there is no block (a blank line, code, a heading).
+    /// </summary>
+    public static (string Markdown, string Id)? AnchorBlock(string markdown, int offset, Func<string> newId)
+    {
+        var text = markdown.Replace("\r\n", "\n");
+        var lines = text.Split('\n');
+        var code = CodeLines(lines);
+        int line = text[..Math.Clamp(offset, 0, text.Length)].Count(c => c == '\n');
+        bool Body(int i) => i >= 0 && i < lines.Length && !code[i] && lines[i].Trim().Length > 0 && !HeadingRegex().IsMatch(lines[i]);
+        if (!Body(line)) return null;
+        int first = line, last = line;
+        while (Body(first - 1)) first--;
+        while (Body(last + 1)) last++;
+        for (int i = first; i <= last; i++)
+            if (BlockIdMarkRegex().Match(lines[i]) is { Success: true } m) return (markdown, m.Groups[1].Value);
+        var id = newId();
+        var seals = TrailingSealsRegex().Match(lines[last]);
+        lines[last] = lines[last][..seals.Index] + " ^" + id + lines[last][seals.Index..];
+        return (string.Join("\n", lines), id);
+    }
+
+    [GeneratedRegex(@"(?:[ \t]*\{ia:""[^""\n]*""\})*[ \t]*$")]
+    private static partial Regex TrailingSealsRegex();
+
+    /// <summary>A heading's text as the person reads it: without the Assistente's authorship seal at its end.</summary>
+    private static string Title(Match heading) => TrailingSealsRegex().Replace(heading.Groups[2].Value, "").Trim();
+
     /// <summary>The section [start, end) of the first heading named <paramref name="name"/> between the two lines.</summary>
     private static (int Start, int End)? Heading(string[] lines, int from, int to, string name)
     {
@@ -105,7 +135,7 @@ public static partial class EmbedFragments
         for (int i = from; i < to; i++)
         {
             if (code[i] || HeadingRegex().Match(lines[i]) is not { Success: true } h) continue;
-            if (AssistantTools.Fold(h.Groups[2].Value.Trim()) != wanted) continue;
+            if (AssistantTools.Fold(Title(h)) != wanted) continue;
             int level = h.Groups[1].Length, end = i + 1;
             while (end < to && (code[end] || HeadingRegex().Match(lines[end]) is not { Success: true } next || next.Groups[1].Length > level)) end++;
             return (i, end);

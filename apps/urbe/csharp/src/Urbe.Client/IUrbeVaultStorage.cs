@@ -9,7 +9,7 @@ namespace Urbe.Client;
 /// nothing written there is overwritten. The caller reads the folder again before writing (CST-005).
 /// </summary>
 public sealed class VaultChangedOutsideException()
-    : IOException("A pasta foi modificada fora do Urbe. Reabra o vault antes de salvar para evitar sobrescrever dados.");
+    : IOException("A pasta foi modificada fora do Numa. Reabra o vault antes de salvar para evitar sobrescrever dados.");
 
 public interface IUrbeVaultStorage
 {
@@ -457,7 +457,7 @@ public interface IUrbeVaultStorage
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
         if (existing is not null && NoteLibrary.IsFuture(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span)))
-            throw new InvalidOperationException("O registro das notas é de uma versão mais nova do Urbe: escrita recusada.");
+            throw new InvalidOperationException("O registro das notas é de uma versão mais nova do Numa: escrita recusada.");
         if (!NoteLibrary.IsRecord(json)) throw new InvalidDataException("notas.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
@@ -481,7 +481,7 @@ public interface IUrbeVaultStorage
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
         if (existing is not null && !AreaLayout.IsLayout(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
-            throw new InvalidOperationException("A aparência das caixas é de uma versão mais nova do Urbe: escrita recusada.");
+            throw new InvalidOperationException("A aparência das caixas é de uma versão mais nova do Numa: escrita recusada.");
         if (!AreaLayout.IsLayout(json)) throw new InvalidDataException("area.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
@@ -504,8 +504,31 @@ public interface IUrbeVaultStorage
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
         if (existing is not null && !Constellation.IsConstellation(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
-            throw new InvalidOperationException("A Constelação é de uma versão mais nova do Urbe: escrita recusada.");
+            throw new InvalidOperationException("A Constelação é de uma versão mais nova do Numa: escrita recusada.");
         if (!Constellation.IsConstellation(json)) throw new InvalidDataException("constelacao.json inválido.");
+        return (path, System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
+    /// <summary>
+    /// #1005: rewrites .urbe/estudo/flashcards.json (the study library's decks) alone, with the same safeguards as
+    /// area.json: never over a newer or unreadable file, in a protected vault or after an interrupted operation.
+    /// </summary>
+    Task SaveFlashcardsAsync(string json, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava os flashcards.");
+
+    /// <summary>The checks of a flashcards.json rewrite.</summary>
+    static (string Path, byte[] Bytes) PlanFlashcardsWrite(IReadOnlyList<VaultFile> files, string json)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(json);
+        var snapshot = VaultReader.Read(files);
+        var existing = files.FirstOrDefault(f => string.Equals(f.Path, Urbe.Core.Study.FlashcardLibrary.Path, StringComparison.OrdinalIgnoreCase));
+        var path = existing?.Path ?? Urbe.Core.Study.FlashcardLibrary.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
+        if (existing is not null && !Urbe.Core.Study.FlashcardLibrary.IsLibrary(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
+            throw new InvalidOperationException("Os flashcards são de uma versão mais nova do Numa: escrita recusada.");
+        if (!Urbe.Core.Study.FlashcardLibrary.IsLibrary(json)) throw new InvalidDataException("flashcards.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
 
@@ -528,7 +551,7 @@ public interface IUrbeVaultStorage
         if (segments.Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.')))
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
         if (!WritableExtensions.Contains(Path.GetExtension(path)))
-            throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+            throw new NotSupportedException("Tipo de arquivo que o Numa não grava: " + path);
     }
 
     /// <summary>
@@ -542,7 +565,7 @@ public interface IUrbeVaultStorage
         if (path.Split('/').Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ') || s.EndsWith('.')))
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
         if (!BinaryExtensions.Contains(Path.GetExtension(path)))
-            throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+            throw new NotSupportedException("Tipo de arquivo que o Numa não grava: " + path);
     }
 
     /// <summary>Use the existing text/binary allowlists and hidden-path protections without decoding the original bytes.</summary>
@@ -554,7 +577,7 @@ public interface IUrbeVaultStorage
 
     static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
     };
 
     static IReadOnlySet<string> WritableExtensions => VaultTextFiles.Extensions;

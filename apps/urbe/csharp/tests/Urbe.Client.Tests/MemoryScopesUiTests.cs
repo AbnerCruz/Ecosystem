@@ -28,7 +28,7 @@ public sealed partial class HeadlessUiTests
             panel.Open();
             Dispatcher.UIThread.RunJobs();
             var name = ((IAssistantApp)view).VaultName;
-            var key = name.Length > 0 ? name : "Urbe";
+            var key = name.Length > 0 ? name : "Numa";
             panel.Config.CustomAgents.Add(new("two", "Revisora", "sparkle", "", "read", false, ""));
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m1", Text = "Prefere respostas curtas", Kind = "preference", Scope = "agent", AgentId = "geral", Vault = key });
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m2", Text = "O projeto se chama Droerni", Kind = "fact", Scope = "vault", Vault = key });

@@ -61,10 +61,10 @@
     {
       "check": "Segurar, alças, arrastar entre blocos, copiar e colar com o teclado do Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/docs/csharp/EDITOR-REVIEW-20261114.md",
-      "evidence": "Seção 6 do documento; NN-017."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/984); registro em docs/governance/responses/VAL-HO-20261115-urbe-mobile-selection-beta54-6779b6223a8c.md."
     }
   ],
   "known_issues": [

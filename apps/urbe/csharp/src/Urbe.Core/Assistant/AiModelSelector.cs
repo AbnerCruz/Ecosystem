@@ -78,7 +78,6 @@ public static class AiModelSelector
     public static AiCostEstimate Estimate(AiModelCapabilities? m, AiTaskNeeds n)
     {
         if (m is null) return new(null, "Sem modelo, sem gasto.");
-        if (m.Place == AiModelPlace.Device) return new(0, "Sem cobrança: roda no aparelho.");
         if (n.Output.HasFlag(AiModalities.Image) && m.Makes(AiModalities.Image) == true)
             return new(null, m.ImageRate is { } rate ? "Tarifa: " + rate + " (estimativa; a cobrança final é do provedor)." : "Preço da imagem não informado · não significa gratuito.");
         if (m.Price is { } p && n.InputTokens + n.OutputTokens > 0)
@@ -106,7 +105,7 @@ public static class AiModelSelector
         var capable = candidates.Where(c => Check(c, needs).Fit == Fit.Yes).ToList();
         AiModelCapabilities? Best(IEnumerable<AiModelCapabilities> pool) => pool
             .OrderBy(c => chosen is not null && c.ProviderId == chosen.ProviderId ? 0 : 1)
-            .ThenBy(c => c.Place switch { AiModelPlace.Device => 0, AiModelPlace.OwnServer => 1, _ => 2 })
+            .ThenBy(c => c.Place == AiModelPlace.OwnServer ? 0 : 1)
             .ThenBy(c => Estimate(c, needs).Usd ?? (c.Price is { } p ? (p.Input + p.Output) / 1e6 : double.MaxValue))
             .ThenByDescending(c => c.Context ?? 0)
             .FirstOrDefault();
@@ -139,8 +138,7 @@ public static class AiModelSelector
     }
 
     private static string Privacy(AiModelCapabilities from, AiModelCapabilities to) =>
-        !from.LeavesDevice && to.LeavesDevice ? ", mas o conteúdo sairá do aparelho para " + to.ProviderName
-        : from.ProviderId != to.ProviderId && to.Place == AiModelPlace.Remote ? " (o conteúdo vai para " + to.ProviderName + ")" : "";
+        from.ProviderId != to.ProviderId && to.Place == AiModelPlace.Remote ? " (o conteúdo vai para " + to.ProviderName + ")" : "";
 
     /// <summary>
     /// How a video would be made now. Programmatic video (rendered on the device from the vault, no model, no cost) needs the
@@ -153,9 +151,9 @@ public static class AiModelSelector
         var generative = candidates.Where(c => c.Makes(AiModalities.Video) == true).OrderBy(c => c.Place).FirstOrDefault();
         if (generative is not null && (allowRemote || generative.Place != AiModelPlace.Remote))
             return new(true, false, generative, "Vídeo generativo externo: " + generative.Label +
-                (generative.LeavesDevice ? "; a descrição sai do aparelho e precisa de " + generative.HostRequirement : "") + ". " + Estimate(generative, new(Output: AiModalities.Video)).Text);
+"; a descrição sai do aparelho e precisa de " + generative.HostRequirement + ". " + Estimate(generative, new(Output: AiModalities.Video)).Text);
         return new(false, false, generative,
-            "Vídeo indisponível: este aparelho ainda não tem o renderizador de vídeo programático do Urbe, e " +
+            "Vídeo indisponível: este aparelho ainda não tem o renderizador de vídeo programático do Numa, e " +
             (generative is null ? "nenhum modelo configurado gera vídeo (um vídeo generativo exigiria um provedor externo, com envio e cobrança)."
                 : "o único modelo que gera vídeo, " + generative.Label + ", enviaria os dados para fora do aparelho."));
     }

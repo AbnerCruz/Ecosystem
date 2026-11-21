@@ -112,6 +112,10 @@ public sealed partial class HeadlessUiTests
                 var edited = original.Replace("- uma", "- primeira {ia:\"modelo-b\"}");
                 Assert.Equal(edited, File.ReadAllText(Path.Combine(vault, "Comece.md")));
                 Assert.Equal(edited, view.Documents!.Get("Comece.md")!.Content);
+                // CST-154: the replaced text is in "Versões anteriores", named after the agent that changed it
+                var history = File.ReadAllText(Path.Combine(vault, ".urbe", "history.v2.json"));
+                Assert.Contains("\"by\":", history);
+                Assert.Contains(original.Replace("\r\n", "\n").Split('\n')[0], history);
                 var run = panel.Conversation.Runs.Last();
                 Assert.Equal(("end", 1), (run.Stopped, run.Changes.Count));
                 texts = panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
@@ -132,7 +136,7 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto, tema sépia."}}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Revisei a personalização salva."}}]}"""));
-                panel.Send("Deixe o Urbe em sépia");
+                panel.Send("Deixe o Numa em sépia");
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal(("set_appearance", "Personalização/tema.json"), (panel.PendingApproval!.Call.Name, panel.PendingApproval.Preview!.Path));
                 Assert.False(File.Exists(Path.Combine(vault, "Personalização", "tema.json")));
@@ -149,11 +153,12 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("sk-or-teste", File.ReadAllText(Path.Combine(UrbeApp.AssistantFolder!, "config.json")));
                 Assert.DoesNotContain(Directory.GetFiles(vault, "*", SearchOption.AllDirectories), f => File.ReadAllText(f).Contains("sk-or-teste"));
 
-                // The next launch starts fresh; the original conversation stays in explicit history.
+                // CST-145: the next launch, moments later, continues the conversation still in use (an old one would give
+                // way to a new chat); it is the same conversation kept in the history
                 var again = new AssistantPanel(view, new FolderAssistantStorage(UrbeApp.AssistantFolder!));
                 again.Open();
-                Assert.NotEqual(panel.Conversation.Id, again.Conversation.Id);
-                Assert.Empty(again.Conversation.Messages);
+                Assert.Equal(panel.Conversation.Id, again.Conversation.Id);
+                Assert.NotEmpty(again.Conversation.Messages);
                 Assert.Equal("Troque a primeira tarefa", new AssistantStore(
                     new FolderAssistantStorage(UrbeApp.AssistantFolder!)).GetConversation(panel.Conversation.Id)!.Title);
                 // Regression: preserve the full settings layout and the new memory and network tabs.
@@ -277,7 +282,8 @@ public sealed partial class HeadlessUiTests
                 ClickNamed(view.Editor, "Pedir a Jarvis");
                 for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 if (panel.CurrentRun is { } run) await run;
-                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                // under a loaded machine the compact card settles later: wait for it, never a fixed time
+                for (int i = 0; i < 800 && panel.CompactStatus != "result"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 // UC-81: note invocation completes in a contextual sheet, not an unsolicited full chat.
                 Assert.False(panel.IsVisible);
                 Assert.True(view.AssistantMini.IsVisible);
@@ -454,13 +460,10 @@ public sealed partial class HeadlessUiTests
                 // Latest request: collapsed summary and nested inspection with intact results.
                 var activity = Assert.IsType<StackPanel>(panel.Log.Children[31]);
                 var activityBorder = Assert.IsType<Border>(activity.Children[0]);
-                var activityFold = Assert.IsType<Expander>(activityBorder.Child);
-                Assert.Null(activityFold.Content);
+                Assert.IsType<Button>(activityBorder.Child);
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(),
-                    t => t.Text?.StartsWith("10 operações", StringComparison.Ordinal) == true);
-                activityFold.IsExpanded = true;
-                Dispatcher.UIThread.RunJobs();
-                var timeline = Assert.IsType<StackPanel>(activityFold.Content);
+                    t => t.Text?.Contains("10 etapas", StringComparison.Ordinal) == true);
+                var timeline = Assert.IsType<StackPanel>(OpenSteps(panel));
                 Assert.Equal(10, timeline.Children.Count);
                 var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(Assert.IsType<Ui.Deferred>(timeline.Children[0]).View).Child);
                 firstStage.IsExpanded = true;

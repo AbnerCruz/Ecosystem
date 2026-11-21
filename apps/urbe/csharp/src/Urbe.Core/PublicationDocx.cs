@@ -45,8 +45,16 @@ public static class PublicationDocx
         var lists = new Dictionary<int, (int NumId, bool Ordered)>();
         var body = new XElement(W + "body");
         int drawing = 0;
-        body.Add(Para("Title", new XElement(W + "r", Text(doc.Title))));
         var book = doc.Layout == "book";
+        var cover = doc.Chapters.Count > 0 && doc.Chapters[0].Cover;
+        var pageBreak = () => new XElement(W + "p", new XElement(W + "r", new XElement(W + "br", new XAttribute(W + "type", "page"))));
+        // CST-159: the cover note on a page of its own, in place of the plain title line
+        if (cover)
+        {
+            foreach (var block in PublicationOffice.Flatten(doc.Chapters[0].Blocks)) body.Add(Block(block));
+            body.Add(pageBreak());
+        }
+        else body.Add(Para("Title", new XElement(W + "r", Text(doc.Title))));
         if (book)
         {
             body.Add(Para("TOCHeading", new XElement(W + "r", Text("Sumário"))));
@@ -57,10 +65,11 @@ public static class PublicationDocx
                 new XElement(W + "r", Text("Atualize o sumário (F9 no Word; Ferramentas → Atualizar no LibreOffice).")),
                 new XElement(W + "r", new XElement(W + "fldChar", new XAttribute(W + "fldCharType", "end")))));
         }
-        for (int c = 0; c < doc.Chapters.Count; c++)
+        for (int c = cover ? 1 : 0; c < doc.Chapters.Count; c++)
         {
             var chapter = doc.Chapters[c];
-            if (c > 0 && book) body.Add(new XElement(W + "p", new XElement(W + "r", new XElement(W + "br", new XAttribute(W + "type", "page")))));
+            // in a book every chapter starts a page, the first one too (the contents page comes before it)
+            if (book) body.Add(pageBreak());
             foreach (var block in PublicationOffice.Flatten(chapter.Blocks)) body.Add(Block(block));
         }
         body.Add(new XElement(W + "sectPr",
@@ -69,7 +78,7 @@ public static class PublicationDocx
                 new XAttribute(W + "left", 1134), new XAttribute(W + "header", 709), new XAttribute(W + "footer", 709), new XAttribute(W + "gutter", 0))));
         var document = new XDocument(new XElement(W + "document",
             new XAttribute(XNamespace.Xmlns + "w", W), new XAttribute(XNamespace.Xmlns + "r", R), new XAttribute(XNamespace.Xmlns + "wp", WP),
-            new XAttribute(XNamespace.Xmlns + "a", A), new XAttribute(XNamespace.Xmlns + "pic", Pic), body));
+            new XAttribute(XNamespace.Xmlns + "a", A), new XAttribute(XNamespace.Xmlns + "pic", Pic), new XAttribute(XNamespace.Xmlns + "m", MathOmml.M), body));
 
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
@@ -92,9 +101,9 @@ public static class PublicationDocx
                 Relationship("rId2", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", "docProps/core.xml")));
             Xml(zip, "docProps/core.xml", new XElement(CP + "coreProperties",
                 new XAttribute(XNamespace.Xmlns + "cp", CP), new XAttribute(XNamespace.Xmlns + "dc", DC), new XAttribute(XNamespace.Xmlns + "dcterms", DCTerms), new XAttribute(XNamespace.Xmlns + "xsi", Xsi),
-                new XElement(DC + "title", PublicationOffice.XmlSafe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(DC + "creator", "Urbe")));
+                new XElement(DC + "title", PublicationOffice.XmlSafe(doc.Title)), new XElement(DC + "language", "pt-BR"), new XElement(DC + "creator", "Numa")));
             Xml(zip, "word/document.xml", document.Root!);
-            Xml(zip, "word/styles.xml", Styles());
+            Xml(zip, "word/styles.xml", Styles(doc.Accent.TrimStart('#').ToUpperInvariant()));
             Xml(zip, "word/numbering.xml", Numbering(lists));
             Xml(zip, "word/settings.xml", new XElement(W + "settings", new XAttribute(XNamespace.Xmlns + "w", W),
                 book ? new XElement(W + "updateFields", new XAttribute(W + "val", "true")) : null,
@@ -103,7 +112,9 @@ public static class PublicationDocx
             Xml(zip, "word/_rels/document.xml.rels", new XElement(Rel + "Relationships", rels));
             foreach (var (path, bytes) in media) Bytes(zip, "word/" + path, bytes);
         }
-        return new PublicationExport(stream.ToArray(), doc.Limitations);
+        // the TeX notice stays only if some formula is still TeX (one that has no native equation here)
+        var texLeft = body.Descendants(W + "rStyle").Any(e => (string?)e.Attribute(W + "val") == "MathTex");
+        return new PublicationExport(stream.ToArray(), texLeft ? doc.Limitations : doc.Limitations.Where(l => !l.StartsWith("Fórmulas saem como TeX", StringComparison.Ordinal)).ToList());
 
         IEnumerable<XElement> Block(OfficeBlock block)
         {
@@ -111,7 +122,10 @@ public static class PublicationDocx
             {
                 case OfficeHeading h: yield return Para("Heading" + Math.Clamp(h.Level, 1, 6), Runs(h.Runs)); break;
                 case OfficeParagraph p:
-                    yield return Para(p.Style switch { "quote" => "Quote", "math" => "Formula", "box" => "Box", "boxtitle" => "BoxTitle", _ => null }, Runs(p.Runs));
+                    // a display formula is a native equation paragraph when it converts (Word, LibreOffice and Google Docs edit it)
+                    if (p.Style == "math" && p.Runs is [{ Math: true } only] && MathOmml.Convert(only.Text) is { } display)
+                        yield return Para("Formula", new XElement(MathOmml.M + "oMathPara", display));
+                    else yield return Para(p.Style switch { "quote" => "Quote", "math" => "Formula", "box" => "Box", "boxtitle" => "BoxTitle", _ => null }, Runs(p.Runs));
                     break;
                 case OfficeListItem li:
                     if (!lists.TryGetValue(li.ListId, out var list)) lists[li.ListId] = list = (lists.Count + 1, li.Ordered);
@@ -215,6 +229,7 @@ public static class PublicationDocx
     private static XElement Run(OfficeRun run, string? style)
     {
         if (run.Break) return new XElement(W + "r", new XElement(W + "br"));
+        if (run.Math && style is null && MathOmml.Convert(run.Text) is { } equation) return equation;
         var props = new XElement(W + "rPr");
         if (style is not null) props.Add(new XElement(W + "rStyle", new XAttribute(W + "val", style)));
         else if (run.Code) props.Add(new XElement(W + "rStyle", new XAttribute(W + "val", "InlineCode")));
@@ -231,7 +246,8 @@ public static class PublicationDocx
     private static XElement Para(string? style, params object?[] content) =>
         new(W + "p", style is null ? null : new XElement(W + "pPr", new XElement(W + "pStyle", new XAttribute(W + "val", style))), content);
 
-    private static XElement Styles()
+    /// <summary>The styles, the headings and box titles in the publication's accent (CST-161).</summary>
+    private static XElement Styles(string accent)
     {
         XElement Style(string id, string name, string type = "paragraph", string? basedOn = "Normal", object? ppr = null, object? rpr = null, bool heading = false) =>
             new(W + "style", new XAttribute(W + "type", type), new XAttribute(W + "styleId", id), new XElement(W + "name", new XAttribute(W + "val", name)),
@@ -244,13 +260,13 @@ public static class PublicationDocx
                     new XElement(W + "sz", new XAttribute(W + "val", 22)), new XElement(W + "lang", new XAttribute(W + "val", "pt-BR")))),
                 new XElement(W + "pPrDefault", new XElement(W + "pPr", new XElement(W + "spacing", new XAttribute(W + "after", 160), new XAttribute(W + "line", 276), new XAttribute(W + "lineRule", "auto"))))),
             new XElement(W + "style", new XAttribute(W + "type", "paragraph"), new XAttribute(W + "default", 1), new XAttribute(W + "styleId", "Normal"), new XElement(W + "name", new XAttribute(W + "val", "Normal")), new XElement(W + "qFormat")),
-            Style("Title", "Title", ppr: new XElement(W + "pPr", new XElement(W + "spacing", new XAttribute(W + "after", 240))), rpr: new XElement(W + "rPr", new XElement(W + "sz", new XAttribute(W + "val", 52)), new XElement(W + "color", new XAttribute(W + "val", "6B4F2A")))),
+            Style("Title", "Title", ppr: new XElement(W + "pPr", new XElement(W + "spacing", new XAttribute(W + "after", 240))), rpr: new XElement(W + "rPr", new XElement(W + "sz", new XAttribute(W + "val", 52)), new XElement(W + "color", new XAttribute(W + "val", accent)))),
             Style("TOCHeading", "TOC Heading", rpr: new XElement(W + "rPr", new XElement(W + "b"), new XElement(W + "sz", new XAttribute(W + "val", 28)))));
         int[] sizes = [36, 30, 26, 24, 22, 22];
         for (int level = 1; level <= 6; level++)
             styles.Add(Style("Heading" + level, "heading " + level,
                 ppr: new XElement(W + "pPr", new XElement(W + "keepNext"), new XElement(W + "spacing", new XAttribute(W + "before", 240), new XAttribute(W + "after", 80)), new XElement(W + "outlineLvl", new XAttribute(W + "val", level - 1))),
-                rpr: new XElement(W + "rPr", new XElement(W + "b"), new XElement(W + "color", new XAttribute(W + "val", "6B4F2A")), new XElement(W + "sz", new XAttribute(W + "val", sizes[level - 1])))));
+                rpr: new XElement(W + "rPr", new XElement(W + "b"), new XElement(W + "color", new XAttribute(W + "val", accent)), new XElement(W + "sz", new XAttribute(W + "val", sizes[level - 1])))));
         styles.Add(Style("Quote", "Quote", ppr: new XElement(W + "pPr", new XElement(W + "pBdr", new XElement(W + "left", new XAttribute(W + "val", "single"), new XAttribute(W + "sz", 18), new XAttribute(W + "space", 8), new XAttribute(W + "color", "999999"))),
             new XElement(W + "ind", new XAttribute(W + "left", 567))), rpr: new XElement(W + "rPr", new XElement(W + "i"), new XElement(W + "color", new XAttribute(W + "val", "555555")))));
         styles.Add(Style("Code", "Code", ppr: new XElement(W + "pPr", new XElement(W + "shd", new XAttribute(W + "val", "clear"), new XAttribute(W + "color", "auto"), new XAttribute(W + "fill", "F3F1EC")),
@@ -259,7 +275,7 @@ public static class PublicationDocx
         XElement BoxProps() => new(W + "pPr", new XElement(W + "pBdr", new XElement(W + "left", new XAttribute(W + "val", "single"), new XAttribute(W + "sz", 24), new XAttribute(W + "space", 8), new XAttribute(W + "color", "9C7B45"))),
             new XElement(W + "shd", new XAttribute(W + "val", "clear"), new XAttribute(W + "color", "auto"), new XAttribute(W + "fill", "F6F3EE")), new XElement(W + "spacing", new XAttribute(W + "after", 60)), new XElement(W + "ind", new XAttribute(W + "left", 284)));
         styles.Add(Style("Box", "Box", ppr: BoxProps()));
-        styles.Add(Style("BoxTitle", "Box Title", "Box", ppr: BoxProps(), rpr: new XElement(W + "rPr", new XElement(W + "b"), new XElement(W + "color", new XAttribute(W + "val", "6B4F2A")))));
+        styles.Add(Style("BoxTitle", "Box Title", "Box", ppr: BoxProps(), rpr: new XElement(W + "rPr", new XElement(W + "b"), new XElement(W + "color", new XAttribute(W + "val", accent)))));
         styles.Add(Style("Formula", "Formula", ppr: new XElement(W + "pPr", new XElement(W + "jc", new XAttribute(W + "val", "center")))));
         styles.Add(Style("ListParagraph", "List Paragraph", ppr: new XElement(W + "pPr", new XElement(W + "spacing", new XAttribute(W + "after", 60)), new XElement(W + "contextualSpacing"))));
         styles.Add(Style("InlineCode", "Inline Code", "character", null, rpr: new XElement(W + "rPr", new XElement(W + "rFonts", new XAttribute(W + "ascii", "Consolas"), new XAttribute(W + "hAnsi", "Consolas")), new XElement(W + "shd", new XAttribute(W + "val", "clear"), new XAttribute(W + "color", "auto"), new XAttribute(W + "fill", "F3F1EC")))));

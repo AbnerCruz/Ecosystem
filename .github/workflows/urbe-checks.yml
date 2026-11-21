@@ -138,32 +138,16 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Install, launch and resume the actual Android application
+      - name: Android journey — example vault, video publication in the Estúdio, playback recorded, resume
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           arch: x86_64
           target: google_apis
+          profile: pixel_6
           disable-animations: true
-          script: |
-            mkdir -p apps/urbe/csharp/artifacts/android-smoke
-            adb install -r "$(find apps/urbe/csharp/artifacts/emulator -name '*-Signed.apk' | head -1)"
-            adb logcat -c
-            adb shell monkey -p app.urbe.nativepreview -c android.intent.category.LAUNCHER 1
-            sleep 10
-            # android-emulator-runner executa cada linha do script em um shell separado.
-            # Nao persistir pid em variavel entre linhas: validar o processo diretamente.
-            adb logcat -d -v threadtime > apps/urbe/csharp/artifacts/android-smoke/startup-logcat.txt
-            adb shell pidof app.urbe.nativepreview
-            adb exec-out screencap -p > apps/urbe/csharp/artifacts/android-smoke/launched.png
-            adb shell input keyevent KEYCODE_HOME
-            sleep 2
-            adb shell monkey -p app.urbe.nativepreview -c android.intent.category.LAUNCHER 1
-            sleep 5
-            adb logcat -d -v threadtime > apps/urbe/csharp/artifacts/android-smoke/logcat.txt
-            adb shell pidof app.urbe.nativepreview
-            adb exec-out screencap -p > apps/urbe/csharp/artifacts/android-smoke/resumed.png
-            if grep -E 'FATAL EXCEPTION|Fatal signal|ANR in app.urbe' apps/urbe/csharp/artifacts/android-smoke/logcat.txt; then exit 1; fi
+          # one line: the runner starts a new shell per line (apps/urbe/csharp/tools/android-e2e.sh)
+          script: bash apps/urbe/csharp/tools/android-e2e.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:

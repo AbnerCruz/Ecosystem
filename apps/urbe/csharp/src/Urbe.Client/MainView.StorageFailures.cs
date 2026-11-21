@@ -85,7 +85,7 @@ public sealed partial class MainView
             catch (Exception) { /* the copy stays where it is: nothing is lost, the next opening tries again */ }
         }
         if (restored.Count == 0 && kept.Count == 0) return null;
-        var told = "O Urbe fechou no meio de uma gravação.";
+        var told = "O Numa fechou no meio de uma gravação.";
         if (restored.Count > 0) told += " " + string.Join(", ", restored.Select(n => "“" + n + "”")) + (restored.Count == 1 ? " voltou" : " voltaram") + " ao texto completo de antes.";
         foreach (var (note, copy) in kept) told += " “" + note + "”: as duas versões ficaram, a anterior em “" + copy + "”.";
         return told;

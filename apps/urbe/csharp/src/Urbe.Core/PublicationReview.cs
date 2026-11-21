@@ -25,7 +25,8 @@ public static partial class PublicationReview
     public const double SubtitleWordsPerSecond = 3.2;
 
     public static IReadOnlyList<ReviewIssue> Run(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, bool>? fileExists = null, Func<string, bool>? noteExists = null, Func<string, string?>? readData = null)
+        Func<string, bool>? fileExists = null, Func<string, bool>? noteExists = null, Func<string, string?>? readData = null,
+        Func<string, string?>? readNote = null)
     {
         var issues = new List<ReviewIssue>();
         if (project.Sections.Count == 0)
@@ -109,6 +110,11 @@ public static partial class PublicationReview
                     if (target.Length > 0 && noteExists is not null && !noteExists(target))
                         issues.Add(new(ReviewSeverity.Warning, s, path, number, "Link para uma nota que não existe: [[" + target + "]].",
                             "Crie a nota, corrija o nome ou tire os colchetes."));
+                    // CST-213: a citation of a part (heading or ^block) that is not in the note it names
+                    else if (link.Groups[1].Value.Split('#', 2) is [_, var part] && part.Trim().Length > 0 && readNote is not null &&
+                             (target.Length == 0 ? text : readNote(target)) is { } cited && EmbedFragments.LineOf(cited, part) is null)
+                        issues.Add(new(ReviewSeverity.Warning, s, path, number, "Citação de um trecho que não existe: [[" + link.Groups[1].Value.Trim() + "]].",
+                            "Corrija o título ou o ^bloco citado (ele pode ter sido renomeado) ou cite a nota inteira."));
                 }
             }
             if (inFence) issues.Add(new(ReviewSeverity.Error, s, path, fenceStart, "Bloco de código aberto com ``` e nunca fechado: o resto da nota vira código.", "Feche o bloco com ```."));

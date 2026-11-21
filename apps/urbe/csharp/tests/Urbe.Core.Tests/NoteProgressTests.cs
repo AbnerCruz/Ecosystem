@@ -48,4 +48,61 @@ public sealed class NoteProgressTests
         Assert.DoesNotContain("value:", directive, StringComparison.Ordinal);
         Assert.DoesNotContain("total:", directive, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void PendingTasksAreFoundAtTheirLinesEvenWithSealsAndFrontmatter()
+    {
+        const string note = "---\ntitle: t\n---\n# Hoje\n- [x] feito\n- [ ] ler {ia:\"m\"}\n  - [ ] resumir\n# Depois\n- [ ] fora";
+        var result = NoteProgress.Evaluate("source: tasks\nsection: Hoje", note);
+        Assert.Equal([5, 6], result.Pending.Select(p => p.Line));
+        Assert.Equal("resumir", result.Pending[1].Text);
+        Assert.Empty(NoteProgress.Evaluate("label: x\nvalue: 1\ntotal: 2", note).Pending);
+    }
+
+    [Fact]
+    public void StepMovesTheValueWhereItLivesAndStopsAtTheEnds()
+    {
+        const string block = "```progress\nlabel: Livro\nvalue: 54\ntotal: 224\n```";
+        var note = "Antes\n\n" + block + "\n";
+        var start = note.IndexOf("```", StringComparison.Ordinal);
+        var more = NoteProgress.Step(note, start, start + block.Length, 1);
+        Assert.Contains("value: 55\n", more);
+        Assert.StartsWith("Antes", more);
+        var top = "```progress\nvalue: 2\ntotal: 2\n```";
+        Assert.Null(NoteProgress.Step(top, 0, top.Length, 1));
+        var low = "```progress\nvalue: 0\ntotal: 2\n```";
+        Assert.Null(NoteProgress.Step(low, 0, low.Length, -1));
+        var linked = "---\nlidas: 25\npaginas: 100\n---\n```progress\nvalue: $lidas\ntotal: $paginas\n```";
+        var b = linked.IndexOf("```", StringComparison.Ordinal);
+        var moved = NoteProgress.Step(linked, b, linked.Length, -1)!;
+        Assert.Contains("lidas: 24", moved);
+        Assert.Contains("value: $lidas", moved);
+        var tasks = "```progress\nsource: tasks\n```\n- [ ] a";
+        Assert.Null(NoteProgress.Step(tasks, 0, tasks.IndexOf("\n-", StringComparison.Ordinal), 1));
+    }
+
+    [Fact]
+    public void SummariesReadEveryBlockAsTheScreenDoes()
+    {
+        const string note = "```progress\nlabel: Livro\nvalue: 54\ntotal: 224\n```\n\n~~~\n```progress\nvalue: 1\ntotal: 1\n```\n~~~\n\n```progresso\nlabel: Tarefas\nsource: tasks\n```\n- [x] a\n- [ ] b";
+        var all = NoteProgress.Summaries(note).ToList();
+        Assert.Contains("Livro: 54/224 · 24,1% · faltam 170", all);
+        Assert.Contains("Tarefas: 1/2 · 50% · faltam 1", all);
+        Assert.Equal(2, all.Count);
+    }
+
+    [Fact]
+    public void CodeFencesFollowCommonMarkInTheEditorsBlocksAndTheHtml()
+    {
+        // a ~~~ example holds ``` lines; a ```` fence holds a ``` one; only the same mark, as long or longer, closes
+        const string note = "~~~md\n```progress\nvalue: 1\ntotal: 1\n```\n~~~\n\n````\n```js\nx\n```\n````\n\nfim";
+        var blocks = MarkdownEngine.SplitBlocks(note);
+        Assert.Equal(["code", "code", "paragraph"], blocks.Select(b => b.Kind));
+        Assert.Equal("fim", note[blocks[2].Start..blocks[2].End]);
+        var html = MarkdownEngine.Render(note);
+        Assert.Contains("```progress", html);
+        Assert.Contains("```js", html);
+        Assert.Contains("data-lang=\"md\"", html);
+        Assert.Empty(NoteProgress.Summaries(note));
+    }
 }

@@ -15,7 +15,7 @@ public sealed partial class MainView
         // once per session: the Urbe kept running, the details are in Configurações
         if (_errorNoticeShown) return;
         _errorNoticeShown = true;
-        ShowLifeNotice("Algo deu errado, mas o Urbe continuou. Detalhes em Configurações → Relatório de erros.");
+        ShowLifeNotice("Algo deu errado, mas o Numa continuou. Detalhes em Configurações → Relatório de erros.");
     };
 
     private async Task ShowErrorReportAsync()
@@ -32,6 +32,6 @@ public sealed partial class MainView
                 ShowLifeNotice("Relatório copiado.", Ui.ToastKind.Success);
             }),
             new DialogItem("Apagar relatório", UrbeTheme.Icons.Trash, Danger: true, Run: () => { CrashLog.Clear(); ShowLifeNotice("Relatório apagado."); return Task.CompletedTask; })
-        ], "Fica só neste aparelho e o Urbe não envia a ninguém. Leva o erro, sem o texto das suas notas, chaves ou pastas; erros com mais de " + CrashLog.KeepDays + " dias saem sozinhos.\n\n" + (tail.Length > 0 ? tail : "Nenhum erro registrado."));
+        ], "Fica só neste aparelho e o Numa não envia a ninguém. Leva o erro, sem o texto das suas notas, chaves ou pastas; erros com mais de " + CrashLog.KeepDays + " dias saem sozinhos.\n\n" + (tail.Length > 0 ? tail : "Nenhum erro registrado."));
     }
 }

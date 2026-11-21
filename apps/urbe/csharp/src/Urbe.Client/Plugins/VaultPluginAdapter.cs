@@ -118,6 +118,9 @@ public sealed class VaultPluginAdapter(VaultPluginSpec spec, string hash) : IUrb
         public string? OpenNotePath => api.OpenNotePath;
         public string? LoadData(string key) => api.GetData(key);
         public void SaveData(string key, string json) => api.SetData(key, json);
+        public Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin, bool structured = false) =>
+            api.AskAgentAsync(agentId, task, scope, structured);
+        public bool Exists(string path) => api.SourceExists(path);
     }
 
     // ---------------------------------------------------------------- the panel's items
