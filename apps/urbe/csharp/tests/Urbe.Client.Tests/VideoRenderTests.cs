@@ -650,4 +650,35 @@ public sealed class VideoRenderTests
         var outside = project with { Video = project.Video with { Scenes = [scene with { Elements = [scene.Elements[0] with { Source = "../fora.png" }] }] } };
         Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(outside));
     }
+
+    /// <summary>#1004: a scene can come in by wipe (revealed left to right) or slide (in from the right) over the previous one.</summary>
+    [Theory]
+    [InlineData("wipe")]
+    [InlineData("slide")]
+    public void ASceneComesInByItsTransition(string kind)
+    {
+        var store = new DocumentStore();
+        var a = store.Upsert(new DocumentInput { Path = "A.md", Content = "# A\n\nUm.\n" });
+        var b = store.Upsert(new DocumentInput { Path = "B.md", Content = "# B\n\nDois.\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = VideoComposition.Synced(PublicationProject.Create("V", a.Id).AddSource(b.Id) with { Design = new PublicationDesign { Layout = "video" } });
+        var scenes = project.Video!.Scenes;
+        project = project with { Video = project.Video with { Resolution = 180, Subtitles = false, Scenes =
+        [
+            scenes[0] with { Duration = 2, Background = "#ff0000", Transition = new VideoTransition { Kind = "cut" }, Elements = [] },
+            scenes[1] with { Duration = 2, Background = "#0000ff", Transition = new VideoTransition { Kind = kind, Seconds = 1 }, Elements = [] }
+        ] } };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var r = new VideoFrameRenderer(timeline);
+        // halfway through the transition (it starts 1 s before the first scene ends)
+        var mid = timeline.Scenes[1].Start + 0.5;
+        using var f = r.Render(mid);
+        int w = f.Width, y = f.Height / 2;
+        bool Blue(SKColor c) => c.Blue > 200 && c.Red < 60;
+        if (kind == "wipe") { Assert.True(Blue(f.GetPixel(w / 10, y))); Assert.True(Reddish(f.GetPixel(w * 9 / 10, y))); }
+        else { Assert.True(Reddish(f.GetPixel(w / 10, y))); Assert.True(Blue(f.GetPixel(w * 9 / 10, y))); }
+        using var after = r.Render(timeline.Scenes[1].Start + 1.5);
+        Assert.True(Blue(after.GetPixel(w / 2, y)));
+    }
 }

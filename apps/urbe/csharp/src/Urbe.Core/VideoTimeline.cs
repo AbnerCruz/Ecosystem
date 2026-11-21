@@ -68,7 +68,12 @@ public sealed record VideoParentFrame(double X, double Y, double Scale, double R
 /// scene, or one whose animations ended), so a rendered layer is reused instead of drawn again.
 /// </summary>
 public sealed record VideoLayer(VideoTimelineScene Scene, double Opacity, double LocalTime, IReadOnlyList<VideoElementState> Elements, string StateKey,
-    VideoCameraState? Camera = null);
+    VideoCameraState? Camera = null)
+{
+    /// <summary>#1004: how the scene is entering — its transition kind and how far along (0 to 1, eased); 1 once in.</summary>
+    public string Entrance => Scene.Scene.Transition.Kind;
+    public double EntranceProgress => Scene.FadeIn > 0 && LocalTime < Scene.FadeIn ? Opacity : 1;
+}
 
 /// <summary>#1004 slice 4: the camera at one instant: the frame point at the centre, the zoom and the rotation.</summary>
 public sealed record VideoCameraState(double X, double Y, double Zoom, double Rotation)
@@ -158,7 +163,7 @@ public sealed class VideoTimeline
             if (source is null && !missing.Contains(placement.Source.DocumentId)) missing.Add(placement.Source.DocumentId);
             var plain = VideoScript.Plain(source?.Markdown);
             var title = VideoScript.Title(source?.Markdown) ?? (source is { } s ? Path.GetFileNameWithoutExtension(s.Path) : null);
-            double fade = scene.Transition.Kind == "fade" ? Math.Min(scene.Transition.Seconds, scene.Duration / 2) : 0;
+            double fade = scene.Transition.Kind != "cut" ? Math.Min(scene.Transition.Seconds, scene.Duration / 2) : 0;
             // a crossfade overlaps the previous scene; the first one fades in from black
             double overlap = i == 0 ? 0 : Math.Min(fade, scenes[^1].Duration / 2);
             double start = Math.Max(0, end - overlap);

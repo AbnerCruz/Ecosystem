@@ -134,9 +134,11 @@ public sealed record VideoScene
     };
 }
 
-/// <summary>How a scene enters: "cut" or "fade" (a crossfade over the previous scene, from black at the start).</summary>
+/// <summary>How a scene enters: "cut", "fade" (a crossfade over the previous scene, from black at the start), "slide", "wipe" or "zoom".</summary>
 public sealed record VideoTransition
 {
+    /// <summary>cut, fade, or #1004's slide (in from the right), wipe (revealed left to right) and zoom (closing in as it appears).</summary>
+    public static readonly string[] Kinds = ["cut", "fade", "slide", "wipe", "zoom"];
     public string Kind { get; init; } = "cut";
     public double Seconds { get; init; } = 0.5;
 }
@@ -315,7 +317,7 @@ public static class VideoCompositionRules
             Id(scene.Id, "cena");
             if (string.IsNullOrWhiteSpace(scene.PlacementId)) throw Bad("cena sem nota");
             if (!Finite(scene.Duration) || scene.Duration is < 0.1 or > 3600) throw Bad("duração da cena");
-            if (scene.Transition is null || scene.Transition.Kind is not ("cut" or "fade") ||
+            if (scene.Transition is null || !VideoTransition.Kinds.Contains(scene.Transition.Kind) ||
                 !Finite(scene.Transition.Seconds) || scene.Transition.Seconds is < 0 or > 10) throw Bad("transição");
             if (scene.Elements is null || scene.Elements.Count > 256) throw Bad("elementos");
             foreach (var e in scene.Elements)

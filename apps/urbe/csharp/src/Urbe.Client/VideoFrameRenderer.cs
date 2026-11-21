@@ -63,8 +63,19 @@ public sealed class VideoFrameRenderer : IDisposable
             {
                 // drawn right after it is taken: the next layer may evict it from the cache
                 var image = _cache.GetOrAdd(layer.StateKey, () => DrawLayer(layer));
-                using var paint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(layer.Opacity * 255)) };
+                float p = (float)layer.EntranceProgress, w = image.Width, h = image.Height;
+                // #1004: the entering scene comes in by its transition; fade (and the first scene) by opacity
+                var entering = p < 1 ? layer.Entrance : "in";
+                using var paint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round((entering is "slide" or "wipe" ? 1 : layer.Opacity) * 255)) };
+                canvas.Save();
+                switch (entering)
+                {
+                    case "slide": canvas.Translate((1 - p) * w, 0); break;
+                    case "wipe": canvas.ClipRect(new SKRect(0, 0, p * w, h)); break;
+                    case "zoom": float z = 1.15f - 0.15f * p; canvas.Translate(w / 2, h / 2); canvas.Scale(z); canvas.Translate(-w / 2, -h / 2); break;
+                }
                 canvas.DrawImage(image, 0, 0, new SKSamplingOptions(SKFilterMode.Linear), paint);
+                canvas.Restore();
                 if (!_cache.Owns(image)) image.Dispose();
             }
         }
