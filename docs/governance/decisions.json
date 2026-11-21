@@ -2390,7 +2390,7 @@
     },
     {
       "id": "DEC-0067",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Urbe: narração neural em pt-BR e a licença do fonemizador",
@@ -2422,7 +2422,11 @@
         "https://github.com/AbnerCruz/Ecosystem/issues/1004"
       ],
       "raisedBy": "claude-code-urbe-editor",
-      "raisedAt": "2026-11-20"
+      "raisedAt": "2026-11-20",
+      "decision": "Alternativa A — A — espeak-ng (GPL-3.0) junto do modelo baixado (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/1008).",
+      "decidedAt": "2026-11-21",
+      "record": "docs/governance/responses/DEC-0067.md",
+      "consequencesApplied": false
     }
   ]
 }
