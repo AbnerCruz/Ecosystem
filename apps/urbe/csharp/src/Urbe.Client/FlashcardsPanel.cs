@@ -26,13 +26,14 @@ public sealed class FlashcardsPanel : Border
         void Grade(Flashcard card, Recall grade);
         string StateOf(Flashcard card);
         Task SetMenuAsync(StudySet set);
-        Task CardMenuAsync(StudySet set, Flashcard card);
         void OpenNote(string path);
         void Close();
         /// <summary>Adds one card to a deck; null when it was added, else what is wrong (a repeated front, an empty side…).</summary>
         Task<string?> AddCardAsync(string deckId, string front, string back);
         /// <summary>Makes an empty set; its set id ("deck:…"), or the reason it could not.</summary>
         Task<(string? SetId, string? Problem)> CreateSetAsync(string title);
+        /// <summary>Changes a card's text (null when done, else why not); removes it when <paramref name="remove"/>.</summary>
+        Task<string?> EditCardAsync(string deckId, string cardId, string front, string back, bool remove);
     }
 
     private readonly IHost _host;
@@ -159,8 +160,15 @@ public sealed class FlashcardsPanel : Border
         list.Children.Add(actions);
         if (set.Kind == "deck" && set.DeckId is { } deckId) list.Children.Add(NewCardForm(set.Id, deckId));
         foreach (var card in set.Cards)
-            list.Children.Add(Row(card.Front, card.Back + " · " + _host.StateOf(card), null,
-                () => { if (set.Kind == "deck") _ = CardAsync(set, card); }, "Cartão " + card.Front));
+        {
+            var at = list.Children.Count;
+            list.Children.Add(Row(card.Front, card.Back + " · " + _host.StateOf(card), null, () =>
+            {
+                // a deck's card opens its editor in its place; a note's card is edited in the note
+                if (set.DeckId is not { } id || list.Children.OfType<Border>().Any(b => b.Tag as string == "editar:" + card.Id)) return;
+                list.Children.Insert(at + 1, CardEditor(set.Id, id, card));
+            }, "Cartão " + card.Front));
+        }
         _body.Content = list;
     }
 
@@ -197,8 +205,40 @@ public sealed class FlashcardsPanel : Border
         };
     }
 
+    private Control CardEditor(string setId, string deckId, Flashcard card)
+    {
+        TextBox Field(string text, string name)
+        {
+            var box = new TextBox
+            {
+                Text = text, TextWrapping = TextWrapping.Wrap, MinHeight = UrbeTokens.MinTouch, FontSize = UrbeTokens.Type.Body.Size,
+                Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary),
+                Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(box, name);
+            return box;
+        }
+        var front = Field(card.Front, "Frente do cartão");
+        var back = Field(card.Back, "Verso do cartão");
+        var error = UrbeTokens.Type.Footnote.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger), TextWrapping = TextWrapping.Wrap, IsVisible = false });
+        async Task Done(bool remove)
+        {
+            if (await _host.EditCardAsync(deckId, card.Id, front.Text ?? "", back.Text ?? "", remove) is { } problem) { error.Text = problem; error.IsVisible = true; return; }
+            ShowSet(setId);
+        }
+        var buttons = new WrapPanel();
+        buttons.Children.Add(Primary("Salvar", () => _ = Done(false)));
+        buttons.Children.Add(Secondary("Excluir cartão", () => _ = Done(true)));
+        buttons.Children.Add(Secondary("Fechar", () => ShowSet(setId)));
+        return new Border
+        {
+            Tag = "editar:" + card.Id, Background = UrbeTheme.Brush(UrbeTokens.Color.SurfaceRaised), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            Padding = new Thickness(UrbeTokens.Space.S), Margin = new Thickness(0, 0, 0, UrbeTokens.Space.Xs),
+            Child = new StackPanel { Spacing = UrbeTokens.Space.Xs, Children = { Caption("Mudar só o verso mantém o progresso do cartão."), front, back, error, buttons } }
+        };
+    }
+
     private async Task MenuAsync(StudySet set) { await _host.SetMenuAsync(set); if (_host.Sets().Any(s => s.Set.Id == set.Id)) ShowSet(set.Id); else ShowList(); }
-    private async Task CardAsync(StudySet set, Flashcard card) { await _host.CardMenuAsync(set, card); ShowSet(set.Id); }
 
     public void StartReview(StudySet set, bool all)
     {

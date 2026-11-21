@@ -175,9 +175,18 @@ public sealed partial class MainView : IAssistantStudy
         public string StateOf(Flashcard card) =>
             view.Study().GetValueOrDefault(view.StateKey(card.Id)) is not { } s ? "novo" : s.Due <= Today ? "para hoje" : "volta em " + s.Due.ToString("dd/MM");
         public Task SetMenuAsync(StudySet set) => view.DeckMenuAsync(set);
-        public Task CardMenuAsync(StudySet set, Flashcard card) => view.CardMenuAsync(set, card);
         public void OpenNote(string path) { view.CloseFlashcards(); view.OpenNoteByPath(path); }
         public void Close() => view.CloseFlashcards();
+        public async Task<string?> EditCardAsync(string deckId, string cardId, string front, string back, bool remove)
+        {
+            try
+            {
+                await view.ChangeFlashcardsAsync(l => remove ? l.RemoveCard(deckId, cardId, DateTime.UtcNow) : l.EditCard(deckId, cardId, front, back, DateTime.UtcNow));
+                return null;
+            }
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or InvalidDataException or IOException or UnauthorizedAccessException or NotSupportedException)
+            { return e.Message; }
+        }
         public async Task<(string? SetId, string? Problem)> CreateSetAsync(string title)
         {
             try { var deck = await view.ChangeFlashcardsAsync(l => l.Create(title, [], "manual", null, DateTime.UtcNow)); return ("deck:" + deck.Id, null); }
@@ -203,16 +212,6 @@ public sealed partial class MainView : IAssistantStudy
             await Guard(() => ChangeFlashcardsAsync(l => l.Rename(deckId, t, DateTime.UtcNow)));
         else if (pick == 2 && await Dialogs.ConfirmAsync("Excluir \"" + set.Title + "\"?", set.Cards.Count + " cartões serão apagados.", "Excluir", danger: true))
             await Guard(() => ChangeFlashcardsAsync(l => l.Delete(deckId)));
-    }
-
-    private async Task CardMenuAsync(StudySet set, Flashcard card)
-    {
-        if (set.DeckId is not { } deckId) return;
-        var choice = await Dialogs.ChooseAsync(card.Front, [new DialogItem("Editar", UrbeTheme.Icons.Pencil, "Mudar só a resposta mantém o progresso."), new DialogItem("Excluir cartão", UrbeTheme.Icons.Trash, Danger: true)], card.Back);
-        if (choice == 0 && await AskCardAsync((card.Front, card.Back)) is { } edited)
-            await Guard(() => ChangeFlashcardsAsync(l => l.EditCard(deckId, card.Id, edited.Front, edited.Back, DateTime.UtcNow)));
-        else if (choice == 1 && await Dialogs.ConfirmAsync("Excluir o cartão?", card.Front, "Excluir", danger: true))
-            await Guard(() => ChangeFlashcardsAsync(l => l.RemoveCard(deckId, card.Id, DateTime.UtcNow)));
     }
 
     private async Task Guard(Func<Task> act)

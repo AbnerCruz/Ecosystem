@@ -74,6 +74,13 @@ public sealed partial class HeadlessUiTests
             ClickButtonWithText(panel, "Adicionar cartão");
             for (int i = 0; i < 200 && study.Sets()[0].Set.Cards.Count < 3; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
             Assert.Equal(3, study.Sets()[0].Set.Cards.Count);
+            // a card edited in its place: changing only the back keeps the card (and its progress)
+            var idBefore = study.Sets()[0].Set.Cards[2].Id;
+            ClickButtonWithText(panel, "Cartão Maior ave?");
+            Named("Verso do cartão").Text = "Avestruz (Struthio camelus)";
+            ClickButtonWithText(panel, "Salvar");
+            for (int i = 0; i < 200 && study.Sets()[0].Set.Cards[2].Back != "Avestruz (Struthio camelus)"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal(("Avestruz (Struthio camelus)", idBefore), (study.Sets()[0].Set.Cards[2].Back, study.Sets()[0].Set.Cards[2].Id));
             Named("Frente do novo cartão").Text = "Maior ave?";
             Named("Verso do novo cartão").Text = "Outra";
             ClickButtonWithText(panel, "Adicionar cartão");
