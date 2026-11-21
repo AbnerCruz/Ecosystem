@@ -838,7 +838,15 @@ public sealed partial class MainActivity
                     _problems = [];
             }
 
-            if (AiPanelOpen) RenderConversation();
+            // Updating every Markdown answer/step on each tool event caused O(history) UI rebuilds.
+            // Keep the cowork chip live, and refresh the full chat at most a few times/second.
+            UpdateAiCompact();
+            long now = Environment.TickCount64;
+            if (AiPanelOpen && (!work.IsRunning || now - _aiLastConversationRenderMs >= 400))
+            {
+                _aiLastConversationRenderMs = now;
+                RenderConversation();
+            }
             RefreshSendButton();
         });
     }
