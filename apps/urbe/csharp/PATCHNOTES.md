@@ -1,14 +1,15 @@
 # Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.68
+**Versão canônica preparada:** 2.0.0-beta.70
 **Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-- A seleção de voz mostra o preço disponível e permite ouvir uma amostra antes de salvar. A síntese da amostra pode ser cobrada pelo provedor.
-- A seleção de vídeo mostra as tarifas divulgadas por segundo, resolução ou token e abre a página do provedor para consultar exemplos.
-- O formulário aceita tema, fontes selecionadas ou ambos. Sem fontes informadas, o agente é orientado a pesquisar conforme suas permissões. Podcast e vídeo oferecem duração Curto, Médio, Longo ou Flexível.
-- Publicações tem a opção Novo podcast. O Estúdio permite editar o roteiro, gerar áudio com a voz do agente e voltar para ouvir o resultado.
-- Flashcards pode ser aberto pelo menu principal ou por Estudo, mesmo com a biblioteca vazia.
-- A prévia de vídeo mostra quando falta áudio e oferece ações para narrar o roteiro, escolher a voz ou adicionar uma faixa. No Android, o player lê a trilha temporária por um descritor de arquivo do app.
-- Publicações ocultam o selo de autoria da IA no Estúdio e no conteúdo exportado. A narração do podcast também ignora os selos do roteiro.
+- Publicações agora têm a ação única **Nova publicação**, com escolha entre Artigo, Livro, Apresentação, Curso, Vídeo e Podcast.
+- Podcast usa o mesmo projeto editável `.publication.json`, o Estúdio e as fontes Markdown de outros formatos, sem uma biblioteca separada.
+- Ao criar Podcast, o Numa prepara um roteiro vinculado `.podcast.md`; roteiros legados continuam compatíveis.
+- O Estúdio permite editar e narrar notas de publicações do tipo Podcast mesmo quando a fonte não tem sufixo de podcast.
+- O Assistente é orientado a usar `write_publication` com `design.layout=podcast`, preservando o contrato editorial e a rastreabilidade das notas.
+- Ao criar Vídeo, a publicação recebe um projeto inicial de cenas sincronizado.
+- Incluídos testes de interface e de persistência para garantir o mesmo fluxo de publicação e reabertura de Podcast.
+- Testes automatizados não substituem validação no aparelho com serviço real de voz.

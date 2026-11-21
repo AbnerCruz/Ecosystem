@@ -522,6 +522,11 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 Assert.Contains("Resultado devolvido ao agente",
                     panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                // Reopening before the previous sheet detaches must use a NEW visual
+                // list, never reparent the old StackPanel between ScrollViewers.
+                var reopened = Assert.IsType<StackPanel>(OpenSteps(panel));
+                Assert.NotSame(timeline, reopened);
+                Assert.Equal(10, reopened.Children.Count);
 
                 // a new request: while it streams and waits for approval, the earlier ones are not rebuilt
                 model.Chats.Enqueue(Sse(
@@ -540,6 +545,28 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Aprovar alteração · Comece.md", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 panel.Answer(AiApproval.Approve);
                 await panel.CurrentRun!;
+
+                // Real crash regression (20-21 Nov): a persisted update_plan
+                // with duplicate JSON keys must not break ActivityTimeline/RenderLog.
+                msgs.Add(new AiChatMessage
+                {
+                    Id = "user-bad-json", Role = "user",
+                    Content = [AiChatBlock.TextBlock("Ver plano antigo")]
+                });
+                msgs.Add(new AiChatMessage
+                {
+                    Id = "assistant-bad-json", Role = "assistant",
+                    Content = [new AiChatBlock
+                    {
+                        Type = "tool_use", Id = "bad-plan", Name = "update_plan",
+                        Input = System.Text.Json.Nodes.JsonNode.Parse(
+                            """{"steps":[{"status":"done"}],"steps":[{"status":"pending"}]}""")
+                    }]
+                });
+                panel.RenderAll();
+                Assert.NotEmpty(panel.Log.Children);
+                var badPlan = panel.Conversation.Messages[^1].Content[0];
+                Assert.NotNull(badPlan.Input);
                 return true;
             }
             finally

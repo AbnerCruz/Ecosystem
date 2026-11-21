@@ -70,6 +70,18 @@ public sealed partial class AssistantPanel
         _timelinesUsed.Clear();
     }
 
+    /// <summary>
+    /// A saved/tool-streamed JSON object can contain a duplicate key. System.Text.Json.Nodes
+    /// throws ArgumentException when it first materializes that object's dictionary.
+    /// A broken tool argument must not crash the entire conversation when we read the steps.
+    /// The original tool input is preserved for debugging, and the stage remains visible.
+    /// </summary>
+    private static JsonNode? ActivityProperty(JsonNode? input, string name)
+    {
+        try { return input is JsonObject obj ? obj[name] : null; }
+        catch (ArgumentException) { return null; }
+    }
+
     private Control ActivityTimeline(AiChatMessage request, IReadOnlyList<AiChatMessage> messages)
     {
         var calls = messages.SelectMany(message => message.Content
@@ -94,8 +106,9 @@ public sealed partial class AssistantPanel
             : calls.Any(x => ResultFor(x.Block.Id) is { IsError: true }) ? "Atividade concluída com alertas"
             : calls.Count > 0 ? "Trabalho realizado" : "Análise concluída";
 
-        if (!running && !needsApproval && !needsAnswer && !needsForm && (calls.LastOrDefault(x => x.Block.Name == "update_plan").Block?.Input as JsonObject)?["steps"] is JsonArray remaining &&
-            remaining.Any(x => x is not JsonObject step || JsonText(step["status"]) != "done"))
+        if (!running && !needsApproval && !needsAnswer && !needsForm &&
+            ActivityProperty(calls.LastOrDefault(x => x.Block.Name == "update_plan").Block?.Input, "steps") is JsonArray remaining &&
+            remaining.Any(x => x is not JsonObject || JsonText(ActivityProperty(x, "status")) != "done"))
             headline = "Execução encerrada · plano com pendências";
         var key = KeyOf(request);
         _timelinesUsed.Add(key);
@@ -225,6 +238,13 @@ public sealed partial class AssistantPanel
     {
         _stepsShown = timeline;
         timeline.Window = null;
+        // The previous sheet may still be animating closed: its ScrollViewer still owns
+        // the old list. Never attach the same visual StackPanel to a second presenter.
+        // Preserve the underlying messages/expanded state; remount only view controls.
+        timeline.List = null;
+        timeline.Items.Clear();
+        timeline.Older = null;
+        timeline.Newer = null;
         var title = Label("Etapas · " + timeline.Messages.Sum(m => m.Content.Count(b => b.Type == "tool_use")), 15, UrbeTheme.Text);
         title.FontWeight = FontWeight.SemiBold;
         title.VerticalAlignment = VerticalAlignment.Center;
@@ -422,9 +442,9 @@ public sealed partial class AssistantPanel
             if (_progress.TryGetValue(block.Id, out var progress)) details.Children.Add(Wrap(progress, 12, UrbeTheme.Text2));
             if (_nested.TryGetValue(block.Id, out var nested))
                 foreach (var step in nested) details.Children.Add(Wrap("↳ " + step, 12, UrbeTheme.Text2));
-            if (block.Name == "update_plan" && (block.Input as JsonObject)?["steps"] is JsonArray steps && block.Id == LatestPlanId())
+            if (block.Name == "update_plan" && ActivityProperty(block.Input, "steps") is JsonArray steps && block.Id == LatestPlanId())
                 details.Children.Add(Plan(steps));
-            if (block.Name == "ask_user" && (block.Input as JsonObject)?["question"] is JsonValue question)
+            if (block.Name == "ask_user" && ActivityProperty(block.Input, "question") is JsonValue question)
                 details.Children.Add(Wrap(LegacyCustomize.JsToString(question), 13, UrbeTheme.Text));
             if (block.Input is not null && !block.Pending)
             {

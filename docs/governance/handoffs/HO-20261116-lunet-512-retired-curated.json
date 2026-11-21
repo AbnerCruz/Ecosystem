@@ -1,0 +1,99 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261116-lunet-512-retired-curated",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-16T14:20:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-pr-reconciliation-20261116",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-512",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-inspiration-retired-curated-20261116",
+  "base_commit": "54cdca1d21143a2509da523b552121af429bf44e",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/960",
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/src/Lunet.Core/InspirationLibrary.cs",
+    "apps/lunet2d/tests/Lunet.Tests/InspirationLibraryTests.cs",
+    "docs/governance/handoffs/lunet-512-retired-curated-2026-11-16.md",
+    "docs/governance/handoffs/HO-20261116-lunet-512-retired-curated.json"
+  ],
+  "work_completed": [
+    "Referências curadas retiradas de versões futuras são reabertas como snapshots locais, preservando dados pessoais e evitando corrupção do JSON.",
+    "Entradas inválidas de campos persistidos como notas e nome de projeto passam a falhar sem modificar o arquivo original.",
+    "Reconciliados CHANGELOG e ROADMAP com a nova Home de main sem sobrescrever nenhuma alteração; adicionado handoff JSON NN-008."
+  ],
+  "verification": [
+    {
+      "check": "lunet2d-ci do head fb56b618",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43882077739"
+    },
+    {
+      "check": "consistency do head fb56b618",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43882077662"
+    },
+    {
+      "check": "Checks da reconciliação com a main atual",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O integrador deve executar sobre este novo merge commit."
+    },
+    {
+      "check": "Android 13 DEVICE: reabrir biblioteca com referência aposentada, alterar notas, reiniciar",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/inspiracao.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Ainda sem teste físico Android 13.",
+    "PR #959 separado também modifica o changelog; preservar ambas as entradas após integração."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI e integração automática sobre o estado combinado; se PR #959 integrar antes, reconciliar novamente sem descartar linhas de changelog.",
+    "Validar preservação real de JSON, favoritos, notas e referências removidas no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Dados pessoais preservados durante evolução do catálogo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff estruturado JSON sob diretório normativo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem aprovação DEVICE presumida."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "curated-reference-backwards-compatibility",
+      "status": "product-specific",
+      "rationale": "Persistência do InspirationLibrary Lunet, sem componente compartilhado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

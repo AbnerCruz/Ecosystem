@@ -49,6 +49,31 @@ public sealed class AssistantStoreTests
     }
 
     [Fact]
+    public void DuplicateModelToolKeysAreCanonicalizedBeforePersistingAndReplaying()
+    {
+        var raw = System.Text.Json.Nodes.JsonNode.Parse(
+            """{"type":"tool_use","id":"call-dup","name":"update_plan","input":{"tests":[1],"tests":[2],"steps":[{"status":"done","status":"pending"}]}}""")!;
+        var block = AiChatBlock.FromJson(raw);
+        Assert.Equal(2, (int)block.Input!["tests"]![0]!);
+        Assert.Equal("pending", (string?)block.Input["steps"]![0]!["status"]);
+
+        var saved = block.ToJson();
+        var reread = AiChatBlock.FromJson(saved);
+        Assert.Equal(2, (int)reread.Input!["tests"]![0]!);
+        Assert.Equal("pending", (string?)reread.Input["steps"]![0]!["status"]);
+
+        var store = new AssistantStore(new MemoryAssistantStorage());
+        var conversation = new AiConversation { Id = "duplicate-model-args" };
+        conversation.Messages.Add(new AiChatMessage
+        {
+            Id = "a-duplicate", Role = "assistant", Content = [block]
+        });
+        store.SaveConversation(conversation, now: 1);
+        var restored = store.GetConversation(conversation.Id)!;
+        Assert.Equal(2, (int)restored.Messages[0].Content[0].Input!["tests"]![0]!);
+    }
+
+    [Fact]
     public void ConfigurationAndConversationsRoundTrip()
     {
         var storage = new MemoryAssistantStorage();

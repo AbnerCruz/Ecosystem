@@ -132,6 +132,8 @@ public sealed class PublicationStudioView : Border
         root.Children.Add(bar);
         root.Children.Add(body);
         Child = root;
+        // Preview text can contain hundreds of pages. Build only sections near the viewport.
+        Ui.Deferred.Watch(_preview);
     }
 
     public string ProjectPath { get; private set; } = "";
@@ -473,33 +475,56 @@ public sealed class PublicationStudioView : Border
             if (video) continue;   // the video panel is the preview; each note is a scene there
             if (source is not null)
             {
-                var text = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;
-                var origin = Provenance(source, catalog);
-                if (origin is not null) _preview.Children.Add(origin);
-                var shown = new Border
+                var previewSource = source;
+                var previewLabel = label;
+                var previewReference = piece.Source;
+                var isCover = piece.IsCover;
+                var text = MarkdownEngine.SplitFrontmatter(previewSource.Markdown).Body;
+                Control BuildPreview()
                 {
-                    // the cover stands apart: its own block, taller, as its page in the book
-                    Padding = piece.IsCover ? new Thickness(14, 48) : new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
-                    BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
-                    Child = new StackPanel
+                    var origin = Provenance(previewSource, catalog);
+                    var shown = new Border
                     {
-                        Children =
+                        Padding = isCover ? new Thickness(14, 48) : new Thickness(14, 10),
+                        BorderThickness = new Thickness(0, 1, 0, 0),
+                        BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
+                        Child = new StackPanel
                         {
-                            // the note's name, only when its first heading does not already say it
-                            new TextBlock { Text = label, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
-                                IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(), label, StringComparison.CurrentCultureIgnoreCase) },
-                            new MarkdownReader { Selectable = true, ProgressContextMarkdown = source.Markdown,
-                                ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown }.BuildMarkdown(text)
+                            Children =
+                            {
+                                new TextBlock
+                                {
+                                    Text = previewLabel, FontSize = UrbeTokens.Type.Caption.Size,
+                                    Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                                    IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(),
+                                        previewLabel, StringComparison.CurrentCultureIgnoreCase)
+                                },
+                                new MarkdownReader
+                                {
+                                    Selectable = true, ProgressContextMarkdown = previewSource.Markdown,
+                                    ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown
+                                }.BuildMarkdown(text)
+                            }
                         }
-                    }
-                };
-                // CST-156: a double tap on a paragraph of the preview opens its note at that paragraph
-                var reference = piece.Source;
-                shown.DoubleTapped += (_, e) =>
-                {
-                    if (ShownText(e.Source) is { Length: > 0 } tapped) { EditShownTextRequested?.Invoke(reference, tapped); e.Handled = true; }
-                };
-                _preview.Children.Add(shown);
+                    };
+                    shown.DoubleTapped += (_, e) =>
+                    {
+                        if (ShownText(e.Source) is { Length: > 0 } tapped)
+                        { EditShownTextRequested?.Invoke(previewReference, tapped); e.Handled = true; }
+                    };
+                    if (origin is null) return shown;
+                    var together = new StackPanel { Spacing = 8 };
+                    together.Children.Add(origin);
+                    together.Children.Add(shown);
+                    return together;
+                }
+                // Short publications keep their immediate preview. Books and long notes
+                // defer Markdown layout until the reader scrolls to that section.
+                if (project.Sections.Count <= 3 && text.Length <= 2500)
+                    _preview.Children.Add(BuildPreview());
+                else
+                    _preview.Children.Add(new Ui.Deferred(BuildPreview,
+                        Math.Clamp(180 + text.Length / 55.0 * 18, 240, 2400)));
             }
             else
                 _preview.Children.Add(new TextBlock { Text = "Fonte ausente — o arquivo original não será substituído.", Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
