@@ -26,6 +26,21 @@ public sealed partial class MainView
     private readonly Dictionary<(DocumentStore, string), PublicationDraft> _publicationDrafts = [];
     private PublicationDraft? _publicationDraft;
 
+    // All publication formats share the same library, composer and .publication.json contract.
+    private static readonly (string Layout, string Name, string Detail)[] PublicationKinds =
+    [
+        ("article", "Artigo", "Texto contínuo"),
+        ("book", "Livro", "Capítulos e sumário"),
+        ("slides", "Apresentação", "Uma nota por slide"),
+        ("course", "Curso", "Módulos, aulas e exercícios"),
+        ("video", "Vídeo", "Cenas, motion graphics e narração"),
+        ("podcast", "Podcast", "Roteiro editável e exportação de áudio")
+    ];
+
+    private async Task<int?> ChoosePublicationKindAsync() =>
+        await Dialogs.ChooseAsync("Formato da publicação",
+            PublicationKinds.Select(k => new DialogItem(k.Name, Detail: k.Detail)).ToList());
+
     public PublicationStudioView PublicationsStudio => _publicationsStudio ??= MakePublicationsStudio();
 
     private PublicationStudioView MakePublicationsStudio()
@@ -205,13 +220,15 @@ public sealed partial class MainView
     /// copy (CST-135).
     /// </summary>
     public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
-        string? tag = null, string? fragment = null, PublicationQuery? query = null, PublicationProject? style = null, bool podcast = false)
+        string? tag = null, string? fragment = null, PublicationQuery? query = null, PublicationProject? style = null, bool podcast = false, string? layout = null)
     {
         if (!VaultWritable || _store is null)
         {
             await Dialogs.AlertAsync("Publicações", NoVaultMessage);
             return;
         }
+        // The podcast is a publication format, not a separate publication subsystem.
+        podcast |= layout == "podcast";
         var source = sourcePath is null ? null : _store.Get(sourcePath);
         if (source is not null && !ArtifactModel.IsNote(source.Path)) source = null;
         var originalStore = _store;
@@ -226,6 +243,9 @@ public sealed partial class MainView
             return;
         }
         var project = style?.StyleFor(title.Trim()) ?? PublicationProject.Create(title.Trim());
+        if (podcast) layout = "podcast";
+        if (layout is not null)
+            project = project with { Design = project.Design with { Layout = layout } };
         if (fragment is { Length: > 0 } && source is not null) project = project.AddSource(new PublicationSourceReference(source.Id, fragment));
         else if (source is not null) project = project.AddSource(source.Id);
         foreach (var p in sourcePaths ?? [])
@@ -406,12 +426,16 @@ public sealed partial class MainView
             catch (Exception e) when (e is InvalidDataException or NotSupportedException)
             { return new DialogItem(d.Title + " (verificar arquivo)", Detail: d.Path); }
         }).ToList();
-        options.Add(new DialogItem("Nova publicação", UrbeTheme.Icons.Plus, "Criar a partir das notas do vault"));
-        options.Add(new DialogItem("Novo podcast", UrbeTheme.Icons.Plus, "Criar um roteiro e narrar com a voz do agente"));
+        options.Add(new DialogItem("Nova publicação", UrbeTheme.Icons.Plus,
+            "Artigo, livro, apresentação, curso, vídeo ou podcast"));
         var chosen = await Dialogs.ChooseAsync("Publicações", options);
         if (chosen is not { } index) return;
-        if (index == projects.Count) await CreatePublicationAsync();
-        else if (index == projects.Count + 1) await CreatePublicationAsync(podcast: true);
+        if (index == projects.Count)
+        {
+            var kind = await ChoosePublicationKindAsync();
+            if (kind is { } selected)
+                await CreatePublicationAsync(layout: PublicationKinds[selected].Layout);
+        }
         else await OpenPublicationAsync(projects[index].Path);
     }
 
@@ -502,7 +526,7 @@ public sealed partial class MainView
     {
         var draft = _publicationDraft;
         if (_publicationsStudio?.Project is not { } project) return;
-        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro, apresentação, curso ou vídeo"),
+        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro, apresentação, curso, vídeo ou podcast"),
             new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience),
             .. project.Design.Layout == "video" && project.Video is { } v
                 ? new[] { new DialogItem("Formato do vídeo", Detail: v.Aspect + " · " + v.FrameSize.Width + "×" + v.FrameSize.Height + " · " + v.Fps + " qps" + (v.Subtitles ? " · legendas" : "")) }
@@ -510,10 +534,9 @@ public sealed partial class MainView
         PublicationProject? next = null;
         if (option == 0)
         {
-            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)"),
-                new DialogItem("Curso", Detail: "Cada nota um módulo, cada ## uma aula, questionários e progresso"),
-                new DialogItem("Vídeo (uma nota por cena)", Detail: "O texto da nota é o roteiro e a legenda; o tempo fica na publicação")]);
-            if (layout is >= 0 and <= 4) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides", "course", "video" }[layout.Value] } };
+            var kind = await ChoosePublicationKindAsync();
+            if (kind is { } selected)
+                next = project with { Design = project.Design with { Layout = PublicationKinds[selected].Layout } };
         }
         else if (option == 1)
         {
