@@ -47,12 +47,9 @@ public sealed partial class HeadlessUiTests
             var before = UrbeApp.AssistantFolder;
             UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
             var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
-            var window = new Window { Width = 412, Height = 860, Content = view };
-            window.Show();
             try
             {
                 await view.OpenVaultAsync();
-                await Settle(window, view);
                 var panel = view.Assistant;
                 panel.Open();
                 panel.SelectAgent("geral");
@@ -84,7 +81,6 @@ public sealed partial class HeadlessUiTests
             finally
             {
                 UrbeApp.AssistantFolder = before;
-                window.Close();
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }, CancellationToken.None));
@@ -221,8 +217,8 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Contexto");
                 Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Pesquisa");
-                Assert.Contains("Privacidade e pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Conexões");
+                Assert.Contains("Configurações globais da pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Agentes");
                 Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;

@@ -930,7 +930,7 @@ public sealed partial class AssistantPanel
         {
             ("models", "Modelos", "Provedores e imagens"),
             ("agents", "Agentes", "Identidade e perfis"),
-            ("web", "Pesquisa", "Internet e fontes"),
+            ("web", "Conexões", "Privacidade, aparelho e serviços"),
             ("context", "Contexto", "Instruções e memória")
         };
         // Flat navigation: no grid of outlined mini-cards. Categories are ALWAYS visible and can wrap on phones.
@@ -1555,7 +1555,12 @@ public sealed partial class AssistantPanel
             var t = a?.Tools ?? chosen?.Tools ?? "read";
             var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, chosen?.Icon ?? (t == "read" ? "search" : "sparkle"), p.Length > 80 ? p[..80] : p, t, t == "all", p);
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
-            if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
+            if (at >= 0) _cfg.CustomAgents[at] = made;
+            else
+            {
+                _cfg.CustomAgents.Add(made);
+                _cfg.AgentMedia[made.Id] = new AiAgentMediaProfile(VideoProviderId: "");
+            }
             if (a is null && t != "read")
             {
                 // a new agent that writes starts asking before each change; Permissões can make it automatic

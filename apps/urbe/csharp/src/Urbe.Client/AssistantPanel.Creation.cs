@@ -48,7 +48,12 @@ public sealed partial class AssistantPanel
     {
         if (ConversationBusy(_conv.Id)) { _app.Notify("Aguarde a resposta atual antes de iniciar outra criação."); return; }
         var conversation = _conv;
-        var body = OpenView("Gerar " + kind);
+        CancellationTokenSource? reading = null;
+        var body = OpenView("Gerar " + kind, () =>
+        {
+            reading?.Cancel();
+            CloseView();
+        });
         var focus = new TextBox { PlaceholderText = "Assunto, objetivo e público", Text = _input.Text };
         var options = new TextBox
         {
@@ -86,7 +91,7 @@ public sealed partial class AssistantPanel
         ShowSources();
         var status = Hint("");
         body.Children.Add(status);
-        var submit = TextButton("Enviar configurações e gerar", () => { }, primary: true);
+        var submit = new Ui.UrbeButton("Enviar configurações e gerar", Ui.ButtonKind.Primary);
         submit.Click += async (_, _) =>
         {
             if (!ReferenceEquals(conversation, _conv) || ConversationBusy(conversation.Id)) return;
@@ -101,6 +106,9 @@ public sealed partial class AssistantPanel
                 status.Text = "Configure um modelo de conversa para este agente antes de gerar.";
                 return;
             }
+            var requestedFocus = focus.Text.Trim();
+            var requestedOptions = options.Text?.Trim();
+            var requestedLanguage = language.Text?.Trim();
             var included = selected.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToList();
             var excluded = _pendingAttachments.Where(source => !included.Contains(source)).ToList();
             var instructions = kind switch
@@ -111,25 +119,32 @@ public sealed partial class AssistantPanel
             };
             submit.IsEnabled = false;
             using var cancel = new CancellationTokenSource();
+            reading = cancel;
             var stop = TextButton("Cancelar leitura", cancel.Cancel);
             body.Children.Add(stop);
             try
             {
                 var prepared = new List<AiChatBlock>();
+                var textBudget = AssistantTextAttachments.MaxTotalTextBytes - included.Sum(source =>
+                    System.Text.Encoding.UTF8.GetByteCount(source.Text ?? ""));
                 foreach (var source in included)
                 {
                     var ready = source;
                     if (source.LocalSourceId is { } id && LocalSourcePath(id) is { } path &&
                         VaultFileKinds.Classify(source.FileName) is VaultFileKinds.Audio or VaultFileKinds.Video &&
-                        PlatformAudio.Available && File.Exists(path))
+                        PlatformAudio.Available && textBudget > 0 && File.Exists(path))
                     {
                         status.Text = "Lendo o áudio de " + source.FileName + "…";
                         try
                         {
                             var transcript = await ReadSourceTranscriptAsync(path, cancel.Token);
-                            if (transcript.Length > 0)
+                            var transcriptBytes = System.Text.Encoding.UTF8.GetByteCount(transcript);
+                            if (transcriptBytes > 0 && transcriptBytes <= textBudget)
+                            {
                                 ready = new AiChatBlock { Hidden = true, FileName = source.FileName, LocalSourceId = id,
                                     Text = source.Text + "\nTranscrição local por instante:\n" + transcript };
+                                textBudget -= transcriptBytes;
+                            }
                         }
                         catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
                         {
@@ -143,13 +158,13 @@ public sealed partial class AssistantPanel
                 _pendingAttachments.Clear();
                 _pendingAttachments.AddRange(prepared);
                 Send(instructions + "\nUse as fontes marcadas. Informe lacunas se uma fonte não estiver legível.\n" +
-                    "Assunto, objetivo e público: " + focus.Text.Trim() + "\nPreferências: " + options.Text?.Trim() +
-                    "\nIdioma: " + language.Text?.Trim());
+                    "Assunto, objetivo e público: " + requestedFocus + "\nPreferências: " + requestedOptions +
+                    "\nIdioma: " + requestedLanguage);
                 _pendingAttachments.AddRange(excluded);
                 RefreshAttachments();
             }
             catch (OperationCanceledException) when (cancel.IsCancellationRequested) { status.Text = "Leitura cancelada."; }
-            finally { body.Children.Remove(stop); submit.IsEnabled = true; }
+            finally { reading = null; body.Children.Remove(stop); submit.IsEnabled = true; }
         };
         body.Children.Add(submit);
     }

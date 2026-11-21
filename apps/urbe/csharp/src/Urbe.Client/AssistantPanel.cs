@@ -902,8 +902,10 @@ public sealed partial class AssistantPanel : Border
                 int limit = mime == "application/pdf" ? AssistantDocumentTools.MaxFileBytes :
                     mime.Length > 0 ? 60 * 1024 * 1024 : AssistantTextAttachments.MaxTextBytes;
 
-                await using var stream = await file.OpenReadAsync();
-                var bytes = await AssistantTextAttachments.ReadBoundedAsync(stream, limit);
+                byte[]? bytes;
+                await using (var stream = await file.OpenReadAsync())
+                    bytes = await AssistantTextAttachments.ReadBoundedAsync(stream, limit);
+                if (!ReferenceEquals(conversation, _conv)) break;
                 if (bytes is null)
                 {
                     await AttachLocalSourceAsync(file, conversation);

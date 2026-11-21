@@ -17,12 +17,9 @@ public sealed partial class HeadlessUiTests
         var before = UrbeApp.AssistantFolder;
         UrbeApp.AssistantFolder = Path.Combine(folder, "assistente");
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(folder, "sel.json")));
-        var window = new Window { Width = 412, Height = 900, Content = view };
-        window.Show();
         try
         {
             await view.OpenVaultAsync();
-            await Settle(window, view);
             var panel = view.Assistant;
             panel.Open();
             panel.SelectAgent("geral");
@@ -54,7 +51,6 @@ public sealed partial class HeadlessUiTests
         }
         finally
         {
-            window.Close();
             UrbeApp.AssistantFolder = before;
             try { Directory.Delete(folder, true); } catch (IOException) { }
         }
