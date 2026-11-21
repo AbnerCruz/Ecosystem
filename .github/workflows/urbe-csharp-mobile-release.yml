@@ -77,11 +77,13 @@ jobs:
           assert beta.findtext('ApplicationId') == 'app.urbe.csharp', 'Identidade Android alterada'
           version = root.findtext('.//UrbeBetaVersion')
           code = int(root.findtext('.//UrbeBetaVersionCode'))
+          app_label = beta.findtext('ApplicationTitle')
+          assert app_label and app_label.strip() == app_label and '\n' not in app_label, 'Android beta ApplicationTitle invalid'
           assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z][A-Za-z0-9-]*(?:\.\d+)?)?', version), version
           assert code >= 2000001, code
           tag = 'urbe-csharp-v' + version
           with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write(f'version={version}\nversion_code={code}\ntag={tag}\n')
+              out.write(f'version={version}\nversion_code={code}\ntag={tag}\napp_label={app_label}\n')
           print(f'Urbe C# {version} / versionCode {code} / {tag}')
           PY
           (cd ../tools && sha256sum -c urbe-dev.keystore.sha256)
@@ -159,6 +161,7 @@ jobs:
         if: steps.version.outputs.skip != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          EXPECTED_APP_LABEL: ${{ steps.version.outputs.app_label }}
         run: |
           set -euo pipefail
           apk="artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk"
@@ -168,7 +171,7 @@ jobs:
           badging="$("$aapt" dump badging "$apk")"
           echo "$badging" | head -3
           echo "$badging" | grep -q "package: name='app.urbe.csharp'.*versionName='$VERSION'" || { echo "::error::Identidade ou versão erradas"; exit 1; }
-          echo "$badging" | grep -q "application-label:'Urbe'" || { echo "::error::Nome do app errado"; exit 1; }
+          echo "$badging" | grep -Fxq "application-label:'$EXPECTED_APP_LABEL'" || { echo "::error::Nome do app errado (esperado: $EXPECTED_APP_LABEL)"; exit 1; }
 
       - name: Preserve verified Android beta APK as workflow artifact
         if: steps.version.outputs.skip != 'true'
