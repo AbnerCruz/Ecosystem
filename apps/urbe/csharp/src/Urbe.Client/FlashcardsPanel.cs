@@ -25,13 +25,14 @@ public sealed class FlashcardsPanel : Border
         IReadOnlyList<(string Label, string Detail)> When(Flashcard card);
         void Grade(Flashcard card, Recall grade);
         string StateOf(Flashcard card);
-        Task NewSetAsync();
         Task SetMenuAsync(StudySet set);
         Task CardMenuAsync(StudySet set, Flashcard card);
         void OpenNote(string path);
         void Close();
         /// <summary>Adds one card to a deck; null when it was added, else what is wrong (a repeated front, an empty side…).</summary>
         Task<string?> AddCardAsync(string deckId, string front, string back);
+        /// <summary>Makes an empty set; its set id ("deck:…"), or the reason it could not.</summary>
+        Task<(string? SetId, string? Problem)> CreateSetAsync(string title);
     }
 
     private readonly IHost _host;
@@ -105,7 +106,7 @@ public sealed class FlashcardsPanel : Border
         var list = new StackPanel { Spacing = 2, Margin = new Thickness(12, 4, 12, 24), MaxWidth = 760 };
         int due = sets.Sum(s => s.Progress.Due);
         list.Children.Add(Caption(sets.Count == 0 ? "Nenhum conjunto ainda." : (due == 0 ? "Nada para revisar hoje." : due + (due == 1 ? " cartão para hoje" : " cartões para hoje")) + " · " + sets.Count + (sets.Count == 1 ? " conjunto" : " conjuntos")));
-        list.Children.Add(Primary("Novo conjunto", () => _ = NewAsync()));
+        list.Children.Add(NewSetForm());
         if (sets.Count == 0)
             list.Children.Add(Caption("Crie um aqui, peça ao Assistente (\"faça flashcards sobre…\") ou escreva pergunta::resposta numa linha de uma nota."));
         foreach (var (set, p) in sets)
@@ -115,10 +116,27 @@ public sealed class FlashcardsPanel : Border
         _body.Content = list;
     }
 
-    private async Task NewAsync()
+    /// <summary>A title typed in the list makes the set and opens it, ready for its first card.</summary>
+    private Control NewSetForm()
     {
-        await _host.NewSetAsync();
-        ShowList();
+        var title = new TextBox
+        {
+            PlaceholderText = "Novo conjunto: título (ex.: Animais)", MinHeight = UrbeTokens.MinTouch, FontSize = UrbeTokens.Type.Body.Size,
+            Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary),
+            Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(title, "Título do novo conjunto");
+        var error = UrbeTokens.Type.Footnote.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger), TextWrapping = TextWrapping.Wrap, IsVisible = false });
+        async Task Create()
+        {
+            error.IsVisible = false;
+            var (setId, problem) = await _host.CreateSetAsync(title.Text ?? "");
+            if (setId is null) { error.Text = problem ?? ""; error.IsVisible = true; return; }
+            ShowSet(setId);
+        }
+        title.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; _ = Create(); } };
+        var create = Primary("Criar conjunto", () => _ = Create());
+        return new StackPanel { Spacing = UrbeTokens.Space.Xs, Margin = new Thickness(0, 0, 0, UrbeTokens.Space.S), Children = { title, error, create } };
     }
 
     public void ShowSet(string setId)

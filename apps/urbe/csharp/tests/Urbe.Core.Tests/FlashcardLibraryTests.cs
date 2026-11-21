@@ -38,6 +38,15 @@ public sealed class FlashcardLibraryTests
     }
 
     [Fact]
+    public void APersonMayStartASetEmptyButTheAssistenteAlwaysBringsCards()
+    {
+        var library = new FlashcardLibrary();
+        Assert.Empty(library.Create("Vazio", [], "manual", null, Now).Cards);
+        Assert.Throws<ArgumentException>(() => library.Create("Da IA", [], "assistente", null, Now));
+        Assert.Single(library.Decks);
+    }
+
+    [Fact]
     public void ARepeatedFrontIsRefusedAndFixingTheAnswerKeepsTheCard()
     {
         var library = new FlashcardLibrary();

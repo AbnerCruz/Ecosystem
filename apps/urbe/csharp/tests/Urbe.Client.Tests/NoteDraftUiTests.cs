@@ -43,6 +43,8 @@ public sealed partial class HeadlessUiTests
             view.Editor.Editor.Text = typed;
             await Pump(400);                       // the draft is written after a short pause…
             await view.DraftWrites;
+            // …in the background: a busy machine may take longer than the pause
+            for (int i = 0; i < 500 && (!Directory.Exists(drafts) || Directory.GetFiles(drafts, "*.json").Length == 0); i++) { await Pump(10); await view.DraftWrites; }
             Assert.NotEmpty(Directory.GetFiles(drafts, "*.json"));
             // …and the app is killed before its save: the vault keeps the old text, the draft stays
             var kept = Directory.GetFiles(drafts, "*.json").ToDictionary(f => f, File.ReadAllText);

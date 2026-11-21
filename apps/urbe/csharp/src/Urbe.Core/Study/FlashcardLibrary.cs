@@ -98,7 +98,9 @@ public sealed class FlashcardLibrary
         if (title.Length > 200) throw new ArgumentException("O título tem " + title.Length + " caracteres; use até 200.");
         if (origin is not ("manual" or "assistente")) throw new ArgumentException("origin é manual ou assistente.");
         var id = NewId(title);
-        var deck = new FlashcardDeck { Id = id, Title = title, Origin = origin, Source = Blank(source), Created = now, Updated = now, Cards = Checked(id, cards, []) };
+        // a person may start a set empty and fill it in the panel; a set the Assistente makes always has its cards
+        var checkedCards = cards.Count == 0 && origin == "manual" ? [] : Checked(id, cards, []);
+        var deck = new FlashcardDeck { Id = id, Title = title, Origin = origin, Source = Blank(source), Created = now, Updated = now, Cards = checkedCards };
         Decks.Add(deck);
         return deck;
     }

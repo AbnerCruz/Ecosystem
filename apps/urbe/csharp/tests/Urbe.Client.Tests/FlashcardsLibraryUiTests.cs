@@ -57,6 +57,14 @@ public sealed partial class HeadlessUiTests
             Assert.NotNull(panel);
             Assert.Equal("list", panel!.Screen);
             Snapshot(window, "native-flashcards-list.png");
+            // a set made from the list opens ready for its first card
+            var titleBox = panel.GetLogicalDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Título do novo conjunto");
+            titleBox.Text = "Plantas";
+            ClickButtonWithText(panel, "Criar conjunto");
+            for (int i = 0; i < 200 && panel.Screen != "set"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal("set", panel.Screen);
+            Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => Avalonia.Automation.AutomationProperties.GetName(t) == "Frente do novo cartão");
+            Assert.Contains(study.Sets(), x => x.Set.Title == "Plantas" && x.Set.Cards.Count == 0);
             panel.ShowSet("deck:animais");
             Assert.Equal("set", panel.Screen);
             // a card typed right in the set, without dialogs; a repeated front is refused there, saying why
@@ -98,8 +106,9 @@ public sealed partial class HeadlessUiTests
             await reopened.OpenVaultAsync();
             await Settle(again, reopened);
             var back = ((IAssistantStudy)reopened).Sets();
-            Assert.Equal(["Maior mamífero?", "Animal terrestre mais rápido?", "Maior ave?"], back[0].Set.Cards.Select(c => c.Front));
-            Assert.Equal(3, back[0].Progress.Reviewed);   // the review's progress came back too
+            Assert.Equal(["Maior mamífero?", "Animal terrestre mais rápido?", "Maior ave?"], back.Single(x => x.Set.Id == "deck:animais").Set.Cards.Select(c => c.Front));
+            Assert.Contains(back, x => x.Set.Title == "Plantas");
+            Assert.Equal(3, back.Single(x => x.Set.Id == "deck:animais").Progress.Reviewed);   // the review's progress came back too
             Assert.Equal(before, Visible());
             again.Close();
             return true;

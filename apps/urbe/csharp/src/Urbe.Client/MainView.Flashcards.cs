@@ -174,11 +174,16 @@ public sealed partial class MainView : IAssistantStudy
         }
         public string StateOf(Flashcard card) =>
             view.Study().GetValueOrDefault(view.StateKey(card.Id)) is not { } s ? "novo" : s.Due <= Today ? "para hoje" : "volta em " + s.Due.ToString("dd/MM");
-        public async Task NewSetAsync() => await view.NewDeckAsync();
         public Task SetMenuAsync(StudySet set) => view.DeckMenuAsync(set);
         public Task CardMenuAsync(StudySet set, Flashcard card) => view.CardMenuAsync(set, card);
         public void OpenNote(string path) { view.CloseFlashcards(); view.OpenNoteByPath(path); }
         public void Close() => view.CloseFlashcards();
+        public async Task<(string? SetId, string? Problem)> CreateSetAsync(string title)
+        {
+            try { var deck = await view.ChangeFlashcardsAsync(l => l.Create(title, [], "manual", null, DateTime.UtcNow)); return ("deck:" + deck.Id, null); }
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or InvalidDataException or IOException or UnauthorizedAccessException or NotSupportedException)
+            { return (null, e.Message); }
+        }
         public async Task<string?> AddCardAsync(string deckId, string front, string back)
         {
             try { await view.ChangeFlashcardsAsync(l => l.Add(deckId, [(front, back)], DateTime.UtcNow)); return null; }
@@ -215,16 +220,6 @@ public sealed partial class MainView : IAssistantStudy
         try { await act(); }
         catch (Exception e) when (e is ArgumentException or InvalidOperationException or InvalidDataException or IOException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Flashcards", e.Message); }
-    }
-
-    private async Task<FlashcardDeck?> NewDeckAsync()
-    {
-        if (await Dialogs.PromptAsync(new PromptOptions("Novo conjunto", "Título", Placeholder: "Ex.: Animais")) is not { Length: > 0 } title) return null;
-        if (await AskCardAsync(null) is not { } card) return null;
-        FlashcardDeck? made = null;
-        await Guard(async () => made = await ChangeFlashcardsAsync(l => l.Create(title, [card], "manual", null, DateTime.UtcNow)));
-        if (made is not null && await Dialogs.ConfirmAsync("Conjunto criado", "Adicionar outro cartão?", "Adicionar outro", cancel: "Pronto")) await AddCardManuallyAsync(made.Id);
-        return made;
     }
 
     private async Task AddCardManuallyAsync(string deckId)
