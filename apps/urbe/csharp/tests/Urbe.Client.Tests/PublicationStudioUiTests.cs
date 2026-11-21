@@ -93,7 +93,8 @@ public sealed partial class HeadlessUiTests
                 .Single(b => AutomationProperties.GetName(b) == "Nova publicação");
             create.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
-            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Formato da publicação");
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Podcast"));
             view.Dialogs.Cancel();
             return true;
         }
