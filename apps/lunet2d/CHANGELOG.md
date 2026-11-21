@@ -1,5 +1,51 @@
 # Changelog
 
+- LUNET-511 (PR #962, CI/DEVICE pendentes): publicação de revisões rejeita diretórios de IDs da biblioteca que sejam links simbólicos antes de enumerar manifestos ou criar staging; regressão xUnit protege arquivos externos.
+
+- LUNET-511: manifestos da biblioteca que declaram um arquivo como ancestral de outro (inclusive diferenças de caixa) são recusados antes de importar/exportar; regressão xUnit preserva Game.cs, ZIP ausente e manifesto original. CI e DEVICE ainda pendentes.
+
+- LUNET-511 (incremento em PR #962, CI/DEVICE pendentes): a busca offline da biblioteca também encontra assets pelos nomes e caminhos dos arquivos-fonte e derivados (por exemplo `.sprite.json` e `.png`), preservando metadados e versões.
+- LUNET-511 (PR #962, CI/DEVICE pendentes): prévia e importação agora rejeitam colisões de nomes que diferem apenas por maiúsculas/minúsculas, inclusive em diretórios ancestrais, protegendo a portabilidade dos assets entre Android e desktops; duas regressões xUnit adicionadas.
+- LUNET-511 (PR #962, CI/DEVICE pendentes): importação de manifestos SHA-256 minúsculos também compara hashes sem diferenciar caixa durante staging e rollback; regressão existente reforçada para verificar os bytes realmente importados.
+- LUNET-511 (PR #962, CI/DEVICE pendentes): importação e exportação ZIP aceitam SHA-256 hexadecimal em minúsculas nos manifestos, coerentemente com a verificação de integridade; regressão cobre importação, ZIP e preservação dos metadados.
+
+- LUNET-511 (PR #962, CI/DEVICE pendentes): importação agora rejeita colisões com arquivos ancestrais durante o preflight, antes de criar staging; teste xUnit cobre preservação de arquivos do projeto e recusa sem importação parcial.
+
+
+- LUNET-511 (PR #962, CI/DEVICE pendentes): prévia de importação identifica também colisões em diretórios ancestrais ocupados por arquivos, antes de iniciar a cópia; regressão xUnit adicionada.
+- LUNET-511 (PR #962, CI/DEVICE pendentes): antes de importar um asset, o Android apresenta os caminhos em conflito sem alterar o projeto; a importação ainda revalida o destino. Regressão xUnit para prévia sem efeitos colaterais e recusa de sobrescrita.
+
+
+- LUNET-511 (integridade de manifestos, CI/DEVICE pendentes): leitura da biblioteca rejeita tipo de asset desconhecido e data de criação ausente, sem alterar o manifesto ou o projeto importador; regressões xUnit cobrem ambos os campos.
+
+
+
+- LUNET-511 (PR #962, CI/DEVICE pendentes): verificação de integridade sob demanda na Biblioteca Android, conferindo SHA-256 e tamanho dos arquivos da versão sem apagar dados danificados; regressão xUnit adicionada.
+
+- LUNET-511 (SAF, DEVICE pendente): a exportação ZIP da biblioteca trata ausência ou bloqueio do seletor de documentos Android sem encerrar a Activity e sem deixar exportação pendente; conteúdo da Library permanece intacto. Validação Android 13 necessária.
+
+- LUNET-511 (CI/DEVICE pendentes): formulário Android de publicação agora aceita tags separadas por vírgula para pesquisa offline; regressão cobre persistência das tags após reinício. Corrigido teste de busca Unicode decomposto que usava sequências de escape literais em vez de caracteres combinantes reais.
+
+- LUNET-511 (busca global, CI/DEVICE pendentes): busca de assets agora aceita termos sem acentos, letras maiúsculas e Unicode decomposto, preservando intactos nomes e metadados originais. Regressão xUnit para título, autor, atribuição e tags.
+
+- LUNET-511 (CI/DEVICE pendentes): Biblioteca pessoal ganhou pesquisa offline combinando termos de título, tipo, autoria, licença, atribuição e tags; interface Android permite buscar e limpar filtros sem modificar versões imutáveis. Regressão xUnit verifica múltiplas versões e persistência.
+
+- LUNET-511 (integridade, CI/DEVICE pendentes): exportação ZIP agora calcula SHA-256 e tamanho dos bytes efetivamente gravados no arquivo compactado, fechando a janela entre a checagem prévia e a cópia; em caso de alteração concorrente a exportação falha e remove o ZIP temporário. Teste xUnit verifica os hashes e tamanhos das entradas exportadas contra o manifesto imutável.
+
+- LUNET-511 (CI pendente): removida anotação xUnit `[Fact]` duplicada no teste de exportação ZIP de versões, que impedia compilar toda a suíte (CS0579). O teste de versões e atribuição permanece ativo; DEVICE ainda pendente.
+
+- LUNET-511 (correção de CI): callback SAF agora usa `global::Android.Net.Uri` para evitar resolução incorreta de namespace; teste de exportação ZIP compara atribuição após desserializar JSON (Unicode escapado), preservando a verificação semântica. Ainda aguardando novo CI/DEVICE.
+
+- LUNET-511 (incremento Android, CI/DEVICE pendentes): Biblioteca global oferece Exportar ZIP para cada versão imutável usando o seletor de documentos do Android (SAF); o ZIP é verificado em cache antes de abrir o destino, o estado da seleção sobrevive à recriação da Activity e o temporário é limpo. Regressão verifica que revisões antigas/novas mantêm bytes e metadados de licença distintos.
+
+- LUNET-511 (incremento, CI/DEVICE pendentes): exportação ZIP autocontida de uma versão imutável da Library, com manifesto, fontes e derivados; validação SHA-256, rejeição de destino existente e limpeza de arquivo temporário em falhas. Regressões xUnit cobrem conteúdo, colisão e corrupção. Exposição pelo Android/SAF ainda pendente.
+
+- LUNET-511 (integridade, CI/DEVICE pendentes): leitura de versões da Library rejeita metadados persistidos ausentes/inválidos (título, licença, autor, atribuição e tags), além de hashes SHA-256 com caracteres não hexadecimais. Testes xUnit parametrizados verificam falha controlada, preservação do manifesto e ausência de escrita no jogo de destino.
+
+- LUNET-511 (integridade, CI/DEVICE pendentes): importação de assets recusa manifestos locais com ID, lista de arquivos, caminho ou hash nulos, emitindo erro de dados inválidos em vez de exceção inesperada. Regressões verificam preservação do projeto de destino e do manifesto original.
+
+- LUNET-511 (biblioteca em desenvolvimento, CI/DEVICE pendentes): biblioteca local de assets versionados, com publicação de fontes e derivados, hashes SHA-256 e metadados de origem/licença; importação por cópia para outros jogos, preflight de colisões, recusa de dados corrompidos e rollback sem apagar mudanças concorrentes. Interface de publicação e uso entre projetos conectada à Home e à seção Studios, ainda sem teste físico.
+
 - LUNET-512 (segurança de leitura, CI/DEVICE pendentes): campos inválidos em JSON persistido, incluindo notas longas e associação de projeto fora dos limites, agora são reportados como dados inválidos sem exceção não tratada no Android. O arquivo original é preservado. Testes de regressão cobrem ambos os campos.
 
 - LUNET-512 (integridade de dados, CI/DEVICE pendentes): referências curadas retiradas do catálogo embutido continuam acessíveis como snapshots locais, preservando favoritos, notas e associação a projetos após atualizar o aplicativo e salvar novamente. Identificadores pessoais inválidos continuam rejeitados; referências curadas que retornarem recebem metadados oficiais com dados pessoais preservados.

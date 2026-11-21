@@ -18,6 +18,14 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ## Mensagens
 
+### 20261117-chatgpt-library-symlink — 2026-11-17 (America/Sao_Paulo) — ChatGPT → próximos agentes — em andamento
+- Item: LUNET-511, integridade da publicação de revisões, PR #962.
+- Base: `feat/lunet-511-versioned-asset-library-20261116`; conferidos main/AGENTS/ROADMAP e PRs #959–#962.
+- Código: `src/Lunet.Core/ReusableAssetLibrary.cs` impede seguir diretório de ID simbólico antes de enumerar versões e antes de publicar; teste em `tests/Lunet.Tests/ReusableAssetLibraryTests.cs` cobre preservação de destino externo.
+- Verificação: commits GitHub publicados; .NET local indisponível, CI novo e DEVICE Android 13 pendentes. Não declarar pronto.
+- Próximo passo: acompanhar checks, corrigir eventual falha, implementar Studio independente e validar no aparelho.
+
+
 ### 20260929-codex-01 — 2026-09-29 (America/Sao_Paulo) — Codex → próximos agentes — em andamento
 - Item: continuidade entre agentes (§24/§30/§36) e Git progressivo da Fase 3 (§22).
 - Contexto recuperado do Git, não mensagem do Claude: `main` em `898c628` incorporou Inspector/classificação/layouts pelo PR #19. A branch `ccr-8e262421-r4rdz0` contém trabalho posterior, `b934056`, no PR #20: Git em C# puro e painel Android. Não reiniciar essa implementação.
@@ -764,6 +772,41 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação: Home sem abrir jogo, navegação em quatro destinos com alvos de toque de 48dp, fixados/último jogo em arquivo privado fora dos projetos, lista com busca, documentação offline e configurações. Studios permitem escolher projeto real. Não cria projetos temporários nem altera código Game.cs.
 - Testes: LauncherPreferencesTests (seis cenários), compilação/testes Android e consistency dependem do CI. DEVICE e prints pendentes; não declarar gate LUNET-510 fechado.
 - Próximo: corrigir CI/Build se necessário, validar moto g32 Android 13 e avançar Library/Studios autônomos LUNET-511. Sem merge manual nem mudança do estágio.
+
+### 20261116-chatgpt-lunet511-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → próximos agentes — em andamento
+- Escopo: LUNET-511, biblioteca global versionada, branch feat/lunet-511-versioned-asset-library-20261116 baseada em main 95143cb. Exclusivamente AbnerCruz/Ecosystem.
+- Investigação: LunetProject.WriteText e Import escrevem arquivos dentro do jogo, ProjectAssetCatalog lê seus assets; não ligar projetos a arquivo global mutável. Pesquisa Android offline-first e ativos/licenças da auditoria LUNET-510–512.
+- Trabalho de código: ReusableAssetLibrary publica versões por diretório com fontes e derivados, registra origem/licença/hashes, protege links e traversal; ImportToProject copia arquivos após preflight, recusa colisões e conteúdo corrompido e tenta rollback seguro. MainActivity.AssetLibrary adiciona interface para publicar assets e copiar versões para projetos sem substituição silenciosa.
+- Verificação: seis testes ReusableAssetLibraryTests adicionados, CI e DEVICE pendentes. Biblioteca precisa ser ligada à Home para acesso fora de projetos e Studios precisam aceitar workspace de Library; não declarar item terminado.
+- Próximo: reconciliar com PR #961 quando integrar, ligar Home → Biblioteca, conferir build Android e testes, implementar edição independente no Studio, export ZIP e validar no aparelho.
+
+### 20261116-chatgpt-lunet511-reconcile — 2026-11-16 (America/Sao_Paulo) — ChatGPT → agente do Lunet — em desenvolvimento
+- Item: LUNET-511 / PR #962; reconciliação semântica com a main 54cdca1 (Home PR #961), preservando alterações dos outros agentes.
+- Implementação: Biblioteca de assets acessível da Home e da seção Studios mesmo sem projeto aberto. Preservados ReusableAssetLibrary e testes; ainda falta edição dos próprios assets pelo Studio fora de projeto, ZIP e DEVICE.
+- Verificação: CI da branch anterior passou; aguardar novo CI combinado e validação em Android 13. PR mantido em draft até escopo realmente completo.
+- Próximo: implementar IAssetWorkspace sem criar cópias dos Studios, export/import ZIP, provas de integridade e teste físico.
+
+### 20261117-chatgpt-lunet511-hashcase-01 — 2026-11-17 (America/Sao_Paulo) — ChatGPT → integrador — em andamento
+- Item: LUNET-511, compatibilidade de hashes SHA-256 válidos em minúsculas no manifesto persistido.
+- Base: branch feat/lunet-511-versioned-asset-library-20261116; PR #962; #961 integrado, #959/#960 abertos.
+- Código: ReusableAssetLibrary.ImportToProject e ExportZip usam comparação hexadecimal case-insensitive, como VerifyIntegrity; manifestos originais não são regravados.
+- Teste: LowercaseManifestSha256_ImportsAndExportsWithoutChangingStoredMetadata verifica importação, ZIP, verificação e preservação dos bytes do manifesto.
+- Commits: 06d0628, 7697d42; documentação CHANGELOG e ROADMAP atualizada. CI consultado para 7697d42 sem runs retornados; não declarar teste aprovado nem DEVICE.
+- Referências: auditoria Home/Studios/Explorar 15/11, .NET StringComparison.OrdinalIgnoreCase e SHA-256 hexadecimal; sem alteração de estágio.
+- Próximo: verificar CI do head, corrigir regressões, desenvolver Studios autônomos, validar no Android 13.
+
+### 20261117-chatgpt-lunet511-staging — 2026-11-17 — ChatGPT → próximos agentes
+- Escopo: PR #962, `ReusableAssetLibrary.cs` e `ReusableAssetLibraryTests.cs`; corrigidas comparações de SHA-256 no staging e rollback para manifestos minúsculos; regressão existente reforçada com comparação de bytes importados.
+- Evidência: commits 6283939, dce179e, 73382eb. CI do novo head e DEVICE Android 13 ainda não verificados; não fechar LUNET-511.
+- Próximo: verificar CI, resolver falhas e avançar edição autônoma nos Studios sem projeto.
+
+### 20261117-chatgpt-lunet511-filename-search — 2026-11-17 (America/Sao_Paulo) — ChatGPT → próximos agentes — em revisão
+- Item: LUNET-511, busca offline de arquivos-fonte e derivados no PR #962.
+- Base: main, AGENTS, ROADMAP, auditoria de Home/Studios/Explorar e PRs #959–#962 consultados; branch `feat/lunet-511-versioned-asset-library-20261116`.
+- Código: ReusableAssetLibrary.Search inclui caminhos dos arquivos versionados no índice textual; teste Search_FindsSourceAndDerivedFilenamesAfterRestart.
+- Evidência: commits 5ebbacc e fdd486e, handoff docs/handoffs/lunet-511-filename-search-2026-11-17.md. Head anterior deccf69 passou consistency, lunet2d-ci, lunet2d-ui-screens e lunet2d-release; CI do novo head ainda sem workflow retornado.
+- Bloqueios: .NET local não executado, DEVICE Android 13 pendente, Studios globais editáveis ainda não concluídos.
+- Próximo passo: validar CI do novo head e implementar edição autônoma sem projeto; sem merge forçado nem mudança de estágio.
 
 ### 20261116-chatgpt-lunet512-population-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → próximos agentes/integrador — pronto para revisão
 - Item: LUNET-512 — popular Explorar. Base main `54cdca1d`; branch `feat/lunet-512-populate-reference-catalog-20261116`; somente `AbnerCruz/Ecosystem/apps/lunet2d`.

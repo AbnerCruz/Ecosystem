@@ -222,6 +222,7 @@ public sealed partial class MainActivity
         content.AddView(LunetUi.Label(this, "FERRAMENTAS", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         AddHomeAction(content, "Projetos", "Pesquisar, fixar, criar, importar e exportar", ShowProjects);
         AddHomeAction(content, "Studios", "Sprite, tilemap, áudio, paleta, partículas e dados", ShowLauncherStudios);
+        AddHomeAction(content, "Biblioteca pessoal", "Assets versionados e reutilizáveis entre jogos", ShowReusableAssetLibrary);
         AddHomeAction(content, "Explorar", "Ideias, gêneros e mecânicas para seus jogos", OpenInspirationExplorer);
         AddHomeAction(content, "Documentação", "API, exemplos e guias disponíveis offline", ShowReference);
         AddHomeAction(content, "Configurações", "Preferências do ambiente e do editor", ShowSettings);
@@ -244,11 +245,12 @@ public sealed partial class MainActivity
         root.SetBackgroundColor(LunetUi.Background);
         root.AddView(LunetUi.Label(this, "Studios", LunetUi.TextHero, LunetUi.Text, bold: true));
         root.AddView(LunetUi.Label(this,
-            "Escolha o projeto para abrir os Studios existentes. A biblioteca independente será integrada separadamente.",
+            "A Biblioteca pessoal funciona sem projeto. Para editar nos Studios atuais, escolha um jogo.",
             LunetUi.TextBody, LunetUi.TextMuted));
         var scroll = new ScrollView(this);
         var list = LunetUi.Column(this, 10);
         list.SetPadding(0, Dp(16), 0, Dp(8));
+        AddHomeAction(list, "Biblioteca pessoal", "Publicar e reutilizar assets entre projetos", ShowReusableAssetLibrary);
         var names = _store.List().OrderByDescending(name => _launcherPreferences?.IsPinned(name) == true)
             .ThenByDescending(ProjectTouched).ToArray();
         foreach (var name in names)
