@@ -22,8 +22,20 @@
 - **Flashcards sem janelas.** Crie um conjunto escrevendo só o título na lista; dentro do conjunto, adicione um cartão com frente e verso ali mesmo, e edite ou remova um cartão no próprio lugar. Um conjunto feito por você pode começar vazio.
 - **O Assistente usa o que o app já faz.** Quando você pede um vídeo ou um mapa mental, ele usa a ferramenta do app em vez de criar um plugin, a não ser que você peça um plugin.
 
+## Vozes naturais
+
+- **Escolha Dora, Alex ou Faber.** Em "Voz da narração" agora há vozes naturais em português: Dora e Alex (Kokoro) e Faber (Piper). Elas narram os vídeos, o podcast (o segundo apresentador usa a outra voz do mesmo modelo) e os vídeos do Assistente.
+- **Baixa uma vez, depois funciona sem internet.** A voz é baixada só quando você a escolhe: 132 MB para Dora e Alex, 67 MB para Faber. O app confere o arquivo antes de usar e o guarda na pasta privada dele, fora das suas notas.
+- **Licenças.** As licenças vêm junto do download e aparecem antes de baixar. A pronúncia do português usa o espeak-ng, que é software livre sob GPL-3.0; o código-fonte está em https://github.com/espeak-ng/espeak-ng. Os modelos de voz têm licença própria (Apache-2.0 do Kokoro; CC0 dos dados da voz Faber).
+- **O app ficou maior.** O APK cresceu cerca de 26 MB, por causa do motor que roda as vozes no aparelho. As vozes em si não vêm no APK.
+
+## Dados do aplicativo
+
+- **Veja o que o app guarda e onde.** Uma nova tela, "Dados do aplicativo", lista o que o app mantém (configurações, histórico, vozes baixadas e o resto) e em que pasta. A tela só mostra: nada é apagado por ela.
+
 ## Não testado no aparelho
 
 - Testado com testes automáticos num computador: 1800 círculos com rastro a 360p levaram cerca de 24 ms por quadro; não medi no seu Android. A esfera 3D do teste de código levou cerca de 56 ms por quadro a 720p, também só no computador.
 - O painel de Flashcards sem janelas não foi usado com o dedo num aparelho.
 - O app Android compila, mas não foi aberto em aparelho nem emulador, e não reexecutei um pedido real de vídeo com o seu modelo.
+- As vozes naturais não foram ouvidas no aparelho, e a velocidade delas num celular modesto não foi medida.

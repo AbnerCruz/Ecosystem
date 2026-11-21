@@ -32,6 +32,17 @@ Obrigações da GPL-3.0 a cumprir no download do modelo:
 - oferta do código-fonte correspondente do espeak-ng (link para a versão exata usada e para o código, mantido disponível enquanto o componente for distribuído);
 - avisos de copyright e de ausência de garantia preservados; o componente GPL fica identificado como tal, separado do restante do app.
 
+## Implementação (21/11/2026)
+
+- `Urbe.Core/Voice/NeuralVoices.cs`: catálogo das vozes (Kokoro `pf_dora` e `pm_alex`, Piper faber) com endereço, tamanho e **SHA-256** de cada pacote; os hashes ficam ali, não neste documento.
+- `Urbe.Client` (`NeuralSpeech`): síntese pelo sherpa-onnx 1.13.8 com espeak-ng embutido. O pacote é baixado uma vez quando a pessoa escolhe a voz em "Voz da narração", conferido por tamanho e SHA-256 e extraído na pasta privada `vozes` do app, junto de `LICENCAS-NUMA.txt`. Narração, podcast (o segundo apresentador usa a outra voz do modelo) e vídeos do Assistente usam essa voz.
+- APK: cerca de 26 MB a mais (arm64: `libonnxruntime.so` 22 MB, `libsherpa-onnx-c-api.so` 4,5 MB). Os modelos não vão no APK.
+- Testes: Core 1890/1890, Client 732/732. `NeuralSpeechTests` instala o modelo Piper real a partir de uma cópia local e sintetiza português; no CI esses testes são pulados sem `URBE_TTS_ARCHIVES`. Build Android Release com as bibliotecas nativas no APK; **não executado em aparelho**.
+
+Estado das obrigações da GPL-3.0:
+- feito: as licenças (GPL-3.0, Apache-2.0, CC0) vão junto do download e são mostradas antes de baixar; o link do código-fonte do espeak-ng (https://github.com/espeak-ng/espeak-ng) é informado;
+- falta: mostrar as licenças de novo no app depois do download; fixar a versão exata do espeak-ng usada pelo sherpa-onnx 1.13.8 e a oferta do código-fonte correspondente a essa versão.
+
 ## Proposta anterior (histórico, antes da decisão)
 
 - Um provedor único de síntese no app (`SpeechSynth`) com três fontes: a voz do sistema (que já existe, como alternativa explícita), um modelo neural local baixado sob demanda (com checksum, tamanho e licença visíveis) e, opcionalmente, um endpoint externo configurado pela pessoa. A narração de vídeo (`render_video`/`FitToVoices`) e a leitura em voz alta passam a usar esse provedor.

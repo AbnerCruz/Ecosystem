@@ -83,7 +83,18 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantIntent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Study/FlashcardLibrary.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FlashcardsLibraryUiTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/FlashcardLibraryTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FlashcardLibraryTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AppData.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NeuralSpeech.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Urbe.Client.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/Voice/NeuralVoices.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDataUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NeuralSpeechTests.cs",
+    "apps/urbe/docs/csharp/TTS-NEURAL-20261120.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261120-urbe-flashcards-nativos.json"
   ],
   "work_completed": [
     "#1004: novo tipo de elemento de vídeo \"code\": a IA escreve um programa JavaScript draw(ctx, t, info) executado por quadro no Jint 4.18.0 (C# puro, BSD-2), com API só de desenho (fill/stroke/gradient/glow/circle/rect/poly/path/text/save/restore/translate/rotate/scale).",
@@ -103,7 +114,9 @@
     "Transições de cena slide, wipe e zoom.",
     "Ajudas hsl() e 3D (rotateX, rotateY, project) no ambiente do programa.",
     "Benchmark só com código: esfera de Fibonacci 3D, 56 ms/quadro a 720p na CPU do container.",
-    "Teste de rascunhos espera o arquivo do rascunho existir antes de verificar."
+    "Teste de rascunhos espera o arquivo do rascunho existir antes de verificar.",
+    "Vozes naturais: catálogo NeuralVoices (Urbe.Core/Voice, tamanho e SHA-256) e NeuralSpeech (Urbe.Client) com Kokoro Dora/Alex e Piper Faber via sherpa-onnx 1.13.8 com espeak-ng; download único ao escolher em \"Voz da narração\", conferido e extraído na pasta privada vozes com LICENCAS-NUMA.txt; usadas por narração, podcast (segundo apresentador com a outra voz) e vídeos do Assistente. APK ~26 MB maior; modelos fora do APK.",
+    "Tela \"Dados do aplicativo\" só leitura (P5 do #1005): mostra o que o app guarda e onde, sem apagar nada."
   ],
   "verification": [
     {
@@ -116,19 +129,27 @@
       "check": "Urbe.Client.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "728/728; AProgramDrawsTheFrame: 1800 círculos com rastro, 24 ms/quadro a 360p; esfera 3D 56 ms/quadro a 720p, na CPU do container."
+      "evidence": "732/732, incluindo NeuralSpeechTests (modelo Piper real de cópia local sintetiza português; pulados no CI sem URBE_TTS_ARCHIVES); AProgramDrawsTheFrame: 1800 círculos com rastro, 24 ms/quadro a 360p; esfera 3D 56 ms/quadro a 720p, na CPU do container."
     },
     {
       "check": "Build Android Debug",
       "kind": "automated",
       "result": "passed",
       "evidence": "Compila; não executado em aparelho nem emulador."
+    },
+    {
+      "check": "Build Android Release",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "APK com libonnxruntime.so e libsherpa-onnx-c-api.so (arm64); não executado em aparelho."
     }
   ],
   "known_issues": [
     "Não testado no aparelho (ADD-0035); desempenho medido só no container, sem GPU.",
     "DEC-0066 (execução geral de código) segue pendente; este elemento usa só desenho.",
-    "Não reexecutado com o modelo do proprietário."
+    "Não reexecutado com o modelo do proprietário.",
+    "Vozes naturais não ouvidas no aparelho; velocidade num celular modesto não medida.",
+    "GPL-3.0: falta mostrar as licenças de novo após o download e fixar versão/fonte exata do espeak-ng."
   ],
   "next_actions": [
     "Pedir vídeos com código ao Assistente com modelo real e medir qualidade e tempo."
