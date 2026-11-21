@@ -52,7 +52,9 @@ public sealed partial class HeadlessUiTests
             await Pump(100);
             // closing saves the note and, once saved, clears its draft in the background; both must end before the
             // "crash" state is put back, or a late clear deletes it (seen when the whole suite runs and the machine is busy)
-            for (int i = 0; i < 500 && (File.ReadAllText(file) != typed || Directory.GetFiles(drafts, "*.json").Length > 0); i++)
+            // the note may be being written right now: a busy file counts as "not saved yet"
+            static string? Saved(string path) { try { return File.ReadAllText(path); } catch (IOException) { return null; } }
+            for (int i = 0; i < 500 && (Saved(file) != typed || Directory.GetFiles(drafts, "*.json").Length > 0); i++)
             {
                 await Pump(10);
                 await view.DraftWrites;
