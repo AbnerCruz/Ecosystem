@@ -266,6 +266,8 @@ public sealed partial class MainView
         }
         query ??= tag is { Length: > 0 } ? new PublicationQuery("tag", tag.TrimStart('#')) : folder is { Length: > 0 } ? new PublicationQuery("folder", folder) : null;
         if (query is not null) project = project with { Query = query };
+        if (project.Design.Layout == "video")
+            project = VideoComposition.Synced(project, reference => _store.Get(reference.DocumentId)?.Content);
         if (project.Sections.Count == 0 && (sourcePaths is { Count: > 0 } || tag is { Length: > 0 }))
         {
             await Dialogs.AlertAsync("Publicações", tag is { Length: > 0 } ? "Nenhuma nota tem a tag #" + tag.TrimStart('#') + "." : "Nenhuma das escolhidas é uma nota.");
