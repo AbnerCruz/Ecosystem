@@ -359,7 +359,8 @@ public sealed class LunetAiSession
         IReadOnlyList<string>? attachments)
     {
         if (mode != LunetAiMode.Teach || prompt.Length > 220 || attachments is { Count: > 0 } ||
-            !string.IsNullOrEmpty(editor.Selection) || editor.Diagnostics.Count > 0)
+            !string.IsNullOrWhiteSpace(editor.OpenFile) || !string.IsNullOrEmpty(editor.Selection) ||
+            editor.Diagnostics.Count > 0)
             return false;
         string text = prompt.ToLowerInvariant();
         string[] projectSpecific =
