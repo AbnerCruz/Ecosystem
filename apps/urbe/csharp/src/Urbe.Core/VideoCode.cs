@@ -20,7 +20,11 @@ public sealed class VideoCodeException(string message) : Exception(message);
 public static class VideoCode
 {
     public const int MaxSourceChars = 60_000, MaxCommands = 60_000, MaxStatements = 5_000_000;
-    public static readonly TimeSpan FrameTimeout = TimeSpan.FromMilliseconds(500);
+    /// <summary>
+    /// A safety net only. The limit that decides is <see cref="MaxStatements"/>: it is the same on every device, so a
+    /// program that draws here draws on a slow phone too (a wall-clock limit would cut it there and not here).
+    /// </summary>
+    public static readonly TimeSpan FrameTimeout = TimeSpan.FromSeconds(5);
 
     public const string Help =
         "draw(ctx, t, info): t = segundos da cena, info = {width, height, frame, fps}. ctx desenha em pixels da caixa do elemento (0,0 no canto superior esquerdo; ctx.width × ctx.height). " +
