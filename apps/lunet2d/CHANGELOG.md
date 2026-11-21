@@ -1,5 +1,9 @@
 # Changelog
 
+- LUNET-512 (segurança de leitura, CI/DEVICE pendentes): campos inválidos em JSON persistido, incluindo notas longas e associação de projeto fora dos limites, agora são reportados como dados inválidos sem exceção não tratada no Android. O arquivo original é preservado. Testes de regressão cobrem ambos os campos.
+
+- LUNET-512 (integridade de dados, CI/DEVICE pendentes): referências curadas retiradas do catálogo embutido continuam acessíveis como snapshots locais, preservando favoritos, notas e associação a projetos após atualizar o aplicativo e salvar novamente. Identificadores pessoais inválidos continuam rejeitados; referências curadas que retornarem recebem metadados oficiais com dados pessoais preservados.
+
 - LUNET-512 (correção de estabilidade, CI anterior verde; DEVICE pendente): abertura de links externos do Explorar trata ausência de navegador e bloqueio de Activity no Android, informando o problema sem encerrar o aplicativo. PR #959; não altera dados, estágio ou versão.
 
 - LUNET-512 (expansão em PR; CI/DEVICE pendentes): catálogo de Explorar ampliado de 12 para **131 jogos de referência curados**, com mecânicas e observações de estudo pesquisáveis (incluindo voo/montarias e controles mobile). Links de pesquisa de gameplay no YouTube sob demanda, sem rede automática ou vídeos embutidos; lista Android paginada em blocos de 18 para não inflar a Home. Novos testes protegem IDs, metadados, busca e migração de notas/favoritos.

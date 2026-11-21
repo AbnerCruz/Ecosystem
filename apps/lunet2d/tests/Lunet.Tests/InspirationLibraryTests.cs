@@ -81,6 +81,26 @@ public sealed class InspirationLibraryTests : IDisposable
         Assert.False(File.Exists(CatalogPath));
     }
 
+    [Theory]
+    [InlineData("Notes", 6001)]
+    [InlineData("ProjectName", 81)]
+    public void InvalidSavedFields_AreReportedWithoutOverwritingPersonalData(string field, int length)
+    {
+        Directory.CreateDirectory(_root);
+        var catalog = new InspirationLibrary(CatalogPath);
+        catalog.SetPersonalDetails("ref.celeste", true, "Minha nota", "MeuJogo");
+        var document = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(CatalogPath))!;
+        var entry = document["Entries"]!.AsArray()
+            .Single(e => e!["Id"]!.GetValue<string>() == "ref.celeste")!;
+        entry[field] = new string('x', length);
+        var original = document.ToJsonString();
+        File.WriteAllText(CatalogPath, original);
+
+        var error = Assert.Throws<InvalidDataException>(() => new InspirationLibrary(CatalogPath));
+        Assert.IsType<ArgumentException>(error.InnerException);
+        Assert.Equal(original, File.ReadAllText(CatalogPath));
+    }
+
     [Fact]
     public void InvalidJson_DoesNotGetReplacedOrSilentlyReinitialized()
     {
@@ -88,6 +108,34 @@ public sealed class InspirationLibraryTests : IDisposable
         File.WriteAllText(CatalogPath, "{broken-json");
         Assert.Throws<InvalidDataException>(() => new InspirationLibrary(CatalogPath));
         Assert.Equal("{broken-json", File.ReadAllText(CatalogPath));
+    }
+
+    [Fact]
+    public void RetiredCuratedReference_PreservesPersonalNotesAcrossCatalogUpgradeAndSave()
+    {
+        // Simulate a reference removed from a newer built-in catalog.
+        var retired = new InspirationReference("ref.retired", "Retired game", "Puzzle",
+            "Top-down", "Pixel art", ["Lógica"], "Estudar regras.", Notes: "Nota insubstituível",
+            Favorite: true, Curated: true);
+        Directory.CreateDirectory(_root);
+        var saved = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            Version = 1,
+            Entries = new[] { retired }
+        });
+        File.WriteAllText(CatalogPath, saved);
+
+        var library = new InspirationLibrary(CatalogPath);
+        var preserved = Assert.Single(library.All, r => r.Id == "ref.retired");
+        Assert.Equal("Nota insubstituível", preserved.Notes);
+        Assert.True(preserved.Favorite);
+        Assert.True(preserved.Curated);
+
+        library.SetPersonalDetails("ref.retired", true, "Nota atualizada", "JogoNovo");
+        var reopened = new InspirationLibrary(CatalogPath);
+        Assert.Equal("Nota atualizada", reopened.All.Single(r => r.Id == "ref.retired").Notes);
+        Assert.Equal("JogoNovo", reopened.All.Single(r => r.Id == "ref.retired").ProjectName);
+        Assert.Contains(reopened.All, r => r.Id == "ref.celeste");
     }
 
     [Fact]
