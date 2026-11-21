@@ -10,6 +10,58 @@ namespace Urbe.Client.Tests;
 /// <summary>CST-170/209 in the studio: a video publication previewed, timed and exported as a verified MP4.</summary>
 public sealed partial class HeadlessUiTests
 {
+    private sealed class PreviewClock : IPreviewAudio
+    {
+        public double Position { get; set; }
+        public bool Ended { get; set; }
+        public bool Failed => false;
+        public bool Disposed { get; private set; }
+        public void Dispose() => Disposed = true;
+    }
+
+    [Fact]
+    public async Task PublicationVideo_PreviewFollowsTheAudioClockAndResumesAtThePlayhead() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var store = new DocumentStore();
+            var note = store.Upsert(new DocumentInput { Path = "Cena.md", Content = "# Cena\n\nA fala." });
+            using var catalog = new PublicationSourceCatalog(store);
+            var project = VideoComposition.Synced(PublicationProject.Create("Cena", note.Id) with { Design = new PublicationDesign { Layout = "video" } });
+            project = project with { Video = project.Video! with
+            {
+                Audio = [new VideoAudioClip { Kind = "voice", Path = "voz.wav", Start = 0 }]
+            } };
+            var panel = new PublicationVideoPanel();
+            var timeline = VideoTimeline.Build(project, catalog, 144);
+            var clock = new PreviewClock { Position = 1.5 };
+            var starts = new List<double>();
+            panel.StartAudioAsync = (_, start, _) =>
+            {
+                starts.Add(start);
+                return Task.FromResult<IPreviewAudio?>(clock);
+            };
+
+            try
+            {
+                panel.Show(timeline, new Dictionary<string, byte[]>(), id => id);
+                panel.TogglePlay();
+                Assert.Equal(0, Assert.Single(starts));
+                for (int i = 0; i < 50 && Math.Abs(panel.CurrentTime - 1.5) > 0.001; i++)
+                {
+                    await Task.Delay(10);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Assert.Equal(1.5, panel.CurrentTime, 3);
+                panel.TogglePlay();
+                Assert.True(clock.Disposed);
+                clock = new PreviewClock { Position = 1.5 };
+                panel.TogglePlay();
+                Assert.Equal(1.5, starts.Last(), 3);
+                return true;
+            }
+            finally { panel.Release(); }
+        }, CancellationToken.None));
+
     /// <summary>#956 (conversa da beta.57: "o vídeo não ficou pronto"): render_video speaks and encodes through the app, as the Estúdio exports.</summary>
     [Fact]
     public async Task PublicationVideo_TheAssistantGetsTheVoiceAndAVerifiedMp4() =>

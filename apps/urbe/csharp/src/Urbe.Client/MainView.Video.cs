@@ -20,6 +20,7 @@ public sealed partial class MainView
 
     private void WirePublicationVideo(PublicationStudioView studio)
     {
+        studio.VideoPanel.StartAudioAsync = StartPublicationPreviewAudioAsync;
         studio.VideoExportRequested += () => _ = ExportPublicationVideoAsync();
         studio.VideoCancelRequested += () => _videoExport?.Cancel();
         studio.SubtitlesRequested += format => _ = ExportPublicationSubtitlesAsync(format);
@@ -579,6 +580,51 @@ public sealed partial class MainView
         var files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
         foreach (var path in VideoFrameRenderer.FilesUsed(timeline))
             if (vault is not null && (await vault.ReadFileAsync(path, 64L << 20, cancel))?.Bytes is { } bytes) files[path] = bytes;
+        var soundtrack = await MixPublicationSoundtrackAsync(timeline, temp, skipped, cancel);
+        using var renderer = new VideoFrameRenderer(timeline, files);
+        return await VideoExport.RunAsync(renderer, encoder, target, soundtrack, progress, cancel);
+    }
+
+    private async Task<IPreviewAudio?> StartPublicationPreviewAudioAsync(VideoTimeline timeline, double start, CancellationToken cancel)
+    {
+        if (PlatformAudio.StartPreview is not { } play) return null;
+        var temp = Directory.CreateTempSubdirectory("numa-video-preview-");
+        bool started = false;
+        try
+        {
+            var skipped = new List<string>();
+            var wav = await MixPublicationSoundtrackAsync(timeline, temp.FullName, skipped, cancel);
+            if (wav is null) throw new IOException("Nenhuma faixa da publicação pôde ser reproduzida.");
+            var audio = await play(wav, start, cancel);
+            started = true;
+            if (skipped.Count > 0) ShowLifeNotice("Não foi possível reproduzir: " + string.Join(", ", skipped));
+            return new TemporaryPreviewAudio(audio, temp);
+        }
+        finally { if (!started) DeletePreviewFiles(temp); }
+    }
+
+    private sealed class TemporaryPreviewAudio(IPreviewAudio audio, DirectoryInfo temp) : IPreviewAudio
+    {
+        public double Position => audio.Position;
+        public bool Ended => audio.Ended;
+        public bool Failed => audio.Failed;
+
+        public void Dispose()
+        {
+            try { audio.Dispose(); }
+            finally { DeletePreviewFiles(temp); }
+        }
+    }
+
+    private static void DeletePreviewFiles(DirectoryInfo temp)
+    {
+        try { temp.Delete(true); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
+    private async Task<string?> MixPublicationSoundtrackAsync(VideoTimeline timeline, string temp, List<string> skipped, CancellationToken cancel)
+    {
+        var vault = _vault;
         string? soundtrack = null;
         if (timeline.Audio.Count > 0)
         {
@@ -588,12 +634,13 @@ public sealed partial class MainView
                 int n = 0;
                 foreach (var clip in timeline.Audio)
                 {
-                    var read = vault is null ? null : await vault.ReadFileAsync(clip.Path, 1L << 30, cancel);
-                    if (read?.Bytes is not { } bytes) { skipped.Add(clip.Path); continue; }
+                    await using var input = vault is null ? null : await vault.OpenReaderStreamAsync(clip.Path, cancel);
+                    if (input is null) { skipped.Add(clip.Path); continue; }
                     // the original and its WAV never share a name (a .wav track was copied onto itself and the export failed)
                     var source = System.IO.Path.Combine(temp, "origem" + n + System.IO.Path.GetExtension(clip.Path));
                     var wav = System.IO.Path.Combine(temp, "a" + n++ + ".wav");
-                    await File.WriteAllBytesAsync(source, bytes, cancel);
+                    await using (var copy = File.Create(source))
+                        await input.CopyToAsync(copy, cancel);
                     if (await PlatformVideo.ToWavAsync(source, wav, cancel)) decoded.Add((clip, File.OpenRead(wav)));
                     else skipped.Add(clip.Path);
                 }
@@ -605,8 +652,7 @@ public sealed partial class MainView
             }
             finally { foreach (var (_, wav) in decoded) wav.Dispose(); }
         }
-        using var renderer = new VideoFrameRenderer(timeline, files);
-        return await VideoExport.RunAsync(renderer, encoder, target, soundtrack, progress, cancel);
+        return soundtrack;
     }
 
     /// <summary>

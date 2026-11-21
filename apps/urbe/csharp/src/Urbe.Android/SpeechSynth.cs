@@ -27,6 +27,7 @@ internal sealed class SpeechSynth : UtteranceProgressListener
     {
         SpeechSynth? synth = null;
         PlatformAudio.PlayWav = PlayAsync;
+        PlatformAudio.StartPreview = StartPreviewAsync;
         PlatformAudio.SynthesizeToWav = (text, voice, target, cancel) => (synth ??= new SpeechSynth(context)).SpeakAsync(text, voice, target, cancel);
     }
 
@@ -70,6 +71,62 @@ internal sealed class SpeechSynth : UtteranceProgressListener
         using (cancel.Register(() => { try { player.Stop(); } catch (Java.Lang.IllegalStateException) { } done.TrySetResult(); }))
             await done.Task;
         player.Release();
+    }
+
+    private static async Task<IPreviewAudio> StartPreviewAsync(string path, double start, CancellationToken cancel)
+    {
+        var playback = new PreviewAudio();
+        try
+        {
+            await playback.StartAsync(path, start, cancel);
+            return playback;
+        }
+        catch
+        {
+            playback.Dispose();
+            throw;
+        }
+    }
+
+    private sealed class PreviewAudio : IPreviewAudio
+    {
+        private readonly Android.Media.MediaPlayer _player = new();
+        private readonly TaskCompletionSource _prepared = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _seeked = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public double Position => _player.CurrentPosition / 1000d;
+        public bool Ended { get; private set; }
+        public bool Failed { get; private set; }
+
+        public async Task StartAsync(string path, double start, CancellationToken cancel)
+        {
+            _player.Prepared += (_, _) => _prepared.TrySetResult();
+            _player.SeekComplete += (_, _) => _seeked.TrySetResult();
+            _player.Completion += (_, _) => Ended = true;
+            _player.Error += (_, _) =>
+            {
+                Failed = true;
+                _prepared.TrySetResult();
+                _seeked.TrySetResult();
+            };
+            _player.SetDataSource(path);
+            _player.PrepareAsync();
+            await _prepared.Task.WaitAsync(cancel);
+            if (!Failed && start > 0)
+            {
+                _player.SeekTo((int)(start * 1000));
+                await _seeked.Task.WaitAsync(cancel);
+            }
+            cancel.ThrowIfCancellationRequested();
+            if (Failed) throw new IOException("O Android não conseguiu reproduzir a trilha.");
+            _player.Start();
+        }
+
+        public void Dispose()
+        {
+            _player.Release();
+            _player.Dispose();
+        }
     }
 
     private async Task<bool> SpeakAsync(string text, int voice, string target, CancellationToken cancel)

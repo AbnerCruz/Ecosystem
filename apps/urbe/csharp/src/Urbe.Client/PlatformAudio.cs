@@ -33,5 +33,16 @@ public static class PlatformAudio
     /// <summary>#1004: plays a WAV file to the end (or until cancelled); null where the platform cannot play one here.</summary>
     public static Func<string, CancellationToken, Task>? PlayWav { get; set; }
 
+    /// <summary>Starts a local WAV at the requested timeline position and reports the media clock.</summary>
+    public static Func<string, double, CancellationToken, Task<IPreviewAudio>>? StartPreview { get; set; }
+
     public static bool Available => DecodeToWav is not null && TranscribeWav is not null;
+}
+
+
+public interface IPreviewAudio : IDisposable
+{
+    double Position { get; }
+    bool Ended { get; }
+    bool Failed { get; }
 }
