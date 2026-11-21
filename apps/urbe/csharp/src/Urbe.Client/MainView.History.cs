@@ -83,7 +83,7 @@ public sealed partial class MainView
         var versions = _history.List(doc.Id);
         if (versions.Count == 0)
         {
-            await Dialogs.AlertAsync("Versões anteriores", "Esta nota ainda não tem versões guardadas. A cada mudança o Urbe guarda a versão anterior (até 40 por nota).");
+            await Dialogs.AlertAsync("Versões anteriores", "Esta nota ainda não tem versões guardadas. A cada mudança o Numa guarda a versão anterior (até 40 por nota).");
             return;
         }
         static string When(long ms)
@@ -95,7 +95,9 @@ public sealed partial class MainView
         var options = versions.Select(v =>
         {
             var text = System.Text.RegularExpressions.Regex.Replace(v.Content, @"\s+", " ").Trim();
-            return new DialogItem(When(v.Timestamp), UrbeTheme.Icons.Clock, text.Length > 70 ? text[..70] + "…" : text.Length > 0 ? text : "(vazia)");
+            // CST-154: whose change came after this text
+            return new DialogItem(When(v.Timestamp) + (v.By is { } by ? " · antes de uma edição de " + by : ""), UrbeTheme.Icons.Clock,
+                text.Length > 70 ? text[..70] + "…" : text.Length > 0 ? text : "(vazia)");
         }).ToList();
         var i = await Dialogs.ChooseAsync("Versões anteriores", options,
             "Escolha uma versão para ver e restaurar. A versão atual também fica guardada, então dá para voltar.");

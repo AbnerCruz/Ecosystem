@@ -5,12 +5,80 @@ using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
 using Urbe.Core;
+using Urbe.Core.Assistant;
 
 namespace Urbe.Client.Tests;
 
 /// <summary>CST-150/151/158: real vault creation, live editorial sources and real file export.</summary>
 public sealed partial class HeadlessUiTests
 {
+    [Fact]
+    public async Task LongPublicationDoesNotBuildEveryMarkdownPreviewOnOpening() =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+        {
+            var store = new DocumentStore();
+            var project = PublicationProject.Create("Publicação extensa");
+            for (var i = 0; i < 8; i++)
+            {
+                var note = store.Upsert(new DocumentInput
+                {
+                    Path = "Capítulo " + i + ".md",
+                    Content = "# Capítulo " + i + "\n\n" + new string('x', 5000)
+                });
+                project = project.AddSource(note.Id);
+            }
+            using var catalog = new PublicationSourceCatalog(store);
+            var studio = new PublicationStudioView();
+            studio.Open("Publicações/Extensa.publication.json", project, catalog);
+            var previews = studio.GetLogicalDescendants().OfType<Ui.Deferred>().ToList();
+            Assert.Equal(8, previews.Count);
+            Assert.All(previews, p => Assert.False(p.IsMade));
+            studio.Close();
+            return Task.FromResult(true);
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task PublicationsCanCreateAndReopenAPodcast() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "numa-publication-podcast-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var create = view.ShowPublicationsAsync();
+                ClickButtonWithText(view.Dialogs, "Novo podcast");
+                view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Single().Text = "Ciência";
+                ClickButtonWithText(view.Dialogs, "Criar");
+                await create;
+                var studio = view.PublicationsStudio;
+                var path = Assert.IsType<string>(studio.ProjectPath);
+                var script = view.Documents!.Get(Assert.Single(studio.Project!.Sources).DocumentId)!;
+                Assert.EndsWith(".podcast.md", script.Path);
+                Assert.Contains(studio.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Editar roteiro"));
+                Assert.Contains(studio.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Gerar áudio do podcast"));
+
+                IAssistantApp app = view;
+                await app.SaveNoteAsync(script, "# Ciência\n\n**Ana:** Bem-vindos ao podcast.\n");
+                var speech = ConfigureSpeechProvider(view);
+                var audio = await view.SpeakPodcastAsync(script.Path);
+                Assert.NotNull(audio);
+                Assert.Equal("Bem-vindos ao podcast.", Assert.Single(speech.Requests).Text);
+                studio.Close();
+                await view.OpenPublicationAsync(path);
+                ClickButtonWithText(studio, "Ouvir podcast");
+                Assert.True(view.FilePreview.IsVisible);
+                Assert.Equal(audio, view.FilePreview.Current);
+                return true;
+            }
+            finally { window.Close(); Directory.Delete(dir, true); }
+        }, TestContext.Current.CancellationToken));
+
     [Fact]
     public async Task Publications_FolderCreationSelectsRealNotesAndLegacyNewActionRoutesToPublications() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
@@ -30,7 +98,6 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(new[] { "Bairro/Sub/Dois.md", "Bairro/Um.md" },
                 project.Sources.Select(s => view.Documents!.Get(s.DocumentId)!.Path));
             Assert.DoesNotContain("Fonte aninhada", File.ReadAllText(Path.Combine(vault, "Publicações", "Do bairro.publication.json")));
-            Assert.False(view.Studio.IsVisible);
             view.PublicationsStudio.Close();
 
             // Existing shortcut ID stays valid but cannot resurrect the retired editor.
@@ -40,7 +107,6 @@ public sealed partial class HeadlessUiTests
             Assert.True(view.Dialogs.IsOpen);
             Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
             view.Dialogs.Cancel();
-            Assert.False(view.Studio.IsVisible);
 
             view.ShowPages();
             var create = view.Pages.GetLogicalDescendants().OfType<Button>()
@@ -160,6 +226,29 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Texto REVISADO", body.ReadToEnd());
                 Assert.Empty(view.LastOfficeLimitations);
             }
+            // CST-191: what the format does not keep is said BEFORE saving; "Voltar" saves nothing
+            var notePath = view.Documents!.List().First(d => d.Content.Contains("Texto REVISADO")).Path;
+            var linked = view.Documents.Get(notePath)!;
+            await ((IAssistantApp)view).SaveNoteAsync(linked, linked.Content + "\n\nVer [[Outra nota]].\n");
+            await Settle(window, view);
+            (string Name, byte[] Bytes)? declined = null;
+            view.SavePageFile = (name, bytes) => { declined = (name, bytes); return Task.FromResult<bool?>(true); };
+            var asking = view.ExportPublicationOfficeAsync("docx");
+            for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Ligações [[entre notas]] viram texto") == true);
+            ClickButtonWithText(view.Dialogs, "Voltar");
+            await asking;
+            Assert.Null(declined);
+            asking = view.ExportPublicationOfficeAsync("docx");   // asked again (it was not accepted); this time saved
+            for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+            ClickButtonWithText(view.Dialogs, "Salvar assim");
+            await asking;
+            Assert.NotNull(declined);
+            declined = null;
+            await view.ExportPublicationOfficeAsync("docx");   // the same losses, accepted: not asked again
+            Assert.NotNull(declined);
+            await ((IAssistantApp)view).SaveNoteAsync(view.Documents.Get(notePath)!, linked.Content);   // back as it was for the PDF below
+            await Settle(window, view);
             (string Name, byte[] Bytes)? pdfFile = null;
             view.SavePageFile = (name, bytes) => { pdfFile = (name, bytes); return Task.FromResult<bool?>(true); };
             await view.ExportPublicationOfficeAsync("pdf");

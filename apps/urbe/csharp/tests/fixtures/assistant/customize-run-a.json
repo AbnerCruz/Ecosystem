@@ -11,7 +11,7 @@
    "input": {},
    "label": "Lendo o formato da personalização",
    "access": "read",
-   "description": "Formato completo da personalização do Urbe: tema.json (tema, cores, fontes, forma, editor, cidade, texturas, estilos), temas salvos e pacotes de texturas. Mostra também a configuração atual. Chame antes de mudar a aparência.",
+   "description": "Formato completo da personalização do Numa: tema.json (tema, cores, fontes, forma, editor, cidade, texturas, estilos), temas salvos e pacotes de texturas. Mostra também a configuração atual. Chame antes de mudar a aparência.",
    "parameters": {
     "type": "object",
     "properties": {},
@@ -35,7 +35,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -88,7 +88,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -140,7 +140,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -189,7 +189,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -238,7 +238,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -272,7 +272,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -308,7 +308,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -362,7 +362,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -401,7 +401,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {
@@ -440,7 +440,7 @@
    },
    "label": "Mudando a aparência",
    "access": "write",
-   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "description": "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
    "parameters": {
     "type": "object",
     "properties": {

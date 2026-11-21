@@ -136,7 +136,9 @@ Para o Hub, dispara também o `hub-release.yml` existente **somente** quando o d
 
 O status `ecosystem/integration` no head do PR tem o formato `<resultado> main=<sha> combined=<sha|-> <routine|critical|->[: detalhe]`. O `combined` é o commit **exato** testado.
 
-Resultados possíveis: `testando`, `pronto`, `integrado`, `conflito`, `falhou`, `bloqueado`, `obsoleto`.
+Resultados possíveis: `testando`, `aguarda-checks`, `pronto`, `integrado`, `conflito`, `falhou`, `bloqueado`, `obsoleto`.
+
+Se os checks adicionais do head ainda não passaram, o integrador registra `aguarda-checks` e segue para os outros PRs. Quando os checks desse head passam, a coleta recoloca o PR na fila para testar sua combinação com a `main` atual.
 
 Cada PR tem um comentário do integrador com a rastreabilidade completa:
 - `main`, head e combinado testados;

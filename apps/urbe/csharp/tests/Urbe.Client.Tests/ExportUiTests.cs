@@ -42,7 +42,7 @@ public sealed partial class HeadlessUiTests
             var notes = Menu(view);
             Assert.True(notes.IndexOf("Importar arquivos") < notes.IndexOf("Exportar tudo (.zip)")
                 && notes.IndexOf("Exportar tudo (.zip)") < notes.IndexOf("Lixeira")
-                && notes.IndexOf("Lixeira") < notes.IndexOf("Pasta do Urbe no dispositivo"), string.Join(" / ", notes));
+                && notes.IndexOf("Lixeira") < notes.IndexOf("Pasta do Numa no dispositivo"), string.Join(" / ", notes));
             window.KeyPress(Avalonia.Input.Key.Escape, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Escape, null);
             for (int i = 0; i < 20 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
 

@@ -31,10 +31,9 @@ public sealed partial class HeadlessUiTests
             panel.Conversation.Messages.Add(new AiChatMessage { Id = "a", Role = "assistant", Content = [new AiChatBlock { Type = "tool_use", Id = "bad-plan", Name = "update_plan", Input = JsonNode.Parse(payload) }] });
             panel.Conversation.Messages.Add(new AiChatMessage { Role = "user", Meta = new() { ToolResults = true }, Content = [new AiChatBlock { Type = "tool_result", ToolUseId = "bad-plan", Content = "Plano recebido" }] });
             panel.RenderAll();
-            var fold = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
-            fold.IsExpanded = true;
+            var steps = OpenSteps(panel);
             await Settle(window, view);
-            var stage = ((Panel)fold.Content!).Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
+            var stage = steps.Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
             stage!.IsExpanded = true;
             await Settle(window, view);
             panel.RenderAll();

@@ -73,6 +73,7 @@ public sealed partial class HeadlessUiTests
         public Task SaveMaintenanceAsync(System.Text.Json.Nodes.JsonObject maintenance, CancellationToken c = default) => inner.SaveMaintenanceAsync(maintenance, c);
         public Task SaveNotesRecordAsync(string json, CancellationToken c = default) => Run("record", () => inner.SaveNotesRecordAsync(json, c));
         public Task SaveAreaLayoutAsync(string json, CancellationToken c = default) => inner.SaveAreaLayoutAsync(json, c);
+        public Task SaveFlashcardsAsync(string json, CancellationToken c = default) => inner.SaveFlashcardsAsync(json, c);
         public Task SaveConstellationAsync(string json, CancellationToken c = default) => inner.SaveConstellationAsync(json, c);
     }
 
@@ -359,7 +360,7 @@ public sealed partial class HeadlessUiTests
         vault.Storage.Fail("save");
         var closed = false;
         vault.Window.Closed += (_, _) => closed = true;
-        var dialogs = await AnsweringAsync(vault, () => { vault.Window.Close(); return Task.Delay(300); }, _ => "Continuar no Urbe");
+        var dialogs = await AnsweringAsync(vault, () => { vault.Window.Close(); return Task.Delay(300); }, _ => "Continuar no Numa");
         Assert.Contains(dialogs, d => d.Contains("A nota não foi salva") && d.Contains("Fechar sem salvar"));
         Assert.False(closed);
         Assert.True(view.Editor.HasChanges);   // the text is still there; saving now works

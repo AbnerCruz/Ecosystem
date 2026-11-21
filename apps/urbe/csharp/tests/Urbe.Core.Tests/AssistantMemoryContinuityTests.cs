@@ -68,8 +68,11 @@ public sealed class AssistantMemoryContinuityTests
     {
         var reader = AssistantAgent.Agents.Single(x => x.Id == "pesquisador");
         var writer = AssistantAgent.Agents.Single(x => x.Id == "escritor");
+        // #963: read-only closes the notes, not the memory; learning stays asked for every time. An agent whose tools
+        // are read-only by its role (the researcher) still does not write memory.
         Assert.False(AssistantAgent.AllowTool(reader, "readonly", "memory-write"));
-        Assert.False(AssistantAgent.AllowTool(writer, "readonly", "memory-write"));
+        Assert.True(AssistantAgent.AllowTool(writer, "readonly", "memory-write"));
+        Assert.True(AssistantAgent.NeedsApproval("memory-write", "readonly", runAllow: false));
         Assert.True(AssistantAgent.AllowTool(writer, "ask", "memory-write"));
         Assert.False(AssistantAgent.NeedsApproval("memory-write", "ask", runAllow: false) == false);
     }

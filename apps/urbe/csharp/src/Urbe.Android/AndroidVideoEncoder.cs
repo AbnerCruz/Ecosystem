@@ -28,6 +28,31 @@ internal sealed class AndroidVideoEncoder : IVideoEncoder
 
     public static void Install()
     {
+        VideoReferenceFrames.ReadNative = (source, cancel) => Task.Run<IReadOnlyList<VideoReferenceFrame>>(() =>
+        {
+            using var media = new MediaMetadataRetriever();
+            try { media.SetDataSource(source); }
+            catch (Java.Lang.RuntimeException) { return []; }
+            var duration = long.TryParse(media.ExtractMetadata(MetadataKey.Duration), out var ms) ? ms / 1000d : 0;
+            var frames = new List<VideoReferenceFrame>();
+            foreach (var at in VideoReferenceFrames.SampleTimes(duration))
+            {
+                cancel.ThrowIfCancellationRequested();
+                try
+                {
+                    using var bitmap = media.GetFrameAtTime((long)(at * 1_000_000), Option.Closest);
+                    if (bitmap is null) continue;
+                    var scale = Math.Min(1d, 480d / Math.Max(bitmap.Width, bitmap.Height));
+                    using var resized = scale < 1 ? global::Android.Graphics.Bitmap.CreateScaledBitmap(bitmap,
+                        Math.Max(1, (int)(bitmap.Width * scale)), Math.Max(1, (int)(bitmap.Height * scale)), true) : null;
+                    using var output = new MemoryStream();
+                    if ((resized ?? bitmap).Compress(global::Android.Graphics.Bitmap.CompressFormat.Jpeg!, 82, output))
+                        frames.Add(new(at, output.ToArray()));
+                }
+                catch (Java.Lang.RuntimeException) { /* A damaged frame does not discard the other samples. */ }
+            }
+            return frames;
+        }, cancel);
         PlatformVideo.CreateEncoder = () => new AndroidVideoEncoder();
         PlatformVideo.DecodeAudio = (source, target, cancel) => Task.Run(() => DecodePcm(source, target, cancel), cancel);
     }
@@ -38,7 +63,7 @@ internal sealed class AndroidVideoEncoder : IVideoEncoder
         if (settings.AudioWavPath is { } wav) EncodeAudio(wav, cancel);
         var format = MediaFormat.CreateVideoFormat("video/avc", settings.Width, settings.Height);
         format.SetInteger(MediaFormat.KeyColorFormat, ColorFormatYuv420Flexible);
-        format.SetInteger(MediaFormat.KeyBitRate, Math.Clamp(settings.Width * settings.Height * settings.Fps / 8, 1_000_000, 20_000_000));
+        format.SetInteger(MediaFormat.KeyBitRate, (int)Urbe.Core.VideoBudget.VideoBitsPerSecond(settings.Width, settings.Height, settings.Fps));
         format.SetInteger(MediaFormat.KeyFrameRate, settings.Fps);
         format.SetInteger(MediaFormat.KeyIFrameInterval, 1);
         _video = MediaCodec.CreateEncoderByType("video/avc");

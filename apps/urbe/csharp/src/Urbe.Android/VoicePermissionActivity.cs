@@ -26,7 +26,7 @@ public sealed class VoicePermissionActivity : Activity
         // denied for good ("não perguntar de novo"): the system will not show its dialog, so point to the settings
         if (asked && !ShouldShowRequestPermissionRationale(Android.Manifest.Permission.RecordAudio))
         {
-            Toast.MakeText(this, "Permita o microfone do Urbe nas configurações para gravar notas rápidas.", ToastLength.Long)?.Show();
+            Toast.MakeText(this, "Permita o microfone do Numa nas configurações para gravar notas rápidas.", ToastLength.Long)?.Show();
             try
             {
                 var settings = new Intent(Android.Provider.Settings.ActionApplicationDetailsSettings, Android.Net.Uri.Parse("package:" + PackageName));
@@ -38,7 +38,7 @@ public sealed class VoicePermissionActivity : Activity
             return;
         }
         prefs?.Edit()?.PutBoolean(AskedKey, true)?.Apply();
-        Toast.MakeText(this, "Para gravar sua nota rápida, o Urbe usa o microfone só enquanto você fala.", ToastLength.Long)?.Show();
+        Toast.MakeText(this, "Para gravar sua nota rápida, o Numa usa o microfone só enquanto você fala.", ToastLength.Long)?.Show();
         RequestPermissions(VoiceNotes.Permissions(), Request);
     }
 

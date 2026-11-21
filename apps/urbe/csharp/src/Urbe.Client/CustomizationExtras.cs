@@ -150,6 +150,34 @@ public sealed partial class Customization
 
     private const string LineNumbersKey = "urbe.editor.numeracao";
 
+    /// <summary>
+    /// AbnerCruz/Urbe#51: how long a pause ends the production session (then the Urbe opens on the Área de trabalho);
+    /// null = always reopen where it was. A preference of this device.
+    /// </summary>
+    public TimeSpan? SessionPause
+    {
+        get => Device.Get(SessionPauseKey) switch
+        {
+            null => ProductionSession.DefaultPause,
+            "sempre" => null,
+            var v when double.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var minutes) && minutes > 0 => TimeSpan.FromMinutes(minutes),
+            _ => ProductionSession.DefaultPause
+        };
+        set => Device.Set(SessionPauseKey, value is null ? "sempre" : value == ProductionSession.DefaultPause ? null
+            : value.Value.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private const string SessionPauseKey = "urbe.sessao.pausa";
+
+    /// <summary>When the person last used the Urbe (written on use and when it goes to the background).</summary>
+    public DateTimeOffset? LastActive
+    {
+        get => long.TryParse(Device.Get(LastActiveKey), out var ms) ? DateTimeOffset.FromUnixTimeMilliseconds(ms) : null;
+        set => Device.Set(LastActiveKey, value?.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private const string LastActiveKey = "urbe.sessao.ativo";
+
     public bool SafeMode
     {
         get => Device.Get(SafeKey) == "1";
@@ -164,7 +192,7 @@ public sealed partial class Customization
         catch (JsonException) { return []; }
     }
 
-    private static string ApprovalKey(string path) => "Urbe::" + path;
+    private static string ApprovalKey(string path) => "Numa::" + path;
 
     /// <summary>lista(): the plugin files with their state. The native app cannot run them: "aprovado" only records the owner's approval of this exact code.</summary>
     public IReadOnlyList<PluginEntry> Plugins()

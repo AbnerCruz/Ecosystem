@@ -194,6 +194,20 @@ public static partial class NoteMarks
     public static string AddComment(string text, CommentGroup group, string comment) =>
         text.Insert(group.Start + group.Length, Quote(comment));
 
+    /// <summary>
+    /// CST-022: the text with the comment <paramref name="index"/> of the run at <paramref name="group"/> rewritten, or
+    /// removed when <paramref name="value"/> is null or blank. The word and the other comments stay as they are.
+    /// </summary>
+    public static string ChangeComment(string text, CommentGroup group, int index, string? value)
+    {
+        var run = text.Substring(group.Start, group.Length);
+        var notes = NoteRegex().Matches(run);
+        if (index < 0 || index >= notes.Count) return text;
+        var note = notes[index];
+        var replaced = run[..note.Index] + (string.IsNullOrWhiteSpace(value) ? "" : Quote(value)) + run[(note.Index + note.Length)..];
+        return text[..group.Start] + replaced + text[(group.Start + group.Length)..];
+    }
+
     /// <summary>One comment as written in the note: <c>{"…"}</c>, with quotes and backslashes escaped.</summary>
     public static string Quote(string comment) =>
         "{\"" + comment.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace('\n', ' ').Trim() + "\"}";

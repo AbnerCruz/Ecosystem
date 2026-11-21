@@ -10,7 +10,7 @@ using Urbe.Core;
 
 namespace Urbe.AndroidHost;
 
-internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, IStudyWebView, IReaderActivity
+internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, IStudyWebView, IReaderActivity, IReaderMediaPosition
 {
     private WebView? _web;
     public string Address { get; private set; } = address;
@@ -44,12 +44,27 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
     }
     private void LoadAddress(WebView web)
     {
-        if (ReaderUris.YouTube(Address) is not null && new Uri(Address).AbsolutePath.StartsWith("/embed/", StringComparison.Ordinal))
+        if (ReaderUris.IsYouTubeEmbed(Address))
             web.LoadUrl(Address, new Dictionary<string, string> { ["Referer"] = "https://" + (web.Context?.PackageName ?? "app.urbe.nativepreview") + "/" });
         else web.LoadUrl(Address);
     }
+    // The platform may dispose the Java peer before Avalonia tears down its host.
+    // Do not let cleanup or a late activity transition crash the UI dispatcher.
+    private static void WithLiveWebView(Action operation)
+    {
+        try { operation(); }
+        catch (ObjectDisposedException) { /* Android already disposed this native peer. */ }
+    }
+
     public void SetReaderActive(bool active)
-    { if (_web is { } web) { if (active) web.OnResume(); else { web.EvaluateJavascript(ReaderActivity.PauseScript, null); web.OnPause(); } } }
+    {
+        if (_web is not { } web) return;
+        WithLiveWebView(() =>
+        {
+            if (active) web.OnResume();
+            else { web.EvaluateJavascript(ReaderActivity.PauseScript, null); web.OnPause(); }
+        });
+    }
     public void GoBack() { if (CanGoBack) _web!.GoBack(); }
     public void GoForward() { if (CanGoForward) _web!.GoForward(); }
     public void ReloadPage() => _web?.Reload();
@@ -66,19 +81,50 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
         return done.Task.WaitAsync(TimeSpan.FromSeconds(3));
     }
 
+    public async Task<string> PageHtmlAsync()
+    {
+        if (_web is null) return "";
+        try { return await ReadStringAsync(_web, StudyPageScripts.Html); }
+        catch (TimeoutException) { return ""; }
+    }
+
+    /// <summary>The second the page's player is at (the official YouTube player included), or null without one.</summary>
+    public async Task<double?> ReadMediaSecondAsync()
+    {
+        if (_web is null) return null;
+        try { return double.TryParse(await ReadStringAsync(_web, "String(" + MediaPositionScripts.Read + ")"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var s) ? s : null; }
+        catch (TimeoutException) { return null; }
+    }
+
+    public Task SeekMediaAsync(double seconds)
+    {
+        if (_web is not null && double.IsFinite(seconds) && seconds >= 0) _web.EvaluateJavascript(MediaPositionScripts.Seek(seconds), null);
+        return Task.CompletedTask;
+    }
+
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
-        if (_web is { } web)
-        {
-            _web = null;
-            web.StopLoading(); web.OnPause(); web.Destroy(); web.Dispose();
-        }
+        var web = _web;
+        _web = null; // invalidate callbacks before any native teardown begins
+        if (web is null) return;
+        // Each method is independent: Android may have disposed the WebView already,
+        // or StopLoading may dispose it while the host still needs to finish teardown.
+        WithLiveWebView(web.StopLoading);
+        WithLiveWebView(web.OnPause);
+        WithLiveWebView(web.Destroy);
+        WithLiveWebView(web.Dispose);
     }
 
     private void Changed(WebView? view, string? error = null)
     {
-        Address = view?.Url ?? Address; Error = error;
-        Dispatcher.UIThread.Post(() => NavigationChanged?.Invoke());
+        if (view is null || !ReferenceEquals(_web, view)) return;
+        try { Address = view.Url ?? Address; }
+        catch (ObjectDisposedException) { return; }
+        Error = error;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ReferenceEquals(_web, view)) NavigationChanged?.Invoke();
+        });
     }
     private sealed class Navigation(AndroidStudyBrowser host) : WebViewClient
     {

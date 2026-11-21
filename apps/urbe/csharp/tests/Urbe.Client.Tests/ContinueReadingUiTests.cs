@@ -74,6 +74,8 @@ public sealed partial class HeadlessUiTests
             pane.Open();
             await Settle(window, view);
             var row = Assert.Single(pane.ContinueRows);
+            Assert.NotNull(pane.FlashcardsRow);
+            Assert.DoesNotContain(pane.FlashcardsRow, pane.ContinueRows);
             Assert.Contains("página 2 de 3", Avalonia.Automation.AutomationProperties.GetName(row));
             Assert.Contains(row.GetLogicalDescendants().OfType<ProgressBar>(), b => Math.Abs(b.Value - 200.0 / 3) < .01);
             row.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));

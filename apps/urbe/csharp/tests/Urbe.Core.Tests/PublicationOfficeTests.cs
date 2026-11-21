@@ -67,7 +67,9 @@ public sealed class PublicationOfficeTests
         // two ordered lists in two notes: each counts from 1
         var numbering = XDocument.Parse(Entry(zip, "word/numbering.xml"));
         Assert.True(numbering.Descendants(w + "startOverride").Count() >= 2);
-        Assert.Contains(result.Limitations, l => l.Contains("TeX"));
+        // the formula is a native equation, so the TeX notice is gone
+        Assert.Contains(doc.Descendants(MathOmml.M + "oMath"), m => m.Value == "x2");
+        Assert.DoesNotContain(result.Limitations, l => l.Contains("TeX"));
         Assert.Contains(result.Limitations, l => l.Contains("[[entre notas]]"));
     }
 
@@ -94,7 +96,9 @@ public sealed class PublicationOfficeTests
         var all = content.Root!.Value;
         Assert.Contains("faltam 3", all);
         Assert.DoesNotContain("PRIVADO", all);
-        Assert.Contains(result.Limitations, l => l.Contains("TeX"));
+        // the formula is an embedded formula object, so the TeX notice is gone
+        Assert.Contains(content.Descendants(), e => e.Name.LocalName == "object");
+        Assert.DoesNotContain(result.Limitations, l => l.Contains("TeX"));
     }
 
     [Fact]

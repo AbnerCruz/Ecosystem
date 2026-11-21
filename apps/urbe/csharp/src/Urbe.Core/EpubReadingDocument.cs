@@ -22,6 +22,8 @@ public interface IReaderPublication : IDisposable
     string ReadText(int index);
     /// <summary>The raster pictures of a chapter, in reading order, that can be examined (OCR, a question to the AI) and cited.</summary>
     IReadOnlyList<ReaderImage> ChapterImages(int index) => [];
+    /// <summary>The text of the footnote or endnote with this id in a part, or null when that element is not one.</summary>
+    string? Footnote(int index, string id) => null;
 }
 
 /// <summary>Lazy EPUB spine reader. Scripts, remote assets, archive escapes and DRM never gain host access.</summary>
@@ -98,7 +100,8 @@ public sealed class EpubReadingDocument : IReaderPublication
                 if (name == "a" && key == "href")
                 {
                     string href = attribute.Value;
-                    if (href.StartsWith('#')) continue;
+                    // a note reference goes to the reader (which shows the note where it is read), not a jump inside the page
+                    if (href.StartsWith('#')) { if (IsNoteRef(element)) attribute.Value = "https://urbe.reader.invalid/chapter/" + index + href; continue; }
                     string? resolved = ReaderArchive.Resolve(path, href);
                     int chapter = resolved is null ? -1 : _spine.FindIndex(p => p.FilePath == resolved);
                     if (chapter >= 0) attribute.Value = "https://urbe.reader.invalid/chapter/" + chapter + (href.Contains('#') ? "#" + href.Split('#', 2)[1] : "");
@@ -126,6 +129,22 @@ public sealed class EpubReadingDocument : IReaderPublication
         }
         return new(document.ToString(SaveOptions.DisableFormatting), plain, FixedLayout);
     }
+
+    public string? Footnote(int index, string id)
+    {
+        if (index < 0 || index >= _spine.Count || id.Length == 0) return null;
+        var target = _archive.Xml(_spine[index].FilePath).Descendants().FirstOrDefault(e => (string?)e.Attribute("id") == id);
+        if (target is null || !new[] { target }.Concat(target.Ancestors().Take(2)).Any(IsNote)) return null;
+        var text = System.Text.RegularExpressions.Regex.Replace(target.Value, @"\s+", " ").Trim();
+        return text.Length > 0 ? text : null;
+    }
+
+    // EPUB 3 epub:type and DPUB-ARIA roles; an <aside> is a note in EPUB 3's own sense
+    private static string Semantics(XElement e) =>
+        ((string?)e.Attributes().FirstOrDefault(a => a.Name.LocalName == "type" && a.Name.NamespaceName.Length > 0) ?? "") + " " + ((string?)e.Attribute("role") ?? "");
+    private static bool IsNoteRef(XElement a) => Semantics(a).Contains("noteref", StringComparison.Ordinal);
+    private static bool IsNote(XElement e) =>
+        e.Name.LocalName == "aside" || System.Text.RegularExpressions.Regex.IsMatch(Semantics(e), @"\b(doc-)?(footnote|endnote|rearnote)\b");
 
     public string ReadText(int index) => Plain(_archive.Xml(_spine[index].FilePath));
 

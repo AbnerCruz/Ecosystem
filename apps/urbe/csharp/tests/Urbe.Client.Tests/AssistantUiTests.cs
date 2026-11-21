@@ -38,6 +38,57 @@ public sealed partial class HeadlessUiTests
     private static string Sse(params string[] chunks) => string.Concat(chunks.Select(c => "data: " + c + "\n\n")) + "data: [DONE]\n\n";
 
     [Fact]
+    public async Task Assistant_OffersTheVideoPublicationLinkWithoutOpeningTheStudio() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "numa-video-handoff-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            try
+            {
+                await view.OpenVaultAsync();
+                var panel = view.Assistant;
+                panel.Open();
+                panel.SelectAgent("geral");
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "teste"));
+                panel.Config.AgentPolicies["geral"] = "auto";
+                panel.Conversation.ProviderId = "openrouter";
+                panel.Conversation.Model = "org/m";
+
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"video","function":{"name":"create_video","arguments":"{\"title\":\"Órbita\",\"scenes\":[{\"title\":\"Abertura\",\"narration\":\"A Terra dá uma volta ao redor do Sol.\",\"code\":\"function draw(ctx, t) { ctx.circle(100, 100, 20); }\"}]}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                for (int i = 0; i < 2; i++)
+                    model.Chats.Enqueue(Sse(
+                        """{"choices":[{"delta":{"content":"A publicação Órbita está pronta para editar."}}]}""",
+                        """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+
+                panel.Send("Crie um vídeo sobre a órbita da Terra");
+                await panel.CurrentRun!;
+                Assert.Equal("end", panel.Conversation.Runs.Last().Stopped);
+                Assert.False(view.PublicationsStudio.IsVisible);
+                Assert.True(panel.IsVisible);
+                ClickButtonWithText(panel, "Abrir no Estúdio · Órbita");
+                for (int i = 0; i < 50 && !view.PublicationsStudio.IsVisible; i++) await Task.Delay(10);
+                Assert.True(view.PublicationsStudio.IsVisible);
+                Assert.Equal("Órbita", view.PublicationsStudio.Project!.Title);
+                Assert.DoesNotContain("\"name\":\"render_video\"", model.Sent[0]);
+                Assert.Empty(Directory.EnumerateFiles(vault, "*.mp4", SearchOption.AllDirectories));
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Assistant_EditsTheVaultWithApprovalAndUndoes() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
@@ -112,6 +163,10 @@ public sealed partial class HeadlessUiTests
                 var edited = original.Replace("- uma", "- primeira {ia:\"modelo-b\"}");
                 Assert.Equal(edited, File.ReadAllText(Path.Combine(vault, "Comece.md")));
                 Assert.Equal(edited, view.Documents!.Get("Comece.md")!.Content);
+                // CST-154: the replaced text is in "Versões anteriores", named after the agent that changed it
+                var history = File.ReadAllText(Path.Combine(vault, ".urbe", "history.v2.json"));
+                Assert.Contains("\"by\":", history);
+                Assert.Contains(original.Replace("\r\n", "\n").Split('\n')[0], history);
                 var run = panel.Conversation.Runs.Last();
                 Assert.Equal(("end", 1), (run.Stopped, run.Changes.Count));
                 texts = panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
@@ -132,7 +187,7 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto, tema sépia."}}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Revisei a personalização salva."}}]}"""));
-                panel.Send("Deixe o Urbe em sépia");
+                panel.Send("Deixe o Numa em sépia");
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal(("set_appearance", "Personalização/tema.json"), (panel.PendingApproval!.Call.Name, panel.PendingApproval.Preview!.Path));
                 Assert.False(File.Exists(Path.Combine(vault, "Personalização", "tema.json")));
@@ -149,11 +204,12 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("sk-or-teste", File.ReadAllText(Path.Combine(UrbeApp.AssistantFolder!, "config.json")));
                 Assert.DoesNotContain(Directory.GetFiles(vault, "*", SearchOption.AllDirectories), f => File.ReadAllText(f).Contains("sk-or-teste"));
 
-                // The next launch starts fresh; the original conversation stays in explicit history.
+                // CST-145: the next launch, moments later, continues the conversation still in use (an old one would give
+                // way to a new chat); it is the same conversation kept in the history
                 var again = new AssistantPanel(view, new FolderAssistantStorage(UrbeApp.AssistantFolder!));
                 again.Open();
-                Assert.NotEqual(panel.Conversation.Id, again.Conversation.Id);
-                Assert.Empty(again.Conversation.Messages);
+                Assert.Equal(panel.Conversation.Id, again.Conversation.Id);
+                Assert.NotEmpty(again.Conversation.Messages);
                 Assert.Equal("Troque a primeira tarefa", new AssistantStore(
                     new FolderAssistantStorage(UrbeApp.AssistantFolder!)).GetConversation(panel.Conversation.Id)!.Title);
                 // Regression: preserve the full settings layout and the new memory and network tabs.
@@ -162,10 +218,11 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Agentes");
                 Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Contexto");
-                Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Pesquisa");
-                Assert.Contains("Privacidade e pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickButtonWithText(panel, "Configurar");
+                Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<Button>().Select(x => x.Content as string));
+                panel.ShowSettings();
+                ClickNamed(panel, "Configurações: Conexões");
+                Assert.Contains("Configurações globais da pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Agentes");
                 Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;
@@ -277,7 +334,8 @@ public sealed partial class HeadlessUiTests
                 ClickNamed(view.Editor, "Pedir a Jarvis");
                 for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 if (panel.CurrentRun is { } run) await run;
-                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                // under a loaded machine the compact card settles later: wait for it, never a fixed time
+                for (int i = 0; i < 800 && panel.CompactStatus != "result"; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 // UC-81: note invocation completes in a contextual sheet, not an unsolicited full chat.
                 Assert.False(panel.IsVisible);
                 Assert.True(view.AssistantMini.IsVisible);
@@ -454,19 +512,21 @@ public sealed partial class HeadlessUiTests
                 // Latest request: collapsed summary and nested inspection with intact results.
                 var activity = Assert.IsType<StackPanel>(panel.Log.Children[31]);
                 var activityBorder = Assert.IsType<Border>(activity.Children[0]);
-                var activityFold = Assert.IsType<Expander>(activityBorder.Child);
-                Assert.Null(activityFold.Content);
+                Assert.IsType<Button>(activityBorder.Child);
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(),
-                    t => t.Text?.StartsWith("10 operações", StringComparison.Ordinal) == true);
-                activityFold.IsExpanded = true;
-                Dispatcher.UIThread.RunJobs();
-                var timeline = Assert.IsType<StackPanel>(activityFold.Content);
+                    t => t.Text?.Contains("10 etapas", StringComparison.Ordinal) == true);
+                var timeline = Assert.IsType<StackPanel>(OpenSteps(panel));
                 Assert.Equal(10, timeline.Children.Count);
                 var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(Assert.IsType<Ui.Deferred>(timeline.Children[0]).View).Child);
                 firstStage.IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 Assert.Contains("Resultado devolvido ao agente",
                     panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                // Reopening before the previous sheet detaches must use a NEW visual
+                // list, never reparent the old StackPanel between ScrollViewers.
+                var reopened = Assert.IsType<StackPanel>(OpenSteps(panel));
+                Assert.NotSame(timeline, reopened);
+                Assert.Equal(10, reopened.Children.Count);
 
                 // a new request: while it streams and waits for approval, the earlier ones are not rebuilt
                 model.Chats.Enqueue(Sse(
@@ -485,6 +545,28 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Aprovar alteração · Comece.md", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 panel.Answer(AiApproval.Approve);
                 await panel.CurrentRun!;
+
+                // Real crash regression (20-21 Nov): a persisted update_plan
+                // with duplicate JSON keys must not break ActivityTimeline/RenderLog.
+                msgs.Add(new AiChatMessage
+                {
+                    Id = "user-bad-json", Role = "user",
+                    Content = [AiChatBlock.TextBlock("Ver plano antigo")]
+                });
+                msgs.Add(new AiChatMessage
+                {
+                    Id = "assistant-bad-json", Role = "assistant",
+                    Content = [new AiChatBlock
+                    {
+                        Type = "tool_use", Id = "bad-plan", Name = "update_plan",
+                        Input = System.Text.Json.Nodes.JsonNode.Parse(
+                            """{"steps":[{"status":"done"}],"steps":[{"status":"pending"}]}""")
+                    }]
+                });
+                panel.RenderAll();
+                Assert.NotEmpty(panel.Log.Children);
+                var badPlan = panel.Conversation.Messages[^1].Content[0];
+                Assert.NotNull(badPlan.Input);
                 return true;
             }
             finally

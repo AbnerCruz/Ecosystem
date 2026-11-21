@@ -16,7 +16,7 @@ namespace Urbe.Client;
 public sealed class SplitPane : Border
 {
     private readonly TextBlock _title = new() { FontSize = 14, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-    private readonly SelectableTextBlock _article = new() { TextWrapping = TextWrapping.Wrap, FontSize = 15, LineHeight = 22 };
+    private readonly SelectableTextBlock _article = new() { TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Callout.Size, LineHeight = 22 };
     private readonly ContentControl _viewport = new();
     private readonly ScrollViewer _scroll;
     private readonly Button _swap;
@@ -71,7 +71,7 @@ public sealed class SplitPane : Border
     {
         var b = new Button
         {
-            Content = text, Width = 36, Height = 36, Padding = new Thickness(0), CornerRadius = new CornerRadius(10), FontSize = 16,
+            Content = text, Width = 36, Height = 36, Padding = new Thickness(0), CornerRadius = new CornerRadius(10), FontSize = UrbeTokens.Type.Body.Size,
             Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };

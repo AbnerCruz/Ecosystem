@@ -18,13 +18,14 @@ Fonte de verdade do que existe e do que falta. A especificação completa está 
 
 Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
 
-## Auditoria incremental
+## Auditoria incremental e canal único (15/11/2026)
+
 - [ ] **LUNET-511 — Validação adicional de manifestos (código e testes propostos; CI/DEVICE pendentes):** rejeitar `Kind` fora do enum e `CreatedUtc` ausente ao ler versões locais, preservando arquivo e projetos; regressões xUnit adicionadas na branch #962.
   - Incremento PR #962: prévia de conflitos inclui arquivo ocupando pasta ancestral; teste de regressão registrado, CI/DEVICE ainda pendentes.
 
- e canal único (15/11/2026)
-
 - [ ] **LUNET-509 — Eliminar espelho e registrar a auditoria atual (implementação documental proposta; CI/integrador pendentes):** DEC-0064/ADD-0035 determinam apenas Ecosystem para código, CI e releases. O próximo agente deve ler `../../docs/architecture/audits/lunet-estado-atual-2026-11-15.md`, verificar a main e priorizar E2E no Android, segurança de edições da IA, fluxo completo dos Studios, desempenho e multiplayer real; não fechar gates sem DEVICE. Não mexer na maturidade alfa/beta/dev/estável por iniciativa própria.
+
+- [ ] **LUNET-512 / ampliação de conteúdo (PR em revisão, sem DEVICE):** 131 referências de jogos curadas embutidas e pesquisáveis com 119 fichas novas e mais mecânicas; cada ficha traz observação específica de estudo e link opcional de pesquisa de gameplay (nunca vídeo no APK). Explorar limita renderização inicial a 18 cartões e permite carregar mais. Testes em `InspirationCatalogPopulationTests.cs`; validar CI, integridade de notas/favoritos e fluidez em Android 13 antes de concluir.
 
 ## Nova direção de UX e criação independente — solicitação do proprietário em 15/11/2026
 

@@ -13,6 +13,17 @@ namespace Urbe.Client.Tests;
 
 public sealed partial class HeadlessUiTests
 {
+    /// <summary>#50: the steps open in the panel that rises from the bottom; this taps the activity line and returns its list.</summary>
+    private static Panel OpenSteps(AssistantPanel panel)
+    {
+        var open = panel.Log.GetLogicalDescendants().OfType<Button>()
+            .First(b => (Avalonia.Automation.AutomationProperties.GetName(b) ?? "").StartsWith("Atividade do agente", StringComparison.Ordinal));
+        open.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(panel.StepsSheet.IsOpen);
+        return panel.StepsList!;
+    }
+
     [Fact]
     public async Task Activity_ExpandedLongRunIsNotRebuiltOnEveryRender() => Assert.True(await Session.Dispatch<bool>(async () =>
     {
@@ -40,54 +51,54 @@ public sealed partial class HeadlessUiTests
                     Content = [new AiChatBlock { Type = "tool_result", ToolUseId = "c" + i, Content = big }] });
             }
             panel.RenderAll();
-            var fold = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
-            // opening 300 steps made and laid out all 600 lines at once: a frozen second (2,1 s headless, local)
+            // #50: opening 300 steps froze the app (all 600 lines laid out at once); the panel draws the latest page only
             await Settle(window, view);
             var tap = Stopwatch.StartNew();
-            fold.IsExpanded = true;
-            Dispatcher.UIThread.RunJobs();
+            var list = OpenSteps(panel);
             window.UpdateLayout();
             Dispatcher.UIThread.RunJobs();
             tap.Stop();
             PerfLog("activity.open300 " + tap.ElapsedMilliseconds + " ms");
-            // alone (URBE_PERF=1): 1 141 ms before, ~70 ms now; in the full suite the other tests' windows also render
             if (Environment.GetEnvironmentVariable("URBE_PERF") == "1") Assert.True(tap.ElapsedMilliseconds < 300, tap.ElapsedMilliseconds + " ms");
             await Settle(window, view);
-            var list = (Panel)fold.Content!;
-            var stages = list.Children.ToList();
-            Assert.True(stages.Count >= 600);   // every step and every reasoning line is in the list
-            var made = stages.OfType<Ui.Deferred>().Count(d => d.IsMade);
-            Assert.InRange(made, 1, 120);       // only those near the screen were made
-            // scrolling to the top makes the first steps
-            var scroll = list.FindAncestorOfType<ScrollViewer>()!;
-            scroll.Offset = new Avalonia.Vector(0, 0);
-            await Settle(window, view);
-            Assert.True(((Ui.Deferred)stages[0]).IsMade);
-            Assert.True(((Ui.Deferred)stages[1]).IsMade);
-            Assert.False(((Ui.Deferred)stages[^200]).IsMade);
-            var firstStage = stages.Select(Ui.Deferred.Of).OfType<Border>().First().Child as Expander;
-            firstStage!.IsExpanded = true;
-            await Settle(window, view);
-            var details = firstStage.Content;
+            Snapshot(window, "activity-steps-panel.png");
+            var stages = list.Children.OfType<Ui.Deferred>().ToList();
+            Assert.Equal(AssistantPanel.StepsPage, stages.Count);
+            Assert.Contains("Ver anteriores (580)", list.Children.OfType<Button>().Select(b => b.Content as string));
+            Assert.DoesNotContain(list.Children.OfType<Button>(), b => (b.Content as string ?? "").StartsWith("Ver mais recentes", StringComparison.Ordinal));
+            // the latest step is the last one, in chronological order
+            var lastStage = (Border)stages[^1].View;
+            Assert.Contains("N299", string.Join(" ", lastStage.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text)));
 
+            // earlier pages, then back: never more than StepsMax drawn, nothing lost or repeated
+            for (int k = 0; k < 4; k++) { Named(list, "Ver as etapas anteriores").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal(AssistantPanel.StepsMax, list.Children.OfType<Ui.Deferred>().Count());
+            // 600 lines (300 steps and their 300 reasoning summaries): four pages back from the latest 20 is [500, 560)
+            Assert.Contains("Ver mais recentes (40)", list.Children.OfType<Button>().Select(b => b.Content as string));
+            for (int k = 0; k < 2; k++) { Named(list, "Ver as etapas mais recentes").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs(); }
+            Assert.DoesNotContain(list.Children.OfType<Button>(), b => (b.Content as string ?? "").StartsWith("Ver mais recentes", StringComparison.Ordinal));
+            stages = list.Children.OfType<Ui.Deferred>().ToList();
+            Assert.Equal(stages.Count, stages.Distinct().Count());
+
+            // re-rendering (each streamed token) keeps the same controls
             var clock = Stopwatch.StartNew();
             for (int k = 0; k < 20; k++) panel.RenderAll();
             clock.Stop();
             Console.WriteLine("activity.render300 " + clock.ElapsedMilliseconds / 20.0 + " ms per render");
+            Assert.Same(list, panel.StepsList);
+            Assert.Equal(stages, list.Children.OfType<Ui.Deferred>().ToList());
 
-            var foldAgain = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
-            Assert.Same(fold, foldAgain);
-            Assert.True(foldAgain.IsExpanded);
-            var listAgain = (Panel)foldAgain.Content!;
-            Assert.Same(list, listAgain);
-            Assert.Equal(stages, listAgain.Children.ToList());   // the same 300+ controls, not new ones
-            Assert.Same(details, ((Expander)listAgain.Children.Select(Ui.Deferred.Of).OfType<Border>().First().Child!).Content);
-
-            // a new step is added without rebuilding the others
+            // the panel at the latest step follows a new one
             msgs.Add(new AiChatMessage { Id = "a300", Role = "assistant", Content = [new AiChatBlock { Type = "tool_use", Id = "c300", Name = "read_note", Input = new JsonObject { ["path"] = "Z.md" } }] });
             panel.RenderAll();
-            Assert.Same(stages[0], listAgain.Children[0]);
-            Assert.Equal(stages.Count + 1, listAgain.Children.Count);
+            Assert.Contains("Z.md", string.Join(" ", ((Border)list.Children.OfType<Ui.Deferred>().Last().View).GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text)));
+
+            // the X is in the panel's bar, outside the list that scrolls; it closes the panel only
+            var close = Named(panel.StepsSheet.Card, "Fechar etapas");
+            Assert.DoesNotContain(close, list.GetLogicalDescendants());
+            close.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Settle(window, view);
+            Assert.False(panel.StepsSheet.IsOpen);
             return true;
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; }
@@ -121,10 +132,10 @@ public sealed partial class HeadlessUiTests
                     Content = [new AiChatBlock { Type = "tool_result", ToolUseId = "c" + i, Content = "texto " + i }] });
             }
             panel.RenderAll();
-            var fold = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
-            fold.IsExpanded = true;
+            var list = OpenSteps(panel);
+            // the most the panel draws at once
+            for (int k = 0; k < 2; k++) { Named(list, "Ver as etapas anteriores").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs(); }
             await Settle(window, view);
-            var list = (Panel)fold.Content!;
             var scroll = list.FindAncestorOfType<ScrollViewer>()!;
             Assert.True(scroll.Extent.Height > scroll.Viewport.Height * 4);
             scroll.Offset = new Avalonia.Vector(0, scroll.Extent.Height / 2);
@@ -142,8 +153,8 @@ public sealed partial class HeadlessUiTests
             // every step is still in the list, in order, and the top can be reached
             scroll.Offset = default;
             await Settle(window, view);
-            Assert.True(((Ui.Deferred)list.Children[0]).IsMade);
-            Assert.Equal(200, list.Children.Count);
+            Assert.True(list.Children.OfType<Ui.Deferred>().First().IsMade);
+            Assert.Equal(AssistantPanel.StepsMax, list.Children.OfType<Ui.Deferred>().Count());
             return true;
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; }
@@ -192,10 +203,9 @@ public sealed partial class HeadlessUiTests
             msgs.Add(new AiChatMessage { Id = "r", Role = "user", Meta = new() { ToolResults = true },
                 Content = [new AiChatBlock { Type = "tool_result", ToolUseId = "c", Content = result }] });
             panel.RenderAll();
-            var fold = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
-            fold.IsExpanded = true;
+            var steps = OpenSteps(panel);
             await Settle(window, view);
-            var stage = ((Panel)fold.Content!).Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
+            var stage = steps.Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
             var tap = Stopwatch.StartNew();
             stage!.IsExpanded = true;
             Dispatcher.UIThread.RunJobs();

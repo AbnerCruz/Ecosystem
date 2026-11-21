@@ -236,6 +236,21 @@ public sealed partial class GraphCanvasView : Control
         ctx.DrawText(formatted, at);
     }
 
+    /// <summary>A card's text: its own lines, wrapped to the card, the first line bold, ellipsis only where the card ends.</summary>
+    private static void DrawWrapped(DrawingContext ctx, string value, Rect box, double size)
+    {
+        var lines = value.Replace("\r", "").Split('\n', 2);
+        var title = new FormattedText(lines[0], CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+            UrbeTheme.UiTypeface(FontWeight.SemiBold), size, new SolidColorBrush(Color.Parse(UrbeTheme.Text)))
+        { MaxTextWidth = box.Width, MaxTextHeight = box.Height, Trimming = TextTrimming.CharacterEllipsis };
+        ctx.DrawText(title, box.TopLeft);
+        if (lines.Length < 2 || title.Height + size >= box.Height) return;
+        var rest = new FormattedText(lines[1], CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+            UrbeTheme.UiTypeface(FontWeight.Normal), size * .85, new SolidColorBrush(Color.Parse(UrbeTheme.Text3)))
+        { MaxTextWidth = box.Width, MaxTextHeight = box.Height - title.Height - 4, Trimming = TextTrimming.CharacterEllipsis };
+        ctx.DrawText(rest, new Point(box.X, box.Y + title.Height + 4));
+    }
+
     public override void Render(DrawingContext ctx)
     {
         if (!_fitted) Fit();
@@ -308,16 +323,20 @@ public sealed partial class GraphCanvasView : Control
             else ctx.DrawRectangle(background, outline, bounds, n.Kind == GraphNodeKind.Group ? 4 : 11,
                 n.Kind == GraphNodeKind.Group ? 4 : 11);
             if (_zoom < .38) continue;
+            // a text card is its text; the others say what they point to
             var caption = n.Kind switch
             {
                 GraphNodeKind.Note => "NOTA", GraphNodeKind.File => "ARQUIVO",
                 GraphNodeKind.Folder => "PASTA", GraphNodeKind.Group => "GRUPO",
-                GraphNodeKind.Shape => "FORMA", _ => "TEXTO"
+                GraphNodeKind.Shape => "FORMA", _ => ""
             };
             var px = bounds.X + 12 * _zoom;
             if (missing) caption += " · NÃO ENCONTRADA";
-            DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(missing ? UrbeTheme.Danger : UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
-            DrawLabel(ctx, n.Label, new Point(px, bounds.Y + 33 * _zoom), Color.Parse(UrbeTheme.Text), Math.Max(10, 13 * _zoom), FontWeight.SemiBold);
+            if (caption.Length > 0)
+                DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(missing ? UrbeTheme.Danger : UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
+            var top = caption.Length > 0 ? 33 : 12;
+            DrawWrapped(ctx, n.Label, new Rect(px, bounds.Y + top * _zoom, Math.Max(1, bounds.Width - 24 * _zoom), Math.Max(1, bounds.Height - (top + 8) * _zoom)),
+                Math.Max(10, 13 * _zoom));
         }
         RenderHint(ctx);
     }
@@ -327,8 +346,9 @@ public sealed partial class GraphCanvasView : Control
 public sealed class GraphBoardPanel : Grid
 {
     public GraphCanvasView Canvas { get; } = new();
-    private readonly TextBlock _title = new() { FontSize = 15, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-    private readonly Button _edit, _link, _delete, _open;
+    private readonly TextBlock _title = new() { FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight, VerticalAlignment = VerticalAlignment.Center };
+    private readonly Button _edit, _link, _delete, _open, _save;
+    private readonly StackPanel _strip;
     private readonly Button _undo, _redo, _group, _resize, _select, _draw, _erase;
     public event Action? BackRequested;
     public event Action? SaveRequested;
@@ -357,7 +377,7 @@ public sealed class GraphBoardPanel : Grid
         var top = new StackPanel { Orientation = Orientation.Vertical, Spacing = 4, Margin = new Thickness(12, 8, 12, 6) };
         var head = new DockPanel();
         var back = Action("← Voltar"); back.Click += (_, _) => BackRequested?.Invoke();
-        var save = Action("Salvar"); save.Click += (_, _) => SaveRequested?.Invoke();
+        _save = Action("Salvar"); var save = _save; save.Click += (_, _) => SaveRequested?.Invoke();
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(save, Dock.Right);
         head.Children.Add(back);
@@ -365,7 +385,7 @@ public sealed class GraphBoardPanel : Grid
         head.Children.Add(_title);
         top.Children.Add(head);
 
-        var strip = new StackPanel { Orientation = Orientation.Horizontal };
+        var strip = _strip = new StackPanel { Orientation = Orientation.Horizontal };
         var addText = Action("+ Texto"); addText.Click += (_, _) => AddTextRequested?.Invoke();
         var addVault = Action("+ Vault"); addVault.Click += (_, _) => AddVaultRequested?.Invoke();
         _edit = Action("Editar"); _edit.Click += (_, _) => EditRequested?.Invoke();
@@ -410,10 +430,13 @@ public sealed class GraphBoardPanel : Grid
         UpdateButtons();
     }
 
-    public void Show(GraphDocument document)
+    /// <summary>Read only (a projection of app data): moved for reading, nothing to edit or save; Abrir stays.</summary>
+    public void Show(GraphDocument document, bool readOnly = false)
     {
         _title.Text = document.Title;
-        Canvas.Show(document);
+        Canvas.Show(document, readOnly);
+        _save.IsVisible = !readOnly;
+        foreach (var item in _strip.Children) item.IsVisible = !readOnly || item == _open;
         UpdateButtons();
     }
 

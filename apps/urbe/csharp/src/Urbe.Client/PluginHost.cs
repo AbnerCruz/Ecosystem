@@ -111,6 +111,18 @@ public sealed partial class MainView
             host.ShowLifeNotice(text);
         }
 
+        public Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, bool structured = false)
+        {
+            Need(PluginPermissions.Agents);
+            return host.Assistant.AskFromPluginAsync(manifest.Name, agentId, task, scope, structured);
+        }
+
+        public bool SourceExists(string path)
+        {
+            Need(PluginPermissions.Agents);
+            return ((IAssistantApp)host).FileExists(path);
+        }
+
         public void Button(string title, string icon, Func<Task> run)
         {
             Need(PluginPermissions.Buttons);
@@ -274,7 +286,7 @@ public sealed partial class MainView
             var head = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
             DockPanel.SetDock(close, Dock.Right);
             head.Children.Add(close);
-            head.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center });
+            head.Children.Add(new TextBlock { Text = title, FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Callout.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center });
             Child = new StackPanel { Children = { head, content } };
         }
 

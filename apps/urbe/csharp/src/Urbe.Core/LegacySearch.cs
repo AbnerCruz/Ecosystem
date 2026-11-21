@@ -387,6 +387,31 @@ public static class UserShortcuts
         return result;
     }
 
+    /// <summary>
+    /// CST-140: what in atalhos.json would fail without a word — an unreadable file, a key the keymap cannot read, two
+    /// entries for the same key (only the last would count), a command that does not exist — each said in a line.
+    /// </summary>
+    public static IReadOnlyList<string> Problems(string? json, Func<string, bool> hasCommand)
+    {
+        var problems = new List<string>();
+        if (string.IsNullOrWhiteSpace(json)) return problems;
+        System.Text.Json.Nodes.JsonObject? map;
+        try { map = (System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject)?["atalhos"] as System.Text.Json.Nodes.JsonObject; }
+        catch (System.Text.Json.JsonException e) { return ["O arquivo não pôde ser lido (" + e.Message.Split('.')[0] + "); nenhum atalho seu vale até corrigir."]; }
+        if (map is null) return ["Falta o objeto \"atalhos\"; nenhum atalho seu vale até corrigir."];
+        var seen = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (key, value) in map)
+        {
+            if (Canonical(key) is not { } shortcut) { problems.Add("“" + key + "” não é um atalho que o Numa entende (use, por exemplo, Ctrl+Shift+K)."); continue; }
+            if (seen.TryGetValue(shortcut, out var first)) problems.Add("“" + first + "” e “" + key + "” são a mesma tecla: só a última vale.");
+            else seen[shortcut] = key;
+            var command = value is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<string>(out var c) ? c.Trim() : null;
+            if (command is null) problems.Add("“" + key + "”: o comando precisa ser um texto, como \"ui.workspace\".");
+            else if (command.Length > 0 && !hasCommand(command)) problems.Add("“" + key + "”: o comando “" + command + "” não existe; o atalho não faz nada.");
+        }
+        return problems;
+    }
+
     /// <summary>A shortcut as the keymap writes it (modifiers in the order Mod, Alt, Shift; one-letter keys upper-case), or null.</summary>
     public static string? Canonical(string written)
     {

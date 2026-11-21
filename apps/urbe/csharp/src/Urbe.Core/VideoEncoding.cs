@@ -44,13 +44,14 @@ public static class VideoAudio
             long size = BinaryPrimitives.ReadUInt32LittleEndian(chunk.AsSpan(4));
             if (id == "fmt ")
             {
-                var fmt = new byte[Math.Max(16, size)];
-                if (stream.ReadAtLeast(fmt, (int)size, false) < 16) return null;
+                if (size < 16 || size > stream.Length - stream.Position) return null;
+                var fmt = new byte[16];
+                if (stream.ReadAtLeast(fmt, 16, false) < 16) return null;
                 format = BinaryPrimitives.ReadUInt16LittleEndian(fmt);
                 channels = BinaryPrimitives.ReadUInt16LittleEndian(fmt.AsSpan(2));
                 rate = BinaryPrimitives.ReadInt32LittleEndian(fmt.AsSpan(4));
                 bits = BinaryPrimitives.ReadUInt16LittleEndian(fmt.AsSpan(14));
-                if (size % 2 == 1) stream.ReadByte();
+                stream.Seek(size - 16 + size % 2, SeekOrigin.Current);
             }
             else if (id == "data")
             {
@@ -82,6 +83,36 @@ public static class VideoAudio
         BinaryPrimitives.WriteUInt32LittleEndian(h.AsSpan(40), (uint)Math.Min(uint.MaxValue, dataBytes));
         stream.Write(h);
     }
+
+    /// <summary>
+    /// CST-172: the shape of a sound as one line of blocks (▁▂▃▄▅▆▇█), the loudest moment of each slice: enough to see
+    /// where the voice speaks and where the music is quiet, read a slice at a time from a PCM16 WAV.
+    /// </summary>
+    public static string Waveform(Stream wav, int slices = 40)
+    {
+        if (ReadWavInfo(wav) is not { } info || info.Frames == 0 || slices <= 0) return "";
+        const string Levels = "▁▂▃▄▅▆▇█";
+        var peaks = new int[slices];
+        long per = Math.Max(1, info.Frames / slices);
+        var buffer = new byte[64 * 1024 - 64 * 1024 % (info.Channels * 2)];
+        wav.Position = info.DataOffset;
+        int bytesPerFrame = info.Channels * 2;
+        long frame = 0;
+        int read;
+        while (frame < info.Frames && (read = wav.Read(buffer, 0, (int)Math.Min(buffer.Length, (info.Frames - frame) * bytesPerFrame))) > 0)
+        {
+            for (int i = 0; i + 1 < read; i += 2)
+            {
+                int slice = (int)Math.Min(slices - 1, (frame + i / bytesPerFrame) / per);
+                peaks[slice] = Math.Max(peaks[slice], Math.Abs((int)BinaryPrimitives.ReadInt16LittleEndian(buffer.AsSpan(i))));
+            }
+            frame += read / bytesPerFrame;
+        }
+        return Shape(peaks, Levels);
+    }
+
+    private static string Shape(int[] peaks, string levels) =>
+        string.Concat(peaks.Select(p => levels[Math.Min(levels.Length - 1, p * levels.Length / 32768)]));
 
     /// <summary>
     /// The soundtrack: every clip (a PCM16 WAV of any rate and channels) placed at its start, trimmed, scaled by its
@@ -136,14 +167,20 @@ public static class VideoAudio
             return BinaryPrimitives.ReadInt16LittleEndian(raw.AsSpan((int)(k * info.Channels + c) * 2)) / 32768f;
         }
         var volume = (float)clip.Volume;
+        // where the clip really ends (its length, or the file's end), for the fade out
+        long audibleEnd = Math.Min(clipEnd, clipStart + (long)Math.Floor((info.Frames - trim) / ratio));
+        double fadeIn = clip.FadeIn * Rate, fadeOut = clip.FadeOut * Rate;
         for (long o = from; o < to; o++)
         {
+            float gain = volume;
+            if (fadeIn > 0 && o - clipStart < fadeIn) gain *= (float)((o - clipStart) / fadeIn);
+            if (fadeOut > 0 && audibleEnd - o < fadeOut) gain *= (float)Math.Max(0, (audibleEnd - o) / fadeOut);
             double s = trim + (o - clipStart) * ratio;
             long i0 = (long)Math.Floor(s);
             float f = (float)(s - i0);
             int index = (int)(o - at) * Channels;
             for (int c = 0; c < Channels; c++)
-                mix[index + c] += volume * (Sample(i0, c) * (1 - f) + Sample(i0 + 1, c) * f);
+                mix[index + c] += gain * (Sample(i0, c) * (1 - f) + Sample(i0 + 1, c) * f);
         }
     }
 }

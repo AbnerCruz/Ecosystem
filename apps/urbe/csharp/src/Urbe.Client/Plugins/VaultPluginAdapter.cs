@@ -118,6 +118,9 @@ public sealed class VaultPluginAdapter(VaultPluginSpec spec, string hash) : IUrb
         public string? OpenNotePath => api.OpenNotePath;
         public string? LoadData(string key) => api.GetData(key);
         public void SaveData(string key, string json) => api.SetData(key, json);
+        public Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin, bool structured = false) =>
+            api.AskAgentAsync(agentId, task, scope, structured);
+        public bool Exists(string path) => api.SourceExists(path);
     }
 
     // ---------------------------------------------------------------- the panel's items
@@ -154,7 +157,7 @@ public sealed class VaultPluginAdapter(VaultPluginSpec spec, string hash) : IUrb
                 var primary = PluginScriptTruthy(it["destaque"]);
                 var b = new Button
                 {
-                    Height = 36, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(10), FontSize = 13, FontWeight = FontWeight.SemiBold,
+                    Height = 36, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(10), FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight,
                     Background = UrbeTheme.Brush(primary ? UrbeTheme.Accent : UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(primary ? "#ffffff" : UrbeTheme.Text),
                     BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(primary ? 0 : 1), VerticalContentAlignment = VerticalAlignment.Center
                 };
@@ -206,7 +209,7 @@ public sealed class VaultPluginAdapter(VaultPluginSpec spec, string hash) : IUrb
                     for (int i = 0; i < Math.Min(list.Count, 500); i++)
                     {
                         var vars = new Dictionary<string, object?>(extra ?? [], StringComparer.Ordinal) { ["item"] = list[i], ["indice"] = (double)i };
-                        var text = new TextBlock { Text = rt.Text(itemSrc, vars), TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
+                        var text = new TextBlock { Text = rt.Text(itemSrc, vars), TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
                         if (acts is null) { host.Children.Add(text); continue; }
                         var b = new Button { Content = text, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0, 2), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left };
                         b.Click += async (_, _) => await rt.RunAsync(acts, vars);

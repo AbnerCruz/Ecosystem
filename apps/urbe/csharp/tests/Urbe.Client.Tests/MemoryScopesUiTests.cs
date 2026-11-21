@@ -19,8 +19,6 @@ public sealed partial class HeadlessUiTests
         var before = UrbeApp.AssistantFolder;
         UrbeApp.AssistantFolder = Path.Combine(folder, "assistente");
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(folder, "sel.json")));
-        var window = new Window { Width = 412, Height = 900, Content = view };
-        window.Show();
         try
         {
             await view.OpenVaultAsync();
@@ -28,19 +26,20 @@ public sealed partial class HeadlessUiTests
             panel.Open();
             Dispatcher.UIThread.RunJobs();
             var name = ((IAssistantApp)view).VaultName;
-            var key = name.Length > 0 ? name : "Urbe";
+            var key = name.Length > 0 ? name : "Numa";
             panel.Config.CustomAgents.Add(new("two", "Revisora", "sparkle", "", "read", false, ""));
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m1", Text = "Prefere respostas curtas", Kind = "preference", Scope = "agent", AgentId = "geral", Vault = key });
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m2", Text = "O projeto se chama Droerni", Kind = "fact", Scope = "vault", Vault = key });
             panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "m3", Text = "Revisar só ortografia", Kind = "procedure", Scope = "agent", AgentId = "two", Vault = key });
             panel.ShowSettings();
-            ClickNamed(panel, "Configurações: Contexto");
+            ClickNamed(panel, "Configurações: Agentes");
+            ClickButtonWithText(panel, "Configurar");
             ClickButtonWithText(panel, "Gerenciar memórias");
             Dispatcher.UIThread.RunJobs();
             List<string?> Texts() => [.. panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text)];
             Assert.Contains(Texts(), t => t?.StartsWith("Preferência · só Assistente (privada) · ", StringComparison.Ordinal) == true);
             Assert.Contains(Texts(), t => t?.StartsWith("Fato · compartilhada · todos os agentes deste vault · ", StringComparison.Ordinal) == true);
-            Assert.Contains(Texts(), t => t?.StartsWith("Procedimento · só Revisora (privada) · ", StringComparison.Ordinal) == true);
+            Assert.DoesNotContain("Revisar só ortografia", Texts());
 
             ClickButtonWithText(panel, "Privadas de Assistente");
             Dispatcher.UIThread.RunJobs();
@@ -54,7 +53,7 @@ public sealed partial class HeadlessUiTests
             Assert.DoesNotContain("Prefere respostas curtas", Texts());
             return true;
         }
-        finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); } catch (IOException) { } }
+        finally { UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); } catch (IOException) { } }
     }, CancellationToken.None));
     [Fact]
     public async Task Memory_AnAgentsPrivateMemoriesGoWithItAndSharedOnesStay() => Assert.True(await Session.Dispatch<bool>(async () =>

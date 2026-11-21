@@ -21,7 +21,7 @@ public sealed class TutorialPanel : Border
     private readonly TextBox _search = new()
     {
         PlaceholderText = "Buscar no tutorial",
-        FontSize = 15,
+        FontSize = UrbeTokens.Type.Callout.Size,
         MinHeight = 40,
         CornerRadius = new CornerRadius(12),
         Margin = new Thickness(16, 0, 16, 8),
@@ -189,7 +189,7 @@ public sealed class TutorialPanel : Border
             label.Children.Add(new TextBlock { Text = TitleOf(a), FontSize = 15, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis });
             // a search shows where the words are
             if (q.Length > 0 && Excerpt(a.Content, q) is { } excerpt)
-                label.Children.Add(new TextBlock { Text = excerpt, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2 });
+                label.Children.Add(new TextBlock { Text = excerpt, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2 });
             var row = new Button
             {
                 Content = label,
@@ -207,7 +207,7 @@ public sealed class TutorialPanel : Border
         {
             var copy = new Button
             {
-                Content = new TextBlock { Text = "Copiar o tutorial para o vault, como notas", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap },
+                Content = new TextBlock { Text = "Copiar o tutorial para o vault, como notas", FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap },
                 Margin = new Thickness(12, 24, 12, 0), Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
                 Background = Brushes.Transparent, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1)
             };

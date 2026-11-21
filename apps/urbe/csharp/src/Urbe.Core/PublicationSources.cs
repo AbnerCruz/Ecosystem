@@ -70,7 +70,8 @@ public sealed class PublicationSourceCatalog : IDisposable
         if (document is null || document.Id != source.DocumentId || !ArtifactModel.IsNote(document.Path))
             return null;
 
-        var text = document.Content;
+        // Authorship belongs to the source note. The publication reads the clean Markdown for rendering and export.
+        var text = AiAuthorship.Strip(document.Content);
         if (!string.IsNullOrEmpty(source.Fragment))
         {
             var fragment = source.Fragment.Trim().TrimStart('#');

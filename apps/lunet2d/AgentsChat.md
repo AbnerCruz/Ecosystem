@@ -807,3 +807,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Evidência: commits 5ebbacc e fdd486e, handoff docs/handoffs/lunet-511-filename-search-2026-11-17.md. Head anterior deccf69 passou consistency, lunet2d-ci, lunet2d-ui-screens e lunet2d-release; CI do novo head ainda sem workflow retornado.
 - Bloqueios: .NET local não executado, DEVICE Android 13 pendente, Studios globais editáveis ainda não concluídos.
 - Próximo passo: validar CI do novo head e implementar edição autônoma sem projeto; sem merge forçado nem mudança de estágio.
+
+### 20261116-chatgpt-lunet512-population-01 — 2026-11-16 (America/Sao_Paulo) — ChatGPT → próximos agentes/integrador — pronto para revisão
+- Item: LUNET-512 — popular Explorar. Base main `54cdca1d`; branch `feat/lunet-512-populate-reference-catalog-20261116`; somente `AbnerCruz/Ecosystem/apps/lunet2d`.
+- Auditoria: 12 referências já funcionavam offline com filtros, favoritos e notas; a interface criava todos os cards de uma vez. PRs #959 (link externo) e #960 (referências curadas aposentadas) estavam abertos e não foram alterados.
+- Implementação: 119 novas fichas textuais educativas, agora 131 no catálogo, distribuídas por gêneros, perspectivas, estilos e mecânicas. Links curados abrem busca de gameplay por toque; nenhum vídeo ou imagem protegida é distribuído no APK. Movimento aéreo e montarias pesquisáveis (Owlboy/Terraria). Android carrega 18 cards inicialmente com botão Mostrar mais.
+- Testes: `InspirationCatalogPopulationTests.cs` protege contagem/IDs, conteúdo, busca combinada e persistência de favoritos/notas de versões anteriores. Testes .NET e CI ainda pendentes neste ambiente sem SDK; não alegar que passaram.
+- Arquivos/documentos: `InspirationCatalogExpansion.cs`, `InspirationLibrary.cs`, `MainActivity.Inspiration.cs`, testes, `docs/guides/inspiracao.md`, ROADMAP, CHANGELOG e `HO-20261116-lunet-512-catalog-population.json`.
+- Próximos passos: inspecionar CI, reconciliar com #959/#960 e validar moto g32 Android 13 (incluindo pesquisa/links sem navegador, notas, IME, fluidez). Sem DEVICE nem APK/release confirmada.

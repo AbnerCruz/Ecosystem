@@ -35,7 +35,7 @@ public sealed class PagesPanel : Border
             Children =
             {
                 new TextBlock { Text = "Páginas antigas", FontSize = 20, FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
-                new TextBlock { Text = "Arquivos preservados · visualizar e exportar", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
+                new TextBlock { Text = "Arquivos preservados · visualizar e exportar", FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
             }
         };
         var create = new Button
@@ -99,7 +99,7 @@ public sealed class PagesPanel : Border
                     Children =
                     {
                         new TextBlock { Text = pendingCompositions == 1 ? "1 composição da versão anterior" : pendingCompositions + " composições da versão anterior", FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
-                        new TextBlock { Text = "As composições agora são páginas: cada uma vira uma página com as mesmas notas, em Páginas/Composições. O arquivo antigo fica no vault, sem mudança.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) },
+                        new TextBlock { Text = "As composições agora são páginas: cada uma vira uma página com as mesmas notas, em Páginas/Composições. O arquivo antigo fica no vault, sem mudança.", TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) },
                         convert
                     }
                 }
@@ -144,8 +144,8 @@ public sealed class PagesPanel : Border
             Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Spacing = 2,
             Children =
             {
-                new TextBlock { Text = p.Title, FontSize = 16, FontWeight = FontWeight.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
-                new TextBlock { Text = p.Path + " · " + p.Sections + (p.Sections == 1 ? " seção" : " seções"), FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
+                new TextBlock { Text = p.Title, FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                new TextBlock { Text = p.Path + " · " + p.Sections + (p.Sections == 1 ? " seção" : " seções"), FontSize = UrbeTokens.Type.Caption.Size, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }
             }
         };
         var row = new DockPanel();

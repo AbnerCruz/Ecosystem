@@ -33,6 +33,28 @@ public sealed class AssistantWebResearchTests
     { Content = new StringContent(html, Encoding.UTF8, "text/html") };
 
     [Fact]
+    public async Task VideoReferenceAcceptsDirectMediaAndRejectsWebPagesAndPrivateRedirects()
+    {
+        var video = new byte[] { 1, 2, 3 };
+        var handler = new Handler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/watch") return Html("<html>player</html>");
+            if (request.RequestUri.AbsolutePath == "/redirect")
+                return new HttpResponseMessage(HttpStatusCode.Redirect)
+                { Headers = { Location = new Uri("http://127.0.0.1/file.mp4") } };
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            { Content = new ByteArrayContent(video) { Headers = { ContentType = new("video/mp4") } } };
+        });
+        using var web = new AssistantWebSession(Config(), handler: handler, resolver: PublicDns);
+        using var destination = new MemoryStream();
+        await web.DownloadReferenceVideoAsync("https://example.org/file.mp4", destination);
+        Assert.Equal(video, destination.ToArray());
+        await Assert.ThrowsAsync<AiToolException>(() => web.DownloadReferenceVideoAsync("https://example.org/watch", destination));
+        await Assert.ThrowsAsync<AiToolException>(() => web.DownloadReferenceVideoAsync("https://example.org/redirect", destination));
+        Assert.All(handler.Requested, url => Assert.Equal("example.org", url.Host));
+    }
+
+    [Fact]
     public async Task SearchReturnsIndependentResultsDeduplicatedWithProvenanceAndFilters()
     {
         var handler = new Handler(request =>
@@ -250,6 +272,26 @@ public sealed class AssistantWebResearchTests
         using var local = new AssistantWebSession(offline, handler: h, resolver: PublicDns);
         await Assert.ThrowsAsync<AiToolException>(() => local.SearchAsync("não consultar"));
         Assert.Empty(h.Requested);
+    }
+
+    /// <summary>CST-124: a long page read only in part is a partial reading until its end is read; it never goes back.</summary>
+    [Fact]
+    public async Task APageReadInPartIsAPartialReadingUntilItsEndIsRead()
+    {
+        var page = "<html><head><title>Longa</title></head><body><main>" + string.Concat(Enumerable.Range(1, 300).Select(i => "<p>Parágrafo " + i + ".</p>")) + "</main></body></html>";
+        using var web = new AssistantWebSession(Config(), handler: new Handler(_ => Html(page)), resolver: PublicDns);
+        await web.FetchAsync("https://example.org/longa", 1, 100);
+        Assert.Equal("leitura parcial", Assert.Single(web.Sources).Status);
+        await web.FetchAsync("https://example.org/longa", 101, 180);
+        await web.FetchAsync("https://example.org/longa", 281, 180);
+        Assert.Equal("página acessada", Assert.Single(web.Sources).Status);
+        await web.FetchAsync("https://example.org/longa", 1, 10);   // reading a part again does not undo the whole
+        Assert.Equal("página acessada", Assert.Single(web.Sources).Status);
+        // a jump past unread lines leaves it partial
+        using var gap = new AssistantWebSession(Config(), handler: new Handler(_ => Html(page)), resolver: PublicDns);
+        await gap.FetchAsync("https://example.org/longa", 1, 50);
+        await gap.FetchAsync("https://example.org/longa", 200, 180);
+        Assert.Equal("leitura parcial", Assert.Single(gap.Sources).Status);
     }
 
     [Fact]

@@ -35,7 +35,7 @@ public sealed partial class HeadlessUiTests
             await Settle(window, view);
             Assert.True(view.Editor.IsVisible);
             Assert.Equal("Arquivo/Movida.md", view.Editor.Current!.Path);
-            Assert.Contains("movida fora do Urbe", view.Editor.NoticeText ?? "");
+            Assert.Contains("movida fora do Numa", view.Editor.NoticeText ?? "");
             view.Editor.Editor.Text = "# Movida\n\nVai mudar de pasta.\n\nE foi.\n";
             Assert.True(await view.Editor.SaveAsync());
             Assert.Contains("E foi.", File.ReadAllText(Path.Combine(vault, "Arquivo", "Movida.md")));
@@ -48,7 +48,7 @@ public sealed partial class HeadlessUiTests
             Assert.True(await view.RefreshFromDiskAsync());
             await Settle(window, view);
             Assert.True(view.Editor.IsVisible);
-            Assert.Contains("apagada fora do Urbe", view.Editor.NoticeText ?? "");
+            Assert.Contains("apagada fora do Numa", view.Editor.NoticeText ?? "");
             view.Editor.Editor.Text = "# Aberta\n\nTexto.\n\nDigitado depois.\n";
             Assert.True(await view.Editor.SaveAsync());
             await Settle(window, view);

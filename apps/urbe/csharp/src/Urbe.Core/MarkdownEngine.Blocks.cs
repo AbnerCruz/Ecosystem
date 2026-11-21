@@ -59,15 +59,15 @@ public static partial class MarkdownEngine
         for (int i = 0, p = offset; i < lines.Length; p += lines[i].Length + 1, i++) starts[i] = p;
         int EndOf(int i) => starts[i] + lines[i].Length;
         void Add(int from, int to, string kind) => blocks.Add(new MarkdownBlock(Map(starts[from]), Map(EndOf(to)), kind));
-        var fence = new string(Backtick, 3);
-
         for (var i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
-            if (FencePattern().IsMatch(line) || line.StartsWith(fence, StringComparison.Ordinal))
+            char open = '\0';
+            var length = 0;
+            if (Fence(line, ref open, ref length, out _))
             {
                 var j = i + 1;
-                while (j < lines.Length && !(FencePattern().IsMatch(lines[j]) || lines[j].StartsWith(fence, StringComparison.Ordinal))) j++;
+                while (j < lines.Length && !Fence(lines[j], ref open, ref length, out _)) j++;
                 if (j >= lines.Length) j = lines.Length - 1;
                 Add(i, j, "code");
                 i = j;
@@ -106,8 +106,7 @@ public static partial class MarkdownEngine
     }
 
     /// <summary>A line that opens or closes fenced code for <see cref="SplitBlocks"/>.</summary>
-    internal static bool IsFenceLine(string line) =>
-        FencePattern().IsMatch(line) || line.StartsWith(new string(Backtick, 3), StringComparison.Ordinal);
+    internal static bool IsFenceLine(string line) => CodeFenceScanPattern().IsMatch(line);
 
     private static bool IsListLine(string line) =>
         TaskPattern().IsMatch(line) || UnorderedPattern().IsMatch(line) || OrderedPattern().IsMatch(line);

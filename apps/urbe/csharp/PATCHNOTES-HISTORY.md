@@ -2,6 +2,59 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.67 — 21/11/2026
+- Narração por provedor, remoção do motor de voz baixável, catálogo de vídeo remoto e configuração de memória, idioma e permissões na ficha do agente.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.67
+
+## 2.0.0-beta.66 — 21/11/2026
+- Publicações são entregues por link no chat, com cenas programadas, prévia com áudio e referência visual por quadros. Seleção única de fontes e perfis de agente com herança.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.66
+
+## 2.0.0-beta.65 — 21/11/2026
+- Cenas JavaScript editáveis no Estúdio, transições entre cenas, vozes naturais locais (Kokoro e Piper), tela Dados do aplicativo e melhorias na biblioteca de Flashcards.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.65
+
+## 2.0.0-beta.64 — 21/11/2026
+- Flashcards nativos com biblioteca própria (#1005) e movimento procedural nos vídeos: cópias por fórmula, texto letra a letra, brilho/sombra/desfoque/gradiente, recorte, componentes, câmera por cena e escolha da voz da narração.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.64
+
+## 2.0.0-beta.63 — 20/11/2026
+- Painel de etapas sem travar com muitas etapas (#1000) e create_video: o vídeo inteiro numa chamada.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.63
+
+## 2.0.0-beta.62 — 20/11/2026
+- O app passa a se chamar Numa (DEC-0060); pacote, pastas e dados continuam os mesmos.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.62
+
+## 2.0.0-beta.61 — 20/11/2026
+- Temas de vídeo prontos, cenas compostas (abertura, tópico, comparação, número, fórmula, gráfico, citação), cena pronta no Estúdio e erros de publicação que dizem o que corrigir.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.61
+
+## 2.0.0-beta.60 — 20/11/2026
+- Painel de etapas da IA com X fixo e páginas (sem travar com centenas de etapas), resumo do raciocínio à vista, e a última nota e conversa voltam só na mesma sessão de uso.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.60
+
+## 2.0.0-beta.59 — 19/11/2026
+- Integrais certas (a de (1+cos x)² em [0, 2π] dava 8π/3), sem limite de passos, resposta cortada continua sozinha, o Assistente pergunta o formato antes de produzir e monta vídeos cena por cena.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.59
+
+## 2.0.0-beta.58 — 19/11/2026
+- O Assistente entrega o vídeo pronto (narração, MP4 e legendas no vault), gráficos e fórmulas aparecem nos vídeos, o selo da IA não aparece na tela e não há pedido de permissão a cada quadro; curvas, traços que se desenham e grupos no motor.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.58
+
+## 2.0.0-beta.57 — 18/11/2026
+- Revisão de vídeo cena por cena pela IA, edição por toque e linha do tempo no Estúdio, narração que acompanha a cena, fontes da publicação ordenáveis e exportação conferida.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.57
+
+## 2.0.0-beta.56 — 18/11/2026
+- Barras de progresso com −/+, checklist por seção, leitura por páginas, notas de rodapé, marcação de instantes no YouTube, modo leitura e salvar página da web como nota.
+- Revisão de formulários, comentários, adaptações no Estúdio, conversão de páginas em publicações e memória dos agentes. Corrigido o fechamento ao anexar PDFs ao Assistente.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.56
+
+## 2.0.0-beta.55 — 15/11/2026
+- O app é a pasta 1:1 (pastas e notas mudadas fora aparecem), gravações sem reler o vault, Restaurar tudo, multi-seleção com arquivos, Ordenar notas, botões que avisam quando falham.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.55
+
 ## 2.0.0-beta.54 — 15/11/2026
 - Selecionar, copiar, recortar, colar e selecionar tudo no celular em todo o app; alças de seleção entre blocos no Visual.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.54

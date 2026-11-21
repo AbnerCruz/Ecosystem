@@ -1,0 +1,7 @@
+{
+  "product": "urbe",
+  "version": "2.0.0-beta.65",
+  "head": "a305f899106357f0fb9faa7d1431be2f7906fe74",
+  "workflow": "urbe-csharp-mobile-release.yml",
+  "tag": "urbe-csharp-v2.0.0-beta.65"
+}

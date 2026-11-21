@@ -33,7 +33,7 @@ public static class OdpSlides
         try
         {
             if (archive.Contains("META-INF/manifest.xml") && archive.Text("META-INF/manifest.xml").Contains("encryption-data", StringComparison.Ordinal))
-                throw new NotSupportedException("Esta apresentação está protegida por senha; o Urbe não a lê. Abra em outro app.");
+                throw new NotSupportedException("Esta apresentação está protegida por senha; o Numa não a lê. Abra em outro app.");
             if (!archive.Contains("content.xml")) throw new InvalidDataException("O pacote não tem content.xml; não é uma apresentação OpenDocument.");
             var content = archive.Xml("content.xml").Root ?? throw new InvalidDataException("Apresentação vazia.");
             var stylesRoot = archive.Contains("styles.xml") ? archive.Xml("styles.xml").Root : null;

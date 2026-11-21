@@ -32,7 +32,7 @@ public sealed class ZoomImageView : Grid
         _scroll = new ScrollViewer { Content = _image, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         _percent = new TextBlock { Text = "100%", VerticalAlignment = VerticalAlignment.Center,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), FontSize = 12 };
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), FontSize = UrbeTokens.Type.Caption.Size };
         var actions = new WrapPanel { Children = { Action("−", () => SetZoom(Zoom / 1.25)), _percent,
             Action("+", () => SetZoom(Zoom * 1.25)), Action("Ajustar", () => { SetZoom(1); _scroll.Offset = default; }) } };
         Grid.SetRow(_scroll, 1);

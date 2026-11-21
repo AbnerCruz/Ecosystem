@@ -29,6 +29,13 @@ public interface IStudyWebView : IReaderTextSelection
     void GoBack();
     void GoForward();
     void ReloadPage();
+    /// <summary>The page as loaded now (its HTML), read only when the person asks for Modo leitura or to keep it; "" when unknown.</summary>
+    Task<string> PageHtmlAsync() => Task.FromResult("");
+}
+
+public static class StudyPageScripts
+{
+    public const string Html = "document.documentElement ? document.documentElement.outerHTML : ''";
 }
 
 public static class StudyWebViews

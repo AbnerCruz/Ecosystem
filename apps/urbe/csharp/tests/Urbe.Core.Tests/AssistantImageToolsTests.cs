@@ -9,7 +9,9 @@ namespace Urbe.Core.Tests;
 /// <summary>UC-63: generate_image — the provider draws (OpenAI images API, base64), the vault keeps a new file, the note shows it.</summary>
 public sealed class AssistantImageToolsTests
 {
-    private static readonly byte[] Png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13];
+    // signature, IHDR (1×1, 8-bit RGBA) and IEND: what the provenance goes after
+    private static readonly byte[] Png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, (byte)'I', (byte)'H', (byte)'D', (byte)'R',
+        0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 0x1f, 0x15, 0xc4, 0x89, 0, 0, 0, 0, (byte)'I', (byte)'E', (byte)'N', (byte)'D', 0xae, 0x42, 0x60, 0x82];
 
     private sealed class Answer(int status, string body) : HttpMessageHandler
     {
@@ -187,6 +189,8 @@ public sealed class AssistantImageToolsTests
         private readonly DocumentStore _documents = new();
         public Dictionary<string, byte[]> Saved { get; } = new(StringComparer.OrdinalIgnoreCase);
         public bool CanDraw { get; set; } = true;
+        public (string Model, string Provider) Drawer => ("modelo-teste", "Provedor");
+        public string? PriceQuote => "US$ 0,04/imagem";
         public Host() => _documents.Upsert(new DocumentInput { Id = "doc_1", Path = "Lia.md", Content = "# Lia\n" });
         public DocumentStore Documents => _documents;
         public KnowledgeIndex Knowledge => new(_documents);
@@ -215,10 +219,16 @@ public sealed class AssistantImageToolsTests
         Assert.Equal("write", tool.Access);   // asked for approval like every tool that writes
         var input = new JsonObject { ["prompt"] = "Retrato da Lia, aquarela", ["size"] = "1024x1536", ["note"] = "Lia" };
         Assert.Contains("Imagens/", tool.Preview!(input, host).Note);
+        Assert.Contains("Preço de referência: US$ 0,04/imagem", tool.Preview!(input, host).Note);
         var output = await tool.Run(input, host);
         var (path, bytes) = Assert.Single(host.Saved);
         Assert.Equal("Imagens/Retrato da Lia aquarela.png", path);
-        Assert.Equal(Png, bytes);
+        // CST-082: the file says it was generated, by which model, from what and when; the picture itself is the same
+        var made = ImageProvenance.Read(bytes)!;
+        Assert.Equal(("modelo-teste", "Provedor", "Retrato da Lia, aquarela"), (made.Model, made.Provider, made.Prompt));
+        Assert.True(DateTimeOffset.Now - made.Created < TimeSpan.FromMinutes(1));
+        Assert.Contains("gerado por IA", output.Content);
+        Assert.Equal("Imagens/Retrato da Lia aquarela.png", AssistantImageTools.SavedImagePath(output.Content));
         Assert.Equal("# Lia\n\n![[Imagens/Retrato da Lia aquarela.png]]\n", host.Documents.Get("Lia.md")!.Content);
         Assert.Single(output.Changes!);
 

@@ -26,7 +26,7 @@ public sealed class AssistantGuideToolsTests
     public void AQueryBringsTheRelevantSections()
     {
         var answer = AssistantGuideTools.Answer(Articles, "como incorporar uma imagem na nota", null);
-        Assert.StartsWith("Guia do Urbe — seções", answer);
+        Assert.StartsWith("Guia do Numa — seções", answer);
         Assert.Contains("## Editor › Incorporar", answer);
         Assert.Contains("![[foto.png]]", answer);
         var boxes = AssistantGuideTools.Answer(Articles, "caixa dentro de caixa", null);

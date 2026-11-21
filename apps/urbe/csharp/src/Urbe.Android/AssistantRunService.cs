@@ -16,7 +16,7 @@ namespace Urbe.AndroidHost;
 /// </summary>
 [Service(Exported = false, ForegroundServiceType = ForegroundService.TypeSpecialUse)]
 [MetaData("android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE",
-    Value = "User-initiated local AI agent execution and review of vault artifacts while the Urbe UI is backgrounded")]
+    Value = "User-initiated local AI agent execution and review of vault artifacts while the Numa UI is backgrounded")]
 public sealed class AssistantRunService : Service
 {
     private const string ChannelActive = "urbe-ai-active";
@@ -138,7 +138,7 @@ public sealed class AssistantRunService : Service
             AssistantActivityKind.QuestionNeeded => run.Agent + " tem uma pergunta",
             AssistantActivityKind.Completed => run.Agent + " concluiu a tarefa",
             AssistantActivityKind.Failed => run.Agent + " encontrou um problema",
-            _ => "Assistente do Urbe"
+            _ => "Assistente do Numa"
         };
         var description = run.Kind switch
         {
