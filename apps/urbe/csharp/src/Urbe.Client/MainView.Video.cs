@@ -499,8 +499,23 @@ public sealed partial class MainView
         var items = voices.Select(v => new DialogItem(Label(v) + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""), Detail: Detail(v)))
             .Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
         items.Add(new DialogItem("Licenças das vozes naturais", Detail: "O que cada voz baixada usa e sob qual licença"));
+        var installed = Urbe.Core.Voice.NeuralVoices.Models.Where(m => NeuralSpeech.Shared?.IsInstalled(m) == true).ToList();
+        if (installed.Count > 0) items.Add(new DialogItem("Apagar vozes baixadas", Detail: "Libera o espaço; podem ser baixadas de novo", Danger: true));
         if (await Dialogs.ChooseAsync("Voz da narração", items, "Vale para narrar vídeos, podcasts e os vídeos do Assistente, neste aparelho.") is not int pick) return;
-        if (pick == items.Count - 1) { await ShowVoiceLicencesAsync(); return; }
+        int licences = voices.Count + 1;
+        if (pick == licences) { await ShowVoiceLicencesAsync(); return; }
+        if (pick == licences + 1)
+        {
+            var which = await Dialogs.ChooseAsync("Apagar vozes baixadas", installed.Select(m => new DialogItem(m.Folder, Detail: Size(m.Bytes) + " baixados")).ToList());
+            if (which is int w && NeuralSpeech.Shared is { } shared)
+            {
+                shared.Remove(installed[w]);
+                if (Urbe.Core.Voice.NeuralVoices.Find(PlatformAudio.PreferredVoice) is { } current && current.Model == installed[w].Id)
+                    PlatformAudio.PreferredVoice = null;   // its voice is gone: back to the device's
+                ShowLifeNotice("Voz apagada.");
+            }
+            return;
+        }
         var before = PlatformAudio.PreferredVoice;
         var picked = pick == 0 ? null : voices[pick - 1];
         // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
