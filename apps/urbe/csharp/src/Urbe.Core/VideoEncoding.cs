@@ -44,13 +44,14 @@ public static class VideoAudio
             long size = BinaryPrimitives.ReadUInt32LittleEndian(chunk.AsSpan(4));
             if (id == "fmt ")
             {
-                var fmt = new byte[Math.Max(16, size)];
-                if (stream.ReadAtLeast(fmt, (int)size, false) < 16) return null;
+                if (size < 16 || size > stream.Length - stream.Position) return null;
+                var fmt = new byte[16];
+                if (stream.ReadAtLeast(fmt, 16, false) < 16) return null;
                 format = BinaryPrimitives.ReadUInt16LittleEndian(fmt);
                 channels = BinaryPrimitives.ReadUInt16LittleEndian(fmt.AsSpan(2));
                 rate = BinaryPrimitives.ReadInt32LittleEndian(fmt.AsSpan(4));
                 bits = BinaryPrimitives.ReadUInt16LittleEndian(fmt.AsSpan(14));
-                if (size % 2 == 1) stream.ReadByte();
+                stream.Seek(size - 16 + size % 2, SeekOrigin.Current);
             }
             else if (id == "data")
             {

@@ -202,3 +202,16 @@ Referências visuais de vídeo usam os blocos de imagem existentes na mensagem.
 O Numa guarda uma amostra de quadros com instantes para a conversa. A mídia
 anexada continua na pasta privada de fontes. Downloads de links públicos
 diretos são temporários e descartados após preparar as imagens.
+
+## Voz do provedor e ficha do agente (beta.67)
+
+A escolha de voz em `agentMedia.voice` e `video.narrationVoice` usa uma
+referência `speech:` a ID do provedor, modelo, voz e formato. As credenciais
+continuam na conexão privada. Referências anteriores a vozes locais deixam
+de oferecer síntese. As faixas WAV já gravadas continuam legíveis.
+`agentMedia.captureMemory` e `agentMedia.replyLanguage` são opcionais e
+herdam do perfil geral, com as preferências globais anteriores como fallback.
+`agentDeviceAccess` guarda as permissões individualizadas. Ausência de
+entrada preserva os padrões anteriores de acesso ao aparelho.
+Os pacotes antigos em `vozes/` podem ser removidos explicitamente em Dados
+do aplicativo. A remoção atua só na pasta privada de modelos.

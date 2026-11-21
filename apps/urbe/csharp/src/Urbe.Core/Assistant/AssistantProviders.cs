@@ -805,6 +805,25 @@ public sealed class AssistantProviders
     /// <summary>CST-173: the generative video models this app knows how to call, by provider preset.</summary>
     public static string? VideoModel(string preset) => preset == "openai" ? "sora-2" : null;
 
+    public static bool SupportsVideo(AiProviderConfig cfg) => cfg.Preset is "openai" or "openrouter";
+
+    public async Task<IReadOnlyList<(string Id, string Name)>> ListVideoModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
+    {
+        if (!SupportsVideo(cfg)) return [];
+        if (cfg.Preset != "openrouter")
+            return (await ListModelsAsync(cfg, cancel)).Where(m =>
+                m.OutputModalities?.Contains("video", StringComparer.OrdinalIgnoreCase) == true ||
+                m.Id.StartsWith("sora-", StringComparison.OrdinalIgnoreCase)).Select(m => (m.Id, m.Name)).ToList();
+
+        var provider = Resolve(cfg);
+        var url = Join(provider.BaseUrl, "/videos/models");
+        using var response = await RequestAsync(provider, url, () => Get(url, OpenAiHeaders(provider)), cancel);
+        var catalog = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel));
+        return (catalog?["data"] as JsonArray ?? []).OfType<JsonObject>()
+            .Where(m => m["supported_durations"] is JsonArray && (string?)m["id"] is { Length: > 0 })
+            .Select(m => ((string)m["id"]!, (string?)m["name"] ?? (string)m["id"]!)).ToList();
+    }
+
     /// <summary>How long a generation may take before the Urbe stops waiting (it is cancelled at the provider too).</summary>
     public static TimeSpan VideoTimeout { get; set; } = TimeSpan.FromMinutes(20);
 
@@ -817,13 +836,17 @@ public sealed class AssistantProviders
         IProgress<int>? progress = null, CancellationToken cancel = default)
     {
         var p = Resolve(cfg);
-        if (VideoModel(p.Preset) is not { } preset) throw new AiProviderException(p.Name + " não gera vídeos pela API configurada. Use um provedor OpenAI.");
+        if (!SupportsVideo(cfg)) throw new AiProviderException(p.Name + " não gera vídeos pela API configurada.");
+        bool openRouter = p.Preset == "openrouter";
         if (p.ApiKey.Length == 0) throw new AiProviderException("Configure a chave de " + p.Name + " nas configurações do Assistente.");
         if (string.IsNullOrWhiteSpace(prompt)) throw new AiProviderException("Descreva o vídeo.");
-        var m = string.IsNullOrWhiteSpace(model) ? preset : model.Trim();
+        var m = string.IsNullOrWhiteSpace(model) ? VideoModel(p.Preset) : model.Trim();
+        if (m is null) throw new AiProviderException("Selecione um modelo de vídeo do provedor.");
         var root = Join(p.BaseUrl, "/videos");
         HttpRequestMessage Create()
         {
+            if (openRouter) return Post(root, new JsonObject { ["model"] = m, ["prompt"] = prompt,
+                ["duration"] = seconds, ["size"] = size }, OpenAiHeaders(p));
             var request = new HttpRequestMessage(HttpMethod.Post, root)
             {
                 Content = new MultipartFormDataContent
@@ -841,17 +864,17 @@ public sealed class AssistantProviders
             try { j = JsonNode.Parse(json); }
             catch (JsonException) { throw new AiProviderException("O provedor devolveu uma resposta que não é JSON."); }
             var id = (string?)j?["id"] ?? throw new AiProviderException("O provedor não devolveu o trabalho de vídeo.");
-            return (id, (string?)j?["status"] ?? "", j?["progress"] is JsonValue pr && pr.TryGetValue<int>(out var n) ? n : 0, (string?)j?["error"]?["message"]);
+            return (id, (string?)j?["status"] ?? "", j?["progress"] is JsonValue pr && pr.TryGetValue<int>(out var n) ? n : 0, j?["error"] is JsonObject error ? (string?)error["message"] : (string?)j?["error"]);
         }
         (string Id, string Status, int Progress, string? Error) job;
         using (var created = await RequestAsync(p, root, Create, cancel)) job = Job(await created.Content.ReadAsStringAsync(cancel));
         var started = DateTime.UtcNow;
         try
         {
-            while (job.Status is "queued" or "in_progress")
+            while (job.Status is "pending" or "queued" or "in_progress" or "processing")
             {
                 progress?.Report(job.Progress);
-                if (DateTime.UtcNow - started > VideoTimeout) throw new AiProviderException("O vídeo passou de " + (int)VideoTimeout.TotalMinutes + " minutos sem ficar pronto; o pedido foi cancelado no provedor.");
+                if (DateTime.UtcNow - started > VideoTimeout) throw new AiProviderException("O vídeo passou de " + (int)VideoTimeout.TotalMinutes + " minutos sem ficar pronto. A espera foi encerrada.");
                 await _delay(TimeSpan.FromSeconds(5), cancel);
                 var at = root + "/" + Uri.EscapeDataString(job.Id);
                 using var state = await RequestAsync(p, at, () => Get(at, OpenAiHeaders(p)), cancel);
@@ -866,7 +889,7 @@ public sealed class AssistantProviders
             if (Mp4Inspection.Read(check) is not { Video: not null }) throw new AiProviderException("O provedor devolveu algo que não é um vídeo MP4.");
             return bytes;
         }
-        catch (Exception e) when (e is OperationCanceledException || e is AiProviderException && job.Status is "queued" or "in_progress")
+        catch (Exception e) when (!openRouter && (e is OperationCanceledException || e is AiProviderException && job.Status is "queued" or "in_progress"))
         {
             // stop the paid job at the provider; whatever happens here, the cancellation is what the person sees
             try
@@ -881,7 +904,6 @@ public sealed class AssistantProviders
         }
     }
 
-    /// <summary>listModels(cfg).</summary>
     public static bool SupportsSpeech(AiProviderConfig provider) =>
         provider.Preset is "openai" or "openrouter" or "custom" && Resolve(provider).Kind == "openai" &&
         Uri.TryCreate(Resolve(provider).BaseUrl, UriKind.Absolute, out var uri) && uri.Scheme == "https" && !uri.IsLoopback;
@@ -940,20 +962,20 @@ public sealed class AssistantProviders
             ["input"] = text, ["response_format"] = choice.Format };
         using var response = await RequestAsync(provider, url, () => Post(url, input, OpenAiHeaders(provider)), cancel);
         var bytes = await response.Content.ReadAsByteArrayAsync(cancel);
+        using var stream = new MemoryStream(bytes, writable: false);
+        if (VideoAudio.ReadWavInfo(stream) is { Frames: > 0 }) return bytes;
+        var mime = response.Content.Headers.ContentType?.MediaType;
         if (choice.Format == "pcm" && KnownPcmRate(choice.Model) is > 0 and var rate &&
-            bytes.Length > 0 && bytes.Length % 2 == 0)
+            bytes.Length > 0 && bytes.Length % 2 == 0 &&
+            mime is "audio/pcm" or "audio/x-pcm" or "audio/raw" or "application/octet-stream")
         {
             using var wav = new MemoryStream();
             VideoAudio.WriteWavHeader(wav, 1, rate, bytes.Length);
             wav.Write(bytes);
             return wav.ToArray();
         }
-        if (choice.Format == "mp3" && response.Content.Headers.ContentType?.MediaType == "audio/mpeg" && bytes.Length > 0)
-            return bytes;
-        using var stream = new MemoryStream(bytes, writable: false);
-        if (VideoAudio.ReadWavInfo(stream) is not { Frames: > 0 })
-            throw new AiProviderException("O provedor não retornou uma faixa WAV PCM válida.");
-        return bytes;
+        if (choice.Format == "mp3" && mime == "audio/mpeg" && bytes.Length > 0) return bytes;
+        throw new AiProviderException("O provedor não retornou áudio no formato esperado.");
     }
 
     public Task<List<AiModelInfo>> ListModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)

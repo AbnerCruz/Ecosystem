@@ -1098,6 +1098,13 @@ public sealed partial class AssistantPanel
             SaveConfig();
             ShowMemoryManager(agentId);
         }));
+        if (agentId != "geral" && c.AgentMedia.GetValueOrDefault(agentId)?.CaptureMemory is not null)
+            head.Children.Add(TextButton("Herdar registro de tarefas do Assistente padrão", () =>
+            {
+                c.AgentMedia[agentId] = c.AgentMedia[agentId] with { CaptureMemory = null };
+                SaveConfig();
+                ShowMemoryManager(agentId);
+            }));
         body.Children.Add(head);
         var search = new TextBox { PlaceholderText = "Pesquisar fatos, decisões, procedimentos ou fontes…",
             MinHeight = 44 };
@@ -1798,7 +1805,7 @@ public sealed partial class AssistantPanel
         body.Children.Add(Section("Vídeo generativo", Hint(videoChoice + " · clipes externos cobrados pelo provedor."),
             TextButton("Selecionar provedor e modelo de vídeo", async () =>
             {
-                var providers = _cfg.Providers.Where(p => AssistantProviders.VideoModel(p.Preset) is not null &&
+                var providers = _cfg.Providers.Where(p => AssistantProviders.SupportsVideo(p) &&
                     !string.IsNullOrWhiteSpace(p.ApiKey)).ToList();
                 var choices = providers.Select(p => new DialogItem(p.Name ?? p.Id)).Prepend(new DialogItem("Desativar vídeo generativo")).ToList();
                 if (await _app.Dialogs.ChooseAsync("Vídeo generativo deste agente", choices) is not int index) return;
@@ -1806,9 +1813,7 @@ public sealed partial class AssistantPanel
                 var videoProvider = providers[index - 1];
                 try
                 {
-                    var models = (await Providers.ListModelsAsync(videoProvider)).Where(m =>
-                        m.OutputModalities?.Contains("video", StringComparer.OrdinalIgnoreCase) == true ||
-                        m.Id.StartsWith("sora-", StringComparison.OrdinalIgnoreCase)).ToList();
+                    var models = await Providers.ListVideoModelsAsync(videoProvider);
                     if (models.Count == 0)
                     {
                         await _app.Dialogs.AlertAsync("Modelo de vídeo", "O catálogo deste provedor não informou modelos de vídeo compatíveis.");

@@ -1677,8 +1677,8 @@ public sealed partial class AssistantPanel : Border
         private CancellationToken Linked(CancellationToken token) => token.CanBeCanceled ? CancellationTokenSource.CreateLinkedTokenSource(cancel, token).Token : cancel;
         private AiAgentMediaProfile Media => panel._cfg.MediaFor(agentId);
         private AiProviderConfig? VideoProvider => panel._cfg.Providers.FirstOrDefault(p =>
-            AssistantProviders.VideoModel(p.Preset) is not null && !string.IsNullOrWhiteSpace(p.ApiKey) &&
-            (Media.VideoProviderId is null ? panel._cfg.GenerativeVideo : p.Id == Media.VideoProviderId));
+            AssistantProviders.SupportsVideo(p) && !string.IsNullOrWhiteSpace(p.ApiKey) &&
+            (Media.VideoProviderId is null ? panel._cfg.GenerativeVideo && p.Preset == "openai" : p.Id == Media.VideoProviderId));
         public bool CanGenerate => VideoProvider is not null;
         string IAssistantVideos.Unavailable => "Configure um provedor e modelo de vídeo generativo no perfil deste agente.";
         private string VideoModel(AiProviderConfig provider) => Media.VideoModel ?? AssistantProviders.VideoModel(provider.Preset)!;
