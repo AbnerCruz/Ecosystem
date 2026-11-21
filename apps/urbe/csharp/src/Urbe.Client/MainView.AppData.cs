@@ -66,6 +66,7 @@ public sealed partial class MainView
             Local("Posições de leitura", state + ".readers.v1.json", "Onde você parou em cada PDF, livro ou vídeo.");
             Local("Voz da narração", state + ".voice.txt", "A voz escolhida para narrar.");
             Local("Rascunhos não salvos", Path.Combine(dir, "rascunhos"), "Texto digitado antes de o app fechar, para recuperar.");
+            Local("Vozes naturais baixadas", Path.Combine(dir, "vozes"), "Modelos de voz (Kokoro, Piper) e suas licenças; podem ser baixados de novo.");
         }
         if (UrbeApp.AssistantFolder is { } assistant && Directory.Exists(assistant))
         {
