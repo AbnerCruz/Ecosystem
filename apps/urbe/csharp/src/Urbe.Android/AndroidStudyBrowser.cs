@@ -48,8 +48,23 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
             web.LoadUrl(Address, new Dictionary<string, string> { ["Referer"] = "https://" + (web.Context?.PackageName ?? "app.urbe.nativepreview") + "/" });
         else web.LoadUrl(Address);
     }
+    // The platform may dispose the Java peer before Avalonia tears down its host.
+    // Do not let cleanup or a late activity transition crash the UI dispatcher.
+    private static void WithLiveWebView(Action operation)
+    {
+        try { operation(); }
+        catch (ObjectDisposedException) { /* Android already disposed this native peer. */ }
+    }
+
     public void SetReaderActive(bool active)
-    { if (_web is { } web) { if (active) web.OnResume(); else { web.EvaluateJavascript(ReaderActivity.PauseScript, null); web.OnPause(); } } }
+    {
+        if (_web is not { } web) return;
+        WithLiveWebView(() =>
+        {
+            if (active) web.OnResume();
+            else { web.EvaluateJavascript(ReaderActivity.PauseScript, null); web.OnPause(); }
+        });
+    }
     public void GoBack() { if (CanGoBack) _web!.GoBack(); }
     public void GoForward() { if (CanGoForward) _web!.GoForward(); }
     public void ReloadPage() => _web?.Reload();
@@ -89,17 +104,27 @@ internal sealed class AndroidStudyBrowser(string address) : NativeControlHost, I
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
-        if (_web is { } web)
-        {
-            _web = null;
-            web.StopLoading(); web.OnPause(); web.Destroy(); web.Dispose();
-        }
+        var web = _web;
+        _web = null; // invalidate callbacks before any native teardown begins
+        if (web is null) return;
+        // Each method is independent: Android may have disposed the WebView already,
+        // or StopLoading may dispose it while the host still needs to finish teardown.
+        WithLiveWebView(web.StopLoading);
+        WithLiveWebView(web.OnPause);
+        WithLiveWebView(web.Destroy);
+        WithLiveWebView(web.Dispose);
     }
 
     private void Changed(WebView? view, string? error = null)
     {
-        Address = view?.Url ?? Address; Error = error;
-        Dispatcher.UIThread.Post(() => NavigationChanged?.Invoke());
+        if (view is null || !ReferenceEquals(_web, view)) return;
+        try { Address = view.Url ?? Address; }
+        catch (ObjectDisposedException) { return; }
+        Error = error;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ReferenceEquals(_web, view)) NavigationChanged?.Invoke();
+        });
     }
     private sealed class Navigation(AndroidStudyBrowser host) : WebViewClient
     {
