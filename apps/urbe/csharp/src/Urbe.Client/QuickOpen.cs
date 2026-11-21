@@ -409,6 +409,7 @@ public sealed class SearchFeature
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
         Register("workspace.diagnostics", "Diagnóstico do workspace", "Workspace", () => _ = view.ShowDiagnosticsAsync());
+        Register("workspace.appData", "Dados do aplicativo", "Workspace", () => _ = view.ShowAppDataAsync());
         Register("tutorial.menu", "Tutorial: abrir ou restaurar", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("ui.settings", "Configurações", "Aplicativo", () => _ = view.ShowSettingsAsync());
         Register("ui.assistant", "Assistente", "Aplicativo", view.ToggleAssistant);
