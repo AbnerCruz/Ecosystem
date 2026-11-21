@@ -52,7 +52,8 @@ public sealed class PinnedPanel : Border
     public Func<IReadOnlyList<ContinueReadingItem>>? ContinueReading { get; set; }
     private readonly StackPanel _continue = new() { Spacing = 2, Margin = new Thickness(0, 0, 0, 6) };
     /// <summary>The "Continuar lendo" rows shown (for tests and automation).</summary>
-    public IReadOnlyList<Button> ContinueRows => _continue.Children.OfType<Button>().ToArray();
+    public IReadOnlyList<Button> ContinueRows => _continue.Children.OfType<Button>()
+        .Where(row => !ReferenceEquals(row, FlashcardsRow)).ToArray();
 
     private void ShowChooser()
     {
