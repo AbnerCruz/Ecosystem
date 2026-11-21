@@ -215,4 +215,17 @@ public sealed class FlashcardLibraryTests
         Assert.Equal(2, Assert.Single(host.Library.Decks).Cards.Count);
         Assert.Empty(host.Documents.List());
     }
+
+    [Theory]
+    [InlineData("faça um vídeo sobre órbitas com motion graphics", "write_plugin", true)]
+    [InlineData("monte um mapa mental das causas da guerra", "plugin_guide", true)]
+    [InlineData("crie um cronômetro com imagem de fundo no painel", "write_plugin", false)]
+    [InlineData("um player de vídeo no editor", "write_plugin", false)]
+    [InlineData("crie um plugin que gere um vídeo", "write_plugin", false)]
+    public void APluginIsRefusedOnlyForWhatTheAppDoesNatively(string request, string tool, bool refused)
+    {
+        var all = new HashSet<string> { "create_video", "edit_graph", "create_flashcards" };
+        Assert.Equal(refused, AssistantIntent.Refusal(request, tool, all) is not null);
+        Assert.Null(AssistantIntent.Refusal(request, tool, new HashSet<string>()));   // without the native tool, nothing to point to
+    }
 }

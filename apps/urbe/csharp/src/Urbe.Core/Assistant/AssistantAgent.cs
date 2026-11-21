@@ -759,6 +759,8 @@ public static class AssistantAgent
         var readCache = new Dictionary<string, TaskCompletionSource<Out>>(StringComparer.Ordinal);
         var cycles = new HashSet<string>(StringComparer.Ordinal);
         // #1005: the person's request in this run, to keep the result class they asked for (AssistantIntent)
+        // the native tools this run can use (flashcards only when the app has its library)
+        var nativeTools = byName.Keys.Where(n => n != "create_flashcards" || o.Host.Study is not null).ToHashSet(StringComparer.Ordinal);
         var request = string.Join("\n", messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?.Content
             .Where(b => b.Type == "text").Select(b => b.Text) ?? []);
         // owner's report on long revisions: no whole rewrite from a stale or partial read, and no endless blind retries
@@ -1061,7 +1063,7 @@ public static class AssistantAgent
         {
             byName.TryGetValue(call.Name, out var tool);
             if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
-            if (AssistantIntent.Refusal(request, call.Name, byName.ContainsKey("create_flashcards") && o.Host.Study is not null) is { } mismatch)
+            if (AssistantIntent.Refusal(request, call.Name, nativeTools) is { } mismatch)
                 return new Out(mismatch, true, "error");
             if (call.Id == truncatedCall)
                 return new Out("Esta chamada foi cortada pelo limite de saída do modelo antes de terminar: os argumentos chegaram incompletos e nada foi feito. " +

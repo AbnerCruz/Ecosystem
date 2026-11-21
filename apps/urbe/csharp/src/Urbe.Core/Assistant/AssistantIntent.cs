@@ -20,12 +20,33 @@ public static class AssistantIntent
         return Flashcards.Any(f => text.Contains(f, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// What the app does natively, by the words a request uses for it, and the tool that does it: a plugin is never the
+    /// answer to these unless the person asked for a plugin (#1005: the same mistake as beta.60, for every native kind).
+    /// </summary>
+    private static readonly (string What, string[] Words, string Tool)[] Native =
+    [
+        ("flashcards", Flashcards, "create_flashcards"),
+        // only words that name the object asked for; loose ones ("imagem", "livro") also appear in requests for plugins
+        ("vídeo", ["faca um video", "faz um video", "crie um video", "cria um video", "gere um video", "gera um video", "monte um video", "motion graphic"], "create_video"),
+        ("grafo", ["grafo", "mapa mental", "mapa de conceitos"], "edit_graph"),
+    ];
+
     /// <summary>Why <paramref name="tool"/> must not run for <paramref name="request"/>; null when it may.</summary>
-    public static string? Refusal(string? request, string tool, bool nativeFlashcards)
+    /// <param name="available">The tools this run has (a native kind counts only when its tool is there).</param>
+    public static string? Refusal(string? request, string tool, IReadOnlySet<string> available)
     {
-        if (!PluginTools.Contains(tool) || !nativeFlashcards || !AsksForFlashcards(request)) return null;
-        if (AssistantTools.Fold(request ?? "").Contains("plugin", StringComparison.Ordinal)) return null;   // the person asked for a plugin
-        return "Recusado: o pedido é de flashcards, e o Numa tem flashcards nativos. Use create_flashcards (uma chamada cria o conjunto inteiro na biblioteca de Estudo). " +
-               "Não crie plugin, nota ou pasta para isso; um plugin só se a pessoa pedir um plugin.";
+        if (!PluginTools.Contains(tool)) return null;
+        var text = AssistantTools.Fold(request ?? "");
+        if (text.Contains("plugin", StringComparison.Ordinal)) return null;   // the person asked for a plugin
+        foreach (var (what, words, native) in Native)
+            if (available.Contains(native) && words.Any(w => text.Contains(AssistantTools.Fold(w), StringComparison.Ordinal)))
+                return "Recusado: o pedido é de " + what + ", e o Numa faz isso nativamente. Use " + native +
+                       ". Não crie plugin, nota ou pasta para isso; um plugin só se a pessoa pedir um plugin.";
+        return null;
     }
+
+    /// <summary>The flashcards-only form (kept for callers that know only that).</summary>
+    public static string? Refusal(string? request, string tool, bool nativeFlashcards) =>
+        Refusal(request, tool, nativeFlashcards ? new HashSet<string> { "create_flashcards" } : new HashSet<string>());
 }
