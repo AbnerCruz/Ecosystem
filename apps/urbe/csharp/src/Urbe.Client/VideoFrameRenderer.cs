@@ -22,6 +22,9 @@ public sealed class VideoFrameRenderer : IDisposable
     private readonly object _gate = new();
 
     /// <param name="files">The vault files the elements use (images), read before rendering by their paths.</param>
+    // #1004: programs measure text with the font they are drawn with
+    static VideoFrameRenderer() => VideoCode.Measure = (text, size, bold) => { using var font = Font(bold, (float)size); return font.MeasureText(text); };
+
     public VideoFrameRenderer(VideoTimeline timeline, IReadOnlyDictionary<string, byte[]>? files = null, long cacheBytes = 160L << 20)
     {
         _timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));

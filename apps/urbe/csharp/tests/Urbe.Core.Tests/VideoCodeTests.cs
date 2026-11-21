@@ -112,4 +112,18 @@ public sealed class VideoCodeTests
         Assert.Equal(0.5 * 9.8 * 0.25, inOrder[0], 0);   // free fall at 0.5 s, about 1.2 units
         Assert.True(inOrder.All(y => y <= 100));           // it bounced off the floor
     }
+
+    [Fact]
+    public void AProgramMeasuresTextToLayItOut()
+    {
+        var before = VideoCode.Measure;
+        VideoCode.Measure = (text, size, bold) => text.Length * size * (bold ? 1 : 0.5);
+        try
+        {
+            var cmds = VideoCode.Run("function draw(ctx){ var w = ctx.measure('abcd', 10); ctx.rect(0, 0, w, 2); ctx.rect(0, 0, ctx.measure('ab', 10, true), 2); }", 0, 100, 100);
+            Assert.Equal(20, cmds[0].Args[2]);
+            Assert.Equal(20, cmds[1].Args[2]);
+        }
+        finally { VideoCode.Measure = before; }
+    }
 }
