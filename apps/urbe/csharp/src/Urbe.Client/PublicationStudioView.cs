@@ -192,14 +192,21 @@ public sealed class PublicationStudioView : Border
         panel.ExportRequested += () => VideoExportRequested?.Invoke();
         panel.CancelRequested += () => VideoCancelRequested?.Invoke();
         panel.AddElementRequested += id => AddVideoElementRequested?.Invoke(id);
-        panel.SceneChanged += scene =>
-        {
-            if (_project is not { } p) return;
-            var synced = VideoComposition.Synced(p, ReadScript);
-            UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
-        };
+        panel.SceneChanged += ApplyVideoScene;
+        panel.CodeEditRequested += (scene, element) => CodeEditRequested?.Invoke(scene, element);
         return panel;
     }
+
+    /// <summary>A scene of the video changed (the panel's edits, or the host's code editor), saved like any change.</summary>
+    public void ApplyVideoScene(VideoScene scene)
+    {
+        if (_project is not { } p) return;
+        var synced = VideoComposition.Synced(p, ReadScript);
+        UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
+    }
+
+    /// <summary>#1004: editing a code element's program (the host has the dialogs).</summary>
+    public event Action<VideoScene, VideoElement>? CodeEditRequested;
 
     private string? ReadScript(PublicationSourceReference reference)
     {

@@ -15,7 +15,7 @@ public sealed record DialogItem(string Label, string? Icon = null, string? Detai
 
 /// <summary>Options of UrbeDialogs.prompt.</summary>
 public sealed record PromptOptions(string Title, string? Label = null, string Value = "", string Placeholder = "", string? Hint = null,
-    string Confirm = "Confirmar", string Cancel = "Cancelar", Func<string, string?>? Validate = null, bool Required = true);
+    string Confirm = "Confirmar", string Cancel = "Cancelar", Func<string, string?>? Validate = null, bool Required = true, bool Code = false);
 
 /// <summary>
 /// src/ui/dialogs.js natively: one dialog at a time (the next ones wait), a bottom sheet on a
@@ -163,6 +163,18 @@ public sealed partial class UrbeDialogs : Grid
         input.Resources["TextControlBackgroundFocused"] = UrbeTheme.Brush(UrbeTheme.Bg);
         input.Resources["TextControlBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTheme.Bg);
         input.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
+        if (o.Code)
+        {
+            // #1004: a program: several lines, monospaced, Enter is a new line (the button saves)
+            input.AcceptsReturn = true;
+            input.AcceptsTab = true;
+            input.TextWrapping = TextWrapping.NoWrap;
+            input.MinHeight = 220;
+            input.MaxHeight = 420;
+            input.FontFamily = new FontFamily("Consolas, Menlo, monospace");
+            input.FontSize = UrbeTokens.Type.Footnote.Size;
+            input.FontWeight = FontWeight.Normal;
+        }
         var error = new TextBlock { IsVisible = false, Foreground = UrbeTheme.Brush(UrbeTheme.Danger), FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, FontWeight = FontWeight.Medium, Margin = new Thickness(2, 6, 2, 0), TextWrapping = TextWrapping.Wrap };
         void ShowError(string t) { error.Text = t; error.IsVisible = true; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Danger); if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) input.Focus(); }
         input.TextChanged += (_, _) => { error.IsVisible = false; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2); };
@@ -190,7 +202,7 @@ public sealed partial class UrbeDialogs : Grid
             body.Children.Add(new TextBlock { Text = o.Hint, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 8, 2, 0) });
         body.Children.Add(actions);
         // selectName: the base name selected, without the extension
-        Dispatcher.UIThread.Post(() =>
+        if (!o.Code) Dispatcher.UIThread.Post(() =>
         {
             var v = input.Text ?? "";
             int dot = v.LastIndexOf('.');

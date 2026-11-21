@@ -27,6 +27,7 @@ public sealed partial class MainView
         studio.AdjustAudioRequested += () => _ = AdjustPublicationAudioAsync();
         studio.NarrateRequested += () => _ = NarratePublicationVideoAsync();
         studio.VoiceRequested += () => _ = ChooseNarrationVoiceAsync();
+        studio.CodeEditRequested += (scene, element) => _ = EditVideoCodeAsync(studio, scene, element);
         studio.VideoThemeRequested += () => _ = ChoosePublicationVideoThemeAsync();
         studio.CanNarrate = PlatformAudio.SynthesizeToWav is not null;
         studio.AddVideoElementRequested += id => _ = AddPublicationVideoElementAsync(id);
@@ -417,6 +418,17 @@ public sealed partial class MainView
             _videoExport = null;
             try { Directory.Delete(temp, true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
+    }
+
+    /// <summary>#1004: the program of a code element, edited by hand; it is checked before it replaces the old one.</summary>
+    public async Task EditVideoCodeAsync(PublicationStudioView studio, VideoScene scene, VideoElement element)
+    {
+        var code = await Dialogs.PromptAsync(new PromptOptions("Código do objeto", "draw(ctx, t, info)", element.Text ?? "", Confirm: "Salvar", Code: true,
+            Hint: "JavaScript que desenha cada quadro. Sem acesso a arquivos, rede ou notas.",
+            Validate: v => { try { VideoCode.Check(v); VideoCode.Run(v, 0, 320, 180); return null; } catch (VideoCodeException e) { return e.Message; } }));
+        if (code is null) return;
+        var elements = scene.Elements.Select(e => e.Id == element.Id ? e with { Text = code } : e).ToList();
+        studio.ApplyVideoScene(scene with { Elements = elements });
     }
 
     /// <summary>Where the chosen narration voice is kept: on this device (voices are the device's), never in the vault.</summary>

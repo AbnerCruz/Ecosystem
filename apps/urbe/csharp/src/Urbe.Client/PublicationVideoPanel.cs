@@ -119,6 +119,8 @@ public sealed class PublicationVideoPanel : StackPanel
     public event Action? CancelRequested;
     /// <summary>The scene, in the project, changed by the timing controls.</summary>
     public event Action<VideoScene>? SceneChanged;
+    /// <summary>#1004: the person asked to edit a code element's program.</summary>
+    public event Action<VideoScene, VideoElement>? CodeEditRequested;
     public event Action<string>? AddElementRequested;
 
     public VideoTimeline? Timeline => _renderer?.Timeline;
@@ -280,7 +282,7 @@ public sealed class PublicationVideoPanel : StackPanel
             b.Click += (_, _) => run();
             return b;
         }
-        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", _ => "Texto" };
+        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", "code" => "Código", _ => "Texto" };
         _inspector.Children.Add(new TextBlock
         {
             Text = kind + (c is null ? " · fora da cena neste instante" : " · " + Clock(c.Value.Local) + " da cena"),
@@ -288,7 +290,9 @@ public sealed class PublicationVideoPanel : StackPanel
         });
         bool keyed = c is { } now && VideoEditing.HasKeyframe(element, now.Local);
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
-        foreach (var b in new[]
+        var buttons = new List<Button>();
+        if (element.Kind == "code") buttons.Add(Action("Editar código", "Editar o programa que desenha este objeto", () => CodeEditRequested?.Invoke(scene.Scene, element)));
+        foreach (var b in buttons.Concat(new Button[]
         {
             Action(keyed ? "◆ Tirar quadro-chave" : "◇ Quadro-chave aqui", keyed ? "Tirar o quadro-chave deste instante" : "Marcar quadro-chave neste instante",
                 () => { if (Current() is { } x) SceneChanged?.Invoke(VideoEditing.ToggleKeyframe(x.Scene.Scene, x.State.Id, x.Local, x.State)); }, c is not null),
@@ -296,7 +300,7 @@ public sealed class PublicationVideoPanel : StackPanel
             Action("Menor", "Diminuir o objeto", () => SceneChanged?.Invoke(VideoEditing.Resize(scene.Scene, element.Id, 1 / 1.15))),
             Action("Remover", "Remover o objeto da cena", () => { Select(null); SceneChanged?.Invoke(VideoEditing.Remove(scene.Scene, element.Id)); }),
             Action("Pronto", "Terminar de editar o objeto", () => Select(null))
-        })
+        }))
         {
             b.Margin = new Thickness(0, 0, 6, 6);
             actions.Children.Add(b);
