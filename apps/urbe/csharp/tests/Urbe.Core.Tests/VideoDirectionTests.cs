@@ -476,4 +476,31 @@ public sealed class VideoDirectionTests
         var render = await AssistantVideoDirectionTools.All.Single(t => t.Name == "render_video").Run(new JsonObject { ["path"] = "Publicações/Relatividade do tempo.publication.json" }, host);
         Assert.Contains("Vídeo pronto", render.Content);
     }
+
+    /// <summary>#1004: a scene of create_video can be a program (alone, or behind a layout); a broken program writes nothing.</summary>
+    [Fact]
+    public async Task CreateVideoTakesAProgramPerScene()
+    {
+        var host = new Host();
+        var create = AssistantVideoDirectionTools.All.Single(t => t.Name == "create_video");
+        var input = JsonNode.Parse("""
+            {"title":"Órbitas","theme":"noite","scenes":[
+              {"title":"Campo","narration":"Partículas giram em torno de uma estrela.","code":"function draw(ctx,t){ for(var i=0;i<100;i++){ var a=Math.random()*6.28+t; ctx.fill('#7dd3fc'); ctx.circle(ctx.width/2+120*Math.cos(a), ctx.height/2+80*Math.sin(a), 2); } }"},
+              {"title":"Lei","narration":"A gravidade mantém as órbitas.","layout":"formula","slots":{"titulo":"Gravidade","formula":"F = G\\frac{m_1 m_2}{r^2}"},"code":"function draw(ctx,t){ ctx.fill('#1e293b'); ctx.circle(ctx.width/2, ctx.height/2, 40 + 10*Math.sin(t)); }"}]}
+            """)!.AsObject();
+        var result = await create.Run(input, host);
+        Assert.Contains("Vídeo criado", result.Content);
+        var project = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Órbitas.publication.json")!.Content);
+        Assert.Equal(["code"], project.Video!.Scenes[0].Elements.Select(e => e.Kind));
+        Assert.Equal("code", project.Video.Scenes[1].Elements[0].Kind);              // the program is behind
+        Assert.Contains(project.Video.Scenes[1].Elements, e => e.Kind == "math");   // the layout over it
+
+        var before = host.Documents.List().Count;
+        var bad = JsonNode.Parse("""{"title":"Quebrado","scenes":[{"title":"A","narration":"x","code":"function draw(ctx){ nada(); }"}]}""")!.AsObject();
+        var error = await Assert.ThrowsAsync<AiToolException>(() => create.Run(bad, host));
+        Assert.Contains("nada", error.Message);
+        Assert.Equal(before, host.Documents.List().Count);
+        var none = JsonNode.Parse("""{"title":"Vazio","scenes":[{"title":"A","narration":"x"}]}""")!.AsObject();
+        Assert.Contains("layout", (await Assert.ThrowsAsync<AiToolException>(() => create.Run(none, host))).Message);
+    }
 }
