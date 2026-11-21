@@ -170,13 +170,16 @@ public sealed partial class AssistantPanel
 
         // Complete user-visible thread. Hidden instructions and internal tool
         // results do not appear as human conversation messages.
+        // The compact panel is rebuilt when the conversation grows. Long chat histories
+        // must not allocate and format every Markdown bubble on the UI thread at once.
+        bool deferHistory = _conv.Messages.Count > 14;
         foreach (var message in _conv.Messages)
         {
             if (message.Role is not ("user" or "assistant") ||
                 (message.Role == "user" && message.Meta?.ToolResults == true))
                 continue;
 
-            var text = string.Join("\n\n", message.Content
+            var text = string.Join("\\n\\n", message.Content
                 .Where(b => b.Type == "text" && !b.Hidden && !string.IsNullOrWhiteSpace(b.Text))
                 .Select(b => b.Text));
             var files = message.Content.Where(b => b.Type == "attachment" && !string.IsNullOrWhiteSpace(b.FileName))
@@ -185,35 +188,43 @@ public sealed partial class AssistantPanel
             if (text.Length == 0 && attachments.Length == 0) continue;
 
             var user = message.Role == "user";
-            var bubble = new StackPanel
+            Control MakeBubble()
             {
-                Spacing = 3, Margin = new Thickness(0, 3),
-                HorizontalAlignment = user ? HorizontalAlignment.Right : HorizontalAlignment.Stretch
-            };
-            var content = new StackPanel { Spacing = 4 };
-            if (text.Length > 0)
-            {
-                // the same reading as the full conversation (15 px, formatted): the popup is a reading surface too
-                // (observation of 15/11/2026: "olha como o texto tá pequeno" — it was 13 px plain text)
-                if (user)
+                var bubble = new StackPanel
                 {
-                    var textBlock = new SelectableTextBlock
+                    Spacing = 3, Margin = new Thickness(0, 3),
+                    HorizontalAlignment = user ? HorizontalAlignment.Right : HorizontalAlignment.Stretch
+                };
+                var content = new StackPanel { Spacing = 4 };
+                if (text.Length > 0)
+                {
+                    if (user)
                     {
-                        Text = text, FontSize = UrbeTokens.Type.Callout.Size, TextWrapping = TextWrapping.Wrap,
-                        Foreground = UrbeTheme.Brush(UrbeTheme.Text)
-                    };
-                    Ui.TextActions.Attach(textBlock);
-                    content.Children.Add(textBlock);
+                        var textBlock = new SelectableTextBlock
+                        {
+                            Text = text, FontSize = UrbeTokens.Type.Callout.Size, TextWrapping = TextWrapping.Wrap,
+                            Foreground = UrbeTheme.Brush(UrbeTheme.Text)
+                        };
+                        Ui.TextActions.Attach(textBlock);
+                        content.Children.Add(textBlock);
+                    }
+                    else content.Children.Add(Markdown(text));
                 }
-                else content.Children.Add(Markdown(text));
+                if (attachments.Length > 0)
+                    content.Children.Add(Wrap("Anexos: " + attachments, 13, UrbeTheme.Text2));
+                bubble.Children.Add(user
+                    ? new Border { Child = content, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(14), MaxWidth = 420, Background = UrbeTheme.Brush(UrbeTheme.Accent, .14) }
+                    : content);
+                return bubble;
             }
-            if (attachments.Length > 0)
-                content.Children.Add(Wrap("Anexos: " + attachments, 13, UrbeTheme.Text2));
-            bubble.Children.Add(user
-                ? new Border { Child = content, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(14), MaxWidth = 420, Background = UrbeTheme.Brush(UrbeTheme.Accent, .14) }
-                : content);
-            transcript.Children.Add(bubble);
+
+            if (deferHistory || text.Length > 3500)
+                transcript.Children.Add(new Ui.Deferred(MakeBubble,
+                    Math.Clamp(64 + text.Length / 42.0 * 19, 64, 1100)));
+            else
+                transcript.Children.Add(MakeBubble());
         }
+        Ui.Deferred.Watch(transcript);
         if (transcript.Children.Count == 0)
             transcript.Children.Add(Wrap("Envie uma mensagem para começar a conversa.", 15, UrbeTheme.Text2));
 
