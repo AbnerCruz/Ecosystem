@@ -25,6 +25,8 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 
 
 
+
+
 ## Auditoria incremental e canal único (15/11/2026)
 
 - [ ] **LUNET-511 — Validação adicional de manifestos (código e testes propostos; CI/DEVICE pendentes):** rejeitar `Kind` fora do enum e `CreatedUtc` ausente ao ler versões locais, preservando arquivo e projetos; regressões xUnit adicionadas na branch #962.
@@ -45,6 +47,7 @@ Estudo e critérios propostos em `../../docs/architecture/audits/lunet-home-stud
   - Exportação ZIP via SAF: tratar seletor ausente/bloqueado sem crash e limpar estado pendente (commit 39cb0a8; validação DEVICE Android 13 pendente).
   - Busca offline agora ignora diferenças de caixa, acentos e Unicode decomposto em título, autor, licença, atribuição e tags (teste xUnit adicionado; CI/DEVICE pendentes).
 - [ ] **LUNET-512 — Explorar gêneros, mecânicas e jogos de referência offline (primeira entrega funcional, CI/DEVICE pendentes):** catálogo curado local, busca por título, gênero, mecânica, perspectiva, estética e outros filtros combináveis; fichas educativas, favoritos e notas, vínculos opcionais a projetos. IA/online opcionais, sem misturar com o futuro catálogo de jogos publicados no Lunet e sem embutir screenshots não licenciadas. Implementação proposta: catálogo curado e pessoal em `InspirationLibrary`, busca por múltiplos filtros/acentos, favoritos, notas e associação a projeto, CRUD e tela Android acessível do launcher (`MainActivity.Inspiration.cs`), com testes `InspirationLibraryTests` e guia `docs/guides/inspiracao.md`. Integrações externas/mídia licenciada seguem fora desta entrega; não fechar gate até DEVICE.
+  - Regressão de integridade (16/11): referências curadas retiradas de versões futuras não podem invalidar o JSON do usuário nem perder notas/favoritos após salvar. Implementação e teste no PR de preservação; CI e DEVICE ainda necessários, sem fechar o gate.
 
 - [ ] **LUNET-511 — Tags no formulário Android (código/teste propostos; CI/DEVICE pendentes):** publicação permite informar tags separadas por vírgula, persistidas por versão e pesquisáveis offline. Regressão cobre reinício e busca por múltiplos termos; Studios sem projeto seguem pendentes.
 
