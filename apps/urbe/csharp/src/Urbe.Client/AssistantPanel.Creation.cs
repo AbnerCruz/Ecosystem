@@ -180,11 +180,14 @@ public sealed partial class AssistantPanel
         var text = request.Content.FirstOrDefault(block => block.Type == "text" && !block.Hidden)?.Text ?? "";
         var local = request.Content.Where(block => block.LocalSourceId is not null &&
             VaultFileKinds.Classify(block.FileName) == VaultFileKinds.Video).ToList();
-        var links = text.Contains("vídeo", StringComparison.OrdinalIgnoreCase) ||
-            text.Contains("video", StringComparison.OrdinalIgnoreCase) || text.Contains("motion", StringComparison.OrdinalIgnoreCase)
-            ? System.Text.RegularExpressions.Regex.Matches(text, @"https?://[^\s<>""\[\]]+", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
-                .Select(match => match.Value.TrimEnd('.', ',', ')')).Distinct(StringComparer.Ordinal).ToList()
-            : [];
+        bool videoRequest = text.Contains("vídeo", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("video", StringComparison.OrdinalIgnoreCase) || text.Contains("motion", StringComparison.OrdinalIgnoreCase);
+        var links = System.Text.RegularExpressions.Regex.Matches(text, @"https?://[^\s<>""\[\]]+",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            .Select(match => match.Value.TrimEnd('.', ',', ')'))
+            .Where(url => videoRequest || Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+                VaultFileKinds.Classify(uri.AbsolutePath) == VaultFileKinds.Video)
+            .Distinct(StringComparer.Ordinal).ToList();
         if (local.Count + links.Count == 0) return;
         if (AiModelCatalog.Find(_cfg, choice)?.Reads(AiModalities.Image) != true)
         {

@@ -1608,6 +1608,12 @@ public sealed partial class AssistantPanel
                 else _cfg.AgentModels.Remove(agentId!);
                 SaveConfig(); Back(); RenderAll();
             }));
+        if (image && (imageAgentId ?? _conv.AgentId) != "geral")
+            body.Children.Add(TextButton("Desativar imagens para este agente", () =>
+            {
+                _cfg.AgentImages[imageAgentId ?? _conv.AgentId] = new AiModelChoice("", "");
+                SaveConfig(); Back(); RenderAll();
+            }));
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo" };
         var manual = new TextBox { PlaceholderText = "Ou informe o ID exato do modelo" };

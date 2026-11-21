@@ -472,7 +472,7 @@ public sealed partial class MainView
         var voices = PlatformAudio.Voices?.Invoke() ?? [];
         var items = voices.Select(id =>
             new DialogItem((Urbe.Core.Voice.NeuralVoices.Find(id)?.Name ?? id) + (id == current ? " (atual)" : "")))
-            .Prepend(new DialogItem("Padrão do aparelho" + (current is null ? " (atual)" : ""))).ToList();
+            .Prepend(new DialogItem("Padrão do aparelho" + (string.IsNullOrEmpty(current) ? " (atual)" : ""))).ToList();
         if (await Dialogs.ChooseAsync("Voz da narração", items) is not int index) return null;
         var picked = index == 0 ? null : voices[index - 1];
         if (!await EnsureNarrationVoiceAsync(picked)) return null;

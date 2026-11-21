@@ -12,6 +12,7 @@ public sealed class AssistantStoreTests
         var config = new AiConfig { AgentWorkspaceVersion = 1 };
         config.AgentModels["geral"] = new("provider", "text");
         config.AgentImages["geral"] = new("provider", "image");
+        config.AgentImages["beto"] = new("", "");
         config.AgentMedia["geral"] = new(Research: false, Voice: "dora", VideoProviderId: "provider", VideoModel: "video");
         config.AgentMedia["alice"] = new(Voice: "alex", VideoProviderId: "");
         config.AgentMedia["beto"] = new(Research: true);
@@ -19,6 +20,7 @@ public sealed class AssistantStoreTests
         var saved = AssistantStore.ConfigFromJson(AssistantStore.ConfigToJson(config));
         Assert.Equal(new AiModelChoice("provider", "text"), saved.ModelFor(new AiConversation { AgentId = "alice", Model = "old-cached-model" }));
         Assert.Equal(config.AgentImages["geral"], saved.ImageFor("alice"));
+        Assert.Null(saved.ImageFor("beto"));
         Assert.Equal(new AiAgentMediaProfile(false, "alex", ""), saved.MediaFor("alice"));
         Assert.Equal(new AiAgentMediaProfile(true, "dora", "provider", "video"), saved.MediaFor("beto"));
         saved.AgentMedia["geral"] = saved.AgentMedia["geral"] with { Voice = "faber" };

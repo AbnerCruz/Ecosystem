@@ -220,8 +220,11 @@ public sealed class AiConfig
             own.VideoProviderId is null ? defaults.VideoModel : own.VideoModel);
     }
 
-    public AiModelChoice? ImageFor(string id) =>
-        AgentImages.GetValueOrDefault(id) ?? AgentImages.GetValueOrDefault("geral");
+    public AiModelChoice? ImageFor(string id)
+    {
+        var choice = AgentImages.GetValueOrDefault(id) ?? AgentImages.GetValueOrDefault("geral");
+        return choice is { ProviderId.Length: > 0 } ? choice : null;
+    }
 
     public bool AllowsResearch(string id) => Web.Allowed(id) && MediaFor(id).Research == true;
     public Dictionary<string, AiModelChoice> AgentModels { get; set; } = new(StringComparer.Ordinal);

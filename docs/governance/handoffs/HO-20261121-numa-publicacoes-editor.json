@@ -43,7 +43,9 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoReferenceFramesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
     "apps/urbe/docs/csharp/DATA-CATALOG.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
@@ -82,6 +84,18 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "dotnet run tests/consistency/Check.cs, 22 checks."
+    },
+    {
+      "check": "Perfis e links de referência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "42 testes focados de persistência, herança, modelos e pesquisa. Inclui download direto e rejeição de página HTML e redirecionamento privado."
+    },
+    {
+      "check": "Quadros de referência e fluxo do chat",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3 testes em Linux, incluindo seis amostras de um MP4 real com ffmpeg e a imagem composta, o clique para abrir o Estúdio e a confirmação do briefing."
     }
   ],
   "known_issues": [

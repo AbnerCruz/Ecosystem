@@ -31,22 +31,25 @@ internal sealed class AndroidVideoEncoder : IVideoEncoder
         VideoReferenceFrames.ReadNative = (source, cancel) => Task.Run<IReadOnlyList<VideoReferenceFrame>>(() =>
         {
             using var media = new MediaMetadataRetriever();
-            media.SetDataSource(source);
+            try { media.SetDataSource(source); }
+            catch (Java.Lang.RuntimeException) { return []; }
             var duration = long.TryParse(media.ExtractMetadata(MetadataKey.Duration), out var ms) ? ms / 1000d : 0;
             var frames = new List<VideoReferenceFrame>();
             foreach (var at in VideoReferenceFrames.SampleTimes(duration))
             {
                 cancel.ThrowIfCancellationRequested();
-                if (media.GetFrameAtTime((long)(at * 1_000_000), Option.Closest) is not { } bitmap) continue;
-                using (bitmap)
+                try
                 {
+                    using var bitmap = media.GetFrameAtTime((long)(at * 1_000_000), Option.Closest);
+                    if (bitmap is null) continue;
                     var scale = Math.Min(1d, 480d / Math.Max(bitmap.Width, bitmap.Height));
-                    using var sized = global::Android.Graphics.Bitmap.CreateScaledBitmap(bitmap,
-                        Math.Max(1, (int)(bitmap.Width * scale)), Math.Max(1, (int)(bitmap.Height * scale)), true);
+                    using var resized = scale < 1 ? global::Android.Graphics.Bitmap.CreateScaledBitmap(bitmap,
+                        Math.Max(1, (int)(bitmap.Width * scale)), Math.Max(1, (int)(bitmap.Height * scale)), true) : null;
                     using var output = new MemoryStream();
-                    if (sized?.Compress(global::Android.Graphics.Bitmap.CompressFormat.Jpeg!, 82, output) == true)
+                    if ((resized ?? bitmap).Compress(global::Android.Graphics.Bitmap.CompressFormat.Jpeg!, 82, output))
                         frames.Add(new(at, output.ToArray()));
                 }
+                catch (Java.Lang.RuntimeException) { /* A damaged frame does not discard the other samples. */ }
             }
             return frames;
         }, cancel);
