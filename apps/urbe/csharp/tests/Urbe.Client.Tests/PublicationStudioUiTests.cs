@@ -27,12 +27,17 @@ public sealed partial class HeadlessUiTests
                 await view.OpenVaultAsync();
                 await Settle(window, view);
                 var create = view.ShowPublicationsAsync();
-                ClickButtonWithText(view.Dialogs, "Novo podcast");
+                Assert.DoesNotContain(view.Dialogs.GetLogicalDescendants().OfType<Button>(),
+                    button => Equals(button.Content, "Novo podcast"));
+                ClickButtonWithText(view.Dialogs, "Nova publicação");
+                ClickButtonWithText(view.Dialogs, "Podcast");
                 view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Single().Text = "Ciência";
                 ClickButtonWithText(view.Dialogs, "Criar");
                 await create;
                 var studio = view.PublicationsStudio;
                 var path = Assert.IsType<string>(studio.ProjectPath);
+                Assert.EndsWith(".publication.json", path);
+                Assert.Equal("podcast", studio.Project!.Design.Layout);
                 var script = view.Documents!.Get(Assert.Single(studio.Project!.Sources).DocumentId)!;
                 Assert.EndsWith(".podcast.md", script.Path);
                 Assert.Contains(studio.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Editar roteiro"));
