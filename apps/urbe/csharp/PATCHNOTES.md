@@ -16,8 +16,14 @@
 - **Simulações que não mudam.** Coisas que caem, quicam ou crescem ficam iguais não importa como o vídeo é tocado: pulando, voltando ou exportando, e em qualquer aparelho.
 - **Imagens do seu vault.** O programa pode usar imagens do seu vault, desde que o elemento liste quais são. Só valem caminhos de dentro do vault.
 - **Janelas mais consistentes.** Os tamanhos de letra das janelas e de boa parte da interface seguem o mesmo padrão do resto da interface.
+- **Transições entre cenas.** Agora uma cena pode entrar deslizando, sendo revelada como uma cortina ou com um zoom.
+- **Programas que sabem o tamanho da cena.** O programa de um elemento sabe quanto dura a cena, mede o tamanho dos textos, escolhe cores por matiz e tem ajudas para girar e desenhar formas em 3D, como uma esfera de pontos girando.
+- **Crie código pelo Estúdio.** Ao adicionar um elemento, a opção "Programa (código)" já vem com um programa de exemplo para você mudar.
+- **Flashcards sem janelas.** Crie um conjunto escrevendo só o título na lista; dentro do conjunto, adicione um cartão com frente e verso ali mesmo, e edite ou remova um cartão no próprio lugar. Um conjunto feito por você pode começar vazio.
+- **O Assistente usa o que o app já faz.** Quando você pede um vídeo ou um mapa mental, ele usa a ferramenta do app em vez de criar um plugin, a não ser que você peça um plugin.
 
 ## Não testado no aparelho
 
-- Testado com testes automáticos num computador: 1800 círculos com rastro a 360p levaram cerca de 24 ms por quadro; não medi no seu Android.
+- Testado com testes automáticos num computador: 1800 círculos com rastro a 360p levaram cerca de 24 ms por quadro; não medi no seu Android. A esfera 3D do teste de código levou cerca de 56 ms por quadro a 720p, também só no computador.
+- O painel de Flashcards sem janelas não foi usado com o dedo num aparelho.
 - O app Android compila, mas não foi aberto em aparelho nem emulador, e não reexecutei um pedido real de vídeo com o seu modelo.

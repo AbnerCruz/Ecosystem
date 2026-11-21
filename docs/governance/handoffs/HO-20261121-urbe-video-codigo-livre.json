@@ -76,7 +76,14 @@
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
     "docs/governance/handoffs/HO-20261120-urbe-video-procedural.json",
-    "docs/governance/handoffs/HO-20261121-urbe-video-codigo-livre.json"
+    "docs/governance/handoffs/HO-20261121-urbe-video-codigo-livre.json",
+    "apps/urbe/csharp/src/Urbe.Client/FlashcardsPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Flashcards.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantIntent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Study/FlashcardLibrary.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FlashcardsLibraryUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FlashcardLibraryTests.cs"
   ],
   "work_completed": [
     "#1004: novo tipo de elemento de vídeo \"code\": a IA escreve um programa JavaScript draw(ctx, t, info) executado por quadro no Jint 4.18.0 (C# puro, BSD-2), com API só de desenho (fill/stroke/gradient/glow/circle/rect/poly/path/text/save/restore/translate/rotate/scale).",
@@ -90,20 +97,26 @@
     "O limite do elemento code é a contagem de instruções (5M), igual em todo aparelho; 5 s de relógio só como rede de segurança.",
     "simulate(key, init, step, t, dt) para estado em passos determinístico, independente da ordem de reprodução.",
     "ctx.image(i,x,y,w,h) para imagens do vault declaradas em `source` (\"a.png; b.jpg\"), validadas como caminhos do vault.",
-    "Tokens de design: tamanhos de letra na interface onde coincidem com a escala (mesma aparência); ratchet 289→139."
+    "Tokens de design: tamanhos de letra na interface onde coincidem com a escala (mesma aparência); ratchet 289→139.",
+    "ctx.measure(texto, tamanho) mede textos; info.duration dá a duração da cena ao programa.",
+    "Estúdio: opção \"Programa (código)\" ao adicionar elemento, com programa inicial.",
+    "Transições de cena slide, wipe e zoom.",
+    "Ajudas hsl() e 3D (rotateX, rotateY, project) no ambiente do programa.",
+    "Benchmark só com código: esfera de Fibonacci 3D, 56 ms/quadro a 720p na CPU do container.",
+    "Teste de rascunhos espera o arquivo do rascunho existir antes de verificar."
   ],
   "verification": [
     {
       "check": "Urbe.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1881/1881, incluindo VideoCodeTests (sandbox, limites, determinismo)."
+      "evidence": "1890/1890, incluindo VideoCodeTests (sandbox, limites, determinismo, measure, duration, 3D)."
     },
     {
       "check": "Urbe.Client.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "724/724; AProgramDrawsTheFrame: 1800 círculos com rastro, 24 ms/quadro a 360p na CPU do container."
+      "evidence": "728/728; AProgramDrawsTheFrame: 1800 círculos com rastro, 24 ms/quadro a 360p; esfera 3D 56 ms/quadro a 720p, na CPU do container."
     },
     {
       "check": "Build Android Debug",
