@@ -135,7 +135,7 @@ public sealed partial class AssistantPanel
             var excluded = _pendingAttachments.Where(source => !included.Contains(source)).ToList();
             var instructions = kind switch
             {
-                "Podcast" => "Gere um podcast: salve o roteiro em uma nota .podcast.md, no formato **Nome:** fala, e crie uma publicação editável com a nota como fonte. Entregue o rascunho no Estúdio.",
+                "Podcast" => "Gere um podcast dentro de Publicações: salve o roteiro em uma nota .podcast.md, no formato **Nome:** fala, e use write_publication com design.layout=podcast e a nota como fonte. Entregue o mesmo projeto .publication.json no Estúdio; não crie um sistema de podcasts separado.",
                 "Vídeo" => "Crie um vídeo de motion graphics por código com create_video e entregue a publicação editável.",
                 _ => "Crie flashcards com create_flashcards na biblioteca nativa e informe o conjunto criado."
             };
