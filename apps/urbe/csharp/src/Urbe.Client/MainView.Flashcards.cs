@@ -179,6 +179,12 @@ public sealed partial class MainView : IAssistantStudy
         public Task CardMenuAsync(StudySet set, Flashcard card) => view.CardMenuAsync(set, card);
         public void OpenNote(string path) { view.CloseFlashcards(); view.OpenNoteByPath(path); }
         public void Close() => view.CloseFlashcards();
+        public async Task<string?> AddCardAsync(string deckId, string front, string back)
+        {
+            try { await view.ChangeFlashcardsAsync(l => l.Add(deckId, [(front, back)], DateTime.UtcNow)); return null; }
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or InvalidDataException or IOException or UnauthorizedAccessException or NotSupportedException)
+            { return e.Message; }
+        }
     }
 
     private async Task DeckMenuAsync(StudySet set)

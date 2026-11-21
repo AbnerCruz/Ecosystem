@@ -30,6 +30,8 @@ public sealed class FlashcardsPanel : Border
         Task CardMenuAsync(StudySet set, Flashcard card);
         void OpenNote(string path);
         void Close();
+        /// <summary>Adds one card to a deck; null when it was added, else what is wrong (a repeated front, an empty side…).</summary>
+        Task<string?> AddCardAsync(string deckId, string front, string back);
     }
 
     private readonly IHost _host;
@@ -137,10 +139,44 @@ public sealed class FlashcardsPanel : Border
             else _ = MenuAsync(set);
         }));
         list.Children.Add(actions);
+        if (set.Kind == "deck" && set.DeckId is { } deckId) list.Children.Add(NewCardForm(set.Id, deckId));
         foreach (var card in set.Cards)
             list.Children.Add(Row(card.Front, card.Back + " · " + _host.StateOf(card), null,
                 () => { if (set.Kind == "deck") _ = CardAsync(set, card); }, "Cartão " + card.Front));
         _body.Content = list;
+    }
+
+    /// <summary>The front and the back typed right in the set, added with one button (no dialogs one after another).</summary>
+    private Control NewCardForm(string setId, string deckId)
+    {
+        TextBox Field(string hint) => new()
+        {
+            PlaceholderText = hint, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false, MinHeight = UrbeTokens.MinTouch,
+            FontSize = UrbeTokens.Type.Body.Size, Background = UrbeTheme.Brush(UrbeTokens.Color.Surface), Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary),
+            Padding = new Thickness(UrbeTokens.Space.S, UrbeTokens.Space.Xs), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+        };
+        var front = Field("Frente: pergunta ou termo");
+        var back = Field("Verso: resposta");
+        Avalonia.Automation.AutomationProperties.SetName(front, "Frente do novo cartão");
+        Avalonia.Automation.AutomationProperties.SetName(back, "Verso do novo cartão");
+        var error = UrbeTokens.Type.Footnote.Apply(new TextBlock { Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger), TextWrapping = TextWrapping.Wrap, IsVisible = false });
+        async Task Add()
+        {
+            error.IsVisible = false;
+            if (await _host.AddCardAsync(deckId, front.Text ?? "", back.Text ?? "") is { } problem) { error.Text = problem; error.IsVisible = true; return; }
+            ShowSet(setId);
+            if (_body.Content is StackPanel page && page.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "novo-cartao") is { } form &&
+                form.Child is StackPanel inner && inner.Children.OfType<TextBox>().FirstOrDefault() is { } next) next.Focus();
+        }
+        back.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; _ = Add(); } };
+        front.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; back.Focus(); } };
+        var add = Primary("Adicionar cartão", () => _ = Add());
+        return new Border
+        {
+            Tag = "novo-cartao", Background = UrbeTheme.Brush(UrbeTokens.Color.SurfaceRaised), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            Padding = new Thickness(UrbeTokens.Space.S), Margin = new Thickness(0, 0, 0, UrbeTokens.Space.S),
+            Child = new StackPanel { Spacing = UrbeTokens.Space.Xs, Children = { front, back, error, add } }
+        };
     }
 
     private async Task MenuAsync(StudySet set) { await _host.SetMenuAsync(set); if (_host.Sets().Any(s => s.Set.Id == set.Id)) ShowSet(set.Id); else ShowList(); }
