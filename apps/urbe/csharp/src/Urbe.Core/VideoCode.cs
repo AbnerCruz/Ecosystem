@@ -33,7 +33,7 @@ public static class VideoCode
     public static Func<string, double, bool, double> Measure { get; set; } = (text, size, _) => text.Length * size * 0.55;
 
     public const string Help =
-        "draw(ctx, t, info): t = segundos da cena, info = {width, height, frame, fps}. ctx desenha em pixels da caixa do elemento (0,0 no canto superior esquerdo; ctx.width × ctx.height). " +
+        "draw(ctx, t, info): t = segundos da cena, info = {width, height, frame, fps, duration} (t / info.duration vai de 0 a 1 na cena, e acompanha a duração se a narração mudar). ctx desenha em pixels da caixa do elemento (0,0 no canto superior esquerdo; ctx.width × ctx.height). " +
         "Cor e traço: fill(cor) stroke(cor, largura) noFill() noStroke() alpha(0..1) blend(\"normal|add|screen|multiply|overlay|lighten|darken\") dash(traço, vão, deslocamento) (dash(0) volta ao contínuo) gradient(x1,y1,x2,y2,cor1,cor2) glow(raio, cor) noGlow(). " +
         "Formas: circle(x,y,r) ellipse(x,y,rx,ry) rect(x,y,w,h,raio?) arc(x,y,r,grauInicial,grauFinal) line(x1,y1,x2,y2) poly([x,y,…], fechar?) path(\"M… L… C… Z\") text(texto,x,y,tamanho,\"left|center|right\"?, negrito?) image(i,x,y,largura,altura) (a imagem i da lista em source, \"a.png; b.jpg\", do vault). measure(texto, tamanho, negrito?) devolve a largura em pixels. " +
         "Transformações: save() restore() translate(x,y) rotate(graus) scale(s, sy?). Também: lerp(a,b,u), clamp(v,a,b), ease(u) (suave 0..1), noise(x), Math.random() determinístico. " +
@@ -54,7 +54,7 @@ public static class VideoCode
     public static void Check(string source) => Prepare(source);
 
     /// <summary>The commands the script draws at <paramref name="t"/> in a <paramref name="width"/>×<paramref name="height"/> box.</summary>
-    public static IReadOnlyList<VideoDrawCommand> Run(string source, double t, double width, double height, int fps = 30, string seed = "")
+    public static IReadOnlyList<VideoDrawCommand> Run(string source, double t, double width, double height, int fps = 30, string seed = "", double duration = 0)
     {
         var p = Prepare(source);
         p.Recorder.Reset(width, height);
@@ -62,7 +62,7 @@ public static class VideoCode
         try
         {
             var info = new JsObject(p.Engine);
-            info.Set("width", width); info.Set("height", height); info.Set("frame", Math.Round(t * fps)); info.Set("fps", fps);
+            info.Set("width", width); info.Set("height", height); info.Set("frame", Math.Round(t * fps)); info.Set("fps", fps); info.Set("duration", duration > 0 ? duration : t);
             p.Engine.Advanced.ResetCallStack();
             p.Engine.Invoke(p.Draw, p.Recorder.Api, t, info);
         }

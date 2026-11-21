@@ -126,4 +126,11 @@ public sealed class VideoCodeTests
         }
         finally { VideoCode.Measure = before; }
     }
+
+    [Fact]
+    public void AProgramKnowsTheScenesDuration()
+    {
+        var cmds = VideoCode.Run("function draw(ctx, t, info){ ctx.rect(0, 0, 100 * t / info.duration, 1); }", 2, 100, 100, duration: 8);
+        Assert.Equal(25, cmds.Single().Args[2], 9);
+    }
 }

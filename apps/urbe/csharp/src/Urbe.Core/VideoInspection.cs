@@ -60,7 +60,7 @@ public static class VideoInspection
                     if (e.Kind == "code")
                     {
                         // a program that fails draws nothing: the agent is told where and why
-                        try { VideoCode.Run(e.Text, local, Math.Max(1, e.Width * W), Math.Max(1, e.Height * H), timeline.Fps, e.Id + "#" + e.Instance); }
+                        try { VideoCode.Run(e.Text, local, Math.Max(1, e.Width * W), Math.Max(1, e.Height * H), timeline.Fps, e.Id + "#" + e.Instance, scene.Duration); }
                         catch (VideoCodeException ex)
                         {
                             Add(ReviewSeverity.Error, e.Id, "code", local, "O código de " + e.Id + " falhou em " + N(local) + " s e não desenha nada: " + ex.Message + ".",

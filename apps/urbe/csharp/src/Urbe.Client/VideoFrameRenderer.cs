@@ -135,7 +135,7 @@ public sealed class VideoFrameRenderer : IDisposable
                 case "math": DrawMath(canvas, e, box, color); break;
                 case "path": DrawPath(canvas, e, box, color, h); break;
                 case "group": break;   // only carries its children
-                case "code": DrawCode(canvas, e, box, layer.LocalTime, color); break;
+                case "code": DrawCode(canvas, e, box, layer.LocalTime, color, layer.Scene.Duration); break;
                 default: DrawText(canvas, e.Text ?? "", box, (float)(e.FontSize * h), color, e.Kind == "title", e.Kind == "script" ? SKTextAlign.Left : SKTextAlign.Center, e.Progress); break;
             }
             canvas.Restore();
@@ -324,10 +324,10 @@ public sealed class VideoFrameRenderer : IDisposable
     /// #1004: what a code element's program draws now, replayed in its box (origin at the box's top-left corner).
     /// A program that fails draws nothing here; the measured review says why.
     /// </summary>
-    private void DrawCode(SKCanvas canvas, VideoElementState e, SKRect box, double t, SKColor baseColor)
+    private void DrawCode(SKCanvas canvas, VideoElementState e, SKRect box, double t, SKColor baseColor, double duration)
     {
         IReadOnlyList<VideoDrawCommand> commands;
-        try { commands = VideoCode.Run(e.Text, t, box.Width, box.Height, _timeline.Fps, e.Id + "#" + e.Instance); }
+        try { commands = VideoCode.Run(e.Text, t, box.Width, box.Height, _timeline.Fps, e.Id + "#" + e.Instance, duration); }
         catch (VideoCodeException) { return; }
         byte opacity = baseColor.Alpha;
         int start = canvas.Save();
