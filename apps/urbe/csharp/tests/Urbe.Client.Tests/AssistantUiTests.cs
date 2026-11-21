@@ -38,7 +38,7 @@ public sealed partial class HeadlessUiTests
     private static string Sse(params string[] chunks) => string.Concat(chunks.Select(c => "data: " + c + "\n\n")) + "data: [DONE]\n\n";
 
     [Fact]
-    public async Task Assistant_OpensTheNewVideoPublicationForEditing() =>
+    public async Task Assistant_OffersTheVideoPublicationLinkWithoutOpeningTheStudio() =>
         Assert.True(await Session.Dispatch(async () =>
         {
             var dir = Path.Combine(Path.GetTempPath(), "numa-video-handoff-" + Guid.NewGuid().ToString("N"));
@@ -71,8 +71,11 @@ public sealed partial class HeadlessUiTests
                 panel.Send("Crie um vídeo sobre a órbita da Terra");
                 await panel.CurrentRun!;
                 Assert.Equal("end", panel.Conversation.Runs.Last().Stopped);
+                Assert.False(view.PublicationsStudio.IsVisible);
+                Assert.True(panel.IsVisible);
+                ClickButtonWithText(panel, "Abrir no Estúdio · Órbita");
+                for (int i = 0; i < 50 && !view.PublicationsStudio.IsVisible; i++) await Task.Delay(10);
                 Assert.True(view.PublicationsStudio.IsVisible);
-                Assert.False(panel.IsVisible);
                 Assert.Equal("Órbita", view.PublicationsStudio.Project!.Title);
                 Assert.DoesNotContain("\"name\":\"render_video\"", model.Sent[0]);
                 Assert.Empty(Directory.EnumerateFiles(vault, "*.mp4", SearchOption.AllDirectories));

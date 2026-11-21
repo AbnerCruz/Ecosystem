@@ -5,6 +5,16 @@ namespace Urbe.Core.Assistant;
 /// <summary>CST-149/150/177: live publication tools use the existing permission/preview/writer/undo pipeline.</summary>
 public static class AssistantPublicationTools
 {
+    public static string? SavedPath(string result)
+    {
+        const string suffix = ".publication.json";
+        var prefix = result.StartsWith("Publicação salva: ", StringComparison.Ordinal) ? "Publicação salva: " :
+            result.StartsWith("Vídeo criado: ", StringComparison.Ordinal) ? "Vídeo criado: " : null;
+        if (prefix is null) return null;
+        var end = result.IndexOf(suffix, prefix.Length, StringComparison.OrdinalIgnoreCase);
+        return end < 0 ? null : result[prefix.Length..(end + suffix.Length)];
+    }
+
     public static IReadOnlyList<AiTool> All { get; } =
     [
         new AiTool
@@ -36,7 +46,7 @@ public static class AssistantPublicationTools
                     ? " Revisão " + saved.Revision + ". Cenas (preencha cada uma com edit_video_scene): " + string.Join("; ", video.Scenes.Select((sc, i) =>
                         (i + 1) + " " + sc.Id + " = " + (host.Documents.Get(project.Sections[i].Source.DocumentId)?.Path ?? "?") + " (" + sc.Elements.Count + " elementos)")) + "."
                     : "";
-                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + ")." + scenes + " Abra com open_note; as fontes continuam sendo notas editáveis.",
+                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + ")." + scenes + " O chat oferece um link para abrir no Estúdio.",
                     [new AiChange(saved.Id, doc is null ? null : new AiNoteSnap(doc.Path, doc.Content), new AiNoteSnap(saved.Path, saved.Content))]);
             }
         },
@@ -111,7 +121,7 @@ public static class AssistantPublicationTools
         "escalonar: opacity set sat((t - 0.1*i)/0.4). Tipografia cinética: title com split letters e motions opacity set sat((t-0.05*i)/0.3), y add 0.05*(1-smooth((t-0.05*i)/0.3)) (cada letra sobe e aparece em sequência); words para revelar palavra a palavra com a fala. Componentes: o que se repete com conteúdo diferente (um rótulo com caixa, um cartão de dado, um ícone com legenda) é um componente usado várias vezes, não cópias escritas à mão. Revelar com clip: uma forma rect invisível (opacity 0) com progress 0→1 revela o texto da esquerda para a direita; um circle que cresce (scale) abre uma imagem a partir do centro. Câmera com propósito: aproximar devagar (zoom 1→1.15 na cena toda) dá vida a uma cena parada; pan de um ponto a outro conduz o olhar entre partes de um diagrama. Efeitos com propósito: glow em pontos de luz, partículas e destaques; shadow para separar cartões do fundo; blur em planos de fundo ou para entrar desfocado (blur keyframes 0.03→0); gradient em formas grandes. Formas repetidas podem passar da borda; texto repetido é revisado como texto. " +
         "components? ({nome: [elementos]}: grupos feitos uma vez; dentro deles x e y são deslocamentos do centro, 0,0 é o centro), audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT. " +
-        "Entregue a publicação editável e informe seu caminho. O Numa abre a publicação nova no Estúdio, onde a pessoa decide quando narrar ou exportar em MP4. Use .publication.json. " +
+        "Entregue a publicação editável pelo link no chat. A pessoa abre o Estúdio quando quiser e decide quando narrar ou exportar em MP4. Use .publication.json. " +
         // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec

@@ -1274,18 +1274,6 @@ public sealed partial class AssistantPanel : Border
             cts.Dispose();
         }
 
-        if (run.Stopped == "end" && run.Error is null && conv.OriginConversationId is null &&
-            ReferenceEquals(conv, _conv) && IsVisible && ReferenceEquals(documents, _app.Documents))
-        {
-            // Use the final path of a newly created publication, even if the agent renamed it during review.
-            var publications = run.Changes.GroupBy(change => change.Id)
-                .Where(group => group.First().Before is null && group.Last().After is { } after &&
-                    after.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase))
-                .Select(group => group.Last().After!.Path)
-                .ToList();
-            if (publications.Count == 1)
-                await _app.OpenAssistantPublicationAsync(publications[0]);
-        }
     }
 
     /// <summary>Delegated chats are new private conversations of their target agent, not shared transcripts.</summary>
@@ -1767,7 +1755,12 @@ public sealed partial class AssistantPanel : Border
         public Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string newPath) => panel._app.RenameNoteAsync(doc, newPath);
         public Task TrashNoteAsync(UrbeDocument doc) => panel._app.TrashNoteAsync(doc);
         public Task CreateFolderAsync(string path) => panel._app.CreateFolderAsync(path);
-        public void OpenNote(string path) => panel._app.OpenReference(path);
+        public void OpenNote(string path)
+        {
+            if (path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase))
+                throw new AiToolException("Envie o link da publicação no chat. A pessoa abre o Estúdio quando quiser.");
+            panel._app.OpenReference(path);
+        }
         public void Remember(string fact) { panel.StoreMemory(fact, "fact", "agent", "", agentId); }
         public IReadOnlyList<AiMemoryMatch> SearchMemory(string query, int limit) =>
             AssistantMemoryEngine.Search(panel._cfg, panel.VaultKey, agentId, query, limit);
@@ -2008,6 +2001,17 @@ public sealed partial class AssistantPanel : Border
                 .OfType<(string Id, string Title, int Cards)>().GroupBy(d => d.Id).Select(g => g.Last()).ToList();
             foreach (var deck in decks) desired.Add(DeckCard(deck.Id, deck.Title, deck.Cards));
             if (answer is not null) desired.Add(View(answer));
+            var publications = steps.SelectMany(m => m.Content)
+                .Where(b => b.Type == "tool_use" && b.Name is "create_video" or "write_publication")
+                .Select(b => ResultFor(b.Id) is { IsError: false } result ? AssistantPublicationTools.SavedPath(result.Content) : null)
+                .OfType<string>().Distinct(StringComparer.Ordinal);
+            foreach (var path in publications)
+            {
+                if (_app.Documents?.Get(path) is not { } document) continue;
+                var link = LinkButton("Abrir no Estúdio · " + Path.GetFileName(path)[..^".publication.json".Length],
+                    () => _ = _app.OpenAssistantPublicationAsync(document.Path));
+                desired.Add(link);
+            }
             i = end - 1;
         }
         foreach (var form in _conv.Forms.Where(f => f.State == "pending")) desired.Add(FormView(form));

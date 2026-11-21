@@ -48,7 +48,7 @@
   ],
   "work_completed": [
     "#1004: create_video exige programa JavaScript por cena. O catálogo de cenas prontas saiu da autoria do Estúdio. A leitura de publicações existentes é preservada.",
-    "Uma nova publicação de um chat em primeiro plano é aberta no Estúdio ao terminar. O exportador MP4 continua acessível na interface e o Assistente já não recebe a ferramenta render_video.",
+    "Uma nova publicação fica disponível em um link no chat. O Estúdio abre após o clique. O exportador MP4 continua acessível na interface e o Assistente já não recebe a ferramenta render_video.",
     "Prévia e MP4 usam a mesma mixagem WAV. MediaPlayer no Android e waveaudio no Windows dão a posição de mídia ao desenho da prévia.",
     "#1005: o perfil do agente reúne voz, pesquisa e vídeo generativo com os modelos já configuráveis. A escolha vocal entra na publicação de vídeo e pode ser substituída pelo usuário.",
     "#956: seletor único e briefing antes de iniciar Podcast, Vídeo ou Flashcards, com seleção de fontes. Roteiro de podcast em Publicações oferece ação de síntese. Áudio e vídeo selecionados ficam no armazenamento privado e podem contribuir com transcrição local.",
@@ -65,7 +65,7 @@
       "check": "Testes focados headless do cliente",
       "kind": "automated",
       "result": "passed",
-      "evidence": "3/3: entrega no Estúdio sem MP4, reprodução pelo relógio de áudio simulado e envio condicionado ao briefing."
+      "evidence": "3/3: link explícito para o Estúdio, sem exportação automática, reprodução pelo relógio de áudio simulado e envio condicionado ao briefing."
     },
     {
       "check": "Build do cliente e desktop",
