@@ -109,7 +109,7 @@ public sealed partial class MainActivity
         {
             var box = Column(); box.AddView(Text(provider.Name, 20, true));
             box.AddView(Text(provider.BaseUrl, 13));
-            box.AddView(Text($"{provider.Models.Count} modelos salvos • chave protegida", 13));
+            box.AddView(Text($"{provider.Models.Count} modelos salvos • " + (SavedModelConfiguration.IsLocalHttp(SavedModelConfiguration.BaseUri(provider.BaseUrl)) ? "HTTP local, sem chave" : "chave protegida"), 13));
             box.AddView(Button("Modelos de " + provider.Name, () => ShowProviderModels(provider.Id)));
             box.AddView(Button("Editar " + provider.Name, () => EditProvider(provider)));
             box.AddView(Button("Remover " + provider.Name, () =>
@@ -127,22 +127,28 @@ public sealed partial class MainActivity
     {
         SettingsScreen(provider is null ? "Novo provedor" : "Editar provedor", ShowAiSettings);
         var name = Input("Nome do provedor", provider?.Name ?? "");
-        var url = Input("URL base da API (https://…/v1)", provider?.BaseUrl ?? "");
+        var url = Input("URL base HTTPS ou HTTP local", provider?.BaseUrl ?? "");
         var key = Input(provider is null ? "Chave de API" : "Nova chave (vazio mantém a salva)", secret: true);
-        _content.AddView(Text("API compatível com Chat Completions. Exemplos: https://openrouter.ai/api/v1 ou https://api.openai.com/v1", 14));
+        _content.AddView(Text("API Chat Completions: HTTPS com chave, ou HTTP sem chave somente em localhost/127.0.0.1. No Android, localhost é o próprio aparelho, não seu computador.", 14));
         url.InputType = InputTypes.ClassText | InputTypes.TextVariationUri;
         _content.AddView(Text("Nome do provedor:", 14)); _content.AddView(name);
         _content.AddView(Text("URL base da API:", 14)); _content.AddView(url);
         _content.AddView(Text("Chave de API:", 14)); _content.AddView(key);
         _content.AddView(Button("Salvar provedor", () =>
         {
-            var baseUrl = SavedModelConfiguration.BaseUri((url.Text ?? "").Trim()).AbsoluteUri.TrimEnd('/');
+            var uri = SavedModelConfiguration.BaseUri((url.Text ?? "").Trim());
+            var baseUrl = uri.AbsoluteUri.TrimEnd('/');
+            var local = SavedModelConfiguration.IsLocalHttp(uri);
             var id = provider?.Id ?? Guid.NewGuid().ToString("N");
             var credential = string.IsNullOrEmpty(key.Text) ? _providerKeys.GetValueOrDefault(id) : key.Text;
-            if (credential is null || credential.Length is < 8 or > 8192 || credential.Any(char.IsControl))
-                throw new ArgumentException("Informe uma chave de API válida, com ao menos 8 caracteres.");
+            if (local && !string.IsNullOrWhiteSpace(key.Text))
+                throw new ArgumentException("Não envie chave pela conexão HTTP local.");
+            if (!local && (credential is null || credential.Length is < 8 or > 8192 || credential.Any(char.IsControl)))
+                throw new ArgumentException("Provedores HTTPS exigem chave de API com ao menos 8 caracteres.");
             var updated = new SavedProvider(id, (name.Text ?? "").Trim(), baseUrl, provider?.Models ?? []);
-            var keys = new Dictionary<string, string>(_providerKeys) { [id] = credential };
+            var keys = new Dictionary<string, string>(_providerKeys);
+            if (local) keys.Remove(id); // Nunca transportar uma chave HTTPS antiga para HTTP.
+            else keys[id] = credential!;
             var next = _modelConfiguration with { Providers = _modelConfiguration.Providers.Where(p => p.Id != id).Append(updated).ToArray() };
             SaveModels(next, keys); key.Text = ""; ShowProviderModels(id);
         }, true));
@@ -257,7 +263,7 @@ public sealed partial class MainActivity
             Notice("Orçamento da instância", $"Restam {_execution.RemainingCents} centavos USD e {_execution.RemainingRuns} execuções. Trocar de modelo mantém as reservas já feitas.");
             return;
         }
-        var body = Column(); body.AddView(Text("O modelo e a chave já estão salvos. Autorize o teto de gasto desta abertura do aplicativo.", 14));
+        var body = Column(); body.AddView(Text("O modelo e, quando necessário, a chave já estão salvos. Autorize o teto desta abertura do aplicativo.", 14));
         var limit = Input("Teto em centavos USD", "100"); body.AddView(limit);
         Dialog("Autorizar gasto", body, "Autorizar", () =>
         {
