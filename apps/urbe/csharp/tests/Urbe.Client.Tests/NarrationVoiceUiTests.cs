@@ -85,4 +85,23 @@ public sealed partial class HeadlessUiTests
         }
         finally { (PlatformAudio.Voices, PlatformAudio.PreferredVoice, PlatformAudio.SynthesizeToWav, PlatformAudio.PlayWav) = saved; }
     }, CancellationToken.None));
+
+    /// <summary>DEC-0067 A: the natural voices' licences, espeak-ng's GPL-3.0 and where its source is, can be read in the app.</summary>
+    [Fact]
+    public async Task Narration_TheVoicesLicencesCanBeRead() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var view = new MainView();
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        var showing = view.ShowVoiceLicencesAsync();
+        for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+        var text = string.Join(" ", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+        Assert.Contains("GPL-3.0", text);
+        Assert.Contains("https://github.com/espeak-ng/espeak-ng", text);
+        Assert.Contains("Apache-2.0", text);
+        ClickButtonWithText(view.Dialogs, "Ok");
+        await showing;
+        window.Close();
+        return true;
+    }, CancellationToken.None));
 }

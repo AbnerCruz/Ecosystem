@@ -467,6 +467,19 @@ public sealed partial class MainView
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
     }
 
+    /// <summary>
+    /// DEC-0067 A (GPL-3.0 of espeak-ng): the licences of every natural voice, installed or not, readable at any time,
+    /// with where the source of espeak-ng is.
+    /// </summary>
+    public async Task ShowVoiceLicencesAsync()
+    {
+        var lines = Urbe.Core.Voice.NeuralVoices.Models.Select(m =>
+            (NeuralSpeech.Shared?.IsInstalled(m) == true ? "Instalada — " : "Não baixada — ") + m.Folder + "\n" + m.Licences);
+        await Dialogs.AlertAsync("Licenças das vozes naturais", string.Join("\n\n", lines) +
+            "\n\nO espeak-ng é software livre sob a GPL-3.0: você pode obter, estudar, mudar e redistribuir o código-fonte dele em https://github.com/espeak-ng/espeak-ng. " +
+            "Ele vem sem garantia. As vozes ficam numa pasta própria do app e podem ser apagadas a qualquer momento.");
+    }
+
     /// <summary>What the voice says when it is tried: numbers, a name and a pause, like a narration.</summary>
     public const string VoiceSample = "Olá! Esta é a voz que vai narrar seus vídeos. Em 1905, Einstein publicou quatro artigos; a luz viaja a 300 mil quilômetros por segundo.";
 
@@ -485,7 +498,9 @@ public sealed partial class MainView
             : "Voz do aparelho";
         var items = voices.Select(v => new DialogItem(Label(v) + (v == PlatformAudio.PreferredVoice ? " (atual)" : ""), Detail: Detail(v)))
             .Prepend(new DialogItem("Padrão do aparelho" + (PlatformAudio.PreferredVoice is null ? " (atual)" : ""))).ToList();
+        items.Add(new DialogItem("Licenças das vozes naturais", Detail: "O que cada voz baixada usa e sob qual licença"));
         if (await Dialogs.ChooseAsync("Voz da narração", items, "Vale para narrar vídeos, podcasts e os vídeos do Assistente, neste aparelho.") is not int pick) return;
+        if (pick == items.Count - 1) { await ShowVoiceLicencesAsync(); return; }
         var before = PlatformAudio.PreferredVoice;
         var picked = pick == 0 ? null : voices[pick - 1];
         // a natural voice not yet on the device is downloaded once, with the person's go-ahead and its licences shown
