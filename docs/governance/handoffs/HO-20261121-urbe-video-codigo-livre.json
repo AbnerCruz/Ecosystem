@@ -13,7 +13,7 @@
   "branch": "ccr-f022efc2-0vtff7",
   "base_commit": "b15ce196c4a0bbcdca6e43ec31ff19a8ba496a12",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1009",
   "files_changed": [
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
@@ -94,7 +94,9 @@
     "apps/urbe/docs/csharp/TTS-NEURAL-20261120.md",
     "docs/adr/README.md",
     "docs/governance/decisions.json",
-    "docs/governance/handoffs/HO-20261120-urbe-flashcards-nativos.json"
+    "docs/governance/handoffs/HO-20261120-urbe-flashcards-nativos.json",
+    "apps/urbe/csharp/src/Urbe.Core/Execution/AssistantCodeRunner.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantCodeRunnerTests.cs"
   ],
   "work_completed": [
     "#1004: novo tipo de elemento de vídeo \"code\": a IA escreve um programa JavaScript draw(ctx, t, info) executado por quadro no Jint 4.18.0 (C# puro, BSD-2), com API só de desenho (fill/stroke/gradient/glow/circle/rect/poly/path/text/save/restore/translate/rotate/scale).",
@@ -116,7 +118,11 @@
     "Benchmark só com código: esfera de Fibonacci 3D, 56 ms/quadro a 720p na CPU do container.",
     "Teste de rascunhos espera o arquivo do rascunho existir antes de verificar.",
     "Vozes naturais: catálogo NeuralVoices (Urbe.Core/Voice, tamanho e SHA-256) e NeuralSpeech (Urbe.Client) com Kokoro Dora/Alex e Piper Faber via sherpa-onnx 1.13.8 com espeak-ng; download único ao escolher em \"Voz da narração\", conferido e extraído na pasta privada vozes com LICENCAS-NUMA.txt; usadas por narração, podcast (segundo apresentador com a outra voz) e vídeos do Assistente. APK ~26 MB maior; modelos fora do APK.",
-    "Tela \"Dados do aplicativo\" só leitura (P5 do #1005): mostra o que o app guarda e onde, sem apagar nada."
+    "Tela \"Dados do aplicativo\" só leitura (P5 do #1005): mostra o que o app guarda e onde, sem apagar nada.",
+    "Voz natural baixada pode ser apagada para liberar espaço; a narração volta à voz do aparelho (f1856151).",
+    "Licenças das vozes naturais legíveis no app a qualquer momento, inclusive depois do download.",
+    "Fonte do espeak-ng fixada: commit ed530aa1 de csukuangfj/espeak-ng, SHA-256 do zip em NeuralVoices.cs (0fb34fb5).",
+    "DEC-0066 B passo 1: contrato IAssistantCodeRunner em src/Urbe.Core/Execution com UnavailableCodeRunner e validação antes do sandbox (fac2b225; WASMTIME-PLAN-20261121.md)."
   ],
   "verification": [
     {
@@ -149,10 +155,12 @@
     "DEC-0066 (execução geral de código) segue pendente; este elemento usa só desenho.",
     "Não reexecutado com o modelo do proprietário.",
     "Vozes naturais não ouvidas no aparelho; velocidade num celular modesto não medida.",
-    "GPL-3.0: falta mostrar as licenças de novo após o download e fixar versão/fonte exata do espeak-ng."
+    "Apagar voz e tela de licenças não testados no aparelho.",
+    "Wasmtime ainda não integrado: execução de código do Assistente responde 'indisponível'."
   ],
   "next_actions": [
-    "Pedir vídeos com código ao Assistente com modelo real e medir qualidade e tempo."
+    "Pedir vídeos com código ao Assistente com modelo real e medir qualidade e tempo.",
+    "WASMTIME-PLAN passo 2: build do Wasmtime para Android NDK e binding C#."
   ],
   "decisions_required": [],
   "normative_sources": [
