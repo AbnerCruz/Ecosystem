@@ -9,7 +9,7 @@ namespace Urbe.Client.Tests;
 /// </summary>
 public sealed partial class DesignTokensRatchetTests
 {
-    private const int HexColoursBaseline = 69, FontSizesBaseline = 289;
+    private const int HexColoursBaseline = 69, FontSizesBaseline = 269;
 
     private static IEnumerable<string> ClientSources()
     {
