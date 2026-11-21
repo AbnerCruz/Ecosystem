@@ -23,7 +23,16 @@ RTF = tempo de síntese ÷ duração do áudio (abaixo de 1 é mais rápido que 
 3. **Custo no celular (estimativa).** O Kokoro já fica perto do tempo real num servidor x64. Num Android modesto deve ficar algumas vezes mais lento que a fala. Serve para narrar um vídeo em segundo plano, cena a cena, mas não para leitura instantânea. Isso precisa ser medido no aparelho. O Piper deve ficar perto do tempo real ou abaixo dele.
 4. **Licenças dos pesos.** Kokoro-82M: Apache-2.0 (arquivo `LICENSE` do pacote). Voz Piper faber: dataset CC0 (`MODEL_CARD`). O Piper original (OHF-Voice/piper1-gpl) é GPL; os pesos da voz têm licença própria.
 
-## Proposta (não decidida)
+## Decisão
+
+**DEC-0067 — alternativa A** (proprietário, pelo portal, 21/11/2026; [registro](../../../../docs/governance/responses/DEC-0067.md)): o Urbe fonemiza o português com o **espeak-ng (GPL-3.0)**, distribuído junto do modelo neural baixado sob demanda, pelo sherpa-onnx 1.13.x (a linha que ainda embute o espeak-ng). Estado: em desenvolvimento; nada disto foi testado no aparelho.
+
+Obrigações da GPL-3.0 a cumprir no download do modelo:
+- o texto da GPL-3.0 (e as licenças dos pesos: Apache-2.0 do Kokoro, CC0 do dataset Piper) vai junto do download e é mostrado no app antes e depois de baixar;
+- oferta do código-fonte correspondente do espeak-ng (link para a versão exata usada e para o código, mantido disponível enquanto o componente for distribuído);
+- avisos de copyright e de ausência de garantia preservados; o componente GPL fica identificado como tal, separado do restante do app.
+
+## Proposta anterior (histórico, antes da decisão)
 
 - Um provedor único de síntese no app (`SpeechSynth`) com três fontes: a voz do sistema (que já existe, como alternativa explícita), um modelo neural local baixado sob demanda (com checksum, tamanho e licença visíveis) e, opcionalmente, um endpoint externo configurado pela pessoa. A narração de vídeo (`render_video`/`FitToVoices`) e a leitura em voz alta passam a usar esse provedor.
 - Primeiro passo que não depende da decisão de licença: o provedor e a escolha de voz, com a voz do sistema. O motor neural entra quando a questão do fonemizador estiver decidida.
