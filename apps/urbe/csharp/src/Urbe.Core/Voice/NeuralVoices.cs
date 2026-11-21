@@ -21,10 +21,10 @@ public static class NeuralVoices
     [
         new("kokoro", "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2",
             132_353_410, "72c347230107ef8a31098ec4d468a605244beef5f1ed00db97efa13518800653", "kokoro-int8-multi-lang-v1_0",
-            "Kokoro-82M: Apache-2.0. espeak-ng (fonemas): GPL-3.0, código-fonte em https://github.com/espeak-ng/espeak-ng. sherpa-onnx: Apache-2.0."),
+            "Kokoro-82M: Apache-2.0. espeak-ng (fonemas): GPL-3.0, código-fonte correspondente (versão usada pelo sherpa-onnx 1.13.8, commit ed530aa113046142eb5115cf2fc9157854d0ffe1, zip SHA-256 e4e262cbe34f7fe21f91f1ba3397f2728e1f30eafbae7853f2b753a9ed13f0dd) em https://github.com/csukuangfj/espeak-ng/archive/ed530aa113046142eb5115cf2fc9157854d0ffe1.zip; projeto original https://github.com/espeak-ng/espeak-ng. sherpa-onnx: Apache-2.0."),
         new("piper-faber", "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-faber-medium.tar.bz2",
             67_183_065, "7add3f923ad6bc25ca8a192805fd1a64d1b3893e4611c4a9719545a825039a83", "vits-piper-pt_BR-faber-medium",
-            "Voz faber (Piper): dados CC0. espeak-ng (fonemas): GPL-3.0, código-fonte em https://github.com/espeak-ng/espeak-ng. sherpa-onnx: Apache-2.0."),
+            "Voz faber (Piper): dados CC0. espeak-ng (fonemas): GPL-3.0, código-fonte correspondente (versão usada pelo sherpa-onnx 1.13.8, commit ed530aa113046142eb5115cf2fc9157854d0ffe1, zip SHA-256 e4e262cbe34f7fe21f91f1ba3397f2728e1f30eafbae7853f2b753a9ed13f0dd) em https://github.com/csukuangfj/espeak-ng/archive/ed530aa113046142eb5115cf2fc9157854d0ffe1.zip; projeto original https://github.com/espeak-ng/espeak-ng. sherpa-onnx: Apache-2.0."),
     ];
 
     public static readonly IReadOnlyList<NeuralVoice> All =

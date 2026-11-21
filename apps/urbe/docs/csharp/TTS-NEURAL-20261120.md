@@ -41,7 +41,8 @@ Obrigações da GPL-3.0 a cumprir no download do modelo:
 
 Estado das obrigações da GPL-3.0:
 - feito: as licenças (GPL-3.0, Apache-2.0, CC0) vão junto do download e são mostradas antes de baixar; o link do código-fonte do espeak-ng (https://github.com/espeak-ng/espeak-ng) é informado;
-- falta: mostrar as licenças de novo no app depois do download; fixar a versão exata do espeak-ng usada pelo sherpa-onnx 1.13.8 e a oferta do código-fonte correspondente a essa versão.
+- feito: as licenças podem ser vistas de novo depois do download; a versão exata do espeak-ng (commit ed530aa1 do fork usado pelo sherpa-onnx 1.13.8, com o SHA-256 do zip) e o link do código-fonte correspondente vão nas licenças;
+- falta: manter o zip do código-fonte disponível enquanto a voz for distribuída (espelho próprio ainda não criado).
 
 ## Proposta anterior (histórico, antes da decisão)
 
