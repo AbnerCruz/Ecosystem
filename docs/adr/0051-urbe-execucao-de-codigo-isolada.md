@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — aguarda decisão do proprietário. Nenhum código de execução foi escrito.
+Aceito — decisão explícita do proprietário, DEC-0066, alternativa B (A2 — Wasmtime nativo), 21/11/2026. Nenhum código de execução foi escrito ainda.
 
 ## Contexto
 
@@ -30,7 +30,15 @@ NN-016 (permissões antes da autonomia) e NN-011 exigem decisão explícita. Um 
 
 ## Decisão
 
-Pendente (proposta abaixo; o proprietário decide).
+**A2 — Wasmtime nativo** (DEC-0066, alternativa B, escolhida pelo proprietário pelo portal em 21/11/2026; [registro](../governance/responses/DEC-0066.md)). O código geral escrito pela IA (CST-201–212) roda num runtime Wasmtime com WASI, limites de combustível (CPU) e memória, sem rede, vendo só a pasta temporária com as cópias liberadas.
+
+- **Android:** o pacote `Wasmtime` para .NET não traz binário `android-arm64`; é preciso compilar a biblioteca C do Wasmtime com o NDK e manter esse binário (dezenas de MB no APK). **Trabalho não iniciado.**
+- **Windows:** binários oficiais do pacote.
+- **Elemento `code` do vídeo:** continua no Jint (Alternativa E abaixo), só desenho, sem acesso ao sistema; não passa para o Wasmtime.
+
+Proposta original do agente (não escolhida): A1 (WACS) com C como complemento. As garantias gerais continuam: a execução recebe cópias dos arquivos que a pessoa ou a aprovação liberou, nunca o vault; o resultado volta como dado; cada execução aparece nas etapas do Assistente com código, saída e limites; aprovação no modo "perguntar".
+
+Texto anterior da proposta:
 
 
 A como caminho principal, depois de uma prova de conceito que meça Android e Windows; C como complemento opcional e explícito; B só se A falhar no Windows. Em qualquer opção: a execução recebe cópias dos arquivos que a pessoa ou a aprovação liberou, nunca o vault; o resultado volta como dado; cada execução aparece nas etapas do Assistente com código, saída e limites; aprovação no modo "perguntar".
@@ -55,6 +63,19 @@ A como caminho principal, depois de uma prova de conceito que meça Android e Wi
 
 Com isso, a opção A passa a ter duas variantes: **A1 — WACS (C# puro)**, igual nas duas plataformas, mais lento; **A2 — Wasmtime**, rápido no Windows, e no Android só com build próprio pelo NDK.
 
-## Decisão pendente
+## Decisão registrada
 
-O proprietário escolhe em DEC-0066 (portal). Até a decisão, nenhum código de execução é escrito.
+DEC-0066 decidida em 21/11/2026: alternativa B (A2 — Wasmtime nativo). Ver a seção Decisão.
+
+## Alternativa E — interpretador JavaScript em C# (Jint), só para desenho de vídeo
+
+Registro de 21/11/2026, ligado à issue #1004 (o proprietário pediu código livre no vídeo, como no ChatGPT/Claude). **Não é a resposta à DEC-0066**; com a DEC-0066 decidida (Wasmtime para o código geral), o elemento `code` do vídeo continua aqui, no Jint.
+
+- **Escopo restrito:** só o elemento `code` do vídeo. O JavaScript escrito pelo Assistente roda a cada quadro e só desenha. O motor recebe um objeto de desenho (canvas) e os parâmetros de tempo e instância (`t`, `i`, `n`, `u` e afins). Não há acesso ao vault, a arquivos, à rede, a segredos, ao CLR (`AllowClr` desligado) nem a qualquer outra API do host.
+- **Limites por execução** (opções do Jint): `TimeoutInterval` (tempo por quadro), `MemoryLimit` (memória alocada), `MaxStatements` (número de instruções) e `LimitRecursion` (profundidade de chamadas). Estourar um limite interrompe só aquele elemento, com erro visível na revisão; o app e os dados seguem intactos.
+- **Determinismo:** `Math.random` é substituído por um gerador com semente (da cena/elemento), para que o mesmo quadro saia igual na prévia, no render e na revisão medida.
+- **Licença (verificada no nuget.org em 21/11/2026):** `Jint` 4.18.0 (última estável) — BSD-2-Clause; depende de `Acornima` 1.9.1 (parser, sucessor do Esprima no Jint 4.x) — BSD-3-Clause; esta depende de `System.Memory`/`System.Runtime.CompilerServices.Unsafe` (MIT, só em alvos antigos). Todas permissivas, compatíveis com distribuição do app.
+- **Android/AOT:** código gerenciado puro, sem binário nativo; não aumenta o APK com bibliotecas por ABI e roda igual no Android e no Windows. Interpretado (sem geração de IL em tempo de execução), compatível com trimming/AOT, com cuidado de preservar os tipos expostos ao script.
+- **Limite de segurança reconhecido:** como já dito em "Alternativas rejeitadas", um interpretador no mesmo processo não é fronteira de isolamento geral. Aqui ele é aceitável porque a superfície exposta é só a de desenho e os limites acima cortam CPU, memória e recursão; nada além disso é oferecido ao script.
+
+A execução de código geral pelo Assistente (CST-201–212: arquivos, análise de dados, saída como dado) foi decidida na DEC-0066 (Wasmtime nativo); esta alternativa não a substitui.

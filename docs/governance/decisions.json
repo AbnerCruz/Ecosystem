@@ -2386,7 +2386,7 @@
       "decision": "Alternativa B — A2 — Wasmtime (nativo) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/1007).",
       "decidedAt": "2026-11-21",
       "record": "docs/governance/responses/DEC-0066.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0067",
@@ -2426,7 +2426,7 @@
       "decision": "Alternativa A — A — espeak-ng (GPL-3.0) junto do modelo baixado (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/1008).",
       "decidedAt": "2026-11-21",
       "record": "docs/governance/responses/DEC-0067.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }

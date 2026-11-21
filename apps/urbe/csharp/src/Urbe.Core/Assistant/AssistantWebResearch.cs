@@ -309,6 +309,43 @@ public sealed class AssistantWebSession : IDisposable
             "\nNão use snippets como prova. Abra páginas relevantes com web_fetch antes de afirmar fatos.";
     }
 
+    public async Task DownloadReferenceVideoAsync(string url, Stream destination)
+    {
+        RequireEnabled();
+        const long maxBytes = 96L * 1024 * 1024;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_cancel);
+        timeout.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_config.TimeoutSeconds, 3, 60)));
+        var current = ValidateUrl(url);
+        for (int redirects = 0; redirects <= 5; redirects++)
+        {
+            await ValidateDns(current);
+            using var response = await _http.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            if ((int)response.StatusCode is 301 or 302 or 303 or 307 or 308 &&
+                response.Headers.Location is { } location)
+            {
+                current = ValidateUrl(new Uri(current, location).AbsoluteUri);
+                continue;
+            }
+            var mime = response.Content.Headers.ContentType?.MediaType;
+            if (!response.IsSuccessStatusCode || mime?.StartsWith("video/", StringComparison.OrdinalIgnoreCase) != true)
+                throw new AiToolException("Use um link público direto para um arquivo de vídeo ou anexe o arquivo.");
+            if (response.Content.Headers.ContentLength > maxBytes)
+                throw new AiToolException("O vídeo excede 96 MB neste fluxo de download. Anexe o arquivo do dispositivo.");
+            await using var input = await response.Content.ReadAsStreamAsync(timeout.Token);
+            var buffer = new byte[65536];
+            long size = 0;
+            int read;
+            while ((read = await input.ReadAsync(buffer, timeout.Token)) > 0)
+            {
+                size += read;
+                if (size > maxBytes) throw new AiToolException("O vídeo excede 96 MB. Anexe o arquivo do dispositivo.");
+                await destination.WriteAsync(buffer.AsMemory(0, read), timeout.Token);
+            }
+            return;
+        }
+        throw new AiToolException("Excesso de redirecionamentos no link do vídeo.");
+    }
+
     public async Task<string> FetchAsync(string url, int startLine = 1, int maxLines = 100)
     {
         RequireEnabled();

@@ -18,8 +18,8 @@ public sealed class PublicationStudioView : Border
     private readonly StackPanel _sources = new() { Spacing = 8 };
     private readonly StackPanel _preview = new() { Spacing = 20, Margin = new Thickness(18, 14, 18, 32) };
     private readonly TextBlock _title = new() { FontSize = 20, FontWeight = FontWeight.Bold };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
-    private readonly TextBlock _saveStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _saveStatus = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
     private readonly Button _retry = new() { Content = "Tentar salvar novamente", MinHeight = 44, IsVisible = false };
     private readonly Button _print;
     private PublicationSourceCatalog? _catalog;
@@ -75,7 +75,7 @@ public sealed class PublicationStudioView : Border
                 Item("Exportar legendas para a web (VTT)", () => SubtitlesRequested?.Invoke("vtt"));
                 Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
                 if (_project?.Video?.Audio.Count > 0) Item("Ajustar áudios do vídeo", () => AdjustAudioRequested?.Invoke());
-                if (CanNarrate) Item("Narrar o roteiro com a voz do aparelho", () => NarrateRequested?.Invoke());
+                if (CanNarrate) Item("Narrar o roteiro", () => NarrateRequested?.Invoke());
                 if (CanNarrate) Item("Voz da narração", () => VoiceRequested?.Invoke());
             }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
@@ -100,7 +100,7 @@ public sealed class PublicationStudioView : Border
         sourcesHead.Children.Add(add);
         sourcesHead.Children.Add(new TextBlock
         {
-            Text = "Notas da publicação", FontSize = 16, FontWeight = FontWeight.SemiBold,
+            Text = "Notas da publicação", FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight,
             VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
         });
         _saveStatus.Margin = new Thickness(16, 0, 16, 4);
@@ -132,6 +132,8 @@ public sealed class PublicationStudioView : Border
         root.Children.Add(bar);
         root.Children.Add(body);
         Child = root;
+        // Preview text can contain hundreds of pages. Build only sections near the viewport.
+        Ui.Deferred.Watch(_preview);
     }
 
     public string ProjectPath { get; private set; } = "";
@@ -173,6 +175,9 @@ public sealed class PublicationStudioView : Border
     public event Action? AdjustAudioRequested;
     /// <summary>CST-172: each scene's script spoken by the device's voice and placed at the scene's start.</summary>
     public event Action? NarrateRequested;
+    public event Action<string>? PodcastAudioRequested;
+    public event Action<string>? PlayPodcastRequested;
+    public Func<string, string?>? FindPodcastAudio { get; set; }
     /// <summary>#1004: choosing the device voice that narrates.</summary>
     public event Action? VoiceRequested;
     /// <summary>#956: choose the video's finished look (VideoThemes).</summary>
@@ -191,15 +196,25 @@ public sealed class PublicationStudioView : Border
         var panel = new PublicationVideoPanel();
         panel.ExportRequested += () => VideoExportRequested?.Invoke();
         panel.CancelRequested += () => VideoCancelRequested?.Invoke();
+        panel.AddAudioRequested += () => AddAudioRequested?.Invoke();
+        panel.NarrateRequested += () => NarrateRequested?.Invoke();
+        panel.VoiceRequested += () => VoiceRequested?.Invoke();
         panel.AddElementRequested += id => AddVideoElementRequested?.Invoke(id);
-        panel.SceneChanged += scene =>
-        {
-            if (_project is not { } p) return;
-            var synced = VideoComposition.Synced(p, ReadScript);
-            UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
-        };
+        panel.SceneChanged += ApplyVideoScene;
+        panel.CodeEditRequested += (scene, element) => CodeEditRequested?.Invoke(scene, element);
         return panel;
     }
+
+    /// <summary>A scene of the video changed (the panel's edits, or the host's code editor), saved like any change.</summary>
+    public void ApplyVideoScene(VideoScene scene)
+    {
+        if (_project is not { } p) return;
+        var synced = VideoComposition.Synced(p, ReadScript);
+        UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
+    }
+
+    /// <summary>#1004: editing a code element's program (the host has the dialogs).</summary>
+    public event Action<VideoScene, VideoElement>? CodeEditRequested;
 
     private string? ReadScript(PublicationSourceReference reference)
     {
@@ -326,7 +341,7 @@ public sealed class PublicationStudioView : Border
         catch (NotSupportedException) { origin = null; }
         var panel = new StackPanel { Spacing = 4, Margin = new Thickness(14, 8, 14, 0) };
         var name = origin is null ? "uma nota que não existe mais" : System.IO.Path.GetFileNameWithoutExtension(origin.Path);
-        panel.Children.Add(new TextBlock { Text = link.Kind + " de " + name, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+        panel.Children.Add(new TextBlock { Text = link.Kind + " de " + name, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
         if (origin is null) return panel;
         var actions = new WrapPanel();
         var open = new Ui.UrbeButton("Abrir a origem", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
@@ -334,7 +349,7 @@ public sealed class PublicationStudioView : Border
         actions.Children.Add(open);
         if (EditorialNotes.IsBehind(link, origin.Markdown))
         {
-            panel.Children.Add(new TextBlock { Text = "A origem mudou desde esta adaptação. Confira e marque como revisada.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+            panel.Children.Add(new TextBlock { Text = "A origem mudou desde esta adaptação. Confira e marque como revisada.", TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
             var reviewed = new Ui.UrbeButton("Marcar como revisada", Ui.ButtonKind.Ghost) { MinHeight = 40, Padding = new Thickness(10, 0) };
             reviewed.Click += (_, _) => AdaptationReviewed?.Invoke(adaptation.DocumentId, link.OriginId);
             actions.Children.Add(reviewed);
@@ -394,6 +409,23 @@ public sealed class PublicationStudioView : Border
             remove.Click += (_, _) => { if (_project is { } p) UpdateProject(p.RemovePlacement(piece.Id)); };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
+            if (CanNarrate && source?.Path is { } podcastPath &&
+                podcastPath.EndsWith(Urbe.Core.Study.Podcast.Suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                var actions = new WrapPanel();
+                AddAction("Editar roteiro", () => EditSourceRequested?.Invoke(documentId));
+                AddAction("Gerar áudio do podcast", () => PodcastAudioRequested?.Invoke(podcastPath));
+                if (FindPodcastAudio?.Invoke(podcastPath) is { } audio)
+                    AddAction("Ouvir podcast", () => PlayPodcastRequested?.Invoke(audio));
+                _preview.Children.Add(actions);
+
+                void AddAction(string label, Action run)
+                {
+                    var button = new Ui.UrbeButton(label, Ui.ButtonKind.Ghost);
+                    button.Click += (_, _) => run();
+                    actions.Children.Add(button);
+                }
+            }
             // one way where it can move: the first goes down, the others up (a button that does nothing is not shown);
             // the cover stays at the start, so it has none and the piece after it counts as the first
             int head = project.Cover is null ? 0 : 1;
@@ -442,33 +474,56 @@ public sealed class PublicationStudioView : Border
             if (video) continue;   // the video panel is the preview; each note is a scene there
             if (source is not null)
             {
-                var text = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;
-                var origin = Provenance(source, catalog);
-                if (origin is not null) _preview.Children.Add(origin);
-                var shown = new Border
+                var previewSource = source;
+                var previewLabel = label;
+                var previewReference = piece.Source;
+                var isCover = piece.IsCover;
+                var text = MarkdownEngine.SplitFrontmatter(previewSource.Markdown).Body;
+                Control BuildPreview()
                 {
-                    // the cover stands apart: its own block, taller, as its page in the book
-                    Padding = piece.IsCover ? new Thickness(14, 48) : new Thickness(14, 10), BorderThickness = new Thickness(0, 1, 0, 0),
-                    BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
-                    Child = new StackPanel
+                    var origin = Provenance(previewSource, catalog);
+                    var shown = new Border
                     {
-                        Children =
+                        Padding = isCover ? new Thickness(14, 48) : new Thickness(14, 10),
+                        BorderThickness = new Thickness(0, 1, 0, 0),
+                        BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
+                        Child = new StackPanel
                         {
-                            // the note's name, only when its first heading does not already say it
-                            new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
-                                IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(), label, StringComparison.CurrentCultureIgnoreCase) },
-                            new MarkdownReader { Selectable = true, ProgressContextMarkdown = source.Markdown,
-                                ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown }.BuildMarkdown(text)
+                            Children =
+                            {
+                                new TextBlock
+                                {
+                                    Text = previewLabel, FontSize = UrbeTokens.Type.Caption.Size,
+                                    Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+                                    IsVisible = !string.Equals(EmbedFragments.Headings(text).FirstOrDefault()?.Trim(),
+                                        previewLabel, StringComparison.CurrentCultureIgnoreCase)
+                                },
+                                new MarkdownReader
+                                {
+                                    Selectable = true, ProgressContextMarkdown = previewSource.Markdown,
+                                    ProgressNoteResolver = id => catalog.Read(new PublicationSourceReference(id))?.Markdown
+                                }.BuildMarkdown(text)
+                            }
                         }
-                    }
-                };
-                // CST-156: a double tap on a paragraph of the preview opens its note at that paragraph
-                var reference = piece.Source;
-                shown.DoubleTapped += (_, e) =>
-                {
-                    if (ShownText(e.Source) is { Length: > 0 } tapped) { EditShownTextRequested?.Invoke(reference, tapped); e.Handled = true; }
-                };
-                _preview.Children.Add(shown);
+                    };
+                    shown.DoubleTapped += (_, e) =>
+                    {
+                        if (ShownText(e.Source) is { Length: > 0 } tapped)
+                        { EditShownTextRequested?.Invoke(previewReference, tapped); e.Handled = true; }
+                    };
+                    if (origin is null) return shown;
+                    var together = new StackPanel { Spacing = 8 };
+                    together.Children.Add(origin);
+                    together.Children.Add(shown);
+                    return together;
+                }
+                // Short publications keep their immediate preview. Books and long notes
+                // defer Markdown layout until the reader scrolls to that section.
+                if (project.Sections.Count <= 3 && text.Length <= 2500)
+                    _preview.Children.Add(BuildPreview());
+                else
+                    _preview.Children.Add(new Ui.Deferred(BuildPreview,
+                        Math.Clamp(180 + text.Length / 55.0 * 18, 240, 2400)));
             }
             else
                 _preview.Children.Add(new TextBlock { Text = "Fonte ausente — o arquivo original não será substituído.", Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });

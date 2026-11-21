@@ -555,4 +555,130 @@ public sealed class VideoRenderTests
         Assert.True(Reddish(whole.GetPixel((int)(0.8 * whole.Width), y)));
         Assert.False(half.GetPixel((int)(0.2 * half.Width), (int)(0.35 * half.Height)).Green > 100);   // the mask itself is invisible
     }
+
+    /// <summary>#1004: a program the agent writes draws the frame — a field of orbiting particles with trails, built by loops.</summary>
+    [Fact]
+    public void AProgramDrawsTheFrame()
+    {
+        var (catalog, project) = Project(resolution: 360, seconds: 3);
+        using var _c = catalog;
+        const string code = """
+            function draw(ctx, t, info) {
+              var cx = ctx.width / 2, cy = ctx.height / 2;
+              ctx.gradient(0, 0, 0, ctx.height, '#0b1020', '#1a0b2e'); ctx.rect(0, 0, ctx.width, ctx.height);
+              ctx.glow(12, '#ffcc66'); ctx.fill('#ffdd88'); ctx.circle(cx, cy, 18); ctx.noGlow();
+              for (var i = 0; i < 300; i++) {
+                var r = 40 + 140 * Math.random(), a0 = Math.random() * 6.283, w = 0.4 + Math.random();
+                for (var k = 0; k < 6; k++) {
+                  var a = a0 + (t - k * 0.04) * w;
+                  ctx.alpha(1 - k / 6); ctx.fill('#7dd3fc');
+                  ctx.circle(cx + r * Math.cos(a), cy + r * Math.sin(a) * 0.6, 1.6);
+                }
+                ctx.alpha(1);
+              }
+              ctx.fill('#ff0000'); ctx.rect(0, 0, 20, 20);
+            }
+            """;
+        var scene = project.Video!.Scenes[0] with { Background = "#000000",
+            Elements = [new VideoElement { Id = "prog", Kind = "code", Text = code, X = 0.5, Y = 0.5, Width = 1, Height = 1 }] };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.DoesNotContain(VideoInspection.Run(timeline), i => i.Severity == ReviewSeverity.Error);
+        using var r = new VideoFrameRenderer(timeline);
+        using var a = r.Render(0.5);
+        using var b = r.Render(1.5);
+        Assert.True(Reddish(a.GetPixel(5, 5)));                      // the program's own marker, at its box's corner
+        int Blue(SKBitmap f) { int n = 0; for (int x = 0; x < f.Width; x += 2) for (int y = 0; y < f.Height; y += 2) { var p = f.GetPixel(x, y); if (p.Blue > 180 && p.Red < 160) n++; } return n; }
+        Assert.True(Blue(a) > 100, "particles drawn: " + Blue(a));
+        Assert.NotEqual(Enumerable.Range(0, a.Width).Select(x => a.GetPixel(x, a.Height / 2 + 30)), Enumerable.Range(0, b.Width).Select(x => b.GetPixel(x, b.Height / 2 + 30)));   // it moves
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        for (int i = 0; i < 10; i++) r.Render(i / 10.0).Dispose();
+        long ms = clock.ElapsedMilliseconds / 10;
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllBytes(Path.Combine(dir, "video-codigo.png"), r.RenderSheet([0.3, 1.0, 1.8, 2.6]));
+            File.AppendAllText(Path.Combine(dir, "video-codigo.txt"), "1800 círculos por código: " + ms + " ms/quadro a 360p\n");
+        }
+    }
+
+    /// <summary>#1004: light adds up — red and green drawn with blend('add') make yellow where they meet; an arc draws only its part.</summary>
+    [Fact]
+    public void AProgramAddsLightAndDrawsArcs()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 1);
+        using var _c = catalog;
+        const string code = """
+            function draw(ctx) {
+              ctx.blend('add');
+              ctx.fill('#ff0000'); ctx.circle(100, 90, 50);
+              ctx.fill('#00ff00'); ctx.circle(140, 90, 50);
+              ctx.blend('normal'); ctx.noFill(); ctx.stroke('#0000ff', 8); ctx.arc(250, 90, 40, 0, 90);
+            }
+            """;
+        var scene = project.Video!.Scenes[0] with { Background = "#000000",
+            Elements = [new VideoElement { Id = "luz", Kind = "code", Text = code, X = 0.5, Y = 0.5, Width = 1, Height = 1 }] };
+        using var r = new VideoFrameRenderer(VideoTimeline.Build(project with { Video = project.Video with { Scenes = [scene] } }, catalog));
+        using var f = r.Render(0.5);
+        var both = f.GetPixel(120, 90);
+        Assert.True(both.Red > 200 && both.Green > 200 && both.Blue < 60, both.ToString());   // yellow where the lights overlap
+        Assert.True(f.GetPixel(250, 130).Blue > 150);    // the arc's lower quarter (0° to 90°, clockwise from the right)
+        Assert.True(f.GetPixel(250, 50).Blue < 60);      // its upper part is not drawn
+    }
+
+    /// <summary>#1004: a program draws the vault images its element declares, by index, and nothing else.</summary>
+    [Fact]
+    public void AProgramDrawsTheImagesItsElementDeclares()
+    {
+        var (catalog, project) = Project(resolution: 180, seconds: 1);
+        using var _c = catalog;
+        using var red = new SKBitmap(8, 8);
+        red.Erase(SKColors.Red);
+        using var png = SKImage.FromBitmap(red).Encode(SKEncodedImageFormat.Png, 100);
+        var scene = project.Video!.Scenes[0] with { Background = "#000000",
+            Elements = [new VideoElement { Id = "foto", Kind = "code", Source = "Imagens/vermelho.png", X = 0.5, Y = 0.5, Width = 1, Height = 1,
+                Text = "function draw(ctx){ ctx.image(0, 10, 10, 60, 60); ctx.image(5, 100, 10, 60, 60); }" }] };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.Equal(["Imagens/vermelho.png"], VideoFrameRenderer.FilesUsed(timeline));
+        using var r = new VideoFrameRenderer(timeline, new Dictionary<string, byte[]> { ["Imagens/vermelho.png"] = png.ToArray() });
+        using var f = r.Render(0.5);
+        Assert.True(Reddish(f.GetPixel(40, 40)));
+        Assert.False(Reddish(f.GetPixel(130, 40)));   // index 5 is not in the list: nothing
+        var outside = project with { Video = project.Video with { Scenes = [scene with { Elements = [scene.Elements[0] with { Source = "../fora.png" }] }] } };
+        Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(outside));
+    }
+
+    /// <summary>#1004: a scene can come in by wipe (revealed left to right) or slide (in from the right) over the previous one.</summary>
+    [Theory]
+    [InlineData("wipe")]
+    [InlineData("slide")]
+    public void ASceneComesInByItsTransition(string kind)
+    {
+        var store = new DocumentStore();
+        var a = store.Upsert(new DocumentInput { Path = "A.md", Content = "# A\n\nUm.\n" });
+        var b = store.Upsert(new DocumentInput { Path = "B.md", Content = "# B\n\nDois.\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = VideoComposition.Synced(PublicationProject.Create("V", a.Id).AddSource(b.Id) with { Design = new PublicationDesign { Layout = "video" } });
+        var scenes = project.Video!.Scenes;
+        project = project with { Video = project.Video with { Resolution = 180, Subtitles = false, Scenes =
+        [
+            scenes[0] with { Duration = 2, Background = "#ff0000", Transition = new VideoTransition { Kind = "cut" }, Elements = [] },
+            scenes[1] with { Duration = 2, Background = "#0000ff", Transition = new VideoTransition { Kind = kind, Seconds = 1 }, Elements = [] }
+        ] } };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        using var r = new VideoFrameRenderer(timeline);
+        // halfway through the transition (it starts 1 s before the first scene ends)
+        var mid = timeline.Scenes[1].Start + 0.5;
+        using var f = r.Render(mid);
+        int w = f.Width, y = f.Height / 2;
+        bool Blue(SKColor c) => c.Blue > 200 && c.Red < 60;
+        if (kind == "wipe") { Assert.True(Blue(f.GetPixel(w / 10, y))); Assert.True(Reddish(f.GetPixel(w * 9 / 10, y))); }
+        else { Assert.True(Reddish(f.GetPixel(w / 10, y))); Assert.True(Blue(f.GetPixel(w * 9 / 10, y))); }
+        using var after = r.Render(timeline.Scenes[1].Start + 1.5);
+        Assert.True(Blue(after.GetPixel(w / 2, y)));
+    }
 }

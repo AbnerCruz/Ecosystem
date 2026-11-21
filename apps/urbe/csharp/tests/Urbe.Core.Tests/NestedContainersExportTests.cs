@@ -42,9 +42,9 @@ public sealed class NestedContainersExportTests
         }
     }
 
-    /// <summary>CST-035: an AI-written block shows its model discreetly ("IA: modelo") in every output, never the raw seal.</summary>
+    /// <summary>CST-035: publication exports render the authored text without displaying the note’s authorship seal.</summary>
     [Fact]
-    public async Task EveryOutputShowsAuthorshipDiscreetlyWithoutTheRawSeal()
+    public async Task EveryPublicationOutputKeepsTheTextWithoutTheVisibleAiSeal()
     {
         var store = new DocumentStore();
         var note = store.Upsert(new DocumentInput { Path = "Resumo.md", Content = "# Resumo\n\nEscrito pela pessoa.\n\nParágrafo da IA. {ia:\"modelo-x\"}\n" });
@@ -62,7 +62,8 @@ public sealed class NestedContainersExportTests
         };
         foreach (var (format, text) in outputs)
         {
-            Assert.True(text.Contains("IA: modelo-x", StringComparison.Ordinal), format + " não mostra a autoria");
+            Assert.False(text.Contains("modelo-x", StringComparison.Ordinal), format + " mostra o selo de autoria");
+            Assert.True(text.Contains("Parágrafo da IA.", StringComparison.Ordinal), format);
             Assert.False(text.Contains("{ia:", StringComparison.Ordinal), format + " mostra o selo cru");
             Assert.True(text.Contains("Escrito pela pessoa.", StringComparison.Ordinal), format);
         }

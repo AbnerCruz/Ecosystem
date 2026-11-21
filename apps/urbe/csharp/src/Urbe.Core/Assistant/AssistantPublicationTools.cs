@@ -5,6 +5,16 @@ namespace Urbe.Core.Assistant;
 /// <summary>CST-149/150/177: live publication tools use the existing permission/preview/writer/undo pipeline.</summary>
 public static class AssistantPublicationTools
 {
+    public static string? SavedPath(string result)
+    {
+        const string suffix = ".publication.json";
+        var prefix = result.StartsWith("Publicação salva: ", StringComparison.Ordinal) ? "Publicação salva: " :
+            result.StartsWith("Vídeo criado: ", StringComparison.Ordinal) ? "Vídeo criado: " : null;
+        if (prefix is null) return null;
+        var end = result.IndexOf(suffix, prefix.Length, StringComparison.OrdinalIgnoreCase);
+        return end < 0 ? null : result[prefix.Length..(end + suffix.Length)];
+    }
+
     public static IReadOnlyList<AiTool> All { get; } =
     [
         new AiTool
@@ -36,7 +46,7 @@ public static class AssistantPublicationTools
                     ? " Revisão " + saved.Revision + ". Cenas (preencha cada uma com edit_video_scene): " + string.Join("; ", video.Scenes.Select((sc, i) =>
                         (i + 1) + " " + sc.Id + " = " + (host.Documents.Get(project.Sections[i].Source.DocumentId)?.Path ?? "?") + " (" + sc.Elements.Count + " elementos)")) + "."
                     : "";
-                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + ")." + scenes + " Abra com open_note; as fontes continuam sendo notas editáveis.",
+                return new AiToolOutput("Publicação salva: " + saved.Path + " (fontes: " + ids + ")." + scenes + " O chat oferece um link para abrir no Estúdio.",
                     [new AiChange(saved.Id, doc is null ? null : new AiNoteSnap(doc.Path, doc.Content), new AiNoteSnap(saved.Path, saved.Content))]);
             }
         },
@@ -94,7 +104,7 @@ public static class AssistantPublicationTools
         "cada ## uma aula, blocos ```quiz viram questões); video (cada seção é uma cena; o texto da nota é o roteiro e a legenda). " +
         "Vídeo: campo video {aspect:16:9|9:16|1:1, resolution:144–2160, fps:1–60, subtitles:bool, theme:noite|quadro|papel|neon|sobrio (escolha sempre um: dá fundo em gradiente, " +
         "cor de texto, duas cores de diagrama e legendas combinando; elementos sem color e cenas sem background seguem o tema), scenes:[{id, placementId (= id da seção), duration (s), " +
-        "transition:{kind:cut|fade, seconds}, background:#rrggbb, camera? ({keyframes, motions} sobre x, y (ponto do quadro no centro, 0.5 é o meio), zoom (1 é o quadro inteiro, 2 o dobro de perto) e rotation; o fundo fica, os elementos se movem sob a câmera), elements:[{id, kind:title|text|script|shape|image|plot|math|path|group|use (use coloca um componente: component, params {chave: valor} preenchem {{chave}} nos textos; x, y, scale, rotation, opacity, keyframes e motions movem o componente inteiro), text? (rótulo curto, até " +
+        "transition:{kind:cut|fade|slide|wipe|zoom (slide entra da direita, wipe revela da esquerda, zoom aproxima ao surgir), seconds}, background:#rrggbb, camera? ({keyframes, motions} sobre x, y (ponto do quadro no centro, 0.5 é o meio), zoom (1 é o quadro inteiro, 2 o dobro de perto) e rotation; o fundo fica, os elementos se movem sob a câmera), elements:[{id, kind:title|text|script|shape|image|plot|math|path|group|use|code (code: text é um programa JavaScript seu que desenha a caixa do elemento a cada quadro; use coloca um componente: component, params {chave: valor} preenchem {{chave}} nos textos; x, y, scale, rotation, opacity, keyframes e motions movem o componente inteiro), text? (rótulo curto, até " +
         "160 caracteres; o roteiro é a nota; em plot a função, em math o TeX, em path os dados de path SVG \"M… L… C… Z\" ajustados à caixa), source? (imagem do vault), " +
         "x,y,width,height (0–1 do quadro), color, fontSize (em path, a espessura do traço), start, end?, parent? (id de outro elemento da cena: x,y viram deslocamento " +
         "a partir do centro dele, e escala, rotação e opacidade dele valem para este; group não desenha nada e serve de pai), " +
@@ -103,19 +113,21 @@ public static class AssistantPublicationTools
         // #1004: procedural motion — the model invents particles, orbits, grids and staggers as formulas instead of lists of elements
         "Fórmulas: + - * / ^, pi, tau, e; sin cos tan atan sqrt abs exp ln floor ceil round fract sat smooth (0–1 suave) rand(v) (0–1 determinístico por v) noise(v) (ruído suave); " +
         "min(a,b) max(a,b) mod(a,b) pow(a,b) atan2(y,x) step(borda,v) mix(a,b,u) clamp(v,lo,hi) — dentro delas a vírgula separa argumentos e o decimal é ponto. " +
+        "CÓDIGO LIVRE (kind code): use um programa para desenhar cada nova cena de motion graphics. " + VideoCode.Help + " " +
+        "Para ocupar o quadro inteiro use x 0.5, y 0.5, width 1, height 1. Se o programa falhar, review_publication diz a linha e o motivo. " +
+        "Ex.: {\"id\":\"campo\",\"kind\":\"code\",\"x\":0.5,\"y\":0.5,\"width\":1,\"height\":1,\"text\":\"function draw(ctx,t){ for(var i=0;i<200;i++){ var r=30+Math.random()*200, a=Math.random()*6.28+t*0.5; ctx.fill('#7dd3fc'); ctx.circle(ctx.width/2+r*Math.cos(a), ctx.height/2+r*Math.sin(a)*0.6, 2); } }\"}. " +
         "Movimento procedural: partículas, órbitas, grades, ondas e entradas escalonadas são UM elemento com repeat e fórmulas, nunca dezenas de elementos; " +
         "ex. 200 estrelas: {\"id\":\"estrelas\",\"kind\":\"shape\",\"text\":\"circle\",\"width\":0.004,\"height\":0.007,\"repeat\":200,\"motions\":[{\"property\":\"x\",\"mode\":\"set\",\"expression\":\"rand(i)\"},{\"property\":\"y\",\"mode\":\"set\",\"expression\":\"rand(i+0.5)\"},{\"property\":\"opacity\",\"mode\":\"set\",\"expression\":\"0.3+0.7*noise(i+2t)\"}]}; " +
         "escalonar: opacity set sat((t - 0.1*i)/0.4). Tipografia cinética: title com split letters e motions opacity set sat((t-0.05*i)/0.3), y add 0.05*(1-smooth((t-0.05*i)/0.3)) (cada letra sobe e aparece em sequência); words para revelar palavra a palavra com a fala. Componentes: o que se repete com conteúdo diferente (um rótulo com caixa, um cartão de dado, um ícone com legenda) é um componente usado várias vezes, não cópias escritas à mão. Revelar com clip: uma forma rect invisível (opacity 0) com progress 0→1 revela o texto da esquerda para a direita; um circle que cresce (scale) abre uma imagem a partir do centro. Câmera com propósito: aproximar devagar (zoom 1→1.15 na cena toda) dá vida a uma cena parada; pan de um ponto a outro conduz o olhar entre partes de um diagrama. Efeitos com propósito: glow em pontos de luz, partículas e destaques; shadow para separar cartões do fundo; blur em planos de fundo ou para entrar desfocado (blur keyframes 0.03→0); gradient em formas grandes. Formas repetidas podem passar da borda; texto repetido é revisado como texto. " +
         "components? ({nome: [elementos]}: grupos feitos uma vez; dentro deles x e y são deslocamentos do centro, 0,0 é o centro), audio:[{id, kind:voice|music|effect, path (arquivo do vault), start, trimStart, length?, volume}]}. IDs de cenas e elementos são estáveis: preserve-os ao editar. " +
         "Saídas que a pessoa exporta no estúdio: HTML, EPUB, PDF editorial, DOCX, ODT, PPTX (slides) e MP4 verificado (vídeo) com legendas SRT. " +
-        "Um vídeo pedido a você termina em render_video, que narra, gera o MP4 e as legendas no vault. Não crie .page.json; esse editor foi substituído. " +
+        "Entregue a publicação editável pelo link no chat. A pessoa abre o Estúdio quando quiser e decide quando narrar ou exportar em MP4. Use .publication.json. " +
         // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
-        "Vídeo novo: create_video numa chamada só (título, tema e, por cena, a fala, o layout e os textos curtos da tela), depois look_at_video e render_video. " +
+        "Vídeo novo: create_video numa chamada só (título, tema e, por cena, a fala e o programa que desenha a tela), depois revise com review_publication e, quando disponível, look_at_video. " +
         "Para mudar um vídeo existente, ou montar a partir de notas que já existem: 1) write_publication só com sources e design {layout:video} (o app cria uma cena por fonte e devolve os ids); " +
-        "2) edit_video_scene para cada cena, uma por chamada, de preferência com layout e slots (abertura, topico, comparacao, numero, formula, grafico, citacao: " +
-        "composições prontas com entradas animadas), acrescentando elementos só quando o layout não basta; 3) review_publication e look_at_video; 4) render_video. Nunca mande os elementos detalhados de todas as cenas num write_publication só (a resposta é cortada pelo limite de saída); o roteiro compacto do create_video cabe. " +
+        "2) edit_video_scene para cada cena, uma por chamada, com um elemento code nas cenas novas e nas cenas programadas que precisam de revisão; 3) review_publication e look_at_video; 4) entregue a publicação editável. Nunca mande os elementos detalhados de todas as cenas num write_publication só (a resposta é cortada pelo limite de saída); o roteiro compacto do create_video cabe. " +
         "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
         "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
         "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02}," +
@@ -136,7 +148,7 @@ public static class AssistantPublicationTools
         "referências; 3) roteiro — a ordem das seções e o que cada uma diz, antes de escrever; 4) composição — texto nas notas, layout no projeto; " +
         "5) revisão — review_publication e correção nas notas; 6) entrega — diga o que foi revisado e o que não foi. Decisões de rumo (público, tom, cortes) são da pessoa. " +
         "Vídeo, depois de montar: review_publication mede cada cena (fora do quadro, texto cortado, sobreposição, contraste) e lista os ids; " +
-        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa; por fim render_video. " +
+        "look_at_video mostra os quadros reais; edit_video_scene corrige só a cena com problema; repita até a revisão limpa; por fim, informe o caminho da publicação editável. " +
         "Um especialista (consult_agent) só quando ele sabe algo que você não sabe; não divida em vários agentes o que um faz bem.";
 
     /// <summary>

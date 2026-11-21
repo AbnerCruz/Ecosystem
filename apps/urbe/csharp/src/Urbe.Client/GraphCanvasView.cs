@@ -346,7 +346,7 @@ public sealed partial class GraphCanvasView : Control
 public sealed class GraphBoardPanel : Grid
 {
     public GraphCanvasView Canvas { get; } = new();
-    private readonly TextBlock _title = new() { FontSize = 15, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _title = new() { FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _edit, _link, _delete, _open, _save;
     private readonly StackPanel _strip;
     private readonly Button _undo, _redo, _group, _resize, _select, _draw, _erase;

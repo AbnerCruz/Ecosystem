@@ -67,7 +67,6 @@ public sealed partial class MainView : Grid
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
         Editor.Pinned.ContinueReading = () => ContinueReading();
         Editor.Pinned.FlashcardsSummary = FlashcardsSummary;
-        LoadNarrationVoice();
         Editor.Pinned.OpenFlashcards = () => _ = ShowFlashcardsAsync(null);
         Editor.Pinned.NoteText = path => ArtifactModel.IsNote(path) ? _contents.GetValueOrDefault(path) : null;
         FilePreview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
@@ -801,6 +800,7 @@ public sealed partial class MainView : Grid
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Publicações", UrbeTheme.Icons.Page, "Livros, artigos e páginas feitos de notas reais", Run: ShowPublicationsAsync));
+        items.Add(new("Flashcards", UrbeTheme.Icons.Book, "Biblioteca de cartões de estudo", Run: () => ShowFlashcardsAsync(null)));
         items.Add(new("Diagnóstico de teclado e toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Registrar foco, rolagem, IME e toques; desligado por padrão", Run: ToggleTouchDebugAsync));
         if (UpdateItem() is { } update) items.Add(update);
         if (_snapshot is { FutureFiles.Count: > 0 })
@@ -1559,6 +1559,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
                 Run: () => { ShowTrashView(); return Task.CompletedTask; }),
+            new DialogItem("Dados do aplicativo", UrbeTheme.Icons.Storage, "O que o Numa guarda e onde", Run: () => ShowAppDataAsync()),
             .. (_vault is null ? Array.Empty<DialogItem>() :
                 [new DialogItem("Pasta do Numa no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
         ]);

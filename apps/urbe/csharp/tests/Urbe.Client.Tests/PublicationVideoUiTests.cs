@@ -10,60 +10,57 @@ namespace Urbe.Client.Tests;
 /// <summary>CST-170/209 in the studio: a video publication previewed, timed and exported as a verified MP4.</summary>
 public sealed partial class HeadlessUiTests
 {
-    /// <summary>#956: the person composes a scene with a ready layout from the Estúdio's Objeto button, typing only the content.</summary>
-    [Fact]
-    public async Task PublicationVideo_ASceneIsComposedWithAReadyLayout() =>
-        Assert.True(await Session.Dispatch(async () =>
+    private sealed class PreviewClock : IPreviewAudio
     {
-        var dir = Path.Combine(Path.GetTempPath(), "urbe-layout-" + Guid.NewGuid().ToString("N"));
-        var vault = Path.Combine(dir, "vault");
-        Directory.CreateDirectory(vault);
-        File.WriteAllText(Path.Combine(vault, "Cena.md"), "# Relógios no GPS\n\nOs relógios dos satélites adiantam.\n");
-        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
-        var window = new Window { Width = 412, Height = 860, Content = view };
-        window.Show();
-        async Task Pump() { for (int j = 0; j < 12; j++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(15); } }
-        async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
-        async Task Type(string? value, string confirm = "Seguir")
+        public double Position { get; set; }
+        public bool Ended { get; set; }
+        public bool Failed => false;
+        public bool Disposed { get; private set; }
+        public void Dispose() => Disposed = true;
+    }
+
+    [Fact]
+    public async Task PublicationVideo_PreviewFollowsTheAudioClockAndResumesAtThePlayhead() =>
+        Assert.True(await Session.Dispatch(async () =>
         {
-            for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Any(); j++) await Pump();
-            if (value is not null) view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = value;
-            ClickButtonWithText(view.Dialogs, confirm);
-            await Pump();
-        }
-        try
-        {
-            await view.OpenVaultAsync();
-            await Settle(window, view);
-            var create = view.CreatePublicationAsync("Cena.md");
-            Dispatcher.UIThread.RunJobs();
-            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "GPS";
-            ClickButtonWithText(view.Dialogs, "Criar");
-            await create;
-            await Pump();
-            var studio = view.PublicationsStudio;
-            studio.UpdateProject(studio.Project! with { Design = studio.Project.Design with { Layout = "video" } });
-            await Pump();
-            var scene = Assert.Single(studio.Project!.Video!.Scenes);
-            var button = studio.GetLogicalDescendants().OfType<Button>().First(b => (Avalonia.Automation.AutomationProperties.GetName(b) ?? "").StartsWith("Adicionar objeto à cena", StringComparison.Ordinal));
-            button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            await Choose("Cena pronta (layout)");
-            await Choose("Número em destaque");
-            await Type("38 µs");                       // número
-            await Type("de diferença por dia");        // legenda
-            await Type(null);                          // título: the note's, as offered
-            for (int j = 0; j < 100 && studio.Project!.Video!.Scenes[0].Elements.Count < 3; j++) await Pump();
-            var elements = studio.Project!.Video!.Scenes[0].Elements;
-            Assert.Equal(["titulo", "numero", "legenda"], elements.Select(e => e.Id[(scene.Id.Length + 1)..]));
-            Assert.Equal("Relógios no GPS", elements[0].Text);
-            Assert.Equal("38 µs", elements[1].Text);
-            studio.VideoPanel.ShowAt(studio.VideoPanel.Timeline!.Scenes[0].Settled);
-            await Settle(window, view);
-            Snapshot(window, "estudio-cena-pronta.png");
-            return true;
-        }
-        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
-    }, CancellationToken.None));
+            var store = new DocumentStore();
+            var note = store.Upsert(new DocumentInput { Path = "Cena.md", Content = "# Cena\n\nA fala." });
+            using var catalog = new PublicationSourceCatalog(store);
+            var project = VideoComposition.Synced(PublicationProject.Create("Cena", note.Id) with { Design = new PublicationDesign { Layout = "video" } });
+            project = project with { Video = project.Video! with
+            {
+                Audio = [new VideoAudioClip { Kind = "voice", Path = "voz.wav", Start = 0 }]
+            } };
+            var panel = new PublicationVideoPanel();
+            var timeline = VideoTimeline.Build(project, catalog, 144);
+            var clock = new PreviewClock { Position = 1.5 };
+            var starts = new List<double>();
+            panel.StartAudioAsync = (_, start, _) =>
+            {
+                starts.Add(start);
+                return Task.FromResult<IPreviewAudio?>(clock);
+            };
+
+            try
+            {
+                panel.Show(timeline, new Dictionary<string, byte[]>(), id => id);
+                panel.TogglePlay();
+                Assert.Equal(0, Assert.Single(starts));
+                for (int i = 0; i < 50 && Math.Abs(panel.CurrentTime - 1.5) > 0.001; i++)
+                {
+                    await Task.Delay(10);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Assert.Equal(1.5, panel.CurrentTime, 3);
+                panel.TogglePlay();
+                Assert.True(clock.Disposed);
+                clock = new PreviewClock { Position = 1.5 };
+                panel.TogglePlay();
+                Assert.Equal(1.5, starts.Last(), 3);
+                return true;
+            }
+            finally { panel.Release(); }
+        }, CancellationToken.None));
 
     /// <summary>#956 (conversa da beta.57: "o vídeo não ficou pronto"): render_video speaks and encodes through the app, as the Estúdio exports.</summary>
     [Fact]
@@ -79,17 +76,16 @@ public sealed partial class HeadlessUiTests
         var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
         var window = new Window { Width = 412, Height = 860, Content = view };
         window.Show();
-        var voice = PlatformAudio.SynthesizeToWav;
         try
         {
             await view.OpenVaultAsync();
             await Settle(window, view);
             IAssistantApp app = view;
-            PlatformAudio.SynthesizeToWav = (_, _, target, _) => { File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
+            ConfigureSpeechProvider(view);
             var wav = await app.SpeakAsync("Uma frase.", CancellationToken.None);
             Assert.NotNull(wav);
             Assert.True(VideoAudio.ReadWavInfo(new MemoryStream(wav!)) is { Frames: 800 });
-            PlatformAudio.SynthesizeToWav = null;
+            view.Assistant.Config.AgentMedia.Remove("geral");
             Assert.Null(await app.SpeakAsync("Uma frase.", CancellationToken.None));
             if (FfmpegVideoEncoder.Find() is null) return true;   // the MP4 itself is checked where ffmpeg exists
             var store = new DocumentStore();
@@ -106,7 +102,6 @@ public sealed partial class HeadlessUiTests
         }
         finally
         {
-            PlatformAudio.SynthesizeToWav = voice;
             window.Close();
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
@@ -148,6 +143,10 @@ public sealed partial class HeadlessUiTests
             var scene = Assert.Single(studio.Project!.Video!.Scenes);
             Assert.NotNull(studio.VideoPanel.Frame);
             Assert.Equal((640, 360), (studio.VideoPanel.Timeline!.Width, studio.VideoPanel.Timeline.Height));
+            Assert.Contains(studio.VideoPanel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.StartsWith("Vídeo sem áudio.") == true);
+            Assert.NotNull(Named("Narrar roteiro"));
+            Assert.NotNull(Named("Escolher voz"));
+            Assert.NotNull(Named("Adicionar áudio"));
 
             var target = Path.Combine(vault, "Publicações", "Filme.publication.json");
             Click(Named("Alongar cena Cena"));
@@ -216,6 +215,32 @@ public sealed partial class HeadlessUiTests
             studio.UpdateProject(studio.Project! with { Video = studio.Project.Video! with { Audio = [new VideoAudioClip { Path = "trilha.wav", Kind = "music" }] } });
             await Pump();
             async Task Choose(string text) { for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text); j++) await Pump(); ClickButtonWithText(view.Dialogs, text); }
+            var previousPreview = PlatformAudio.StartPreview;
+            var preview = new PreviewClock { Position = 0.25 };
+            string? mixedPath = null;
+            bool hasAudio = false;
+            PlatformAudio.StartPreview = (path, _, _) =>
+            {
+                mixedPath = path;
+                using var wav = File.OpenRead(path);
+                var info = VideoAudio.ReadWavInfo(wav)!;
+                wav.Position = info.DataOffset;
+                using var pcm = new BinaryReader(wav);
+                hasAudio = Enumerable.Range(0, 128).Any(_ => pcm.ReadInt16() != 0);
+                return Task.FromResult<IPreviewAudio>(preview);
+            };
+            try
+            {
+                panel.ShowAt(0);
+                panel.TogglePlay();
+                for (int j = 0; j < 50 && !panel.IsPlaying; j++) await Pump();
+                Assert.True(panel.IsPlaying);
+                Assert.True(hasAudio);
+                panel.TogglePlay();
+                Assert.True(preview.Disposed);
+                Assert.False(File.Exists(mixedPath));
+            }
+            finally { PlatformAudio.StartPreview = previousPreview; }
             var adjust = view.AdjustPublicationAudioAsync();
             await Choose("trilha.wav");
             for (int j = 0; j < 100 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains('█') == true); j++) await Pump();
@@ -231,14 +256,10 @@ public sealed partial class HeadlessUiTests
             await Choose("Tirar do vídeo");
             await remove;
             Assert.Empty(studio.Project!.Video!.Audio);
-            // CST-172: the device's voice narrates each scene's script, placed at the scene's start
-            var voice = PlatformAudio.SynthesizeToWav;
-            var spoken = new List<string>();
-            PlatformAudio.SynthesizeToWav = (text, _, target, _) => { spoken.Add(text); File.WriteAllBytes(target, Urbe.Core.LongAudio.Wav(new short[800])); return Task.FromResult(true); };
-            try { await view.NarratePublicationVideoAsync(); }
-            finally { PlatformAudio.SynthesizeToWav = voice; }
+            var speech = ConfigureSpeechProvider(view);
+            await view.NarratePublicationVideoAsync();
             await Pump();
-            Assert.Contains(spoken, t => t.Contains("Uma frase do roteiro."));
+            Assert.Contains(speech.Requests, t => t.Text.Contains("Uma frase do roteiro."));
             var narration = Assert.Single(studio.Project!.Video!.Audio, a => a.Kind == "voice");
             Assert.Equal(("Narração/Filme/Cena 1.wav", 0.0), (narration.Path, narration.Start));
             Assert.True(File.Exists(Path.Combine(vault, "Narração", "Filme", "Cena 1.wav")));

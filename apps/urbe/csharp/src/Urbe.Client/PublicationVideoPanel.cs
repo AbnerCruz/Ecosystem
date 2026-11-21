@@ -22,25 +22,32 @@ public sealed class PublicationVideoPanel : StackPanel
     public const int PreviewResolution = 360;
     private readonly Image _frame = new() { Stretch = Stretch.Uniform, MaxHeight = 420 };
     private readonly Slider _scrubber = new() { Minimum = 0, Maximum = 1, MinHeight = 44 };
-    private readonly TextBlock _time = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _time = new() { FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _play = new() { Content = "▶ Reproduzir", MinHeight = 44, Padding = new Thickness(12, 4) };
     private readonly Ui.UrbeButton _export = new("Exportar MP4", Ui.ButtonKind.Primary, UrbeTheme.Icons.Download) { MinHeight = 44 };
     private readonly Ui.UrbeButton _cancel = new("Cancelar", Ui.ButtonKind.Danger) { MinHeight = 44, IsVisible = false };
     private readonly ProgressBar _progress = new() { Minimum = 0, Maximum = 1, IsVisible = false, Height = 6 };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _audioStatus = new()
+    {
+        FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
+    };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel _scenes = new() { Spacing = 6 };
     private readonly DispatcherTimer _timer = new();
     private readonly System.Diagnostics.Stopwatch _clock = new();
     private VideoFrameRenderer? _renderer;
     private WriteableBitmap? _bitmap;
     private double _playFrom;
+    private CancellationTokenSource? _startingAudio;
+    private IPreviewAudio? _audio;
+    public Func<VideoTimeline, double, CancellationToken, Task<IPreviewAudio?>>? StartAudioAsync { get; set; }
     private bool _scrubbing;
     // #956 P2: the object selected on the preview, its outline, the inspector, and a drag under way
     private readonly Canvas _overlay = new() { IsHitTestVisible = false };
     private readonly Border _outline = new() { BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(3), IsVisible = false };
     private readonly Grid _stage = new() { Background = Brushes.Black };
     private readonly StackPanel _inspector = new() { Spacing = 6, IsVisible = false };
-    private readonly TextBlock _hint = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
+    private readonly TextBlock _hint = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Text = "Toque num objeto da prévia para movê-lo, mudar o tamanho ou animá-lo." };
     private (string Scene, string Element)? _selected;
     private Point? _dragFrom;
     private Point _dragBy;
@@ -59,7 +66,8 @@ public sealed class PublicationVideoPanel : StackPanel
         _scrubber.PropertyChanged += (_, e) =>
         {
             if (e.Property != Avalonia.Controls.Primitives.RangeBase.ValueProperty || _scrubbing) return;
-            if (!_timer.IsEnabled) ShowAt(_scrubber.Value);
+            Stop();
+            ShowAt(_scrubber.Value);
         };
         _play.Click += (_, _) => TogglePlay();
         _export.Click += (_, _) => ExportRequested?.Invoke();
@@ -67,7 +75,10 @@ public sealed class PublicationVideoPanel : StackPanel
         _timer.Tick += (_, _) =>
         {
             if (_renderer is null) { Stop(); return; }
-            Advance(_playFrom + _clock.Elapsed.TotalSeconds);
+            if (_audio is { Failed: true }) { Stop(); _status.Text = "O áudio da prévia foi interrompido."; return; }
+            Advance(_audio is { } audio
+                ? audio.Ended ? _renderer.Timeline.Duration : audio.Position
+                : _playFrom + _clock.Elapsed.TotalSeconds);
         };
         var controls = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(_play, Dock.Left);
@@ -106,19 +117,37 @@ public sealed class PublicationVideoPanel : StackPanel
         Children.Add(_hint);
         Children.Add(_inspector);
         Children.Add(controls);
+        var audioActions = new WrapPanel();
+        AudioAction("Narrar roteiro", () => NarrateRequested?.Invoke());
+        AudioAction("Escolher voz", () => VoiceRequested?.Invoke());
+        AudioAction("Adicionar áudio", () => AddAudioRequested?.Invoke());
+        Children.Add(new StackPanel { Spacing = 3, Children = { _audioStatus, audioActions } });
+
+        void AudioAction(string label, Action run)
+        {
+            var button = new Ui.UrbeButton(label, Ui.ButtonKind.Ghost);
+            button.Click += (_, _) => run();
+            audioActions.Children.Add(button);
+        }
+
         Children.Add(_strip);
         Children.Add(exportRow);
         Children.Add(_progress);
         Children.Add(_status);
-        Children.Add(new TextBlock { Text = "Cenas", FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 8, 0, 0) });
+        Children.Add(new TextBlock { Text = "Cenas", FontSize = UrbeTokens.Type.BodyStrong.Size, FontWeight = UrbeTokens.Type.BodyStrong.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 8, 0, 0) });
         Children.Add(_scenes);
         DetachedFromVisualTree += (_, _) => Stop();
     }
 
+    public event Action? NarrateRequested;
+    public event Action? VoiceRequested;
+    public event Action? AddAudioRequested;
     public event Action? ExportRequested;
     public event Action? CancelRequested;
     /// <summary>The scene, in the project, changed by the timing controls.</summary>
     public event Action<VideoScene>? SceneChanged;
+    /// <summary>#1004: the person asked to edit a code element's program.</summary>
+    public event Action<VideoScene, VideoElement>? CodeEditRequested;
     public event Action<string>? AddElementRequested;
 
     public VideoTimeline? Timeline => _renderer?.Timeline;
@@ -132,6 +161,7 @@ public sealed class PublicationVideoPanel : StackPanel
     {
         // the first look is the first scene formed, not the black of its fade-in
         var at = _renderer is null ? Poster(timeline) : _scrubber.Value;
+        Stop();
         _renderer?.Dispose();
         _renderer = new VideoFrameRenderer(timeline, files, 48L << 20);
         _timer.Interval = TimeSpan.FromSeconds(1.0 / Math.Clamp(timeline.Fps, 1, 30));
@@ -140,6 +170,9 @@ public sealed class PublicationVideoPanel : StackPanel
         _scrubber.Value = Math.Min(at, timeline.Duration);
         _scrubbing = false;
         ShowAt(_scrubber.Value);
+        _audioStatus.Text = timeline.Audio.Count == 0
+            ? "Vídeo sem áudio. Narre o roteiro ou adicione uma faixa para ouvir na prévia."
+            : timeline.Audio.Count == 1 ? "1 faixa de áudio" : timeline.Audio.Count + " faixas de áudio";
         if (!IsExporting)
             _status.Text = timeline.FrameCount == 0 ? "Adicione notas: cada nota vira uma cena, e o texto dela é o roteiro e a legenda."
                 : timeline.Scenes.Count + (timeline.Scenes.Count == 1 ? " cena" : " cenas") + " · " + Clock(timeline.Duration) + " · " + timeline.Fps + " qps";
@@ -280,7 +313,7 @@ public sealed class PublicationVideoPanel : StackPanel
             b.Click += (_, _) => run();
             return b;
         }
-        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", _ => "Texto" };
+        string kind = element.Kind switch { "title" => "Título", "script" => "Roteiro", "shape" => "Forma", "image" => "Imagem", "plot" => "Gráfico", "math" => "Fórmula", "path" => "Traço", "group" => "Grupo", "code" => "Código", _ => "Texto" };
         _inspector.Children.Add(new TextBlock
         {
             Text = kind + (c is null ? " · fora da cena neste instante" : " · " + Clock(c.Value.Local) + " da cena"),
@@ -288,7 +321,9 @@ public sealed class PublicationVideoPanel : StackPanel
         });
         bool keyed = c is { } now && VideoEditing.HasKeyframe(element, now.Local);
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
-        foreach (var b in new[]
+        var buttons = new List<Button>();
+        if (element.Kind == "code") buttons.Add(Action("Editar código", "Editar o programa que desenha este objeto", () => CodeEditRequested?.Invoke(scene.Scene, element)));
+        foreach (var b in buttons.Concat(new Button[]
         {
             Action(keyed ? "◆ Tirar quadro-chave" : "◇ Quadro-chave aqui", keyed ? "Tirar o quadro-chave deste instante" : "Marcar quadro-chave neste instante",
                 () => { if (Current() is { } x) SceneChanged?.Invoke(VideoEditing.ToggleKeyframe(x.Scene.Scene, x.State.Id, x.Local, x.State)); }, c is not null),
@@ -296,7 +331,7 @@ public sealed class PublicationVideoPanel : StackPanel
             Action("Menor", "Diminuir o objeto", () => SceneChanged?.Invoke(VideoEditing.Resize(scene.Scene, element.Id, 1 / 1.15))),
             Action("Remover", "Remover o objeto da cena", () => { Select(null); SceneChanged?.Invoke(VideoEditing.Remove(scene.Scene, element.Id)); }),
             Action("Pronto", "Terminar de editar o objeto", () => Select(null))
-        })
+        }))
         {
             b.Margin = new Thickness(0, 0, 6, 6);
             actions.Children.Add(b);
@@ -306,7 +341,7 @@ public sealed class PublicationVideoPanel : StackPanel
         if (c is { } at && VideoEditing.EasingAt(element, at.Local) is { } easing)
         {
             var curves = new WrapPanel { Orientation = Orientation.Horizontal };
-            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            curves.Children.Add(new TextBlock { Text = "Curva até aqui:", FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             foreach (var (label, value) in VideoEditing.Curves)
             {
                 var chosen = value == easing;
@@ -321,7 +356,7 @@ public sealed class PublicationVideoPanel : StackPanel
         if (times.Count > 0)
         {
             var row = new WrapPanel { Orientation = Orientation.Horizontal };
-            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            row.Children.Add(new TextBlock { Text = "Quadros-chave:", FontSize = UrbeTokens.Type.Caption.Size, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             foreach (var t in times)
             {
                 var jump = Action("◆ " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s", "Ir ao quadro-chave de " + t.ToString("0.0#", CultureInfo.GetCultureInfo("pt-BR")) + " s",
@@ -331,7 +366,7 @@ public sealed class PublicationVideoPanel : StackPanel
             }
             _inspector.Children.Add(row);
         }
-        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+        else _inspector.Children.Add(new TextBlock { Text = "Arraste o objeto na prévia para movê-lo. Para animar: marque um quadro-chave, mude o tempo, mova o objeto.", FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
     }
 
     private Control SceneRow(VideoTimelineScene placed, string label)
@@ -374,12 +409,36 @@ public sealed class PublicationVideoPanel : StackPanel
         return row;
     }
 
-    public void TogglePlay()
+    public void TogglePlay() => _ = TogglePlayAsync();
+
+    private async Task TogglePlayAsync()
     {
-        if (_timer.IsEnabled) { Stop(); return; }
-        if (_renderer is null || _renderer.Timeline.FrameCount == 0) return;
-        // playing from the poster starts the video from its beginning
-        _playFrom = _scrubber.Value >= _renderer.Timeline.Duration - 0.01 || Math.Abs(_scrubber.Value - Poster(_renderer.Timeline)) < 1e-6 ? 0 : _scrubber.Value;
+        if (_timer.IsEnabled || _startingAudio is not null) { Stop(); return; }
+        if (_renderer is not { } renderer || renderer.Timeline.FrameCount == 0) return;
+        var timeline = renderer.Timeline;
+        _playFrom = _scrubber.Value >= timeline.Duration - 0.01 || Math.Abs(_scrubber.Value - Poster(timeline)) < 1e-6 ? 0 : _scrubber.Value;
+        if (timeline.Audio.Count > 0 && StartAudioAsync is { } startAudio)
+        {
+            using var pending = new CancellationTokenSource();
+            _startingAudio = pending;
+            _play.Content = "Cancelar prévia";
+            try
+            {
+                var audio = await startAudio(timeline, _playFrom, pending.Token);
+                if (!ReferenceEquals(_startingAudio, pending)) { audio?.Dispose(); return; }
+                _audio = audio;
+                if (audio is null) _status.Text = "A prévia de áudio está indisponível neste aparelho.";
+            }
+            catch (OperationCanceledException) when (pending.IsCancellationRequested) { return; }
+            catch (Exception error)
+            {
+                if (!ReferenceEquals(_startingAudio, pending)) return;
+                _status.Text = "Não foi possível tocar a trilha. " + error.Message;
+                _play.Content = "▶ Reproduzir";
+                return;
+            }
+            finally { if (ReferenceEquals(_startingAudio, pending)) _startingAudio = null; }
+        }
         _clock.Restart();
         _timer.Start();
         _play.Content = "❚❚ Pausar";
@@ -387,8 +446,13 @@ public sealed class PublicationVideoPanel : StackPanel
 
     public void Stop()
     {
+        var pending = _startingAudio;
+        _startingAudio = null;
+        pending?.Cancel();
         _timer.Stop();
         _clock.Stop();
+        _audio?.Dispose();
+        _audio = null;
         _play.Content = "▶ Reproduzir";
     }
 

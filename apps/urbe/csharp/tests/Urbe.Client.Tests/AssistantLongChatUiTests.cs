@@ -73,6 +73,14 @@ public sealed partial class HeadlessUiTests
             var first = (Ui.Deferred)panel.Log.Children[0];
             Assert.True(first.IsMade);
             Assert.Contains(first.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Pergunta número 0 sobre as minhas notas");
+
+            // The contextual mini-panel shares this 400-message history but must not
+            // eagerly parse/measure all its Markdown while the editor stays responsive.
+            panel.ShowCompact();
+            var miniItems = view.AssistantMini.GetLogicalDescendants().OfType<Ui.Deferred>().ToList();
+            Assert.Equal(400, miniItems.Count);
+            Assert.True(miniItems.Count(d => d.IsMade) < 70);
+            panel.DismissCompact();
             return true;
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; }

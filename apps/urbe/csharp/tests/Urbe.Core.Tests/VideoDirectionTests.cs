@@ -444,15 +444,15 @@ public sealed class VideoDirectionTests
     }
 
     [Fact]
-    public async Task CreateVideoMakesTheNotesThePublicationAndComposedScenesInOneCall()
+    public async Task CreateVideoMakesTheNotesThePublicationAndProgrammedScenesInOneCall()
     {
         var host = new Host();
         var create = AssistantVideoDirectionTools.All.Single(t => t.Name == "create_video");
         var input = JsonNode.Parse("""
             {"title":"Relatividade do tempo","theme":"quadro","scenes":[
-              {"title":"Abertura","narration":"O tempo não corre igual para todo mundo.","layout":"abertura","slots":{"titulo":"Relatividade do tempo","subtitulo":"Por que relógios discordam"}},
-              {"title":"O fator gama","narration":"O tempo se estica pelo fator gama, que cresce perto da luz.","layout":"formula","slots":{"titulo":"O fator gama","formula":"\\gamma = \\frac{1}{\\sqrt{1-v^2/c^2}}"}},
-              {"title":"GPS","narration":"Sem corrigir 38 microssegundos por dia, o GPS erraria quilômetros.","layout":"numero","slots":{"numero":"38 µs","legenda":"por dia no GPS"}}]}
+              {"title":"Abertura","narration":"O tempo não corre igual para todo mundo.","code":"function draw(ctx,t){ ctx.circle(400,250,70); }"},
+              {"title":"O fator gama","narration":"O tempo se estica pelo fator gama, que cresce perto da luz.","code":"function draw(ctx,t){ ctx.circle(400,250,50+t); }"},
+              {"title":"GPS","narration":"Sem corrigir 38 microssegundos por dia, o GPS erraria quilômetros.","code":"function draw(ctx,t){ ctx.circle(400,250,100+t); }"}]}
             """)!.AsObject();
         var result = await create.Run(input, host);
         Assert.Contains("Vídeo criado: Publicações/Relatividade do tempo.publication.json", result.Content);
@@ -462,18 +462,43 @@ public sealed class VideoDirectionTests
         var project = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Relatividade do tempo.publication.json")!.Content);
         Assert.Equal("quadro", project.Video!.Theme);
         Assert.Equal(3, project.Video.Scenes.Count);
-        Assert.Contains(project.Video.Scenes[1].Elements, e => e.Kind == "math");
-        Assert.Contains(project.Video.Scenes[2].Elements, e => e.Text == "38 µs");
+        Assert.All(project.Video.Scenes, scene => Assert.Equal("code", Assert.Single(scene.Elements).Kind));
         Assert.Equal(4, result.Changes!.Count);   // three notes and the publication, all undoable
 
         // a mistake is said before anything is written
         var before = host.Documents.List().Count;
         var bad = JsonNode.Parse("""{"title":"Outro","scenes":[{"title":"A","narration":"x","layout":"comparacao","slots":{"titulo":"T"}}]}""")!.AsObject();
         var error = await Assert.ThrowsAsync<AiToolException>(() => create.Run(bad, host));
-        Assert.Contains("esquerda", error.Message);
+        Assert.Contains("code", error.Message);
         Assert.Equal(before, host.Documents.List().Count);
         // and the video it made goes on to a verified MP4
         var render = await AssistantVideoDirectionTools.All.Single(t => t.Name == "render_video").Run(new JsonObject { ["path"] = "Publicações/Relatividade do tempo.publication.json" }, host);
         Assert.Contains("Vídeo pronto", render.Content);
+    }
+
+    /// <summary>#1004: create_video requires a program per scene and validates it before writing.</summary>
+    [Fact]
+    public async Task CreateVideoTakesAProgramPerScene()
+    {
+        var host = new Host();
+        var create = AssistantVideoDirectionTools.All.Single(t => t.Name == "create_video");
+        var input = JsonNode.Parse("""
+            {"title":"Órbitas","theme":"noite","scenes":[
+              {"title":"Campo","narration":"Partículas giram em torno de uma estrela.","code":"function draw(ctx,t){ for(var i=0;i<100;i++){ var a=Math.random()*6.28+t; ctx.fill('#7dd3fc'); ctx.circle(ctx.width/2+120*Math.cos(a), ctx.height/2+80*Math.sin(a), 2); } }"},
+              {"title":"Lei","narration":"A gravidade mantém as órbitas.","code":"function draw(ctx,t){ ctx.fill('#1e293b'); ctx.circle(ctx.width/2, ctx.height/2, 40 + 10*Math.sin(t)); }"}]}
+            """)!.AsObject();
+        var result = await create.Run(input, host);
+        Assert.Contains("Vídeo criado", result.Content);
+        var project = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Órbitas.publication.json")!.Content);
+        Assert.Equal(["code"], project.Video!.Scenes[0].Elements.Select(e => e.Kind));
+        Assert.Equal("code", Assert.Single(project.Video.Scenes[1].Elements).Kind);
+
+        var before = host.Documents.List().Count;
+        var bad = JsonNode.Parse("""{"title":"Quebrado","scenes":[{"title":"A","narration":"x","code":"function draw(ctx){ nada(); }"}]}""")!.AsObject();
+        var error = await Assert.ThrowsAsync<AiToolException>(() => create.Run(bad, host));
+        Assert.Contains("nada", error.Message);
+        Assert.Equal(before, host.Documents.List().Count);
+        var none = JsonNode.Parse("""{"title":"Vazio","scenes":[{"title":"A","narration":"x"}]}""")!.AsObject();
+        Assert.Contains("code", (await Assert.ThrowsAsync<AiToolException>(() => create.Run(none, host))).Message);
     }
 }

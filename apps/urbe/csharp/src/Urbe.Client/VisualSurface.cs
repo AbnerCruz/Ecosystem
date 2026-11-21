@@ -1934,7 +1934,7 @@ public sealed class VisualSurface : StackPanel
                 Children =
                 {
                     UrbeTheme.Icon(SlashMenu.Icons["link"], 15),
-                    new TextBlock { Text = "Abrir", FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center }
+                    new TextBlock { Text = "Abrir", FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, VerticalAlignment = VerticalAlignment.Center }
                 }
             },
             Padding = new Thickness(12, 0), MinHeight = 36, CornerRadius = new CornerRadius(18), Focusable = false, IsVisible = false,
@@ -1994,7 +1994,7 @@ public sealed class VisualSurface : StackPanel
         }
         void Sep() { var sep = new Border { Width = 1, Height = 20, Margin = new Thickness(3, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) }; row.Children.Add(sep); if (!clipboard) _formatting.Add(sep); }
         Control Ic(string name) => UrbeTheme.Icon(SlashMenu.Icons[name], 18);
-        TextBlock Word(string text) => new() { Text = text, FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        TextBlock Word(string text) => new() { Text = text, FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, VerticalAlignment = VerticalAlignment.Center };
         // the clipboard first, in words (as the phone's own text menu): Copiar, Recortar, Colar, Selecionar tudo
         _copyButton = Add("copy", Word("Copiar"), "Copiar", wide: true);
         _cutButton = Add("cut", Word("Recortar"), "Recortar", wide: true);
@@ -2002,17 +2002,17 @@ public sealed class VisualSurface : StackPanel
         _allButton = Add("selectAll", Word("Tudo"), "Selecionar tudo", wide: true);
         clipboard = false;
         Sep();
-        Add("bold", new TextBlock { Text = "B", FontWeight = FontWeight.Bold, FontSize = 15 }, "Negrito");
-        Add("italic", new TextBlock { Text = "I", FontStyle = FontStyle.Italic, FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.SemiBold, FontSize = 15 }, "Itálico");
+        Add("bold", new TextBlock { Text = "B", FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Callout.Size }, "Negrito");
+        Add("italic", new TextBlock { Text = "I", FontStyle = FontStyle.Italic, FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.SemiBold, FontSize = UrbeTokens.Type.Callout.Size }, "Itálico");
         Add("code", Ic("code"), "Código");
         Sep();
         Add("wiki", Ic("wikilink"), "Transformar em link de nota");
         Add("link", Ic("link"), "Link externo");
         Sep();
-        Add("h2", new TextBlock { Text = "H", FontWeight = FontWeight.Bold, FontSize = 15 }, "Título");
+        Add("h2", new TextBlock { Text = "H", FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Callout.Size }, "Título");
         Add("quote", Ic("quote"), "Citação");
         Sep();
-        Add("comment", new TextBlock { Text = "%%", FontWeight = FontWeight.Bold, FontSize = 13 }, "Comentário");
+        Add("comment", new TextBlock { Text = "%%", FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Footnote.Size }, "Comentário");
         Add("wordComment", new TextBlock { Text = "💬", FontSize = 14 }, "Comentar a palavra");
         Add("pin", UrbeTheme.Icon(UrbeTheme.Icons.Pin, 18), "Fixar em painel");
         // narrower than all its buttons (a phone): it scrolls sideways, never off the screen

@@ -179,7 +179,7 @@ public sealed partial class MainView
 
     private static Control Message(string text) => new TextBlock
     {
-        Text = text, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(14, 12)
+        Text = text, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(14, 12)
     };
 
     private Control Missing(string target) => new Border

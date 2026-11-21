@@ -14,7 +14,7 @@ public sealed class StudyBrowserPanel : Grid
 {
     private readonly TextBox _address = new() { PlaceholderText = "Endereço ou pesquisa", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
     private readonly ContentControl _content = new();
-    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(12, 4, 12, 0) };
+    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(12, 4, 12, 0) };
     private readonly Ui.UrbeIconButton _back = new(UrbeTheme.Icons.Back, "Voltar"), _forward = new(UrbeTheme.Icons.Forward, "Avançar");
     private readonly TextBox _timestamp = new() { Text = "0", Width = 72, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
     private readonly StackPanel _video = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(12, 4) };

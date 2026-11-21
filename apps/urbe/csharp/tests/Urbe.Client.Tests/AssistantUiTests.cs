@@ -38,6 +38,57 @@ public sealed partial class HeadlessUiTests
     private static string Sse(params string[] chunks) => string.Concat(chunks.Select(c => "data: " + c + "\n\n")) + "data: [DONE]\n\n";
 
     [Fact]
+    public async Task Assistant_OffersTheVideoPublicationLinkWithoutOpeningTheStudio() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "numa-video-handoff-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            try
+            {
+                await view.OpenVaultAsync();
+                var panel = view.Assistant;
+                panel.Open();
+                panel.SelectAgent("geral");
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "teste"));
+                panel.Config.AgentPolicies["geral"] = "auto";
+                panel.Conversation.ProviderId = "openrouter";
+                panel.Conversation.Model = "org/m";
+
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"video","function":{"name":"create_video","arguments":"{\"title\":\"Órbita\",\"scenes\":[{\"title\":\"Abertura\",\"narration\":\"A Terra dá uma volta ao redor do Sol.\",\"code\":\"function draw(ctx, t) { ctx.circle(100, 100, 20); }\"}]}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                for (int i = 0; i < 2; i++)
+                    model.Chats.Enqueue(Sse(
+                        """{"choices":[{"delta":{"content":"A publicação Órbita está pronta para editar."}}]}""",
+                        """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+
+                panel.Send("Crie um vídeo sobre a órbita da Terra");
+                await panel.CurrentRun!;
+                Assert.Equal("end", panel.Conversation.Runs.Last().Stopped);
+                Assert.False(view.PublicationsStudio.IsVisible);
+                Assert.True(panel.IsVisible);
+                ClickButtonWithText(panel, "Abrir no Estúdio · Órbita");
+                for (int i = 0; i < 50 && !view.PublicationsStudio.IsVisible; i++) await Task.Delay(10);
+                Assert.True(view.PublicationsStudio.IsVisible);
+                Assert.Equal("Órbita", view.PublicationsStudio.Project!.Title);
+                Assert.DoesNotContain("\"name\":\"render_video\"", model.Sent[0]);
+                Assert.Empty(Directory.EnumerateFiles(vault, "*.mp4", SearchOption.AllDirectories));
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Assistant_EditsTheVaultWithApprovalAndUndoes() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
@@ -167,10 +218,11 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Agentes");
                 Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Contexto");
-                Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Pesquisa");
-                Assert.Contains("Privacidade e pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickButtonWithText(panel, "Configurar");
+                Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<Button>().Select(x => x.Content as string));
+                panel.ShowSettings();
+                ClickNamed(panel, "Configurações: Conexões");
+                Assert.Contains("Configurações globais da pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Agentes");
                 Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;
@@ -470,6 +522,11 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 Assert.Contains("Resultado devolvido ao agente",
                     panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                // Reopening before the previous sheet detaches must use a NEW visual
+                // list, never reparent the old StackPanel between ScrollViewers.
+                var reopened = Assert.IsType<StackPanel>(OpenSteps(panel));
+                Assert.NotSame(timeline, reopened);
+                Assert.Equal(10, reopened.Children.Count);
 
                 // a new request: while it streams and waits for approval, the earlier ones are not rebuilt
                 model.Chats.Enqueue(Sse(
@@ -488,6 +545,28 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Aprovar alteração · Comece.md", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 panel.Answer(AiApproval.Approve);
                 await panel.CurrentRun!;
+
+                // Real crash regression (20-21 Nov): a persisted update_plan
+                // with duplicate JSON keys must not break ActivityTimeline/RenderLog.
+                msgs.Add(new AiChatMessage
+                {
+                    Id = "user-bad-json", Role = "user",
+                    Content = [AiChatBlock.TextBlock("Ver plano antigo")]
+                });
+                msgs.Add(new AiChatMessage
+                {
+                    Id = "assistant-bad-json", Role = "assistant",
+                    Content = [new AiChatBlock
+                    {
+                        Type = "tool_use", Id = "bad-plan", Name = "update_plan",
+                        Input = System.Text.Json.Nodes.JsonNode.Parse(
+                            """{"steps":[{"status":"done"}],"steps":[{"status":"pending"}]}""")
+                    }]
+                });
+                panel.RenderAll();
+                Assert.NotEmpty(panel.Log.Children);
+                var badPlan = panel.Conversation.Messages[^1].Content[0];
+                Assert.NotNull(badPlan.Input);
                 return true;
             }
             finally

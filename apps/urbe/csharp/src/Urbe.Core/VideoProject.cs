@@ -26,6 +26,7 @@ public sealed record VideoComposition
     public string? Theme { get; init; }
     public List<VideoScene> Scenes { get; init; } = [];
     public List<VideoAudioClip> Audio { get; init; } = [];
+    public string? NarrationVoice { get; init; }
     /// <summary>#1004 slice 5: reusable groups of elements by name, placed in scenes by elements of kind "use".</summary>
     public Dictionary<string, List<VideoElement>>? Components { get; init; }
     /// <summary>#956: what each scene showed in the last MP4 saved (scene ID → <see cref="VideoTimelineScene.ContentKey"/>).</summary>
@@ -134,9 +135,11 @@ public sealed record VideoScene
     };
 }
 
-/// <summary>How a scene enters: "cut" or "fade" (a crossfade over the previous scene, from black at the start).</summary>
+/// <summary>How a scene enters: "cut", "fade" (a crossfade over the previous scene, from black at the start), "slide", "wipe" or "zoom".</summary>
 public sealed record VideoTransition
 {
+    /// <summary>cut, fade, or #1004's slide (in from the right), wipe (revealed left to right) and zoom (closing in as it appears).</summary>
+    public static readonly string[] Kinds = ["cut", "fade", "slide", "wipe", "zoom"];
     public string Kind { get; init; } = "cut";
     public double Seconds { get; init; } = 0.5;
 }
@@ -150,7 +153,7 @@ public sealed record VideoTransition
 /// </summary>
 public sealed record VideoElement
 {
-    public static readonly string[] Kinds = ["title", "text", "script", "shape", "image", "plot", "math", "path", "group"];
+    public static readonly string[] Kinds = ["title", "text", "script", "shape", "image", "plot", "math", "path", "group", "code"];
     public const int MaxPathData = 8192;
 
     public string Id { get; init; } = "el_" + Guid.NewGuid().ToString("N");
@@ -200,6 +203,17 @@ public sealed record VideoElement
     public double Shadow { get; init; }
     public double Blur { get; init; }
     public string? Gradient { get; init; }
+
+    /// <summary>
+    /// The vault images an element draws: an image's source, or the list a code element declares in its source
+    /// ("a.png; b.jpg"), which its program reaches by index with ctx.image(i, …) — and nothing else of the vault.
+    /// </summary>
+    public static IReadOnlyList<string> Images(VideoElement e) => e.Kind switch
+    {
+        "image" when e.Source is { Length: > 0 } s => [s],
+        "code" when e.Source is { Length: > 0 } s => s.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
+        _ => []
+    };
 
     /// <summary>The shapes an element can be clipped to.</summary>
     public static readonly string[] ClipShapes = ["rect", "retangulo", "retângulo", "ellipse", "elipse", "circle", "circulo", "círculo"];
@@ -304,7 +318,7 @@ public static class VideoCompositionRules
             Id(scene.Id, "cena");
             if (string.IsNullOrWhiteSpace(scene.PlacementId)) throw Bad("cena sem nota");
             if (!Finite(scene.Duration) || scene.Duration is < 0.1 or > 3600) throw Bad("duração da cena");
-            if (scene.Transition is null || scene.Transition.Kind is not ("cut" or "fade") ||
+            if (scene.Transition is null || !VideoTransition.Kinds.Contains(scene.Transition.Kind) ||
                 !Finite(scene.Transition.Seconds) || scene.Transition.Seconds is < 0 or > 10) throw Bad("transição");
             if (scene.Elements is null || scene.Elements.Count > 256) throw Bad("elementos");
             foreach (var e in scene.Elements)
@@ -325,6 +339,13 @@ public static class VideoCompositionRules
                     if (!VideoKeyframe.IsEasing(k.Easing))
                         throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
                     if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
+                }
+                if (e.Kind == "code")
+                {
+                    foreach (var img in VideoElement.Images(e))
+                        if (!VideoScript.IsVaultPath(img)) throw Bad("imagem \"" + img + "\" de " + e.Id + ": use caminhos do vault separados por ;");
+                    try { VideoCode.Check(e.Text ?? ""); }
+                    catch (VideoCodeException ex) { throw Bad("código de " + e.Id + ": " + ex.Message); }
                 }
                 if (e.Split is { } split)
                 {

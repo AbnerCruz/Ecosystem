@@ -57,6 +57,17 @@ public static class VideoInspection
                 for (int i = 0; i < visible.Count; i++)
                 {
                     var e = visible[i];
+                    if (e.Kind == "code")
+                    {
+                        // a program that fails draws nothing: the agent is told where and why
+                        try { VideoCode.Run(e.Text, local, Math.Max(1, e.Width * W), Math.Max(1, e.Height * H), timeline.Fps, e.Id + "#" + e.Instance, scene.Duration); }
+                        catch (VideoCodeException ex)
+                        {
+                            Add(ReviewSeverity.Error, e.Id, "code", local, "O código de " + e.Id + " falhou em " + N(local) + " s e não desenha nada: " + ex.Message + ".",
+                                "Corrija o código (" + VideoCode.Help.Split(':')[0] + ") e veja de novo com look_at_video.");
+                        }
+                        continue;
+                    }
                     if (!Visual.Contains(e.Kind)) continue;
                     // a split text's units scale and turn about their own centres; the text's box is the one laid out
                     var b = Box(e.Split is not null ? e with { Scale = 1, Rotation = 0 } : e, W, H);

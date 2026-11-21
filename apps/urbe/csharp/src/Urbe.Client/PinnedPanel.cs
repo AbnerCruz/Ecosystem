@@ -17,7 +17,7 @@ public sealed class PinnedPanel : Border
 {
     private readonly TextBlock _from = new()
     {
-        FontSize = 12,
+        FontSize = UrbeTokens.Type.Caption.Size,
         FontWeight = FontWeight.SemiBold,
         Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
         TextTrimming = TextTrimming.CharacterEllipsis,
@@ -52,7 +52,8 @@ public sealed class PinnedPanel : Border
     public Func<IReadOnlyList<ContinueReadingItem>>? ContinueReading { get; set; }
     private readonly StackPanel _continue = new() { Spacing = 2, Margin = new Thickness(0, 0, 0, 6) };
     /// <summary>The "Continuar lendo" rows shown (for tests and automation).</summary>
-    public IReadOnlyList<Button> ContinueRows => _continue.Children.OfType<Button>().ToArray();
+    public IReadOnlyList<Button> ContinueRows => _continue.Children.OfType<Button>()
+        .Where(row => !ReferenceEquals(row, FlashcardsRow)).ToArray();
 
     private void ShowChooser()
     {
@@ -66,7 +67,7 @@ public sealed class PinnedPanel : Border
     /// <summary>#1005: the study library's line (sets and cards due today); null hides it.</summary>
     public Func<(int Sets, int Due)?>? FlashcardsSummary { get; set; }
     public Action? OpenFlashcards { get; set; }
-    /// <summary>The "Flashcards" row shown, when the library has sets (tests and automation).</summary>
+    /// <summary>The "Flashcards" row shown, in the Study source chooser (tests and automation).</summary>
     public Button? FlashcardsRow { get; private set; }
 
     private void ShowContinueReading()
@@ -75,13 +76,13 @@ public sealed class PinnedPanel : Border
         FlashcardsRow = null;
         var items = ContinueReading?.Invoke() ?? [];
         var cards = FlashcardsSummary?.Invoke();
-        _continue.IsVisible = items.Count > 0 || cards is not null;
-        if (cards is { } c && OpenFlashcards is { } open)
+        _continue.IsVisible = items.Count > 0 || OpenFlashcards is not null;
+        if (OpenFlashcards is { } open)
         {
             var text = new StackPanel { Spacing = 3 };
             text.Children.Add(new TextBlock { Text = "Flashcards", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
-            text.Children.Add(new TextBlock { Text = (c.Sets == 1 ? "1 conjunto" : c.Sets + " conjuntos") + " · " + (c.Due == 0 ? "nada para hoje" : c.Due == 1 ? "1 cartão para hoje" : c.Due + " cartões para hoje"),
-                FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+            text.Children.Add(new TextBlock { Text = cards is not { } c ? "Biblioteca de cartões de estudo" : (c.Sets == 1 ? "1 conjunto" : c.Sets + " conjuntos") + " · " + (c.Due == 0 ? "nada para hoje" : c.Due == 1 ? "1 cartão para hoje" : c.Due + " cartões para hoje"),
+                FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
             var row = new Button { Content = text, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, Padding = new Thickness(8, 6), MinHeight = 48 };
             Avalonia.Automation.AutomationProperties.SetName(row, "Flashcards");
             row.Click += (_, _) => open();
@@ -95,7 +96,7 @@ public sealed class PinnedPanel : Border
             string name = System.IO.Path.GetFileName(item.Path);
             var text = new StackPanel { Spacing = 3 };
             text.Children.Add(new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis });
-            text.Children.Add(new TextBlock { Text = item.Progress.Position + " · " + item.LastRead, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis });
+            text.Children.Add(new TextBlock { Text = item.Progress.Position + " · " + item.LastRead, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis });
             // the bar only when the format has a known total; it is reading progress, not a checklist
             if (item.Progress.Fraction is { } fraction)
             {

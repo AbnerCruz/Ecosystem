@@ -75,7 +75,7 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0046](0046-urbe-tags-herdadas-por-projeto.md) | Tags herdadas por projeto no Urbe | Aceito |
 | [0047](0047-urbe-leitura-estudo-isolados.md) | Leitores locais, navegador isolado e continuidade de estudo | Proposto |
 | [0048](0048-urbe-cliente-mcp.md) | Urbe: cliente MCP para ferramentas externas opcionais | Aceito |
-| [0051](0051-urbe-execucao-de-codigo-isolada.md) | Urbe: execução de código isolada por plataforma | Proposto |
+| [0051](0051-urbe-execucao-de-codigo-isolada.md) | Urbe: execução de código isolada por plataforma | Aceito (DEC-0066) |
 
 - [ADR-0049 — Autonomia por escopo e releases automáticas](0049-autonomia-por-escopo-e-releases-automaticas.md) — Aceito (DEC-0063).
 

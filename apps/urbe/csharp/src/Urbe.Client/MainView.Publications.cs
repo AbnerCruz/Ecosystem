@@ -1,5 +1,6 @@
 using Urbe.Core;
 using Urbe.Core.Assistant;
+using Urbe.Core.Study;
 
 namespace Urbe.Client;
 
@@ -48,6 +49,9 @@ public sealed partial class MainView
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
         WirePublicationVideo(studio);
+        studio.PodcastAudioRequested += path => _ = SpeakPodcastAsync(path);
+        studio.FindPodcastAudio = FindPodcastAudio;
+        studio.PlayPodcastRequested += path => _ = ShowFileAsync(path);
         studio.Closed += () =>
         {
             ReleaseSavedPublicationDraft(_publicationDraft);
@@ -201,7 +205,7 @@ public sealed partial class MainView
     /// copy (CST-135).
     /// </summary>
     public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
-        string? tag = null, string? fragment = null, PublicationQuery? query = null, PublicationProject? style = null)
+        string? tag = null, string? fragment = null, PublicationQuery? query = null, PublicationProject? style = null, bool podcast = false)
     {
         if (!VaultWritable || _store is null)
         {
@@ -214,7 +218,7 @@ public sealed partial class MainView
         var originalVault = _vault;
         var folder = sourceFolder?.Trim('/');
         var suggested = fragment ?? source?.Title ?? (folder is { Length: > 0 } ? System.IO.Path.GetFileName(folder) : null) ?? (tag is { Length: > 0 } ? "#" + tag.TrimStart('#') : null);
-        var title = await Dialogs.PromptAsync(new PromptOptions("Nova publicação", Label: "Título", Placeholder: suggested ?? "Ex.: Meu livro", Confirm: "Criar"));
+        var title = await Dialogs.PromptAsync(new PromptOptions(podcast ? "Novo podcast" : "Nova publicação", Label: "Título", Placeholder: suggested ?? (podcast ? "Ex.: Conversas sobre ciência" : "Ex.: Meu livro"), Confirm: "Criar"));
         if (string.IsNullOrWhiteSpace(title)) return;
         if (!ReferenceEquals(_store, originalStore) || !ReferenceEquals(_vault, originalVault))
         {
@@ -247,17 +251,30 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Publicações", tag is { Length: > 0 } ? "Nenhuma nota tem a tag #" + tag.TrimStart('#') + "." : "Nenhuma das escolhidas é uma nota.");
             return;
         }
-        var path = "Publicações/" + ArtifactModel.SafeName(title.Trim()) + ".publication.json";
-        if (_store.Get(path) is not null || _attachments.Contains(path))
+        const string publicationSuffix = ".publication.json";
+        var basePath = "Publicações/" + ArtifactModel.SafeName(title.Trim());
+        var stem = basePath;
+        var path = stem + publicationSuffix;
+        for (var n = 2; Taken(path) || podcast && Taken(stem + Podcast.Suffix); n++)
         {
-            var name = path[..^".publication.json".Length];
-            for (var n = 2; ; n++)
-            {
-                var candidate = name + "-" + n + ".publication.json";
-                if (_store.Get(candidate) is null && !_attachments.Contains(candidate)) { path = candidate; break; }
-            }
+            stem = basePath + "-" + n;
+            path = stem + publicationSuffix;
         }
-        try { await ((IAssistantApp)this).CreateNoteAsync(path, PublicationProjectCodec.Serialize(project)); }
+
+        bool Taken(string candidate) => originalStore.Get(candidate) is not null || _attachments.Contains(candidate);
+
+        try
+        {
+            var app = (IAssistantApp)this;
+            if (podcast)
+            {
+                var script = await app.CreateNoteAsync(stem + Podcast.Suffix,
+                    "# " + title.Trim() + "\n\n<!-- Escreva cada fala em um parágrafo no formato **Nome:** texto. -->\n");
+                project = project.AddSource(script.Id);
+                if (!ReferenceEquals(_store, originalStore) || !ReferenceEquals(_vault, originalVault)) return;
+            }
+            await app.CreateNoteAsync(path, PublicationProjectCodec.Serialize(project));
+        }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
         {
             await Dialogs.AlertAsync("Não foi possível criar a publicação", StorageProblems.Explain(ex));
@@ -383,7 +400,6 @@ public sealed partial class MainView
         }
         var projects = _store.List().Where(d => d.Path.EndsWith(".publication.json", StringComparison.OrdinalIgnoreCase))
             .OrderBy(d => d.Title, StringComparer.OrdinalIgnoreCase).ToList();
-        if (projects.Count == 0) { await CreatePublicationAsync(); return; }
         var options = projects.Select(d =>
         {
             try { return new DialogItem(PublicationProjectCodec.Parse(d.Content).Title, Detail: d.Path); }
@@ -391,9 +407,11 @@ public sealed partial class MainView
             { return new DialogItem(d.Title + " (verificar arquivo)", Detail: d.Path); }
         }).ToList();
         options.Add(new DialogItem("Nova publicação", UrbeTheme.Icons.Plus, "Criar a partir das notas do vault"));
+        options.Add(new DialogItem("Novo podcast", UrbeTheme.Icons.Plus, "Criar um roteiro e narrar com a voz do agente"));
         var chosen = await Dialogs.ChooseAsync("Publicações", options);
         if (chosen is not { } index) return;
         if (index == projects.Count) await CreatePublicationAsync();
+        else if (index == projects.Count + 1) await CreatePublicationAsync(podcast: true);
         else await OpenPublicationAsync(projects[index].Path);
     }
 

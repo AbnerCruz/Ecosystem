@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -19,6 +20,7 @@ public sealed class AiChatBlock
     /// <summary>Selected files are local to this private conversation; never copied into the vault.</summary>
     public string MimeType { get; set; } = "";
     public string FileName { get; set; } = "";
+    public string? LocalSourceId { get; set; }
     public bool IsError { get; set; }
     public bool Pending { get; set; }
     public string? Partial { get; set; }
@@ -29,10 +31,52 @@ public sealed class AiChatBlock
 
     public static AiChatBlock TextBlock(string text) => new() { Type = "text", Text = text };
 
+    /// <summary>
+    /// A tool/provider can send duplicate JSON keys (observed in saved update_plan
+    /// history). JsonNode parses the bytes lazily, but indexing that object later
+    /// throws ArgumentException and crashes the UI. Materialize all object keys
+    /// here, retaining the last value of a duplicate key, before tools/history/UI
+    /// inspect them. Never reinterpret the author's note content.
+    /// </summary>
+    public static JsonNode? NormalizeToolInput(JsonNode? input)
+    {
+        if (input is null) return null;
+        string raw;
+        try { raw = input.ToJsonString(); }
+        catch (Exception e) when (e is ArgumentException or JsonException or InvalidOperationException)
+        {
+            return new JsonObject { ["_invalid_tool_input"] = "Argumentos ilegíveis recebidos do modelo." };
+        }
+        try
+        {
+            using var json = JsonDocument.Parse(raw);
+            return CopyJson(json.RootElement);
+        }
+        catch (JsonException)
+        {
+            // Preserve malformed input as text instead of making the chat unloadable.
+            return new JsonObject { ["_invalid_tool_input"] = raw };
+        }
+
+        static JsonNode? CopyJson(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                var result = new JsonObject();
+                foreach (var property in element.EnumerateObject())
+                    result[property.Name] = CopyJson(property.Value);
+                return result;
+            }
+            if (element.ValueKind == JsonValueKind.Array)
+                return new JsonArray(element.EnumerateArray().Select(CopyJson).ToArray());
+            return element.ValueKind == JsonValueKind.Null ? null : JsonNode.Parse(element.GetRawText());
+        }
+    }
+
     public static AiChatBlock From(AiBlock b) => b.Type switch
     {
         "text" => TextBlock(b.Text),
-        "tool_use" => new() { Type = "tool_use", Id = b.Id, Name = b.Name, Input = b.Input },
+        "tool_use" => new() { Type = "tool_use", Id = b.Id, Name = b.Name, Input = NormalizeToolInput(b.Input) },
         "attachment" => new() { Type = "attachment", Content = b.Content, MimeType = b.MimeType, FileName = b.FileName },
         _ => new() { Type = "tool_result", ToolUseId = b.ToolUseId, Content = b.Content, IsError = b.IsError }
     };
@@ -45,6 +89,11 @@ public sealed class AiChatBlock
             case "text":
                 o["text"] = Text;
                 if (Hidden) o["_hidden"] = true;
+                if (LocalSourceId is not null)
+                {
+                    o["local_source_id"] = LocalSourceId;
+                    o["source_name"] = FileName;
+                }
                 if (Hidden && FileName.Length > 0 && Content.Length > 0)
                 {
                     o["source_name"] = FileName;
@@ -55,7 +104,11 @@ public sealed class AiChatBlock
                 o["mime"] = MimeType; o["name"] = FileName; o["data"] = Content;
                 break;
             case "tool_use":
-                o["id"] = Id; o["name"] = Name; o["input"] = Input?.DeepClone();
+                o["id"] = Id; o["name"] = Name;
+                // Most inputs were normalized at the model/history boundary. Do not
+                // parse every past tool call again on EVERY conversation save.
+                try { o["input"] = Input?.DeepClone(); }
+                catch (ArgumentException) { o["input"] = NormalizeToolInput(Input); }
                 if (Pending) o["_pending"] = true;
                 if (Partial is not null) o["_partial"] = Partial;
                 break;
@@ -73,8 +126,8 @@ public sealed class AiChatBlock
         var type = (string?)n["type"] ?? "text";
         return type switch
         {
-            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h), FileName = (string?)n["source_name"] ?? "", Content = (string?)n["source_bytes"] ?? "" },
-            "tool_use" => new() { Type = "tool_use", Id = (string?)n["id"] ?? "", Name = (string?)n["name"] ?? "", Input = n["input"]?.DeepClone(), Pending = n["_pending"] is JsonValue p && Urbe.Core.Pages.PageEngine.Truthy(p), Partial = (string?)n["_partial"] },
+            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h), FileName = (string?)n["source_name"] ?? "", Content = (string?)n["source_bytes"] ?? "", LocalSourceId = (string?)n["local_source_id"] },
+            "tool_use" => new() { Type = "tool_use", Id = (string?)n["id"] ?? "", Name = (string?)n["name"] ?? "", Input = NormalizeToolInput(n["input"]), Pending = n["_pending"] is JsonValue p && Urbe.Core.Pages.PageEngine.Truthy(p), Partial = (string?)n["_partial"] },
             "attachment" => new() { Type = "attachment", MimeType = (string?)n["mime"] ?? "",
                 FileName = (string?)n["name"] ?? "", Content = (string?)n["data"] ?? "" },
             _ => new()
@@ -759,6 +812,8 @@ public static class AssistantAgent
         var readCache = new Dictionary<string, TaskCompletionSource<Out>>(StringComparer.Ordinal);
         var cycles = new HashSet<string>(StringComparer.Ordinal);
         // #1005: the person's request in this run, to keep the result class they asked for (AssistantIntent)
+        // the native tools this run can use (flashcards only when the app has its library)
+        var nativeTools = byName.Keys.Where(n => n != "create_flashcards" || o.Host.Study is not null).ToHashSet(StringComparer.Ordinal);
         var request = string.Join("\n", messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?.Content
             .Where(b => b.Type == "text").Select(b => b.Text) ?? []);
         // owner's report on long revisions: no whole rewrite from a stale or partial read, and no endless blind retries
@@ -1061,7 +1116,7 @@ public static class AssistantAgent
         {
             byName.TryGetValue(call.Name, out var tool);
             if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
-            if (AssistantIntent.Refusal(request, call.Name, byName.ContainsKey("create_flashcards") && o.Host.Study is not null) is { } mismatch)
+            if (AssistantIntent.Refusal(request, call.Name, nativeTools) is { } mismatch)
                 return new Out(mismatch, true, "error");
             if (call.Id == truncatedCall)
                 return new Out("Esta chamada foi cortada pelo limite de saída do modelo antes de terminar: os argumentos chegaram incompletos e nada foi feito. " +

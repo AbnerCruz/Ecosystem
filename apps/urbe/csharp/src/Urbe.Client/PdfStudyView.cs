@@ -15,11 +15,11 @@ public sealed class PdfStudyView : Grid, IDisposable
 {
     private readonly byte[] _bytes;
     private readonly string _path;
-    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(4, 6, 4, 0) };
+    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Caption.Size, Margin = new Thickness(4, 6, 4, 0) };
     private readonly TextBox _text = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
         FontSize = 17, LineHeight = 27, Padding = new Thickness(16, 8), Margin = new Thickness(0, 4, 0, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
     private readonly TextBox _page = new() { Width = 52, MinHeight = 40, Text = "1", HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _pages = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, Margin = new Thickness(6, 0, 4, 0) };
+    private readonly TextBlock _pages = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = UrbeTokens.Type.Footnote.Size, Margin = new Thickness(6, 0, 4, 0) };
     private readonly TextBox _query = new() { PlaceholderText = "Buscar", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
     private readonly StackPanel _results = new() { Spacing = 0 };
     private readonly Button _moreText = new Ui.UrbeButton("Continuar texto desta página", ButtonKind.Ghost) { IsVisible = false };
@@ -182,7 +182,7 @@ public sealed class PdfStudyView : Grid, IDisposable
                     Content = new TextBlock
                     {
                         Inlines = new Avalonia.Controls.Documents.InlineCollection { new Avalonia.Controls.Documents.Run("p. " + hit.Page + "  ") { FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) }, new Avalonia.Controls.Documents.Run(hit.Context) },
-                        TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2)
+                        TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2)
                     },
                     HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
                     Background = Brushes.Transparent, Padding = new Thickness(8, 8), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)

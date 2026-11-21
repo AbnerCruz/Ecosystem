@@ -19,14 +19,14 @@ public sealed class EpubStudyView : Grid, IDisposable
     private readonly ContentControl _body = new() { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
     private readonly TextBox _text = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, FontSize = 18 };
     private readonly TextBox _query = new() { PlaceholderText = "Buscar no livro", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 4, 4, 0) };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 4, 4, 0) };
     private readonly ListBox _results = new() { IsVisible = false, MaxHeight = 160 };
     private readonly ProgressBar _progress = new() { Minimum = 0, Height = 4 };
     private readonly Ui.UrbeIconButton _previous = new(UrbeTheme.Icons.Back, "Capítulo anterior"), _next = new(UrbeTheme.Icons.Forward, "Próximo capítulo");
     private readonly Ui.UrbeButton _moreSearch = new("Buscar mais", Ui.ButtonKind.Ghost);
     // a footnote shown where it is read (outside the page's area: a native page covers anything drawn over it)
     private readonly Border _note = new() { IsVisible = false, Padding = new Thickness(12, 8), Margin = new Thickness(4, 4, 4, 0), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1) };
-    private readonly SelectableTextBlock _noteText = new() { TextWrapping = TextWrapping.Wrap, FontSize = 15 };
+    private readonly SelectableTextBlock _noteText = new() { TextWrapping = TextWrapping.Wrap, FontSize = UrbeTokens.Type.Callout.Size };
     private (int Part, string Anchor) _noteTarget;
     /// <summary>The footnote shown now (tests); null when none.</summary>
     public string? ShownNote => _note.IsVisible ? _noteText.Text : null;

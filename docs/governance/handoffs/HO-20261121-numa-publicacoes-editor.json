@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261121-numa-publicacoes-editor",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-21T10:04:24Z",
+  "agent": {
+    "id": "codex-numa",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "codex/numa-publicacoes-editor",
+  "base_commit": "fe88a9eb85451e3e3d615762e138b680d2dd82e2",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1012",
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVideoEncoder.cs",
+    "apps/urbe/csharp/src/Urbe.Android/SpeechSynth.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Creation.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Video.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PlatformAudio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoReferenceFrames.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebResearch.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/WindowsSpeech.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoReferenceFramesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261121-numa-publicacoes-editor.json"
+  ],
+  "work_completed": [
+    "#1004: create_video exige programa JavaScript por cena. O catálogo de cenas prontas saiu da autoria do Estúdio. A leitura de publicações existentes é preservada.",
+    "Uma nova publicação fica disponível em um link no chat. O Estúdio abre após o clique. O exportador MP4 continua acessível na interface e o Assistente já não recebe a ferramenta render_video.",
+    "Prévia e MP4 usam a mesma mixagem WAV. MediaPlayer no Android e waveaudio no Windows dão a posição de mídia ao desenho da prévia.",
+    "#1005: o perfil do agente reúne voz, pesquisa e vídeo generativo com os modelos já configuráveis. A escolha vocal entra na publicação de vídeo e pode ser substituída pelo usuário.",
+    "#956: seletor único e briefing antes de iniciar Podcast, Vídeo ou Flashcards, com seleção de fontes. Roteiro de podcast em Publicações oferece ação de síntese. Áudio e vídeo selecionados ficam no armazenamento privado e podem contribuir com transcrição local.",
+    "Beta.66 preparada pelo canal existente. Estudo original: PR #1011. Comunicação com Claude Code registrada no PR #1009.",
+    "Amostras de quadros com instantes para referências anexadas e links públicos diretos. Modelos com entrada de imagem recebem os quadros; perfis secundários herdam campos de mídia e modelos do geral quando não sobrescritos."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1897/1897 pelo runner xUnit em Linux."
+    },
+    {
+      "check": "Testes focados headless do cliente",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3/3: link explícito para o Estúdio, sem exportação automática, reprodução pelo relógio de áudio simulado e envio condicionado ao briefing."
+    },
+    {
+      "check": "Build do cliente e desktop",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Projetos portáteis e Urbe.Desktop compilados em Linux."
+    },
+    {
+      "check": "Consistência Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs, 22 checks."
+    },
+    {
+      "check": "Perfis e links de referência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "42 testes focados de persistência, herança, modelos e pesquisa. Inclui download direto e rejeição de página HTML e redirecionamento privado."
+    },
+    {
+      "check": "Quadros de referência e fluxo do chat",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3 testes em Linux, incluindo seis amostras de um MP4 real com ffmpeg e a imagem composta, o clique para abrir o Estúdio e a confirmação do briefing."
+    }
+  ],
+  "known_issues": [
+    "Escuta, troca de voz e foco de áudio em Android e Windows não testados em aparelho ou desktop Windows.",
+    "A transcrição local de mídia depende da capacidade do dispositivo. A extração visual usa quadros amostrados e pede um modelo com entrada de imagem. Páginas de vídeo sem acesso direto ao arquivo precisam de anexo. Arquivos de formatos desconhecidos ficam como referência local.",
+    "Sem execução com uma conta real de modelo externo de vídeo.",
+    "A suíte headless com janelas encontrou indisponibilidade de fonte no ambiente Linux local. Os três testes focados executaram sem montar uma janela."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar as verificações da branch e a integração automática. Conferir a prévia em um aparelho real com voz e música e comparar com o MP4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0051-urbe-execucao-de-codigo-isolada.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Desenho continua restrito ao runtime de vídeo; binários locais não são enviados ao modelo; permissões de pesquisa por agente respeitam a preferência global."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Evidência automatizada e limitações de aparelho identificadas explicitamente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "numa-publicacoes-e-fontes",
+      "status": "product-specific",
+      "rationale": "Reutiliza mixagem, TTS, persistência e destinos existentes no Numa."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Alterações no produto autorizado, com campos aditivos e compatibilidade de leitura."
+  }
+}

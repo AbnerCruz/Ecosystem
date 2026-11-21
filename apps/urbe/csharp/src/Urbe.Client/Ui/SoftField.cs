@@ -14,7 +14,7 @@ public static class SoftField
     public static TextBox Style(TextBox box, bool withIcon = false)
     {
         box.MinHeight = 40;
-        box.FontSize = 15;
+        box.FontSize = UrbeTokens.Type.Callout.Size;
         box.CornerRadius = new CornerRadius(14);
         box.Padding = new Thickness(withIcon ? 40 : 14, 8, 12, 8);
         box.VerticalContentAlignment = VerticalAlignment.Center;

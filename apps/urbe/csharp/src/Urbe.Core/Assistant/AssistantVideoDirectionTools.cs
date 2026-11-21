@@ -6,6 +6,7 @@ namespace Urbe.Core.Assistant;
 /// <summary>#956: the renderer the preview and the MP4 use, lent to the agent so it sees what it made.</summary>
 public interface IAssistantVideoFrames
 {
+    string? NarrationVoice => null;
     /// <summary>How a text element fits its box when drawn at <paramref name="width"/>×<paramref name="height"/>.</summary>
     VideoTextFit Fit(VideoElementState element, int width, int height);
     /// <summary>The frames at <paramref name="times"/> side by side in one PNG, each labelled with its number.</summary>
@@ -46,15 +47,13 @@ public static class AssistantVideoDirectionTools
         new AiTool
         {
             Name = "create_video", Access = "write",
-            Description = "Cria um vídeo inteiro numa chamada: uma nota por cena (a fala, que vira narração e legenda), a publicação de vídeo com o tema " +
-                          "e cada cena já composta por um layout. Depois: look_at_video para conferir e render_video para o MP4. " +
-                          "scenes: [{title, narration (o que é dito, 1–3 frases), layout, slots}]. Layouts: " +
-                          string.Join("; ", VideoLayouts.All.Select(l => l.Id + " (" + string.Join(", ", l.Required) + (l.Optional.Length > 0 ? "; opcional " + string.Join(", ", l.Optional) : "") + ")")) +
-                          ". Textos dos slots são curtos (o que aparece na tela); a explicação vai na narration. Temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".",
+            Description = "Cria uma publicação de vídeo editável. Cada cena tem uma nota de narração e um programa JavaScript que desenha o quadro inteiro. " +
+                          "Escreva draw(ctx, t, info) para cada cena. Use componentes de notas que a pessoa escolheu como referência, quando houver. " +
+                          "Depois confira com review_publication e, quando disponível, look_at_video. Entregue a publicação para edição no Estúdio. " +
+                          VideoCode.Help + " Temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".",
             Parameters = JsonNode.Parse("""
                 {"type":"object","properties":{"title":{"type":"string"},"theme":{"type":"string"},"aspect":{"type":"string","enum":["16:9","9:16","1:1"]},"folder":{"type":"string"},
-                 "scenes":{"type":"array","minItems":1,"items":{"type":"object","properties":{"title":{"type":"string"},"narration":{"type":"string"},"layout":{"type":"string"},
-                 "slots":{"type":"object","additionalProperties":{"type":"string"}}},"required":["title","narration","layout","slots"]}}},"required":["title","scenes"],"additionalProperties":false}
+                 "scenes":{"type":"array","minItems":1,"items":{"type":"object","properties":{"title":{"type":"string"},"narration":{"type":"string"},"code":{"type":"string"}},"required":["title","narration","code"]}}},"required":["title","scenes"],"additionalProperties":false}
                 """)!.AsObject(),
             Label = i => "Criando o vídeo " + ((string?)i["title"] ?? ""),
             Run = CreateVideoAsync
@@ -74,7 +73,7 @@ public static class AssistantVideoDirectionTools
             Name = "edit_video_scene", Access = "write",
             Description = "Muda só uma cena de uma publicação de vídeo, pelo id: duration, background, transition e elementos. " +
                           "layout + slots monta a cena inteira já composta (posições, tamanhos e entradas animadas): " + string.Join("; ", VideoLayouts.All.Select(l => l.Id + " (" + string.Join(", ", l.Required) + (l.Optional.Length > 0 ? "; opcional " + string.Join(", ", l.Optional) : "") + ")")) +
-                          ". Prefira um layout por cena a posicionar elementos à mão; textos na tela curtos (o que é falado fica na nota). Cada elemento de elements com id existente recebe só os campos enviados; sem id ou com id novo, entra na cena. " +
+                          ". Para cenas programadas, edite o elemento kind code pelo id. Use layout apenas ao manter uma publicação existente que já usa layout. Textos na tela curtos (o que é falado fica na nota). Cada elemento de elements com id existente recebe só os campos enviados; sem id ou com id novo, entra na cena. " +
                           "remove_elements tira elementos. As outras cenas e as notas não mudam. Requer expected_revision (a revisão que review_publication ou look_at_video informam).",
             Parameters = JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"expected_revision":{"type":"integer"},"scene_id":{"type":"string"},"layout":{"type":"string"},"slots":{"type":"object","additionalProperties":{"type":"string"}},"duration":{"type":"number"},"background":{"type":"string"},"transition":{"type":"object","additionalProperties":true},"elements":{"type":"array","items":{"type":"object","additionalProperties":true}},"remove_elements":{"type":"array","items":{"type":"string"}}},"required":["path","expected_revision","scene_id"],"additionalProperties":false}""")!.AsObject(),
             Label = i => "Ajustando a cena " + ((string?)i["scene_id"] ?? ""),
@@ -162,7 +161,7 @@ public static class AssistantVideoDirectionTools
 
     /// <summary>
     /// #956 (owner: "demorou muito, muitos passos"): the whole video in one call — the notes with what each scene says,
-    /// the publication with its theme, and every scene composed by a layout. Everything is checked before anything is
+    /// the publication with its theme, and a drawing program for every scene. Everything is checked before anything is
     /// written, so a mistake costs one corrected call, not a half-made video.
     /// </summary>
     private static async Task<AiToolOutput> CreateVideoAsync(JsonObject input, IAssistantHost host)
@@ -173,6 +172,8 @@ public static class AssistantVideoDirectionTools
         if (VideoThemes.Find(theme) is null) throw new AiToolException("Tema " + theme + " não existe; temas: " + string.Join(", ", VideoThemes.All.Select(t => t.Id)) + ".");
         var aspect = (string?)input["aspect"] ?? "16:9";
         if (!VideoComposition.Aspects.Contains(aspect)) throw new AiToolException("Proporção " + aspect + "; use 16:9, 9:16 ou 1:1.");
+        var frames = host.VideoFrames;
+        var voice = frames?.NarrationVoice;
         var name = ArtifactModel.SafeName(title);
         var folder = ((string?)input["folder"] ?? "Publicações/" + name).Trim().Trim('/');
         if (!VideoScript.IsVaultPath(folder + "/x.md")) throw new AiToolException("Pasta inválida: " + folder + ".");
@@ -181,26 +182,21 @@ public static class AssistantVideoDirectionTools
         var scenes = (input["scenes"] as JsonArray ?? []).OfType<JsonObject>().ToList();
         if (scenes.Count == 0) throw new AiToolException("Envie ao menos uma cena.");
 
-        // everything checked first: layouts, slots and texts; nothing is written on a mistake
-        var plans = new List<(string Title, string Narration, string Layout, Dictionary<string, string> Slots)>();
+        // Validate every program before creating any scene notes.
+        var plans = new List<(string Title, string Narration, string Code)>();
         for (int i = 0; i < scenes.Count; i++)
         {
-            var sc = scenes[i];
-            var st = ((string?)sc["title"] ?? "").Trim();
-            var narration = ((string?)sc["narration"] ?? "").Trim();
-            var layout = (string?)sc["layout"] ?? "";
-            if (st.Length == 0 || narration.Length == 0) throw new AiToolException("Cena " + (i + 1) + ": title e narration são obrigatórios.");
-            var slots = new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (var (key, value) in sc["slots"] as JsonObject ?? [])
-            {
-                var text = value is JsonValue v && v.TryGetValue<string>(out var str) ? str : value?.ToJsonString() ?? "";
-                if (text.Length > AssistantPublicationTools.MaxOverlay)
-                    throw new AiToolException("Cena " + (i + 1) + ", " + key + ": " + text.Length + " caracteres; na tela vão até " + AssistantPublicationTools.MaxOverlay + ". O que é dito vai na narration.");
-                slots[key] = text;
-            }
-            try { VideoLayouts.Build(layout, slots, "x"); }
-            catch (ArgumentException e) { throw new AiToolException("Cena " + (i + 1) + ": " + e.Message); }
-            plans.Add((st, narration, layout, slots));
+            var scene = scenes[i];
+            var sceneTitle = ((string?)scene["title"] ?? "").Trim();
+            var narration = ((string?)scene["narration"] ?? "").Trim();
+            var code = ((string?)scene["code"] ?? "").Trim();
+            if (sceneTitle.Length == 0 || narration.Length == 0 || code.Length == 0)
+                throw new AiToolException("Cena " + (i + 1) + ": title, narration e code são obrigatórios.");
+            if (scene.ContainsKey("layout") || scene.ContainsKey("slots"))
+                throw new AiToolException("Cena " + (i + 1) + ": desenhe o quadro no programa code.");
+            try { VideoCode.Check(code); VideoCode.Run(code, 0, 1280, 720); }
+            catch (VideoCodeException e) { throw new AiToolException("Cena " + (i + 1) + ", code: " + e.Message); }
+            plans.Add((sceneTitle, narration, code));
         }
 
         var changes = new List<AiChange>();
@@ -218,11 +214,15 @@ public static class AssistantVideoDirectionTools
         project = VideoComposition.Synced(project, r => host.Documents.Get(r.DocumentId)?.Content);
         var video = project.Video! with
         {
-            Theme = theme, Aspect = aspect,
+            Theme = theme, Aspect = aspect, NarrationVoice = voice,
             Scenes = project.Video!.Scenes.Select((scene, i) => scene with
             {
                 Background = VideoThemes.DefaultBackground,
-                Elements = VideoLayouts.Build(plans[i].Layout, plans[i].Slots, scene.Id)
+                Elements = [new VideoElement
+                {
+                    Id = scene.Id + "_codigo", Kind = "code", Text = plans[i].Code,
+                    X = 0.5, Y = 0.5, Width = 1, Height = 1
+                }]
             }).ToList()
         };
         project = project with { Video = video };
@@ -233,7 +233,7 @@ public static class AssistantVideoDirectionTools
         var issues = Inspect(timeline, host);
         return new AiToolOutput("Vídeo criado: " + pubPath + " · revisão " + saved.Revision + " · " + timeline.Scenes.Count + " cenas, " + N(timeline.Duration) + " s, tema " + theme +
             ". Falas nas notas de " + folder + "/.\n" + Issues(issues, host.VideoFrames is not null) + "\n" + Outline(timeline) +
-            "\nPróximo: look_at_video para conferir os quadros e render_video para o MP4 com narração.", changes);
+            "\nPróximo: confira a revisão e entregue a publicação editável. A pessoa decide no Estúdio se quer narrar ou exportar.", changes);
     }
 
     /// <summary>

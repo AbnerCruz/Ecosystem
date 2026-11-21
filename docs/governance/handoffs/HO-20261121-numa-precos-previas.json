@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261121-numa-precos-previas",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-21T13:12:12Z",
+  "agent": {
+    "id": "codex-numa",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-173",
+  "component": "urbe",
+  "state": "review",
+  "branch": "codex/numa-model-previews",
+  "base_commit": "c8082ae2f08e6feab11de218dcf1694a64c6ab0e",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1014",
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/SpeechSynth.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Creation.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Speech.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Podcast.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationSources.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Study/Podcast.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FlashcardsLibraryUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SpeechProviderFixture.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantSpeechProviderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/GenerativeVideoTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NestedContainersExportTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PodcastTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261121-numa-precos-previas.json"
+  ],
+  "work_completed": [
+    "Beta.68 mostra preços com unidade no seletor de voz e vídeo. Onde o catálogo não informa a tarifa, mostra indisponibilidade.",
+    "Prévia de voz solicitada pelo usuário, com texto de exemplo, aviso de cobrança e reprodução nativa. Salvar a voz não gera áudio.",
+    "Vídeo usa tarifas do catálogo e abre a página do provedor para consultar exemplos.",
+    "Briefing aceita tema, fontes selecionadas ou ambos. A orientação de pesquisa sem fontes segue as permissões do agente. Vídeo e podcast têm duração selecionável.",
+    "Publicações oferece Novo podcast e ações visíveis para editar o roteiro, gerar a fala por provedor e ouvir o WAV salvo.",
+    "Flashcards tem entrada no menu principal e fica acessível em Estudo com a biblioteca vazia.",
+    "O vídeo informa quando falta áudio e oferece ações para narrar, escolher voz e adicionar faixa. O player Android abre a trilha temporária por descritor de arquivo.",
+    "O selo visível de autoria fica fora do conteúdo de Publicações e da narração do podcast. A nota original e o manifesto de pacote preservam a proveniência."
+  ],
+  "verification": [
+    {
+      "check": "Tarifas e contratos de provedor",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "6 testes focados do Core. Valores e unidades testados com catálogos simulados."
+    },
+    {
+      "check": "Prévia de voz no seletor",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1 teste do cliente verifica preço, a ausência de síntese ao abrir, a ação explícita e a escolha final. Player e provedor simulados."
+    },
+    {
+      "check": "Briefing de criação",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Cinco casos no cliente, cobrindo tema, anexos, ambos, pesquisa bloqueada, confirmação e as quatro durações. Modelo simulado."
+    },
+    {
+      "check": "Podcast, Flashcards e prévia de vídeo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Cinco testes focados do cliente. A prévia recebe WAV com amostras PCM não silenciosas no player simulado. Consistência: 22 checks passaram."
+    },
+    {
+      "check": "Selo de autoria nas Publicações",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "72 testes do Core cobrem Publicações, formatos exportados, podcast e vídeo. O teste de exportação preserva texto e omite o selo nos seis formatos verificados."
+    }
+  ],
+  "known_issues": [
+    "Reprodução de amostra não testada em aparelho físico.",
+    "Prévias de vídeo são os exemplos da página externa. Não há clipe gerado pelo seletor.",
+    "Saída de áudio das Publicações em aparelho físico pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar pelo fluxo oficial do Ecosystem."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Só uma ação explícita aciona a síntese, a amostra é temporária e preços ausentes não viram zero."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste simulado identificado. Nenhum aparelho físico usado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "numa-previa-voz",
+      "status": "product-specific",
+      "rationale": "Reusa cliente do provedor, pipeline WAV e player nativo."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Incremento da versão beta pelo canal existente."
+  }
+}

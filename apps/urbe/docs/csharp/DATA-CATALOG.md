@@ -171,3 +171,47 @@ arquivos genéricos; browser remoto não ganha bridge, host objects ou permissõ
 do vault. Android usa origem local/CSP para documento e WebView remoto; não se
 afirma multi-profile universal. Cache/cookies remotos pertencem ao WebView do
 sistema; não são exportados nem copiados para notas automaticamente.
+
+## #1004, #1005 e #956 — voz, perfil e fontes de criação
+
+- `AssistantStore/config.json` ganha `agentMedia:{id:{research,voice,videoProviderId,videoModel}}`.
+  Pesquisa herda a configuração global e exige a permissão do agente. Sem
+  `videoProviderId`, agentes já existentes mantêm a preferência anterior. Um
+  ID vazio desliga o vídeo externo. As credenciais continuam nos provedores
+  cadastrados. Teste: `MediaProfilesRoundTripIndependentlyAndRespectGlobalPrivacy`.
+- Em `.publication.json`, `video.narrationVoice` opcional identifica a voz
+  escolhida para novas sínteses. Sem campo, usa-se a preferência do aparelho.
+  Alterar a escolha preserva a faixa existente até o usuário narrar novamente.
+  A duração dos novos WAVs orienta a colocação das faixas na timeline.
+- Conversas e rascunhos do Assistente podem referenciar um anexo privado por
+  `local_source_id` e `source_name`. O arquivo é copiado em fluxo para
+  `sources/<id>` sob a pasta privada do Assistente. O identificador deve ser um
+  UUID canônico sem separadores. O modelo recebe o nome da fonte e, quando
+  disponível e submetida pelo usuário, a transcrição local com instantes.
+  Os arquivos binários referenciados permanecem no aparelho. Esses campos são
+  aditivos e não requerem regravação de conversas antigas.
+
+Perfis secundários herdam voz, pesquisa e configuração do vídeo por campo do
+perfil `geral` quando o campo correspondente falta ou é nulo. Voz vazia
+seleciona a voz padrão do aparelho e provedor de vídeo vazio desliga o vídeo
+externo. Valores anteriores gravados continuam sendo escolhas individuais.
+Os modelos de texto e imagem seguem as escolhas específicas ou o perfil geral.
+A preferência global de privacidade continua sendo o teto para pesquisa.
+
+Referências visuais de vídeo usam os blocos de imagem existentes na mensagem.
+O Numa guarda uma amostra de quadros com instantes para a conversa. A mídia
+anexada continua na pasta privada de fontes. Downloads de links públicos
+diretos são temporários e descartados após preparar as imagens.
+
+## Voz do provedor e ficha do agente (beta.67)
+
+A escolha de voz em `agentMedia.voice` e `video.narrationVoice` usa uma
+referência `speech:` a ID do provedor, modelo, voz e formato. As credenciais
+continuam na conexão privada. Referências anteriores a vozes locais deixam
+de oferecer síntese. As faixas WAV já gravadas continuam legíveis.
+`agentMedia.captureMemory` e `agentMedia.replyLanguage` são opcionais e
+herdam do perfil geral, com as preferências globais anteriores como fallback.
+`agentDeviceAccess` guarda as permissões individualizadas. Ausência de
+entrada preserva os padrões anteriores de acesso ao aparelho.
+Os pacotes antigos em `vozes/` podem ser removidos explicitamente em Dados
+do aplicativo. A remoção atua só na pasta privada de modelos.

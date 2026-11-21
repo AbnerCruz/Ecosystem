@@ -207,7 +207,7 @@ public sealed partial class CustomizePanel : Grid
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var add = new Button
         {
-            Content = new TextBlock { Text = "Adicionar tag", FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+            Content = new TextBlock { Text = "Adicionar tag", FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
             Padding = new Thickness(12, 6), MinHeight = 40, CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Surface3)
         };
         add.Click += async (_, _) =>
@@ -224,7 +224,7 @@ public sealed partial class CustomizePanel : Grid
         _body.Children.Add(new TextBlock
         {
             Text = "Um parágrafo que começa com “#Todo:” ganha o estilo da tag Todo: a cor e, se você escolher, um ícone antes do nome (toque no ícone escolhido de novo para tirar). O arquivo fica em Personalização/tags.json.",
-            FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 0)
+            FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 0)
         });
     }
 
@@ -251,7 +251,7 @@ public sealed partial class CustomizePanel : Grid
         }
         if (Customization.TagColors.ContainsKey(tag))
         {
-            var reset = new Button { Content = "Padrão", FontSize = 12, Padding = new Thickness(8, 4), Margin = new Thickness(6, 3, 0, 3), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent };
+            var reset = new Button { Content = "Padrão", FontSize = UrbeTokens.Type.Caption.Size, Padding = new Thickness(8, 4), Margin = new Thickness(6, 3, 0, 3), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent };
             reset.Click += async (_, _) => { await Customization.SetTagColorAsync(tag, null); Render(); };
             swatches.Children.Add(reset);
         }
@@ -259,7 +259,7 @@ public sealed partial class CustomizePanel : Grid
         {
             Background = UrbeTheme.Brush(current, .12), BorderBrush = UrbeTheme.Brush(current), BorderThickness = new Thickness(3, 0, 0, 0),
             CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 4), HorizontalAlignment = HorizontalAlignment.Left,
-            Child = new TextBlock { Text = (UrbeTheme.TagIcon(tag) is { } shown ? shown + " " : "") + "#" + tag, FontWeight = FontWeight.Bold, FontSize = 13, Foreground = UrbeTheme.Brush(current) }
+            Child = new TextBlock { Text = (UrbeTheme.TagIcon(tag) is { } shown ? shown + " " : "") + "#" + tag, FontWeight = FontWeight.Bold, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(current) }
         };
         // CST-024: an icon before the name, from a short set or none
         var icons = new WrapPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
@@ -288,11 +288,11 @@ public sealed partial class CustomizePanel : Grid
         var text = Customization.FileContent ?? LegacyCustomize.Stringify(new JsonObject { ["$schema"] = "urbe-tema-1" }, 2) + "\n";
         _json = new TextBox
         {
-            Text = text, AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 14 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = 13,
+            Text = text, AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 14 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size,
             Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12)
         };
-        _jsonState = new TextBlock { FontFamily = UrbeTheme.UiFont, FontSize = 13, Margin = new Thickness(2, 8, 2, 0), TextWrapping = TextWrapping.Wrap };
+        _jsonState = new TextBlock { FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Margin = new Thickness(2, 8, 2, 0), TextWrapping = TextWrapping.Wrap };
         _json.TextChanged += (_, _) => ValidateJson();
         var restore = SmallButton("Restaurar padrão", false);
         restore.Click += async (_, _) =>
@@ -356,7 +356,7 @@ public sealed partial class CustomizePanel : Grid
     {
         var list = new StackPanel { Spacing = 4 };
         foreach (var w in issues)
-            list.Children.Add(new TextBlock { Text = "• " + w.Path + " " + w.Message, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap });
+            list.Children.Add(new TextBlock { Text = "• " + w.Path + " " + w.Message, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap });
         return list;
     }
 
@@ -404,7 +404,7 @@ public sealed partial class CustomizePanel : Grid
         var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         text.Children.Add(Label(title, 14.5, FontWeight.SemiBold));
         if (detail is not null)
-            text.Children.Add(new TextBlock { Text = detail, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock { Text = detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
         Control content;
         if (_narrow && control is Border { Tag: "seg" })
             content = new StackPanel { Spacing = 8, Children = { text, control } };   // ≤520: column, segment stretched
@@ -462,7 +462,7 @@ public sealed partial class CustomizePanel : Grid
             bool on = v == value;
             var b = new Button
             {
-                Content = label, MinHeight = 40, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = 13,
+                Content = label, MinHeight = 40, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size,
                 FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Text2),
                 Background = on ? UrbeTheme.Brush(UrbeTheme.Surface3) : Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch
