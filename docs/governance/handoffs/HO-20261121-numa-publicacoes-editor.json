@@ -110,7 +110,7 @@
   ],
   "reuse_assessment": [
     {
-      "subject": "Prévia sonora, fontes e perfil multimídia",
+      "subject": "numa-publicacoes-e-fontes",
       "status": "product-specific",
       "rationale": "Reutiliza mixagem, TTS, persistência e destinos existentes no Numa."
     }
