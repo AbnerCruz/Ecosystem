@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261121-numa-podcasts-unificados",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-21T16:32:22Z",
+  "agent": {
+    "id": "chatgpt-codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/numa-unified-podcast-publications-20261121",
+  "base_commit": "70c7ea3f35711d2b4d3ce6b131c81534b5d450ee",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1015",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Creation.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Podcast.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "docs/governance/handoffs/HO-20261121-numa-podcasts-unificados.json"
+  ],
+  "work_completed": [
+    "PR #1015: ação única Nova publicação, seletor Artigo/Livro/Apresentação/Curso/Vídeo/Podcast em Publicações e área de trabalho.",
+    "Podcast integrado ao projeto .publication.json com design.layout=podcast; roteiro .podcast.md vinculado, navegação no Estúdio e compatibilidade com roteiros antigos.",
+    "Narração e edição de notas de fonte dentro do Podcast sem exigir sufixo .podcast.md; Assistant orientado a write_publication.",
+    "Projeto inicial de vídeo sincronizado na criação pelo seletor; testes de interface e serialização cobrindo Podcast.",
+    "Após falha NN-008 do integrador, o trabalho foi reconciliado com main e recebeu handoff canônico; versão beta 70 preparada com notas atuais e histórico da beta 69 para evitar divergência entre notas e versão no CI."
+  ],
+  "verification": [
+    {
+      "check": "CI do PR #1015 antes da reconciliação",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "89a4400c16ecaf72e59cfd1ea1fec6f2a29e3135",
+      "evidence": "8 checks concluídos com sucesso: Android/Windows native, smoke Android, cliente C# portátil, E2E e consistência. https://github.com/AbnerCruz/Ecosystem/pull/1015/checks"
+    },
+    {
+      "check": "Pipeline no estado reconciliado com main",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Reexecutar checks após merge de main, inclusão do handoff e versão beta 70; não inferir sucesso do build anterior."
+    }
+  ],
+  "known_issues": [
+    "A atualização/reprodução de podcast com provedor de voz externo não foi testada em aparelho físico.",
+    "A versão beta 70 está preparada no código, mas não publicada; release somente pelo workflow oficial após integração e checks do estado reconciliado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI completo do head e estado combinado, verificar NN-008 e versão canônica embutida; integrar automaticamente se verdes.",
+    "Conferir publicação de APK assinada e assets da beta 70 somente após o workflow oficial concluir."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff tipado para PR #1015 no caminho canônico com base, execução, evidência de CI e pendências."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Consultadas diretamente as regras AGENTS e schema de handoff, sem modificar governança."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e smoke no ambiente automatizado são distintos de validação em aparelho, que não foi executada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "numa-publicacoes-podcast",
+      "status": "product-specific",
+      "rationale": "Reutiliza a infraestrutura de Publicações, o catálogo de fontes, a serialização de projetos e o Estúdio existentes, sem criar um subsistema independente."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Unificação de interface e contrato editorial existente com incremento numérico beta, sem mudança de estágio, assinatura ou identidade Android."
+  }
+}

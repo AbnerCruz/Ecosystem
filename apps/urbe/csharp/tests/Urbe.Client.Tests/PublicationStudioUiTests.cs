@@ -52,12 +52,17 @@ public sealed partial class HeadlessUiTests
                 await view.OpenVaultAsync();
                 await Settle(window, view);
                 var create = view.ShowPublicationsAsync();
-                ClickButtonWithText(view.Dialogs, "Novo podcast");
+                Assert.DoesNotContain(view.Dialogs.GetLogicalDescendants().OfType<Button>(),
+                    button => Equals(button.Content, "Novo podcast"));
+                ClickButtonWithText(view.Dialogs, "Nova publicação");
+                ClickButtonWithText(view.Dialogs, "Podcast");
                 view.Dialogs.GetLogicalDescendants().OfType<TextBox>().Single().Text = "Ciência";
                 ClickButtonWithText(view.Dialogs, "Criar");
                 await create;
                 var studio = view.PublicationsStudio;
                 var path = Assert.IsType<string>(studio.ProjectPath);
+                Assert.EndsWith(".publication.json", path);
+                Assert.Equal("podcast", studio.Project!.Design.Layout);
                 var script = view.Documents!.Get(Assert.Single(studio.Project!.Sources).DocumentId)!;
                 Assert.EndsWith(".podcast.md", script.Path);
                 Assert.Contains(studio.GetLogicalDescendants().OfType<Button>(), b => Equals(b.Content, "Editar roteiro"));
@@ -113,7 +118,8 @@ public sealed partial class HeadlessUiTests
                 .Single(b => AutomationProperties.GetName(b) == "Nova publicação");
             create.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
-            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Formato da publicação");
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Podcast");
             view.Dialogs.Cancel();
             return true;
         }

@@ -25,6 +25,30 @@ public sealed class PublicationProjectTests
     }
 
     [Fact]
+    public void PodcastUsesTheSamePublicationProjectCodecAndLiveSourceAsOtherFormats()
+    {
+        var store = new DocumentStore();
+        var script = store.Upsert(new DocumentInput
+        {
+            Path = "Publicações/Conversa.podcast.md",
+            Content = "# Conversa\n\n**Ana:** Introdução.\n\n**Beto:** Vamos começar."
+        });
+        using var catalog = new PublicationSourceCatalog(store);
+        var publication = PublicationProject.Create("Conversa", script.Id) with
+        {
+            Design = new PublicationDesign { Layout = "podcast" }
+        };
+        var serialized = PublicationProjectCodec.Serialize(publication);
+        var restored = PublicationProjectCodec.Parse(serialized);
+
+        Assert.Equal("podcast", restored.Design.Layout);
+        Assert.Equal(publication.PublicationId, restored.PublicationId);
+        Assert.Equal(script.Id, Assert.Single(restored.Sources).DocumentId);
+        Assert.DoesNotContain("Introdução.", serialized);
+        Assert.Contains("Introdução.", PublicationHtml.Export(restored, catalog).Html);
+    }
+
+    [Fact]
     public void LayoutsUseAccessibleContentsAndPrintProfilesWithoutExposingEditorialBrief()
     {
         var store = new DocumentStore();

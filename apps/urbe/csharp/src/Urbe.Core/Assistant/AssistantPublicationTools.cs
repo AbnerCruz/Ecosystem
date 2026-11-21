@@ -96,12 +96,13 @@ public static class AssistantPublicationTools
     /// <summary>CST-176: the same contract the Estúdio uses, said to agents (layouts, outputs, video).</summary>
     public const string Schema =
         "Publicações usam .publication.json, schemaVersion=1. Campos: publicationId (estável), title, objective, audience, sources [{documentId,fragment?}], " +
-        "sections [{id,source:{documentId,fragment?},role}], design:{theme:paper|ocean|ink, layout:article|book|slides|course|video}, formats:[html,epub,…]. " +
+        "sections [{id,source:{documentId,fragment?},role}], design:{theme:paper|ocean|ink, layout:article|book|slides|course|video|podcast}, formats:[html,epub,…]. " +
         "Em documentId use o caminho da nota (como list_notes/search_notes mostram), o título ou o id; o Numa guarda o id. sections pode faltar: uma seção por fonte, na ordem. Fragmentos são títulos únicos ou ^id existente; ausência ou ambiguidade é erro. " +
         "Escreva/adapte conteúdo em notas Markdown reais pelas ferramentas de notas; reordenação/layout nunca modifica notas. write_publication requer expected_revision " +
         "para substituir um projeto existente, mantendo publicationId. " +
         "Layouts: article e book (capítulos, sumário); slides (cada nota/#/##/--- inicia slide; :::notas vira notas do apresentador); course (cada nota um módulo, " +
-        "cada ## uma aula, blocos ```quiz viram questões); video (cada seção é uma cena; o texto da nota é o roteiro e a legenda). " +
+        "cada ## uma aula, blocos ```quiz viram questões); video (cada seção é uma cena; o texto da nota é o roteiro e a legenda); " +
+        "podcast (o roteiro é uma nota Markdown, preferencialmente .podcast.md; cada fala é **Nome:** texto; narração e exportação WAV ficam no mesmo Estúdio). " +
         "Vídeo: campo video {aspect:16:9|9:16|1:1, resolution:144–2160, fps:1–60, subtitles:bool, theme:noite|quadro|papel|neon|sobrio (escolha sempre um: dá fundo em gradiente, " +
         "cor de texto, duas cores de diagrama e legendas combinando; elementos sem color e cenas sem background seguem o tema), scenes:[{id, placementId (= id da seção), duration (s), " +
         "transition:{kind:cut|fade|slide|wipe|zoom (slide entra da direita, wipe revela da esquerda, zoom aproxima ao surgir), seconds}, background:#rrggbb, camera? ({keyframes, motions} sobre x, y (ponto do quadro no centro, 0.5 é o meio), zoom (1 é o quadro inteiro, 2 o dobro de perto) e rotation; o fundo fica, os elementos se movem sob a câmera), elements:[{id, kind:title|text|script|shape|image|plot|math|path|group|use|code (code: text é um programa JavaScript seu que desenha a caixa do elemento a cada quadro; use coloca um componente: component, params {chave: valor} preenchem {{chave}} nos textos; x, y, scale, rotation, opacity, keyframes e motions movem o componente inteiro), text? (rótulo curto, até " +

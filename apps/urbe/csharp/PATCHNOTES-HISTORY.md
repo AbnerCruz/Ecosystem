@@ -2,6 +2,11 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.69 — 21/11/2026
+- IA: corrigidos crashes em JSON de planos duplicado, reabertura do painel de etapas e ciclo de vida da WebView no Android.
+- Renderização incremental de chats grandes e prévias de publicações, redução de reconstruções quando o Assistente está oculto; testes de regressão adicionados.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.69
+
 ## 2.0.0-beta.68 — 21/11/2026
 - Seleção de voz e vídeo com preços e amostras; geração de publicações por tema/fontes, duração configurável, podcast com narração por voz do agente e prévia de vídeo com áudio.
 - Correções de flashcards e leitura de trilha do player Android, selo de autoria da IA oculto em publicações e exportação.

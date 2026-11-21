@@ -16,7 +16,10 @@ public sealed partial class MainView
     }
 
     public bool CanSpeakPodcast(string? path) =>
-        VaultWritable && path?.EndsWith(Podcast.Suffix, StringComparison.OrdinalIgnoreCase) == true;
+        VaultWritable && path is not null &&
+        (path.EndsWith(Podcast.Suffix, StringComparison.OrdinalIgnoreCase) ||
+         _publicationsStudio?.Project?.Design.Layout == "podcast" &&
+         _publicationsStudio.Project.Sources.Any(source => _store?.Get(source.DocumentId)?.Path == path));
 
     private string? FindPodcastAudio(string scriptPath)
     {

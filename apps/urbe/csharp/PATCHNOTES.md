@@ -1,15 +1,15 @@
 # Numa — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.69
+**Versão canônica preparada:** 2.0.0-beta.70
 **Canal:** Numa 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração.
 **Atualização:** instala por cima da beta anterior (app.urbe.csharp, mesmo certificado).
 
-- Assistente: corrigido o crash `Argument_AddingDuplicate` ao exibir planos de execução contendo propriedades JSON repetidas; ferramentas e histórico fazem normalização defensiva.
-- Painel de etapas: corrigido o crash por reutilização de `StackPanel` já pertencente a outro contêiner visual ao abrir o painel novamente.
-- Navegador de estudo no Android: descarte do `WebView` protegido contra callbacks tardios e `ObjectDisposedException` durante fechamento e navegação.
-- IA: evita reconstruir o histórico completo quando o Assistente está oculto; a atualização visual de respostas no Android tem cadência ajustada para reduzir travamentos.
-- Popup compacto: conversas longas mantêm todas as mensagens, mas renderizam o Markdown progressivamente à medida que se aproxima da área visível.
-- Publicações: adia a montagem de capítulos e prévias grandes, reduzindo trabalho síncrono e engasgos ao abrir o Estúdio.
-- Incluídos testes de regressão para planos malformados, reabertura de etapas, centenas de mensagens e publicações grandes.
-- Ainda é necessária validação de estresse no aparelho físico: encerramentos silenciosos do processo Android não foram reproduzidos e não podem ser declarados eliminados.
+- Publicações agora têm a ação única **Nova publicação**, com escolha entre Artigo, Livro, Apresentação, Curso, Vídeo e Podcast.
+- Podcast usa o mesmo projeto editável `.publication.json`, o Estúdio e as fontes Markdown de outros formatos, sem uma biblioteca separada.
+- Ao criar Podcast, o Numa prepara um roteiro vinculado `.podcast.md`; roteiros legados continuam compatíveis.
+- O Estúdio permite editar e narrar notas de publicações do tipo Podcast mesmo quando a fonte não tem sufixo de podcast.
+- O Assistente é orientado a usar `write_publication` com `design.layout=podcast`, preservando o contrato editorial e a rastreabilidade das notas.
+- Ao criar Vídeo, a publicação recebe um projeto inicial de cenas sincronizado.
+- Incluídos testes de interface e de persistência para garantir o mesmo fluxo de publicação e reabertura de Podcast.
+- Testes automatizados não substituem validação no aparelho com serviço real de voz.
