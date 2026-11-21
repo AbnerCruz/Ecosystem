@@ -12,7 +12,7 @@
 - LUNET-511 (PR #962, CI/DEVICE pendentes): importação agora rejeita colisões com arquivos ancestrais durante o preflight, antes de criar staging; teste xUnit cobre preservação de arquivos do projeto e recusa sem importação parcial.
 
 
-- LUNET-511 (PR #962, CI/DEVICE pendentes): prévia de importação identifica também colisões em diretórios ancestrais ocupados por arquivos, antes de iniciar a cópia; regressão xUnit adicionada.\n
+- LUNET-511 (PR #962, CI/DEVICE pendentes): prévia de importação identifica também colisões em diretórios ancestrais ocupados por arquivos, antes de iniciar a cópia; regressão xUnit adicionada.
 - LUNET-511 (PR #962, CI/DEVICE pendentes): antes de importar um asset, o Android apresenta os caminhos em conflito sem alterar o projeto; a importação ainda revalida o destino. Regressão xUnit para prévia sem efeitos colaterais e recusa de sobrescrita.
 
 
