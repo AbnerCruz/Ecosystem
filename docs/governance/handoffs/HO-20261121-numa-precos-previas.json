@@ -18,19 +18,23 @@
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Creation.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Speech.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/SpeechProviderFixture.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantSpeechProviderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/GenerativeVideoTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261121-numa-precos-previas.json"
   ],
   "work_completed": [
     "Beta.68 mostra preços com unidade no seletor de voz e vídeo. Onde o catálogo não informa a tarifa, mostra indisponibilidade.",
     "Prévia de voz solicitada pelo usuário, com texto de exemplo, aviso de cobrança e reprodução nativa. Salvar a voz não gera áudio.",
-    "Vídeo usa tarifas do catálogo e abre a página do provedor para consultar exemplos."
+    "Vídeo usa tarifas do catálogo e abre a página do provedor para consultar exemplos.",
+    "Briefing aceita tema, fontes selecionadas ou ambos. A orientação de pesquisa sem fontes segue as permissões do agente. Vídeo e podcast têm duração selecionável."
   ],
   "verification": [
     {
@@ -44,6 +48,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "1 teste do cliente verifica preço, a ausência de síntese ao abrir, a ação explícita e a escolha final. Player e provedor simulados."
+    },
+    {
+      "check": "Briefing de criação",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Cinco casos no cliente, cobrindo tema, anexos, ambos, pesquisa bloqueada, confirmação e as quatro durações. Modelo simulado."
     }
   ],
   "known_issues": [
