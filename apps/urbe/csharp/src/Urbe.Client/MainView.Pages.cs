@@ -36,7 +36,7 @@ public sealed partial class MainView
     {
         var panel = new PagesPanel();
         panel.PageRequested += path => _ = ShowPageAsync(path);
-        panel.NewRequested += () => _ = CreatePublicationAsync();
+        panel.NewRequested += () => _ = CreateNewPublicationAsync();
         panel.ConvertCompositionsRequested += () => _ = ConvertCompositionsAsync();
         panel.MenuRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), panel);
