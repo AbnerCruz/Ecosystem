@@ -14,6 +14,10 @@ public sealed class AssistantSpeechProviderTests
         {
             if (request.Method == HttpMethod.Get)
             {
+                if (request.RequestUri!.AbsolutePath.EndsWith("/endpoints", StringComparison.Ordinal))
+                    return new(HttpStatusCode.OK) { Content = new StringContent("""
+                        {"data":{"endpoints":[{"pricing":{"prompt":"0.0000005","completion":"0.00001"}}]}}
+                        """) };
                 Assert.Equal("/api/v1/audio/speech/models", request.RequestUri!.AbsolutePath);
                 return new(HttpStatusCode.OK)
                 {
@@ -44,6 +48,9 @@ public sealed class AssistantSpeechProviderTests
         var service = new AssistantProviders(new SpeechHandler(), (_, _) => Task.CompletedTask);
         var model = Assert.Single(await service.ListSpeechModelsAsync(provider, cancel));
         Assert.Equal(["Kore", "Aoede"], model.Voices);
+        var price = await service.SpeechPriceAsync(provider, model.Id, cancel);
+        Assert.Contains("US$ 0,5 por 1 milhão de tokens de entrada", price);
+        Assert.Contains("US$ 10 por 1 milhão de tokens de saída", price);
         var choice = new AiSpeechChoice(provider.Id, model.Id, model.Voices[0], model.Format);
         Assert.Equal(choice, AiSpeechChoice.Parse(choice.Reference));
         Assert.Null(AiSpeechChoice.Parse("kokoro-dora"));

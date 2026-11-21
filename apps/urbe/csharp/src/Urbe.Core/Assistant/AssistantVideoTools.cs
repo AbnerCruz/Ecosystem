@@ -34,7 +34,7 @@ public static class AssistantVideoTools
     public static AiTool Tool { get; } = new()
     {
         Name = "generate_video", Access = "write",
-        Description = "Gera um clipe curto com um modelo de vídeo generativo externo (pago por segundo; envia só a descrição) e guarda o MP4 em Vídeos/. " +
+        Description = "Gera um clipe curto com um modelo de vídeo generativo externo (cobrado pelo provedor; envia só a descrição) e guarda o MP4 em Vídeos/. " +
                       "Para vídeo explicativo editável a partir de notas, use uma Publicação no layout video (motion graphics do Numa), não esta ferramenta.",
         Parameters = JsonNode.Parse("""
             {"type":"object","properties":{
@@ -50,7 +50,7 @@ public static class AssistantVideoTools
             var model = host.Videos?.Model ?? "modelo de vídeo";
             return new AiPreview(Str(i, "path") is { Length: > 0 } p ? AssistantTools.Norm(p) : Folder + "/", null, null,
                 "Gerar um vídeo de " + Duration(i) + " s (" + (Str(i, "size") is { Length: > 0 } s ? s : Sizes[0]) + ") com " + model +
-                ", um modelo generativo externo: o provedor cobra por segundo e recebe só esta descrição. O resultado não é editável cena a cena." +
+                ", um modelo generativo externo: o provedor cobra conforme o modelo e recebe só esta descrição. O resultado não é editável cena a cena." +
                 "\n\nDescrição: " + Str(i, "prompt"));
         },
         Run = async (i, host) =>

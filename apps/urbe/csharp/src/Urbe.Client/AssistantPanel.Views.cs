@@ -1819,8 +1819,25 @@ public sealed partial class AssistantPanel
                         await _app.Dialogs.AlertAsync("Modelo de vídeo", "O catálogo deste provedor não informou modelos de vídeo compatíveis.");
                         return;
                     }
-                    if (await _app.Dialogs.ChooseAsync("Modelo de vídeo", models.Select(m => new DialogItem(m.Name, Detail: m.Id)).ToList()) is int model)
-                        SaveMedia(ownMedia with { VideoProviderId = videoProvider.Id, VideoModel = models[model].Id });
+                    if (await _app.Dialogs.ChooseAsync("Modelo de vídeo", models.Select(m => new DialogItem(m.Name, Detail: m.Price)).ToList()) is int model)
+                    {
+                        var chosen = models[model];
+                        while (await _app.Dialogs.ChooseAsync(chosen.Name,
+                            [new DialogItem("Usar este modelo"), new DialogItem("Ver página e exemplos do provedor")], chosen.Price) is int action)
+                        {
+                            if (action == 0)
+                            {
+                                SaveMedia(ownMedia with { VideoProviderId = videoProvider.Id, VideoModel = chosen.Id });
+                                break;
+                            }
+                            var page = videoProvider.Preset == "openrouter" && AssistantImagePricing.ValidOpenRouterSlug(chosen.Id)
+                                ? "https://openrouter.ai/" + chosen.Id
+                                : "https://developers.openai.com/api/docs/guides/video-generation";
+                            if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher)
+                                await launcher.LaunchUriAsync(new Uri(page));
+                            else break;
+                        }
+                    }
                 }
                 catch (AiProviderException e) { await _app.Dialogs.AlertAsync("Modelo de vídeo", e.Message); }
             }), canInherit ? Inherit(ownMedia.VideoProviderId is null, () => SaveMedia(ownMedia with { VideoProviderId = null, VideoModel = null })) : Hint("Padrão para os outros agentes.")));
