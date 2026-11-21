@@ -555,4 +555,51 @@ public sealed class VideoRenderTests
         Assert.True(Reddish(whole.GetPixel((int)(0.8 * whole.Width), y)));
         Assert.False(half.GetPixel((int)(0.2 * half.Width), (int)(0.35 * half.Height)).Green > 100);   // the mask itself is invisible
     }
+
+    /// <summary>#1004: a program the agent writes draws the frame — a field of orbiting particles with trails, built by loops.</summary>
+    [Fact]
+    public void AProgramDrawsTheFrame()
+    {
+        var (catalog, project) = Project(resolution: 360, seconds: 3);
+        using var _c = catalog;
+        const string code = """
+            function draw(ctx, t, info) {
+              var cx = ctx.width / 2, cy = ctx.height / 2;
+              ctx.gradient(0, 0, 0, ctx.height, '#0b1020', '#1a0b2e'); ctx.rect(0, 0, ctx.width, ctx.height);
+              ctx.glow(12, '#ffcc66'); ctx.fill('#ffdd88'); ctx.circle(cx, cy, 18); ctx.noGlow();
+              for (var i = 0; i < 300; i++) {
+                var r = 40 + 140 * Math.random(), a0 = Math.random() * 6.283, w = 0.4 + Math.random();
+                for (var k = 0; k < 6; k++) {
+                  var a = a0 + (t - k * 0.04) * w;
+                  ctx.alpha(1 - k / 6); ctx.fill('#7dd3fc');
+                  ctx.circle(cx + r * Math.cos(a), cy + r * Math.sin(a) * 0.6, 1.6);
+                }
+                ctx.alpha(1);
+              }
+              ctx.fill('#ff0000'); ctx.rect(0, 0, 20, 20);
+            }
+            """;
+        var scene = project.Video!.Scenes[0] with { Background = "#000000",
+            Elements = [new VideoElement { Id = "prog", Kind = "code", Text = code, X = 0.5, Y = 0.5, Width = 1, Height = 1 }] };
+        project = project with { Video = project.Video with { Scenes = [scene] } };
+        PublicationProjectCodec.Validate(project);
+        var timeline = VideoTimeline.Build(project, catalog);
+        Assert.DoesNotContain(VideoInspection.Run(timeline), i => i.Severity == ReviewSeverity.Error);
+        using var r = new VideoFrameRenderer(timeline);
+        using var a = r.Render(0.5);
+        using var b = r.Render(1.5);
+        Assert.True(Reddish(a.GetPixel(5, 5)));                      // the program's own marker, at its box's corner
+        int Blue(SKBitmap f) { int n = 0; for (int x = 0; x < f.Width; x += 2) for (int y = 0; y < f.Height; y += 2) { var p = f.GetPixel(x, y); if (p.Blue > 180 && p.Red < 160) n++; } return n; }
+        Assert.True(Blue(a) > 100, "particles drawn: " + Blue(a));
+        Assert.NotEqual(Enumerable.Range(0, a.Width).Select(x => a.GetPixel(x, a.Height / 2 + 30)), Enumerable.Range(0, b.Width).Select(x => b.GetPixel(x, b.Height / 2 + 30)));   // it moves
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        for (int i = 0; i < 10; i++) r.Render(i / 10.0).Dispose();
+        long ms = clock.ElapsedMilliseconds / 10;
+        if (Environment.GetEnvironmentVariable("URBE_EVIDENCE") is { Length: > 0 } dir)
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllBytes(Path.Combine(dir, "video-codigo.png"), r.RenderSheet([0.3, 1.0, 1.8, 2.6]));
+            File.AppendAllText(Path.Combine(dir, "video-codigo.txt"), "1800 círculos por código: " + ms + " ms/quadro a 360p\n");
+        }
+    }
 }

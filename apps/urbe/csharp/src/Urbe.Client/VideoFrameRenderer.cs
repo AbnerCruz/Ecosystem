@@ -132,6 +132,7 @@ public sealed class VideoFrameRenderer : IDisposable
                 case "math": DrawMath(canvas, e, box, color); break;
                 case "path": DrawPath(canvas, e, box, color, h); break;
                 case "group": break;   // only carries its children
+                case "code": DrawCode(canvas, e, box, layer.LocalTime, color); break;
                 default: DrawText(canvas, e.Text ?? "", box, (float)(e.FontSize * h), color, e.Kind == "title", e.Kind == "script" ? SKTextAlign.Left : SKTextAlign.Center, e.Progress); break;
             }
             canvas.Restore();
@@ -313,6 +314,105 @@ public sealed class VideoFrameRenderer : IDisposable
             float x = align == SKTextAlign.Left ? box.Left : 0;
             canvas.DrawText(line, x, y, align, font, paint);
             y += font.Spacing;
+        }
+    }
+
+    /// <summary>
+    /// #1004: what a code element's program draws now, replayed in its box (origin at the box's top-left corner).
+    /// A program that fails draws nothing here; the measured review says why.
+    /// </summary>
+    private void DrawCode(SKCanvas canvas, VideoElementState e, SKRect box, double t, SKColor baseColor)
+    {
+        IReadOnlyList<VideoDrawCommand> commands;
+        try { commands = VideoCode.Run(e.Text, t, box.Width, box.Height, _timeline.Fps, e.Id + "#" + e.Instance); }
+        catch (VideoCodeException) { return; }
+        byte opacity = baseColor.Alpha;
+        int start = canvas.Save();
+        canvas.Translate(box.Left, box.Top);
+        canvas.ClipRect(new SKRect(0, 0, box.Width, box.Height));
+        var fill = new SKPaint { Color = SKColors.White.WithAlpha(opacity), IsAntialias = true, Style = SKPaintStyle.Fill };
+        var stroke = new SKPaint { Color = SKColors.White.WithAlpha(opacity), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2, StrokeCap = SKStrokeCap.Round, StrokeJoin = SKStrokeJoin.Round };
+        bool doFill = true, doStroke = false;
+        double alpha = 1;
+        var states = new Stack<(SKPaint Fill, SKPaint Stroke, bool DoFill, bool DoStroke, double Alpha)>();
+        SKColor Tint(string? c, SKColor fallback) => Color(c, fallback).WithAlpha((byte)Math.Round(Color(c, fallback).Alpha * alpha * opacity / 255.0));
+        void Shape(Action<SKPaint> draw) { if (doFill) draw(fill); if (doStroke) draw(stroke); }
+        try
+        {
+            foreach (var c in commands)
+            {
+                var a = c.Args;
+                float F(int i) => i < a.Length && double.IsFinite(a[i]) ? (float)a[i] : 0;
+                switch (c.Op)
+                {
+                    case "fill": fill.Shader = null; fill.Color = Tint(c.Color, SKColors.White); doFill = true; break;
+                    case "stroke": stroke.Color = Tint(c.Color, SKColors.White); stroke.StrokeWidth = Math.Max(0, F(0)); doStroke = true; break;
+                    case "noFill": doFill = false; break;
+                    case "noStroke": doStroke = false; break;
+                    case "alpha":
+                        alpha = a[0];
+                        fill.Color = fill.Color.WithAlpha((byte)Math.Round(255 * alpha * opacity / 255.0));
+                        stroke.Color = stroke.Color.WithAlpha((byte)Math.Round(255 * alpha * opacity / 255.0));
+                        break;
+                    case "gradient":
+                        fill.Shader?.Dispose();
+                        fill.Shader = SKShader.CreateLinearGradient(new SKPoint(F(0), F(1)), new SKPoint(F(2), F(3)), [Tint(c.Color, SKColors.White), Tint(c.Color2, SKColors.Black)], SKShaderTileMode.Clamp);
+                        doFill = true;
+                        break;
+                    case "glow":
+                        var filter = a[0] <= 0 ? null : SKImageFilter.CreateDropShadow(0, 0, F(0), F(0), Tint(c.Color is { Length: > 0 } ? c.Color : null, fill.Color));
+                        fill.ImageFilter = filter; stroke.ImageFilter = filter;
+                        break;
+                    case "noGlow": fill.ImageFilter = null; stroke.ImageFilter = null; break;
+                    case "circle": Shape(p => canvas.DrawCircle(F(0), F(1), Math.Max(0, F(2)), p)); break;
+                    case "ellipse": Shape(p => canvas.DrawOval(F(0), F(1), Math.Max(0, F(2)), Math.Max(0, F(3)), p)); break;
+                    case "rect":
+                        var r = new SKRect(F(0), F(1), F(0) + F(2), F(1) + F(3));
+                        Shape(p => { if (F(4) > 0) canvas.DrawRoundRect(r, F(4), F(4), p); else canvas.DrawRect(r, p); });
+                        break;
+                    case "line": canvas.DrawLine(F(0), F(1), F(2), F(3), doStroke ? stroke : fill); break;
+                    case "poly":
+                        if (a.Length < 5) break;
+                        using (var poly = new SKPath())
+                        {
+                            poly.MoveTo(F(0), F(1));
+                            for (int i = 2; i + 1 < a.Length - 1; i += 2) poly.LineTo(F(i), F(i + 1));
+                            if (a[^1] > 0) poly.Close();
+                            Shape(p => canvas.DrawPath(poly, p));
+                        }
+                        break;
+                    case "path":
+                        if (c.Text is { Length: > 0 } data && SKPath.ParseSvgPathData(data) is { } svg) { using (svg) Shape(p => canvas.DrawPath(svg, p)); }
+                        break;
+                    case "text":
+                        using (var font = Font(a.Length > 3 && a[3] > 0, Math.Max(1, F(2))))
+                        {
+                            var align = c.Color switch { "left" => SKTextAlign.Left, "right" => SKTextAlign.Right, _ => SKTextAlign.Center };
+                            canvas.DrawText(c.Text ?? "", F(0), F(1), align, font, doFill ? fill : stroke);
+                        }
+                        break;
+                    case "save":
+                        states.Push((fill.Clone(), stroke.Clone(), doFill, doStroke, alpha));
+                        canvas.Save();
+                        break;
+                    case "restore":
+                        if (states.Count == 0) break;
+                        var s = states.Pop();
+                        fill.Dispose(); stroke.Dispose();
+                        (fill, stroke, doFill, doStroke, alpha) = s;
+                        canvas.Restore();
+                        break;
+                    case "translate": canvas.Translate(F(0), F(1)); break;
+                    case "rotate": canvas.RotateDegrees(F(0)); break;
+                    case "scale": canvas.Scale(F(0), F(1)); break;
+                }
+            }
+        }
+        finally
+        {
+            foreach (var s in states) { s.Fill.Dispose(); s.Stroke.Dispose(); }
+            fill.Dispose(); stroke.Dispose();
+            canvas.RestoreToCount(start);
         }
     }
 

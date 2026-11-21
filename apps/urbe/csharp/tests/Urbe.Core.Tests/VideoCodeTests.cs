@@ -1,0 +1,85 @@
+using Urbe.Core;
+
+namespace Urbe.Core.Tests;
+
+/// <summary>#1004: video drawn by free JavaScript the agent writes, run in Jint with nothing of the app in reach.</summary>
+public sealed class VideoCodeTests
+{
+    [Fact]
+    public void AProgramDrawsWithLoopsFunctionsAndTime()
+    {
+        const string code = """
+            function orbit(i, t) { return { x: 100 + 50 * Math.cos(i + t), y: 100 + 50 * Math.sin(i + t) }; }
+            function draw(ctx, t, info) {
+              ctx.fill('#ff0000');
+              for (var i = 0; i < 12; i++) { var p = orbit(i, t); ctx.circle(p.x, p.y, 3); }
+              ctx.text('t=' + t.toFixed(1), ctx.width / 2, 20, 16);
+            }
+            """;
+        var cmds = VideoCode.Run(code, 0.5, 200, 200);
+        Assert.Equal(12, cmds.Count(c => c.Op == "circle"));
+        Assert.Equal(100 + 50 * Math.Cos(0.5), cmds.First(c => c.Op == "circle").Args[0], 9);
+        Assert.Equal("t=0.5", cmds.Single(c => c.Op == "text").Text);
+        Assert.Equal(100, cmds.Single(c => c.Op == "text").Args[0]);
+    }
+
+    [Theory]
+    [InlineData("function draw(ctx){ ctx.text(typeof require + typeof importNamespace + typeof fetch + typeof System + typeof process + typeof XMLHttpRequest, 0, 0, 10); }")]
+    public void NothingOutsideTheDrawingIsInReach(string code)
+    {
+        var text = VideoCode.Run(code, 0, 10, 10).Single().Text;
+        Assert.Equal(string.Concat(Enumerable.Repeat("undefined", 6)), text);
+    }
+
+    [Theory]
+    [InlineData("function draw(ctx){ while(true){} }", "instruções")]
+    [InlineData("function draw(ctx){ function f(n){ return f(n+1); } f(0); }", "recursão")]
+    [InlineData("function draw(ctx){ var a=[]; while(true) a.push(new Array(100000).fill(1)); }", "")]
+    [InlineData("function draw(ctx){ for(var i=0;i<100000;i++) ctx.circle(0,0,1); }", "comandos")]
+    [InlineData("function draw(ctx){ undefinedThing(); }", "linha 1")]
+    public void AProgramThatRunsAwayOrBreaksIsStoppedSayingWhy(string code, string reason)
+    {
+        var error = Assert.Throws<VideoCodeException>(() => VideoCode.Run(code, 0, 10, 10));
+        Assert.Contains(reason, error.Message);
+    }
+
+    [Theory]
+    [InlineData("", "vazio")]
+    [InlineData("function desenhar(){}", "draw")]
+    [InlineData("function draw( {", "JavaScript válido")]
+    public void ABadProgramIsRefusedBeforeItRuns(string code, string reason) =>
+        Assert.Contains(reason, Assert.Throws<VideoCodeException>(() => VideoCode.Check(code)).Message);
+
+    [Fact]
+    public void RandomIsTheSameEveryTimeForTheSameFrameAndElement()
+    {
+        const string code = "function draw(ctx){ for (var i=0;i<5;i++) ctx.circle(Math.random()*100, noise(i*0.7)*100, 1); }";
+        var a = VideoCode.Run(code, 1, 100, 100, seed: "e1").Select(c => c.Args[0]).ToList();
+        var b = VideoCode.Run(code, 1, 100, 100, seed: "e1").Select(c => c.Args[0]).ToList();
+        var other = VideoCode.Run(code, 1, 100, 100, seed: "e2").Select(c => c.Args[0]).ToList();
+        Assert.Equal(a, b);
+        Assert.NotEqual(a, other);
+    }
+
+    [Fact]
+    public void ACodeElementIsCheckedWithTheVideoAndItsFailureIsReviewed()
+    {
+        var store = new DocumentStore();
+        var doc = store.Upsert(new DocumentInput { Path = "Cena.md", Content = "# Cena\n\nTexto.\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = VideoComposition.Synced(PublicationProject.Create("V", doc.Id) with { Design = new PublicationDesign { Layout = "video" } });
+        VideoElement Code(string js) => new() { Id = "prog", Kind = "code", Text = js, X = 0.5, Y = 0.5, Width = 1, Height = 1 };
+        var bad = project with { Video = project.Video!.WithScene(project.Video.Scenes[0] with { Duration = 3, Elements = [Code("function draw( {")] }) };
+        Assert.Contains("código de prog", Assert.Throws<InvalidDataException>(() => PublicationProjectCodec.Validate(bad)).Message);
+
+        // valid code that fails only after 1 s: the review says where and why
+        var late = project with { Video = project.Video.WithScene(project.Video.Scenes[0] with { Duration = 3, Elements = [Code("function draw(ctx, t){ if (t > 1) missing(); ctx.circle(1,1,1); }")] }) };
+        PublicationProjectCodec.Validate(late);
+        var timeline = VideoTimeline.Build(late, catalog);
+        var issue = Assert.Single(VideoInspection.Run(timeline), i => i.ElementId == "prog");
+        Assert.Equal(ReviewSeverity.Error, issue.Severity);
+        Assert.Contains("missing", issue.Message);
+        // every instant is a new frame of a program (nothing cached as still)
+        Assert.NotEqual(timeline.Evaluate(0.2).Layers[0].StateKey, timeline.Evaluate(0.3).Layers[0].StateKey);
+    }
+}

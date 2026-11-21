@@ -150,7 +150,7 @@ public sealed record VideoTransition
 /// </summary>
 public sealed record VideoElement
 {
-    public static readonly string[] Kinds = ["title", "text", "script", "shape", "image", "plot", "math", "path", "group"];
+    public static readonly string[] Kinds = ["title", "text", "script", "shape", "image", "plot", "math", "path", "group", "code"];
     public const int MaxPathData = 8192;
 
     public string Id { get; init; } = "el_" + Guid.NewGuid().ToString("N");
@@ -325,6 +325,11 @@ public static class VideoCompositionRules
                     if (!VideoKeyframe.IsEasing(k.Easing))
                         throw Bad("keyframe de " + e.Id + " usa a curva \"" + k.Easing + "\"; curvas: " + string.Join(", ", VideoKeyframe.Easings) + " ou cubic-bezier(x1,y1,x2,y2)");
                     if (!Finite(k.Time) || !Finite(k.Value)) throw Bad("keyframe de " + e.Id + " sem tempo ou valor numérico");
+                }
+                if (e.Kind == "code")
+                {
+                    try { VideoCode.Check(e.Text ?? ""); }
+                    catch (VideoCodeException ex) { throw Bad("código de " + e.Id + ": " + ex.Message); }
                 }
                 if (e.Split is { } split)
                 {

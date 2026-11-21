@@ -197,6 +197,7 @@ public sealed class VideoTimeline
                 sb.Append('|').Append(s.Id).Append('#').Append(s.Instance).Append(';').Append(F(s.X)).Append(';').Append(F(s.Y)).Append(';').Append(F(s.Scale))
                   .Append(';').Append(F(s.Opacity)).Append(';').Append(F(s.Rotation)).Append(';').Append(F(s.Progress))
                   .Append(';').Append(F(s.Width)).Append(';').Append(F(s.Height));
+                if (s.Kind == "code") sb.Append(";t").Append(F(local));   // a program draws something new every instant
                 if (s.Effects is { } fx) sb.Append(";fx").Append(F(fx.Glow)).Append(';').Append(F(fx.Shadow)).Append(';').Append(F(fx.Blur));
             }
             var camera = Camera(scene.Scene.Camera, local);
