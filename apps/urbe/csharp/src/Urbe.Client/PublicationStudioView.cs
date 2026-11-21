@@ -408,7 +408,8 @@ public sealed class PublicationStudioView : Border
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
             if (CanNarrate && source?.Path is { } podcastPath &&
-                podcastPath.EndsWith(Urbe.Core.Study.Podcast.Suffix, StringComparison.OrdinalIgnoreCase))
+                (project.Design.Layout == "podcast" ||
+                 podcastPath.EndsWith(Urbe.Core.Study.Podcast.Suffix, StringComparison.OrdinalIgnoreCase)))
             {
                 var actions = new WrapPanel();
                 AddAction("Editar roteiro", () => EditSourceRequested?.Invoke(documentId));
