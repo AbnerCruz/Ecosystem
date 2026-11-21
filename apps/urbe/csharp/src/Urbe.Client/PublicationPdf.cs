@@ -14,14 +14,19 @@ public static class PublicationPdf
 {
     private const float PageW = 595.28f, PageH = 841.89f, MarginX = 62, MarginTop = 64, MarginBottom = 74;
     private const float ContentW = PageW - 2 * MarginX;
-    private static readonly SKColor Ink = new(0x25, 0x27, 0x2c), Accent = new(0x6b, 0x4f, 0x2a), Muted = new(0x66, 0x66, 0x66), Link = new(0x05, 0x63, 0xc1);
+    private static readonly SKColor Ink = new(0x25, 0x27, 0x2c), Muted = new(0x66, 0x66, 0x66), Link = new(0x05, 0x63, 0xc1);
 
     public static async Task<PublicationExport> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
         Func<string, Task<byte[]?>>? readAsset = null, Func<string, string?>? data = null, CancellationToken cancellationToken = default) =>
         Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken, rasterize: null, data: data));
 
+    // CST-161: the publication's accent (PublicationTheme), for this export on this thread
+    [ThreadStatic] private static SKColor _accent;
+    private static SKColor Accent => _accent;
+
     public static PublicationExport Write(OfficeDocument doc)
     {
+        _accent = SKColor.TryParse(doc.Accent, out var accent) ? accent : new SKColor(0x6b, 0x4f, 0x2a);
         var limitations = new SortedSet<string>(doc.Limitations.Where(l => !l.Contains("TeX") && !l.Contains("SVG")), StringComparer.Ordinal);
         var book = doc.Layout == "book";
         var fonts = new Fonts(book);
@@ -425,7 +430,7 @@ public static class PublicationPdf
                     pieces.Add(new Piece(run.Text, fonts.Get(size), color, (float)sz.Width * scale, Svg: m.Svg, Height: (float)sz.Height * scale));
                     continue;
                 }
-                if (run.Math) limitations.Add("Fórmulas que o Urbe não conseguiu desenhar saem como TeX.");
+                if (run.Math) limitations.Add("Fórmulas que o Numa não conseguiu desenhar saem como TeX.");
                 var face = fonts.Face(run.Bold, run.Italic || run.Math, run.Code);
                 var ink = run.Href is not null ? Link : color;
                 var runSize = run.Code ? size * .9f : size;

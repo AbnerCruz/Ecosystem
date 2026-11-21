@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261121-urbe-release-label-fix",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-21T06:44:12.454Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "OPS-1010",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-release-app-label-from-csproj-20261121",
+  "base_commit": "bac99570cdcce6a7f607e96031f250a9507671bb",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1010",
+  "files_changed": [
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    "docs/governance/handoffs/HO-20261121-urbe-release-label-fix.json"
+  ],
+  "work_completed": [
+    "Causa da falha de distribuição beta.62–64 localizada no workflow: o passo de verificação do APK exigia application-label:'Urbe' após a mudança de ApplicationTitle para Numa em beta.62.",
+    "Verificação do APK agora usa ApplicationTitle da PropertyGroup do canal beta no projeto Android como única fonte do rótulo esperado, transmitido via output/env e comparado com igualdade literal em aapt badging.",
+    "Identificador app.urbe.csharp, certificado beta, integridade do APK, versões e governança preservados. Mantida fila persistente de releases para republicação de revisões históricas sem reconstruí-las a partir de outra versão."
+  ],
+  "verification": [
+    {
+      "check": "Reprodução da falha beta.64",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução https://github.com/AbnerCruz/Ecosystem/actions/runs/44872341714 : compilação e assinatura do APK concluídas; verificação falhou exatamente com 'Nome do app errado' antes de publicar."
+    },
+    {
+      "check": "CI consistency do PR #1010",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/44876789891 — status em andamento ao registrar este handoff."
+    },
+    {
+      "check": "GitHub Actions - publicação assinada beta.64 e releases beta.62/63",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "A validação real do fluxo, APK e tag ocorre após integração do PR e despacho pela fila durável de releases; ainda não publicada."
+    }
+  ],
+  "known_issues": [
+    "A correção ainda não foi testada pelo workflow completo; o código de publicação passa por CI e release depois da integração.",
+    "As betas .62, .63 e .64 ainda não possuem release publicada no momento do handoff. O reconciliador só poderá repeti-las após o conserto chegar à main.",
+    "Nenhum aparelho físico foi utilizado para validação; ADD-0035 não bloqueia a integração por isso."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar PR #1010 apenas após verificações exigidas pelo Ecosystem.",
+    "Confirmar execução de urbe-csharp-mobile-release.yml após merge e que as tags beta.62, beta.63 e beta.64 possuem APK Android e Windows.",
+    "Se necessário, verificar e reparar falhas de publicação adicionais sem enfraquecer assinatura ou verificação de artefatos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    ".github/integrator/integrate.sh",
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    ".github/workflows/release-reconcile.yml",
+    "docs/distribution/automatic-releases.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "O resultado foi registrado no handoff do próprio PR com estado review."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em aparelho não foi declarada; testes CI e release distinguem-se de DEVICE."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "O PR altera a verificação de rótulo em workflow de publicação, preservando controles de assinatura, versão e identidade do APK."
+  }
+}

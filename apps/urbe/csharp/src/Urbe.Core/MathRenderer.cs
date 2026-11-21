@@ -38,11 +38,30 @@ public static class MathRenderer
     public const string CSharpMathVersion = "1.0.0-pre.2";
     public const int MaxTexLength = 32_768;
 
+    /// <summary>
+    /// CST-181: a formula drawn once is not typeset again (a book's formulas on every export and every reading, a few
+    /// ms each on a computer and many times that on a modest phone). Rendering is a pure function of its inputs, so
+    /// the result is kept by them, least recently used out first, within a memory budget.
+    /// </summary>
     public static MathRenderResult RenderSvg(
         string? tex,
         bool display = true,
         float fontSize = 20,
         IReadOnlyDictionary<string, string>? macros = null)
+    {
+        var key = (tex ?? "") + "\u0001" + (display ? 'D' : 'T') + fontSize.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                  (macros is { Count: > 0 } ? "\u0001" + string.Join("\u0002", macros.OrderBy(m => m.Key, StringComparer.Ordinal).Select(m => m.Key + "=" + m.Value)) : "");
+        return Cache.GetOrAdd(key, () => RenderSvgUncached(tex, display, fontSize, macros));
+    }
+
+    /// <summary>The formulas already drawn, about 16 MB at most.</summary>
+    internal static readonly BoundedCache<MathRenderResult> Cache = new(16L << 20, r => (r.Svg.Length + r.Tex.Length) * 2L + 256);
+
+    private static MathRenderResult RenderSvgUncached(
+        string? tex,
+        bool display,
+        float fontSize,
+        IReadOnlyDictionary<string, string>? macros)
     {
         var source = tex ?? string.Empty;
         if (source.Length > MaxTexLength)

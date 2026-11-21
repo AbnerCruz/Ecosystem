@@ -106,6 +106,7 @@ public sealed class VoiceNoteQueueBacklog(VoiceNoteQueueFile queue, Func<string,
                     var audio = current.Audio is null ? null : Path.Combine(queue.Folder, current.Audio);
                     if (audio is null || !File.Exists(audio)) { queue.Remove(current.Id); continue; }
                     string? text = null, error = null;
+                    VoiceNoteQueue.RepairWav(audio);   // cut short by a killed process: its header still said 0 bytes
                     try { text = await transcribe(audio); }
                     catch (Exception ex) { error = ex.Message; }
                     current = current with { Text = QuickNotes.Clean(text), Attempts = current.Attempts + 1, Error = text is null ? error ?? "Não foi possível transcrever." : null };
@@ -189,7 +190,7 @@ public sealed partial class MainView
     }
 
     private DialogItem? QuickVoiceItem() => Voice is null ? null
-        : new DialogItem("Nota rápida", UrbeTheme.Icons.Mic, "Fale e o Urbe escreve em “" + QuickNotes.Folder + "”.", Run: QuickVoiceNoteAsync);
+        : new DialogItem("Nota rápida", UrbeTheme.Icons.Mic, "Fale e o Numa escreve em “" + QuickNotes.Folder + "”.", Run: QuickVoiceNoteAsync);
 
     /// <summary>Listens, then appends what was said to today's quick note.</summary>
     public async Task QuickVoiceNoteAsync()

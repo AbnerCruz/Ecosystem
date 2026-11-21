@@ -31,10 +31,10 @@ public sealed class LiveHtmlPane : Border
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         BorderBrush = UrbeTheme.Brush(UrbeTheme.Line);
         BorderThickness = new Thickness(1, 0, 0, 0);
-        _browser = new Button { Content = "Abrir no navegador", Padding = new Thickness(12, 6), FontSize = 13, IsVisible = !OperatingSystem.IsAndroid() };
+        _browser = new Button { Content = "Abrir no navegador", Padding = new Thickness(12, 6), FontSize = UrbeTokens.Type.Footnote.Size, IsVisible = !OperatingSystem.IsAndroid() };
         AutomationPropertiesName(_browser, "Abrir a prévia no navegador");
         _browser.Click += (_, _) => OpenInBrowser();
-        var title = new TextBlock { Text = "Prévia ao vivo", FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center };
+        var title = new TextBlock { Text = "Prévia ao vivo", FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center };
         var head = new DockPanel { Margin = new Thickness(12, 6, 8, 6) };
         DockPanel.SetDock(_browser, Dock.Right);
         head.Children.Add(_browser);

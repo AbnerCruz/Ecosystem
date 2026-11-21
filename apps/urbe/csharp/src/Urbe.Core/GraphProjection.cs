@@ -68,56 +68,76 @@ public static class GraphProjection
         var graph = GraphDocument.Create(root.Length == 0 ? "Estrutura do vault" : "Estrutura de " + root);
         var byPath = new Dictionary<string, GraphNode>(StringComparer.OrdinalIgnoreCase);
         var byNoteId = new Dictionary<string, GraphNode>(StringComparer.Ordinal);
-        int row = 0;
         foreach (var item in items)
         {
-            var depth = item.Path.Count(ch => ch == '/') - (root.Length > 0 ? root.Count(ch => ch == '/') + 1 : 0);
-            depth = Math.Max(0, depth);
-            var node = graph.AddReference(item.Kind, item.Path, depth * 265, row++ * 112, item.Id, recordHistory: false);
+            var node = graph.AddReference(item.Kind, item.Path, 0, 0, item.Id, recordHistory: false);
             byPath[item.Path] = node;
             if (item.Id is not null) byNoteId[item.Id] = node;
         }
-        // Tidy hierarchy: leaves take unique rows; folder parents sit at their children's
-        // vertical midpoint. This avoids long crossing lines produced by a flat list layout.
+        // Blocks, not one long column: each folder sits left of its files and notes laid out as a near-square grid,
+        // its subfolders below them; the top-level blocks are packed in shelves towards a 16:9 view. A vault of
+        // thousands of notes reads as a map instead of a line hundreds of screens tall.
         var children = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var item in items)
         {
             var cut = item.Path.LastIndexOf('/');
             var parent = cut < 0 ? "" : item.Path[..cut];
             if (!byPath.ContainsKey(parent)) parent = "";
-            if (!children.TryGetValue(parent, out var siblings))
-            {
-                siblings = [];
-                children[parent] = siblings;
-            }
+            if (!children.TryGetValue(parent, out var siblings)) children[parent] = siblings = [];
             siblings.Add(item.Path);
         }
+        const double Col = 266, Row = 116;
         var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        int leaf = 0;
-        double Place(string path, int depth)
+        // the leaves as a grid about as wide as tall (a card is ~2.3 times wider than high), then each subfolder's block
+        (double W, double H) Contents(List<string> kids, double x, double y)
+        {
+            var leaves = kids.Where(k => children.GetValueOrDefault(k) is not { Count: > 0 }).ToList();
+            int cols = leaves.Count == 0 ? 0 : (int)Math.Max(1, Math.Ceiling(Math.Sqrt(leaves.Count * Row / Col)));
+            int rows = cols == 0 ? 0 : (leaves.Count + cols - 1) / cols;
+            for (int i = 0; i < leaves.Count; i++) Put(leaves[i], x + i % cols * Col, y + i / cols * Row);
+            double w = cols * Col, h = rows * Row;
+            foreach (var folder in kids.Except(leaves))
+            {
+                var (bw, bh) = Block(folder, x, y + h);
+                w = Math.Max(w, bw);
+                h += bh;
+            }
+            return (w, h);
+        }
+        (double W, double H) Block(string path, double x, double y)
+        {
+            Put(path, x, y);
+            var (w, h) = Contents(children.GetValueOrDefault(path) ?? [], x + Col, y);
+            return (Col + w, Math.Max(Row, h) + Row / 2);
+        }
+        void Put(string path, double x, double y)
         {
             if (!visited.Add(path)) throw new InvalidDataException("Hierarquia com ciclo.");
-            var child = children.GetValueOrDefault(path);
-            double y;
-            if (child is { Count: > 0 })
-            {
-                double first = 0, last = 0;
-                for (var index = 0; index < child.Count; index++)
-                {
-                    var childY = Place(child[index], depth + 1);
-                    if (index == 0) first = childY;
-                    last = childY;
-                }
-                y = (first + last) / 2;
-            }
-            else y = (leaf++) * 116;
-            graph.MoveNode(byPath[path].Id, depth * 266, y, recordHistory: false);
-            return y;
+            graph.MoveNode(byPath[path].Id, x, y, recordHistory: false);
         }
-        foreach (var path in children.GetValueOrDefault("") ?? [])
-            Place(path, 0);
-        foreach (var item in items)
-            if (!visited.Contains(item.Path)) Place(item.Path, 0);
+        var top = children.GetValueOrDefault("") ?? [];
+        var topLeaves = top.Where(k => children.GetValueOrDefault(k) is not { Count: > 0 }).ToList();
+        double shelfX = 0, shelfY = 0, shelfH = 0;
+        if (topLeaves.Count > 0) { var (_, h) = Contents(topLeaves, 0, 0); shelfY = h + Row; }
+        var blocks = top.Except(topLeaves).ToList();
+        // the shelf width that makes the whole roughly 16:9, from the blocks' total area
+        double area = items.Count * Col * Row * 1.4;
+        double shelf = Math.Max(Col * 4, Math.Sqrt(area * 16 / 9));
+        foreach (var folder in blocks)
+        {
+            var (w, h) = Block(folder, shelfX, shelfY);
+            if (shelfX > 0 && shelfX + w > shelf)
+            {
+                // too wide for this shelf: the block starts the next one
+                visited.RemoveWhere(p => p == folder || p.StartsWith(folder + "/", StringComparison.OrdinalIgnoreCase));
+                shelfY += shelfH + Row;
+                shelfX = 0;
+                shelfH = 0;
+                (w, h) = Block(folder, shelfX, shelfY);
+            }
+            shelfX += w + Col / 2;
+            shelfH = Math.Max(shelfH, h);
+        }
 
         foreach (var item in items)
         {

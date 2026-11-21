@@ -119,7 +119,7 @@ public sealed class ConnectionsPanel : Border
     {
         var dot = new Avalonia.Controls.Shapes.Ellipse { Width = 8, Height = 8, Fill = new SolidColorBrush(ConnectionsGraph.FolderColor(n.Folder)), VerticalAlignment = VerticalAlignment.Center };
         var name = new TextBlock { Text = n.Title, FontSize = 14, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis };
-        var where = new TextBlock { Text = n.Folder.Length == 0 ? "Na raiz" : n.Folder, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis };
+        var where = new TextBlock { Text = n.Folder.Length == 0 ? "Na raiz" : n.Folder, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis };
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { dot, new StackPanel { Children = { name, where } } } },

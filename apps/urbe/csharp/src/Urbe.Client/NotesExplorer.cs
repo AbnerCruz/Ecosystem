@@ -22,7 +22,7 @@ public sealed class NotesExplorer : Border
     private static readonly StringComparer Locale = StringComparer.InvariantCulture; // localeCompare
 
     private readonly TextBlock _title = new() { Text = "Explorer", FontSize = 24, FontWeight = FontWeight.Bold, LetterSpacing = -0.48, TextTrimming = TextTrimming.CharacterEllipsis };
-    private readonly TextBlock _status = new() { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
+    private readonly TextBlock _status = new() { FontSize = UrbeTokens.Type.Caption.Size, TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
     private readonly Border _mark = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private string _homeTitle = "Explorer";
     private readonly Button _back, _new, _more, _close;
@@ -30,7 +30,7 @@ public sealed class NotesExplorer : Border
     private readonly TextBox _search = new()
     {
         PlaceholderText = "Buscar arquivos",
-        FontSize = 16,
+        FontSize = UrbeTokens.Type.Body.Size,
         FontWeight = FontWeight.Medium,
         Background = Brushes.Transparent,
         BorderThickness = new Thickness(0),
@@ -536,7 +536,8 @@ public sealed class NotesExplorer : Border
     {
         Fresh();
         if (!_visibleFolders.Contains(folder)) return false;
-        Toggle(FolderPrefix + folder);
+        // a hold selects (and starts a drag); it never takes a selected row out: a tap does that (CST-037)
+        if (!_selected.Contains(FolderPrefix + folder)) Toggle(FolderPrefix + folder);
         return true;
     }
 
@@ -555,7 +556,7 @@ public sealed class NotesExplorer : Border
     {
         Fresh();
         if (!_visibleNotes.Contains(path)) return false;
-        Toggle(path);
+        if (!_selected.Contains(path)) Toggle(path);
         return true;
     }
 
@@ -751,7 +752,7 @@ public sealed class NotesExplorer : Border
         bool folder = key.StartsWith(FolderPrefix, StringComparison.Ordinal);
         var box = new TextBox
         {
-            Text = name, FontSize = 15, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center,
+            Text = name, FontSize = UrbeTokens.Type.Callout.Size, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center,
             Margin = new Thickness(8 + depth * 16, 2, 8, 2), CornerRadius = new CornerRadius(10),
             Background = UrbeTheme.Brush(UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent)
         };
@@ -842,7 +843,7 @@ public sealed class NotesExplorer : Border
                  })
         {
             var section = id;
-            var counter = new TextBlock { Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
+            var counter = new TextBlock { Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
             var row = new Button
             {
                 Content = RowFrame(icon, label, null, false, false, counter), Background = Brushes.Transparent, BorderThickness = new Thickness(0),
@@ -929,7 +930,7 @@ public sealed class NotesExplorer : Border
         {
             var counter = new TextBlock
             {
-                Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 13,
+                Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = UrbeTokens.Type.Footnote.Size,
                 Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 2, 0)
             };
             counter.Classes.Add("urbe-folder-count");
@@ -1033,7 +1034,7 @@ public sealed class NotesExplorer : Border
         DockPanel.SetDock(all, Dock.Right);
         head.Children.Add(empty);
         head.Children.Add(all);
-        head.Children.Add(new TextBlock { Text = items.Count + " item(ns) · restaure ou exclua de vez", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
+        head.Children.Add(new TextBlock { Text = items.Count + " item(ns) · restaure ou exclua de vez", FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
         _list.Children.Add(head);
         // many items (UC-78, observation of 15/11/2026: the trash was slow): only the rows near the screen are made
         var rows = new List<Func<Control>>(items.Count);
@@ -1086,7 +1087,7 @@ public sealed class NotesExplorer : Border
         Children =
         {
             new TextBlock { Text = title, FontSize = 17, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6), TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center },
-            new TextBlock { Text = text, FontSize = 15, LineHeight = 22.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center }
+            new TextBlock { Text = text, FontSize = UrbeTokens.Type.Callout.Size, LineHeight = 22.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center }
         }
     };
 
@@ -1096,7 +1097,7 @@ public sealed class NotesExplorer : Border
         // .ui-btn.ui-btn-primary, 18px above
         var create = new Button
         {
-            Content = new TextBlock { Text = action, FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk) },
+            Content = new TextBlock { Text = action, FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk) },
             MinHeight = 48,
             Padding = new Thickness(18, 0),
             Margin = new Thickness(0, 18, 0, 0),
@@ -1121,7 +1122,7 @@ public sealed class NotesExplorer : Border
             Children =
             {
                 UrbeTheme.Icon(icon, 17, color, 1.8),
-                new TextBlock { Text = label, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(color), VerticalAlignment = VerticalAlignment.Center }
+                new TextBlock { Text = label, FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(color), VerticalAlignment = VerticalAlignment.Center }
             }
         },
         MinHeight = 44,
@@ -1173,7 +1174,7 @@ public sealed class NotesExplorer : Border
         var label = new TextBlock
         {
             Text = name,
-            FontSize = 15,
+            FontSize = UrbeTokens.Type.Callout.Size,
             FontWeight = FontWeight.Medium,
             LineHeight = 19.5,
             Foreground = UrbeTheme.Brush(UrbeTheme.Text),
@@ -1189,7 +1190,7 @@ public sealed class NotesExplorer : Border
             var sub = new TextBlock
             {
                 Text = small,
-                FontSize = 12,
+                FontSize = UrbeTokens.Type.Caption.Size,
                 LineHeight = 15.6,
                 Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
                 TextTrimming = TextTrimming.CharacterEllipsis,
@@ -1304,7 +1305,7 @@ public sealed class NotesExplorer : Border
                     Children =
                     {
                         UrbeTheme.Icon(icon, 20, color, 1.8),
-                        new TextBlock { Text = label, FontSize = 12, Foreground = UrbeTheme.Brush(color), HorizontalAlignment = HorizontalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis }
+                        new TextBlock { Text = label, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(color), HorizontalAlignment = HorizontalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis }
                     }
                 },
                 Width = label is null ? 38 : double.NaN,
@@ -1336,7 +1337,7 @@ public sealed class NotesExplorer : Border
         _renameAction.Click += (_, _) => { if (_selected.Count == 1) BeginRename(_selected.First()); };
         clear.Click += (_, _) => ClearSelection();
         _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
-        _count.FontSize = 15;
+        _count.FontSize = UrbeTokens.Type.Callout.Size;
         _count.FontWeight = FontWeight.SemiBold;
         _count.Margin = new Thickness(6, 0);
         _count.VerticalAlignment = VerticalAlignment.Center;

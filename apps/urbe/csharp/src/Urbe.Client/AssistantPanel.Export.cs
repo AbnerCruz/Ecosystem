@@ -19,15 +19,14 @@ public sealed partial class AssistantPanel
         ], "O arquivo pode conter informações privadas compartilhadas no chat. Nenhuma chave cadastrada de provedor será incluída.");
         if (chosen is null) return;
         bool complete = chosen == 1;
-        var content = AssistantExport.Conversation(conversation, complete, UrbeApp.InstalledVersion);
+        var content = AssistantExport.Conversation(conversation, complete, UrbeApp.InstalledVersion, secrets: _cfg.Secrets());
         await SaveAssistantExportAsync("Urbe-conversa-" + SafeFileId(conversation.Id) + (complete ? ".json" : ".md"),
             content, complete);
     }
 
     /// <summary>Only this agent's scoped memory; no cross-agent or global/vault records.</summary>
-    private async Task ExportAgentMemoryAsync()
+    private async Task ExportAgentMemoryAsync(string agentId)
     {
-        var agentId = _conv.AgentId;
         var chosen = await _app.Dialogs.ChooseAsync("Exportar memória do agente",
         [
             new DialogItem("Leve (.md)", Detail: "Lembranças individuais em Markdown, com tipo e estado."),
@@ -35,7 +34,7 @@ public sealed partial class AssistantPanel
         ], "Somente memórias individuais do agente " + agentId + ". Memórias globais ou do vault não serão atribuídas indevidamente a ele. O arquivo pode conter dados privados.");
         if (chosen is null) return;
         bool complete = chosen == 1;
-        var content = AssistantExport.Memory(_cfg, agentId, complete, UrbeApp.InstalledVersion);
+        var content = AssistantExport.Redact(AssistantExport.Memory(_cfg, agentId, complete, UrbeApp.InstalledVersion), _cfg.Secrets());
         await SaveAssistantExportAsync("Urbe-memoria-" + SafeFileId(agentId) + (complete ? ".json" : ".md"),
             content, complete);
     }

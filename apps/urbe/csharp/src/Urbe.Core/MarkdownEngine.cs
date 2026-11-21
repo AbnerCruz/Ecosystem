@@ -220,21 +220,43 @@ public static partial class MarkdownEngine
         (tex ?? string.Empty) +
         (string.IsNullOrEmpty(close) ? "$" : close);
 
+    /// <summary>
+    /// CommonMark code fences: a line of 3+ <c>`</c> or <c>~</c> (up to 3 spaces before) opens one; only the same mark,
+    /// at least as long and with nothing after, closes it. A backtick fence's info has no backtick. True when
+    /// <paramref name="line"/> opens or closes a fence (the state moves); <paramref name="language"/> is the opener's first word.
+    /// </summary>
+    internal static bool Fence(string line, ref char open, ref int length, out string language)
+    {
+        language = string.Empty;
+        var m = CodeFenceScanPattern().Match(line);
+        if (!m.Success) return false;
+        var run = m.Groups[1].Value;
+        var rest = line[m.Length..];
+        if (open != '\0')
+        {
+            if (run[0] != open || run.Length < length || rest.Trim().Length > 0) return false;
+            open = '\0'; length = 0;
+            return true;
+        }
+        if (run[0] == Backtick && rest.Contains(Backtick)) return false;
+        open = run[0]; length = run.Length;
+        var word = rest.Trim().Split(' ', '\t')[0];
+        language = LanguageWord().IsMatch(word) ? word : string.Empty;
+        return true;
+    }
+
+    [GeneratedRegex(@"^[\w+#.-]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex LanguageWord();
+
     private static string RenderHeadings(string markdown)
     {
         var lines = NormalizeNewlines(markdown).Split('\n');
-        var inCode = false;
-        var fence = new string(Backtick, 3);
+        char open = '\0';
+        var length = 0;
 
         for (var i = 0; i < lines.Length; i++)
         {
-            if (lines[i].StartsWith(fence, StringComparison.Ordinal))
-            {
-                inCode = !inCode;
-                continue;
-            }
-
-            if (inCode)
+            if (Fence(lines[i], ref open, ref length, out _) || open != '\0')
                 continue;
 
             var match = EmptyHeadingPattern().Match(lines[i]);
@@ -254,7 +276,8 @@ public static partial class MarkdownEngine
         var code = new List<string>();
         var language = string.Empty;
         var stack = new List<(string Type, int Indent)>();
-        var fence = new string(Backtick, 3);
+        char fenceOpen = '\0';
+        var fenceLength = 0;
 
         void CloseLevel()
         {
@@ -300,9 +323,7 @@ public static partial class MarkdownEngine
         for (var i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
-            Match match = FencePattern().Match(line);
-
-            if (match.Success || line.StartsWith(fence, StringComparison.Ordinal))
+            if (Fence(line, ref fenceOpen, ref fenceLength, out var info))
             {
                 if (inCode) FlushCode();
                 else
@@ -310,10 +331,12 @@ public static partial class MarkdownEngine
                     CloseList();
                     inCode = true;
                     code.Clear();
-                    language = match.Success ? match.Groups[1].Value : string.Empty;
+                    language = info;
                 }
                 continue;
             }
+
+            Match match;
 
             if (inCode)
             {
@@ -765,8 +788,6 @@ public static partial class MarkdownEngine
     private static partial Regex StrikePattern();
     [GeneratedRegex(@"^(#{1,6})[ \t]*$", RegexOptions.CultureInvariant)]
     private static partial Regex EmptyHeadingPattern();
-    [GeneratedRegex(@"^\x60\x60\x60\s*([\w+#.-]*)\s*$", RegexOptions.CultureInvariant)]
-    private static partial Regex FencePattern();
     [GeneratedRegex(@"^(#{1,6})\s+(.+)$", RegexOptions.CultureInvariant)]
     private static partial Regex HeadingPattern();
     [GeneratedRegex(@"^ {0,3}([-*_])(?:\s*\1){2,}\s*$", RegexOptions.CultureInvariant)]

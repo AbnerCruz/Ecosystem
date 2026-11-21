@@ -91,7 +91,7 @@ public static class AssistantCustomizeTools
         new AiTool
         {
             Name = "appearance_schema", Access = "read",
-            Description = "Formato completo da personalização do Urbe: tema.json (tema, cores, fontes, forma, editor, estilos) e temas salvos. Mostra também a configuração atual. Chame antes de mudar a aparência.",
+            Description = "Formato completo da personalização do Numa: tema.json (tema, cores, fontes, forma, editor, estilos) e temas salvos. Mostra também a configuração atual. Chame antes de mudar a aparência.",
             Parameters = Schema(new JsonObject()),
             Label = _ => "Lendo o formato da personalização",
             Run = (_, host) =>
@@ -106,7 +106,7 @@ public static class AssistantCustomizeTools
         new AiTool
         {
             Name = "set_appearance", Access = "write",
-            Description = "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+            Description = "Muda a aparência do Numa gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
             Parameters = Schema(new JsonObject
             {
                 ["config"] = new JsonObject { ["type"] = "object", ["description"] = "Partes do tema.json no formato de appearance_schema", ["additionalProperties"] = true },

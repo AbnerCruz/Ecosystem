@@ -7,6 +7,24 @@ namespace Urbe.Core.Tests;
 public sealed class PublicationProjectTests
 {
     [Fact]
+    public void ExistingAiSealsStayInTheNoteAndOutOfPublishedContent()
+    {
+        const string content = "# Capítulo {ia:\"modelo\"}\n\n**Texto** {ia:\"modelo\"}\n\n`{ia:\"exemplo\"}`";
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "Capítulo.md", Content = content });
+        using var catalog = new PublicationSourceCatalog(store);
+        var reference = new PublicationSourceReference(note.Id, "Capítulo");
+        Assert.DoesNotContain("modelo", catalog.Read(reference)!.Markdown);
+
+        var project = PublicationProject.Create("Livro").AddSource(reference);
+        var html = PublicationHtml.Export(project, catalog).Html;
+        Assert.Contains("<strong>Texto</strong>", html);
+        Assert.DoesNotContain("modelo", html);
+        Assert.Contains("exemplo", html);
+        Assert.Equal(content, store.Get(note.Id)!.Content);
+    }
+
+    [Fact]
     public void LayoutsUseAccessibleContentsAndPrintProfilesWithoutExposingEditorialBrief()
     {
         var store = new DocumentStore();
@@ -99,7 +117,7 @@ public sealed class PublicationProjectTests
     }
 
     [Fact]
-    public void HtmlOmitsPrivateEditorialCommentsKeepsAttributionAndLeavesCodeUntouched()
+    public void HtmlOmitsPrivateEditorialCommentsAndSealsAndLeavesCodeUntouched()
     {
         var store = new DocumentStore();
         const string content = "Texto público {ia:\"modelo-x\"}\n\n%%revisão PRIVADA%%\n\npalavra{\"comentário PRIVADO\"}\n\n&Agente&: pedido PRIVADO\n\n`%%exemplo literal%%`";
@@ -107,7 +125,7 @@ public sealed class PublicationProjectTests
         using var catalog = new PublicationSourceCatalog(store);
         var result = PublicationHtml.Export(PublicationProject.Create("Artigo", note.Id), catalog);
         Assert.DoesNotContain("PRIVAD", result.Html);
-        Assert.Contains("IA: modelo-x", result.Html);
+        Assert.DoesNotContain("modelo-x", result.Html);
         Assert.Contains("<code>%%exemplo literal%%</code>", result.Html);
         Assert.Equal(content, store.Get(note.Id)!.Content);
     }

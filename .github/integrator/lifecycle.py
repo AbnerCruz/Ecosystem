@@ -27,12 +27,6 @@ def stage(version):
     return version.split('-', 1)[1].split('.', 1)[0] if '-' in version else 'stable'
 
 
-def protected(paths):
-    return any(p in ('MANIFEST.md', 'AGENTS.md', 'ecosystem.json', CONFIG) or p.endswith('/AGENTS.md') or
-               p.startswith(('.github/', 'docs/governance/', 'docs/contracts/', 'docs/adr/', 'tests/consistency/'))
-               for p in paths if not p.startswith('docs/governance/handoffs/'))
-
-
 def checks_passed(checks, statuses, ignored_suites=()):
     latest = {}
     for check in checks:
@@ -132,7 +126,9 @@ def write_version(root, cfg, version):
 
 def prepare(work, base, head, files):
     plans = []
-    needs_owner = protected(files)
+    # ADD-0035: which paths wait for the owner is the main's integration-policy.json ('extreme'), applied by Check.cs;
+    # here only a change of stage (alfa/beta/estável, the owner's) does
+    needs_owner = False
     for product in affected(files):
         cfg = config()[product]  # Always trusted configuration, not the candidate's.
         before = git('show', f'{base}:{cfg["versionFile"]}')

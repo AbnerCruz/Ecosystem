@@ -67,7 +67,7 @@ public sealed partial class ComicBook : IDisposable
     {
         var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096)));
         if (signature is FileSignature.Rar or FileSignature.SevenZip)
-            throw new NotSupportedException("Este quadrinho é " + FileSignatures.Describe(signature) + " (CBR/CB7); o Urbe só abre CBZ. Abra em outro app ou converta para CBZ.");
+            throw new NotSupportedException("Este quadrinho é " + FileSignatures.Describe(signature) + " (CBR/CB7); o Numa só abre CBZ. Abra em outro app ou converta para CBZ.");
         if (signature != FileSignature.Zip)
             throw new InvalidDataException("O arquivo não é um CBZ: o conteúdo parece " + FileSignatures.Describe(signature) + ".");
         var archive = new ReaderArchive(bytes);

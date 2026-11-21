@@ -23,13 +23,16 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 - [ ] **LUNET-514 — IA co-work contínua e rápida (incremento em branch, CI/DEVICE pendentes):** entrada compacta não modal, etapas reais no editor, histórico/diffs expandíveis. Em `feat/lunet-standalone-studio-20261121`: status e envio no pop-up; redução de reconstruções Markdown e consultas de disco por evento; contexto menor para perguntas gerais. **Faltam** medir latência do provedor e das ferramentas em aparelho, executar criação multimídia pela IA com aprovação, gates Android. Issue #1017, guia `docs/guides/cowork-studio-global.md`.
 - [ ] **LUNET-515 — Studios sem projeto (primeiro incremento em branch, CI/DEVICE pendentes):** Home → Studios sem escolher jogo. Criação/retomada de Sprite, Music e Sound Designer usando `StudioAssetWorkspace` independente de `LunetProject`, publicação de fonte+derivado no `ReusableAssetLibrary` e escolha posterior de projeto. **Faltam** Tile, Paleta, Partículas, Dados, exportação SAF dos rascunhos e edição de versões da biblioteca; depende do PR #962 draft, testes Android e APK. Issue #1017.
 
-## Auditoria incremental
+
+
+## Auditoria incremental e canal único (15/11/2026)
+
 - [ ] **LUNET-511 — Validação adicional de manifestos (código e testes propostos; CI/DEVICE pendentes):** rejeitar `Kind` fora do enum e `CreatedUtc` ausente ao ler versões locais, preservando arquivo e projetos; regressões xUnit adicionadas na branch #962.
   - Incremento PR #962: prévia de conflitos inclui arquivo ocupando pasta ancestral; teste de regressão registrado, CI/DEVICE ainda pendentes.
 
- e canal único (15/11/2026)
-
 - [ ] **LUNET-509 — Eliminar espelho e registrar a auditoria atual (implementação documental proposta; CI/integrador pendentes):** DEC-0064/ADD-0035 determinam apenas Ecosystem para código, CI e releases. O próximo agente deve ler `../../docs/architecture/audits/lunet-estado-atual-2026-11-15.md`, verificar a main e priorizar E2E no Android, segurança de edições da IA, fluxo completo dos Studios, desempenho e multiplayer real; não fechar gates sem DEVICE. Não mexer na maturidade alfa/beta/dev/estável por iniciativa própria.
+
+- [ ] **LUNET-512 / ampliação de conteúdo (PR em revisão, sem DEVICE):** 131 referências de jogos curadas embutidas e pesquisáveis com 119 fichas novas e mais mecânicas; cada ficha traz observação específica de estudo e link opcional de pesquisa de gameplay (nunca vídeo no APK). Explorar limita renderização inicial a 18 cartões e permite carregar mais. Testes em `InspirationCatalogPopulationTests.cs`; validar CI, integridade de notas/favoritos e fluidez em Android 13 antes de concluir.
 
 ## Nova direção de UX e criação independente — solicitação do proprietário em 15/11/2026
 

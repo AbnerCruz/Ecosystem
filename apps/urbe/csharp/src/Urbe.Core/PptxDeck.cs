@@ -135,7 +135,7 @@ public sealed class PptxDeck : IDisposable
     {
         ReadOnlySpan<byte> head = bytes.AsSpan(0, Math.Min(bytes.Length, 8));
         if (head.SequenceEqual((ReadOnlySpan<byte>)[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]))
-            throw new NotSupportedException("Esta apresentação está no formato binário antigo do PowerPoint (.ppt) ou protegida por senha; o Urbe não a lê. Abra em outro app ou salve como .pptx.");
+            throw new NotSupportedException("Esta apresentação está no formato binário antigo do PowerPoint (.ppt) ou protegida por senha; o Numa não a lê. Abra em outro app ou salve como .pptx.");
         if (FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096))) != FileSignature.Zip)
             throw new InvalidDataException("O arquivo não é uma apresentação .pptx: o conteúdo parece " + FileSignatures.Describe(FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096)))) + ".");
         var archive = new ReaderArchive(bytes);

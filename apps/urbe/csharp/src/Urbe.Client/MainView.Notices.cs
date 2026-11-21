@@ -20,13 +20,13 @@ public sealed partial class MainView
         if (_identityNotice is { } recognized) ShowLifeNotice(recognized);
         if (snapshot.IsReadOnly && snapshot.FormatState == VaultFormatState.Future)
         {
-            var msg = "Este vault foi criado por uma versão mais nova do Urbe (formato " + snapshot.VaultFormatVersion + "). Para não corromper nada, ele está aberto somente para leitura. Atualize o Urbe para editar.";
+            var msg = "Este vault foi criado por uma versão mais nova do Numa (formato " + snapshot.VaultFormatVersion + "). Para não corromper nada, ele está aberto somente para leitura. Atualize o Numa para editar.";
             Dispatcher.UIThread.Post(() => _ = Dialogs.AlertAsync("Vault somente leitura", msg), DispatcherPriority.Background);
             return;
         }
         var foreign = snapshot.FutureFiles.Where(p => p != ".urbe/vault.json").ToList();
         if (foreign.Count > 0)
-            ShowLifeNotice("Arquivos de uma versão mais nova do Urbe foram preservados sem alteração: " + string.Join(", ", foreign.Select(p => p.StartsWith(".urbe/", StringComparison.Ordinal) ? p[6..] : p)) + ".");
+            ShowLifeNotice("Arquivos de uma versão mais nova do Numa foram preservados sem alteração: " + string.Join(", ", foreign.Select(p => p.StartsWith(".urbe/", StringComparison.Ordinal) ? p[6..] : p)) + ".");
     }
 
     // ---------------------------------------------------------------- identity.js (REQ-042)
@@ -93,10 +93,16 @@ public sealed partial class MainView
     /// <summary>Back in the Explorer with notes but no link yet: "Ligue suas notas".</summary>
     public void MaybeLinkTip()
     {
-        if (Editor.IsVisible || _store is null || _store.List().Count < 1) return;
+        if (Editor.IsVisible || _store is null || _store.List().Count < 1 || CoversExplorer) return;
         if (TipSeen(Customization, "link") || LinkCount() > 0) return;
         ShowTip("link", "Ligue suas notas", "Dentro de uma nota, digite [[ e escolha outra nota. As duas ficam ligadas, e cada uma mostra a outra em Estrutura e backlinks.");
     }
+
+    /// <summary>A surface over the Explorer (studio, graph, a reader, the study, the Assistente): the Explorer's tips wait.</summary>
+    private bool CoversExplorer => _publicationsStudio is { IsVisible: true } || GraphOpen || FilePreview.IsVisible || StudyOpen || AssistantOpen;
+
+    /// <summary>A surface opened over the Explorer: its tip leaves (not marked seen; it comes back on the Explorer).</summary>
+    private void HideExplorerTip() { if (TipShown is not null) HideTip(); }
 
     private void ShowTip(string key, string title, string text)
     {

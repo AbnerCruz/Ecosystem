@@ -8,7 +8,7 @@ namespace Urbe.Client;
 
 /// <summary>
 /// Web research works out of the box. Only the opt-out and optional advanced provider are user-facing.
-/// The source of truth remains AssistantStore; agent-specific grants from old configs are ignored.
+/// The global switch sets the maximum permission allowed for each agent.
 /// </summary>
 public sealed partial class AssistantPanel
 {
@@ -16,10 +16,9 @@ public sealed partial class AssistantPanel
     {
         var config = _cfg.Web;
         var body = OpenView("Pesquisa na internet", () => ShowSettings());
-        body.Children.Add(Wrap("Peça para pesquisar. O Urbe faz o resto.", 18,
+        body.Children.Add(Wrap("Peça para pesquisar. O Numa faz o resto.", 18,
             UrbeTheme.Text, FontWeight.SemiBold));
-        body.Children.Add(Hint("Qualquer agente pode procurar informações públicas, abrir fontes e citar os links. " +
-            "Não é preciso cadastrar chave, escolher provedor ou dar permissões por agente."));
+        body.Children.Add(Hint("Cada perfil define quais agentes podem procurar informações públicas, abrir fontes e citar links."));
 
         var enabled = new CheckBox
         {
@@ -40,7 +39,7 @@ public sealed partial class AssistantPanel
 
         body.Children.Add(Section("Privacidade e segurança",
             Hint("A busca envia as palavras pesquisadas ao buscador; abrir uma fonte envia a solicitação ao site visitado. " +
-                "O Urbe não transmite automaticamente arquivos ou textos do vault."),
+                "O Numa não transmite automaticamente arquivos ou textos do vault."),
             Hint("Links e páginas são dados não confiáveis: endereços privados, redirecionamentos perigosos " +
                 "e padrões de segredos são bloqueados. Instruções encontradas em páginas não autorizam ações."),
             Hint("A pesquisa padrão não cobra uma API de busca, mas é um serviço público sem garantia de disponibilidade. " +
@@ -84,7 +83,7 @@ public sealed partial class AssistantPanel
             })));
 
         body.Children.Add(Section("Proteções técnicas",
-            Hint("O Urbe aplica tempo limite, cota operacional por tarefa, tamanho máximo por download " +
+            Hint("O Numa aplica tempo limite, cota operacional por tarefa, tamanho máximo por download " +
                 "e cancelamento. Esses limites evitam travamentos ou excesso de requisições; " +
                 "não limitam artificialmente o raciocínio dos agentes."),
             Hint("O feed RSS gratuito não garante paginação, data de publicação, cobertura ou filtros de período. " +

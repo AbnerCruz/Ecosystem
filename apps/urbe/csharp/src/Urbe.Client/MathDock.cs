@@ -140,7 +140,7 @@ public sealed class MathDock : Border
         {
             var hint = new TextBlock { FontSize = 12.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
             hint.Inlines!.Add(new Avalonia.Controls.Documents.Run("Toque num símbolo para inserir · "));
-            hint.Inlines.Add(new Avalonia.Controls.Documents.Run("$…$") { FontFamily = UrbeTheme.MonoFont, FontSize = 12 });
+            hint.Inlines.Add(new Avalonia.Controls.Documents.Run("$…$") { FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Caption.Size });
             hint.Inlines.Add(new Avalonia.Controls.Documents.Run(" cria uma fórmula"));
             _preview.Child = hint;
         }
@@ -206,7 +206,7 @@ public sealed class MathDock : Border
             int index = i;
             var prev = FormulaPane.Formula(MathEditing.Snippet(c.Snip).Text.Replace("{}", "{\\square}", StringComparison.Ordinal), false, 15, out _) ?? new TextBlock();
             prev.Margin = new Thickness(10, 0, 0, 0);
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Children = { new TextBlock { Text = c.Cmd, FontFamily = UrbeTheme.MonoFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center }, prev } };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Children = { new TextBlock { Text = c.Cmd, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center }, prev } };
             var b = new Button
             {
                 Content = row, MinHeight = 38, Padding = new Thickness(10, 4), CornerRadius = new CornerRadius(8), Focusable = false, BorderThickness = new Thickness(0),

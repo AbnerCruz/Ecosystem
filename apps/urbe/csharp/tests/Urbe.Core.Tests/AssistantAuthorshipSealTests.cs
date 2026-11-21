@@ -136,7 +136,7 @@ public sealed class AssistantAuthorshipSealTests
             [AiBlock.ToolUse("w2", "write_note", new JsonObject { ["path"] = "Nota.md", ["content"] = "Texto {ia:\"outro\"}\n" })]);
         Assert.Equal(before, host.Documents.Get("Nota.md")!.Content);
         Assert.Equal(0, host.Writes);
-        Assert.Contains("gerenciados pelo Urbe", ToolResult(messages, "e1"));
+        Assert.Contains("gerenciados pelo Numa", ToolResult(messages, "e1"));
         Assert.All(new[] { "e1", "w1", "w2" }, id =>
             Assert.False(messages.SelectMany(m => m.Content).Single(b => b.ToolUseId == id && b.Type == "tool_result").IsError));
         Assert.NotEqual("error", result.Stopped);
@@ -226,7 +226,7 @@ public sealed class AssistantAuthorshipSealTests
             Messages = [new() { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("oi")] }], Tools = [], MarkAiText = true,
             Stream = (_, request, _, _) => { system = request.System; return Task.FromResult(Answer(AiBlock.TextBlock("oi"))); }
         });
-        Assert.Contains("aplicados e mantidos pelo próprio Urbe", system);
+        Assert.Contains("aplicados e mantidos pelo próprio Numa", system);
         Assert.Contains("não aparecem no texto", system);
     }
 }

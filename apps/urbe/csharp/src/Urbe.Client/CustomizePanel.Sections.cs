@@ -148,7 +148,7 @@ public sealed partial class CustomizePanel
     private Border RangeRow(string path, double value, double min, double max, double step, string label, string unit)
     {
         string Show(double v) => LegacyCustomize.JsNumber(Math.Round(v, 2)) + unit;
-        var output = new TextBlock { Text = Show(value), FontFamily = UrbeTheme.MonoFont, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
+        var output = new TextBlock { Text = Show(value), FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
         var slider = new Slider { Minimum = min, Maximum = max, Value = value, TickFrequency = step, IsSnapToTickEnabled = true, SmallChange = step, LargeChange = step * 2, MinHeight = 28 };
         AutomationName(slider, label);
         bool committed = true;
@@ -208,7 +208,7 @@ public sealed partial class CustomizePanel
         var name_ = new DockPanel();
         if (on) { var ck = UrbeTheme.Icon(Icons.Check, 16, UrbeTheme.Accent); DockPanel.SetDock(ck, Dock.Right); name_.Children.Add(ck); }
         name_.Children.Add(Label(name, 13.5, FontWeight.SemiBold));
-        var stack = new StackPanel { Spacing = 6, Children = { card, name_, new TextBlock { Text = light ? "claro" : "escuro", FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(0, -4, 0, 0) } } };
+        var stack = new StackPanel { Spacing = 6, Children = { card, name_, new TextBlock { Text = light ? "claro" : "escuro", FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(0, -4, 0, 0) } } };
         var b = new Button
         {
             Content = stack, Padding = new Thickness(8), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface), HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -289,13 +289,13 @@ public sealed partial class CustomizePanel
             bool on = value == f.Id;
             var content = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             content.Children.Add(new TextBlock { Text = "Aa", FontFamily = UrbeAppearance.ToFamily(f.Css), FontSize = 24, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center });
-            content.Children.Add(new TextBlock { Text = f.Name, FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
+            content.Children.Add(new TextBlock { Text = f.Name, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
             grid.Children.Add(FontTile(content, on, async () => await Set(path, JsonValue.Create(f.Id)), f.Name));
         }
         bool custom = !LegacyCustomizeTheme.FontData.Any(f => f.Id == value);
         var other = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         other.Children.Add(UrbeTheme.Icon(Icons.Plus, 22, UrbeTheme.Text));
-        other.Children.Add(new TextBlock { Text = custom ? value : "Outra…", FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
+        other.Children.Add(new TextBlock { Text = custom ? value : "Outra…", FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center });
         grid.Children.Add(FontTile(other, custom, async () =>
         {
             var v = await Dialogs.PromptAsync(new PromptOptions("Outra fonte", "Nome da fonte instalada", "", Hint: "Ex.: Inter, Georgia, \"Fira Sans\". Ela precisa existir no aparelho."));
@@ -344,6 +344,8 @@ public sealed partial class CustomizePanel
             RangeRow("texto.alturaLinha", N(t, "alturaLinha", 1.7), 1.2, 2.2, .05, "Altura da linha", ""), sample));
     }
 
+    private static string SessionPauseValue(TimeSpan? pause) => pause is { } p ? p.TotalMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture) : "sempre";
+
     private void EditorSection()
     {
         var e = Sec("editor");
@@ -355,7 +357,11 @@ public sealed partial class CustomizePanel
                 Seg(Customization.LineNumbers, [(EditorLineNumbers.Always, "Sempre"), (EditorLineNumbers.CodeOnly, "Só código"), (EditorLineNumbers.Never, "Nunca")],
                     v => { Customization.LineNumbers = v; return Task.CompletedTask; })),
             Toggle(Customization.BlockTimes, "Horário de cada bloco", "Mostra, ao lado de cada bloco, quando ele mudou pela última vez (pelas Versões anteriores)",
-                v => { Customization.BlockTimes = v; return Task.CompletedTask; })));
+                v => { Customization.BlockTimes = v; return Task.CompletedTask; }),
+            // AbnerCruz/Urbe#51: after a pause this long, the Urbe opens on the Área de trabalho; nothing is lost
+            Row("Ao voltar ao Numa", "Depois de uma pausa maior que esta, o Numa abre na Área de trabalho; antes disso, volta à nota e à conversa onde você estava",
+                Seg(SessionPauseValue(Customization.SessionPause), ProductionSession.Choices.Select(c => (SessionPauseValue(c.Pause), c.Label)).ToArray(),
+                    v => { Customization.SessionPause = ProductionSession.Choices.First(c => SessionPauseValue(c.Pause) == v).Pause; return Task.CompletedTask; }))));
         _body.Children.Add(BarBlock());
     }
 
@@ -454,14 +460,14 @@ public sealed partial class CustomizePanel
         var c = Customization.Config;
         var list = Customization.Styles();
         if (Customization.SafeMode) _body.Children.Add(Banner("warn", "Modo seguro ligado: estilos e plugins estão desativados."));
-        _body.Children.Add(Banner("warn", "O app nativo não tem CSS: os estilos e o CSS rápido ficam guardados no tema.json e valem na versão web do Urbe (1.8.4). Aqui eles não mudam a aparência; use Aparência, Texto e Editor."));
+        _body.Children.Add(Banner("warn", "O app nativo não tem CSS: os estilos e o CSS rápido ficam guardados no tema.json e valem na versão web do Numa (1.8.4). Aqui eles não mudam a aparência; use Aparência, Texto e Editor."));
         var items = new List<Control>();
         if (list.Count == 0) items.Add(Help("Nenhum estilo ainda. Estilos são arquivos .css na pasta Personalização/estilos que mudam qualquer detalhe visual."));
         foreach (var s in list)
         {
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(Label(s.Name, 14.5, FontWeight.SemiBold));
-            text.Children.Add(new TextBlock { Text = s.Path, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
+            text.Children.Add(new TextBlock { Text = s.Path, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
             var act = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
             act.Children.Add(Mini(Icons.Edit, "Editar", () => { Close(); RequestOpen(s.Path); }));
             var sw = Switch(s.On);
@@ -479,7 +485,7 @@ public sealed partial class CustomizePanel
         _body.Children.Add(Block("Estilos", [.. items]));
         var css = new TextBox
         {
-            Text = S(c, "css"), AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 7 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = 13, PlaceholderText = "/* suas regras */",
+            Text = S(c, "css"), AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 7 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size, PlaceholderText = "/* suas regras */",
             Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12)
         };
         var apply = SmallButton("Aplicar", true);
@@ -496,7 +502,7 @@ public sealed partial class CustomizePanel
         try
         {
             if (!Customization.Documents.ContainsKey(p))
-                await Customization.UpsertAsync(p, "/* " + name.Trim() + " — estilo do Urbe.\n   Variáveis: --ui-accent, --ui-bg, --ui-surface, --ui-text, --ui-font, --ui-editor-font, --ui-r-m...\n   Veja o Tutorial, em Personalização. */\n\n/* títulos das notas na cor de destaque */\n#renderedPreview h1 { color: var(--ui-accent); }\n");
+                await Customization.UpsertAsync(p, "/* " + name.Trim() + " — estilo do Numa.\n   Variáveis: --ui-accent, --ui-bg, --ui-surface, --ui-text, --ui-font, --ui-editor-font, --ui-r-m...\n   Veja o Tutorial, em Personalização. */\n\n/* títulos das notas na cor de destaque */\n#renderedPreview h1 { color: var(--ui-accent); }\n");
             await Set("estilos", new JsonObject { [p] = true });
             Toast("Estilo criado e ligado");
         }
@@ -512,7 +518,7 @@ public sealed partial class CustomizePanel
             ["aprovado"] = ("Aprovado · não executa no nativo", "warn"), ["desligado"] = ("Desligado", ""), ["mudou"] = ("Código mudou", "warn"), ["seguro"] = ("Modo seguro", "warn"),
             ["invalido"] = ("Com erros", "err")
         };
-        _body.Children.Add(Banner("warn", "Plugins são programas: podem ler e mudar suas notas. Só ligue código que você entende ou que veio de alguém de confiança. Se o arquivo mudar, o Urbe desliga o plugin até você revisar."));
+        _body.Children.Add(Banner("warn", "Plugins são programas: podem ler e mudar suas notas. Só ligue código que você entende ou que veio de alguém de confiança. Se o arquivo mudar, o Numa desliga o plugin até você revisar."));
         // the native plugins (ADD-0021): each declares what it may do, and nothing else is allowed
         if (NativePlugins?.Invoke() is { Count: > 0 } natives)
         {
@@ -539,8 +545,8 @@ public sealed partial class CustomizePanel
             var (label, kind) = native && p.Status == "aprovado" ? ("Ligado", "ok") : states.GetValueOrDefault(p.Status, ("Desligado", ""));
             var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             name.Children.Add(Label(p.Name, 14.5, FontWeight.SemiBold));
-            if (p.Version.Length > 0) name.Children.Add(new TextBlock { Text = "v" + p.Version, FontFamily = UrbeTheme.MonoFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
-            var text = new StackPanel { Spacing = 2, Children = { name, new TextBlock { Text = p.Description.Length > 0 ? p.Description : p.Path, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap } } };
+            if (p.Version.Length > 0) name.Children.Add(new TextBlock { Text = "v" + p.Version, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
+            var text = new StackPanel { Spacing = 2, Children = { name, new TextBlock { Text = p.Description.Length > 0 ? p.Description : p.Path, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap } } };
             var head = new DockPanel();
             var pill = Pill(label, kind);
             DockPanel.SetDock(pill, Dock.Right);

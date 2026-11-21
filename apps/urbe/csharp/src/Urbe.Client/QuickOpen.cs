@@ -109,14 +109,14 @@ public abstract class SearchPanel : Grid
             _list.Children.Add(new TextBlock
             {
                 Text = emptyText, Margin = new Thickness(24), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center,
-                TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
+                TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
             });
             return;
         }
         if (group is not null)
             _list.Children.Add(new TextBlock
             {
-                Text = group.ToUpperInvariant(), Margin = new Thickness(12, 10, 12, 4), FontFamily = UrbeTheme.UiFont, FontSize = 12,
+                Text = group.ToUpperInvariant(), Margin = new Thickness(12, 10, 12, 4), FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size,
                 FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
             });
         _active = LegacyQuickOpen.Clamp(_active, rows.Count);
@@ -265,19 +265,19 @@ public sealed class QuickOpenPanel : SearchPanel
         var text = new StackPanel { Spacing = 3, Margin = new Thickness(12, 5, 0, 0) };
         text.Children.Add(new TextBlock
         {
-            Text = title, FontFamily = UrbeTheme.UiFont, FontSize = 15, FontWeight = FontWeight.SemiBold,
+            Text = title, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Button.Size, FontWeight = UrbeTokens.Type.Button.Weight,
             Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis
         });
         if (snippet is not null)
         {
-            var t = new TextBlock { FontFamily = UrbeTheme.UiFont, FontSize = 13, LineHeight = 18, TextWrapping = TextWrapping.Wrap, MaxLines = 2, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) };
+            var t = new TextBlock { FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, LineHeight = 18, TextWrapping = TextWrapping.Wrap, MaxLines = 2, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) };
             t.Inlines!.Add(new Run(snippet.Before));
             t.Inlines.Add(new Run(snippet.Match) { Background = UrbeTheme.Brush(UrbeTheme.Accent, .22), Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
             t.Inlines.Add(new Run(snippet.After));
             text.Children.Add(t);
         }
         else if (detail is not null)
-            text.Children.Add(new TextBlock { Text = detail, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis });
+            text.Children.Add(new TextBlock { Text = detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis });
         var row = new DockPanel();
         DockPanel.SetDock(box, Dock.Left);
         row.Children.Add(box);
@@ -289,7 +289,7 @@ public sealed class QuickOpenPanel : SearchPanel
     {
         TextBlock Hint(string key, string what) => new()
         {
-            Text = key + "  " + what, FontFamily = UrbeTheme.UiFont, FontSize = 12, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
+            Text = key + "  " + what, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Caption.Size, FontWeight = UrbeTokens.Type.Caption.Weight, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
         };
         return new Border
         {
@@ -393,16 +393,23 @@ public sealed class SearchFeature
         Register("customize.edit-file", "Abrir tema.json", "Personalização", () => _ = view.EditThemeFileAsync());
         Register("ui.plugins", "Plugins", "Personalização", () => view.Customize.Open("plugins"));
         Register("plugins.reload", "Recarregar plugins", "Personalização", view.SyncPlugins);
-        Register("pages.open", "Ver página antiga", "Arquivos existentes", () => _ = view.ChoosePageForStudioAsync());
+        Register("pages.open", "Ver página antiga", "Arquivos existentes", () => _ = view.ChoosePageAsync());
         Register("tutorial.open", "Tutorial", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("tutorial.restore", "Restaurar o Tutorial", "Ajuda", () => _ = view.RestoreTutorialAsync(true));
         Register("editor.find", "Localizar no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("editor.replace", "Substituir no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("publications.new", "Nova publicação", "Publicações", () => _ = view.CreatePublicationAsync());
+        Register("study.newSession", "Nova sessão de estudo", "Estudo", () => _ = view.CreateStudySessionAsync());
+        Register("study.sessions", "Abrir sessão de estudo", "Estudo", () => _ = view.ShowStudySessionsAsync());
+        Register("study.podcastAudio", "Gerar áudio do podcast", "Estudo", () => { if (view.Editor.Current is { } n) _ = view.SpeakPodcastAsync(n.Path); }, () => view.CanSpeakPodcast(view.Editor.Current?.Path));
+        Register("study.infographic", "Gerar infográfico da nota", "Estudo", () => { if (view.Editor.Current is { } n) _ = view.MakeInfographicAsync(n.Path); }, () => view.CanMakeInfographic(view.Editor.Current?.Path));
         Register("publications.fromTag", "Nova publicação de uma tag", "Publicações", () => _ = view.CreatePublicationFromTagAsync());
+        Register("publications.fromSearch", "Nova publicação de uma busca", "Publicações", () => _ = view.CreatePublicationFromSearchAsync());
+        Register("publications.inStyle", "Nova publicação no estilo de outra", "Publicações", () => _ = view.CreatePublicationInStyleAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
         Register("workspace.diagnostics", "Diagnóstico do workspace", "Workspace", () => _ = view.ShowDiagnosticsAsync());
+        Register("workspace.appData", "Dados do aplicativo", "Workspace", () => _ = view.ShowAppDataAsync());
         Register("tutorial.menu", "Tutorial: abrir ou restaurar", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("ui.settings", "Configurações", "Aplicativo", () => _ = view.ShowSettingsAsync());
         Register("ui.assistant", "Assistente", "Aplicativo", view.ToggleAssistant);

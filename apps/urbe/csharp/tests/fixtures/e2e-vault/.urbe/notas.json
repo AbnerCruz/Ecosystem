@@ -1,0 +1,11 @@
+{
+ "versao": 1,
+ "notas": {
+  "Publicações/Demo.publication.json": { "id": "doc_e2e_demo" },
+  "README.md": { "id": "doc_e2e_readme" },
+  "Roteiro/Abertura.md": { "id": "doc_e2e_abertura" },
+  "Roteiro/Capacidades.md": { "id": "doc_e2e_capacidades" },
+  "Roteiro/Fim.md": { "id": "doc_e2e_fim" }
+ },
+ "pastas": ["Publicações", "Roteiro"]
+}

@@ -142,7 +142,7 @@ public sealed class ClockPlugin : IUrbePlugin
     private static StackPanel Row(params Control[] items) { var r = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 }; foreach (var i in items) r.Children.Add(i); return r; }
     private static Button Small(string text) => new()
     {
-        Content = text, Height = 34, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(10), FontSize = 13, FontWeight = FontWeight.SemiBold,
+        Content = text, Height = 34, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(10), FontSize = UrbeTokens.Type.Label.Size, FontWeight = UrbeTokens.Type.Label.Weight,
         Background = UrbeTheme.Brush(UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
         BorderThickness = new Thickness(1), VerticalContentAlignment = VerticalAlignment.Center
     };

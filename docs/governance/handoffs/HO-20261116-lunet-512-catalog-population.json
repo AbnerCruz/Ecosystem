@@ -1,0 +1,116 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261116-lunet-512-catalog-population",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-16T15:33:06.042Z",
+  "agent": {
+    "id": "chatgpt-lunet-512-catalog-20261116",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-512",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-512-populate-reference-catalog-20261116",
+  "base_commit": "54cdca1d21143a2509da523b552121af429bf44e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/InspirationLibrary.cs",
+    "apps/lunet2d/src/Lunet.Core/InspirationCatalogExpansion.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
+    "apps/lunet2d/tests/Lunet.Tests/InspirationCatalogPopulationTests.cs",
+    "apps/lunet2d/docs/guides/inspiracao.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261116-lunet-512-catalog-population.json"
+  ],
+  "work_completed": [
+    "119 fichas novas curadas adicionadas às 12 originais; 131 referências offline com IDs estáveis, mecânicas, perspectiva, estética e objetivos de estudo.",
+    "Links de pesquisa de gameplay no YouTube construídos localmente; nenhuma rede ou mídia de terceiros embutida no aplicativo.",
+    "Explorar Android mostra inicialmente 18 cartões e oferece Mostrar mais; filtros/pesquisa reiniciam paginação.",
+    "Movimento aéreo coberto por Owlboy e Terraria, incluindo montarias voadoras pesquisáveis.",
+    "Testes adicionados para IDs únicos, campos, busca cruzada, migração de notas/favoritos e URLs HTTPS."
+  ],
+  "verification": [
+    {
+      "check": "Inspeção estática do catálogo gerado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Checagem dinâmica de 118 registros no lote inicial; total final 131 será verificado por xUnit no CI."
+    },
+    {
+      "check": "dotnet test --project apps/lunet2d/tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK .NET ausente no ambiente; rodar via GitHub Actions."
+    },
+    {
+      "check": "lunet2d-ci e consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Acompanhar PR."
+    },
+    {
+      "check": "Validação em moto g32 Android 13",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/inspiracao.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "DEVICE e screenshots pendentes; LUNET-512 permanece aberto.",
+    "PRs #959 (proteção de links externos) e #960 (referências aposentadas) concorrentes exigem reconciliação pelo integrador.",
+    "YouTube é busca de terceiros com disponibilidade não garantida.",
+    "Paginação reduz custo inicial; virtualização completa ainda não foi medida no aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI do PR e corrigir eventuais falhas sem forçar integração.",
+    "Reconciliar PRs #959/#960 preservando links seguros e notas antigas.",
+    "Validar filtros, favoritos, scroll, links e fluidez no Android 13, mantendo gate DEVICE aberto."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/architecture/audits/lunet-home-studios-explorar-2026-11-15.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Catálogo curado permanece na fonte portable; dados pessoais somente no inspiration.json."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Catálogo offline; pesquisa remota apenas por ação explícita."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, não convertido em aceite pelo CI."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sementes específicas do produto; sem extração global."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "inspiration-catalog-seeds",
+      "status": "product-specific",
+      "rationale": "Dados de estudo específicos do Lunet, sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

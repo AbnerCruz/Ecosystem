@@ -11,6 +11,16 @@ public interface IReaderMediaPosition
     Task SeekMediaAsync(double seconds);
 }
 
+/// <summary>The scripts a web host runs in its page to read or move the first audio/video (the official YouTube player's too).</summary>
+public static class MediaPositionScripts
+{
+    public const string Read = "(()=>{let m=document.querySelector('audio,video');return m&&m.readyState>0?m.currentTime:null})()";
+
+    public static string Seek(double seconds) =>
+        "(()=>{let m=document.querySelector('audio,video');if(m){let seek=()=>{m.currentTime=" + seconds.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+        "};if(m.readyState>0)seek();else m.addEventListener('loadedmetadata',seek,{once:true})}})()";
+}
+
 /// <summary>Native study actions around the platform player. Quotes identify a time in a verified local source.</summary>
 public sealed class MediaStudyView : Grid
 {

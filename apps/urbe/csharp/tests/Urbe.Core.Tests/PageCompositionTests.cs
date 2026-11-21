@@ -102,7 +102,7 @@ public sealed class PageModelTests
               "kind":"urbe-page",
               "meta":{"title":"Manual","lang":"pt-BR"},
               "sections":[
-                {"id":"h","type":"hero","props":{"title":"Olá","subtitle":"**Urbe**"}},
+                {"id":"h","type":"hero","props":{"title":"Olá","subtitle":"**Numa**"}},
                 {"id":"t","type":"text","props":{"title":"Introdução","markdown":"Veja **isto**."}},
                 {"id":"n","type":"note","props":{"path":"Guia/Alfa.md","showTitle":true}},
                 {"id":"c","type":"notes","props":{"source":"tag","tag":"guia","sort":"title","expand":true}}
@@ -115,7 +115,7 @@ public sealed class PageModelTests
         Assert.StartsWith("<!doctype html>", html, StringComparison.Ordinal);
         Assert.Contains("<title>Manual</title>", html, StringComparison.Ordinal);
         Assert.Contains("<h1>Olá</h1>", html, StringComparison.Ordinal);
-        Assert.Contains("<strong>Urbe</strong>", html, StringComparison.Ordinal);
+        Assert.Contains("<strong>Numa</strong>", html, StringComparison.Ordinal);
         Assert.Contains("<h2>Introdução</h2>", html, StringComparison.Ordinal);
         Assert.Contains("<strong>isto</strong>", html, StringComparison.Ordinal);
         Assert.Contains("<h1 class='note-title'>Alfa</h1>", html, StringComparison.Ordinal);
@@ -531,6 +531,6 @@ public sealed class CompositionPageConverterTests
             directory = directory.Parent;
         }
 
-        throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Urbe.");
+        throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Numa.");
     }
 }

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261120-urbe-video-procedural",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-20T16:33:18Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "3f002029ce417c17dd9438636354bc9c499e5a74",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VideoProcedural.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoInspection.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FunctionPlot.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoProceduralTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261120-urbe-video-procedural.json"
+  ],
+  "work_completed": [
+    "#1004 fatia 1 (instâncias procedurais): elemento com repeat 1–2000 vira N instâncias; motions veem t, i, n, u e têm modo add|set; funções fract, sat, smooth, rand (determinístico), noise e min/max/mod/pow/atan2/step/mix/lerp/clamp (vírgula separa argumentos dentro delas; fora, 0,5 continua decimal). Validação recusa repeat fora do intervalo, modo inválido, fórmula ilegível e elemento repetido como pai. Revisão medida não acusa borda em formas repetidas (campos de partículas); texto repetido segue revisado. Schema e exemplo para o Assistente; outline mostra instâncias. Linguagem fechada sem acesso a vault, rede ou segredos; WASM continua sob DEC-0066, não assumida.",
+    "#1004 fatia 2 (tipografia cinética): split letters|words em title/text; uma instância por letra ou palavra (sem espaços, grafemas compostos juntos), desenhada na posição do layout do texto inteiro (cache) e transformada em torno do próprio centro; revisão mede o texto uma vez e não acusa sobreposição entre as letras do mesmo texto; schema e exemplo para o Assistente.",
+    "#1004 fatia 3 (efeitos): glow (com glowColor), shadow e blur animáveis por keyframes/motions e gradient, numa camada por elemento com SKImageFilter (halo duplo para o brilho, sombra deslocada, desfoque gaussiano) e gradiente SrcIn só onde o elemento desenhou; a chave de cache do quadro inclui os efeitos.",
+    "#1004 fatia 4 (câmera): scene.camera com keyframes e motions em x, y, zoom e rotation, validada; estado por quadro na camada e na chave de cache; o renderizador aplica a câmera depois do fundo; a revisão medida avalia cada elemento onde a câmera o mostra (VideoCameraState.Apply); toque, contorno e arraste no Estúdio usam a câmera e Unapply devolve o ponto à cena.",
+    "#1004 fatia 3b (recorte): clip = id de uma forma rect/ellipse/circle da cena, validado; o renderizador recorta o elemento pelo contorno atual da forma (posição, escala, rotação e progress).",
+    "#1004 fatia 5 (componentes): video.components e kind use com params; VideoComponents expande por cena (ids prefixados pelo use, filhos do grupo, clip e parent remapeados), a validação vale para a expansão, a timeline desenha e revisa a expansão mas mantém a cena salva (VideoTimelineScene.Elements), e o toque num pedaço seleciona o use.",
+    "#1004 fatia 6 (benchmark do motor): VideoBenchmarkTests compõe à mão as três produções da issue a 720p, exige revisão sem erros, mede ms/quadro e, com URBE_EVIDENCE, grava folha de quadros, MP4 verificado e números. Medido: matemática 148, software 37, partículas 61 ms/quadro (CPU, sem GPU). Otimizações achadas pela medição: halo direto (sem camada) para formas simples com brilho e camada de efeito por letra em texto dividido (partículas 1,5 s → 38 ms/quadro); revisão mede a caixa do texto dividido sem a escala de cada parte.",
+    "Prévia audível da voz: PlatformAudio.PlayWav (MediaPlayer no Android, PlaySound no Windows); a escolha fala uma amostra na voz e só guarda se a pessoa confirmar.",
+    "Testes: VideoBenchmarkTests roda sem paralelismo (não pesa nos testes de interface com espera por tempo); Drafts_TextTypedBeforeACrashIsOfferedBack tinha uma corrida (simulava a queda antes de o salvamento de fechamento terminar e limpar o rascunho), corrigida esperando esse fim; suíte do Client 720/720 duas vezes seguidas."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests (vídeo/gráfico)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1837/1837 na suíte inteira; 120/120 no filtro Video|FunctionPlot|VideoProcedural, incluindo funções de vários argumentos, aridade errada e partículas fora da borda."
+    },
+    {
+      "check": "Urbe.Client.Tests (VideoRender)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "702/702 na suíte inteira; TwoThousandParticlesAt720pAreDrawnAndMeasured desenha 2000 instâncias a 720p abaixo de 1 s/quadro e revisa em menos de 20 s."
+    }
+  ],
+  "known_issues": [
+    "Não testado no aparelho (ADD-0035); desempenho medido só no container, sem GPU. O projeto Android compila (Debug, Android SDK 36), sem execução em emulador ou aparelho.",
+    "Não reexecutado com o modelo do proprietário.",
+    "Fatias seguintes da #1004 (máscara por imagem/gradiente, câmera, componentes, benchmark, TTS neural) não feitas."
+  ],
+  "next_actions": [
+    "Pedir os três prompts da #1004 ao Assistente com modelo real e medir chamadas, tempo e qualidade contra o benchmark do motor.",
+    "Voz neural local depois da DEC-0067."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Fórmulas só aritmética e funções puras; nenhum acesso fora do quadro."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada declarado como testado no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes automáticos citados acima."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-video-procedural",
+      "status": "product-specific",
+      "rationale": "Motor de vídeo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature autorizada (#1004) dentro do Urbe."
+  },
+  "blockers": []
+}

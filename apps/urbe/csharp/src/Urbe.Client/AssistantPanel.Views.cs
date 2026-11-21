@@ -32,7 +32,7 @@ public sealed partial class AssistantPanel
                 .Concat(m.Content.Where(b => b.Hidden && b.Type == "text" && b.Text?.StartsWith("[Arquivo anexado pelo usuário:", StringComparison.Ordinal) == true)
                     .Select(b => b.Text!.Split('\n')[0].Trim('[', ']'))).ToList();
             if (files.Count > 0) stack.Children.Add(Wrap("Anexos: " + string.Join(", ", files), 11, UrbeTheme.Text2));
-            var bubble = new SelectableTextBlock { Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
+            var bubble = new SelectableTextBlock { Text = text, FontSize = UrbeTokens.Type.Callout.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
             Ui.TextActions.Attach(bubble); // native range selection, contextual copy and select-all
             stack.Children.Add(new Border { Child = bubble, Padding = new Thickness(12, 9), CornerRadius = new CornerRadius(16, 16, 4, 16), Background = UrbeTheme.Brush(UrbeTheme.Accent, .16) });
             var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
@@ -150,7 +150,7 @@ public sealed partial class AssistantPanel
         var head = new DockPanel();
         Control mark = status is "running" or "pending" ? Label("…", 15, UrbeTheme.Accent, FontWeight.Bold)
             : status == "done" ? UrbeTheme.Icon(UrbeTheme.Icons.Check, 16, UrbeTheme.Accent, 2.2)
-            : Label(stTxt, 12, status == "error" ? "#c0504d" : UrbeTheme.Text3);
+            : Label(stTxt, 12, status == "error" ? UrbeTokens.Color.Danger : UrbeTheme.Text3);
         DockPanel.SetDock(mark, Dock.Right);
         head.Children.Add(mark);
         var ic = UrbeTheme.Icon(AccessIcon.GetValueOrDefault(tool?.Access ?? "", UrbeTheme.Icons.Layers), 16, UrbeTheme.Text2, 1.8);
@@ -168,7 +168,7 @@ public sealed partial class AssistantPanel
             AssistantImageTools.SavedImagePath(r.Content) is { } generatedPath)
             card.Children.Add(GeneratedImagePreview(generatedPath));
         // only the latest plan shows open, as a checklist
-        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && (b.Input as JsonObject)?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
+        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && ActivityProperty(b.Input, "steps") is JsonArray steps) card.Children.Add(Plan(steps));
         if (b.Name == "ask_user" && r is { IsError: false } && _running is null &&
             _conv.Runs.LastOrDefault()?.Stopped == "needs_input" &&
             _conv.Messages.SelectMany(msg => msg.Content).LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Id == b.Id)
@@ -187,6 +187,31 @@ public sealed partial class AssistantPanel
         var border = Card(card, status == "waiting" ? UrbeTheme.Accent : null);
         border.Padding = new Thickness(10, 8);
         return border;
+    }
+
+    /// <summary>#1005: a flashcard deck the Assistente made, with what opens it in the study library.</summary>
+    private Control DeckCard(string deckId, string title, int cards)
+    {
+        var info = new StackPanel { Spacing = 2, Children =
+        {
+            Label(title, 14, UrbeTheme.Text, FontWeight.SemiBold),
+            Label("Flashcards · " + cards + (cards == 1 ? " cartão" : " cartões") + " · na biblioteca de Estudo", 12, UrbeTheme.Text2)
+        } };
+        void Open() { Close(); _app.Study?.OpenStudy("deck:" + deckId); }
+        var open = TextButton("Abrir", Open);
+        Avalonia.Automation.AutomationProperties.SetName(open, "Abrir os flashcards " + title);
+        var row = new DockPanel();
+        var icon = UrbeTheme.Icon(UrbeTheme.Icons.Book, 22, UrbeTheme.Accent);
+        icon.Margin = new Thickness(0, 0, 10, 0);
+        DockPanel.SetDock(icon, Dock.Left);
+        DockPanel.SetDock(open, Dock.Right);
+        row.Children.Add(icon);
+        row.Children.Add(open);
+        row.Children.Add(info);
+        var card = Card(row, null);
+        card.Padding = new Thickness(12, 10);
+        card.Tag = "flashcards:" + deckId;
+        return card;
     }
 
     /// <summary>Load the saved vault image (not a temporary provider URL) as an inline, tappable result.</summary>
@@ -317,12 +342,12 @@ public sealed partial class AssistantPanel
         foreach (var item in steps)
         {
             if (item is not JsonObject x) { list.Children.Add(Hint("Etapa inválida recebida do modelo. Consulte os parâmetros abaixo.")); continue; }
-            var s = JsonText(x["status"]) ?? "pending";
+            var s = JsonText(ActivityProperty(x, "status")) ?? "pending";
             var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
             var description = new StackPanel { Spacing = 2 };
-            description.Children.Add(Wrap(JsonText(x["step"]) ?? "Etapa sem descrição", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
-            if (JsonText(x["details"]) is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
-            if (JsonText(x["acceptance"]) is { Length: > 0 } acceptance)
+            description.Children.Add(Wrap(JsonText(ActivityProperty(x, "step")) ?? "Etapa sem descrição", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
+            if (JsonText(ActivityProperty(x, "details")) is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
+            if (JsonText(ActivityProperty(x, "acceptance")) is { Length: > 0 } acceptance)
                 description.Children.Add(Wrap("Concluído quando: " + acceptance, 11, UrbeTheme.Text3));
             list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), description));
         }
@@ -361,7 +386,7 @@ public sealed partial class AssistantPanel
                 editor = new TextBox
                 {
                     Text = _approvalDrafts.GetValueOrDefault(p.Call.Id, editable ?? ""), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
-                    FontFamily = UrbeTheme.MonoFont, FontSize = 13, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+                    FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
                     CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
                 };
                 Avalonia.Automation.AutomationProperties.SetName(editor, "Texto proposto");
@@ -454,9 +479,9 @@ public sealed partial class AssistantPanel
                 var (op, line) = ops[i];
                 lines.Children.Add(new Border
                 {
-                    Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
+                    Background = op == '+' ? UrbeTheme.Brush(UrbeTokens.Color.Success, .16) : op == '-' ? UrbeTheme.Brush(UrbeTokens.Color.Danger, .16) : Brushes.Transparent,
                     Padding = new Thickness(4, 1),
-                    Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+                    Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Caption.Size, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
                 });
             }
             int left = 0;
@@ -470,7 +495,7 @@ public sealed partial class AssistantPanel
             Spacing = 4,
             Children =
             {
-                Row(Label("+" + add, 12, "#3a9a5b", FontWeight.Bold), Label("−" + del, 12, "#c0504d", FontWeight.Bold)),
+                Row(Label("+" + add, 12, UrbeTokens.Color.Success, FontWeight.Bold), Label("−" + del, 12, UrbeTokens.Color.Danger, FontWeight.Bold)),
                 new Border { Child = new ScrollViewer { Content = lines, MaxHeight = 320, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), Padding = new Thickness(4) }
             }
         };
@@ -485,8 +510,8 @@ public sealed partial class AssistantPanel
         var tail = new StackPanel { Spacing = 8 };
         Control Note(string text, string action, Action act, bool error = false)
         {
-            var row = new WrapPanel { Children = { Wrap(text, 13, error ? "#c0504d" : UrbeTheme.Text2), LinkButton(action, act) } };
-            return Card(row, error ? "#c0504d" : null);
+            var row = new WrapPanel { Children = { Wrap(text, 13, error ? UrbeTokens.Color.Danger : UrbeTheme.Text2), LinkButton(action, act) } };
+            return Card(row, error ? UrbeTokens.Color.Danger : null);
         }
         if (r.Error is { Length: > 0 }) tail.Children.Add(Note(r.Error, "Tentar de novo", () => CurrentRun = StartAsync(), error: true));
         else if (r.Stopped == "aborted") tail.Children.Add(Note("Interrompido.", "Continuar", () => Send("Continue de onde parou.")));
@@ -515,9 +540,13 @@ public sealed partial class AssistantPanel
             foreach (var f in files) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
+        // CST-086: what the answer drew on from memory, open to correct or forget right here
+        var used = r.MemoryUsed.Select(id => AssistantMemoryEngine.ResolveForEdit(_cfg, id)).Where(m => m is not null).Select(m => m!).ToList();
+        if (used.Count > 0)
+            tail.Children.Add(LinkButton("Usou " + (used.Count == 1 ? "1 lembrança" : used.Count + " lembranças"), () => _ = ShowUsedMemoriesAsync(used.Select(m => m.Id).ToList())));
         if (_conv.WebSources.Count > 0)
         {
-            var read = _conv.WebSources.Count(s => s.Status == "página acessada");
+            var read = _conv.WebSources.Count(s => s.Status is "página acessada" or "leitura parcial");
             tail.Children.Add(LinkButton("Fontes · " + _conv.WebSources.Count + " encontradas · " + read + " consultadas", ShowSources));
         }
         return tail.Children.Count > 0 ? tail : null;
@@ -527,22 +556,20 @@ public sealed partial class AssistantPanel
 
     private static readonly string[] OnlinePresets = ["openrouter", "anthropic", "openai", "gemini", "ollama", "custom"];
 
-    /// <summary>The providers one can add; the model on the device first, where the device has one.</summary>
-    private static string[] PresetOrder => HasDeviceAi ? ["device", .. OnlinePresets] : OnlinePresets;
+    /// <summary>The providers one can add.</summary>
+    private static string[] PresetOrder => OnlinePresets;
 
     private static readonly Dictionary<string, string> PresetDetail = new()
     {
         ["openrouter"] = "Recomendado · Claude, GPT, Gemini, Llama e outros com uma chave", ["anthropic"] = "Claude direto da Anthropic", ["openai"] = "GPT direto da OpenAI",
-        ["device"] = "Grátis e sem internet · baixa uma vez e funciona sempre, até no modo avião", ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
+        ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
     };
 
     private Control Onboarding()
     {
         var box = new StackPanel { Spacing = 10, Margin = new Thickness(4, 24, 4, 0) };
         box.Children.Add(Wrap("Conecte um modelo", 20, UrbeTheme.Text, FontWeight.Bold));
-        box.Children.Add(Wrap(HasDeviceAi
-            ? "Use a IA que mora no seu aparelho (grátis, sem internet) ou conecte um provedor com a sua chave. A chave fica salva só neste aparelho."
-            : "O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
+        box.Children.Add(Wrap("O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
         foreach (var k in PresetOrder)
         {
             var pre = AssistantProviders.Presets[k];
@@ -555,7 +582,7 @@ public sealed partial class AssistantPanel
                 Content = new StackPanel { Spacing = 2, Children = { Label(pre.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), Wrap(PresetDetail[k], 12, UrbeTheme.Text3) } }
             };
             Avalonia.Automation.AutomationProperties.SetName(b, pre.Name);
-            b.Click += (_, _) => { if (k == "device") ShowDevice(); else ShowSettings(k); };
+            b.Click += (_, _) => ShowSettings(k);
             box.Children.Add(b);
         }
         return box;
@@ -643,7 +670,7 @@ public sealed partial class AssistantPanel
         RememberCurrentChat();
         _cfg.AgentId = agentId;
         // Switching agents returns to that agent's selected chat; "Nova conversa" is the only reset.
-        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : NewConversation();
+        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : ResumeOrNew();
         RememberCurrentChat();
         SyncActiveConversation();
         _views.Clear();
@@ -726,6 +753,8 @@ public sealed partial class AssistantPanel
             _store.DeleteAgentConversationsVerified(agent.Id);
             _cfg.CustomAgents.RemoveAll(a => a.Id == agent.Id);
             _cfg.AgentModels.Remove(agent.Id);
+            _cfg.AgentMedia.Remove(agent.Id);
+            _cfg.AgentDeviceAccess.Remove(agent.Id);
             _cfg.AgentImages.Remove(agent.Id);
             _cfg.AgentPolicies.Remove(agent.Id);
             _cfg.AgentToolScopes.Remove(agent.Id);
@@ -897,14 +926,12 @@ public sealed partial class AssistantPanel
         var c = _cfg;
         var v = VaultKey;
         var body = OpenView("Configurações");
-        body.Children.Add(Wrap("O Assistente padrão usa um modelo básico. Configure agentes com modelos melhores conforme suas necessidades. A IA no aparelho requer download prévio do modelo e suporte neste dispositivo.", 14, UrbeTheme.Text2));
-        if (HasDeviceAi) body.Children.Add(TextButton("IA no aparelho", ShowDevice));
+        body.Children.Add(Wrap("Cada agente usa o modelo que você escolher, de qualquer provedor conectado. Um agente sem modelo próprio usa o do Assistente.", 14, UrbeTheme.Text2));
         var choices = new (string Id, string Title, string Description)[]
         {
             ("models", "Modelos", "Provedores e imagens"),
             ("agents", "Agentes", "Identidade e perfis"),
-            ("web", "Pesquisa", "Internet e fontes"),
-            ("context", "Contexto", "Instruções e memória")
+            ("web", "Conexões", "Privacidade, aparelho e serviços")
         };
         // Flat navigation: no grid of outlined mini-cards. Categories are ALWAYS visible and can wrap on phones.
         var navigation = new WrapPanel { Orientation = Orientation.Horizontal, ItemHeight = UrbeTokens.MinTouch };
@@ -978,28 +1005,9 @@ public sealed partial class AssistantPanel
 
         }
 
-        if (_settingsCategory == "context")
-        {
-        body.Children.Add(Section("Preferências de contexto", Hint("Estas informações orientam as respostas; você mantém o controle sobre o que é lembrado.")));
-        var instr = new TextBox { Text = c.Instructions, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 90, PlaceholderText = "Ex.: escreva em português do Brasil, frases curtas; use a pasta Diário para registros do dia." };
-        instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
-        instr.TextChanged += (_, _) => c.Instructions = instr.Text ?? "";
-        body.Children.Add(Section("Instruções para todos os agentes", instr));
-        // CST-077: the system's language by default; an explicit request in the conversation still wins
-        var language = AgentLanguage.Choices.FirstOrDefault(x => x.Code == c.Language);
-        body.Children.Add(Section("Idioma das respostas", Hint("Os agentes respondem neste idioma, salvo se você pedir outro na conversa."),
-            TextButton(language.Name ?? AgentLanguage.Name(c.Language), () => _ = PickLanguageAsync())));
-
-        var nmem = c.MemoryRecords.Count + c.Memory.Values.Sum(items => items.Count);
-        body.Children.Add(Section("Memória",
-            Hint(nmem + " lembranças locais · recuperação por relevância · histórico e fontes."),
-            TextButton("Gerenciar memórias", ShowMemoryManager)));
-
-        }
-
         if (_settingsCategory == "agents")
         {
-            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, começa uma conversa nova."));
+            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, a conversa em andamento continua; uma parada há mais de duas horas dá lugar a uma nova, e as anteriores ficam em Conversas."));
             var agents = new StackPanel { Spacing = 4 };
             foreach (var a in AgentNames.All(c))
             {
@@ -1032,29 +1040,49 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "web")
         {
-            body.Children.Add(Section("Pesquisa na internet",
-                Hint(_cfg.Web.Enabled ? "Disponível para todos os agentes · " + (_cfg.Web.Provider == "brave" ? "Brave (opcional)" : "sem chave") : "Desativada pela preferência de privacidade"),
-                TextButton("Privacidade e pesquisa", ShowWebSettings),
-                Hint("Peça para pesquisar no chat. Sem configurar provedor nem permissão individual.")));
+            body.Children.Add(Section("Privacidade da pesquisa",
+                Hint("A autorização de cada agente fica no perfil dele."),
+                TextButton("Configurações globais da pesquisa", ShowWebSettings)));
+            body.Children.Add(Section("Servidores MCP",
+                Hint(_cfg.McpServers.Count == 0 ? "Nenhum. Um servidor MCP dá ao Assistente ferramentas de outro serviço; cada ferramenta começa desligada."
+                    : string.Join(" · ", _cfg.McpServers.Select(m => m.Name + " (" + m.Tools.Count(t => t.Value is "read" or "write") + " liberadas)"))),
+                TextButton("Servidores MCP", () => _ = McpServersAsync())));
         }
         if (addPreset is not null) EditProvider(null, addPreset);
     }
 
 
+    /// <summary>UC-87: the open agent's memories as a graph (a view of the store, nothing is copied to the vault).</summary>
+    public Task ShowMemoryGraphAsync() => ShowMemoryGraphAsync(_conv.AgentId);
+
+    private async Task ShowMemoryGraphAsync(string agentId)
+    {
+        var agent = AssistantAgent.AgentById(agentId, _cfg.CustomAgents);
+        var name = agent is null ? agentId : AgentNames.CallName(agent, _cfg);
+        var records = MemoryGraph.Records(_cfg, VaultKey, agentId);
+        if (records.Count == 0) { await _app.Dialogs.AlertAsync("Memória", name + " ainda não tem lembranças neste vault."); return; }
+        Close();
+        await _app.ShowGraphProjectionAsync(MemoryGraph.Build("Memória de " + name, records,
+            AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, agentId)));
+    }
+
     /// <summary>Separate memory workspace: no giant list in provider settings or implicit keyboard focus.</summary>
-    private void ShowMemoryManager()
+    private void ShowMemoryManager(string? target = null)
     {
         var c = _cfg;
-        var body = OpenView("Memória", () => ShowSettings());
+        var agentId = target ?? _conv.AgentId;
+        var agent = AssistantAgent.AgentById(agentId, _cfg.CustomAgents);
+        var body = OpenView("Memória", () => EditAgentProfile(agent));
         var head = new StackPanel { Spacing = 6 };
         var state = Hint("As notas continuam sendo a fonte de verdade. Lembranças não são instruções provenientes de arquivos.");
         head.Children.Add(state);
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        actions.Children.Add(TextButton("+ Lembrança", () => _ = AddMemoryByHandAsync()));
-        actions.Children.Add(TextButton("Exportar memória", () => _ = ExportAgentMemoryAsync()));
+        var actions = new WrapPanel { ItemSpacing = 6, LineSpacing = 6 };
+        actions.Children.Add(TextButton("+ Lembrança", () => _ = AddMemoryByHandAsync(agentId)));
+        actions.Children.Add(TextButton("Ver como grafo", () => _ = ShowMemoryGraphAsync(agentId)));
+        actions.Children.Add(TextButton("Exportar memória", () => _ = ExportAgentMemoryAsync(agentId)));
         actions.Children.Add(TextButton("Conflitos", () =>
         {
-            var conflicts = AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, _conv.AgentId);
+            var conflicts = AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, agentId);
             _ = _app.Dialogs.AlertAsync("Possíveis conflitos",
                 conflicts.Count == 0 ? "Nenhum candidato encontrado. A detecção é heurística." :
                 string.Join("\n\n", conflicts.Take(8).Select(p =>
@@ -1062,19 +1090,26 @@ public sealed partial class AssistantPanel
                 "\n\nSão candidatos, não uma decisão automática sobre a verdade.");
         }));
         head.Children.Add(actions);
-        head.Children.Add(TextButton(c.AutoCaptureEpisodes ?
+        head.Children.Add(TextButton(c.MediaFor(agentId).CaptureMemory == true ?
             "Registro de tarefas: ligado (desativar)" : "Registro de tarefas: desligado (ativar)", () =>
         {
-            c.AutoCaptureEpisodes = !c.AutoCaptureEpisodes;
+            var own = c.AgentMedia.GetValueOrDefault(agentId) ?? new();
+            c.AgentMedia[agentId] = own with { CaptureMemory = c.MediaFor(agentId).CaptureMemory != true };
             SaveConfig();
-            ShowMemoryManager();
+            ShowMemoryManager(agentId);
         }));
+        if (agentId != "geral" && c.AgentMedia.GetValueOrDefault(agentId)?.CaptureMemory is not null)
+            head.Children.Add(TextButton("Herdar registro de tarefas do Assistente padrão", () =>
+            {
+                c.AgentMedia[agentId] = c.AgentMedia[agentId] with { CaptureMemory = null };
+                SaveConfig();
+                ShowMemoryManager(agentId);
+            }));
         body.Children.Add(head);
         var search = new TextBox { PlaceholderText = "Pesquisar fatos, decisões, procedimentos ou fontes…",
             MinHeight = 44 };
         body.Children.Add(search);
         // CST-085: which memories only this agent uses and which every agent shares
-        var agentId = _conv.AgentId;
         var agentName = AgentNames.CallName(AssistantAgent.AgentById(agentId, _cfg.CustomAgents), _cfg);
         string show = "all";
         var filters = new WrapPanel { Orientation = Orientation.Horizontal };
@@ -1086,7 +1121,7 @@ public sealed partial class AssistantPanel
         {
             list.Children.Clear();
             // Includes the owner's other agents and archived records. Never share these across hosts.
-            var entries = c.MemoryRecords.Where(m => m.Scope == "global" || m.Vault == VaultKey)
+            var entries = c.MemoryRecords.Where(m => (m.Scope == "global" || m.Vault == VaultKey) && (m.Scope != "agent" || m.AgentId == agentId))
                 .OrderByDescending(m => m.UpdatedAt).ToArray();
             var older = c.Memory.SelectMany(pair => (pair.Key == "*" || pair.Key == VaultKey)
                 ? pair.Value.Select((text, i) => new AiMemoryRecord
@@ -1124,7 +1159,7 @@ public sealed partial class AssistantPanel
                     label.Children.Add(Hint("Origem: " + m.Origin + (m.SourceReference.Length > 0 ? " · " + m.SourceReference : "") +
                         (m.RelatedPaths.Count > 0 ? "\nNotas: " + string.Join(", ", m.RelatedPaths.Take(4)) : "")));
                 var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
-                var edit = TextButton("Editar", () => _ = EditMemoryAsync(m.Id));
+                var edit = TextButton("Editar", () => _ = EditMemoryAsync(m.Id, target: agentId));
                 buttons.Children.Add(edit);
                 var pin = TextButton(m.Pinned ? "Desafixar" : "Fixar", () =>
                 {
@@ -1132,13 +1167,13 @@ public sealed partial class AssistantPanel
                     if (current is not null)
                     {
                         current.Pinned = !current.Pinned;
-                        try { SaveMemoryConfig(); ShowMemoryManager(); }
+                        try { SaveMemoryConfig(); ShowMemoryManager(agentId); }
                         catch (Exception ex) { _app.Notify(ex.Message); }
                     }
-                    else ShowMemoryManager();
+                    else ShowMemoryManager(agentId);
                 });
                 buttons.Children.Add(pin);
-                buttons.Children.Add(TextButton("Esquecer", () => _ = DeleteMemoryAsync(m.Id)));
+                buttons.Children.Add(TextButton("Esquecer", () => _ = DeleteMemoryAsync(m.Id, target: agentId)));
                 label.Children.Add(buttons);
                 list.Children.Add(Card(label));
             }
@@ -1181,7 +1216,7 @@ public sealed partial class AssistantPanel
         "disputed" => "em conflito", "superseded" => "substituída", "archived" => "arquivada", _ => state
     };
 
-    private async Task AddMemoryByHandAsync()
+    private async Task AddMemoryByHandAsync(string agentId)
     {
         var kinds = new[] { "fact", "preference", "decision", "goal", "procedure", "observation" };
         var names = new[] { "Fato", "Preferência", "Decisão", "Objetivo", "Procedimento", "Observação" };
@@ -1200,18 +1235,90 @@ public sealed partial class AssistantPanel
         var scope = scopePick.Value switch { 1 => "agent", 2 => "global", _ => "vault" };
         try
         {
-            AssistantMemoryEngine.Remember(_cfg, text, VaultKey, _conv.AgentId, kinds[pick.Value],
+            AssistantMemoryEngine.Remember(_cfg, text, VaultKey, agentId, kinds[pick.Value],
                 scope, "user", "manual", verified: true);
             SaveMemoryConfig();
-            ShowMemoryManager();
+            ShowMemoryManager(agentId);
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Não foi possível memorizar", ex.Message); }
     }
 
-    private async Task EditMemoryAsync(string id)
+    /// <summary>
+    /// DEC-0061: the MCP servers — add one by its address, see the tools it offers and allow each as reading (runs like a
+    /// web search) or writing (asks every time), or leave it off; remove a server.
+    /// </summary>
+    private async Task McpServersAsync()
+    {
+        var items = _cfg.McpServers.Select(m => new DialogItem(m.Name, Detail: m.Command is { } c ? "Local: " + c : m.Url)).Append(new DialogItem("Adicionar servidor", UrbeTheme.Icons.Plus)).ToList();
+        if (AssistantMcp.LocalServersAllowed) items.Add(new DialogItem("Adicionar servidor local", UrbeTheme.Icons.Plus, "Um programa deste computador"));
+        if (await _app.Dialogs.ChooseAsync("Servidores MCP", items, "As ferramentas de um servidor só chegam ao Assistente depois que você libera cada uma.") is not int pick) return;
+        AiMcpServer server;
+        if (pick == _cfg.McpServers.Count + 1)
+        {
+            var line = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Comando", Placeholder: "npx -y @modelcontextprotocol/server-everything", Confirm: "Continuar",
+                Hint: "O Numa vai executar esse programa neste computador. Adicione só servidores em que você confia."));
+            if (string.IsNullOrWhiteSpace(line)) return;
+            var parts = System.Text.RegularExpressions.Regex.Matches(line.Trim(), "\"([^\"]*)\"|(\\S+)").Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).ToList();
+            var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor local", "Nome", Value: System.IO.Path.GetFileNameWithoutExtension(parts[^1]), Confirm: "Conectar"));
+            if (name is null) return;
+            server = new AiMcpServer { Id = AssistantAgent.NewId("mcp"), Name = name.Trim(), Command = parts[0], Arguments = parts.Skip(1).ToList() };
+        }
+        else if (pick == _cfg.McpServers.Count)
+        {
+            var url = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Endereço", Placeholder: "https://…/mcp", Confirm: "Continuar",
+                Validate: v => Uri.TryCreate(v.Trim(), UriKind.Absolute, out var u) && u.Scheme is "https" or "http" ? null : "Use um endereço https://"));
+            if (url is null) return;
+            var name = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Nome", Value: new Uri(url.Trim()).Host, Confirm: "Continuar"));
+            if (name is null) return;
+            var token = await _app.Dialogs.PromptAsync(new PromptOptions("Adicionar servidor MCP", "Chave (se o servidor pedir)", Confirm: "Conectar", Required: false));
+            server = new AiMcpServer { Id = AssistantAgent.NewId("mcp"), Name = name.Trim(), Url = url.Trim(), Token = string.IsNullOrWhiteSpace(token) ? null : token.Trim() };
+        }
+        else
+        {
+            server = _cfg.McpServers[pick];
+            var what = await _app.Dialogs.ChooseAsync(server.Name, [new DialogItem("Ferramentas"), new DialogItem("Remover servidor", Danger: true)]);
+            if (what == 1) { _cfg.McpServers.Remove(server); SaveConfig(); ShowSettings(); return; }
+            if (what != 0) return;
+        }
+        try { await AssistantMcp.DiscoverAsync(server); }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        { await _app.Dialogs.AlertAsync("Não foi possível conectar", (server.Command ?? server.Url) + "\n\n" + e.Message); return; }
+        if (!_cfg.McpServers.Contains(server)) _cfg.McpServers.Add(server);
+        SaveConfig();
+        while (true)
+        {
+            string State(string tool) => server.Tools.GetValueOrDefault(tool) switch { "read" => "Leitura", "write" => "Escrita (pede aprovação)", _ => "Desligada" };
+            var names = server.Known.Keys.Order(StringComparer.Ordinal).ToList();
+            if (names.Count == 0) { await _app.Dialogs.AlertAsync(server.Name, "O servidor não oferece ferramentas."); break; }
+            if (await _app.Dialogs.ChooseAsync(server.Name, names.Select(n => new DialogItem(n + " · " + State(n), Detail: server.Known[n].Description)).ToList(),
+                    "Toque numa ferramenta para mudar o que ela pode fazer.") is not int t) break;
+            var grant = await _app.Dialogs.ChooseAsync(names[t], [new DialogItem("Desligada"), new DialogItem("Leitura", Detail: "Usa sem perguntar, como uma pesquisa na web."), new DialogItem("Escrita", Detail: "Pergunta antes de cada uso.")]);
+            if (grant is not int g) continue;
+            if (g == 0) server.Tools.Remove(names[t]); else server.Tools[names[t]] = g == 1 ? "read" : "write";
+            SaveConfig();
+        }
+        ShowSettings();
+    }
+
+    /// <summary>CST-086: the memories an answer used, each with Editar and Esquecer; the chat stays where it was.</summary>
+    private async Task ShowUsedMemoriesAsync(IReadOnlyList<string> ids)
+    {
+        var memories = ids.Select(id => AssistantMemoryEngine.ResolveForEdit(_cfg, id)).Where(m => m is not null).Select(m => m!).ToList();
+        if (memories.Count == 0) return;
+        var pick = await _app.Dialogs.ChooseAsync("Lembranças usadas nesta resposta",
+            memories.Select(m => new DialogItem(m.Text.Length > 120 ? m.Text[..119] + "…" : m.Text, Detail: MemoryKindName(m.Kind) + " · " + MemoryWho(m))).ToList(),
+            "São o que o agente sabia de conversas anteriores. Escolha uma para corrigir ou esquecer.");
+        if (pick is not int i) return;
+        var what = await _app.Dialogs.ChooseAsync(memories[i].Text.Length > 60 ? memories[i].Text[..59] + "…" : memories[i].Text,
+            [new DialogItem("Editar"), new DialogItem("Esquecer", Danger: true)]);
+        if (what == 0) await EditMemoryAsync(memories[i].Id, stay: true);
+        else if (what == 1) await DeleteMemoryAsync(memories[i].Id, stay: true);
+    }
+
+    private async Task EditMemoryAsync(string id, bool stay = false, string? target = null)
     {
         var m = AssistantMemoryEngine.ResolveForEdit(_cfg, id);
-        if (m is null) { ShowMemoryManager(); return; }
+        if (m is null) { ShowMemoryManager(target); return; }
         var changed = await _app.Dialogs.PromptAsync(new PromptOptions("Editar lembrança", "Texto",
             Value: m.Text));
         if (changed is null) return;
@@ -1220,12 +1327,12 @@ public sealed partial class AssistantPanel
         {
             if (!AssistantMemoryEngine.Edit(_cfg, m.Id, changed)) return;
             SaveMemoryConfig();
-            ShowMemoryManager();
+            if (stay) RenderLog(); else ShowMemoryManager(target);
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro na edição", ex.Message); }
     }
 
-    private async Task DeleteMemoryAsync(string id)
+    private async Task DeleteMemoryAsync(string id, bool stay = false, string? target = null)
     {
         if (!await _app.Dialogs.ConfirmAsync("Esquecer esta lembrança?",
                 "Ela será removida da memória local. As notas do vault não serão alteradas.",
@@ -1243,7 +1350,7 @@ public sealed partial class AssistantPanel
             }
             else AssistantMemoryEngine.Forget(_cfg, id);
             SaveMemoryConfig();
-            ShowMemoryManager();
+            if (stay) RenderLog(); else ShowMemoryManager(target);
         }
         catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro ao esquecer", ex.Message); }
     }
@@ -1251,7 +1358,7 @@ public sealed partial class AssistantPanel
     private async Task AddProviderAsync()
     {
         var i = await _app.Dialogs.ChooseAsync("Qual provedor?", PresetOrder.Select(k => new DialogItem(AssistantProviders.Presets[k].Name, UrbeTheme.Icons.Storage)).ToList());
-        if (i is { } k) { if (PresetOrder[k] == "device") ShowDevice(); else EditProvider(null, PresetOrder[k]); }
+        if (i is { } k) EditProvider(null, PresetOrder[k]);
     }
 
     private async Task TestProviderAsync(AiProviderConfig p, TextBlock output)
@@ -1272,19 +1379,18 @@ public sealed partial class AssistantPanel
                 var r = await Providers.TestAsync(p, m);
                 output.Text = "Funcionando · " + r.Model;
             }
-            output.Foreground = UrbeTheme.Brush("#3a9a5b");
+            output.Foreground = UrbeTheme.Brush(UrbeTokens.Color.Success);
         }
         catch (Exception e)
         {
             output.Text = e.Message;
-            output.Foreground = UrbeTheme.Brush("#c0504d");
+            output.Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger);
         }
     }
 
     /// <summary>editProvider(): name, API address and key; saved after the models list answers (a 401/403 stops it), then the model picker.</summary>
     private void EditProvider(AiProviderConfig? p, string preset)
     {
-        if (preset == "device") { ShowDevice(); return; }
         var pre = AssistantProviders.Presets.GetValueOrDefault(preset) ?? AssistantProviders.Presets["custom"];
         bool isNew = p is null;
         p ??= new AiProviderConfig(AssistantAgent.NewId("p"), preset, pre.Name, "", "");
@@ -1332,7 +1438,7 @@ public sealed partial class AssistantPanel
             RenderAll();
             await PickModelAsync();
         };
-        void Fail(string text) { output.Text = text; output.Foreground = UrbeTheme.Brush("#c0504d"); }
+        void Fail(string text) { output.Text = text; output.Foreground = UrbeTheme.Brush(UrbeTokens.Color.Danger); }
         var cancel = TextButton("Cancelar", () => ShowSettings());
         cancel.Margin = new Thickness(0, 0, 8, 0);
         body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, save } });
@@ -1383,15 +1489,6 @@ public sealed partial class AssistantPanel
         return (editor, () => [.. rows.Select(r => new AiInstructionBlock((r.Title.Text ?? "").Trim(), (r.Body.Text ?? "").Trim())).Where(b => b.Content.Length > 0)]);
     }
 
-    private async Task PickLanguageAsync()
-    {
-        var choices = AgentLanguage.Choices;
-        if (await _app.Dialogs.ChooseAsync("Idioma das respostas", [.. choices.Select(x => new DialogItem(x.Name, Detail: x.Code.Length > 0 ? x.Code : null))]) is not { } i) return;
-        _cfg.Language = choices[i].Code;
-        SaveConfig();
-        ShowSettings();
-    }
-
     private void EditAgent(AiAgentDef? a)
     {
         bool isNew = a is null;
@@ -1429,7 +1526,11 @@ public sealed partial class AssistantPanel
             var t = a?.Tools ?? chosen?.Tools ?? "read";
             var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, chosen?.Icon ?? (t == "read" ? "search" : "sparkle"), p.Length > 80 ? p[..80] : p, t, t == "all", p);
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
-            if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
+            if (at >= 0) _cfg.CustomAgents[at] = made;
+            else
+            {
+                _cfg.CustomAgents.Add(made);
+            }
             if (a is null && t != "read")
             {
                 // a new agent that writes starts asking before each change; Permissões can make it automatic
@@ -1470,19 +1571,20 @@ public sealed partial class AssistantPanel
         body.Children.Add(Hint(image
             ? "O modelo de imagem não altera o chat. Preços em US$ com unidade de cobrança e fonte; valores variáveis não são estimados como zero."
             : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
-        var auto = TextButton(image ? "Sem modelo de imagem" : agentId == "geral" ? "Usar modelo básico do aparelho" : "Herdar modelo do Assistente", () =>
-        {
-            if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
-            else if (agentId == "geral" && LocalAi.Text is { } runtime)
+        // the Assistente has no model to fall back to; a specialist inherits the Assistente's
+        if (image || agentId != "geral")
+            body.Children.Add(TextButton(image ? imageAgentId == "geral" ? "Sem modelo de imagem" : "Herdar imagem do Assistente" : "Herdar modelo do Assistente", () =>
             {
-                var device = _cfg.Providers.FirstOrDefault(p => p.Preset == "device") ?? new AiProviderConfig("device", "device", "IA no aparelho", "", "");
-                if (!_cfg.Providers.Any(p => p.Id == device.Id)) _cfg.Providers.Add(device);
-                _cfg.AgentModels[agentId] = new AiModelChoice(device.Id, runtime.Recommended.Id);
-            }
-            else _cfg.AgentModels.Remove(agentId!);
-            SaveConfig(); Back(); RenderAll();
-        });
-        body.Children.Add(auto);
+                if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
+                else _cfg.AgentModels.Remove(agentId!);
+                SaveConfig(); Back(); RenderAll();
+            }));
+        if (image && (imageAgentId ?? _conv.AgentId) != "geral")
+            body.Children.Add(TextButton("Desativar imagens para este agente", () =>
+            {
+                _cfg.AgentImages[imageAgentId ?? _conv.AgentId] = new AiModelChoice("", "");
+                SaveConfig(); Back(); RenderAll();
+            }));
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo" };
         var manual = new TextBox { PlaceholderText = "Ou informe o ID exato do modelo" };
@@ -1536,7 +1638,7 @@ public sealed partial class AssistantPanel
         void Paint()
         {
             list.Children.Clear();
-            if (loadError is not null) list.Children.Add(Wrap(loadError, 12, "#c0504d"));
+            if (loadError is not null) list.Children.Add(Wrap(loadError, 12, UrbeTokens.Color.Danger));
             var query = (search.Text ?? "").Trim();
             var filtered = models.Where(m => query.Length == 0 || (m.Id + " " + m.Name).Contains(query, StringComparison.OrdinalIgnoreCase))
                 .Take(image ? 24 : 150).ToList();
@@ -1646,7 +1748,7 @@ public sealed partial class AssistantPanel
                 ? "Consultar outros agentes: automaticamente quando seguro"
                 : "Consultar outros agentes: pede sua aprovação"),
             TextButton("Definir autorização de consultas", () => _ = PickDelegationAsync(agent))));
-        var image = _cfg.AgentImages.GetValueOrDefault(agent.Id);
+        var image = _cfg.ImageFor(agent.Id);
         body.Children.Add(Section("Modelo de imagem", Hint(image?.Model ?? "Nenhum"),
             TextButton("Selecionar modelo de imagem", () => _ = PickConfiguredModelAsync(null, agent.Id))));
         if (image is not null && _cfg.Providers.FirstOrDefault(p => p.Id == image.ProviderId) is { } imageProvider)
@@ -1670,6 +1772,112 @@ public sealed partial class AssistantPanel
             Wrap(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
             Wrap(ModelPriceFor(selected ?? _cfg.ModelFor(new AiConversation { AgentId = agent.Id })), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
+        var media = _cfg.MediaFor(agent.Id);
+        var ownMedia = _cfg.AgentMedia.GetValueOrDefault(agent.Id) ?? new();
+        bool canInherit = agent.Id != "geral";
+        Control Inherit(bool inherited, Action reset) => inherited
+            ? Hint("Herdado do Assistente padrão")
+            : TextButton("Herdar do Assistente padrão", reset);
+        void SaveMedia(AiAgentMediaProfile updated)
+        {
+            SaveBlocks();
+            _cfg.AgentMedia[agent.Id] = updated;
+            SaveConfig();
+            EditAgentProfile(agent);
+        }
+        body.Children.Add(Section("Pesquisa na internet",
+            Hint(!_cfg.Web.Enabled ? "Desativada nas preferências globais de privacidade." : "Apenas consultas e páginas públicas."),
+            TextButton(media.Research == true ? "Pesquisa permitida · desativar" : "Pesquisa desativada · permitir",
+                () => SaveMedia(ownMedia with { Research = media.Research != true })),
+            canInherit ? Inherit(ownMedia.Research is null, () => SaveMedia(ownMedia with { Research = null })) : Hint("Padrão para os outros agentes.")));
+        var voiceName = AiSpeechChoice.Parse(media.Voice) is { } speech ? speech.Model + " · " + speech.Voice : "Selecione um modelo no provedor";
+        body.Children.Add(Section("Voz da narração", Hint(voiceName + " · o roteiro é enviado ao provedor ao gerar áudio."), TextButton("Selecionar provedor e modelo de voz", async () =>
+        {
+            var picked = await PickProviderVoiceAsync();
+            if (picked is { } selectedVoice) SaveMedia(ownMedia with { Voice = selectedVoice.Id ?? "" });
+        }), canInherit ? Inherit(ownMedia.Voice is null, () => SaveMedia(ownMedia with { Voice = null })) : Hint("Padrão para os outros agentes.")));
+        var videoChoice = media.VideoProviderId switch
+        {
+            "" => "Desativado",
+            null => _cfg.GenerativeVideo ? "Preferência anterior do Assistente" : "Desativado",
+            _ => media.VideoModel ?? "Modelo padrão do provedor"
+        };
+        body.Children.Add(Section("Vídeo generativo", Hint(videoChoice + " · clipes externos cobrados pelo provedor."),
+            TextButton("Selecionar provedor e modelo de vídeo", async () =>
+            {
+                var providers = _cfg.Providers.Where(p => AssistantProviders.SupportsVideo(p) &&
+                    !string.IsNullOrWhiteSpace(p.ApiKey)).ToList();
+                var choices = providers.Select(p => new DialogItem(p.Name ?? p.Id)).Prepend(new DialogItem("Desativar vídeo generativo")).ToList();
+                if (await _app.Dialogs.ChooseAsync("Vídeo generativo deste agente", choices) is not int index) return;
+                if (index == 0) { SaveMedia(ownMedia with { VideoProviderId = "", VideoModel = null }); return; }
+                var videoProvider = providers[index - 1];
+                try
+                {
+                    var models = await Providers.ListVideoModelsAsync(videoProvider);
+                    if (models.Count == 0)
+                    {
+                        await _app.Dialogs.AlertAsync("Modelo de vídeo", "O catálogo deste provedor não informou modelos de vídeo compatíveis.");
+                        return;
+                    }
+                    if (await _app.Dialogs.ChooseAsync("Modelo de vídeo", models.Select(m => new DialogItem(m.Name, Detail: m.Price)).ToList()) is int model)
+                    {
+                        var chosen = models[model];
+                        while (await _app.Dialogs.ChooseAsync(chosen.Name,
+                            [new DialogItem("Usar este modelo"), new DialogItem("Ver página e exemplos do provedor")], chosen.Price) is int action)
+                        {
+                            if (action == 0)
+                            {
+                                SaveMedia(ownMedia with { VideoProviderId = videoProvider.Id, VideoModel = chosen.Id });
+                                break;
+                            }
+                            var page = videoProvider.Preset == "openrouter" && AssistantImagePricing.ValidOpenRouterSlug(chosen.Id)
+                                ? "https://openrouter.ai/" + chosen.Id
+                                : "https://developers.openai.com/api/docs/guides/video-generation";
+                            if (TopLevel.GetTopLevel(this)?.Launcher is { } launcher)
+                                await launcher.LaunchUriAsync(new Uri(page));
+                            else break;
+                        }
+                    }
+                }
+                catch (AiProviderException e) { await _app.Dialogs.AlertAsync("Modelo de vídeo", e.Message); }
+            }), canInherit ? Inherit(ownMedia.VideoProviderId is null, () => SaveMedia(ownMedia with { VideoProviderId = null, VideoModel = null })) : Hint("Padrão para os outros agentes.")));
+        var language = media.ReplyLanguage ?? "";
+        body.Children.Add(Section("Idioma das respostas",
+            TextButton(AgentLanguage.Name(language), async () =>
+            {
+                var choices = AgentLanguage.Choices;
+                if (await _app.Dialogs.ChooseAsync("Idioma das respostas", choices.Select(x => new DialogItem(x.Name)).ToList()) is int i)
+                    SaveMedia(ownMedia with { ReplyLanguage = choices[i].Code });
+            }),
+            canInherit ? Inherit(ownMedia.ReplyLanguage is null, () => SaveMedia(ownMedia with { ReplyLanguage = null })) : Hint("Padrão para os outros agentes.")));
+        body.Children.Add(Section("Memória", TextButton("Gerenciar memórias", () => { SaveBlocks(); ShowMemoryManager(agent.Id); })));
+        var grants = _cfg.DeviceAccessFor(agent.Id);
+        Button DeviceSwitch(string key, string name) => TextButton(name + (grants.Contains(key) ? " · permitido" : " · desativado"), () =>
+        {
+            SaveBlocks();
+            var next = grants.ToHashSet(StringComparer.Ordinal);
+            if (!next.Remove(key)) next.Add(key);
+            if (canInherit) _cfg.AgentDeviceAccess[agent.Id] = next; else _cfg.DeviceAccess = next;
+            SaveConfig();
+            EditAgentProfile(agent);
+        });
+        body.Children.Add(Section("Aparelho", DeviceSwitch(AssistantDeviceTools.Alarm, "Despertador"),
+            DeviceSwitch(AssistantDeviceTools.Calendar, "Agenda"), DeviceSwitch(AssistantDeviceTools.Email, "E-mail"),
+            canInherit ? Inherit(!_cfg.AgentDeviceAccess.ContainsKey(agent.Id), () =>
+            {
+                SaveBlocks();
+                _cfg.AgentDeviceAccess.Remove(agent.Id);
+                SaveConfig();
+                EditAgentProfile(agent);
+            }) : Hint("Padrão para os outros agentes.")));
+        if (!canInherit)
+        {
+            var instructions = new TextBox { Text = _cfg.Instructions, AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap, MinHeight = 90 };
+            instructions.TextChanged += (_, _) => _cfg.Instructions = instructions.Text ?? "";
+            instructions.LostFocus += (_, _) => SaveConfig();
+            body.Children.Add(Section("Instruções compartilhadas", instructions));
+        }
         body.Children.Add(blocksEditor);
         var save = TextButton("Salvar instruções", () => { SaveBlocks(); ShowSettings(); }, primary: true);
         body.Children.Add(save);
@@ -1736,7 +1944,7 @@ public sealed partial class AssistantPanel
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
                     Background = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Surface, on ? .14 : 1), BorderThickness = new Thickness(0),
-                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(detail, 12, m.Tools == false ? "#c0504d" : UrbeTheme.Text3) } }
+                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(detail, 12, m.Tools == false ? UrbeTokens.Color.Danger : UrbeTheme.Text3) } }
                 };
                 var id = m.Id;
                 b.Click += (_, _) => Choose(id);

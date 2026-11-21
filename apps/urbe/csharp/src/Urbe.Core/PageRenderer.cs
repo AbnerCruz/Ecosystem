@@ -114,7 +114,7 @@ public static class PageRenderer
                 .Append(MarkdownEngine.EscapeHtml(description)).Append("'>");
         }
         output.Append("<meta property='og:title' content='").Append(title)
-            .Append("'><meta name='generator' content='Urbe'>");
+            .Append("'><meta name='generator' content='Numa'>");
         if (fonts.Length > 0)
         {
             output.Append("<link rel='preconnect' href='https://fonts.googleapis.com'><link rel='preconnect' href='https://fonts.gstatic.com' crossorigin><link rel='stylesheet' href='https://fonts.googleapis.com/css2?")

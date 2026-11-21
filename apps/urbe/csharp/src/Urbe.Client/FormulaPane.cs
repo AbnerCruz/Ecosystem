@@ -50,7 +50,7 @@ public sealed class FormulaPane : Grid
             Background = UrbeTheme.Brush(UrbeTheme.Bg),
             Foreground = UrbeTheme.Brush(UrbeTheme.Text),
             FontFamily = UrbeTheme.MonoFont,
-            FontSize = 15,
+            FontSize = UrbeTokens.Type.Callout.Size,
             PlaceholderText = "Digite LaTeX: \\frac{a}{b}, x^2, \\sqrt{2}…"
         };
         foreach (var key in new[] { "TextControlBackground", "TextControlBackgroundPointerOver", "TextControlBackgroundFocused" })
@@ -303,10 +303,10 @@ public sealed class FormulaPane : Grid
             var c = _list[i];
             int index = i;
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*") };
-            var code = new TextBlock { Text = c.Cmd, FontFamily = UrbeTheme.MonoFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center };
+            var code = new TextBlock { Text = c.Cmd, FontFamily = UrbeTheme.MonoFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center };
             var prev = Formula(MathEditing.Snippet(c.Snip).Text.Replace("{}", "{\\square}", StringComparison.Ordinal), false, 15, out _) ?? new TextBlock();
             prev.Margin = new Thickness(10, 0);
-            var desc = new TextBlock { Text = c.Desc, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
+            var desc = new TextBlock { Text = c.Desc, FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(prev, 1);
             Grid.SetColumn(desc, 2);
             row.Children.Add(code);

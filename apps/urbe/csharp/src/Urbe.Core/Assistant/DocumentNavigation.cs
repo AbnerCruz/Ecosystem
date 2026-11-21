@@ -33,6 +33,17 @@ public static class DocumentNavigation
     }
 }
 
+/// <summary>CST-233: whether a PDF needs a password to be read (an owner-only password does not stop reading).</summary>
+public static class PdfLock
+{
+    public static bool IsLocked(byte[] bytes)
+    {
+        try { using var pdf = PdfDocument.Open(bytes); return false; }
+        catch (UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException) { return true; }
+        catch (Exception e) when (e is not OutOfMemoryException) { return false; }   // another problem is the reader's to tell
+    }
+}
+
 public sealed record DocumentWord(string Text,ReaderRegion Bounds);
 public static class DocumentWordGeometry
 {

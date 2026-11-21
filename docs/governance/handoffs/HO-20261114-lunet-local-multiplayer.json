@@ -43,9 +43,10 @@
     {
       "check": "Dois jogadores no mesmo celular em tela dividida e hot-seat",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/multiplayer.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/975); registro em docs/governance/responses/VAL-HO-20261114-lunet-local-multiplayer-444cebe229ad.md."
     }
   ],
   "known_issues": [

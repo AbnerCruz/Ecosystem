@@ -178,6 +178,26 @@ public sealed class AssistantRunJournalTests
         Assert.Contains(rebuilt.SelectMany(m => m.Content), b => b.ToolUseId == "n1" && b.IsError && b.Content.StartsWith("Precisa do usuário", StringComparison.Ordinal));
     }
 
+    /// <summary>CST-216: actions outside the vault cut by the process (video, alarm, event, e-mail) wait for the person, who is told where to look.</summary>
+    [Fact]
+    public void EffectsOutsideTheVaultAreNeverRepeatedAndSayWhereToLook()
+    {
+        var storage = new MemoryAssistantStorage();
+        var (_, journal) = Start(storage);
+        journal.Response(1, new AiChatMessage { Id = "m1", Role = "assistant", Content = [.. new[] { ("v", "generate_video"), ("a", "set_alarm"), ("e", "add_calendar_event"), ("m", "compose_email") }
+            .Select(c => new AiChatBlock { Type = "tool_use", Id = c.Item1, Name = c.Item2, Input = new System.Text.Json.Nodes.JsonObject() })] }, null);
+        journal.Intent("v", "generate_video", "h", null, null, null, null);
+        journal.Intent("a", "set_alarm", "h", null, null, null, null);
+        journal.Intent("e", "add_calendar_event", "h", null, null, null, null);
+        journal.Intent("m", "compose_email", "h", null, null, null, null);
+        var effects = AssistantRunJournal.Open(storage, "r1")!.Effects(new DocumentStore()).ToDictionary(e => e.Tool);
+        Assert.All(effects.Values, e => Assert.Equal(AiRunEffect.Uncertain, e.State));
+        Assert.Contains("cobrado", effects["generate_video"].Detail);
+        Assert.Contains("relógio", effects["set_alarm"].Detail);
+        Assert.Contains("agenda", effects["add_calendar_event"].Detail);
+        Assert.Contains("não envia", effects["compose_email"].Detail);
+    }
+
     [Fact]
     public async Task AnImageCutWhileBeingGenerated_IsNotGeneratedAgainWithoutThePerson()
     {

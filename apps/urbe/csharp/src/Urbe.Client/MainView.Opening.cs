@@ -46,7 +46,7 @@ public sealed partial class MainView
         if (_lastNames is null) return;
         _lastNames = null;
         if (Explorer.Status == "Atualizando…") Explorer.Status = _snapshot is null ? "Nenhuma pasta aberta" : null;
-        if (_snapshot is null) { LoadArea(null); Explorer.HomeTitle = Workspace.Title = "Urbe"; }
+        if (_snapshot is null) { LoadArea(null); Explorer.HomeTitle = Workspace.Title = "Numa"; }
         RefreshNotes();
     }
 

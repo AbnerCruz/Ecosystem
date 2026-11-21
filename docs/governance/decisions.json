@@ -2183,7 +2183,7 @@
       "decision": "Alternativa A — A — Adotar Numa agora no app (recomendada só se o risco for aceito) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/866).",
       "decidedAt": "2026-10-30",
       "record": "docs/governance/responses/DEC-0060.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0061",
@@ -2316,6 +2316,117 @@
         "docs/architecture/audits/lunet-estado-atual-2026-11-15.md"
       ],
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0065",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Automação plena: sem validação no aparelho e sem aprovações, salvo o extremamente crítico",
+      "context": "Ordem expressa do proprietário em 19/11/2026: as etapas de validação no aparelho e as aprovações atrasam o trabalho; quer merge automático e responder só decisões extremamente críticas, e ser informado do que foi implementado.",
+      "question": "O que ainda exige o proprietário?",
+      "alternatives": [
+        {
+          "option": "A — Só o extremamente crítico",
+          "consequences": "Tudo integra quando verde; o proprietário só aprova mudanças no portão (política, checker, integrador e seus workflows), chaves de assinatura e estágio da versão."
+        },
+        {
+          "option": "B — Manter validações e aprovações por classe",
+          "consequences": "Mantém as etapas que o proprietário mandou remover."
+        }
+      ],
+      "consequences": "Nenhuma validação humana pendente é criada ou exibida; tarefas concluem com evidência automática dita como tal; integração automática para todas as classes, exceto 'extreme'.",
+      "manifestCompatibility": "NN-017 deixa de ser etapa obrigatória e passa a exigir só que nada se apresente como validado no aparelho sem ter sido; NN-018 continua (evidência automática); os demais NN preservados.",
+      "raisedBy": "claude-code-urbe-editor",
+      "raisedAt": "2026-11-19",
+      "decision": "A, conforme ordem direta do proprietário nesta conversa.",
+      "decidedAt": "2026-11-19",
+      "record": "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+      "related": [
+        "docs/governance/integration-policy.json",
+        "MANIFEST.md",
+        "docs/governance/definition-of-done.md"
+      ],
+      "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0066",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: como executar código escrito pela IA com isolamento (ADR-0051)",
+      "context": "O plano Numa 2.6 pede que o Assistente execute código (cálculos, dados, gráficos, conversões) sem terminal (CST-201–204, 206–212). Executar código de um modelo é executar código não confiável: precisa de uma fronteira que impeça acesso ao vault, aos segredos, à rede e consumo ilimitado. A pesquisa de 19/11/2026 (ADR-0051) confirmou que o Wasmtime para .NET não tem binário Android e que existe um interpretador WebAssembly só em C# (WACS, Apache-2.0).",
+      "question": "Qual fronteira de execução de código o Urbe adota?",
+      "alternatives": [
+        {
+          "option": "A1 — WebAssembly interpretado em C# (WACS + QuickJS), no app",
+          "consequences": "Igual no Android e no Windows, offline, sem binário nativo; mais lento (scripts curtos). Prova de conceito no aparelho antes de entrar na release."
+        },
+        {
+          "option": "A2 — Wasmtime (nativo)",
+          "consequences": "Rápido; no Android exige compilar e manter o Wasmtime com o NDK (dezenas de MB no APK)."
+        },
+        {
+          "option": "C — Sandbox remoto opcional",
+          "consequences": "Funciona em qualquer aparelho, mas envia código e dados a um serviço externo e exige internet e chave."
+        },
+        {
+          "option": "D — Não executar código",
+          "consequences": "Sem nova fronteira; o Assistente fica no cálculo e nos dados próprios; CST-201–204 não são feitos."
+        }
+      ],
+      "recommendation": "A1, com C como complemento explícito: a mesma fronteira nas duas plataformas, sem binário nativo novo; a execução recebe cópias dos arquivos liberados, nunca o vault, e aparece nas etapas do Assistente com código, saída e limites.",
+      "consequences": "Define a fronteira de segurança da execução de código (NN-016) e libera CST-201–204 e 206–212 na variante escolhida.",
+      "manifestCompatibility": "NN-016 (permissões antes da autonomia) e NN-011 (decisão explícita); nenhum dado do vault muda; nenhum Product passa a depender de outro.",
+      "related": [
+        "docs/adr/0051-urbe-execucao-de-codigo-isolada.md"
+      ],
+      "raisedBy": "claude-code-urbe-editor",
+      "raisedAt": "2026-11-19",
+      "decision": "Alternativa B — A2 — Wasmtime (nativo) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/1007).",
+      "decidedAt": "2026-11-21",
+      "record": "docs/governance/responses/DEC-0066.md",
+      "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0067",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: narração neural em pt-BR e a licença do fonemizador",
+      "context": "A #1004 pede narração neural natural, offline. Medido em 20/11/2026 (TTS-NEURAL-20261120.md): Kokoro-82M (Apache-2.0) e Piper pt-BR (dataset CC0) funcionam em pt-BR pelo sherpa-onnx 1.13.8, que embute o fonemizador espeak-ng; o sherpa-onnx 2.0 retirou o espeak-ng e exige fonemizador externo. O espeak-ng e o piper_phonemize são GPL-3.0. As amostras WAV foram entregues ao proprietário para escuta.",
+      "question": "Como o Urbe fonemiza o português para a voz neural local?",
+      "alternatives": [
+        {
+          "option": "A — espeak-ng (GPL-3.0) junto do modelo baixado",
+          "consequences": "Funciona já, com Kokoro ou Piper; o app passa a distribuir componente GPL-3.0 (no APK ou no download do modelo), com as obrigações dessa licença."
+        },
+        {
+          "option": "B — fonemizador pt-BR permissivo",
+          "consequences": "Sem GPL; precisa achar ou construir um G2P pt-BR (regras, léxico ou modelo pequeno) e provar a qualidade; a voz neural local atrasa."
+        },
+        {
+          "option": "C — só endpoint externo configurado pela pessoa",
+          "consequences": "Sem fonemizador no app; exige internet, conta ou chave e envio do texto ao serviço com autorização."
+        },
+        {
+          "option": "D — manter a voz do sistema por enquanto",
+          "consequences": "Nada novo a licenciar; a narração continua com o timbre do aparelho."
+        }
+      ],
+      "recommendation": "B como destino e D enquanto isso, com C opcional: o provedor único de síntese é feito agora com a voz do sistema; a voz neural local entra quando houver fonemizador permissivo ou se o proprietário aceitar A.",
+      "consequences": "Define se o Urbe distribui componente GPL e quando a voz neural local chega ao aparelho.",
+      "manifestCompatibility": "NN-016 (texto não sai do aparelho sem autorização) e NN-011 (decisão explícita); nenhum dado do vault muda.",
+      "related": [
+        "apps/urbe/docs/csharp/TTS-NEURAL-20261120.md",
+        "https://github.com/AbnerCruz/Ecosystem/issues/1004"
+      ],
+      "raisedBy": "claude-code-urbe-editor",
+      "raisedAt": "2026-11-20",
+      "decision": "Alternativa A — A — espeak-ng (GPL-3.0) junto do modelo baixado (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/1008).",
+      "decidedAt": "2026-11-21",
+      "record": "docs/governance/responses/DEC-0067.md",
+      "consequencesApplied": true
     }
   ]
 }

@@ -309,6 +309,43 @@ public sealed class AssistantWebSession : IDisposable
             "\nNão use snippets como prova. Abra páginas relevantes com web_fetch antes de afirmar fatos.";
     }
 
+    public async Task DownloadReferenceVideoAsync(string url, Stream destination)
+    {
+        RequireEnabled();
+        const long maxBytes = 96L * 1024 * 1024;
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_cancel);
+        timeout.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_config.TimeoutSeconds, 3, 60)));
+        var current = ValidateUrl(url);
+        for (int redirects = 0; redirects <= 5; redirects++)
+        {
+            await ValidateDns(current);
+            using var response = await _http.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            if ((int)response.StatusCode is 301 or 302 or 303 or 307 or 308 &&
+                response.Headers.Location is { } location)
+            {
+                current = ValidateUrl(new Uri(current, location).AbsoluteUri);
+                continue;
+            }
+            var mime = response.Content.Headers.ContentType?.MediaType;
+            if (!response.IsSuccessStatusCode || mime?.StartsWith("video/", StringComparison.OrdinalIgnoreCase) != true)
+                throw new AiToolException("Use um link público direto para um arquivo de vídeo ou anexe o arquivo.");
+            if (response.Content.Headers.ContentLength > maxBytes)
+                throw new AiToolException("O vídeo excede 96 MB neste fluxo de download. Anexe o arquivo do dispositivo.");
+            await using var input = await response.Content.ReadAsStreamAsync(timeout.Token);
+            var buffer = new byte[65536];
+            long size = 0;
+            int read;
+            while ((read = await input.ReadAsync(buffer, timeout.Token)) > 0)
+            {
+                size += read;
+                if (size > maxBytes) throw new AiToolException("O vídeo excede 96 MB. Anexe o arquivo do dispositivo.");
+                await destination.WriteAsync(buffer.AsMemory(0, read), timeout.Token);
+            }
+            return;
+        }
+        throw new AiToolException("Excesso de redirecionamentos no link do vídeo.");
+    }
+
     public async Task<string> FetchAsync(string url, int startLine = 1, int maxLines = 100)
     {
         RequireEnabled();
@@ -351,7 +388,11 @@ public sealed class AssistantWebSession : IDisposable
             var take = Math.Clamp(maxLines, 1, 180);
             var selected = string.Join("\n", lines.Skip(from - 1).Take(take));
             if (selected.Length > 24_000) selected = selected[..24_000] + "\n[Truncado. Peça outro trecho.]";
-            var src = Register(title, initial.AbsoluteUri, current.AbsoluteUri, published, "página acessada");
+            // CST-124: read from the top without a gap up to its last line = the whole page; otherwise a partial reading
+            var key = current.AbsoluteUri.ToLowerInvariant();
+            var upTo = _readTo.GetValueOrDefault(key);
+            if (from <= upTo + 1) _readTo[key] = upTo = Math.Max(upTo, Math.Min(lines.Length, from + take - 1));
+            var src = Register(title, initial.AbsoluteUri, current.AbsoluteUri, published, upTo >= lines.Length ? "página acessada" : "leitura parcial");
             return "[" + src.Id + "] " + title + "\nURL original: " + src.OriginalUrl +
                 "\nURL final: " + src.FinalUrl + "\nPublicado/atualizado: " + (src.Published ?? "não verificado") +
                 "\nAcessado em: " + src.Accessed + "\nLinhas " + from + "–" + Math.Min(lines.Length, from + take - 1) +
@@ -367,12 +408,18 @@ public sealed class AssistantWebSession : IDisposable
         if (!_config.Enabled) throw new AiToolException("Pesquisa na internet desativada nas preferências de privacidade.");
     }
 
+    private static int Rank(string status) => status switch { "página acessada" => 2, "leitura parcial" => 1, _ => 0 };
+
+    /// <summary>Lines read from the top without a gap, per page (CST-124).</summary>
+    private readonly Dictionary<string, int> _readTo = new(StringComparer.Ordinal);
+
     private AiWebSource Register(string title, string original, string final, string? published, string status)
     {
         var existing = _sources.FirstOrDefault(s => s.FinalUrl.Equals(final, StringComparison.OrdinalIgnoreCase));
         if (existing is not null)
         {
-            if (status == "página acessada" && existing.Status != status)
+            // a reading only ever goes up: search result → partial reading → whole page
+            if (Rank(status) > Rank(existing.Status))
             {
                 var upgraded = existing with { Title = title, OriginalUrl = original, Published = published, Status = status };
                 _sources[_sources.IndexOf(existing)] = upgraded;

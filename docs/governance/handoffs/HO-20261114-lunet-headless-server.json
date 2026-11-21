@@ -47,9 +47,10 @@
     {
       "check": "Rodar lunet-server num PC com um projeto exportado e conectar um celular",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/multiplayer.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-18 (Issue https://github.com/AbnerCruz/Ecosystem/issues/976); registro em docs/governance/responses/VAL-HO-20261114-lunet-headless-server-f57fcd5dee6e.md."
     }
   ],
   "known_issues": [

@@ -22,7 +22,7 @@ public static class FormatSupportMatrix
 
     public static readonly IReadOnlyList<FormatSupport> All =
     [
-        new("Nota Markdown", [".md", ".markdown"], SupportLevel.Complete, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms, "Abre no editor do Urbe."),
+        new("Nota Markdown", [".md", ".markdown"], SupportLevel.Complete, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms, "Abre no editor do Numa."),
         new("Texto simples", [".txt", ".text", ".log"], SupportLevel.Complete, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms,
             "Arquivos grandes são mostrados em partes; a busca percorre o arquivo inteiro."),
         new("RTF", [".rtf"], SupportLevel.Partial, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms,
@@ -44,13 +44,13 @@ public static class FormatSupportMatrix
             "Leitura, não edição: slides desenhados no aparelho com texto, retângulos, elipses, linhas, imagens, tabelas e notas do apresentador, " +
             "com as decorações do slide mestre. Animações, transições, gráficos, equações, formas livres e mídia não são reproduzidos; cada slide diz o que ficou de fora."),
         new("PowerPoint 97–2003", [".ppt"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
-            "Formato binário antigo: o Urbe não o lê. Abra em outro app, ou salve como .pptx para ler aqui; o original não é modificado."),
+            "Formato binário antigo: o Numa não o lê. Abra em outro app, ou salve como .pptx para ler aqui; o original não é modificado."),
         new("Documento legado do Office", [".doc", ".xls", ".xlsx", ".ods"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
-            "O Urbe não lê este formato; o original é aberto em outro app sem conversão."),
+            "O Numa não lê este formato; o original é aberto em outro app sem conversão."),
         new("Quadrinhos CBZ", [".cbz"], SupportLevel.Complete, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
             "Páginas em ordem natural; o texto dos balões não é pesquisável."),
         new("Quadrinhos CBR/CB7", [".cbr", ".cb7", ".cbt"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
-            "RAR, 7z e TAR não são abertos pelo Urbe; converta para CBZ ou abra em outro app."),
+            "RAR, 7z e TAR não são abertos pelo Numa; converta para CBZ ou abra em outro app."),
         new("Imagem", [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"], SupportLevel.Complete, SupportLevel.Partial, SupportLevel.Partial, true, BothPlatforms,
             "Busca e seleção por OCR de uma região."),
         new("Imagem SVG", [".svg"], SupportLevel.Partial, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms, "Mostrada como código-fonte."),
@@ -62,7 +62,7 @@ public static class FormatSupportMatrix
             "Mostrada isolada, sem rede; a busca é na fonte."),
         new("Arquivo ZIP", [".zip"], SupportLevel.Partial, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms, "Lista as entradas; nada é extraído."),
         new("Arquivo compactado", [".7z", ".rar", ".tar", ".gz"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
-            "O Urbe não abre este formato; use outro app."),
+            "O Numa não abre este formato; use outro app."),
     ];
 
     private static readonly Dictionary<string, FormatSupport> ByExtension =

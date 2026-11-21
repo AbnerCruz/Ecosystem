@@ -26,7 +26,8 @@ public sealed record DocumentSearch(int Pages, int LastPage, int NextPage, bool 
 public interface IAssistantDocumentVision
 {
     Task<string> ExaminePageAsync(string reference, byte[] singlePagePdf, int page, CancellationToken cancellationToken = default);
-    Task<string> ExamineImageAsync(string reference, byte[] image, string mimeType, CancellationToken cancellationToken = default);
+    /// <param name="instruction">What to look for; null reads the image as a document (text, figures, formulas).</param>
+    Task<string> ExamineImageAsync(string reference, byte[] image, string mimeType, string? instruction = null, CancellationToken cancellationToken = default);
 }
 
 /// <summary>CST-212 partial: trustworthy PDF text-layer evidence; never claims to OCR scanned pixels.</summary>
@@ -150,6 +151,10 @@ public static class AssistantDocumentTools
         if (data is null) throw new AiToolException("PDF não encontrado no contexto autorizado ou acima do limite.");
         try { return execute(data); }
         catch (AiToolException) { throw; }
+        catch (UglyToad.PdfPig.Exceptions.PdfDocumentEncryptedException)
+        {
+            throw new AiToolException("Este PDF está protegido por senha e o Numa ainda não lê PDFs com senha. Diga isso à pessoa; não tente adivinhar o conteúdo.");
+        }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             throw new AiToolException("Falha ao ler PDF (" + e.GetType().Name + "); arquivo preservado.");

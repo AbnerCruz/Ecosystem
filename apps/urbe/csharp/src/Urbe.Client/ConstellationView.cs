@@ -318,7 +318,7 @@ public sealed class ConstellationPanel : Grid
             Children =
             {
                 new TextBlock { Text = "Constelação", FontSize = 18, FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
-                new TextBlock { Text = "Toque numa estrela para ver as ligações; de novo, para abrir.", FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap }
+                new TextBlock { Text = "Toque numa estrela para ver as ligações; de novo, para abrir.", FontSize = UrbeTokens.Type.Caption.Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap }
             }
         };
         var head = new DockPanel { Margin = new Thickness(6, 8, 12, 6) };
