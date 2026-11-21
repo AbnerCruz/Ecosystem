@@ -114,7 +114,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public async Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default)
     {
         var activity = MainActivity.Current
-            ?? throw new InvalidOperationException("A Activity do Urbe ainda não está pronta.");
+            ?? throw new InvalidOperationException("A Activity do Numa ainda não está pronta.");
         var pending = new TaskCompletionSource<AndroidUri?>(TaskCreationOptions.RunContinuationsAsynchronously);
         activity.RunOnUiThread(async () =>
         {
@@ -743,7 +743,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 var sourceUri = FindDocument(tree, source)
                     ?? throw new FileNotFoundException("O arquivo não existe na pasta.", source);
                 if (create && FindDocument(tree, trashPath) is not null)
-                    throw new IOException("A pasta foi modificada fora do Urbe: " + trashPath);
+                    throw new IOException("A pasta foi modificada fora do Numa: " + trashPath);
                 WriteVerified(tree, trashPath, trashBytes);
                 if (!DocumentsContract.DeleteDocument(Resolver, sourceUri))
                     throw new IOException("O provedor não removeu o arquivo: " + source);
@@ -774,7 +774,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 cancellationToken.ThrowIfCancellationRequested();
                 var uris = sources.Select(s => FindDocument(tree, s) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", s)).ToList();
                 if (create && FindDocument(tree, trashPath) is not null)
-                    throw new IOException("A pasta foi modificada fora do Urbe: " + trashPath);
+                    throw new IOException("A pasta foi modificada fora do Numa: " + trashPath);
                 // the trash holds every text before any file goes
                 WriteVerified(tree, trashPath, trashBytes);
                 for (int i = 0; i < uris.Count; i++)
@@ -810,6 +810,9 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveNotesRecordAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanNotesRecordWrite(files, json), "O registro das notas", cancellationToken);
 
+    public Task SaveFlashcardsAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanFlashcardsWrite(files, json), "Os flashcards", cancellationToken);
+
     public Task SaveAreaLayoutAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanAreaLayoutWrite(files, json), "A aparência das caixas", cancellationToken);
 
@@ -834,7 +837,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (create && FindDocument(tree, target) is not null)
-                    throw new IOException("A pasta foi modificada fora do Urbe: " + target);
+                    throw new IOException("A pasta foi modificada fora do Numa: " + target);
                 WriteVerified(tree, target, plannedBytes);
                 if (FindDocument(tree, target) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(plannedBytes))
                     throw new IOException(what + " não passou na verificação: " + target);

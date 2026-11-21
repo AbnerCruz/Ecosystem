@@ -16,7 +16,7 @@ public sealed class VaultWriterPlanOneTests
         {
             var d = new DirectoryInfo(AppContext.BaseDirectory);
             while (d is not null && !File.Exists(Path.Combine(d.FullName, "Urbe.Portable.slnx"))) d = d.Parent;
-            return d?.FullName ?? throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Urbe.");
+            return d?.FullName ?? throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Numa.");
         }
     }
 

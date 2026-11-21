@@ -88,7 +88,7 @@ public sealed partial class AssistantPanel
     public void StopCompact() => Stop();
 
     /// <summary>Builds only the surface required NOW: running, confirmation, question, or result.</summary>
-    public Control CompactContent()
+    public Control CompactContent(double height = 380)
     {
         var status = CompactStatus;
         var agent = AgentNames.Named(AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents), _cfg).Name;
@@ -108,15 +108,37 @@ public sealed partial class AssistantPanel
             _ => "Trabalho concluído"
         };
 
-        // Fixed-height popup: only the transcript scrolls, never the composer.
-        var body = new Grid { Height = 380, RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto") };
-        var heading = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 0, 5) };
-        heading.Children.Add(Label(agent, 13, UrbeTheme.Text3, FontWeight.SemiBold));
-        heading.Children.Add(Wrap(title, 17, UrbeTheme.Text, FontWeight.SemiBold));
+        // Fixed-height panel: only the conversation scrolls, never the header nor the composer.
+        var body = new Grid { Height = height, RowDefinitions = new RowDefinitions("Auto,*,Auto") };
+        // header: who and what now on the left; open the whole conversation and close on the right (always reachable)
+        var heading = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+        var tools = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        if (status == "thinking") tools.Children.Add(TextButton("Parar", StopCompact));
+        var expand = new Ui.UrbeIconButton(UrbeTheme.Icons.Expand, "Abrir conversa", 18);
+        expand.Click += (_, _) => Open();
+        var close = new Ui.UrbeIconButton(UrbeTheme.Icons.Close, "Fechar", 18);
+        close.Click += (_, _) => DismissCompact();
+        tools.Children.Add(expand);
+        tools.Children.Add(close);
+        DockPanel.SetDock(tools, Dock.Right);
+        heading.Children.Add(tools);
+        var who = new StackPanel { Spacing = 0, VerticalAlignment = VerticalAlignment.Center };
+        who.Children.Add(Wrap(title, 15, UrbeTheme.Text, FontWeight.SemiBold));
+        who.Children.Add(Label(agent, 12, UrbeTheme.Text3));
+        heading.Children.Add(who);
         Grid.SetRow(heading, 0);
         body.Children.Add(heading);
 
         var transcript = new StackPanel { Spacing = UrbeTokens.Space.S };
+        // what the agent did, in words (the same reading as the full chat's steps)
+        foreach (var call in calls.Where(b => b.Name is not ("update_plan" or "ask_user")).TakeLast(3))
+        {
+            var done = ResultFor(call.Id);
+            string label;
+            try { label = ToolByName(call.Name)?.Label(call.Input as System.Text.Json.Nodes.JsonObject ?? new()) ?? call.Name; }
+            catch (Exception e) when (e is not OutOfMemoryException) { label = call.Name; }
+            transcript.Children.Add(Wrap((done is null ? "⋯ " : done.IsError ? "✗ " : "✓ ") + (done is { IsError: false } ? StepWords.Past(label) : label), 13, UrbeTheme.Text3));
+        }
 
         if (status == "approval" && _pending is { } pending)
         {
@@ -168,7 +190,6 @@ public sealed partial class AssistantPanel
                 Spacing = 3, Margin = new Thickness(0, 3),
                 HorizontalAlignment = user ? HorizontalAlignment.Right : HorizontalAlignment.Stretch
             };
-            bubble.Children.Add(Label(user ? "Você" : agent, 13, UrbeTheme.Text3, FontWeight.SemiBold));
             var content = new StackPanel { Spacing = 4 };
             if (text.Length > 0)
             {
@@ -188,12 +209,9 @@ public sealed partial class AssistantPanel
             }
             if (attachments.Length > 0)
                 content.Children.Add(Wrap("Anexos: " + attachments, 13, UrbeTheme.Text2));
-            bubble.Children.Add(new Border
-            {
-                Child = content, Padding = new Thickness(10, 8),
-                CornerRadius = new CornerRadius(12),
-                Background = UrbeTheme.Brush(user ? UrbeTheme.Accent : UrbeTheme.Surface, user ? .14 : 1)
-            });
+            bubble.Children.Add(user
+                ? new Border { Child = content, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(14), MaxWidth = 420, Background = UrbeTheme.Brush(UrbeTheme.Accent, .14) }
+                : content);
             transcript.Children.Add(bubble);
         }
         if (transcript.Children.Count == 0)
@@ -257,7 +275,7 @@ public sealed partial class AssistantPanel
                 Open();
                 if (_cfg.Providers.Count == 0)
                 {
-                    if (HasDeviceAi) ShowDevice(); else ShowSettings("openrouter");
+                    ShowSettings("openrouter");
                 }
                 else _ = PickModelAsync();
                 return;
@@ -274,8 +292,15 @@ public sealed partial class AssistantPanel
                 SendCompact();
             }
         };
-        var send = TextButton("Enviar", SendCompact);
-        send.MinHeight = UrbeTokens.MinTouch;
+        // the same round send button as the full conversation
+        var send = new Button
+        {
+            Width = 44, Height = 44, CornerRadius = new CornerRadius(22), Padding = new Thickness(0), Margin = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Bottom, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
+            Background = UrbeTheme.Brush(UrbeTheme.Accent), Content = UrbeTheme.Icon(UrbeTheme.Icons.ArrowUp, 20, "#ffffff", 2.2)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(send, "Enviar");
+        send.Click += (_, _) => SendCompact();
         var composer = new DockPanel { Margin = new Thickness(0, 6, 0, 4) };
         DockPanel.SetDock(send, Dock.Right);
         composer.Children.Add(send);
@@ -283,13 +308,6 @@ public sealed partial class AssistantPanel
         Grid.SetRow(composer, 2);
         body.Children.Add(composer);
 
-        var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
-        if (status == "thinking")
-            actions.Children.Add(TextButton("Parar", StopCompact));
-        actions.Children.Add(LinkButton("Abrir conversa", Open));
-        actions.Children.Add(LinkButton("Fechar", DismissCompact));
-        Grid.SetRow(actions, 3);
-        body.Children.Add(actions);
         return body;
     }
 }

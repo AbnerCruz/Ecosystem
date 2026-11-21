@@ -106,7 +106,9 @@ public sealed class FormSession
         {
             if (!Visible(f)) continue;
             if (f.Type == "calculated")
-                result[f.Id] = f.Sum.Sum(id => double.TryParse((result[id] ?? Values[id])?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : 0);
+                // a field the conditions hide is not part of the answer, so it is not part of a sum either
+                result[f.Id] = f.Sum.Where(id => Definition.Fields.FirstOrDefault(x => x.Id == id) is not { } source || Visible(source))
+                    .Sum(id => double.TryParse((result[id] ?? Values[id])?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? n : 0);
             else result[f.Id] = Values[f.Id]?.DeepClone();
         }
         return result;
@@ -138,21 +140,39 @@ public sealed class FormSession
                     : f.Min is { } min ? "Use um valor a partir de " + Show(min) + "." : "Use um valor até " + Show(f.Max!.Value) + ".";
             return null;
         }
-        bool ok = f.Type switch
+        if (f.Type == "repeat") return RepeatError(f, v, notes, folders);
+        // each kind says what to write, never only "invalid" (CST-047/048)
+        return f.Type switch
         {
-            "checkbox" or "toggle" => v is JsonValue j && j.TryGetValue<bool>(out _),
-            "date" => DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-            "time" => TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-            "select" => f.Options.Contains(text, StringComparer.Ordinal),
-            "multi_select" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out var s) && f.Options.Contains(s, StringComparer.Ordinal)),
-            "list" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out _)),
-            "repeat" => v is JsonArray a && (f.Min is null || a.Count >= f.Min) && (f.Max is null || a.Count <= f.Max) && a.All(item => item is JsonObject row && new FormSession { Definition = new() { Fields = f.Fields }, Values = row }.Validate(notes, folders).Count == 0),
-            "note" => notes is null || notes.Contains(text),
-            "folder" => folders is null || folders.Contains(text),
-            "color" => text.Length == 7 && text[0] == '#' && int.TryParse(text[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _),
-            _ => v is JsonValue j && j.TryGetValue<string>(out _) && (f.Min is null || text.Length >= f.Min) && (f.Max is null || text.Length <= f.Max)
+            "checkbox" or "toggle" => v is JsonValue j && j.TryGetValue<bool>(out _) ? null : "Marque ou desmarque.",
+            "date" => DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? null : "Use uma data como 2026-12-31.",
+            "time" => TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? null : "Use uma hora como 14:30.",
+            "select" => f.Options.Contains(text, StringComparer.Ordinal) ? null : "Escolha uma das opções.",
+            "multi_select" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out var s) && f.Options.Contains(s, StringComparer.Ordinal)) ? null : "Escolha entre as opções.",
+            "list" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out _)) ? null : "Use uma lista de textos.",
+            "note" => notes is null || notes.Contains(text) ? null : "Escolha uma nota que existe no vault.",
+            "folder" => folders is null || folders.Contains(text) ? null : "Escolha uma pasta que existe no vault.",
+            "color" => text.Length == 7 && text[0] == '#' && int.TryParse(text[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _) ? null : "Use uma cor como #3366cc.",
+            _ => v is not JsonValue t || !t.TryGetValue<string>(out _) ? "Use um texto."
+                : f.Min is { } least && text.Length < least ? "Use pelo menos " + Show(least) + " caracteres."
+                : f.Max is { } most && text.Length > most ? "Use no máximo " + Show(most) + " caracteres." : null
         };
-        return ok ? null : "Valor inválido para " + f.Label + ".";
+    }
+
+    private static string? RepeatError(FormField f, JsonNode v, IReadOnlyCollection<string>? notes, IReadOnlyCollection<string>? folders)
+    {
+        if (v is not JsonArray rows) return "Adicione os itens.";
+        string Items(double n) => Show(n) + (n == 1 ? " item." : " itens.");
+        if (f.Min is { } least && rows.Count < least) return "Adicione pelo menos " + Items(least);
+        if (f.Max is { } most && rows.Count > most) return "Use no máximo " + Items(most);
+        for (int i = 0; i < rows.Count; i++)
+        {
+            if (rows[i] is not JsonObject row) return "Item " + (i + 1) + ": preencha os campos.";
+            var item = new FormSession { Definition = new() { Fields = f.Fields }, Values = row };
+            foreach (var field in f.Fields.Where(item.Visible))
+                if (item.ErrorFor(field, notes, folders) is { } error) return "Item " + (i + 1) + " — " + field.Label + ": " + error;
+        }
+        return null;
     }
 
     // the person's way of writing numbers (pt-BR): 0,5

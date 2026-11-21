@@ -7,7 +7,7 @@ namespace Urbe.Core;
 /// <summary>Where a source was left. <paramref name="Total"/> is the count of its parts (PDF pages, EPUB spine items,
 /// slides) when the reader knew it; files written before CST-241 have none.</summary>
 public sealed record ReaderLocation(int Part, int Offset = 0, double Scroll = 0, int? Total = null);
-public sealed record ReaderPreferences(double FontSize = 18, double LineHeight = 1.6, double Zoom = 1, string Theme = "system", double Margin = 5);
+public sealed record ReaderPreferences(double FontSize = 18, double LineHeight = 1.6, double Zoom = 1, string Theme = "system", double Margin = 5, bool Paged = false);
 /// <summary>The last look chosen in one kind of reader (<see cref="ReaderKinds"/>), used for sources opened for the
 /// first time; never the editor's preferences.</summary>
 public sealed record ReaderDefault(string Reader, ReaderPreferences Preferences, long Updated);

@@ -108,6 +108,10 @@ public sealed partial class MarkdownReader
     /// <summary>CST-207: reads a vault file or note as text for ```dados blocks (null without a vault).</summary>
     public Func<string, Task<string?>>? DataReader { get; set; }
     public Action<string>? ProgressEditRequested { get; set; }
+    /// <summary>CST-227: a numeric goal's − / + was tapped (by how much).</summary>
+    public Action<decimal>? ProgressStepRequested { get; set; }
+    /// <summary>CST-228: the pending tasks of a checklist summary were asked for.</summary>
+    public Action<NoteProgressResult>? ProgressPendingRequested { get; set; }
 
     public Control Build(IReadOnlyList<RichNode> nodes)
     {
@@ -546,13 +550,26 @@ public sealed partial class MarkdownReader
             Avalonia.Automation.AutomationProperties.SetName(bar, result.Label + ": " + result.Summary);
             panel.Children.Add(bar);
             panel.Children.Add(new TextBlock { Text = result.Summary, FontSize = Size * .85, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
-            if (ProgressEditRequested is not null)
+            var actions = new WrapPanel { Orientation = Orientation.Horizontal };
+            Button Action(string text, string name, Action run)
             {
-                var edit = new Button { Content = "Configurar progresso", MinHeight = 44, HorizontalAlignment = HorizontalAlignment.Left };
-                Avalonia.Automation.AutomationProperties.SetName(edit, "Configurar progresso: " + result.Label);
-                edit.Click += (_, e) => { e.Handled = true; ProgressEditRequested?.Invoke(code); };
-                panel.Children.Add(edit);
+                var b = new Button { Content = text, MinHeight = 44, MinWidth = 44, Margin = new Thickness(0, 0, 8, 4), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+                Avalonia.Automation.AutomationProperties.SetName(b, name);
+                b.Click += (_, e) => { e.Handled = true; run(); };
+                actions.Children.Add(b);
+                return b;
             }
+            var counted = code.Contains("source:", StringComparison.Ordinal);
+            if (ProgressStepRequested is { } step && result.IsValid && !counted)
+            {
+                Action("−", "Diminuir " + result.Label, () => step(-1)).IsEnabled = result.Value > 0;
+                Action("+", "Aumentar " + result.Label, () => step(1)).IsEnabled = result.Value < result.Total;
+            }
+            if (ProgressPendingRequested is { } pending && result.Pending.Count > 0)
+                Action("Ver pendentes (" + result.Pending.Count + ")", "Ver tarefas pendentes de " + result.Label, () => pending(result));
+            if (ProgressEditRequested is not null)
+                Action("Configurar", "Configurar progresso: " + result.Label, () => ProgressEditRequested?.Invoke(code));
+            if (actions.Children.Count > 0) panel.Children.Add(actions);
             return new Border { Child = panel, Padding = new Thickness(12), Margin = new Thickness(0, Size * .6), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), CornerRadius = new CornerRadius(10) };
         }
         // CST-174: a ```quiz block is answered by touch

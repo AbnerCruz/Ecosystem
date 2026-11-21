@@ -13,7 +13,7 @@ public sealed record NoteDependent(string Kind, string Path, string Detail);
 /// </summary>
 public static partial class NoteUsage
 {
-    public const string Publication = "publicação", Data = "dados", Progress = "progresso", Embed = "incorporação", Link = "ligação";
+    public const string Publication = "publicação", Data = "dados", Progress = "progresso", Embed = "incorporação", Link = "ligação", Adaptation = "adaptação";
 
     public static IReadOnlyList<NoteDependent> Of(DocumentStore store, UrbeDocument note) => OfMany(store, [note])[note.Id];
 
@@ -59,6 +59,10 @@ public static partial class NoteUsage
             }
             if (!ArtifactModel.IsNote(doc.Path)) continue;
             var text = doc.Content;
+            // CST-155/226: an adaptation names its source by id; a change to the source is checked there
+            if (text.StartsWith("---", StringComparison.Ordinal) && text.Contains("adaptacao_id", StringComparison.Ordinal) &&
+                EditorialNotes.Read(text) is { } adapted && adapted.OriginId != doc.Id && found.TryGetValue(adapted.OriginId, out var origin))
+                origin.Add(new NoteDependent(Adaptation, doc.Path, adapted.Kind.ToLowerInvariant() + " desta nota"));
             if (text.Contains("```", StringComparison.Ordinal))
             {
                 foreach (var source in Urbe.Core.Data.DataBlock.Sources(text))

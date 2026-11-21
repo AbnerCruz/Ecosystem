@@ -42,7 +42,7 @@ public sealed class PageRichBlockRendererTests
                 {"type":"about","props":{"title":"Sobre","image":"javascript:alert(1)","markdown":"Bio **forte**."}},
                 {"type":"copyright","props":{"markdown":"Copyright **2026**"}},
                 {"type":"dedication","props":{"kind":"epigraph","markdown":"Para todos.","author":"Pessoa"}},
-                {"type":"colophon","props":{"markdown":"Produzido no **Urbe**."}}
+                {"type":"colophon","props":{"markdown":"Produzido no **Numa**."}}
               ]
             }
             """);
@@ -73,7 +73,7 @@ public sealed class PageRichBlockRendererTests
         Assert.Contains("Bio <strong>forte</strong>.", html, StringComparison.Ordinal);
         Assert.Contains("Copyright <strong>2026</strong>", html, StringComparison.Ordinal);
         Assert.Contains("bk-ded-author", html, StringComparison.Ordinal);
-        Assert.Contains("Produzido no <strong>Urbe</strong>.", html, StringComparison.Ordinal);
+        Assert.Contains("Produzido no <strong>Numa</strong>.", html, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -167,4 +167,37 @@ public sealed class CalculatorIntegrationTests
         // the note keeps only its lines
         Assert.DoesNotContain("50", store.Get(note.Id)!.Content.Replace("12,5", ""));
     }
+
+    /// <summary>
+    /// Casos de uma conversa real (simulado de Cálculo 2, beta.57): a integral de (1+cos x)² em [0, 2π] dava 8π/3 em vez de
+    /// 3π, e o Assistente refez as contas dezenas de vezes para entender a divergência. Valores de referência analíticos.
+    /// </summary>
+    [Theory]
+    [InlineData("integral de (1 + cos(x))^2 de 0 até 2*pi", 3 * Math.PI)]
+    [InlineData("integral de 1+2*cos(x)+cos(x)^2 de 0 até 2*pi", 3 * Math.PI)]
+    [InlineData("integral de (1-cos(x))^2 de 0 até 2*pi", 3 * Math.PI)]
+    [InlineData("integral de (2+cos(x))^2 de 0 até 2*pi", 9 * Math.PI)]
+    [InlineData("integral de (1+cos(x))^2 de 0 até pi", 1.5 * Math.PI)]
+    [InlineData("integral de cos(x)^2 de 0 até 2*pi", Math.PI)]
+    [InlineData("integral de x*e^(2x) de 0 até 1", 0.25 * 7.38905609893065 + 0.25)]
+    [InlineData("integral de x^2*ln(x) de 1 até e", (2 * 20.085536923187668 + 1) / 9)]
+    public void Integrals_FromARealStudySession_AreRight(string question, double expected)
+    {
+        var r = Calculator.Evaluate(question);
+        Assert.Null(r.Error);
+        Assert.Equal(expected, Number(r.Result!), 6);
+    }
+
+    [Theory]
+    [InlineData("0,5*integral de (1-cos(x))^2 de 0 até 2*pi", 1.5 * Math.PI)]
+    [InlineData("pi*integral de x^4 de 0 até 2", Math.PI * 32 / 5)]
+    [InlineData("6,28318530718 + 3,14159265359", 9.42477796077)]
+    public void IntegralsInsideExpressionsAndDecimalCommasWork(string question, double expected)
+    {
+        var r = Calculator.Evaluate(question);
+        Assert.Null(r.Error);
+        Assert.Equal(expected, Number(r.Result!), 6);
+    }
+
+    private static double Number(string shown) => double.Parse(shown.Trim().TrimStart('≈').Trim().Split(' ')[0].Replace(".", "").Replace(",", "."), System.Globalization.CultureInfo.InvariantCulture);
 }

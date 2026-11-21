@@ -422,28 +422,45 @@ public static class MathSymbolic
     private static (double A, double B)? Linear(MathExpr e, string x) =>
         Polynomial(e, x) is { } p && p.Keys.All(k => k <= 1) && p.GetValueOrDefault(1) != 0 ? (p[1], p.GetValueOrDefault(0)) : null;
 
-    /// <summary>∫ from a to b, adaptive Simpson; the error estimate comes with it.</summary>
+    /// <summary>
+    /// ∫ from a to b, adaptive Simpson; the error estimate comes with it. The interval is first cut at an irrational
+    /// point and every piece is halved at least four times before its estimate is trusted: Simpson on a few evenly spaced
+    /// points agrees with itself by coincidence on periodic functions — ∫₀²π (1+cos x)² dx gave 8π/3 instead of 3π, the
+    /// coarse and the halved estimates both landing on the samples at 0, π/2, π, 3π/2 and 2π.
+    /// </summary>
     public static (double Value, double Error) Integrate(Func<double, double> f, double a, double b, double tolerance = 1e-10)
     {
         if (double.IsInfinity(a) || double.IsInfinity(b)) throw new MathError("Integral com limite infinito ainda não é calculada.");
-        double fa = f(a), fb = f(b), m = (a + b) / 2, fm = f(m);
-        if (!double.IsFinite(fa) || !double.IsFinite(fb) || !double.IsFinite(fm)) throw new MathError("A função não é finita no intervalo de integração.");
-        var whole = (b - a) / 6 * (fa + 4 * fm + fb);
+        if (a == b) return (0, tolerance);
         double error = 0;
-        var value = Step(a, b, fa, fm, fb, whole, tolerance, 50);
+        double F(double t)
+        {
+            var v = f(t);
+            if (!double.IsFinite(v)) throw new MathError("A função não é finita no intervalo de integração.");
+            return v;
+        }
+        F((a + b) / 2);   // a pole at the middle (1/x on [−1, 1]) is refused, not cancelled out
+        double c = a + (b - a) * 0.4472135954999579;   // √0.2: no symmetry of the integrand lines up with it
+        double Piece(double l, double r, double eps)
+        {
+            double fl = F(l), fr = F(r), fm = F((l + r) / 2);
+            return Step(l, r, fl, fm, fr, (r - l) / 6 * (fl + 4 * fm + fr), eps, 0);
+        }
+        var value = Piece(a, c, tolerance / 2) + Piece(c, b, tolerance / 2);
         return (value, Math.Max(error, tolerance));
 
-        double Step(double l, double r, double fl, double fmid, double fr, double s, double eps, int depth)
+        double Step(double l, double r, double fl, double fmid, double fr, double s, double eps, int level)
         {
-            double lm = (l + (l + r) / 2) / 2, rm = ((l + r) / 2 + r) / 2, flm = f(lm), frm = f(rm), mid = (l + r) / 2;
-            if (!double.IsFinite(flm) || !double.IsFinite(frm)) throw new MathError("A função não é finita no intervalo de integração.");
+            double mid = (l + r) / 2, flm = F((l + mid) / 2), frm = F((mid + r) / 2);
             double left = (mid - l) / 6 * (fl + 4 * flm + fmid), right = (r - mid) / 6 * (fmid + 4 * frm + fr), diff = left + right - s;
-            if (depth <= 0 || Math.Abs(diff) <= 15 * eps)
+            if (level >= 50 && Math.Abs(diff) > Math.Max(1e-6, 1e-6 * Math.Abs(left + right)))
+                throw new MathError("A integral não converge no intervalo (a função cresce sem limite perto de x = " + MathFormat.Number(mid) + ").");
+            if (level >= 50 || level >= 4 && Math.Abs(diff) <= 15 * eps)
             {
                 error += Math.Abs(diff) / 15;
                 return left + right + diff / 15;
             }
-            return Step(l, mid, fl, flm, fmid, left, eps / 2, depth - 1) + Step(mid, r, fmid, frm, fr, right, eps / 2, depth - 1);
+            return Step(l, mid, fl, flm, fmid, left, eps / 2, level + 1) + Step(mid, r, fmid, frm, fr, right, eps / 2, level + 1);
         }
     }
 }

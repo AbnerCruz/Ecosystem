@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261118-urbe-video-direction",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-18T18:19:55Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "4b337cce1fac0e204e006c9f019b1a5b22cdc57d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VideoInspection.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDelegation.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoFrameRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Video.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tools/android-e2e.sh",
+    "apps/urbe/csharp/tests/fixtures/e2e-vault",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UiStallWatch.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Graphs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.StudySessions.cs",
+    "apps/urbe/csharp/src/Urbe.Core/GraphProjection.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UiStallWatchTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/GraphAuthoringTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "apps/urbe/csharp/src/Urbe.Core/VideoEditing.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoEditingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationOutputCheck.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationOutputCheckTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationPdfTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MemoryLearningTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoTimelineStrip.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Plugins/PluginAgentAnswer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Plugins/VaultPlugin.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NativePlugins.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PluginHost.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Plugins/VaultPluginAdapter.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultPluginTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PluginAgentUiTests.cs",
+    "apps/urbe/docs/csharp/OWNER-ORDERS-STATUS.md",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationQueryTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationSelectionUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VisualDocumentEditor.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/BlockSourceMapTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationEditBlockUiTests.cs"
+  ],
+  "work_completed": [
+    "#956 P1, ciclo de direção visual da IA: review_publication passa a medir cada cena de vídeo nos mesmos quadros do MP4. Aponta objeto fora do quadro ou dos 90% seguros (SMPTE ST 2046-1), texto cortado ou reduzido (medido pelo renderizador real), sobreposição, texto sob a legenda, contraste abaixo do WCAG 2 e imagem ausente, e lista cenas e elementos por id.",
+    "Ferramenta nova look_at_video: desenha quadros reais (folha numerada) e os mostra ao modelo visual, com consentimento. Sem visão, devolve só a revisão medida, sem gerar erro que leve a loop.",
+    "Ferramenta nova edit_video_scene: muda só uma cena por id (campos enviados de cada elemento), com expected_revision, prévia, aprovação e undo; as outras cenas e as notas não mudam.",
+    "write_publication grava as cenas de um vídeo, e o id padrão de cena e de título deriva da seção: o id que a revisão mostra é o mesmo que a edição usa.",
+    "#956 P1, sincronização: Narrar mede o WAV de cada cena. Uma cena mais curta que a fala cresce para caber (fala + 0,4 s), a trilha guarda a duração real, as legendas terminam com a fala e a revisão avisa quando a fala passa da cena.",
+    "UX verificada no app desktop real (Xvfb): tocar numa .publication.json no Explorer mostrava o JSON cru; agora abre o Estúdio (também pelo open_note da IA). A prévia começava num quadro preto; agora começa na cena formada, e tocar numa cena vai ao momento em que ela está pronta.",
+    "Teste Android na CI: build do emulador (URBE_EMULATOR) abre o vault de exemplo enviado por adb e aceita urbe.open/urbe.play. O passo android-runtime-smoke percorre Notas, Estúdio, vídeo tocando, cenas e retomada, com prints, gravação de tela e logcat como artefatos.",
+    "CST-011 (parte): monitor de travamento da interface (atraso > 700 ms, limite de frozen frame do Android vitals) grava no Relatório de erros a ação em curso, sem conteúdo; pausa com o app em segundo plano.",
+    "Investigação no desktop real com vault sintético de 3.001 notas e nota de 20 mil linhas: abrir, alternar Notas/Estudo/Grafos e gerar a estrutura do vault sem travamento registrado.",
+    "Defeito de UX achado nessa jornada: a estrutura de um vault grande era uma única coluna; agora é um mapa de blocos por pasta, com as notas em grade, perto de 16:9.",
+    "#956 P2, edição por toque na prévia: tocar seleciona o objeto (escala e rotação contadas) com contorno; arrastar move o contorno e grava ao soltar (quadro-chave no instante se o objeto é animado); inspetor com quadro-chave aqui/tirar, maior, menor, remover e os quadros-chave para pular. Um quadro-chave a até 0,1 s é editado em vez de duplicado (defeito visto no app: 0,6 s e 0,65 s). Padrão de suavização easeInOut, não linear.",
+    "CST-213 (parte, formatos): a conferência de cada exportação vira recibo verificado/parcial/com problema, com evidência. Pega ligação OOXML para parte inexistente e parte sem tipo de conteúdo (o 'conteúdo ilegível' do Word), manifesto ODF/EPUB com arquivo ausente, ordem de leitura do EPUB apontando para item inexistente, PPTX sem slides, PDF que um leitor estrito (PdfPig) não abre, PDF sem páginas e fonte não embutida. O aviso de exportação diz o que foi conferido e o que não foi (aparência).",
+    "#963 caso 08: uma crítica a algo elogiado ('a transparência ficou horrível') substitui o elogio guardado como preferência atual (o antigo fica datado e ligado); um julgamento sozinho ('o tempo está bom') nunca vira memória.",
+    "#986/#956: teste do pedido de motion graphics no loop real do agente (modelo roteirizado): nota do roteiro → write_publication pelo caminho → revisão medida → edit_video_scene numa cena → look_at_video → entrega; cinco ferramentas, nenhum erro, nada repetido, escritas aprovadas.",
+    "#956 P2: pinça com dois dedos redimensiona o objeto selecionado na prévia.",
+    "#956 P2, medição antes de otimizar: o vídeo de exemplo (12 s, 720p, 30 qps) desenha em 9,2 ms/quadro no x64 do agente; 126 das 360 camadas desenhadas, o resto do cache (RenderingTheExampleVideoAt720pIsMeasured). Falta o perfil no moto g32 antes de qualquer reexportação por segmentos.",
+    "Jornada Android na CI corrigida duas vezes pelo que os prints mostraram: o vault não chegava ao app (agora run-as nos arquivos privados) e o Estúdio não abria (intent igual à da tarefa; agora ação própria). O roteiro confere o texto da tela pela árvore de acessibilidade e falha se o vault ou a prévia do vídeo não aparecem.",
+    "Defeito visto na gravação do emulador Android: ao terminar de tocar, a prévia voltava a t=0, um quadro preto (entrada em fade). Agora volta à capa (a primeira cena formada), e tocar a partir da capa começa do início.",
+    "#956 P2, linha do tempo visual: faixa com as cenas em blocos do tamanho da duração, trilhas de áudio, cabeça de leitura e quadros-chave do objeto selecionado; tocar leva ao instante; arrastar a borda de uma cena muda a duração (com folga depois do fim para alongar a última cena, defeito achado no teste), pela mesma atualização e desfazer.",
+    "CST-146 (resultado ao plugin): perguntarAgente com \"resposta\" devolve ao plugin o texto e as partes (ação, justificativa, passos, critério, fontes, incertezas, estado); fontes fora do escopo ou inexistentes viram incerteza; a ação do plugin espera o fim da execução. Plugin Próxima tarefa demonstrado no teste.",
+    "CST-160: ordenar as notas da publicação (título, data, pasta; capa primeiro; desfazer) e, nas publicações de consulta, a nota que deixou de combinar é dita para revisão (tirar ou manter, e manter é lembrado).",
+    "CST-156 (parte): toque duplo num parágrafo da prévia de uma publicação abre a nota de origem naquele bloco; quando o texto está em dois blocos ou em nenhum, pergunta 'Editar onde?'."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1773/1773."
+    },
+    {
+      "check": "Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "693/693 (o PDF real da Skia passa: leitor estrito, páginas e fontes embutidas)."
+    },
+    {
+      "check": "App desktop real sob Xvfb",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Explorer → Demo.publication.json abre o Estúdio; reprodução de 12 s gravada com ffmpeg x11grab; quadros conferidos (gráfico traçando, fórmula, legendas)."
+    },
+    {
+      "check": "Jornada no emulador Android (CI, Pixel 6 API 35)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "android-runtime-smoke: vault de exemplo aberto (texto 'Roteiro' na árvore de acessibilidade), Estúdio com 'Prévia do vídeo', reprodução gravada (capa 0:00.6, Pausar 3,4 s e 9,6 s, cenas avançando), retomada sem FATAL/ANR."
+    },
+    {
+      "check": "Pedido real de motion graphics no moto g32, com modelo multimodal: a IA monta, olha, corrige e exporta MP4",
+      "kind": "human",
+      "result": "passed",
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-19 (Issue https://github.com/AbnerCruz/Ecosystem/issues/992); registro em docs/governance/responses/VAL-HO-20261118-urbe-video-direction-28b37f9ce3cc.md."
+    },
+    {
+      "check": "Relatório de travamentos lido no moto g32 depois de uso real",
+      "kind": "human",
+      "result": "passed",
+      "object": "apps/urbe/csharp/src/Urbe.Client/UiStallWatch.cs",
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-19 (Issue https://github.com/AbnerCruz/Ecosystem/issues/991); registro em docs/governance/responses/VAL-HO-20261118-urbe-video-direction-a1bef3cc4e41.md."
+    }
+  ],
+  "known_issues": [
+    "A legenda continua distribuída por comprimento dentro da janela da fala; tempos por palavra exigiriam timestamps do sintetizador, que a voz do aparelho não fornece.",
+    "Exportação incremental por segmentos H.264 (P2) não foi feita: ChangedSince só informa as cenas mudadas.",
+    "Faltam curvas de suavização editáveis e novos tipos de objeto (P2); a edição por toque cobre posição, tamanho, quadro-chave, remoção e duração das cenas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "PROPOSTA ao proprietário (control-plane, fora da autonomia do produto): ligar a jornada Android na CI trocando o script do passo 'Install, launch and resume' em .github/workflows/urbe-checks.yml por `script: bash apps/urbe/csharp/tools/android-e2e.sh` (com profile: pixel_6). Rodou verde neste PR antes de ser retirado (run 44376164723): vault aberto, Estúdio com prévia, reprodução gravada, retomada.",
+    "#956 P2 seguinte: timeline multitrilha visual e pinça para escala; depois exportação reaproveitando cenas sem mudança.",
+    "#963: medir as orientações de memória e busca em conversas reais; branch de diagnóstico só depois da validação no aparelho.",
+    "Seguir a consolidação 2.6 de cima para baixo (gate do editor, §3 item 1).",
+    "ADR-0051 (CST-201), fatos para a decisão do proprietário, pesquisados em 18/11/2026: o NuGet Wasmtime 50.0.1 traz binários só para linux/osx/win (sem android-arm64); os releases do Wasmtime publicam wasmtime-vX-aarch64-android-c-api.tar.xz, que o binding .NET poderia carregar; a issue #12778 (v42.0.1) registrou 'Illegal instruction' no arm64 Android por autenticação de ponteiro (autiasp) na troca de fibras, fechada em 16/04/2026 sem fix oficial confirmado. A prova de conceito no moto g32 precisa usar versão posterior e testar exatamente isso."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0034-autonomia-integracao-releases.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O roteiro continua nas notas; a edição de cena só muda a composição; a duração da narração vem do WAV, sem cópia."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "look_at_video é network e pede consentimento antes de enviar a imagem; edit_video_scene é write, com prévia e aprovação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulador e Xvfb não são DEVICE; validação no moto g32 registrada como pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Cada mudança com teste vermelho→verde e prints/vídeo do app real."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-video-inspection",
+      "status": "product-specific",
+      "rationale": "Revisão do motor de vídeo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature autorizada (#956) dentro do Urbe (ADD-0034)."
+  }
+}

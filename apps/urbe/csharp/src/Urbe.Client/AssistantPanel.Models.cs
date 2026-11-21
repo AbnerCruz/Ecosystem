@@ -86,13 +86,13 @@ public sealed partial class AssistantPanel
     public void ShowModelCapabilities()
     {
         var body = OpenView("O que cada modelo faz", () => ShowSettings());
-        body.Children.Add(Hint("O Urbe escolhe pelo que cada modelo informa. Quando o modelo escolhido não faz algo (por exemplo, ler uma imagem), ele avisa e sugere outro, sem trocar sozinho. \"Não informado\" nunca quer dizer sim nem não."));
+        body.Children.Add(Hint("O Numa escolhe pelo que cada modelo informa. Quando o modelo escolhido não faz algo (por exemplo, ler uma imagem), ele avisa e sugere outro, sem trocar sozinho. \"Não informado\" nunca quer dizer sim nem não."));
         var all = Candidates(_cfg.ModelFor(_conv));
         var inUse = _cfg.AgentModels.Values.Concat(_cfg.AgentImages.Values).Append(_cfg.ModelFor(_conv))
             .Select(c => (c.ProviderId, c.Model)).ToHashSet();
         foreach (var group in all.GroupBy(m => m.ProviderId))
         {
-            var models = group.Where(m => inUse.Contains((m.ProviderId, m.ModelId)) || m.Place == AiModelPlace.Device ||
+            var models = group.Where(m => inUse.Contains((m.ProviderId, m.ModelId)) ||
                                           m.Makes(AiModalities.Image) == true || group.Count() <= 6).ToList();
             var rows = new List<Control>();
             foreach (var m in models)
@@ -113,6 +113,6 @@ public sealed partial class AssistantPanel
         body.Children.Add(Section("Vídeo", Wrap(video.Text, 12, video.Available ? UrbeTheme.Text2 : UrbeTheme.Text3)));
         body.Children.Add(Section("Voz", Hint(PlatformAudio.Available
             ? "Transcrição de áudio em nota: feita no aparelho, sem enviar o áudio a um provedor."
-            : "Transcrição de áudio indisponível neste aparelho. O Urbe ainda não envia áudio aos modelos.")));
+            : "Transcrição de áudio indisponível neste aparelho. O Numa ainda não envia áudio aos modelos.")));
     }
 }

@@ -394,8 +394,14 @@ internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? 
         if (View is WebView web) ReaderReady(web);
         return Task.CompletedTask;
     }
-    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow)
-    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow);if(View is WebView web)web.EvaluateJavascript(_readerAppearance,null);return Task.CompletedTask;}
+    public async Task<bool> TurnPageAsync(int direction)
+    {
+        if (View is not WebView web) return false;
+        try { return await AndroidStudyBrowser.ReadStringAsync(web, ReaderTextLocator.PageScript(direction)) == "true"; }
+        catch (TimeoutException) { return false; }
+    }
+    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow,bool paged=false)
+    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow,paged);if(View is WebView web)web.EvaluateJavascript(_readerAppearance,null);return Task.CompletedTask;}
     public Task GoToReaderAnchorAsync(string id)
     {
         _readerAnchor=id;if(View is WebView web)web.EvaluateJavascript(ReaderTextLocator.AnchorScript(id),null);return Task.CompletedTask;

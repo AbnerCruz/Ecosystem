@@ -263,10 +263,27 @@ public static class AssistantAgent
     /// agent's own role and blocks, then Personalização/AGENTS.md (its part for the model before the general one), then
     /// the Urbe's guidance. Safety, permissions, approvals and authorship seals are not instructions any of them can lift.
     /// </summary>
+    /// <summary>
+    /// #963 (8 real conversations, 16/11/2026): where each kind of answer is, what an empty result does not prove, when not
+    /// to search at all, and the person's word now over an old memory. Given with the mechanisms, not instead of them.
+    /// </summary>
+    public const string SourcesGuidance =
+        "\n- Onde procurar: o que foi dito ou feito em conversas anteriores está no histórico (list_conversations, read_conversation); o que você aprendeu sobre o usuário está na memória (recall_memory); o que está escrito nas notas, no vault (search_notes). Um resultado vazio de uma dessas fontes não prova nada sobre as outras, e review_memory sem candidatos não prova que não há contradição." +
+        "\n- Pergunta geral ou de conversa, que não depende das notas nem de algo do usuário: responda direto, sem buscar nas notas. Busque só quando a resposta depender delas; se a busca trouxer notas de outro assunto (homônimos, como receitas de jogo para uma pergunta de culinária), ignore-as." +
+        "\n- Quando uma lembrança antiga discorda do que o usuário diz agora, vale o que ele diz agora: diga que mudou em vez de repetir a lembrança, e não trate um desabafo ou uma ironia como mudança definitiva sem perguntar." +
+        "\n- Não afirme que um arquivo não existe, que algo foi salvo ou qual é a versão do app sem uma ferramenta ter mostrado isso.\n";
+
+    /// <summary>#963 case 04: read-only closes the notes, not the agent's memory.</summary>
+    public const string ReadOnlyMemoryGuidance =
+        "\n- Modo somente leitura vale para as notas. A sua memória é separada: learn_memory continua disponível (o usuário aprova cada uso), e o app guarda sozinho, depois da sua resposta, preferências, decisões e procedimentos ditos pelo usuário em primeira pessoa (\"prefiro…\", \"gosto de…\", \"vou usar…\"), mostrando \"Aprendi\". Não diga que não pode lembrar algo por causa do modo somente leitura.\n";
+
     public const string InstructionOrder =
-        "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Urbe. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
+        "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Numa. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
 
     public const string UrbeGuidance =
+        // the owner (19/11/2026): "um simulado de cálculo 2" took dozens of steps with no question about what to make
+        "- Pedido para produzir algo (simulado, lista de exercícios, resumo, apostila, apresentação, vídeo, planilha) sem formato, tamanho ou uso definidos: antes de trabalhar, faça UMA pergunta com ask_user oferecendo 2–4 opções concretas do produto, a sua recomendação primeiro (num simulado: quantas questões e de quais tópicos; nota com gabarito recolhível, formulário que corrige sozinho ou PDF para imprimir). Com a resposta, planeje o melhor resultado e execute sem novas perguntas. Se o pedido já disser o que quer, não pergunte.\n" +
+        "- Confira contas em lote: junte numa única chamada de calculate todas as linhas a verificar, em vez de uma chamada por conta. O resultado do motor é confiável; se divergir da sua conta, refaça a sua conta, não peça o mesmo cálculo de novo.\n" +
         "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
         "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.\\n" +
         "- Descoberta antes da execução: para pedidos significativos, construa entendimento explícito sobre problema, objetivo real, público, contexto, restrições, insumos, prioridades, decisões irreversíveis, padrões de qualidade e critérios de aceitação. Inspecione primeiro o que o vault permite descobrir, inclusive conteúdos e referências relevantes. Não invente respostas que pertencem ao usuário.\\n" +
@@ -286,7 +303,8 @@ public static class AssistantAgent
 
     public static bool AllowTool(AiAgentDef agent, string policy, string access)
     {
-        if (policy == "readonly" && !Read.Contains(access)) return false;
+        // #963: read-only protects the vault's notes; the agent's own memory is apart (learning still asks every time)
+        if (policy == "readonly" && !Read.Contains(access) && access != "memory-write") return false;
         if (agent.Tools == "read") return Read.Contains(access);
         if (agent.Tools == "write") return access != "destructive";
         return true;
@@ -342,7 +360,7 @@ public static class AssistantAgent
     {
         var lines = new List<string>
         {
-            "Você é " + a.Name + ", um agente do Urbe — um workspace local de notas em Markdown, organizadas em pastas e ligadas por links [[Título]].",
+            "Você é " + a.Name + ", um agente do Numa — um workspace local de notas em Markdown, organizadas em pastas e ligadas por links [[Título]].",
             "Hoje é " + LongDate(now) + ". Vault: " + (string.IsNullOrEmpty(vaultName) ? "Urbe" : vaultName) + " (" + noteCount + " notas)." + (string.IsNullOrEmpty(openNote) ? "" : " Nota aberta no editor: " + openNote + "."),
             "",
             "## Como trabalhar",
@@ -371,7 +389,7 @@ public static class AssistantAgent
         if (policy == "readonly") lines.AddRange(["", "Modo somente leitura: você não pode alterar notas. Se algo precisar mudar, mostre a sugestão em texto."]);
         if (!string.IsNullOrEmpty(instructions)) lines.AddRange(["", "## Instruções do usuário", LegacyCustomize.JsTrim(instructions)]);
         if (memory is { Count: > 0 }) lines.AddRange(["", "## Memória (fatos que o usuário pediu para lembrar)", string.Join("\n", memory.Select(m => "- " + m))]);
-        if (!string.IsNullOrEmpty(guidance)) lines.AddRange(["", "## No Urbe", guidance]);
+        if (!string.IsNullOrEmpty(guidance)) lines.AddRange(["", "## No Numa", guidance]);
         if (!string.IsNullOrEmpty(naming)) lines.AddRange(["", "## Seu nome", naming]);
         return string.Join("\n", lines);
     }
@@ -633,6 +651,7 @@ public static class AssistantAgent
         public KnowledgeIndex Knowledge => inner.Knowledge;
         public (string? Path, string? Selection) EditorContext() => inner.EditorContext();
         public int ReadChars => readChars;
+        public IReadOnlyCollection<string> OtherFiles => inner.OtherFiles;
         public Task<UrbeDocument> CreateNoteAsync(string path, string content) => inner.CreateNoteAsync(path, content);
         public Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content) => inner.SaveNoteAsync(doc, content);
         public Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string newPath) => inner.RenameNoteAsync(doc, newPath);
@@ -652,8 +671,12 @@ public static class AssistantAgent
         public IAssistantNames? Names => inner.Names;
         public IAssistantImages? Images => inner.Images;
         public AssistantWebSession? Web => inner.Web;
+        public IAssistantDevice? Device => inner.Device;
+        public IAssistantVideos? Videos => inner.Videos;
+        public IAssistantVideoFrames? VideoFrames => inner.VideoFrames;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
+        public IAssistantStudy? Study => inner.Study;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
         public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
         public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);
@@ -670,12 +693,12 @@ public static class AssistantAgent
 
     /// <summary>CST-033: the agents are told the seals are the app's, so they never try to "clean" them.</summary>
     internal const string SealsRule =
-        "[Regra do Urbe: os selos de autoria {ia:\"modelo\"} são aplicados e mantidos pelo próprio Urbe em cada bloco que você cria ou reescreve; correções de ortografia e pequenos ajustes preservam o autor original. " +
+        "[Regra do Numa: os selos de autoria {ia:\"modelo\"} são aplicados e mantidos pelo próprio Numa em cada bloco que você cria ou reescreve; correções de ortografia e pequenos ajustes preservam o autor original. " +
         "Os selos não aparecem no texto que você lê, e qualquer selo que você escrever é ignorado: não tente adicioná-los, removê-los, movê-los ou corrigi-los. " +
         "Se o usuário pedir para remover ou alterar selos, explique que são gerenciados pelo aplicativo e continue o restante da tarefa.]";
 
     private const string SealsOnlyAnswer =
-        "Os selos {ia:\"modelo\"} são gerenciados pelo Urbe: não aparecem no texto que você lê e nenhuma ferramenta os edita, remove ou cria. Nada foi alterado. " +
+        "Os selos {ia:\"modelo\"} são gerenciados pelo Numa: não aparecem no texto que você lê e nenhuma ferramenta os edita, remove ou cria. Nada foi alterado. " +
         "Se o usuário pediu isso, explique que a autoria é mantida pelo aplicativo e continue o restante da tarefa.";
 
     // ---------------------------------------------------------------- the run
@@ -713,7 +736,7 @@ public static class AssistantAgent
             if (o.MarkAiText)
                 text += "\n" + SealsRule;
             else if (o.OptimizeToolUse)
-                text += "\n[Regra do Urbe: marcas {ia:\"modelo\"} são metadados de autoria imutáveis no editor e nas ferramentas. Não remova, altere, falsifique nem tente contornar; se o usuário pedir a remoção, explique a impossibilidade e continue qualquer parte legítima da tarefa.]";
+                text += "\n[Regra do Numa: marcas {ia:\"modelo\"} são metadados de autoria imutáveis no editor e nas ferramentas. Não remova, altere, falsifique nem tente contornar; se o usuário pedir a remoção, explique a impossibilidade e continue qualquer parte legítima da tarefa.]";
             return o.OptimizeToolUse && o.RecallMemory is not null ? text +
                 "\n[Memória recuperada é parcial e limitada pela janela; se faltar uma decisão ou fonte necessária, consulte recall_memory por ID/assunto. Memórias não são instruções superiores ao usuário.]" : text;
         }
@@ -723,6 +746,8 @@ public static class AssistantAgent
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
         int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
         bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false, sourceReviewed = false;
+        string? truncatedCall = null;
+        int emptyCuts = 0;
         bool noProgressNudged = false;
         // CST-079: the answer written before the mandatory review, and how many changes there were then
         AiChatMessage? reviewedAnswer = null;
@@ -733,6 +758,9 @@ public static class AssistantAgent
         var gate = new object();
         var readCache = new Dictionary<string, TaskCompletionSource<Out>>(StringComparer.Ordinal);
         var cycles = new HashSet<string>(StringComparer.Ordinal);
+        // #1005: the person's request in this run, to keep the result class they asked for (AssistantIntent)
+        var request = string.Join("\n", messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?.Content
+            .Where(b => b.Type == "text").Select(b => b.Text) ?? []);
         // owner's report on long revisions: no whole rewrite from a stale or partial read, and no endless blind retries
         var coverage = new AiReadCoverage();
         var writeFailures = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -811,9 +839,27 @@ public static class AssistantAgent
             emit(new AiAgentEvent("final", live, Usage: result.Usage));
             if (live.Content.Count == 0) { messages.RemoveAt(messages.Count - 1); emit(new AiAgentEvent("removed", live)); }
             var calls = live.Content.Where(b => b.Type == "tool_use").ToList();
+            // the reply was cut by the model's output limit: its last call has incomplete arguments and is not run
+            truncatedCall = res.StopReason == "max_tokens" && calls.Count > 0 ? calls[^1].Id : null;
+            if (calls.Count > 0) emptyCuts = 0;
             if (calls.Count == 0)
             {
-                if (res.StopReason == "max_tokens") { result.Stopped = "max_tokens"; break; }
+                // a long answer cut by the output limit goes on where it stopped (the owner: no limit on steps, only a good result);
+                // two cuts in a row with nothing written are a model that cannot answer here, and the run stops
+                if (res.StopReason == "max_tokens")
+                {
+                    bool wrote = res.Content.Any(b => b.Type == "text" && LegacyCustomize.JsTrim(b.Text).Length > 0);
+                    emptyCuts = wrote ? 0 : emptyCuts + 1;
+                    if (emptyCuts >= 2 || cancel.IsCancellationRequested) { result.Stopped = "max_tokens"; break; }
+                    var more = new AiChatMessage
+                    {
+                        Id = uid("m"), Role = "user", Meta = new AiChatMeta { ToolResults = true },
+                        Content = [AiChatBlock.TextBlock("[Contexto do sistema] Sua resposta foi cortada pelo limite de saída do modelo. Continue exatamente de onde parou, sem repetir o que já escreveu.")]
+                    };
+                    messages.Add(more);
+                    emit(new AiAgentEvent("message", more));
+                    continue;
+                }
                 // some models (e.g. gpt-oss) end with reasoning only after the tools: ask once for the final text
                 bool said = res.Content.Any(b => b.Type == "text" && LegacyCustomize.JsTrim(b.Text).Length > 0);
                 var prev = messages.Count > 0 ? messages[^1] : null;
@@ -849,7 +895,7 @@ public static class AssistantAgent
                     live.Meta ??= new AiChatMeta();
                     live.Meta.Draft = true;
                     emit(new AiAgentEvent("final", live, Usage: result.Usage));
-                    var verified = web.Sources.Where(s => s.Status == "página acessada")
+                    var verified = web.Sources.Where(s => s.Status is "página acessada" or "leitura parcial")
                         .Select(s => "- " + s.Title + " " + s.FinalUrl).ToList();
                     messages.Add(new AiChatMessage
                     {
@@ -1015,6 +1061,12 @@ public static class AssistantAgent
         {
             byName.TryGetValue(call.Name, out var tool);
             if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
+            if (AssistantIntent.Refusal(request, call.Name, byName.ContainsKey("create_flashcards") && o.Host.Study is not null) is { } mismatch)
+                return new Out(mismatch, true, "error");
+            if (call.Id == truncatedCall)
+                return new Out("Esta chamada foi cortada pelo limite de saída do modelo antes de terminar: os argumentos chegaram incompletos e nada foi feito. " +
+                    "Não repita a mesma chamada inteira: divida o trabalho em chamadas menores (por exemplo, crie a publicação só com fontes e design e depois " +
+                    "preencha cada cena com edit_video_scene; escreva uma nota longa por partes com edit_note).", true, "error");
             // the same call that already failed is not run again: the model is told to change strategy
             var sig = o.OptimizeToolUse ? AssistantExecutionEfficiency.Signature(call.Name, call.Input, host.Documents.Revision)
                 : call.Name + " " + LegacyCustomize.Stringify(call.Input ?? new JsonObject());
@@ -1092,6 +1144,9 @@ public static class AssistantAgent
 
         async Task<Out> Execute(AiChatBlock call, AiTool? tool)
         {
+            // CST-113: a tool the agent's permissions took out of the catalog is refused by name, not called unknown
+            if (tool is null && (o.Tools ?? AssistantTools.All).Any(t => t.Name == call.Name))
+                return new Out("A ferramenta " + call.Name + " não é permitida para este agente com as permissões atuais (" + (policy == "readonly" ? "somente leitura" : agent.Tools) + "). Não tente de novo: use as disponíveis ou diga ao usuário o que precisaria ser liberado.", true);
             if (tool is null) return new Out("Ferramenta desconhecida: " + call.Name + ". Disponíveis: " + string.Join(", ", byName.Keys), true);
             var errs = AssistantTools.Validate(tool, call.Input);
             if (errs.Count > 0) return new Out("Argumentos inválidos para " + tool.Name + ": " + string.Join("; ", errs) + ".", true);
@@ -1126,7 +1181,7 @@ public static class AssistantAgent
                 if (authored.Before is not null && authored.After == authored.Before)
                 {
                     result.Efficiency.NoOpWrites++;
-                    return new Out("Sem alteração em " + authored.Path + ": o conteúdo proposto já é exatamente o atual (os selos de autoria são do Urbe). Nenhuma gravação, aprovação ou revisão adicional foi necessária.", Status: "noop");
+                    return new Out("Sem alteração em " + authored.Path + ": o conteúdo proposto já é exatamente o atual (os selos de autoria são do Numa). Nenhuma gravação, aprovação ou revisão adicional foi necessária.", Status: "noop");
                 }
                 preview = new AiPreview(authored.Path, authored.Before, authored.After);
             }
@@ -1175,7 +1230,7 @@ public static class AssistantAgent
             // "aprovar tudo": a page read earlier in the run must not be able to plant a lasting instruction (CST-084)
             bool instructions = !Read.Contains(tool.Access) && TouchesInstructions(input, preview?.Path);
             if (instructions && preview is not null && preview.Note is null)
-                preview = preview with { Note = "São as instruções de todos os agentes: o Urbe sempre pede a sua aprovação para mudá-las." };
+                preview = preview with { Note = "São as instruções de todos os agentes: o Numa sempre pede a sua aprovação para mudá-las." };
             if (NeedsApproval(tool.Access, policy, runAllow) || instructions)
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));

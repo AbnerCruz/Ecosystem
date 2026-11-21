@@ -22,7 +22,7 @@ qualquer estado ─► cancelled
 | `waiting` | aguardando algo externo não bloqueante (CI, outra tarefa) |
 | `blocked` | impedido; `blockers` obrigatório |
 | `verifying` | executando verificações |
-| `review` | o agente terminou a execução; aguardando revisão humana/independente, validação humana **ou integração** (PR) — ADR-0014 |
+| `review` | o agente terminou a execução; aguardando **integração** (PR) — ADR-0014 (sem etapa de validação humana desde ADD-0035) |
 | `done` | Definition of Done satisfeita, com evidência, e o resultado **integrado na `main`** (trabalho em branch: PR mergeado) |
 | `failed` | tentativa encerrada sem sucesso; motivo registrado |
 | `cancelled` | não será feita; motivo registrado |
@@ -32,7 +32,7 @@ qualquer estado ─► cancelled
 - **`automated verified`** — verificações automáticas passaram (checks, testes, CI).
 - **`human validated`** — um humano validou o que só pode ser validado por humano: dispositivo real, Android lifecycle, toque, layout, performance percebida, comportamento visual, instalação/atualização.
 
-Uma tarefa que depende de validação humana fica em `review` até ela acontecer; no ROADMAP aparece como `[~]`, nunca `[x]`.
+**ADD-0035 (19/11/2026):** nenhuma tarefa espera `human validated`. Ela conclui com `automated verified` e evidência, e diz o que não foi testado no aparelho (`known_issues`); no ROADMAP vai a `[x]` quando integrada. Um defeito visto depois no aparelho chega como Issue e vira trabalho.
 
 ## 3. Definition of Done (MANIFEST §28, NN-018)
 
@@ -49,7 +49,7 @@ Quando aplicável, "done" exige:
 - [ ] CI verde;
 - [ ] ausência de regressão conhecida;
 - [ ] evidência do resultado (handoff com `verification[].evidence`);
-- [ ] validação humana quando o comportamento depende de dispositivo ou experiência visual.
+- [ ] dito com clareza o que não foi testado no aparelho (sem validação humana como etapa — ADD-0035).
 
 `CHK-HANDOFFS` recusa handoff `done` sem verificação, com verificação pendente/falha, sem evidência ou com bloqueios abertos.
 

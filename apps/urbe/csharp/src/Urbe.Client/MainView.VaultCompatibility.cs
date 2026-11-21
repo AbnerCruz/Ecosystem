@@ -38,10 +38,10 @@ public sealed partial class MainView
             new DialogItem("Preservar original", Detail: "Não modificar o arquivo protegido."),
             new DialogItem("Criar cópia independente", Detail: isNote
                 ? "Duplicar o arquivo no vault. O original permanece intacto; a cópia pode exigir revisão manual antes de ser editável."
-                : "Disponível para documentos de texto reconhecidos pelo Urbe."),
+                : "Disponível para documentos de texto reconhecidos pelo Numa."),
             new DialogItem("Mover original para a lixeira", Detail: isNote
                 ? "Exclusão deliberada: pedir confirmação e preservar o conteúdo na lixeira."
-                : "Disponível somente para notas reconhecidas pelo Urbe.")
+                : "Disponível somente para notas reconhecidas pelo Numa.")
         ], "Alterar a versão instalada não converte automaticamente o conteúdo deste arquivo.");
         if (operation is null || operation == 0) return;
         if (!isNote)

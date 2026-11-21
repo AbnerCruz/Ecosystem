@@ -5,5 +5,7 @@
     <PackageReference Include="CSharpMath.Rendering" Version="[1.0.0-pre.2]" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="VersOne.Epub" Version="3.3.6" />
+    <!-- DEC-0061 / ADR-0048: official MCP client (Apache-2.0), client side only -->
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.4.0" />
   </ItemGroup>
 </Project>

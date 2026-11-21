@@ -52,14 +52,15 @@ public sealed record AiDelegationBrief(string Task, IReadOnlyList<string> Scope,
         }
         else
         {
-            lines.Add(Scope.Count > 0 ? "Escopo de escrita: " + string.Join(", ", Scope) + ". Gravações fora dele são recusadas pelo Urbe."
+            lines.Add(Scope.Count > 0 ? "Escopo de escrita: " + string.Join(", ", Scope) + ". Gravações fora dele são recusadas pelo Numa."
                 : "Escopo de escrita: nenhum. Não altere o vault; devolva o resultado em texto.");
             lines.Add(Expected == "note" && ArtifactPath is not null
                 ? "Resultado esperado: a nota " + ArtifactPath + ", gravada no vault."
                 : "Resultado esperado: texto na sua resposta.");
             lines.Add("Ao terminar, responda com: ARTEFATO: o caminho da nota (ou \"texto\"); JUSTIFICATIVA: como chegou ao resultado e quais fontes usou; PENDÊNCIAS: o que não foi possível fazer.");
         }
-        lines.Add("Limite deste trabalho: " + MaxSteps + " etapas. Você não vê a conversa nem as memórias de quem pediu; peça o que faltar.");
+        // the owner (19/11/2026): no limit of steps; what matters is a good result
+        lines.Add("Você não vê a conversa nem as memórias de quem pediu; peça o que faltar.");
         return string.Join("\n", lines);
     }
 
@@ -111,6 +112,7 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public KnowledgeIndex Knowledge => inner.Knowledge;
     public (string? Path, string? Selection) EditorContext() => inner.EditorContext();
     public int ReadChars => inner.ReadChars;
+    public IReadOnlyCollection<string> OtherFiles => inner.OtherFiles;
     public string Readable(string text) => inner.Readable(text);
     public Task<UrbeDocument> CreateNoteAsync(string path, string content) { Check(path); return inner.CreateNoteAsync(path, content); }
     public Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content) { Check(doc.Path); return inner.SaveNoteAsync(doc, content); }
@@ -130,11 +132,15 @@ public sealed class AssistantScopedHost(IAssistantHost inner, AiDelegationBrief 
     public IAssistantNames? Names => null;
     public IAssistantImages? Images => inner.Images is { } images ? new ScopedImages(images, this) : null;
     public AssistantWebSession? Web => inner.Web;
+    public IAssistantDevice? Device => inner.Device;
+    public IAssistantVideos? Videos => inner.Videos;
+    public IAssistantVideoFrames? VideoFrames => inner.VideoFrames;
     public IAssistantGraphs? Graphs => inner.Graphs is { } graphs ? new ScopedGraphs(graphs, this) : null;
     /// <summary>Depth 1: a delegated specialist does not delegate again.</summary>
     public IAssistantDelegation? Delegation => null;
     public IAssistantConversations? Conversations => inner.Conversations;
     public IAssistantForms? Forms => inner.Forms;
+    public IAssistantStudy? Study => inner.Study;
     public IAssistantAttachmentExtractor? Attachments => null;
     public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
     public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);

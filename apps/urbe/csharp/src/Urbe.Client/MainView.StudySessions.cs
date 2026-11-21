@@ -1,0 +1,124 @@
+using Urbe.Core;
+using Urbe.Core.Study;
+
+namespace Urbe.Client;
+
+/// <summary>
+/// #956: study sessions — a named set of the vault's sources, by id, with objectives. Opening one lists its sources as
+/// they are now (renamed ones followed, missing ones said) and opens the chosen one in Estudo beside the note.
+/// </summary>
+public sealed partial class MainView
+{
+    public async Task<string?> CreateStudySessionAsync()
+    {
+        if (!VaultWritable || _store is null) { await Dialogs.AlertAsync("Sessão de estudo", NoVaultMessage); return null; }
+        var title = await Dialogs.PromptAsync(new PromptOptions("Nova sessão de estudo", "Título", Placeholder: "Ex.: Física I", Confirm: "Continuar"));
+        if (string.IsNullOrWhiteSpace(title)) return null;
+        var objective = await Dialogs.PromptAsync(new PromptOptions("Nova sessão de estudo", "Objetivo (opcional)", Confirm: "Escolher fontes", Required: false));
+        var session = new StudySession { Title = title.Trim(), Objectives = string.IsNullOrWhiteSpace(objective) ? [] : [objective.Trim()] };
+        session = await PickStudySourcesAsync(session);
+        var path = "Estudos/" + ArtifactModel.SafeName(session.Title) + StudySession.Suffix;
+        for (int n = 2; _store.Get(path) is not null; n++) path = "Estudos/" + ArtifactModel.SafeName(session.Title) + "-" + n + StudySession.Suffix;
+        await ((IAssistantApp)this).CreateNoteAsync(path, session.Serialize());
+        return path;
+    }
+
+    // the vault's files and notes, chosen one by one until Concluir (search in the list from 7 items)
+    private async Task<StudySession> PickStudySourcesAsync(StudySession session)
+    {
+        var all = _store!.List().Where(d => !d.Path.EndsWith(StudySession.Suffix, StringComparison.OrdinalIgnoreCase) && !d.Path.StartsWith("Tutorial/", StringComparison.Ordinal))
+            .Select(d => (d.Id, d.Path)).Concat(_attachments.Select(p => (Id: "file:" + p, Path: p))).OrderBy(x => x.Path, StringComparer.OrdinalIgnoreCase).ToList();
+        while (true)
+        {
+            var left = all.Where(x => session.Sources.All(s => s.DocumentId != x.Id)).ToList();
+            var items = new List<DialogItem> { new("Concluir", Detail: session.Sources.Count == 1 ? "1 fonte" : session.Sources.Count + " fontes") };
+            items.AddRange(left.Select(x => new DialogItem(Path.GetFileName(x.Path), Detail: x.Path)));
+            var pick = await Dialogs.ChooseAsync("Fontes de " + session.Title, items);
+            if (pick is not int i || i == 0) return session;
+            session = session.Add(left[i - 1].Id, left[i - 1].Path, MarkdownOfSource(left[i - 1].Id));
+        }
+    }
+
+    /// <summary>A note source's Markdown now (files other than notes are not compared).</summary>
+    private string? MarkdownOfSource(string id) => id.StartsWith("file:", StringComparison.Ordinal) ? null : _store?.Get(id)?.Content;
+
+    private string? PathOfSource(string id) =>
+        id.StartsWith("file:", StringComparison.Ordinal) ? (_attachments.Contains(id[5..]) ? id[5..] : null) : _store?.Get(id) is { } d && d.Id == id ? d.Path : null;
+
+    public async Task OpenStudySessionAsync(string path)
+    {
+        UiStallWatch.Doing("abrir uma sessão de estudo");
+        if (_store?.Get(path) is not { } file) return;
+        StudySession session;
+        try { session = StudySession.Parse(file.Content); }
+        catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or NotSupportedException)
+        { await Dialogs.AlertAsync("Sessão de estudo", "Não foi possível ler a sessão: " + e.Message); return; }
+        // an older session gets its first baseline now: what changes from here on is told
+        if (session.Sources.Any(x => x.Seen is null && MarkdownOfSource(x.DocumentId) is not null))
+        {
+            var based = session.Sources.Select(x => x.Seen is null && MarkdownOfSource(x.DocumentId) is { } md ? x with { Seen = PublicationExportRecord.Version(md) } : x).ToList();
+            session = session with { Sources = based };
+            await SaveNoteAsync(new CityNote(path, session.Serialize()));
+        }
+        var (present, missing) = session.Resolve(PathOfSource);
+        // #956: the same note can be in several sessions; each one says when it changed since it was studied here
+        var changes = session.Changes(MarkdownOfSource);
+        static string Kind(PublicationExportRecord.ChangeKind k) => k switch
+        {
+            PublicationExportRecord.ChangeKind.Structure => "títulos ou ligações",
+            PublicationExportRecord.ChangeKind.Text => "texto",
+            _ => "só a formatação"
+        };
+        var lines = new List<string>();
+        if (session.Objectives.Count > 0) lines.Add("Objetivo: " + string.Join("; ", session.Objectives));
+        if (missing.Count > 0) lines.Add("Não estão mais no vault: " + string.Join(", ", missing.Select(m => Path.GetFileName(m.PathHint))));
+        if (changes.Count > 0) lines.Add("Mudaram desde a última vez: " + string.Join(", ", changes.Select(c => Path.GetFileName(PathOfSource(c.Source.DocumentId) ?? c.Source.PathHint) + " (" + Kind(c.Kind) + ")")));
+        var items = present.Select(p => new DialogItem(Path.GetFileName(p.Path), Detail: changes.Any(c => c.Source.DocumentId == p.Id) ? "mudou · " + p.Path : p.Path))
+            .Append(new DialogItem("Adicionar fontes")).Append(new DialogItem("Mapa da sessão")).Append(new DialogItem("Podcast da sessão")).ToList();
+        if (changes.Count > 0) items.Add(new DialogItem("Marcar como revistas", Detail: "as mudanças deixam de ser avisadas nesta sessão"));
+        var pick = await Dialogs.ChooseAsync(session.Title, items, lines.Count > 0 ? string.Join("\n", lines) : null);
+        if (pick is not int i) return;
+        if (i == present.Count + 3) { await SaveNoteAsync(new CityNote(path, session.MarkSeen(MarkdownOfSource).Serialize())); return; }
+        if (i == present.Count)
+        {
+            var more = await PickStudySourcesAsync(session);
+            if (more.Sources.Count != session.Sources.Count) await SaveNoteAsync(new CityNote(path, more.Serialize()));
+            return;
+        }
+        if (i == present.Count + 1)
+        {
+            var mapPath = path[..^StudySession.Suffix.Length] + ".grafo.json";
+            // a graph is a file of its own, written only through the graphs' path (which keeps an open graph in step);
+            // made again over the map as the person left it: their relations, notes, drawings and places stay
+            if (GraphOpen && !await SaveGraphAsync()) return;
+            GraphDocument? before = null;
+            bool exists = _attachments.Contains(mapPath);
+            if (exists && _vault is not null && (await _vault.ReadFileAsync(mapPath, long.MaxValue))?.Bytes is { } bytes)
+                try { before = GraphDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF')); }
+                catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or NotSupportedException or ArgumentException)
+                { await Dialogs.AlertAsync("Mapa da sessão", "O mapa salvo não pôde ser lido e não foi tocado: " + e.Message); return; }
+            var map = StudyMap.Refresh(before, session, present.Select(p => (p.Id, p.Path, ArtifactModel.IsNote(p.Path) ? _contents.GetValueOrDefault(p.Path) : null)).ToList());
+            try { await WriteGraphForAssistantAsync(mapPath, map.Serialize(), create: !exists); }
+            catch (Urbe.Core.Assistant.AiToolException e) { await Dialogs.AlertAsync("Mapa da sessão", e.Message); return; }
+            await OpenGraphAsync(mapPath);
+            return;
+        }
+        if (i == present.Count + 2) { await CreatePodcastScriptAsync(path, session, present.Select(p => p.Path)); return; }
+        await StartStudyAsync();
+        var source = present[i].Path;
+        if (ArtifactModel.IsNote(source) && _contents.ContainsKey(source)) Editor.Pinned.Pin(_contents[source], source);
+        else await Editor.Pinned.OpenFileAsync(source);
+    }
+
+    /// <summary>The vault's study sessions, to open one (or start a new one).</summary>
+    public async Task ShowStudySessionsAsync()
+    {
+        var sessions = _store?.List().Where(d => d.Path.EndsWith(StudySession.Suffix, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase).ToList() ?? [];
+        var items = sessions.Select(d => new DialogItem(Path.GetFileName(d.Path)[..^StudySession.Suffix.Length], Detail: d.Path))
+            .Append(new DialogItem("Nova sessão de estudo", UrbeTheme.Icons.Plus)).ToList();
+        if (await Dialogs.ChooseAsync("Sessões de estudo", items) is not int i) return;
+        if (i == sessions.Count) { if (await CreateStudySessionAsync() is { } made) await OpenStudySessionAsync(made); }
+        else await OpenStudySessionAsync(sessions[i].Path);
+    }
+}

@@ -23,13 +23,14 @@ public sealed record OfficeRule : OfficeBlock;
 /// <summary>A <c>:::tipo título</c> container of the note (CST-026), with the blocks inside it.</summary>
 public sealed record OfficeBox(string Type, string Title, IReadOnlyList<OfficeBlock> Blocks) : OfficeBlock;
 /// <summary>One placement of the publication: a live note at one revision.</summary>
-public sealed record OfficeChapter(string Title, string DocumentId, IReadOnlyList<OfficeBlock> Blocks);
+/// <param name="Cover">CST-159: the publication's cover (first; its own page, outside the contents).</param>
+public sealed record OfficeChapter(string Title, string DocumentId, IReadOnlyList<OfficeBlock> Blocks, bool Cover = false);
 
 /// <summary>
 /// The publication read once for the office adapters (CST-166/168): chapters of semantic blocks, and the honest
 /// list of what a format could not keep (an office file is not the HTML; nothing is flattened without saying so).
 /// </summary>
-public sealed record OfficeDocument(string Title, string Layout, IReadOnlyList<OfficeChapter> Chapters, IReadOnlyList<string> Limitations);
+public sealed record OfficeDocument(string Title, string Layout, IReadOnlyList<OfficeChapter> Chapters, IReadOnlyList<string> Limitations, string Accent = "#6b4f2a");
 
 /// <summary>An exported office file and what it could not represent natively.</summary>
 public sealed record PublicationExport(byte[] Bytes, IReadOnlyList<string> Limitations);
@@ -57,10 +58,10 @@ public static class PublicationOffice
             cancellationToken.ThrowIfCancellationRequested();
             var source = catalog.Read(piece.Source) ?? throw new InvalidDataException("Nota de origem indisponível: " + piece.Source.DocumentId);
             sources.Add(source);
-            var content = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
+            var content = PublicationAssets.WikiImagesToMarkdown(NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body));
             var blocks = new List<OfficeBlock>();
             foreach (var node in NoteContainers.ParseRich(content)) await Block(node, blocks, source);
-            chapters.Add(new OfficeChapter(Path.GetFileNameWithoutExtension(source.Path), source.DocumentId, blocks));
+            chapters.Add(new OfficeChapter(Path.GetFileNameWithoutExtension(source.Path), source.DocumentId, blocks, piece.IsCover));
         }
         foreach (var source in sources)
         {
@@ -68,7 +69,7 @@ public static class PublicationOffice
             if (current is null || current.Revision != source.Revision || current.Markdown != source.Markdown)
                 throw new InvalidOperationException("Uma fonte mudou durante a exportação. Exporte novamente para usar a revisão atual.");
         }
-        return new OfficeDocument(project.Title, project.Design.Layout, chapters, limits.ToArray());
+        return new OfficeDocument(project.Title, project.Design.Layout, chapters, limits.ToArray(), PublicationTheme.Of(project.Design).Accent);
 
         async Task Block(RichNode node, List<OfficeBlock> into, PublicationSourceView source)
         {
@@ -317,7 +318,7 @@ public static class PublicationOffice
 
         OfficeRun MathRun(string tex)
         {
-            limits.Add("Fórmulas saem como TeX editável (o editor de equações do Word/LibreOffice não as recebe convertidas).");
+            limits.Add("Fórmulas saem como TeX editável onde não viram equação: nos slides, e no Word/ODT quando usam algo sem equivalente no editor de equações.");
             return new OfficeRun(tex, Math: true);
         }
     }

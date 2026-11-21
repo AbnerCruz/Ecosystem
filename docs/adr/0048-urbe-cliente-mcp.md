@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposto — aguarda a decisão DEC-0061 do proprietário. Nenhum código de MCP foi escrito.
+Aceito — DEC-0061, alternativa C (14/11/2026): servidores remotos no celular e no computador, e servidores locais no computador.
+
+Primeiro incremento (15/11/2026, beta.56): cliente remoto (Streamable HTTP) com o SDK oficial `ModelContextProtocol.Core` 2.4.0 (Apache-2.0), no Android e no Windows. Cada servidor é cadastrado pela pessoa (endereço, nome, chave opcional); as ferramentas descobertas começam desligadas e são liberadas uma a uma como leitura (como a pesquisa web, sem aprovação no modo "perguntar") ou escrita (aprovação a cada uso). Elas entram no mesmo catálogo, nas mesmas políticas por agente e nas mesmas aprovações; a resposta de um servidor chega marcada como dado de terceiros, não instrução. Servidores locais (stdio) no computador: o comando do programa, com aviso de que ele será executado; nunca no Android. Falta desta decisão: validação no aparelho.
 
 ## Contexto
 

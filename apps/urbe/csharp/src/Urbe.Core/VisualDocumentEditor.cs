@@ -29,7 +29,9 @@ public sealed record VisualDocumentModel(
 /// </summary>
 public static class VisualDocumentEditor
 {
-    public static VisualDocumentModel Parse(string? markdown)
+    public static VisualDocumentModel Parse(string? markdown) => Parse(markdown, null);
+
+    private static VisualDocumentModel Parse(string? markdown, List<(int Start, int End)>? ranges)
     {
         var frontmatter = MarkdownEngine.SplitFrontmatter(markdown);
         var lines = frontmatter.Body
@@ -39,9 +41,21 @@ public static class VisualDocumentEditor
 
         var blocks = new List<VisualBlock>();
         var index = 0;
+        int mark = 0, counted = 0;
+        // CST-156: each block's lines in the body (what was read since the last mark, blank lines left out)
+        void Close()
+        {
+            int end = index;
+            while (end > mark && string.IsNullOrWhiteSpace(lines[end - 1])) end--;
+            for (; counted < blocks.Count; counted++) ranges?.Add((mark, end));
+        }
 
         while (index < lines.Length)
         {
+            Close();
+            while (index < lines.Length && string.IsNullOrWhiteSpace(lines[index])) index++;
+            mark = index;
+            if (index >= lines.Length) break;
             if (string.IsNullOrWhiteSpace(lines[index]))
             {
                 index++;
@@ -182,9 +196,53 @@ public static class VisualDocumentEditor
                 text));
         }
 
+        Close();
         return new VisualDocumentModel(
             frontmatter.Raw,
             Array.AsReadOnly(blocks.ToArray()));
+    }
+
+    /// <summary>
+    /// CST-156: each block with the lines it comes from in the note (1-based, frontmatter included in the count), so a
+    /// change made to one block in another view goes back to the note's own lines and nowhere else.
+    /// </summary>
+    /// <summary>
+    /// CST-156: the first line of the block that shows <paramref name="shown"/> (text as the reader drew it, without the
+    /// Markdown marks), or null when it is in no block or in more than one.
+    /// </summary>
+    public static int? LineShowing(string? markdown, string shown)
+    {
+        // only the words: marks, list bullets and link targets are not drawn by the reader
+        static string Words(string text) => System.Text.RegularExpressions.Regex.Replace(
+            System.Text.RegularExpressions.Regex.Replace(text.ToLowerInvariant(), @"\]\([^)]*\)", " "), @"[\W_]+", " ").Trim();
+        var probe = Words(shown);
+        if (probe.Length < 3) return null;
+        if (probe.Length > 60) probe = probe[..60].Trim();
+        var hits = Locate(markdown).Where(b => Words(b.Block.Text).Contains(probe, StringComparison.Ordinal)).ToList();
+        return hits.Count == 1 ? hits[0].FirstLine : null;
+    }
+
+    public static IReadOnlyList<(VisualBlock Block, int FirstLine, int LineCount)> Locate(string? markdown)
+    {
+        var ranges = new List<(int Start, int End)>();
+        var model = Parse(markdown, ranges);
+        var text = (markdown ?? "").Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        var body = MarkdownEngine.SplitFrontmatter(markdown).Body.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        int offset = text.EndsWith(body, StringComparison.Ordinal) ? text[..^body.Length].Count(c => c == '\n') : 0;
+        return model.Blocks.Select((b, i) => (b, ranges[i].Start + offset + 1, ranges[i].End - ranges[i].Start)).ToList();
+    }
+
+    /// <summary>CST-156: the note with one block's lines replaced by <paramref name="replacement"/>; everything else byte for byte as it was.</summary>
+    public static string ReplaceBlock(string markdown, int blockIndex, string replacement)
+    {
+        var located = Locate(markdown);
+        if (blockIndex < 0 || blockIndex >= located.Count) throw new ArgumentOutOfRangeException(nameof(blockIndex));
+        var (_, first, count) = located[blockIndex];
+        var newline = markdown.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+        var lines = markdown.Split(newline).ToList();
+        lines.RemoveRange(first - 1, count);
+        lines.InsertRange(first - 1, replacement.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'));
+        return string.Join(newline, lines);
     }
 
     /// <summary>

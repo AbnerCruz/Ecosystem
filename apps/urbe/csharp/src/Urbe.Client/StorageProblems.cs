@@ -12,9 +12,9 @@ public static class StorageProblems
         return error switch
         {
             UnauthorizedAccessException =>
-                "O Urbe não tem permissão para gravar nesta pasta. Abra a pasta de novo em Configurações → Pasta no dispositivo.",
+                "O Numa não tem permissão para gravar nesta pasta. Abra a pasta de novo em Configurações → Pasta no dispositivo.",
             FileNotFoundException or DirectoryNotFoundException =>
-                "O arquivo ou a pasta não está mais lá: pode ter sido movido ou apagado fora do Urbe.",
+                "O arquivo ou a pasta não está mais lá: pode ter sido movido ou apagado fora do Numa.",
             IOException io when DiskFull(io) => "Não há espaço livre no aparelho. Libere espaço e tente de novo.",
             _ => error.Message
         };

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261119-urbe-video-ready",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-19T12:35:55Z",
+  "agent": {
+    "id": "claude-code-urbe-editor",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-209",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-f022efc2-0vtff7",
+  "base_commit": "be7a57f4591901d21c11429d613333691b675e2f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "\"apps/urbe/csharp/tests/fixtures/e2e-vault/Publica\\303\\247\\303\\265es/Demo.publication.json\"",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Video.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoFrameRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EmbedFragments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoEditing.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VideoTimeline.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationVideoUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoDirectionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VideoExpressivenessTests.cs",
+    "docs/governance/handoffs/HO-20261119-urbe-video-ready.json"
+  ],
+  "work_completed": [
+    "Diagnóstico de uma conversa real da beta.57 (exportada pelo proprietário, não versionada): o pedido de um vídeo motion graphics de 60 s terminou sem vídeo depois de 95 mensagens, com pedidos de permissão repetidos e gráficos/fórmulas vazios.",
+    "Causa 1: o schema dado ao Assistente mandava a função do gráfico e o TeX para source, mas o motor lê text; o motor agora lê os dois e o schema foi corrigido.",
+    "Causa 2: o selo de autoria {ia:\"modelo\"} vazava para título e legendas e impedia achar trechos por título; títulos, legendas e fragmentos ignoram o selo.",
+    "Causa 3: erros genéricos ('Uma fonte não existe', 'Vídeo inválido: keyframe'); agora dizem qual fonte/trecho/propriedade/curva e listam o que existe.",
+    "Causa 4: cenas escritas com placementId diferente eram trocadas em silêncio por cenas padrão; agora vão, em ordem, para as seções sem cena.",
+    "Causa 5: look_at_video abria um diálogo de envio a cada quadro mesmo com o agente em autônomo; sob autônomo envia ao mesmo provedor da conversa sem perguntar.",
+    "Ferramenta nova render_video: narra com a voz do aparelho, ajusta cenas à fala, gera o MP4 verificado (mesmo caminho do Exportar MP4 do Estúdio) e o SRT no vault, sem substituir arquivos, e registra o MP4 na publicação.",
+    "Schema do Assistente: exemplo completo de cena (validado por teste), formas line/arrow, orientações de qualidade e regra de não criar publicações de teste.",
+    "Motor: curvas cubic-bezier e back, traço vetorial (path) que se desenha, grupos (parent), formas line e arrow, largura/altura animáveis; inspetor com Curva até aqui; Estúdio com traços prontos."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1795/1795, incluindo reproduções dos defeitos (VideoDirectionTests) e VideoExpressivenessTests."
+    },
+    {
+      "check": "Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "696 testes; o único vermelho da primeira rodada (notas embutidas) era build anterior à edição e passou em seguida. render_video gera MP4 H.264 real verificado pelo ffmpeg do PC."
+    },
+    {
+      "check": "Quadros reais do exemplo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Folha de quadros renderizada (seta desenhada, visto com ressalto, grupo girando); dois problemas de composição achados nela e corrigidos no exemplo."
+    }
+  ],
+  "known_issues": [
+    "Não testado no aparelho: a voz e o codificador do Android não foram usados por render_video nesta sessão (ADD-0035: dito, não pendente).",
+    "Não rodei de novo a conversa real com o modelo do proprietário; a correção foi provada com testes que reproduzem cada defeito.",
+    "Qualidade estética ainda depende do modelo; o Urbe agora dá exemplo e regras, mas não tem temas/presets visuais prontos.",
+    "A UI que pede consentimento visual não tem teste automatizado próprio."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Presets visuais de vídeo (tema, tipografia, paleta) que o Assistente e a pessoa aplicam de uma vez.",
+    "Reexportação por segmentos.",
+    "Governança em PR próprio (exige o proprietário pelas regras vigentes do integrador): ADR-0051 com a pesquisa de 19/11 e DEC-0066 pendente; alinhar .github/integrator/lifecycle.py ao ADD-0035 (hoje qualquer mudança em docs/governance ou docs/adr exige o proprietário)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O roteiro continua nas notas; render_video grava MP4/SRT/WAV como arquivos novos e o projeto só referencia."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "render_video é write (aprovação conforme a política); o envio visual sem pergunta vale só para o agente que a pessoa pôs em autônomo, ao provedor da própria conversa."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada declarado como testado no aparelho (ADD-0035)."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-video-render-tool",
+      "status": "product-specific",
+      "rationale": "Ferramenta do Assistente do Urbe sobre o motor de vídeo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correções e feature autorizada (#956) dentro do Urbe; DEC-0066 só registrada."
+  }
+}

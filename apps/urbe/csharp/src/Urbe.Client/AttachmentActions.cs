@@ -15,7 +15,7 @@ public sealed partial class MainView
         if (Dialogs.IsOpen) return Task.CompletedTask;
         var name = path[(path.LastIndexOf('/') + 1)..];
         var items = new List<DialogItem>();
-        if (withView) items.Add(new DialogItem("Visualizar", UrbeTheme.Icons.Image, "A prévia dentro do Urbe.", Run: () => ShowFileAsync(path)));
+        if (withView) items.Add(new DialogItem("Visualizar", UrbeTheme.Icons.Image, "A prévia dentro do Numa.", Run: () => ShowFileAsync(path)));
         // #downloadPreviewBtn: a copy where the person chooses (only reads the vault)
         if (_vault is not null) items.Add(new DialogItem("Baixar arquivo", UrbeTheme.Icons.Download, "Uma cópia onde você escolher.", Run: () => DownloadFileAsync(path)));
         if (_vault is { CanShare: true }) items.Add(ShareItem(path));

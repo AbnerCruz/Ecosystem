@@ -111,6 +111,18 @@ public sealed partial class MainView
             host.ShowLifeNotice(text);
         }
 
+        public Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, bool structured = false)
+        {
+            Need(PluginPermissions.Agents);
+            return host.Assistant.AskFromPluginAsync(manifest.Name, agentId, task, scope, structured);
+        }
+
+        public bool SourceExists(string path)
+        {
+            Need(PluginPermissions.Agents);
+            return ((IAssistantApp)host).FileExists(path);
+        }
+
         public void Button(string title, string icon, Func<Task> run)
         {
             Need(PluginPermissions.Buttons);

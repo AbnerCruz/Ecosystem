@@ -196,6 +196,42 @@ public sealed class AssistantMemoryEngineTests
         Assert.DoesNotContain(AssistantMemoryEngine.Visible(cfg, "Equipe", "geral"), m => m.Id == temporary.Id);
     }
 
+    /// <summary>
+    /// CST-133: forgetting the memory that replaced another never brings the old one back; saying the same thing again
+    /// as a new statement is a new memory (with its own date and origin), not the obsolete record revived.
+    /// </summary>
+    [Fact]
+    public void ForgettingTheReplacementDoesNotReviveTheObsoleteMemory()
+    {
+        var cfg = new AiConfig();
+        var old = AssistantMemoryEngine.Remember(cfg, "O chefe da equipe é Raul", "Equipe");
+        var next = AssistantMemoryEngine.Remember(cfg, "O chefe da equipe é Ana", "Equipe");
+        Assert.True(AssistantMemoryEngine.Supersede(cfg, old.Id, next.Id));
+        Assert.Contains(old.Id, next.RelatedMemoryIds);   // inspectable: who replaced whom, and since when
+        Assert.NotNull(old.ValidUntil);
+        Assert.True(AssistantMemoryEngine.Forget(cfg, next.Id));
+        Assert.Empty(AssistantMemoryEngine.Search(cfg, "Equipe", "geral", "chefe da equipe", 5));
+        Assert.Equal("superseded", Assert.Single(cfg.MemoryRecords).State);
+        var again = AssistantMemoryEngine.Remember(cfg, "O chefe da equipe é Raul", "Equipe");
+        Assert.NotEqual(old.Id, again.Id);
+        Assert.Equal("superseded", cfg.MemoryRecords.Single(m => m.Id == old.Id).State);
+        Assert.Equal(again.Id, Assert.Single(AssistantMemoryEngine.Search(cfg, "Equipe", "geral", "chefe da equipe", 5)).Memory.Id);
+    }
+
+    /// <summary>CST-134: a memory's source notes follow a rename or a folder move; other memories are untouched.</summary>
+    [Fact]
+    public void MemorySourcesFollowRenamedAndMovedNotes()
+    {
+        var cfg = new AiConfig();
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "a", Text = "x", RelatedPaths = ["Plano.md", "Pasta/Um.md"] });
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "b", Text = "y", RelatedPaths = ["Outra.md"] });
+        cfg.MemoryRecords.Add(new AiMemoryRecord { Id = "c", Text = "z", RelatedPaths = ["Plano.md", "Plano final.md"] });
+        Assert.Equal(2, AssistantMemoryEngine.RetargetPaths(cfg, [("Plano.md", "Plano final.md"), ("Pasta/Um.md", "Nova/Um.md")]));
+        Assert.Equal(["Plano final.md", "Nova/Um.md"], cfg.MemoryRecords[0].RelatedPaths);
+        Assert.Equal(["Outra.md"], cfg.MemoryRecords[1].RelatedPaths);
+        Assert.Equal(["Plano final.md"], cfg.MemoryRecords[2].RelatedPaths);   // no duplicate when both names were there
+    }
+
     [Fact]
     public void DestructiveMemoryOperationsCannotCrossAgentBoundary()
     {

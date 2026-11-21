@@ -11,7 +11,7 @@ public static class AssistantQuickNoteTools
     public static AiTool Add { get; } = new()
     {
         Name = "add_quick_note", Access = "write",
-        Description = "Registra uma nota rápida em \"" + QuickNotes.Folder + "/aaaa-mm.md\", na seção do dia, como item de checklist com o horário atual. O Urbe cria a nota do mês, a seção e o checkbox; envie só o texto. Use quando o usuário pedir para anotar, lembrar ou registrar algo rapidamente.",
+        Description = "Registra uma nota rápida em \"" + QuickNotes.Folder + "/aaaa-mm.md\", na seção do dia, como item de checklist com o horário atual. O Numa cria a nota do mês, a seção e o checkbox; envie só o texto. Use quando o usuário pedir para anotar, lembrar ou registrar algo rapidamente.",
         Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"text":{"type":"string","description":"O que anotar, numa frase"}},"required":["text"],"additionalProperties":false}""")!,
         Label = i => { var t = ((string?)i["text"] ?? "").Trim(); return "Nota rápida: " + (t.Length > 40 ? t[..40] + "…" : t); },
         Preview = (i, host) =>

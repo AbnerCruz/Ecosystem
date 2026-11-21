@@ -15,7 +15,7 @@ public sealed class VaultPluginSpec
     public const string Extension = ".plugin.json";
     public const int Format = 1;
 
-    public static readonly string[] Permissions = ["avisos", "botoes", "comandos", "notas.ler", "notas.escrever", "eventos", "paineis", "dados"];
+    public static readonly string[] Permissions = ["avisos", "botoes", "comandos", "notas.ler", "notas.escrever", "eventos", "paineis", "dados", "agentes"];
     public static readonly string[] Icons = ["clock", "star", "check", "edit", "search", "file", "folder", "list", "book", "pin", "sparkle", "plus", "layers", "flower", "house"];
     public static readonly string[] Events = ["nota:aberta", "nota:salva"];
 
@@ -147,7 +147,9 @@ public sealed class VaultPluginSpec
     public static readonly IReadOnlyDictionary<string, string> Verbs = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["definir"] = "", ["se"] = "", ["repetir"] = "", ["painel"] = "paineis", ["aviso"] = "avisos", ["escreverNota"] = "notas.escrever",
-        ["inserirTexto"] = "notas.escrever", ["abrirNota"] = "notas.ler", ["relogio"] = "", ["parar"] = ""
+        ["inserirTexto"] = "notas.escrever", ["abrirNota"] = "notas.ler", ["relogio"] = "", ["parar"] = "",
+        // CST-146: an agent the person set up works on what the plugin delimited (asked each time, writes only there)
+        ["perguntarAgente"] = "agentes"
     };
 
     private static void CheckActions(JsonArray actions, string where, List<string> declared, List<string> errors)
@@ -183,6 +185,12 @@ public sealed class VaultPluginSpec
                     break;
                 case "aviso" or "inserirTexto" or "abrirNota":
                     CheckTemplate(Str(a[verb]), w + "." + verb, errors);
+                    break;
+                case "perguntarAgente":
+                    CheckTemplate(Str(a["perguntarAgente"]), w + ".perguntarAgente", errors);
+                    if (a["escopo"] is not JsonArray scope || scope.Count == 0)
+                        errors.Add(w + ".escopo: diga as notas ou pastas em que o agente pode trabalhar, ex.: [\"{{notaAberta}}\"] ou [\"Projetos/\"].");
+                    else for (int k = 0; k < scope.Count; k++) CheckTemplate(Str(scope[k]), w + ".escopo[" + k + "]", errors);
                     break;
                 case "escreverNota":
                     CheckTemplate(Str(a["escreverNota"]), w + ".escreverNota", errors);
@@ -273,6 +281,7 @@ public sealed class VaultPluginSpec
         "  {\"escreverNota\": \"Diário/{data()}.md\", \"conteudo\": \"- {hora()} pausa\", \"modo\": \"acrescentar\"|\"substituir\"}   (\"notas.escrever\"; nunca em .urbe nem em plugins)",
         "  {\"inserirTexto\": \"⏱ {formatarTempo(segundos)}\"}          insere no cursor da nota aberta no editor (\"notas.escrever\")",
         "  {\"abrirNota\": \"Diário/{data()}.md\"}                      abre no editor (\"notas.ler\")",
+        "  {\"perguntarAgente\": \"Resuma o que falta fazer\", \"escopo\": [\"{notaAberta}\"], \"agente\": \"geral\", \"resposta\": \"rec\"}   um dos seus agentes trabalha só nessas notas ou pastas, com o próprio modelo e permissões; a pessoa confirma cada pedido e escolhe o agente se \"agente\" faltar (\"agentes\"). Com \"resposta\", a variável rec recebe o texto e, se declaradas, rec_acao, rec_justificativa, rec_passos (lista), rec_criterio, rec_fontes (lista, só fontes conferidas no escopo), rec_incertezas (lista) e rec_estado (concluido, sem estrutura ou recusado)",
         "  {\"parar\": true}                                          para as ações restantes",
         "",
         "EXPRESSÕES: números, \"textos\" ou 'textos', verdadeiro/falso, nulo, [listas], variáveis do estado, + - * / %, == != < <= > >=, e/&&, ou/||, nao/!, condição ? a : b, lista[i].",
@@ -325,6 +334,17 @@ public interface IVaultPluginHost : IPluginScriptHost
     string? OpenNotePath { get; }
     string? LoadData(string key);
     void SaveData(string key, string json);
+
+    /// <summary>
+    /// CST-146: asks an agent (by id, or the person picks when null) to do <paramref name="task"/> on
+    /// <paramref name="scope"/> only: its own model and permissions, writes only inside the scope, the person agrees first.
+    /// Returns the agent's final answer (null when the person declined or the run ended without one).
+    /// </summary>
+    Task<string?> AskAgentAsync(string? agentId, string task, IReadOnlyList<string> scope, string plugin, bool structured = false) =>
+        throw new PluginScriptException("Este lugar não oferece agentes a plugins.");
+
+    /// <summary>Whether a path is a note or file of the vault (to check the sources an agent cites).</summary>
+    bool Exists(string path) => false;
 }
 
 /// <summary>
@@ -502,6 +522,22 @@ public sealed class VaultPluginRuntime
                 case "abrirNota":
                     _host.OpenNote(PluginScript.Template(VaultPluginSpec.Str(a["abrirNota"]), s).Trim());
                     break;
+                case "perguntarAgente":
+                {
+                    var scope = (a["escopo"] as JsonArray ?? []).Select(x => PluginScript.Template(VaultPluginSpec.Str(x), s).Trim()).Where(x => x.Length > 0).ToList();
+                    if (scope.Count == 0) throw new PluginScriptException("perguntarAgente sem escopo: nada para o agente trabalhar.");
+                    // "resposta": the variable that receives the answer (and its parts, when declared) for the plugin to use
+                    var into = VaultPluginSpec.Str(a["resposta"]);
+                    if (into.Length > 0 && !s.Vars.ContainsKey(into)) throw new PluginScriptException("Variável desconhecida: " + into + ". Declare-a em \"estado\".");
+                    var answer = await _host.AskAgentAsync(VaultPluginSpec.Str(a["agente"]) is { Length: > 0 } id ? id : null,
+                        PluginScript.Template(VaultPluginSpec.Str(a["perguntarAgente"]), s), scope, _spec.Name, structured: into.Length > 0);
+                    if (into.Length == 0) break;
+                    bool InScope(string path) => scope.Any(x => string.Equals(path, x, StringComparison.OrdinalIgnoreCase) ||
+                        path.StartsWith(x.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase));
+                    foreach (var (name, value) in PluginAgentAnswer.Parse(answer, InScope, _host.Exists).Variables(into))
+                        if (s.Vars.ContainsKey(name)) s.Vars[name] = value;
+                    break;
+                }
             }
         }
         return true;

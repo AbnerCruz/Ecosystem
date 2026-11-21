@@ -203,11 +203,12 @@ public sealed class InspirationLibrary
     {
         static InspirationReference Seed(string id, string title, string genre, string perspective,
             string style, string idea, params string[] mechanics) =>
-            new("ref." + id, title, genre, perspective, style, mechanics, idea, Curated: true);
+            new("ref." + id, title, genre, perspective, style, mechanics, idea,
+                InspirationCatalogExpansion.GameplaySearchUrl(title), Curated: true);
         yield return Seed("stardew", "Stardew Valley", "Simulação", "Top-down", "Pixel art",
             "Estude como ciclos de dias, estações e rotinas dos personagens se combinam.", "Agricultura", "Calendário", "NPCs", "Progressão");
         yield return Seed("terraria", "Terraria", "Sandbox", "Lateral", "Pixel art",
-            "Observe como exploração, criação de itens e progressão se conectam num mundo editável.", "Construção", "Crafting", "Exploração");
+            "Observe como exploração, crafting, montarias voadoras e progressão se conectam num mundo editável.", "Construção", "Crafting", "Exploração", "Montarias", "Voo");
         yield return Seed("celeste", "Celeste", "Plataforma", "Lateral", "Pixel art",
             "Analise precisão de movimento, leitura da fase e retomada rápida após erros.", "Dash", "Plataforma de precisão", "Respawn");
         yield return Seed("survivors", "Vampire Survivors", "Roguelite", "Top-down", "Pixel art",
@@ -229,5 +230,7 @@ public sealed class InspirationLibrary
         yield return Seed("ftl", "FTL: Faster Than Light", "Estratégia", "Vista de sistemas", "2D estilizado",
             "Analise gestão de tripulação, sistemas interdependentes e decisões em tempo real pausável.",
             "Gerenciamento", "Roguelite", "Combate tático");
+        foreach (var reference in InspirationCatalogExpansion.Entries())
+            yield return reference;
     }
 }

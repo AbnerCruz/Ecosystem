@@ -112,6 +112,15 @@ public static partial class Calculator
             return SolveLine(line, eq, scope);
         if (Command(line, "integral", "integrar", "integrate", "∫") is { } iExpr)
             return IntegralLine(line, iExpr, scope);
+        // a factor times a definite integral: "0,5*integral de … de 0 até 2*pi", "pi*integral de x^4 de 0 até 2"
+        if (ScaledIntegral().Match(line) is { Success: true } scaled && DefiniteBounds().IsMatch(scaled.Groups[2].Value))
+        {
+            var factor = MathEvaluator.Evaluate(MathParser.Parse(scaled.Groups[1].Value, names), scope.Values, scope.Functions);
+            if (factor is not Scalar { Pure: true } k) throw new MathError("O fator antes da integral precisa ser um número.");
+            var (value, error, exact) = Definite(scaled.Groups[2].Value, scope);
+            return exact ? new CalcLine(line, MathFormat.Number(k.Value * value))
+                : new CalcLine(line, "≈ " + MathFormat.Number(k.Value * value) + "  (erro estimado < " + (Math.Abs(k.Value) * error).ToString("0.#E+0", MathFormat.PtBr) + ")", Approximate: true);
+        }
         if (Conversion().Match(line) is { Success: true } conv && MathUnits.Parse(conv.Groups[2].Value) is { } target)
         {
             var value = MathEvaluator.Evaluate(MathParser.Parse(conv.Groups[1].Value, names), scope.Values, scope.Functions);
@@ -140,6 +149,7 @@ public static partial class Calculator
     private static CalcLine IntegralLine(string line, string text, Scope scope)
     {
         string? from = null, to = null;
+        var whole = text;
         if (DefiniteBounds().Match(text) is { Success: true } bounds)
         {
             text = bounds.Groups[1].Value;
@@ -153,21 +163,31 @@ public static partial class Calculator
             return anti is null
                 ? new CalcLine(line, null, "Não encontrei uma primitiva exata. Dê os limites (… de a até b) para o valor numérico.")
                 : new CalcLine(line, MathFormat.Write(anti) + " + C");
-        double a = Number(from, scope), b = Number(to!, scope);
-        if (anti is not null)
+        var (value, error, isExact) = Definite(whole, scope);
+        return isExact ? new CalcLine(line, MathFormat.Number(value))
+            : new CalcLine(line, "≈ " + MathFormat.Number(value) + "  (erro estimado < " + error.ToString("0.#E+0", MathFormat.PtBr) + ")", Approximate: true);
+    }
+
+    /// <summary>A definite integral "f de a até b": its value, the error bound when numeric, and whether it came from a checked primitive.</summary>
+    private static (double Value, double Error, bool Exact) Definite(string text, Scope scope)
+    {
+        var bounds = DefiniteBounds().Match(text);
+        if (!bounds.Success) throw new MathError("Dê os limites da integral: … de a até b.");
+        var (expr, x) = WithVariable(bounds.Groups[1].Value, scope.FunctionNames, scope);
+        expr = Inline(MathSymbolic.Substitute(expr, scope.Values, x), scope);
+        double a = Number(bounds.Groups[2].Value, scope), b = Number(bounds.Groups[3].Value, scope);
+        var numeric = MathSymbolic.Integrate(t => MathEvaluator.Number(expr, x, t, scope.Values), a, b);
+        if (MathSymbolic.Antiderivative(expr, x) is { } anti)
         {
             try
             {
                 var exact = MathEvaluator.Number(anti, x, b, scope.Values) - MathEvaluator.Number(anti, x, a, scope.Values);
-                var check = MathSymbolic.Integrate(t => MathEvaluator.Number(expr, x, t, scope.Values), a, b);
                 // the primitive is trusted only where the function is continuous: compare with the numeric value
-                if (double.IsFinite(exact) && Math.Abs(exact - check.Value) <= 1e-6 * Math.Max(1, Math.Abs(exact)))
-                    return new CalcLine(line, MathFormat.Number(exact));
+                if (double.IsFinite(exact) && Math.Abs(exact - numeric.Value) <= 1e-6 * Math.Max(1, Math.Abs(exact))) return (exact, 0, true);
             }
             catch (MathError) { }
         }
-        var (value, error) = MathSymbolic.Integrate(t => MathEvaluator.Number(expr, x, t, scope.Values), a, b);
-        return new CalcLine(line, "≈ " + MathFormat.Number(value) + "  (erro estimado < " + error.ToString("0.#E+0", MathFormat.PtBr) + ")", Approximate: true);
+        return (numeric.Value, numeric.Error, false);
     }
 
     private static double Number(string text, Scope scope) =>
@@ -270,6 +290,9 @@ public static partial class Calculator
     private static partial Regex Conversion();
     [GeneratedRegex(@"^(.+?)\s+(?:de|from)\s+(.+?)\s+(?:até|ate|a|to)\s+(.+)$", RegexOptions.IgnoreCase)]
     private static partial Regex DefiniteBounds();
+
+    [GeneratedRegex(@"^(.+?)\s*[*·×]\s*(?:integral|∫)\s+(?:de\s+)?(.+)$", RegexOptions.IgnoreCase)]
+    private static partial Regex ScaledIntegral();
     [GeneratedRegex(@"^(.+?)\s+(?:para|for|em relação a)\s+([A-Za-z_]\w*)\s*$", RegexOptions.IgnoreCase)]
     private static partial Regex ForVariable();
 }

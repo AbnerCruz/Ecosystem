@@ -49,7 +49,9 @@ public sealed class ArchitectureTests
                 // PdfPig is a managed, Apache-2.0 PDF text/layout dependency (no native OCR runtime).
                 new { Name = "PdfPig", Version = "0.1.16" },
                 // ADR-0047: managed, read-only EPUB parser; no UI/native host in Core.
-                new { Name = "VersOne.Epub", Version = "3.3.6" }
+                new { Name = "VersOne.Epub", Version = "3.3.6" },
+                // ADR-0048 / DEC-0061: official MCP client (Apache-2.0), client side only, no UI/native host.
+                new { Name = "ModelContextProtocol.Core", Version = "2.4.0" }
             },
             packages);
         Assert.Empty(project.Descendants("FrameworkReference"));
@@ -63,9 +65,8 @@ public sealed class ArchitectureTests
     // Urbe.Readers.Assets: the readers' bundled engines (slides, OCR) only, loaded when such a reader opens
     [InlineData("Urbe.Client", "Urbe.Core,Urbe.Readers.Assets")]
     [InlineData("Urbe.Readers.Assets", "")]
-    [InlineData("Urbe.LocalAi", "Urbe.Core")]
-    [InlineData("Urbe.Desktop", "Urbe.Client,Urbe.LocalAi")]
-    [InlineData("Urbe.Android", "Urbe.Client,Urbe.LocalAi")]
+    [InlineData("Urbe.Desktop", "Urbe.Client")]
+    [InlineData("Urbe.Android", "Urbe.Client")]
     public void ReferencesRespectApprovedBoundaries(string name, string dependency)
     {
         var directory = Path.Combine(Root, "src", name);
@@ -92,5 +93,18 @@ public sealed class ArchitectureTests
         var types = typeof(ProductIdentity).Assembly.GetTypes().Select(t => t.Name);
         Assert.DoesNotContain(types, t => simulation.Any(s => t.StartsWith(s, StringComparison.Ordinal)));
         Assert.False(Directory.Exists(Path.Combine(Root, "src", "Urbe.Client", "World")), "src/Urbe.Client/World voltou");
+    }
+
+    /// <summary>
+    /// CST-061 (owner, 31/10/2026): the old page editor left the app. Old .page.json files are shown, exported and
+    /// converted into Publications; new work is a Publication. Neither its studio nor its page-making tools come back.
+    /// </summary>
+    [Fact]
+    public void TheOldPageEditorIsNotInTheProduct()
+    {
+        var types = typeof(ProductIdentity).Assembly.GetTypes().Select(t => t.Name).ToList();
+        Assert.DoesNotContain(types, t => t is "PageStudio" or "AssistantPageTools" or "PageTemplates");
+        foreach (var file in new[] { "PageStudioView.cs", "MainView.Studio.cs" })
+            Assert.False(File.Exists(Path.Combine(Root, "src", "Urbe.Client", file)), "src/Urbe.Client/" + file + " voltou");
     }
 }

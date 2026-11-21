@@ -159,7 +159,7 @@ public sealed class VoiceNoteService : Service
             if (!VoiceNotes.HasMicrophone(this))
                 NotifyDone("Permita o microfone para gravar", "Toque aqui ou no widget para permitir.", permission: true);
             else
-                NotifyDone("Não foi possível gravar agora", "Abra o Urbe e use Criar → Nota rápida.", permission: false);
+                NotifyDone("Não foi possível gravar agora", "Abra o Numa e use Criar → Nota rápida.", permission: false);
             VoiceNoteWidget.Refresh(this, recording: false);
             StopSelf();
             return StartCommandResult.NotSticky;
@@ -253,7 +253,7 @@ public sealed class VoiceNoteService : Service
             if (text is null)
             {
                 queue.Replace(entry with { Attempts = 1, Error = "Não foi possível transcrever." });
-                NotifyDone("Nota de voz guardada", "O Urbe transcreve quando você abrir o app.", permission: false);
+                NotifyDone("Nota de voz guardada", "O Numa transcreve quando você abrir o app.", permission: false);
                 return;
             }
             if (recognizer) { Recognizer.Release(); recognizer = false; }
@@ -263,7 +263,7 @@ public sealed class VoiceNoteService : Service
         {
             // the WAV and the entry stay: the app offers them again
             CrashLog.Write(ex, "voz");
-            NotifyDone("Nota de voz guardada", "O Urbe tenta de novo quando você abrir o app.", permission: false);
+            NotifyDone("Nota de voz guardada", "O Numa tenta de novo quando você abrir o app.", permission: false);
         }
         finally
         {
@@ -343,7 +343,7 @@ public sealed class VoiceNoteService : Service
             NotifyDone("Salvo em " + QuickNotes.Folder, FirstWords(entry.Text!), permission: false);
             VoiceNotes.Vibrate(this, confirm: true);
         }
-        else NotifyDone("Nota de voz guardada", "Abra o Urbe e escolha a pasta do vault para salvá-la.", permission: false);
+        else NotifyDone("Nota de voz guardada", "Abra o Numa e escolha a pasta do vault para salvá-la.", permission: false);
     }
 
     private static string FirstWords(string text)

@@ -292,30 +292,6 @@ JsonObject Alternative(string decisionId, int index, string option, string conse
 
 // Resposta a uma validação humana (ADD-0005, ADR-0008). Mesmo princípio de Alternative(): título e corpo são definidos AQUI e
 // validados por .github/scripts/apply-decision.cs; o hash impede aplicar uma resposta a uma validação que mudou.
-string ValidationHash(string check, string obj) =>
-    Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(check + "\n" + obj))).ToLowerInvariant()[..12];
-
-JsonObject ValidationAnswer(string taskId, string handoffId, string hash, bool approve)
-{
-    var result = approve ? "passed" : "failed";
-    var verb = approve ? "aprovada" : "reprovada";
-    return new JsonObject
-    {
-        ["result"] = result,
-        ["issueTitle"] = $"Validação {taskId}: {verb}",
-        ["issueBody"] =
-            "<!-- ecosystem-validation:v1 -->\n" +
-            $"validation: {taskId}\n" +
-            $"handoff: {handoffId}\n" +
-            $"check-hash: {hash}\n" +
-            $"result: {result}\n\n" +
-            $"Validação humana da tarefa {taskId} **{verb}**, feita pelo portal do Ecosystem.\n\n" +
-            "Enviar esta Issue confirma o resultado: uma automação o registra na verificação do handoff. " +
-            "Não edite as cinco primeiras linhas. Se quiser, escreva um comentário depois da linha `comment:`.\n\n" +
-            "comment:\n",
-    };
-}
-
 // --- decisões pendentes do proprietário (DEC-0007): sempre com o objeto a revisar ---
 var pendingDecisions = new JsonArray();
 var decisionsDoc = Load("docs/governance/decisions.json");
@@ -340,40 +316,9 @@ foreach (var dn in decisionsDoc["decisions"]!.AsArray())
     });
 }
 
-// --- validações humanas pendentes: último handoff de cada tarefa ---
+// --- validações humanas pendentes: ADD-0035 tirou essa etapa; a fila fica vazia (os registros antigos continuam nos handoffs) ---
 var pending = new JsonArray();
 var hdir = P("docs/governance/handoffs");
-if (Directory.Exists(hdir))
-{
-    var latestPerTask = Directory.EnumerateFiles(hdir, "*.json").Order()
-        .Select(f => (Rel: "docs/governance/handoffs/" + Path.GetFileName(f), Node: Load("docs/governance/handoffs/" + Path.GetFileName(f))))
-        .GroupBy(h => S(h.Node["task_id"]))
-        .Select(g => g.OrderBy(h => S(h.Node["timestamp"]), StringComparer.Ordinal).Last());
-    foreach (var (rel, h) in latestPerTask)
-    {
-        if (S(h["state"]) is "done" or "cancelled" or "failed") continue;
-        foreach (var v in h["verification"]!.AsArray())
-            if (S(v!["kind"]) == "human" && S(v["result"]) == "pending")
-            {
-                var obj = S(v["object"]) ?? throw new InvalidOperationException($"{rel}: validação humana pendente '{S(v["check"])}' sem 'object'; o portal não pode apresentá-la (DEC-0007).");
-                pending.Add(new JsonObject
-                {
-                    ["component"] = S(h["component"]),
-                    ["taskId"] = S(h["task_id"]),
-                    ["check"] = S(v["check"]),
-                    ["state"] = "HUMAN_VALIDATION_PENDING",
-                    ["record"] = Blob(rel),
-                    ["object"] = Link(obj),
-                    // ADD-0012: só a validação crítica interrompe o proprietário; handoffs antigos sem a marcação contam como críticos.
-                    ["critical"] = !(v["critical"] is JsonValue cv && cv.TryGetValue<bool>(out var isCritical) && !isCritical),
-                    ["handoff"] = S(h["message_id"]),
-                    ["checkHash"] = ValidationHash(S(v["check"])!, obj),
-                    ["approve"] = ValidationAnswer(S(h["task_id"])!, S(h["message_id"])!, ValidationHash(S(v["check"])!, obj), true),
-                    ["reject"] = ValidationAnswer(S(h["task_id"])!, S(h["message_id"])!, ValidationHash(S(v["check"])!, obj), false),
-                });
-            }
-    }
-}
 
 // --- candidatos a reutilização (ADR-0011): derivados dos reuse_assessment dos handoffs, nunca digitados ---
 var reuseLatest = new Dictionary<(string Subject, string Component), (string Ts, JsonNode Node, string Handoff, string Component)>();

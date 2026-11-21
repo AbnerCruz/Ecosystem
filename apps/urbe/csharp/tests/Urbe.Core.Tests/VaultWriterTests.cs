@@ -583,6 +583,6 @@ public sealed class VaultWriterTests
             directory = directory.Parent;
         }
 
-        throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Urbe.");
+        throw new DirectoryNotFoundException("Execute os testes dentro do checkout do Numa.");
     }
 }
