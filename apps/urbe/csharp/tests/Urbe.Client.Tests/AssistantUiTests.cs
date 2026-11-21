@@ -38,6 +38,58 @@ public sealed partial class HeadlessUiTests
     private static string Sse(params string[] chunks) => string.Concat(chunks.Select(c => "data: " + c + "\n\n")) + "data: [DONE]\n\n";
 
     [Fact]
+    public async Task Assistant_OpensTheNewVideoPublicationForEditing() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "numa-video-handoff-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var panel = view.Assistant;
+                panel.Open();
+                panel.SelectAgent("geral");
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "teste"));
+                panel.Config.AgentPolicies["geral"] = "auto";
+                panel.Conversation.ProviderId = "openrouter";
+                panel.Conversation.Model = "org/m";
+
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"video","function":{"name":"create_video","arguments":"{\"title\":\"Órbita\",\"scenes\":[{\"title\":\"Abertura\",\"narration\":\"A Terra dá uma volta ao redor do Sol.\",\"code\":\"function draw(ctx, t) { ctx.circle(100, 100, 20); }\"}]}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                for (int i = 0; i < 2; i++)
+                    model.Chats.Enqueue(Sse(
+                        """{"choices":[{"delta":{"content":"A publicação Órbita está pronta para editar."}}]}""",
+                        """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+
+                panel.Send("Crie um vídeo sobre a órbita da Terra");
+                await panel.CurrentRun!;
+                Assert.Equal("end", panel.Conversation.Runs.Last().Stopped);
+                Assert.True(view.PublicationsStudio.IsVisible);
+                Assert.False(panel.IsVisible);
+                Assert.Equal("Órbita", view.PublicationsStudio.Project!.Title);
+                Assert.DoesNotContain("\"name\":\"render_video\"", model.Sent[0]);
+                Assert.Empty(Directory.EnumerateFiles(vault, "*.mp4", SearchOption.AllDirectories));
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                window.Close();
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Assistant_EditsTheVaultWithApprovalAndUndoes() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {

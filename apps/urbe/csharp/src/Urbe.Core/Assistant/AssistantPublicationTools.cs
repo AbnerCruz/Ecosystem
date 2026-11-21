@@ -103,8 +103,8 @@ public static class AssistantPublicationTools
         // #1004: procedural motion — the model invents particles, orbits, grids and staggers as formulas instead of lists of elements
         "Fórmulas: + - * / ^, pi, tau, e; sin cos tan atan sqrt abs exp ln floor ceil round fract sat smooth (0–1 suave) rand(v) (0–1 determinístico por v) noise(v) (ruído suave); " +
         "min(a,b) max(a,b) mod(a,b) pow(a,b) atan2(y,x) step(borda,v) mix(a,b,u) clamp(v,lo,hi) — dentro delas a vírgula separa argumentos e o decimal é ponto. " +
-        "CÓDIGO LIVRE (kind code): quando a cena pede algo que os elementos prontos não fazem — simulação, fractal, campo de partículas com rastro, visualização de dados, geometria gerada, tipografia desenhada, transições inventadas — escreva um programa. " + VideoCode.Help + " " +
-        "Para ocupar o quadro inteiro use x 0.5, y 0.5, width 1, height 1. Combine com elementos comuns (título, fórmula) por cima. Se o programa falhar, review_publication diz a linha e o motivo. " +
+        "CÓDIGO LIVRE (kind code): use um programa para desenhar cada nova cena de motion graphics. " + VideoCode.Help + " " +
+        "Para ocupar o quadro inteiro use x 0.5, y 0.5, width 1, height 1. Se o programa falhar, review_publication diz a linha e o motivo. " +
         "Ex.: {\"id\":\"campo\",\"kind\":\"code\",\"x\":0.5,\"y\":0.5,\"width\":1,\"height\":1,\"text\":\"function draw(ctx,t){ for(var i=0;i<200;i++){ var r=30+Math.random()*200, a=Math.random()*6.28+t*0.5; ctx.fill('#7dd3fc'); ctx.circle(ctx.width/2+r*Math.cos(a), ctx.height/2+r*Math.sin(a)*0.6, 2); } }\"}. " +
         "Movimento procedural: partículas, órbitas, grades, ondas e entradas escalonadas são UM elemento com repeat e fórmulas, nunca dezenas de elementos; " +
         "ex. 200 estrelas: {\"id\":\"estrelas\",\"kind\":\"shape\",\"text\":\"circle\",\"width\":0.004,\"height\":0.007,\"repeat\":200,\"motions\":[{\"property\":\"x\",\"mode\":\"set\",\"expression\":\"rand(i)\"},{\"property\":\"y\",\"mode\":\"set\",\"expression\":\"rand(i+0.5)\"},{\"property\":\"opacity\",\"mode\":\"set\",\"expression\":\"0.3+0.7*noise(i+2t)\"}]}; " +
@@ -115,10 +115,9 @@ public static class AssistantPublicationTools
         // #956 (beta.57, conversa real): the model spent most of the run building test publications to learn the engine
         "Tudo o que o motor de vídeo aceita está descrito aqui: não crie publicações ou notas de teste para descobrir. " +
         // beta.58: the whole video in one call was cut by the model's output limit and arrived without its spec
-        "Vídeo novo: create_video numa chamada só (título, tema e, por cena, a fala, o layout e os textos curtos da tela), depois revise com review_publication e, quando disponível, look_at_video. " +
+        "Vídeo novo: create_video numa chamada só (título, tema e, por cena, a fala e o programa que desenha a tela), depois revise com review_publication e, quando disponível, look_at_video. " +
         "Para mudar um vídeo existente, ou montar a partir de notas que já existem: 1) write_publication só com sources e design {layout:video} (o app cria uma cena por fonte e devolve os ids); " +
-        "2) edit_video_scene para cada cena, uma por chamada, de preferência com layout e slots (abertura, topico, comparacao, numero, formula, grafico, citacao: " +
-        "composições prontas com entradas animadas), acrescentando elementos só quando o layout não basta; 3) review_publication e look_at_video; 4) entregue a publicação editável. Nunca mande os elementos detalhados de todas as cenas num write_publication só (a resposta é cortada pelo limite de saída); o roteiro compacto do create_video cabe. " +
+        "2) edit_video_scene para cada cena, uma por chamada, com um elemento code nas cenas novas e nas cenas programadas que precisam de revisão; 3) review_publication e look_at_video; 4) entregue a publicação editável. Nunca mande os elementos detalhados de todas as cenas num write_publication só (a resposta é cortada pelo limite de saída); o roteiro compacto do create_video cabe. " +
         "Exemplo de cena completa: {\"id\":\"cena_relogio\",\"placementId\":\"<id da seção>\",\"duration\":7,\"transition\":{\"kind\":\"fade\",\"seconds\":0.5},\"elements\":[" +
         "{\"id\":\"t\",\"kind\":\"title\",\"x\":0.5,\"y\":0.16,\"width\":0.8,\"height\":0.14,\"fontSize\":0.07,\"keyframes\":[{\"property\":\"opacity\",\"time\":0,\"value\":0},{\"property\":\"opacity\",\"time\":0.6,\"value\":1,\"easing\":\"easeOut\"}]}," +
         "{\"id\":\"espelho1\",\"kind\":\"shape\",\"text\":\"rect\",\"x\":0.3,\"y\":0.35,\"width\":0.2,\"height\":0.02}," +
