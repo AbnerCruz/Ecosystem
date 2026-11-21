@@ -133,4 +133,21 @@ public sealed class VideoCodeTests
         var cmds = VideoCode.Run("function draw(ctx, t, info){ ctx.rect(0, 0, 100 * t / info.duration, 1); }", 2, 100, 100, duration: 8);
         Assert.Equal(25, cmds.Single().Args[2], 9);
     }
+
+    [Fact]
+    public void ColourAnd3dHelpersGiveWhatADrawingNeeds()
+    {
+        var cmds = VideoCode.Run("""
+            function draw(ctx){
+              ctx.fill(hsl(0, 1, 0.5)); ctx.fill(hsl(120, 1, 0.5)); ctx.fill(hsl(240, 1, 0.5, 0.5));
+              var p = rotateY({ x: 100, y: 0, z: 0 }, 90); ctx.circle(p.x, p.z, 1);
+              var q = project(100, 50, 600, 600); ctx.circle(q.x, q.y, q.scale);
+            }
+            """, 0, 100, 100);
+        Assert.Equal(["#ff0000", "#00ff00", "#800000ff"], cmds.Where(c => c.Op == "fill").Select(c => c.Color));
+        var circles = cmds.Where(c => c.Op == "circle").ToList();
+        Assert.Equal(0, circles[0].Args[0], 6);       // x turned 90° about y goes to depth
+        Assert.Equal(-100, circles[0].Args[1], 6);
+        Assert.Equal([50, 25, 0.5], circles[1].Args.Select(v => Math.Round(v, 6)));   // twice as far: half the size
+    }
 }

@@ -36,7 +36,8 @@ public static class VideoCode
         "draw(ctx, t, info): t = segundos da cena, info = {width, height, frame, fps, duration} (t / info.duration vai de 0 a 1 na cena, e acompanha a duração se a narração mudar). ctx desenha em pixels da caixa do elemento (0,0 no canto superior esquerdo; ctx.width × ctx.height). " +
         "Cor e traço: fill(cor) stroke(cor, largura) noFill() noStroke() alpha(0..1) blend(\"normal|add|screen|multiply|overlay|lighten|darken\") dash(traço, vão, deslocamento) (dash(0) volta ao contínuo) gradient(x1,y1,x2,y2,cor1,cor2) glow(raio, cor) noGlow(). " +
         "Formas: circle(x,y,r) ellipse(x,y,rx,ry) rect(x,y,w,h,raio?) arc(x,y,r,grauInicial,grauFinal) line(x1,y1,x2,y2) poly([x,y,…], fechar?) path(\"M… L… C… Z\") text(texto,x,y,tamanho,\"left|center|right\"?, negrito?) image(i,x,y,largura,altura) (a imagem i da lista em source, \"a.png; b.jpg\", do vault). measure(texto, tamanho, negrito?) devolve a largura em pixels. " +
-        "Transformações: save() restore() translate(x,y) rotate(graus) scale(s, sy?). Também: lerp(a,b,u), clamp(v,a,b), ease(u) (suave 0..1), noise(x), Math.random() determinístico. " +
+        "Transformações: save() restore() translate(x,y) rotate(graus) scale(s, sy?). Também: lerp(a,b,u), clamp(v,a,b), ease(u) (suave 0..1), noise(x), Math.random() determinístico, hsl(graus, s, l, alfa?) → cor. " +
+        "3D simples: rotateX(p, graus), rotateY(p, graus) com p = {x,y,z}; project(x, y, z, foco?) → {x, y, scale} em perspectiva (some ao centro; z positivo afasta). " +
         "Simulação com estado: s = simulate(\"nome\", function(){ return estadoInicial }, function(s, dt, tempo){ avança s }, t, dt?) dá o estado em t, avançado em passos fixos (o mesmo t dá sempre o mesmo estado); dentro do passo use noise(), não Math.random(). " +
         "Sem acesso a arquivos, rede, notas ou tempo real: tudo vem de t.";
 
@@ -125,6 +126,15 @@ public static class VideoCode
         function ease(u) { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
         function __hash(x) { var s = Math.sin(x * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
         function noise(x) { var i = Math.floor(x), f = x - i; f = f * f * (3 - 2 * f); return lerp(__hash(i), __hash(i + 1), f); }
+        function __hex(v) { v = Math.round(clamp(v, 0, 1) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+        function hsl(h, s, l, a) {
+          h = ((h % 360) + 360) % 360 / 360; s = clamp(s, 0, 1); l = clamp(l, 0, 1);
+          function f(n) { var k = (n + h * 12) % 12, q = s * Math.min(l, 1 - l); return l - q * Math.max(-1, Math.min(k - 3, 9 - k, 1)); }
+          return '#' + (a === undefined ? '' : __hex(a)) + __hex(f(0)) + __hex(f(8)) + __hex(f(4));
+        }
+        function rotateX(p, deg) { var r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return { x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c }; }
+        function rotateY(p, deg) { var r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return { x: p.x * c + p.z * s, y: p.y, z: -p.x * s + p.z * c }; }
+        function project(x, y, z, focal) { focal = focal || 600; var k = focal / Math.max(1e-6, focal + z); return { x: x * k, y: y * k, scale: k }; }
         var __sim = {};
         function simulate(key, init, step, t, dt) {
           dt = dt || 1 / 60;
