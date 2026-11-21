@@ -7,6 +7,28 @@ namespace Urbe.Core.Tests;
 public sealed class AssistantStoreTests
 {
     [Fact]
+    public void AgentInheritsFieldsIndividuallyAndCanOverrideOrDisableThem()
+    {
+        var config = new AiConfig { AgentWorkspaceVersion = 1 };
+        config.AgentModels["geral"] = new("provider", "text");
+        config.AgentImages["geral"] = new("provider", "image");
+        config.AgentMedia["geral"] = new(Research: false, Voice: "dora", VideoProviderId: "provider", VideoModel: "video");
+        config.AgentMedia["alice"] = new(Voice: "alex", VideoProviderId: "");
+        config.AgentMedia["beto"] = new(Research: true);
+
+        var saved = AssistantStore.ConfigFromJson(AssistantStore.ConfigToJson(config));
+        Assert.Equal(new AiModelChoice("provider", "text"), saved.ModelFor(new AiConversation { AgentId = "alice", Model = "old-cached-model" }));
+        Assert.Equal(config.AgentImages["geral"], saved.ImageFor("alice"));
+        Assert.Equal(new AiAgentMediaProfile(false, "alex", ""), saved.MediaFor("alice"));
+        Assert.Equal(new AiAgentMediaProfile(true, "dora", "provider", "video"), saved.MediaFor("beto"));
+        saved.AgentMedia["geral"] = saved.AgentMedia["geral"] with { Voice = "faber" };
+        Assert.Equal("faber", saved.MediaFor("beto").Voice);
+        Assert.Equal("alex", saved.MediaFor("alice").Voice);
+        saved.Web.Enabled = false;
+        Assert.False(saved.AllowsResearch("beto"));
+    }
+
+    [Fact]
     public void MediaProfilesRoundTripIndependentlyAndRespectGlobalPrivacy()
     {
         var config = new AiConfig { GenerativeVideo = true };

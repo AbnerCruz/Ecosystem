@@ -9,5 +9,7 @@
 - O Assistente programa cada nova cena de motion graphics. O Estúdio continua abrindo publicações antigas com cenas montadas a partir de layouts.
 - A prévia de vídeo em Publicações usa a mesma mixagem do MP4 e segue a posição do áudio ao reproduzir e retomar.
 - O perfil de cada agente reúne os modelos, a permissão de pesquisa, a voz e o provedor de vídeo generativo. Publicações permite escolher outra voz e recriar a trilha com a duração medida da nova fala.
+- Agentes podem herdar os campos de mídia e modelos do perfil padrão e sobrescrever cada escolha na própria ficha.
 - O menu do chat tem um seletor de arquivos e abre briefings para podcast, vídeo e flashcards. O envio das configurações inicia a criação com as fontes marcadas.
+- Para modelos com entrada de imagem reconhecida, vídeos anexados e links públicos diretos podem fornecer quadros com instantes para orientar a produção.
 - A abertura ao concluir uma criação ainda não foi verificada em aparelho físico.

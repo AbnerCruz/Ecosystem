@@ -1559,7 +1559,6 @@ public sealed partial class AssistantPanel
             else
             {
                 _cfg.CustomAgents.Add(made);
-                _cfg.AgentMedia[made.Id] = new AiAgentMediaProfile(VideoProviderId: "");
             }
             if (a is null && t != "read")
             {
@@ -1603,7 +1602,7 @@ public sealed partial class AssistantPanel
             : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
         // the Assistente has no model to fall back to; a specialist inherits the Assistente's
         if (image || agentId != "geral")
-            body.Children.Add(TextButton(image ? "Sem modelo de imagem" : "Herdar modelo do Assistente", () =>
+            body.Children.Add(TextButton(image ? imageAgentId == "geral" ? "Sem modelo de imagem" : "Herdar imagem do Assistente" : "Herdar modelo do Assistente", () =>
             {
                 if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
                 else _cfg.AgentModels.Remove(agentId!);
@@ -1772,7 +1771,7 @@ public sealed partial class AssistantPanel
                 ? "Consultar outros agentes: automaticamente quando seguro"
                 : "Consultar outros agentes: pede sua aprovação"),
             TextButton("Definir autorização de consultas", () => _ = PickDelegationAsync(agent))));
-        var image = _cfg.AgentImages.GetValueOrDefault(agent.Id);
+        var image = _cfg.ImageFor(agent.Id);
         body.Children.Add(Section("Modelo de imagem", Hint(image?.Model ?? "Nenhum"),
             TextButton("Selecionar modelo de imagem", () => _ = PickConfiguredModelAsync(null, agent.Id))));
         if (image is not null && _cfg.Providers.FirstOrDefault(p => p.Id == image.ProviderId) is { } imageProvider)
@@ -1797,6 +1796,11 @@ public sealed partial class AssistantPanel
             Wrap(ModelPriceFor(selected ?? _cfg.ModelFor(new AiConversation { AgentId = agent.Id })), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
         var media = _cfg.MediaFor(agent.Id);
+        var ownMedia = _cfg.AgentMedia.GetValueOrDefault(agent.Id) ?? new();
+        bool canInherit = agent.Id != "geral";
+        Control Inherit(bool inherited, Action reset) => inherited
+            ? Hint("Herdado do Assistente padrão")
+            : TextButton("Herdar do Assistente padrão", reset);
         void SaveMedia(AiAgentMediaProfile updated)
         {
             SaveBlocks();
@@ -1806,14 +1810,15 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Pesquisa na internet",
             Hint(!_cfg.Web.Enabled ? "Desativada nas preferências globais de privacidade." : "Apenas consultas e páginas públicas."),
-            TextButton(media.Research ? "Pesquisa permitida · desativar" : "Pesquisa desativada · permitir",
-                () => SaveMedia(media with { Research = !media.Research }))));
-        var voiceName = Urbe.Core.Voice.NeuralVoices.Find(media.Voice)?.Name ?? media.Voice ?? "Padrão do aparelho";
+            TextButton(media.Research == true ? "Pesquisa permitida · desativar" : "Pesquisa desativada · permitir",
+                () => SaveMedia(ownMedia with { Research = media.Research != true })),
+            canInherit ? Inherit(ownMedia.Research is null, () => SaveMedia(ownMedia with { Research = null })) : Hint("Padrão para os outros agentes.")));
+        var voiceName = Urbe.Core.Voice.NeuralVoices.Find(media.Voice)?.Name ?? (string.IsNullOrEmpty(media.Voice) ? "Padrão do aparelho" : media.Voice);
         body.Children.Add(Section("Voz da narração", Hint(voiceName), TextButton("Selecionar voz", async () =>
         {
             var picked = await PickVoiceAsync(media.Voice);
-            if (picked is { } selectedVoice) SaveMedia(media with { Voice = selectedVoice.Id });
-        })));
+            if (picked is { } selectedVoice) SaveMedia(ownMedia with { Voice = selectedVoice.Id ?? "" });
+        }), canInherit ? Inherit(ownMedia.Voice is null, () => SaveMedia(ownMedia with { Voice = null })) : Hint("Padrão para os outros agentes.")));
         var videoChoice = media.VideoProviderId switch
         {
             "" => "Desativado",
@@ -1827,13 +1832,13 @@ public sealed partial class AssistantPanel
                     !string.IsNullOrWhiteSpace(p.ApiKey)).ToList();
                 var choices = providers.Select(p => new DialogItem(p.Name ?? p.Id)).Prepend(new DialogItem("Desativar vídeo generativo")).ToList();
                 if (await _app.Dialogs.ChooseAsync("Vídeo generativo deste agente", choices) is not int index) return;
-                if (index == 0) { SaveMedia(media with { VideoProviderId = "", VideoModel = null }); return; }
+                if (index == 0) { SaveMedia(ownMedia with { VideoProviderId = "", VideoModel = null }); return; }
                 var videoProvider = providers[index - 1];
                 var model = await _app.Dialogs.PromptAsync(new PromptOptions("Modelo de vídeo", "ID do modelo",
                     (media.VideoProviderId == videoProvider.Id ? media.VideoModel : AssistantProviders.VideoModel(videoProvider.Preset)) ?? ""));
                 if (!string.IsNullOrWhiteSpace(model))
-                    SaveMedia(media with { VideoProviderId = videoProvider.Id, VideoModel = model.Trim() });
-            })));
+                    SaveMedia(ownMedia with { VideoProviderId = videoProvider.Id, VideoModel = model.Trim() });
+            }), canInherit ? Inherit(ownMedia.VideoProviderId is null, () => SaveMedia(ownMedia with { VideoProviderId = null, VideoModel = null })) : Hint("Padrão para os outros agentes.")));
         body.Children.Add(blocksEditor);
         var save = TextButton("Salvar instruções", () => { SaveBlocks(); ShowSettings(); }, primary: true);
         body.Children.Add(save);

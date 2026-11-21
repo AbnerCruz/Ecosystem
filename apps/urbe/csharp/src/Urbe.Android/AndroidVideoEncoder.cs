@@ -28,6 +28,28 @@ internal sealed class AndroidVideoEncoder : IVideoEncoder
 
     public static void Install()
     {
+        VideoReferenceFrames.ReadNative = (source, cancel) => Task.Run<IReadOnlyList<VideoReferenceFrame>>(() =>
+        {
+            using var media = new MediaMetadataRetriever();
+            media.SetDataSource(source);
+            var duration = long.TryParse(media.ExtractMetadata(MetadataKey.Duration), out var ms) ? ms / 1000d : 0;
+            var frames = new List<VideoReferenceFrame>();
+            foreach (var at in VideoReferenceFrames.SampleTimes(duration))
+            {
+                cancel.ThrowIfCancellationRequested();
+                if (media.GetFrameAtTime((long)(at * 1_000_000), Option.Closest) is not { } bitmap) continue;
+                using (bitmap)
+                {
+                    var scale = Math.Min(1d, 480d / Math.Max(bitmap.Width, bitmap.Height));
+                    using var sized = global::Android.Graphics.Bitmap.CreateScaledBitmap(bitmap,
+                        Math.Max(1, (int)(bitmap.Width * scale)), Math.Max(1, (int)(bitmap.Height * scale)), true);
+                    using var output = new MemoryStream();
+                    if (sized?.Compress(global::Android.Graphics.Bitmap.CompressFormat.Jpeg!, 82, output) == true)
+                        frames.Add(new(at, output.ToArray()));
+                }
+            }
+            return frames;
+        }, cancel);
         PlatformVideo.CreateEncoder = () => new AndroidVideoEncoder();
         PlatformVideo.DecodeAudio = (source, target, cancel) => Task.Run(() => DecodePcm(source, target, cancel), cancel);
     }

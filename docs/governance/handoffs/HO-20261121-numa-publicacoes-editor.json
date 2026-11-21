@@ -18,6 +18,7 @@
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
     "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVideoEncoder.cs",
     "apps/urbe/csharp/src/Urbe.Android/SpeechSynth.cs",
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Creation.cs",
@@ -31,10 +32,12 @@
     "apps/urbe/csharp/src/Urbe.Client/PlatformAudio.cs",
     "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
     "apps/urbe/csharp/src/Urbe.Client/PublicationVideoPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VideoReferenceFrames.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantVideoDirectionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebResearch.cs",
     "apps/urbe/csharp/src/Urbe.Core/VideoProject.cs",
     "apps/urbe/csharp/src/Urbe.Desktop/WindowsSpeech.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
@@ -52,7 +55,8 @@
     "Prévia e MP4 usam a mesma mixagem WAV. MediaPlayer no Android e waveaudio no Windows dão a posição de mídia ao desenho da prévia.",
     "#1005: o perfil do agente reúne voz, pesquisa e vídeo generativo com os modelos já configuráveis. A escolha vocal entra na publicação de vídeo e pode ser substituída pelo usuário.",
     "#956: seletor único e briefing antes de iniciar Podcast, Vídeo ou Flashcards, com seleção de fontes. Roteiro de podcast em Publicações oferece ação de síntese. Áudio e vídeo selecionados ficam no armazenamento privado e podem contribuir com transcrição local.",
-    "Beta.66 preparada pelo canal existente. Estudo original: PR #1011. Comunicação com Claude Code registrada no PR #1009."
+    "Beta.66 preparada pelo canal existente. Estudo original: PR #1011. Comunicação com Claude Code registrada no PR #1009.",
+    "Amostras de quadros com instantes para referências anexadas e links públicos diretos. Modelos com entrada de imagem recebem os quadros; perfis secundários herdam campos de mídia e modelos do geral quando não sobrescritos."
   ],
   "verification": [
     {
@@ -82,7 +86,7 @@
   ],
   "known_issues": [
     "Escuta, troca de voz e foco de áudio em Android e Windows não testados em aparelho ou desktop Windows.",
-    "A transcrição local de mídia depende da capacidade do dispositivo. O conteúdo visual de vídeo ainda não é extraído e arquivos de formatos desconhecidos ficam como referência local.",
+    "A transcrição local de mídia depende da capacidade do dispositivo. A extração visual usa quadros amostrados e pede um modelo com entrada de imagem. Páginas de vídeo sem acesso direto ao arquivo precisam de anexo. Arquivos de formatos desconhecidos ficam como referência local.",
     "Sem execução com uma conta real de modelo externo de vídeo.",
     "A suíte headless com janelas encontrou indisponibilidade de fonte no ambiente Linux local. Os três testes focados executaram sem montar uma janela."
   ],

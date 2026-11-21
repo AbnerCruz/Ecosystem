@@ -64,6 +64,7 @@ public sealed partial class AssistantPanel
                 _ => "Quantidade, dificuldade e tópicos"
             }
         };
+        var referenceLinks = new TextBox { PlaceholderText = "Links diretos dos vídeos de referência (opcional)" };
         var language = new TextBox { PlaceholderText = "Idioma", Text = "Português do Brasil" };
         var sourceList = new StackPanel { Spacing = 6 };
         var selected = new Dictionary<AiChatBlock, CheckBox>();
@@ -88,6 +89,7 @@ public sealed partial class AssistantPanel
             await AttachDeviceFileAsync();
             if (ReferenceEquals(conversation, _conv)) ShowSources();
         })));
+        if (kind == "Vídeo") body.Children.Add(referenceLinks);
         ShowSources();
         var status = Hint("");
         body.Children.Add(status);
@@ -109,6 +111,7 @@ public sealed partial class AssistantPanel
             var requestedFocus = focus.Text.Trim();
             var requestedOptions = options.Text?.Trim();
             var requestedLanguage = language.Text?.Trim();
+            var requestedLinks = referenceLinks.Text?.Trim();
             var included = selected.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToList();
             var excluded = _pendingAttachments.Where(source => !included.Contains(source)).ToList();
             var instructions = kind switch
@@ -159,7 +162,7 @@ public sealed partial class AssistantPanel
                 _pendingAttachments.AddRange(prepared);
                 Send(instructions + "\nUse as fontes marcadas. Informe lacunas se uma fonte não estiver legível.\n" +
                     "Assunto, objetivo e público: " + requestedFocus + "\nPreferências: " + requestedOptions +
-                    "\nIdioma: " + requestedLanguage);
+                    "\nIdioma: " + requestedLanguage + (string.IsNullOrEmpty(requestedLinks) ? "" : "\nReferências de vídeo: " + requestedLinks));
                 _pendingAttachments.AddRange(excluded);
                 RefreshAttachments();
             }
@@ -167,6 +170,77 @@ public sealed partial class AssistantPanel
             finally { reading = null; body.Children.Remove(stop); submit.IsEnabled = true; }
         };
         body.Children.Add(submit);
+    }
+
+    private async Task AddVideoReferenceFramesAsync(AiChatMessage request, AiModelChoice choice,
+        AssistantWebSession? web, CancellationToken cancel)
+    {
+        const string visualGuide = "[Referências visuais de vídeo]";
+        if (request.Content.Any(block => block.Hidden && block.Text?.StartsWith(visualGuide, StringComparison.Ordinal) == true)) return;
+        var text = request.Content.FirstOrDefault(block => block.Type == "text" && !block.Hidden)?.Text ?? "";
+        var local = request.Content.Where(block => block.LocalSourceId is not null &&
+            VaultFileKinds.Classify(block.FileName) == VaultFileKinds.Video).ToList();
+        var links = text.Contains("vídeo", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("video", StringComparison.OrdinalIgnoreCase) || text.Contains("motion", StringComparison.OrdinalIgnoreCase)
+            ? System.Text.RegularExpressions.Regex.Matches(text, @"https?://[^\s<>""\[\]]+", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+                .Select(match => match.Value.TrimEnd('.', ',', ')')).Distinct(StringComparer.Ordinal).ToList()
+            : [];
+        if (local.Count + links.Count == 0) return;
+        if (AiModelCatalog.Find(_cfg, choice)?.Reads(AiModalities.Image) != true)
+        {
+            _app.Notify("Os quadros de referência exigem um modelo com entrada de imagem reconhecida.");
+            return;
+        }
+
+        var prepared = new List<AiChatBlock>();
+        var notes = new List<string>();
+        long bytesUsed = request.Content.Where(block => block.Type == "attachment").Sum(block => (long)block.Content.Length);
+        async Task AddSheet(string path, string label)
+        {
+            var sheet = VideoReferenceFrames.ContactSheet(await VideoReferenceFrames.ReadAsync(path, cancel));
+            if (sheet is null) { notes.Add(label + ": quadros indisponíveis."); return; }
+            var encoded = Convert.ToBase64String(sheet);
+            if (bytesUsed + encoded.Length > MaxAttachmentBytes)
+            { notes.Add(label + ": quadros excedem o tamanho do pedido ao modelo."); return; }
+            bytesUsed += encoded.Length;
+            prepared.Add(new AiChatBlock { Type = "attachment", FileName = label + " — quadros.jpg", MimeType = "image/jpeg", Content = encoded });
+        }
+
+        foreach (var source in local.Take(4))
+        {
+            if (LocalSourcePath(source.LocalSourceId!) is not { } path || !File.Exists(path))
+            { notes.Add(source.FileName + ": arquivo indisponível."); continue; }
+            try { await AddSheet(path, source.FileName); }
+            catch (Exception e) when (e is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            { notes.Add(source.FileName + ": quadros indisponíveis."); }
+        }
+        foreach (var url in links.Take(Math.Max(0, 4 - local.Count)))
+        {
+            if (web is null) { notes.Add("A pesquisa na internet está desativada para as referências por link."); break; }
+            var directory = Directory.CreateTempSubdirectory("numa-link-video-");
+            var path = Path.Combine(directory.FullName, "referencia");
+            try
+            {
+                await using (var output = File.Create(path))
+                    await web.DownloadReferenceVideoAsync(url, output);
+                await AddSheet(path, "Vídeo de referência " + (links.IndexOf(url) + 1));
+            }
+            catch (OperationCanceledException) when (!cancel.IsCancellationRequested)
+            { notes.Add("O download de uma referência excedeu o tempo de leitura."); }
+            catch (Exception e) when (e is IOException or HttpRequestException or AiToolException or InvalidOperationException or ArgumentException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            { notes.Add("Um link não forneceu vídeo legível. Para páginas de vídeo, anexe o arquivo."); }
+            finally
+            {
+                try { directory.Delete(true); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            }
+        }
+        if (local.Count + links.Count > 4) notes.Add("Foram selecionadas até quatro referências visuais para este pedido.");
+        if (notes.Count > 0) _app.Notify(string.Join(" ", notes));
+        request.Content.Add(new AiChatBlock { Hidden = true, Text = visualGuide +
+            " Os anexos de quadros são amostras com instantes. Ao criar motion graphics, derive deles " +
+            "paleta, tipografia, hierarquia, composição e ritmo observável. Use os mesmos parâmetros e funções " +
+            "reutilizáveis nas cenas programadas. Declare o que a amostragem não permite inferir. " + string.Join(" ", notes) });
+        request.Content.AddRange(prepared);
     }
 
     private static async Task<string> ReadSourceTranscriptAsync(string source, CancellationToken cancel)

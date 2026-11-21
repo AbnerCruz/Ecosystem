@@ -44,7 +44,7 @@ public static class PlatformAudio
 
     public static async Task<bool> NarrateAsync(string text, string? voice, string target, CancellationToken cancel)
     {
-        if (voice is null)
+        if (string.IsNullOrEmpty(voice))
             return SynthesizeToWav is { } fallback && await fallback(text, 0, target, cancel);
         if (Urbe.Core.Voice.NeuralVoices.Find(voice) is { } chosen)
             return NeuralSpeech.Shared is { } neural && await neural.SpeakAsync(chosen, text, target, cancel);

@@ -519,6 +519,7 @@ Issue [#1004](https://github.com/AbnerCruz/Ecosystem/issues/1004); branch `ccr-f
 - [~] Criação de motion graphics por programa por cena e entrega da publicação editável no Estúdio. O fluxo do Assistente conclui na publicação. A exportação MP4 fica com o botão do Estúdio. Os layouts gravados anteriormente continuam legíveis.
 - [~] Prévia audível com mixagem compartilhada com o MP4 e posição do player nativo como relógio. Perfil por agente para voz, pesquisa e vídeo generativo. Publicações permite escolher a voz e recalcular a duração ao narrar novamente.
 - [~] #956: seletor único do dispositivo e briefing confirmado no chat para podcast, vídeo e flashcards. Mídia permanece no aparelho e a transcrição é enviada com o pedido quando disponível. Faltam escuta, verificação do seletor SAF e jornada com fontes multimídia em aparelho.
+- [~] Referências visuais amostradas de arquivos ou links públicos diretos e herança por campo do perfil padrão. Vídeo de plataformas sem URL de mídia direta pode ser anexado como arquivo.
 
 - [~] Fatia 1, instâncias procedurais: `repeat` 1–2000, fórmulas de `t`, `i`, `n`, `u`, modo `add|set`, `rand`/`noise` determinísticos e funções de vários argumentos (`VideoProceduralTests`, `TwoThousandParticlesAt720pAreDrawnAndMeasured`).
 - [~] Fatia 2, tipografia cinética: `split: letters|words` em title/text; cada parte é instância com `i`, `n`, `u`, desenhada no seu lugar do texto e girada/escalada em torno do próprio centro (`ASplitTextIsOneInstancePerLetterOrWordWithoutSpaces`, `ASplitTitleEntersLetterByLetterInItsPlace`).

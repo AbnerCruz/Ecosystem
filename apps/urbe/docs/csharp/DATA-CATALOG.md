@@ -190,3 +190,15 @@ sistema; não são exportados nem copiados para notas automaticamente.
   disponível e submetida pelo usuário, a transcrição local com instantes.
   Os arquivos binários referenciados permanecem no aparelho. Esses campos são
   aditivos e não requerem regravação de conversas antigas.
+
+Perfis secundários herdam voz, pesquisa e configuração do vídeo por campo do
+perfil `geral` quando o campo correspondente falta ou é nulo. Voz vazia
+seleciona a voz padrão do aparelho e provedor de vídeo vazio desliga o vídeo
+externo. Valores anteriores gravados continuam sendo escolhas individuais.
+Os modelos de texto e imagem seguem as escolhas específicas ou o perfil geral.
+A preferência global de privacidade continua sendo o teto para pesquisa.
+
+Referências visuais de vídeo usam os blocos de imagem existentes na mensagem.
+O Numa guarda uma amostra de quadros com instantes para a conversa. A mídia
+anexada continua na pasta privada de fontes. Downloads de links públicos
+diretos são temporários e descartados após preparar as imagens.

@@ -1165,6 +1165,8 @@ public sealed partial class AssistantPanel : Border
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try
         {
+            if (resume is null && conv.OriginConversationId is null && conv.Messages.LastOrDefault(IsRequest) is { } request)
+                await AddVideoReferenceFramesAsync(request, choice, web, cts.Token);
             var r = await AssistantAgent.RunAsync(new AiAgentRun
             {
                 // CST-217: a delegated work writes only inside its brief's scope and does not delegate again
@@ -1701,7 +1703,7 @@ public sealed partial class AssistantPanel : Border
         public IReadOnlyList<AiDelegateTarget> Targets => AgentNames.All(panel._cfg)
             .Where(a => a.Id != agentId)
             .Select(a => new AiDelegateTarget(a.Id, AgentNames.CallName(a, panel._cfg),
-                a.Description, panel._cfg.AgentImages.TryGetValue(a.Id, out var image) &&
+                a.Description, panel._cfg.ImageFor(a.Id) is { } image &&
                 !string.IsNullOrWhiteSpace(image.Model) &&
                 panel._cfg.Providers.Any(p => p.Id == image.ProviderId))).ToList();
         public Task<string> ConsultAsync(string targetId, string task, string? previousConversationId = null) =>
@@ -1709,17 +1711,17 @@ public sealed partial class AssistantPanel : Border
         public Task<AiDelegationOutcome> DelegateAsync(string targetId, AiDelegationBrief brief) =>
             panel.DelegateAgentAsync(agentId, conversationId, targetId, brief, cancel);
         public AssistantWebSession? Web => web;
-        private AiProviderConfig? ImageProvider => panel._cfg.AgentImages.TryGetValue(agentId, out var choice)
+        private AiProviderConfig? ImageProvider => panel._cfg.ImageFor(agentId) is { } choice
             ? panel._cfg.Providers.FirstOrDefault(p => p.Id == choice.ProviderId) : null;
         public bool CanDraw => ImageProvider is not null;
-        public string? PriceQuote => ImageProvider is { } ip ? AssistantImagePricing.Published(ip.Preset, panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model is { Length: > 0 } m ? m : AssistantProviders.ImageModel(ip.Preset) ?? "")?.Rate : null;
-        public (string Model, string Provider) Drawer => (panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model is { Length: > 0 } m ? m
+        public string? PriceQuote => ImageProvider is { } ip ? AssistantImagePricing.Published(ip.Preset, panel._cfg.ImageFor(agentId)?.Model is { Length: > 0 } m ? m : AssistantProviders.ImageModel(ip.Preset) ?? "")?.Rate : null;
+        public (string Model, string Provider) Drawer => (panel._cfg.ImageFor(agentId)?.Model is { Length: > 0 } m ? m
             : ImageProvider is { } ip ? AssistantProviders.ImageModel(ip.Preset) ?? "" : "", ImageProvider?.Name ?? ImageProvider?.Preset ?? "");
         public string Unavailable => panel.ImagesUnavailable();
         // CST-219: the run's cancellation reaches the image provider (the tool has no token of its own to give)
         public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken token) =>
             panel.Providers.GenerateImageAsync(ImageProvider ?? throw new AiProviderException("Configure um provedor de imagens."),
-                prompt, panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model, size, token.CanBeCanceled ? token : cancel);
+                prompt, panel._cfg.ImageFor(agentId)?.Model, size, token.CanBeCanceled ? token : cancel);
         public Task SaveAsync(string path, byte[] bytes) => panel._app.CreateBinaryFileAsync(path, bytes);
         public bool Exists(string path) => panel._app.FileExists(path);
         public IAssistantNames? Names => this;

@@ -175,7 +175,7 @@ public sealed class AiMcpToolInfo
     public string Schema { get; set; } = "{\"type\":\"object\"}";
 }
 
-public sealed record AiAgentMediaProfile(bool Research = true, string? Voice = null, string? VideoProviderId = null, string? VideoModel = null);
+public sealed record AiAgentMediaProfile(bool? Research = null, string? Voice = null, string? VideoProviderId = null, string? VideoModel = null);
 
 public sealed class AiConfig
 {
@@ -211,8 +211,19 @@ public sealed class AiConfig
     public string ImageModel { get; set; } = "";
     /// <summary>Agent-specific overrides; no entry means inherit the conversation/default model.</summary>
     public Dictionary<string, AiAgentMediaProfile> AgentMedia { get; set; } = new(StringComparer.Ordinal);
-    public AiAgentMediaProfile MediaFor(string id) => AgentMedia.GetValueOrDefault(id) ?? new();
-    public bool AllowsResearch(string id) => Web.Allowed(id) && MediaFor(id).Research;
+    public AiAgentMediaProfile MediaFor(string id)
+    {
+        var own = AgentMedia.GetValueOrDefault(id) ?? new();
+        var defaults = AgentMedia.GetValueOrDefault("geral") ?? new();
+        return new(own.Research ?? defaults.Research ?? true, own.Voice ?? defaults.Voice,
+            own.VideoProviderId ?? defaults.VideoProviderId,
+            own.VideoProviderId is null ? defaults.VideoModel : own.VideoModel);
+    }
+
+    public AiModelChoice? ImageFor(string id) =>
+        AgentImages.GetValueOrDefault(id) ?? AgentImages.GetValueOrDefault("geral");
+
+    public bool AllowsResearch(string id) => Web.Allowed(id) && MediaFor(id).Research == true;
     public Dictionary<string, AiModelChoice> AgentModels { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, List<AiInstructionBlock>> AgentInstructionBlocks { get; set; } = new(StringComparer.Ordinal);
     public string Policy { get; set; } = "readonly";
@@ -242,7 +253,7 @@ public sealed class AiConfig
         if (AgentModels.TryGetValue(conversation.AgentId, out var chosen) &&
             !string.IsNullOrWhiteSpace(chosen.Model))
             return chosen;
-        if (AgentWorkspaceVersion == 1 && conversation.AgentId != "geral" && conversation.Model.Length == 0 &&
+        if (AgentWorkspaceVersion == 1 && conversation.AgentId != "geral" &&
             AgentModels.TryGetValue("geral", out var assistant)) return assistant;
         var id = conversation.ProviderId ?? ProviderId ?? Providers.FirstOrDefault()?.Id ?? "";
         return new AiModelChoice(id, conversation.Model.Length > 0 ? conversation.Model : Model);
@@ -661,7 +672,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             foreach (var (id, value) in media)
                 if (value is JsonObject profile)
                     c.AgentMedia[id] = new AiAgentMediaProfile(
-                        (bool?)profile["research"] ?? true, (string?)profile["voice"],
+                        (bool?)profile["research"], (string?)profile["voice"],
                         (string?)profile["videoProviderId"], (string?)profile["videoModel"]);
         if (o["agentModels"] is JsonObject models)
             foreach (var (id, value) in models)
