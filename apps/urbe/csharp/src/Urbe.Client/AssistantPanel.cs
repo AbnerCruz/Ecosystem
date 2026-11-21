@@ -1810,7 +1810,10 @@ public sealed partial class AssistantPanel : Border
             return;
         }
         _renderPosted = true;
-        var wait = RenderEvery - (Environment.TickCount64 - _renderedAt);
+        // Android's main thread also owns the text editor and native views. A burst of
+        // streamed tokens must not force full chat layout ten times a second there.
+        var cadence = OperatingSystem.IsAndroid() ? 180 : RenderEvery;
+        var wait = cadence - (Environment.TickCount64 - _renderedAt);
         if (token && wait > 0) _renderTimer = DispatcherTimer.RunOnce(RenderDirty, TimeSpan.FromMilliseconds(wait), DispatcherPriority.Background);
         else Dispatcher.UIThread.Post(RenderDirty, DispatcherPriority.Background);
     }
@@ -1832,13 +1835,21 @@ public sealed partial class AssistantPanel : Border
         _renderTimer = null;
         _renderedAt = Environment.TickCount64;
         // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
-        bool near = _followChatTail && NearEnd();
+        bool fullVisible = IsVisible;
+        bool near = fullVisible && _followChatTail && NearEnd();
         foreach (var d in _dirty) ForgetView(d);
         _dirty.Clear();
-        RenderLog();
-        RenderChrome();
+        // In the editor, the compact assistant is a separate projection of the SAME
+        // conversation. Rebuilding the hidden full chat on every streamed token is
+        // wasted layout work, and competes with keystrokes and the vault.
+        // Open() / RenderAll() reconstructs the full view when it becomes visible.
+        if (fullVisible)
+        {
+            RenderLog();
+            RenderChrome();
+            if (near) ScrollEnd();
+        }
         NotifyCompactChanged();
-        if (near) ScrollEnd();
     }
 
     private double ChatEndGap => Math.Max(0, _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height);
