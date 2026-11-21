@@ -2,6 +2,11 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.68 — 21/11/2026
+- Seleção de voz e vídeo com preços e amostras; geração de publicações por tema/fontes, duração configurável, podcast com narração por voz do agente e prévia de vídeo com áudio.
+- Correções de flashcards e leitura de trilha do player Android, selo de autoria da IA oculto em publicações e exportação.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.68
+
 ## 2.0.0-beta.67 — 21/11/2026
 - Narração por provedor, remoção do motor de voz baixável, catálogo de vídeo remoto e configuração de memória, idioma e permissões na ficha do agente.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.67
