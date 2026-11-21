@@ -31,7 +31,7 @@ public sealed class VideoBenchmarkTests
     private static VideoKeyframe K(string p, double t, double v, string easing = "easeInOut") => new() { Property = p, Time = t, Value = v, Easing = easing };
     private static VideoMotion M(string p, string e, string mode = "add") => new() { Property = p, Expression = e, Mode = mode };
 
-    public static TheoryData<string> Productions => ["matematica", "software", "particulas"];
+    public static TheoryData<string> Productions => ["matematica", "software", "particulas", "codigo"];
 
     private static (PublicationSourceCatalog, PublicationProject) Make(string name) => name switch
     {
@@ -66,6 +66,29 @@ public sealed class VideoBenchmarkTests
                 Keyframes = [K("opacity", 2.5, 0), K("opacity", 2.9, 1), K("y", 2.5, 0.76), K("y", 3, 0.68, "back")] },
             new VideoElement { Id = "r3", Kind = "use", Component = "recurso", X = 0.8, Y = 0.68, Start = 2.8, Params = new() { ["nome"] = "Vídeos" },
                 Keyframes = [K("opacity", 2.8, 0), K("opacity", 3.2, 1), K("y", 2.8, 0.76), K("y", 3.3, 0.68, "back")] }),
+        "codigo" => Video("Esfera", 6, "#05060a", null, null,
+            new VideoElement { Id = "esfera", Kind = "code", X = 0.5, Y = 0.5, Width = 1, Height = 1, Text = """
+                function draw(ctx, t, info) {
+                  var cx = ctx.width / 2, cy = ctx.height / 2 - 20, R = ctx.height * 0.32, n = 1500, golden = Math.PI * (3 - Math.sqrt(5));
+                  ctx.blend('add');
+                  for (var i = 0; i < n; i++) {
+                    var y = 1 - 2 * (i + 0.5) / n, r = Math.sqrt(1 - y * y), a = golden * i;
+                    var p = rotateX(rotateY({ x: Math.cos(a) * r * R, y: y * R, z: Math.sin(a) * r * R }, t * 25), 18);
+                    var q = project(p.x, p.y, p.z, 900);
+                    ctx.fill(hsl(200 + 80 * y + 30 * Math.sin(t), 0.9, 0.6, 0.35 + 0.65 * (1 - (p.z + R) / (2 * R))));
+                    ctx.circle(cx + q.x, cy + q.y, 2.2 * q.scale);
+                  }
+                  ctx.blend('normal');
+                  var title = 'ESFERA DE FIBONACCI', size = 34, x = cx - ctx.measure(title, size, true) / 2;
+                  for (var k = 0; k < title.length; k++) {
+                    var ch = title[k], w = ctx.measure(ch, size, true), u = ease((t - 0.8 - k * 0.05) / 0.4);
+                    ctx.alpha(u); ctx.fill('#f8fafc');
+                    ctx.text(ch, x + w / 2, ctx.height - 60 + 20 * (1 - u), size, 'center', true);
+                    x += w;
+                  }
+                  ctx.alpha(1);
+                }
+                """ }),
         _ => Video("Órbitas", 6, "#05060a",
             new VideoCamera { Keyframes = [K("zoom", 0, 0.85), K("zoom", 6, 1.25)], Motions = [M("rotation", "4*t")] }, null,
             new VideoElement { Id = "estrelas", Kind = "shape", Text = "circle", Width = 0.003, Height = 0.005, Color = "#cbd5e1", Repeat = 300,
