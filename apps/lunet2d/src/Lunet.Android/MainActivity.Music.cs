@@ -21,8 +21,9 @@ public sealed partial class MainActivity
         var safe = new string(ProjectPaletteIdentifier(baseName).ToLowerInvariant().Take(32).ToArray());
         if (safe.Length == 0) safe = "som";
         var name = safe;
-        for (int i = 2; File.Exists(Path.Combine(_project!.Directory, AudioFolder, name + extension)) ||
-                        File.Exists(Path.Combine(_project.Directory, AudioFolder, name + ".wav")); i++)
+        string directory = _project?.Directory ?? StandaloneWorkspace.RootDirectory;
+        for (int i = 2; File.Exists(Path.Combine(directory, AudioFolder, name + extension)) ||
+                        File.Exists(Path.Combine(directory, AudioFolder, name + ".wav")); i++)
             name = safe + "-" + i;
         return name;
     }
@@ -229,7 +230,7 @@ public sealed partial class MainActivity
             .SetTitle("Desenhar efeito sonoro")!
             .SetView(scroll)!
             .SetNegativeButton("Fechar", (_, _) => { })!
-            .SetPositiveButton("Salvar no jogo", (_, _) => SaveDesignedSound(path, effect))!
+            .SetPositiveButton(_project is null ? "Salvar no Studio" : "Salvar no jogo", (_, _) => SaveDesignedSound(path, effect))!
             .Create();
         dialog.DismissEvent += (_, _) => preview.Dispose();
         dialog.Show();
@@ -237,16 +238,23 @@ public sealed partial class MainActivity
 
     private void SaveDesignedSound(string? path, SoundEffect effect)
     {
-        var project = _project!;
+        var project = _project;
         try
         {
             var name = path is null ? UniqueAudioName(effect.Name, SoundEffectExtension) : Path.GetFileName(path)[..^SoundEffectExtension.Length];
             var source = AudioFolder + "/" + name + SoundEffectExtension;
-            project.WriteText(source, SoundDesigner.ToJson(effect with { Name = name }));
+            var json = SoundDesigner.ToJson(effect with { Name = name });
             var wav = SoundDesigner.RenderWav(effect);
-            var full = Path.Combine(project.Directory, AudioFolder, name + ".wav");
-            if (File.Exists(full)) File.Delete(full);
-            using (var stream = new MemoryStream(wav, writable: false)) project.Import(AudioFolder, name + ".wav", stream);
+            if (project is null)
+            {
+                StandaloneWorkspace.WriteText(source, json);
+                StandaloneWorkspace.WriteBytes(AudioFolder + "/" + name + ".wav", wav);
+                AskPublishStandaloneAsset(source);
+                return;
+            }
+            project.WriteText(source, json);
+            using (var stream = new MemoryStream(wav, writable: false))
+                project.Import(AudioFolder, name + ".wav", stream);
             RefreshExplorer();
             new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
                 .SetTitle("Efeito salvo")!

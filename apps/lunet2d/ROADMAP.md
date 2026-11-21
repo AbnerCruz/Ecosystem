@@ -18,6 +18,15 @@ Fonte de verdade do que existe e do que falta. A especificação completa está 
 
 Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
 
+## Solicitação 21/11/2026 — co-work da IA e Studios independentes
+
+- [ ] **LUNET-514 — IA co-work contínua e rápida (incremento em branch, CI/DEVICE pendentes):** entrada compacta não modal, etapas reais no editor, histórico/diffs expandíveis. Em `feat/lunet-standalone-studio-20261121`: status e envio no pop-up; redução de reconstruções Markdown e consultas de disco por evento; contexto menor para perguntas gerais. **Faltam** medir latência do provedor e das ferramentas em aparelho, executar criação multimídia pela IA com aprovação, gates Android. Issue #1017, guia `docs/guides/cowork-studio-global.md`.
+- [ ] **LUNET-515 — Studios sem projeto (primeiro incremento em branch, CI/DEVICE pendentes):** Home → Studios sem escolher jogo. Criação/retomada de Sprite, Music e Sound Designer usando `StudioAssetWorkspace` independente de `LunetProject`, publicação de fonte+derivado no `ReusableAssetLibrary` e escolha posterior de projeto. **Faltam** Tile, Paleta, Partículas, Dados, exportação SAF dos rascunhos e edição de versões da biblioteca; depende do PR #962 draft, testes Android e APK. Issue #1017.
+
+
+
+
+
 ## Auditoria incremental e canal único (15/11/2026)
 
 - [ ] **LUNET-511 — Validação adicional de manifestos (código e testes propostos; CI/DEVICE pendentes):** rejeitar `Kind` fora do enum e `CreatedUtc` ausente ao ler versões locais, preservando arquivo e projetos; regressões xUnit adicionadas na branch #962.
