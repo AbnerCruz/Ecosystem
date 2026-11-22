@@ -45,6 +45,25 @@ public sealed class WorkspaceLayoutTests : IDisposable
     }
 
     [Fact]
+    public void LearnPanelRoundTripsAndKeepsUserSelectedDock()
+    {
+        var path = Path.Combine(_root, "learning-layout.json");
+        var store = new LayoutStore(path);
+        Assert.True(store.Current.OpenPanel("learn"));
+        store.Current.Dock = PanelDock.Bottom;
+        store.Current.PanelFraction = 0.46;
+        store.Save();
+        var reopened = new LayoutStore(path);
+        reopened.Load();
+        Assert.True(reopened.Current.ShowPanel);
+        Assert.Equal("learn", reopened.Current.PanelTab);
+        Assert.Equal(PanelDock.Bottom, reopened.Current.Dock);
+        Assert.Equal(0.46, reopened.Current.PanelFraction);
+        Assert.False(reopened.Current.OpenPanel("not-a-tab"));
+        Assert.Equal("learn", reopened.Current.PanelTab);
+    }
+
+    [Fact]
     public void Store_PersistsCurrentAndNamedLayouts_ProtectsPresets_AndSurvivesCorruption()
     {
         var path = Path.Combine(_root, "layouts.json");
