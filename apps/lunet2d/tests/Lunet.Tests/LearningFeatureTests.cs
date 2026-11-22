@@ -104,7 +104,7 @@ public sealed class LearningFeatureTests : IDisposable
         var ai = new LunetAiLoadedSettings(
             new LunetAiSettings("openrouter", "https://openrouter.ai/api/v1/chat/completions", "test-model", 16, false),
             "test-secret-key-00000");
-        var answer = await store.AskAsync("Me explique vetores.", ai);
+        var answer = await store.AskAsync("Me explique vetores.", ai, TestContext.Current.CancellationToken);
         Assert.Contains("C#", answer);
         Assert.Equal(2, store.History.Count);
         Assert.Equal("user", store.History[0].Role);
@@ -128,7 +128,7 @@ public sealed class LearningFeatureTests : IDisposable
         var ai = new LunetAiLoadedSettings(
             new LunetAiSettings("openrouter", "https://openrouter.ai/api/v1/chat/completions", "test-model", 16, false),
             "test-secret-key-00000");
-        await Assert.ThrowsAsync<HttpRequestException>(() => chat.AskAsync("Teste", ai));
+        await Assert.ThrowsAsync<HttpRequestException>(() => chat.AskAsync("Teste", ai, TestContext.Current.CancellationToken));
         Assert.Empty(chat.History);
         Assert.False(File.Exists(path));
     }
