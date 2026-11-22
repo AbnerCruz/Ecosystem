@@ -77,6 +77,15 @@ public sealed partial class MainActivity
                     DemoConversation();
                 });
                 break;
+            case "learn":
+                Post(() =>
+                {
+                    var progress = LearningProgress();
+                    if (progress is null || _project is null) return;
+                    progress.LinkProject(LearningCatalog.FirstProjectId, _project.Name, _project.Manifest.GameId);
+                    OpenLearningEditor(LearningCatalog.FirstProjectId, _project.Name);
+                });
+                break;
             case "problems": Post(() => OpenWorkbenchPanel(false)); break;
         }
     }
