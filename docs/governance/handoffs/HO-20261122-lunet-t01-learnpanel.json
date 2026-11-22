@@ -8,7 +8,7 @@
     "id": "chatgpt-gpt6-lunet-t01",
     "kind": "ai-agent"
   },
-  "task_id": "LUNET-520-T01",
+  "task_id": "LUNET-520",
   "component": "lunet2d",
   "state": "verifying",
   "branch": "feat/lunet-aprender-t01-completo-20261122",
