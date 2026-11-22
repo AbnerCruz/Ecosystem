@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.1-dev.1000583 — Lunet Aprender e IA global
+
+- **Aprender:** 60 cursos de 12 trilhas listados. Somente LRN-001-P1 (Aprendendo movimento) liberado; demais 119 projetos identificados como “Disponível em breve”.
+- **Primeiro desafio:** quatro objetivos (quadrado, movimento, círculo e vitória), criação/associação de projeto comum, marcação declarativa, barra de progresso e persistência local.
+- **IA da Home:** chat textual geral com histórico separado e sem acesso a ferramentas de arquivos ou projeto; configuração completa de provedor, modelo, chave e permissões acessível na área de trabalho.
+- **IA dos jogos:** conversas por GameId preservadas, seleção apenas de modelo na interface do projeto; o chat contextual permanece no editor.
+- **Documentação:** manifesto, matriz com 60 cursos e 120 projetos, pesquisa, plano técnico, guia de uso e testes.
+- **Limites:** primeira versão não verifica automaticamente jogabilidade ou competência; nenhum curso inteiro foi concluído, pois LRN-001-P2 ainda está indisponível; CI não demonstra teste físico no Android.
+
 - LUNET-511 (PR #962, CI/DEVICE pendentes): publicação de revisões rejeita diretórios de IDs da biblioteca que sejam links simbólicos antes de enumerar manifestos ou criar staging; regressão xUnit protege arquivos externos.
 
 - LUNET-511: manifestos da biblioteca que declaram um arquivo como ancestral de outro (inclusive diferenças de caixa) são recusados antes de importar/exportar; regressão xUnit preserva Game.cs, ZIP ausente e manifesto original. CI e DEVICE ainda pendentes.

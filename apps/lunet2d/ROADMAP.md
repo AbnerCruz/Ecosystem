@@ -1,3 +1,11 @@
+## Nova frente: Lunet Aprender e IA na área de trabalho — LUNET-520/521 (22/11/2026)
+
+Fonte normativa e matrizes de cursos em [docs/learning/MANIFESTO.md](docs/learning/MANIFESTO.md), [MATRIZ-CURRICULAR.md](docs/learning/MATRIZ-CURRICULAR.md), [PESQUISA.md](docs/learning/PESQUISA.md) e [IMPLEMENTACAO.md](docs/learning/IMPLEMENTACAO.md). O projeto foi autorizado para implementação incremental. **As 60 entradas do catálogo não significam 60 cursos lançados.**
+
+- [ ] **LUNET-520 — aba Aprender, primeira entrega:** mostrar 60 cursos divididos em 12 trilhas, com LRN-001-P1 disponível e os 119 outros projetos “Disponível em breve”; criar/associar projeto real, quatro objetivos de movimento, registro local de etapa declarada, progresso, retomada e ajuda contextual via projeto. Evidências de implementação na branch docs/lunet-aprender-manifesto-matriz-20261122; **aguarda CI integrado/merge e APK**. Matriz editorial completa contém 120 projetos, todos com checkbox de implementação inicialmente aberto até integração comprovada.
+- [ ] **LUNET-521 — IA global e configurações na Home:** chat textual global independente de projetos, histórico privado separado, provider/chaves/permissões só na área de trabalho, apenas seletor de modelo e chat dentro do jogo. Preservar sessões por GameId. Código e regressões propostos na mesma branch; **aguarda CI integrado/merge e APK**.
+- [ ] **LUNET-520-LATER — expansão da metodologia:** concluir LRN-001-P2 e, depois, os demais cursos com avaliação e catálogo versionado. Nenhuma caixa curricular [x] por escrever o plano; API e resultados devem existir. A expansão exige tarefas próprias com teste e evidência.
+
 # Roadmap
 
 - [ ] **LUNET-511 / integridade de publicação (PR #962):** recusar diretórios simbólicos de ID de asset antes de enumerar revisões ou publicar; regressão xUnit adicionada, CI e DEVICE pendentes.

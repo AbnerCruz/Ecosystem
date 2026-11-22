@@ -14,6 +14,10 @@ O código é a autoridade: **CODE IS THE SOURCE OF TRUTH / NO HIDDEN GAME LOGIC*
 Framework e código bastam; Studio acelera a produção. A disponibilidade e os
 gates de cada recurso estão no [ROADMAP](ROADMAP.md), não nesta apresentação.
 
+## Aprender e IA na área de trabalho
+
+Veja [manifesto pedagógico](docs/learning/MANIFESTO.md), [matriz de 60 cursos](docs/learning/MATRIZ-CURRICULAR.md) e [guia de uso](docs/guides/aprender.md). O currículo é um plano progressivo: cursos marcados “Disponível em breve” ainda não têm desafios utilizáveis.
+
 ## Planejamento
 
 A especificação completa está em [`docs/SPEC.md`](docs/SPEC.md), o estado e o que falta em [`ROADMAP.md`](ROADMAP.md) (`bash tools/roadmap-status.sh --pending` resume por fase) e a rotina de trabalho em [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).

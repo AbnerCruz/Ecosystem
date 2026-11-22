@@ -38,6 +38,7 @@ public sealed partial class MainActivity
             case "projects": ShowProjects(); break;
             case "studios": ShowLauncherStudios(); break;
             case "explore": OpenInspirationExplorer(); break;
+            case "learn": ShowLearning(); break;
             default: ShowHome(); break;
         }
     }
@@ -71,6 +72,9 @@ public sealed partial class MainActivity
         if (_overlay is not null) CloseOverlay();
         _workspaceFrame = null;
         _aiPanel = null;
+        _aiModelChip = null;
+        _aiPills = null;
+        _workspaceChatOpen = false;
         _workbenchNavButtons.Clear();
         _inspirationOpen = false;
         _launcherSection = section;
@@ -96,6 +100,7 @@ public sealed partial class MainActivity
         Item("projects", "Projetos", ShowProjects);
         Item("studios", "Studios", ShowLauncherStudios);
         Item("explore", "Explorar", OpenInspirationExplorer);
+        Item("learn", "Aprender", ShowLearning);
         return nav;
     }
 
@@ -224,6 +229,8 @@ public sealed partial class MainActivity
         AddHomeAction(content, "Studios", "Sprite, tilemap, áudio, paleta, partículas e dados", ShowLauncherStudios);
         AddHomeAction(content, "Biblioteca pessoal", "Assets versionados e reutilizáveis entre jogos", ShowReusableAssetLibrary);
         AddHomeAction(content, "Explorar", "Ideias, gêneros e mecânicas para seus jogos", OpenInspirationExplorer);
+        AddHomeAction(content, "Aprender", "Cursos por projetos e progresso real", ShowLearning);
+        AddHomeAction(content, "Lunet IA", "Chat global e configurações de IA; separado dos projetos", ShowWorkspaceAi);
         AddHomeAction(content, "Documentação", "API, exemplos e guias disponíveis offline", ShowReference);
         AddHomeAction(content, "Configurações", "Preferências do ambiente e do editor", ShowSettings);
         content.AddView(LunetUi.Button(this, "Importar projeto ZIP", ImportProject, ButtonStyle.Quiet));

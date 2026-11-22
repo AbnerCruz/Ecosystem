@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261122-lunet-aprender-ia-global",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-22T17:43:10Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-520",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "docs/lunet-aprender-manifesto-matriz-20261122",
+  "base_commit": "04640dfa1aba81ddd3fe367ea1c0fa8b4bc8f343",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1021",
+  "files_changed": [
+    "apps/lunet2d/docs/learning/MANIFESTO.md",
+    "apps/lunet2d/docs/learning/MATRIZ-CURRICULAR.md",
+    "apps/lunet2d/docs/learning/IMPLEMENTACAO.md",
+    "apps/lunet2d/docs/learning/PESQUISA.md",
+    "apps/lunet2d/docs/guides/aprender.md",
+    "apps/lunet2d/README.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/src/Lunet.Core/LearningCatalog.cs",
+    "apps/lunet2d/src/Lunet.Core/LearningProgressStore.cs",
+    "apps/lunet2d/src/Lunet.Core/LauncherPreferences.cs",
+    "apps/lunet2d/src/Lunet.Ai/WorkspaceAiChat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Learn.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GlobalAi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LearningFeatureTests.cs",
+    "docs/governance/handoffs/HO-20261122-lunet-aprender-ia-global.json"
+  ],
+  "work_completed": [
+    "Documentados manifesto, 60 cursos, 120 projetos, 480 objetivos, pesquisa, plano de execução e guia. A matriz ainda não marca cursos/práticas como implementados.",
+    "Proposta de aba Aprender com catálogo paginado; somente LRN-001-P1 ativo, quatro etapas declaradas, projeto Lunet normal e progresso persistente em armazenamento privado.",
+    "Implementados chat global sem acesso a arquivos/projetos, histórico persistente isolado, configuração somente na Home e seletor de modelo no chat de projeto.",
+    "Adicionados testes de catálogo, persistência, isolamento de API e falha do provedor; corrigidas duas violações xUnit1051 após execução inicial do CI."
+  ],
+  "verification": [
+    {
+      "check": "Pesquisa externa e auditoria do código canônico",
+      "kind": "automated",
+      "result": "not-applicable",
+      "evidence": "apps/lunet2d/docs/learning/PESQUISA.md (pesquisa documental e revisão técnica; não teste automatizado)"
+    },
+    {
+      "check": "CI do Lunet no PR #1021 — primeira execução",
+      "kind": "automated",
+      "result": "failed",
+      "tested_commit": "d6da488f052f5f2092adb3e4b5fc3d11d1c01aad",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45050877116 — erros xUnit1051 em LearningFeatureTests.cs; corrigidos no commit 8e02530"
+    },
+    {
+      "check": "Reexecução CI Android/.NET do head atualizado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1021 — aguarda nova execução e compilação no estado combinado"
+    }
+  ],
+  "known_issues": [
+    "Esta entrega ainda não foi validada pelo CI Android/.NET completo no momento do handoff; não iniciar release antes dos checks.",
+    "Sem testes no aparelho físico; ADD-0035 dispensa gate humano, mas nenhuma aprovação DEVICE é declarada.",
+    "Somente primeiro desafio e marcação declarativa; não existe avaliação pedagógica automática; demais projetos aguardam implementação.",
+    "Chat global oferece texto do provedor configurado sem ferramentas de projeto; não substitui agente contextual da IDE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI novo do PR #1021; corrigir falhas sem omitir checks, incluído build Android.",
+    "Permitir integrador automático após conjunto de checks verdes; confirmar merge e release Lunet nova na origem canônica.",
+    "Após integração comprovada, registrar checkboxes realmente concluídos (fatia LRN-001-P1) e deixar demais 119 projetos abertos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ROADMAP é autoridade de implementação, matriz curricular de conteúdo, progresso do aluno vive só no app; históricos global/projeto independentes."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff, branch, PR, testes e estado de release documentados."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Decisões do usuário foram consolidadas no manifesto, matriz, pesquisa e roadmap do Lunet."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, SPEC, ADR 0007, protocolo, ADD-0035 e definição de done consultados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e teste Android físico distinguidos; nenhuma validação física alegada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nenhuma caixa marcada done com CI ainda pendente; PR requer integração e evidência."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Novos componentes de aprendizagem locais reutilizam ProjectStore, Editor e configurações existentes; sem reescrita."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Lógica de aprendizagem permanece no Lunet2D porque não há segundo consumidor comprovado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Nova funcionalidade de produto e documentação, sem modificar o integrador, credenciais ou estágio de versão."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "learning-catalog",
+      "status": "product-specific",
+      "rationale": "Catálogo de desafios usa API e IDE de Lunet, sem segundo consumidor atual."
+    },
+    {
+      "subject": "workspace-ai-chat",
+      "status": "product-specific",
+      "rationale": "Chat global é UI/serviço local do Lunet; não justificável extrair infraestrutura genérica."
+    }
+  ]
+}
