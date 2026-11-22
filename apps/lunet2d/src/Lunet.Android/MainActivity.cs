@@ -367,6 +367,7 @@ public sealed partial class MainActivity : Activity
             Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
             return;
         }
+        ResolveLearningWorkspaceContext();
         _problems = [];
         _console.Clear();
         _lastProfilerReport = null;
@@ -485,6 +486,8 @@ public sealed partial class MainActivity : Activity
         _problemsTab = WorkbenchButton("Problemas", () => OpenWorkbenchPanel(false));
         AddPanelTab(_problemsTab);
         AddPanelTab(WorkbenchButton("Console", () => OpenWorkbenchPanel(true)));
+        if (_selectedLearningProjectId is not null)
+            AddPanelTab(WorkbenchButton("Aprender", OpenLearningWorkbenchPanel));
         AddPanelTab(WorkbenchButton("Profiler", () =>
         {
             _layoutStore.Current.OpenPanel("profiler");
@@ -511,7 +514,8 @@ public sealed partial class MainActivity : Activity
         _workspaceFrame = frame;
         _aiPanel = null;
         SetContentView(frame);
-        if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
+        if (_layoutStore.Current.PanelTab == "learn" && _selectedLearningProjectId is not null) SetLearningWorkbenchPanel();
+        else if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
         else SetPanel(_showConsole);
         RefreshWorkbenchNavigation();
         WatchKeyboard(root);
@@ -949,7 +953,7 @@ public sealed partial class MainActivity : Activity
         {
             if (task.IsFaulted || _editor is null || _editor.Version != task.Result.Version || _openFile != path) return;
             _problems = task.Result.Diagnostics;
-            if (!_showConsole && !_showProfiler) SetPanel(false);
+            if (!_showConsole && !_showProfiler && _layoutStore.Current.PanelTab != "learn") SetPanel(false);
             ShowChips(task.Result.Completions);
             _assistant?.RunAsync(a => a.GetFoldRegions(path)).ContinueWith(folds => RunOnUiThread(() =>
             {
