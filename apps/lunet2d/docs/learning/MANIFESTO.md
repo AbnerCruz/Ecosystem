@@ -121,7 +121,7 @@ A navegação principal compacta proposta é **Início · Projetos · Studios ·
 
 ## 11. Prioridades de implantação
 
-- **Fatia 0:** modelo de conteúdo + progresso local + roteamento de Aprender, um curso real, dois projetos reais e ajuda/retorno ao editor, offline e testados.
+- **Fatia 0:** modelo de conteúdo + progresso local + roteamento de Aprender, um primeiro projeto real (LRN-001-P1), os outros 119 em breve, ajuda/retorno ao editor, offline e testados.
 - **Fatia 1:** T01 completo, documentação contextual, retomada de sessão e validação gradativa.
 - **Fatia 2:** T02–T04, rastreamento de competências, projetos independentes e evidências.
 - **Fatia 3:** T05–T08, integração real de Studios, áudio, gráfica/UI.
@@ -135,3 +135,7 @@ Cada fatia deve ter teste de persistência, catálogo íntegro, navegação Andr
 Pesquisa documentada em [PESQUISA.md](PESQUISA.md). Referências primárias: [Harvard CS50 2D](https://cs50.harvard.edu/games/), [Unity Learn Pathways](https://learn.unity.com/pathways), [Godot: primeiro jogo 2D](https://docs.godotengine.org/en/stable/getting_started/first_2d_game/), [IGDA Education SIG](https://www.edusig.org/projects.html), [UNESCO-UNEVOC: competency-based education](https://connect.unevoc.unesco.org/home/TVETipedia%2BGlossary/lang%3De/show%3Dterm/lang%3Den/term%3DCompetency-based%2Beducation), [ICER 2022: scaffold opcional](https://doi.org/10.1145/3501385.3543977), [Android: navegação](https://developer.android.com/design/ui/mobile/guides/layout-and-content/layout-and-nav-patterns) e [Android: offline-first](https://developer.android.com/topic/architecture/data-layer/offline-first).
 
 Não copiar currículo, projetos protegidos, marcas, imagens ou software de terceiros. Adaptar princípios, construir material autoral e rastrear licenças.
+
+## 13. Ajuste da primeira liberação (22/11/2026)
+
+Por decisão do proprietário, o catálogo exibe desde a primeira release todos os 60 cursos, mas **somente LRN-001-P1** fica disponível. Os demais 119 projetos ficam sinalizados como **Disponível em breve**, incluindo LRN-001-P2. O primeiro curso está apenas parcialmente aberto e não pode ter sua caixa marcada como concluída. A área de trabalho ganha chat geral e configurações de IA; o chat de cada jogo mantém contexto e histórico próprios e apresenta somente o seletor de modelo, sem tela de configurações de provedor/chave/permissões. O chat geral não tem ferramentas de leitura/escrita de projeto. Estas decisões integram LUNET-520 e LUNET-521.
