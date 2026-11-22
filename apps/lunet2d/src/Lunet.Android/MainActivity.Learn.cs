@@ -257,10 +257,10 @@ public sealed partial class MainActivity
         if (linked)
         {
             body.AddView(LunetUi.Button(this, "Continuar no editor · " + linkedName,
-                () => OpenProject(linkedName!), ButtonStyle.Primary), LunetUi.FillWidth(Dp(52)));
+                () => OpenLearningEditor(challenge.Id, linkedName!), ButtonStyle.Primary), LunetUi.FillWidth(Dp(52)));
             body.AddView(LunetUi.Button(this, "Pedir uma pista da IA (opcional)", () =>
             {
-                OpenProject(linkedName!);
+                OpenLearningEditor(challenge.Id, linkedName!);
                 OpenAiPanel("Estou estudando no Lunet Aprender, desafio " + challenge.Id + " (" +
                     challenge.Title + "). Objetivo: " + challenge.Mission +
                     " Estou investigando: " + challenge.Investigate +
@@ -299,7 +299,7 @@ public sealed partial class MainActivity
                 name = baseName + suffix++;
             var project = _store.Create(name, ProjectTemplate.Blank, challenge.Orientation);
             progress.LinkProject(projectId, name, project.Manifest.GameId);
-            OpenProject(name);
+            OpenLearningEditor(projectId, name);
         }
         catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -326,7 +326,7 @@ public sealed partial class MainActivity
                 {
                     var project = _store.Open(names[e.Which]);
                     progress.LinkProject(projectId, names[e.Which], project.Manifest.GameId);
-                    ShowLearningProject(projectId);
+                    OpenLearningEditor(projectId, names[e.Which]);
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
                 {
