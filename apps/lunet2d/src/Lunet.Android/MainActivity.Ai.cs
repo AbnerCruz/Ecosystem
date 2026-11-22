@@ -33,6 +33,50 @@ public sealed partial class MainActivity
 
     private LunetAiLoadedSettings Ai => _ai ??= AiStore.Load();
 
+    /// <summary>Dentro do projeto, alterar somente o modelo. Provider, chaves e permissões ficam na Home.</summary>
+    private void ShowAiModelPicker()
+    {
+        var ai = Ai;
+        if (!ai.IsConfigured)
+        {
+            Toast.MakeText(this, "Configure a IA em Início → Lunet IA → ⚙.", ToastLength.Long)?.Show();
+            return;
+        }
+        var provider = LunetAiProviders.Find(ai.Settings.ProviderId);
+        var choices = new[] { "Digitar ID do modelo…" }.Concat(provider.SuggestedModels).ToArray();
+        new AlertDialog.Builder(this)!
+            .SetTitle("Modelo do projeto · " + provider.Name)!
+            .SetItems(choices, (_, e) =>
+            {
+                if (e.Which > 0) { ApplyProjectAiModel(choices[e.Which]); return; }
+                var editor = LunetUi.Input(this, "Identificador do modelo", ai.Settings.Model);
+                new AlertDialog.Builder(this)!.SetTitle("Escolher modelo")!
+                    .SetView(editor)!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!
+                    .SetPositiveButton("Aplicar", (_, _) => ApplyProjectAiModel((editor.Text ?? "").Trim()))!.Show();
+            })!
+            .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+    }
+
+    private void ApplyProjectAiModel(string model)
+    {
+        if (string.IsNullOrWhiteSpace(model) || model.Length > 240)
+        {
+            Toast.MakeText(this, "Identificador de modelo inválido.", ToastLength.Short)?.Show();
+            return;
+        }
+        try
+        {
+            AiStore.Save(Ai.Settings with { Model = model }, null);
+            _ai = null;
+            RefreshAiHeader();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Toast.MakeText(this, "Não foi possível trocar o modelo: " + ex.Message, ToastLength.Long)?.Show();
+        }
+    }
+
     // ---------- Settings (configure once) ----------
 
     private void ShowAiSettings(Action? afterSave = null)
