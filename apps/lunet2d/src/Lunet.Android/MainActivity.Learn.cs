@@ -59,10 +59,10 @@ public sealed partial class MainActivity
             var bar = new ProgressBar(this, null, global::Android.Resource.Attribute.ProgressBarStyleHorizontal)
             { Max = total, Progress = progress.OverallCompletedCount };
             content.AddView(bar, LunetUi.FillWidth(Dp(12)));
-            var next = LearningCatalog.Projects.FirstOrDefault(p => progress.CompletedCount(p.Id) < p.Steps.Count)
+            var next = LearningCatalog.Projects.FirstOrDefault(p => progress.CompletedCountFor(p.Id) < p.Steps.Count)
                 ?? LearningCatalog.Projects[0];
             AddHomeAction(content, "Continuar · " + next.Title,
-                next.Id + " · " + progress.CompletedCount(next.Id) + "/4 objetivos",
+                next.Id + " · " + progress.CompletedCountFor(next.Id) + "/4 objetivos",
                 () => ShowLearningProject(next.Id));
         }
 
@@ -90,7 +90,7 @@ public sealed partial class MainActivity
             }
 
             int completed = progress is null ? 0 : LearningCatalog.Projects
-                .Where(p => p.CourseId == course.Id).Sum(p => progress.CompletedCount(p.Id));
+                .Where(p => p.CourseId == course.Id).Sum(p => progress.CompletedCountFor(p.Id));
             AddHomeAction(list, course.Id + " · " + course.Title,
                 course.Available
                     ? "2 projetos disponíveis · " + completed + "/8 objetivos declarados"
@@ -135,7 +135,7 @@ public sealed partial class MainActivity
         var progress = LearningProgress();
         foreach (var project in LearningCatalog.Projects.Where(p => p.CourseId == courseId))
         {
-            int done = progress?.CompletedCount(project.Id) ?? 0;
+            int done = progress?.CompletedCountFor(project.Id) ?? 0;
             AddHomeAction(content, project.Title,
                 project.Id + " · " + done + "/4 objetivos declarados · Disponível",
                 () => ShowLearningProject(project.Id));
@@ -186,7 +186,7 @@ public sealed partial class MainActivity
         }
         else
         {
-            var count = progress.CompletedCount(challenge.Id);
+            var count = progress.CompletedCountFor(challenge.Id);
             var summary = LunetUi.Label(this,
                 count + " / " + challenge.Steps.Count + " objetivos declarados",
                 LunetUi.TextBody, LunetUi.Text, bold: true);
@@ -212,7 +212,7 @@ public sealed partial class MainActivity
                     try
                     {
                         progress.SetCompleted(challenge.Id, step.Id, args.IsChecked);
-                        int updated = progress.CompletedCount(challenge.Id);
+                        int updated = progress.CompletedCountFor(challenge.Id);
                         summary.Text = updated + " / " + challenge.Steps.Count + " objetivos declarados";
                         bar.Progress = updated;
                     }
