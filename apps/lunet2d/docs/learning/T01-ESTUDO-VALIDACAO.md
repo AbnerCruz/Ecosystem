@@ -30,3 +30,11 @@ Data: 22/11/2026. Base: Ecosystem main c787b843092e161a5eb0a27bff163b8b1164ab8c.
 ## Gates verificáveis
 
 Exatamente 60 cursos, 12 trilhas, 5 cursos publicados e 10 projetos T01. Cada projeto possui quatro etapas e documentação local. Persistência independente, migração V1, corrupção preservada e nenhum código do aluno alterado; testes xUnit. Compilação .NET e Android e release somente pela CI canônica. Sem evidência DEVICE nesta implementação; nunca chamar um checkbox de avaliação automática. Projeto final LRN-005-P2 exige jogo autoral jogável fora de Aprender.
+
+## 6. Reavaliação UX: missão desaparecia ao abrir o editor
+
+Relato do proprietário em 22/11/2026: abrir missão levava ao Game.cs e escondia os objetivos, obrigando o usuário a abandonar a produção para recuperar instruções. Auditoria do código confirmou o acoplamento: ShowLearningProject possuía checkboxes apenas na tela do launcher, enquanto ShowWorkspace oferecia Problemas/Console/Profiler, sem superfície pedagógica persistente. A solução não é duplicar páginas no editor, mas conectar o mesmo LearningProgressStore e a mesma LearningCatalog ao painel acoplável existente.
+
+**Pesquisa e confronto:** o editor atual já dispõe de WorkspaceLayout, dock adaptativo Bottom/Right, painel redimensionável, abas salvas e Preview. As diretrizes Android de navegação e offline-first já pesquisadas sugerem manter conteúdo local e reduzir trocas de contexto; a experiência de tutoriais de Godot/Unity mantém objetivos próximos à produção, mas o Lunet não deve copiar suas telas nem substituir o código real por tutoriais com solução.
+
+**Decisão:** botão Aprender somente quando GameId associa desafio; abrir esse painel automaticamente ao partir de um curso; registrar progresso na mesma store, mostrar referências/rubricas e permitir voltar a Console/Problemas. A seleção de missão é explícita quando GameId vincula vários desafios. LayoutStore aceita PanelTab=learn; compilação com erro abre Problemas; Preview bem-sucedido restaura Aprender após saída. A fileira de abas passa a permitir scroll horizontal. Testes de layout e resolução de GameId precederam a mudança. Validar no Android 13 sem afirmar DEVICE.
