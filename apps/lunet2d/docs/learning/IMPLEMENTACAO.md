@@ -1,13 +1,21 @@
 # Lunet Aprender — matriz de implementação
 
 **Item principal:** LUNET-520 (Aprender). **Complemento:** LUNET-521 (IA da área de trabalho).  
-**Estado deste documento:** plano de execução. **ATENÇÃO:** caixas técnicas marcadas apenas após CI e integração em main; criar código numa branch não equivale a concluir.  
+**Estado deste documento:** histórico de planejamento e execução incremental (T01 na versão 1000584). **ATENÇÃO:** caixas técnicas marcadas apenas após CI e integração em main; criar código numa branch não equivale a concluir.  
 [Manifesto](MANIFESTO.md) · [60 cursos/120 projetos](MATRIZ-CURRICULAR.md) · [Pesquisa](PESQUISA.md) · [ROADMAP canônico](../../ROADMAP.md).
+
+## Fase C-T01 — primeira trilha completa (LUNET-520-T01)
+
+- [ ] Catálogo T01 com 5 cursos, 10 missões e 40 objetivos. Código, rubricas e referências offline em LearningTrackOne.cs, navegação em MainActivity.Learn.cs; **CI e release pendentes até evidência**.
+- [ ] Persistência V2 por ID de missão; leitura V1 não destrutiva, escrita atômica, arquivo corrompido preservado; LearningTrackOneTests e LearningFeatureTests.
+- [ ] Projetos comuns C# via ProjectStore, orientação horizontal para LRN-004-P2, associação e retomada. Não fornecer solução, resultados de testes físicos ou verificador automático fictícios.
+- [ ] Validar CI canônico .NET+Android e integrar PR; emitir APK novo somente para SHA integrado, registrar DEVICE separado.
+- [ ] Liberação definitiva dos dez desafios no APK depende do gate acima. Fonte de estudo: [T01-ESTUDO-VALIDACAO.md](T01-ESTUDO-VALIDACAO.md).
 
 ## Fase A — primeira entrega utilizável
 
-- [ ] **LUNET-520-A01:** exibir os 60 cursos sob 12 trilhas na aba Aprender; somente primeiro curso tem o primeiro projeto habilitado. Testes de quantidade e IDs.
-- [ ] **A02:** os 59 cursos seguintes e o segundo projeto de LRN-001 mostram “Disponível em breve”; nenhum botão finge iniciar conteúdo inexistente.
+- [ ] **LUNET-520-A01:** exibir os 60 cursos sob 12 trilhas na aba Aprender; cinco cursos T01 têm dez projetos habilitados; 55 outros cursos ainda indisponíveis. Testes de quantidade e IDs.
+- [ ] **A02:** os 55 cursos seguintes a T01 mostram “Disponível em breve”; nenhum botão finge iniciar conteúdo inexistente.
 - [ ] **A03:** primeiro desafio mostra objetivos claros: desenhar quadrado, movimentar, posicionar círculo, vencer ao encostar, reiniciar.
 - [ ] **A04:** criar e associar projeto normal via ProjectStore, preservando GameId e código do usuário.
 - [ ] **A05:** marcar/desmarcar etapas por declaração; persistir progresso e recuperar após reinício.
@@ -39,14 +47,14 @@
 - [ ] **C03:** introduzir verificação automática confiável de objetivos mensuráveis, separada de confirmação do usuário.
 - [ ] **C04:** revisão opcional por IA e desafios de transferência sem executar o trabalho pelo aluno.
 - [ ] **C05:** progressão por competências e sugestões personalizadas com proteção de privacidade.
-- [ ] **C06:** implementar LRN-001-P2 e liberar integralmente LRN-001 só após evidências de execução de ambos.
-- [ ] **C07:** liberar demais 59 cursos por matriz de projetos e requisitos, cada um mantendo “Disponível em breve” até sua própria conclusão.
+- [ ] **C06:** implementar T01 inteiro (LRN-001-P2 até LRN-005-P2) com missão, referências offline, migração de dados e testes; revisar após CI.
+- [ ] **C07:** liberar os demais 55 cursos por matriz de projetos e requisitos, cada um mantendo “Disponível em breve” até sua própria conclusão.
 - [ ] **C08:** testes gráficos/UX, acessibilidade, navegabilidade tablet/desktop quando suportado, profiler e integração real de Studio/IA.
 - [ ] **C09:** auditoria final de abrangência: C#, gráficos, shaders, física, áudio, UI, simulação, dados, IA, redes, produção e publicação 2D.
 
 ## Critério de revisão da matriz
 
-Ao integrar cada incremento, o agente deve registrar PR/commit/CI e qual caixa ficou pronta; se a implementação for parcial, manter [ ]. Os checkboxes das **120 entregas pedagógicas** estão exclusivamente na [MATRIZ-CURRICULAR.md](MATRIZ-CURRICULAR.md); um projeto planejado nunca é apresentado como concluído por publicar este Markdown. Uma nova release pode trazer somente LRN-001-P1 disponível, sem mudar os 119 demais.
+Ao integrar cada incremento, o agente deve registrar PR/commit/CI e qual caixa ficou pronta; se a implementação for parcial, manter [ ]. Os checkboxes das **120 entregas pedagógicas** estão exclusivamente na [MATRIZ-CURRICULAR.md](MATRIZ-CURRICULAR.md); um projeto planejado nunca é apresentado como concluído por publicar este Markdown. A versão 1000584 propõe cinco cursos T01/10 projetos e mantém os outros 55 cursos indisponíveis. A matriz registra disponibilidade do produto após CI/integração, nunca realização pelo aluno.
 
 ## Pontos de atenção
 
