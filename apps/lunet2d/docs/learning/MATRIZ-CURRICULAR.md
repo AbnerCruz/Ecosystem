@@ -1,8 +1,10 @@
 # Lunet Aprender — matriz curricular e checklist de publicação
 
-**Data da primeira matriz:** 22/11/2026. **Estado:** 60 cursos especificados; **0 cursos e 0 projetos implementados na aba Aprender** no momento da escrita. Especificação concluída não significa funcionalidade entregue.
+**Data da primeira matriz:** 22/11/2026. **Estado:** 60 cursos especificados; **T01 com cinco cursos e dez missões propostos no código da versão dev.1000584; integração requer CI e merge**. Especificação concluída não significa funcionalidade entregue.
 
 **Fonte de verdade curricular:** este documento. **Fonte de verdade de implementação do aplicativo:** [ROADMAP.md](../../ROADMAP.md) e evidências na main; **progresso do estudante:** dados locais da aplicação (não estes checkboxes).
+
+**Verificação editorial:** os dez desafios T01 possuem dados, navegação, progresso e testes no PR da versão 1000584; caixas T01 só indicam disponibilidade do produto **após a integração com CI verde**, jamais a realização pelo estudante. A validação física Android é registrada separadamente. Referências: T01-ESTUDO-VALIDACAO.md e guia Aprender.
 
 ## Como interpretar as caixas
 
@@ -36,7 +38,7 @@
 
 **Resultado esperado:** Sair do zero até um jogo pequeno completo, entendendo o ciclo editar → executar → corrigir. **Entrada sugerida:** nenhum.
 
-- [ ] **LRN-001 — Aprendendo movimento** · Competência: formas, coordenadas, toque, estados e contato. Pré-requisito: nenhum.
+- [x] **LRN-001 — Aprendendo movimento** · Competência: formas, coordenadas, toque, estados e contato. Pré-requisito: nenhum.
 
   - [x] **LRN-001-P1 — Aprendendo movimento**
 
@@ -45,71 +47,71 @@
     3. Desenhe um círculo distante do quadrado.
     4. Ao tocar o círculo, anuncie vitória e permita reiniciar.
 
-  - [ ] **LRN-001-P2 — Caça ao alvo**
+  - [x] **LRN-001-P2 — Caça ao alvo**
 
     1. Posicione três alvos em lugares diferentes.
     2. Permita mover o mesmo personagem entre eles.
     3. Retire cada alvo após contato.
     4. Finalize apenas após coletar todos e reiniciar corretamente.
 
-- [ ] **LRN-002 — Estados de partida** · Competência: início, jogo ativo, vitória, derrota e reinício. Pré-requisito: LRN-001.
+- [x] **LRN-002 — Estados de partida** · Competência: início, jogo ativo, vitória, derrota e reinício. Pré-requisito: LRN-001.
 
-  - [ ] **LRN-002-P1 — Fuja da borda**
+  - [x] **LRN-002-P1 — Fuja da borda**
 
     1. Desenhe um jogador móvel e uma arena delimitada.
     2. Mantenha o jogo ativo enquanto permanecer na arena.
     3. Ao ultrapassar um limite, apresente derrota.
     4. Adicione reinício que limpa estado e posição.
 
-  - [ ] **LRN-002-P2 — Desafio de três vidas**
+  - [x] **LRN-002-P2 — Desafio de três vidas**
 
     1. Crie um perigo que cruza a arena.
     2. Subtraia uma vida apenas ao contato válido.
     3. Mostre tela de derrota após três danos.
     4. Reinicie vidas, perigos e posição sem criar estados duplicados.
 
-- [ ] **LRN-003 — Pontos e tempo** · Competência: temporizadores, contadores, feedback e HUD elementar. Pré-requisito: LRN-002.
+- [x] **LRN-003 — Pontos e tempo** · Competência: temporizadores, contadores, feedback e HUD elementar. Pré-requisito: LRN-002.
 
-  - [ ] **LRN-003-P1 — Colecionador cronometrado**
+  - [x] **LRN-003-P1 — Colecionador cronometrado**
 
     1. Mostre um contador de pontos visível.
     2. Crie alvo que aparece em posição nova ao ser tocado.
     3. Defina duração finita da rodada.
     4. Finalize com placar coerente e botão de tentar de novo.
 
-  - [ ] **LRN-003-P2 — Corrida de recordes**
+  - [x] **LRN-003-P2 — Corrida de recordes**
 
     1. Calcule tempo até tocar a meta.
     2. Exiba tempo durante a jogada.
     3. Guarde o melhor valor dentro da sessão.
     4. Teste pausa e reinício sem duplicar ou acelerar o cronômetro.
 
-- [ ] **LRN-004 — Controles mobile** · Competência: múltiplos toques, gesto, joysticks, pausa e safe area. Pré-requisito: LRN-003.
+- [x] **LRN-004 — Controles mobile** · Competência: múltiplos toques, gesto, joysticks, pausa e safe area. Pré-requisito: LRN-003.
 
-  - [ ] **LRN-004-P1 — Labirinto de dedo**
+  - [x] **LRN-004-P1 — Labirinto de dedo**
 
     1. Construa labirinto simples de linhas ou blocos.
     2. Implemente movimentação contínua por arrasto.
     3. Não teletransporte o jogador ao trocar de dedo.
     4. Valide início, saída e cancelamento do gesto.
 
-  - [ ] **LRN-004-P2 — Arena com dois controles**
+  - [x] **LRN-004-P2 — Arena com dois controles**
 
     1. Crie movimento com analógico virtual esquerdo.
     2. Controle uma seta de direção com toque direito.
     3. Permita tocar simultaneamente sem confundir dedos.
     4. Pausar e retomar libera capturas antigas de toque.
 
-- [ ] **LRN-005 — Microjogo completo** · Competência: menu, gameplay, derrota, vitória, áudio básico e produto final. Pré-requisito: LRN-004.
+- [x] **LRN-005 — Microjogo completo** · Competência: menu, gameplay, derrota, vitória, áudio básico e produto final. Pré-requisito: LRN-004.
 
-  - [ ] **LRN-005-P1 — Mini-arcade de um minuto**
+  - [x] **LRN-005-P1 — Mini-arcade de um minuto**
 
     1. Desenhe tela inicial e botão iniciar.
     2. Implemente mecânica com pontuação e ameaça crescente.
     3. Mostre derrota e pontuação ao fim.
     4. Reinicie sem acumular objetos ou eventos antigos.
 
-  - [ ] **LRN-005-P2 — Microjogo autoral**
+  - [x] **LRN-005-P2 — Microjogo autoral**
 
     1. Escolha uma regra original de uma tela.
     2. Documente controle, objetivo e condições de fim.
