@@ -113,6 +113,13 @@ public sealed class LearningProgressStore
     public int CompletedCountFor(string projectId) => FindProgress(projectId)?.CompletedStepIds.Length ?? 0;
     public int OverallCompletedCount => _state.Projects.Sum(p => p.CompletedStepIds.Length);
 
+    /// <summary>Desafios associados ao GameId do projeto aberto; múltiplos vínculos
+    /// podem ser selecionados explicitamente no painel da IDE.</summary>
+    public IReadOnlyList<string> LinkedProjectIdsForGameId(string gameId) =>
+        _state.Projects.Where(p => p.GameId is not null &&
+                p.GameId.Equals(gameId, StringComparison.Ordinal))
+            .Select(p => p.Id).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+
     public bool Completed(string projectId, string stepId)
     {
         var project = RequireProject(projectId);
