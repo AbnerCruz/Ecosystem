@@ -263,6 +263,15 @@ jobs:
         run: |
           tag="lunet2d-v$(tr -d '[:space:]' < VERSION)"
           tools/make-release-files.sh dist/lunet.apk "${tag#lunet2d-v}" "$(python3 ../../.github/integrator/release-metadata.py stage "${tag#lunet2d-v}")" "${{ inputs.source_sha || github.sha }}" out
-          gh release view "$tag" >/dev/null 2>&1 && exit 0
+          if gh release view "$tag" >/dev/null 2>&1; then
+            existing_sha="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" --jq '.target_commitish')"
+            requested_sha="${{ inputs.source_sha || github.sha }}"
+            if [ "$existing_sha" != "$requested_sha" ]; then
+              echo "::error::Release ${tag} is from ${existing_sha}, not ${requested_sha}. Bump VERSION and VERSION_CODE instead of silently reusing stale artifacts."
+              exit 1
+            fi
+            echo "Release ${tag} already published for exact source ${requested_sha}"
+            exit 0
+          fi
           gh release create "$tag" out/* --target "${{ inputs.source_sha || github.sha }}" $(python3 ../../.github/integrator/release-metadata.py flags "${tag#lunet2d-v}") \
             --title "Lunet ${tag#lunet2d-v}" --notes-file out/release-notes.md
