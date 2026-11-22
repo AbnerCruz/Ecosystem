@@ -503,8 +503,10 @@ public sealed partial class MainActivity : Activity
         panelScroll.SetBackgroundColor(WorkbenchSurface);
         panelScroll.AddView(_panelList);
 
+        var tabsScroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false, FillViewport = true };
+        tabsScroll.AddView(tabs);
         _showConsole = _layoutStore.Current.PanelTab == "console";
-        root.AddView(BuildBody(BuildEditorHost(), _chipScroll, tabs, panelScroll), Fill(1));
+        root.AddView(BuildBody(BuildEditorHost(), _chipScroll, tabsScroll, panelScroll), Fill(1));
         root.AddView(BuildExtraKeys());
         root.AddView(BuildWorkbenchNavigation());
 
