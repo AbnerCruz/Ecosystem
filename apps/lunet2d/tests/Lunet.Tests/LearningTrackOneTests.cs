@@ -71,7 +71,7 @@ public sealed class LearningTrackOneTests : IDisposable
         Assert.Equal(10, reloaded.OverallCompletedCount);
         foreach (var (project, index) in LearningCatalog.Projects.Select((p, i) => (p, i)))
         {
-            Assert.Equal(1, reloaded.CompletedCount(project.Id));
+            Assert.Equal(1, reloaded.CompletedCountFor(project.Id));
             Assert.True(reloaded.Completed(project.Id, project.Steps[0].Id));
             Assert.False(reloaded.Completed(project.Id, project.Steps[1].Id));
             Assert.Equal("Course" + (index + 1), reloaded.ProjectNameFor(project.Id));
@@ -82,8 +82,8 @@ public sealed class LearningTrackOneTests : IDisposable
         reloaded.SetCompleted(second.Id, second.Steps[0].Id, false);
         var changed = new LearningProgressStore(path);
         Assert.Equal(9, changed.OverallCompletedCount);
-        Assert.Equal(1, changed.CompletedCount(LearningCatalog.FirstProjectId));
-        Assert.Equal(0, changed.CompletedCount(second.Id));
+        Assert.Equal(1, changed.CompletedCountFor(LearningCatalog.FirstProjectId));
+        Assert.Equal(0, changed.CompletedCountFor(second.Id));
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class LearningTrackOneTests : IDisposable
         state.SetCompleted(p2.Id, p2.Steps[2].Id, true);
         var migrated = new LearningProgressStore(path);
         Assert.Equal(3, migrated.OverallCompletedCount);
-        Assert.Equal(2, migrated.CompletedCount(LearningCatalog.FirstProjectId));
+        Assert.Equal(2, migrated.CompletedCountFor(LearningCatalog.FirstProjectId));
         Assert.Equal("MeuJogo", migrated.ProjectNameFor(LearningCatalog.FirstProjectId));
         Assert.Equal("game-legacy", migrated.ProjectGameIdFor(LearningCatalog.FirstProjectId));
         Assert.True(migrated.Completed(p2.Id, p2.Steps[2].Id));
