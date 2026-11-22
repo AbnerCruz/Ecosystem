@@ -1,0 +1,165 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261122-lunet-t01-learnpanel",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-22T19:05:00Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-t01",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-520-T01",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-aprender-t01-completo-20261122",
+  "base_commit": "c787b843092e161a5eb0a27bff163b8b1164ab8c",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1023",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/LearningCatalog.cs",
+    "apps/lunet2d/src/Lunet.Core/LearningTrackOne.cs",
+    "apps/lunet2d/src/Lunet.Core/LearningProgressStore.cs",
+    "apps/lunet2d/src/Lunet.Core/WorkspaceLayout.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Learn.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.LearnPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Layout.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LearningFeatureTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LearningTrackOneTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/WorkspaceLayoutTests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "apps/lunet2d/docs/learning/T01-ESTUDO-VALIDACAO.md",
+    "apps/lunet2d/docs/learning/MATRIZ-CURRICULAR.md",
+    "apps/lunet2d/docs/learning/IMPLEMENTACAO.md",
+    "apps/lunet2d/docs/guides/aprender.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/governance/handoffs/HO-20261122-lunet-t01-learnpanel.json"
+  ],
+  "work_completed": [
+    "Estudo do Framework, IDE, Studios, UX mobile, documentação e referências externas/comunidades; confronto e critérios em docs/learning/T01-ESTUDO-VALIDACAO.md antes das alterações.",
+    "Dez missões pedagógicas publicáveis e independentes de solução pronta em C# (LRN-001–005, P1/P2), quatro objetivos, rubricas, referências offline, projetos comuns e desafio de transferência por missão.",
+    "Catálogo Aprender com cinco cursos disponíveis, dez projetos e quarenta objetivos, mantendo os 55 cursos posteriores indisponíveis.",
+    "LearningProgressStore V2 por GameId e missão, migração V1 não destrutiva, persistência atômica e proteção contra corrupção.",
+    "Correção UX solicitada pelo proprietário: nova aba Aprender no dock do editor junto a Console/Problemas/Profiler, missão visível e checkboxes sincronizados; tela responsiva, seleção de missão e restauração depois do Preview.",
+    "Captura automatizada real no emulador Android 13 em dist/ui-screens/10a-learn.png; documentação/guia, ROADMAP, CHANGELOG e versão de desenvolvimento avançada para 0.0.1-dev.1000584."
+  ],
+  "verification": [
+    {
+      "check": "Suíte .NET Lunet 1136 testes (HEAD anterior ao handoff)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "e6329a3854a5c301030ffa6c3629b0382828e798",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45056835748"
+    },
+    {
+      "check": "Android APK, assinatura estável, runtime Android 13 e testes de instalação (HEAD anterior ao handoff)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "e6329a3854a5c301030ffa6c3629b0382828e798",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45056835739"
+    },
+    {
+      "check": "Screenshot UI Android 13 com painel Aprender visível (HEAD anterior ao handoff)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "e6329a3854a5c301030ffa6c3629b0382828e798",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45056835721 — arquivo 10a-learn.png, sem FATAL EXCEPTION no logcat"
+    },
+    {
+      "check": "Consistência Ecosystem e governance da revisão anterior",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "e6329a3854a5c301030ffa6c3629b0382828e798",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45056835746"
+    },
+    {
+      "check": "CI do HEAD incluindo este handoff",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR #1023 — verificar antes de integrar; não usar resultado anterior como se testasse este novo commit."
+    }
+  ],
+  "known_issues": [
+    "Testes no dispositivo físico moto g32 Android 13 não realizados pelo agente; screenshot no emulador não equivale a validação física.",
+    "Marcação de objetivos continua sendo autodeclaração do aluno, não avaliador automático de jogo nem domínio intelectual.",
+    "Projeto do aluno criado com Game.cs em branco propositalmente, coerente com a metodologia 'se vira e aprende'.",
+    "Release oficial deve sair exclusivamente do pipeline na main após integração; APK do PR é candidato de testes e não release oficial."
+  ],
+  "blockers": [
+    "Validação do HEAD novo pelo CI combinado; integração via integrador governado; publicação da tag lunet2d-v0.0.1-dev.1000584 após merge."
+  ],
+  "next_actions": [
+    "Confirmar checks .NET, Android, screenshots e governance no novo head do PR #1023; corrigir qualquer erro sem suprimir checks.",
+    "Integrar pelo integrador após gates de criticidade/autorização aplicáveis, sem merge manual para contornar regras.",
+    "Confirmar release oficial lunet2d-v0.0.1-dev.1000584 e a APK ARM64 gerada do SHA integrado, e entregar link/roteiro.",
+    "Validar opcionalmente no moto g32 a troca Console↔Aprender, vínculo por GameId, persistência após reinício e retorno do Preview."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/learning/MANIFESTO.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "LearningCatalog e matriz são autoridade do currículo; progressos são privados, por GameId, fora do Game.cs."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff formal registra pesquisa, desenvolvimento, PR, verificação e limites da release."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Solicitação do proprietário consolida T01 inteiro no ROADMAP e MATRIZ-CURRICULAR."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, SPEC, ADR-0007, AGENTS e protocolo de estudo examinados antes da implementação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulador Android 13 e CI automatizada distintos da validação física no moto g32."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Release oficial somente após checks, integração e APK com fonte exata; código em branch não equivale a release."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "LearningWorkBench reutiliza painel do editor, WorkspaceLayout, ProjectStore e progresso existentes sem subsistema paralelo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Currículo e painel permanecem específicos do Lunet; não se extrai camada geral sem outro consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Migração persistente de progresso do aluno e publicação de nova release Android requerem validação rigorosa; respeitar classificação e autorização governada do integrador."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "learning-track-one",
+      "status": "product-specific",
+      "rationale": "Missões do Lunet dependem das APIs Lunet Framework e IDE, sem segundo consumidor comprovado."
+    },
+    {
+      "subject": "learning-workbench-panel",
+      "status": "product-specific",
+      "rationale": "Painel utiliza WorkspaceLayout e MainActivity Android existentes, sem justificar abstração compartilhada."
+    }
+  ]
+}
