@@ -127,8 +127,10 @@ public sealed partial class MainActivity
                 check.SetTextColor(LunetUi.Text);
                 check.SetPadding(Dp(2), Dp(5), Dp(2), Dp(5));
                 check.ContentDescription = "Declarar objetivo concluído: " + step.Objective;
+                bool restoring = false;
                 check.CheckedChange += (_, args) =>
                 {
+                    if (restoring) return;
                     try
                     {
                         progress.SetCompleted(step.Id, args.IsChecked);
@@ -137,8 +139,9 @@ public sealed partial class MainActivity
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
                         Toast.MakeText(this, "Não foi possível salvar o progresso: " + e.Message, ToastLength.Long)?.Show();
-                        check.CheckedChange -= (_, _) => { }; // state restored below, handler reads persisted store
+                        restoring = true;
                         check.Checked = progress.Completed(step.Id);
+                        restoring = false;
                     }
                 };
                 body.AddView(check, LunetUi.FillWidth());
@@ -148,7 +151,15 @@ public sealed partial class MainActivity
             "Marque os objetivos somente depois de testar seu jogo. A marcação é sua declaração, não uma verificação automática de código.",
             LunetUi.TextCaption, LunetUi.TextMuted));
         var linkedName = progress?.ProjectName;
-        var linked = linkedName is not null && _store.List().Contains(linkedName, StringComparer.Ordinal);
+        bool linked = false;
+        if (linkedName is not null && _store.List().Contains(linkedName, StringComparer.Ordinal))
+        {
+            try { linked = _store.Open(linkedName).Manifest.GameId == progress?.ProjectGameId; }
+            catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException)
+            {
+                linked = false;
+            }
+        }
         if (linked)
         {
             body.AddView(LunetUi.Button(this, "Continuar no editor · " + linkedName, () => OpenProject(linkedName!), ButtonStyle.Primary),
