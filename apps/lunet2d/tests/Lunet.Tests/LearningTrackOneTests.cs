@@ -87,6 +87,26 @@ public sealed class LearningTrackOneTests : IDisposable
     }
 
     [Fact]
+    public void WorkspaceLearningPanelResolvesItsProjectByGameIdWithoutCrossingProjects()
+    {
+        var path = Path.Combine(_root, "progress.json");
+        var projects = new ProjectStore(Path.Combine(_root, "games"));
+        var a = projects.Create("Movement");
+        var b = projects.Create("Collect");
+        var state = new LearningProgressStore(path);
+        Assert.Empty(state.LinkedProjectIdsForGameId(a.Manifest.GameId));
+        state.LinkProject("LRN-001-P1", a.Name, a.Manifest.GameId);
+        state.LinkProject("LRN-001-P2", a.Name, a.Manifest.GameId);
+        state.LinkProject("LRN-002-P1", b.Name, b.Manifest.GameId);
+        Assert.Equal(new[] { "LRN-001-P1", "LRN-001-P2" },
+            state.LinkedProjectIdsForGameId(a.Manifest.GameId));
+        Assert.Equal(new[] { "LRN-002-P1" }, state.LinkedProjectIdsForGameId(b.Manifest.GameId));
+        Assert.Empty(state.LinkedProjectIdsForGameId("not-linked"));
+        Assert.Equal(state.LinkedProjectIdsForGameId(a.Manifest.GameId),
+            new LearningProgressStore(path).LinkedProjectIdsForGameId(a.Manifest.GameId));
+    }
+
+    [Fact]
     public void ExistingV1ProgressMigratesLosslesslyOnNextWrite()
     {
         var path = Path.Combine(_root, "progress.json");
