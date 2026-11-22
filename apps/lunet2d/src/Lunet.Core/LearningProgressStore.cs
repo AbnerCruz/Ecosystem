@@ -29,7 +29,7 @@ public sealed class LearningProgressStore
             using var json = JsonDocument.Parse(content);
             if (json.RootElement.ValueKind != JsonValueKind.Object ||
                 !json.RootElement.TryGetProperty("Version", out var version) ||
-                !version.TryGetInt32(out var versionNumber))
+                (version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out var versionNumber)))
                 throw new InvalidDataException("Versão de progresso ausente ou inválida.");
 
             if (versionNumber == 1)
@@ -111,7 +111,6 @@ public sealed class LearningProgressStore
     public string? ProjectNameFor(string projectId) => FindProgress(projectId)?.Name;
     public string? ProjectGameIdFor(string projectId) => FindProgress(projectId)?.GameId;
     public int CompletedCountFor(string projectId) => FindProgress(projectId)?.CompletedStepIds.Length ?? 0;
-    public int CompletedCount(string projectId) => CompletedCountFor(projectId);
     public int OverallCompletedCount => _state.Projects.Sum(p => p.CompletedStepIds.Length);
 
     public bool Completed(string projectId, string stepId)
