@@ -1,46 +1,50 @@
-# Aprender — primeira missão
+# Aprender — primeira trilha completa
 
-**Escopo previsto em LUNET-520/521:** aba Aprender (60 cursos planejados), somente o projeto inicial LRN-001-P1 disponível; IA geral na Home. Não declarar esta função disponível numa release anterior ao merge/CI.
+A trilha **T01 — Primeiros jogos e orientação no Lunet** tem cinco cursos, com dois desafios cada, **10 projetos** disponíveis: Aprendendo movimento, Caça ao alvo, Fuja da borda, Desafio de três vidas, Colecionador cronometrado, Corrida de recordes, Labirinto de dedo, Arena com dois controles, Mini-arcade de um minuto e Microjogo autoral.
 
-## Fazer o primeiro jogo
+Os demais 55 cursos ficam marcados **Disponível em breve**. O catálogo exibe os 60 cursos em 12 trilhas com carregamento incremental.
 
-1. Na tela inicial toque **Aprender** (quinto destino da barra).
-2. Entre em **LRN-001 · Aprendendo movimento**, o primeiro curso. Os outros 59 aparecem **Disponível em breve**. O segundo projeto desse curso também está em breve.
-3. Toque **Criar projeto para o desafio**. O Lunet cria um jogo normal com Game.cs inicial, sem resolver o desafio por você.
-4. Volte a Aprender e abra **Aprendendo movimento** quando precisar revisar objetivos. São quatro etapas: desenhar quadrado, movê-lo por toque, desenhar círculo distante e vencer ao encostar com opção de reiniciar.
-5. No editor, escreva o código do jogo, execute no Preview e depure. Para ajuda, na tela do desafio toque **Pedir ajuda da IA (pistas)** após configurar a IA na Home; o pedido inicial é explicativo e não solicita mudanças de arquivos.
-6. Depois de testar um objetivo, marque sua caixa. O valor mostra quantos dos quatro objetivos você declarou concluídos; **não é verificação automática do jogo**. Pode desmarcar e rever.
-7. Feche e reabra o aplicativo; o progresso fica no armazenamento privado da aplicação, separado do projeto. O mesmo jogo pode ser aberto pelos Projetos.
+## Aprender construindo
 
-Também é possível associar um jogo existente, sem copiá-lo nem apagá-lo. Se o vínculo apontar para jogo excluído ou com GameId diferente, o aplicativo pedirá nova associação.
+1. Na Home, toque **Aprender**. Na trilha inicial, abra um dos cinco cursos disponíveis e escolha o primeiro ou segundo projeto.
+2. Leia a **missão**, os quatro **objetivos**, **Pesquisar** (referências à documentação offline do Framework), **Critérios de aceite** e **Desafio extra**. Nada exige conexão.
+3. Toque **Criar projeto para este desafio**. Será criada uma pasta Lunet normal com `lunet.json` e um `Game.cs` inicial em branco; o jogo não é entregue resolvido. O desafio `LRN-004-P2` abre em orientação horizontal para dois controles.
+4. No Editor, programe seu jogo em C# e use Preview/console para verificar cada comportamento. Se quiser, volte a Aprender e use **Pedir uma pista da IA**; a solicitação padrão é conceitual, não autoriza editar os arquivos.
+5. Ao observar uma etapa funcionando, marque-a. O progresso de cada missão é uma **declaração pessoal**, não um teste automático de jogabilidade, autoria ou domínio. Desmarcar continua possível.
+6. Toque **Continuar no editor** para retomar seu próprio Game.cs. O jogo continua visível em Projetos mesmo após completar o curso; você pode associar qualquer projeto existente à missão sem copiá-lo ou reescrevê-lo.
+7. Após concluir quatro objetivos, abra a segunda missão do curso. O segundo projeto transfere conhecimentos e exige nova solução, não copiar código. No LRN-005-P2, desenvolva um microjogo de uma tela com regra própria.
+
+### Missão dentro do editor — painel sincronizado
+
+Ao tocar **Criar projeto**, **Continuar no editor** ou **Associar projeto**, o Lunet abre o jogo **com a aba Aprender visível** no painel que já contém Console, Problemas e Profiler. O painel mostra missão, quatro objetivos marcáveis, barra de progresso, referências, como verificar no Preview e desafio extra. Não é necessário sair do código para reler o enunciado.
+
+- O painel é redimensionável (embaixo em retrato, lateral em paisagem, segundo o layout escolhido). Em telas estreitas, a fileira de abas pode ser rolada horizontalmente.
+- Para alternar de **Console/Problemas/Profiler** de volta às instruções, toque **Aprender**. Ocultar o painel para focar no código não apaga as etapas.
+- As marcações são registradas na mesma base de progresso da aba Aprender, sincronizadas por **GameId**. Ao voltar ao catálogo, o progresso já está atualizado.
+- Se vários desafios foram associados ao mesmo jogo, use **Trocar missão associada**, sem apagar código ou progresso.
+- Ao parar o Preview depois de iniciar com Aprender, as instruções reaparecem. Erros de compilação continuam acessíveis no painel Problemas.
+- Um jogo sem vínculo de aprendizagem não ganha uma aba vazia nem herda a missão de outro jogo.
+
+### Acompanhamento e recuperação
+
+- A aba Aprender mostra o total de **40 objetivos declarados** da trilha (0–100%) e o próximo projeto incompleto; cada curso mostra 0–8 objetivos e cada missão 0–4.
+- Cada missão mantém associação por ID estável e `GameId`, sem interferir em outras. Fechar/reabrir preserva marcações; remover o jogo deixa o desafio disponível para nova associação.
+- O progresso antigo da versão com apenas LRN-001-P1 é migrado de V1 para V2 na próxima gravação; nenhum objetivo anterior ou vínculo válido é apagado. Arquivos inválidos são preservados e geram erro, não reset silencioso.
+- Aprender funciona sem conta, sem rede e sem IA. Imagens, sons e Studios são opcionais nesta trilha.
 
 ## IA da área de trabalho
 
-Na Home, toque **Lunet IA**. É o chat geral para planejamento, estudo, ideação e dúvidas sobre o Lunet. No ícone de engrenagem dessa tela ficam configuração completa do provedor, modelo, chave, permissões de arquivo, pesquisa web e demais opções. O chat geral **não recebe arquivos nem ferramentas de projeto**; não pode afirmar que inspecionou ou alterou um jogo.
+Na Home, toque **Lunet IA**: chat geral para planejamento e estudo, sem acesso aos arquivos do jogo. A engrenagem nessa tela permite configurar provedor, modelo, chave e permissões. No editor de um jogo, o chat contextual utiliza conversa separada por `GameId`, mostra troca de modelo, mas não permite mudar configurações globais. Credenciais permanecem no Keystore. Pistas da IA são opcionais.
 
-No editor de um projeto, abra o chat contextual. Ele guarda histórico separado por GameId e mantém as ferramentas de projeto existentes, sujeitas a permissões. Para alterar somente o modelo, toque no identificador do modelo ou use **Conversa → Trocar modelo**. Não há acesso à configuração completa de credenciais a partir do chat do projeto.
+## Roteiro de verificação de release
 
-As credenciais continuam no Android Keystore; histórico geral fica separado do histórico dos projetos. Se ainda não configurou a IA, retorne à Home → Lunet IA → engrenagem.
+1. Abra Aprender e confira 5 cursos disponíveis na primeira trilha e 55 cursos futuros; navegue e volte à Home.
+2. Abra **LRN-001-P1** e **LRN-001-P2**. Cada um deve ter quatro objetivos, referências e rubrica diferentes. Crie projetos separados.
+3. Marque uma etapa em cada um; feche e reabra. Confira 2/40, 1/4 em cada missão, sem interferência entre jogos.
+4. Crie projeto em **LRN-004-P2**; confirme orientação horizontal no `lunet.json` e Preview. Abra todos os dez desafios, incluindo **LRN-005-P2**.
+5. Associe projeto antigo ao primeiro desafio; verifique que `Game.cs` permanece intacto. Marque/desmarque e confira 40 etapas independentes.
+6. Teste sem rede; catálogo e progresso continuam funcionais. Abra a IA por demanda, se configurada, e confira que ajuda não substitui o jogo do aluno.
+7. Execute pelo menos um dos desafios no Preview (desenhe uma forma e teste entrada), feche o jogo e retorne pelo launcher.
+8. Se já possuía progresso na versão anterior, confirme que suas etapas e o vínculo do primeiro desafio continuam presentes.
 
-## Comportamentos importantes
-
-- Aprender e chat geral são duas superfícies; nenhuma substitui Editor, Preview, Studios ou Projetos.
-- A barra da Home tem cinco destinos; IA geral é uma ação de Home, não uma sexta aba.
-- Sem internet e sem chave, cursos, enunciados, jogo e progresso continuam utilizáveis; apenas respostas de IA online exigem provedor configurado.
-- “Disponível em breve” não cria projeto nem oferece botão de início falso.
-- Não existe certificado nem avaliação pedagógica automática no primeiro incremento.
-- O curso LRN-001 não é considerado inteiro implementado enquanto LRN-001-P2 não estiver lançado.
-- Corrupção do progresso/chat é informada sem sobrescrever o arquivo original.
-
-## Roteiro de verificação após CI
-
-1. Abra a Home, navegue pelos cinco destinos, feche o app e confira que Aprender reabre corretamente.
-2. Abra Aprender e percorra os 60 títulos com Mostrar mais. Tente tocar num curso futuro; confira o aviso.
-3. No primeiro curso, crie projeto e altere Game.cs. Volte; confira que o progresso é separado e o jogo não foi substituído.
-4. Marque duas etapas, feche e reabra; confira 50%. Desmarque uma e confira 25%.
-5. Associe projeto existente, depois volte e confira acesso ao mesmo GameId.
-6. Abra Lunet IA na Home sem projeto, configure chave, envie pergunta e verifique resposta; reinicie e confira histórico. Nova conversa apaga só o chat geral.
-7. Abra dois projetos diferentes e confira seus históricos distintos. O menu de projeto permite trocar modelo mas não alterar chave/permissões.
-8. Com IA indisponível/erro de rede, o enunciado e o progresso do desafio continuam funcionando.
-
-Esses passos são orientação para reproduzir defeitos, não gate manual obrigatório: a governança ADD-0035 dispensa validação em aparelho para integração, mas exige relatório honesto de verificações realmente executadas.
+O roteiro é para teste reproduzível no Android 13, não substitui CI e não implica que testes físicos tenham sido realizados pelo agente.

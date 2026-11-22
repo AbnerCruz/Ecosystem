@@ -22,7 +22,7 @@ public sealed class WorkspaceLayout
     /// <summary>Largura do Explorer, em dp.</summary>
     public int ExplorerWidthDp { get; set; } = 300;
 
-    /// <summary>Aba visível do painel inferior: "problems", "console" ou "profiler".</summary>
+    /// <summary>Aba visível: "problems", "console", "profiler" ou "learn".</summary>
     public string PanelTab { get; set; } = "problems";
 
     public WorkspaceLayout Normalized()
@@ -30,7 +30,7 @@ public sealed class WorkspaceLayout
         PanelFraction = Math.Clamp(double.IsNaN(PanelFraction) ? 0.3 : PanelFraction, MinPanelFraction, MaxPanelFraction);
         ExplorerWidthDp = Math.Clamp(ExplorerWidthDp, MinExplorerWidth, MaxExplorerWidth);
         if (!Enum.IsDefined(Dock)) Dock = PanelDock.Auto;
-        if (PanelTab is not ("problems" or "console" or "profiler")) PanelTab = "problems";
+        if (PanelTab is not ("problems" or "console" or "profiler" or "learn")) PanelTab = "problems";
         return this;
     }
 
@@ -40,7 +40,7 @@ public sealed class WorkspaceLayout
     /// <summary>Abre um painel conhecido; valores não suportados não alteram a navegação.</summary>
     public bool OpenPanel(string tab)
     {
-        if (tab is not ("problems" or "console" or "profiler")) return false;
+        if (tab is not ("problems" or "console" or "profiler" or "learn")) return false;
         PanelTab = tab;
         ShowPanel = true;
         return true;

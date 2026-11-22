@@ -815,3 +815,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Testes: `InspirationCatalogPopulationTests.cs` protege contagem/IDs, conteúdo, busca combinada e persistência de favoritos/notas de versões anteriores. Testes .NET e CI ainda pendentes neste ambiente sem SDK; não alegar que passaram.
 - Arquivos/documentos: `InspirationCatalogExpansion.cs`, `InspirationLibrary.cs`, `MainActivity.Inspiration.cs`, testes, `docs/guides/inspiracao.md`, ROADMAP, CHANGELOG e `HO-20261116-lunet-512-catalog-population.json`.
 - Próximos passos: inspecionar CI, reconciliar com #959/#960 e validar moto g32 Android 13 (incluindo pesquisa/links sem navegador, notas, IME, fluidez). Sem DEVICE nem APK/release confirmada.
+
+### 20261122-chatgpt-lunet520-t01 — 22/11/2026 — ChatGPT → integrador — implementação para CI
+- Mandato: estudo profundo antes da implementação; completar toda a trilha T01 "Primeiros jogos e orientação no Lunet" (cinco cursos/10 projetos), e preparar release.
+- Base: main c787b843092e161a5eb0a27bff163b8b1164ab8c, branch `feat/lunet-aprender-t01-completo-20261122`. Fonte única Ecosystem, sem editar repositório Lunet2D histórico.
+- Estudo: AGENTS.md, protocolo de estudo, ROADMAP, SPEC, learning/MANIFESTO/MATRIZ/PESQUISA/IMPLEMENTACAO, auditorias framework/IDE/Studio, código Android/ProjectStore/Framework e referências Godot/Unity/GDevelop/Android/comunidades. Consolidação em `docs/learning/T01-ESTUDO-VALIDACAO.md`.
+- Alterações: LearningTrackOne.cs com dez missões (quatro objetivos/rubrica/referências offline/transferência), LearningCatalog.cs T01 disponível, MainActivity.Learn.cs páginas de curso/projeto e progresso, LearningProgressStore.cs V2 por missão com migração V1, testes LearningTrackOneTests.cs + atualização LearningFeatureTests.cs; docs, ROADMAP, CHANGELOG e VERSION 1000584.
+- Distinção de evidência: código e testes comprometidos em branch; xUnit e Android compilação dependem do CI do PR, não foram executados neste ambiente. Nenhuma captura/validação física declarada; checkbox de aluno é autodeclaração, não verificação. Não embutir soluções no Game.cs.
+- Próximo passo: passar CI combinado, resolver regressões, integrar pelo processo autorizado, confirmar release 1000584 e fornecer APK real. Não alterar versão/estágio fora da release solicitada.

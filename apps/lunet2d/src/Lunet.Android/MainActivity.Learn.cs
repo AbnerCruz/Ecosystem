@@ -5,8 +5,10 @@ using Lunet.Core;
 
 namespace Lunet.Android;
 
-/// <summary>LUNET-520: cursos mostrados como catálogo, somente o primeiro desafio é executável.
-/// Estado do aluno é local e independente de ProjectStore.</summary>
+/// <summary>
+/// Aprender: 60 cursos descobríveis, T01 completamente utilizável.
+/// Progressos são declarações do aluno, não resultados de um avaliador automático.
+/// </summary>
 public sealed partial class MainActivity
 {
     private LearningProgressStore? _learningProgress;
@@ -18,7 +20,8 @@ public sealed partial class MainActivity
         if (_learningProgress is not null) return _learningProgress;
         try
         {
-            _learningProgress = new LearningProgressStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"));
+            _learningProgress = new LearningProgressStore(
+                System.IO.Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"));
             _learningProgressError = null;
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -35,22 +38,32 @@ public sealed partial class MainActivity
         root.SetBackgroundColor(LunetUi.Background);
         root.SetPadding(Dp(16), Dp(12), Dp(16), Dp(8));
         root.AddView(LunetUi.Label(this, "Aprender", LunetUi.TextHero, LunetUi.Text, bold: true));
-        root.AddView(LunetUi.Label(this, "Aprenda a criar jogos, criando jogos. 60 cursos planejados em 12 trilhas.", LunetUi.TextBody, LunetUi.TextMuted));
+        root.AddView(LunetUi.Label(this,
+            "Aprenda a desenvolver jogos criando jogos. Primeira trilha: 5 cursos e 10 desafios disponíveis.",
+            LunetUi.TextBody, LunetUi.TextMuted));
+
         var scroll = new ScrollView(this) { FillViewport = true };
         var content = LunetUi.Column(this, 10);
         content.SetPadding(0, Dp(12), 0, Dp(18));
         var progress = LearningProgress();
         if (_learningProgressError is not null)
             content.AddView(LunetUi.Label(this, _learningProgressError, LunetUi.TextLabel, LunetUi.Warning));
+
         if (progress is not null)
         {
-            content.AddView(LunetUi.Label(this, "SEU PRIMEIRO PROJETO", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
-            var percentage = progress.CompletedCount * 25;
-            content.AddView(LunetUi.Label(this, $"{percentage}% · {progress.CompletedCount} de 4 objetivos declarados", LunetUi.TextBody, LunetUi.Text, bold: true));
+            int total = LearningCatalog.Projects.Sum(p => p.Steps.Count);
+            content.AddView(LunetUi.Label(this, "SUA TRILHA INICIAL", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+            content.AddView(LunetUi.Label(this,
+                $"{progress.OverallCompletedCount} / {total} objetivos declarados · sem avaliação automática",
+                LunetUi.TextBody, LunetUi.Text, bold: true));
             var bar = new ProgressBar(this, null, global::Android.Resource.Attribute.ProgressBarStyleHorizontal)
-            { Max = 4, Progress = progress.CompletedCount };
+            { Max = total, Progress = progress.OverallCompletedCount };
             content.AddView(bar, LunetUi.FillWidth(Dp(12)));
-            AddHomeAction(content, "Continuar: Aprendendo movimento", "Disponível · desenhe, mova, alcance o objetivo", ShowLearningFirstProject);
+            var next = LearningCatalog.Projects.FirstOrDefault(p => progress.CompletedCountFor(p.Id) < p.Steps.Count)
+                ?? LearningCatalog.Projects[0];
+            AddHomeAction(content, "Continuar · " + next.Title,
+                next.Id + " · " + progress.CompletedCountFor(next.Id) + "/4 objetivos",
+                () => ShowLearningProject(next.Id));
         }
 
         content.AddView(LunetUi.Label(this, "CATÁLOGO DE CURSOS", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
@@ -58,10 +71,11 @@ public sealed partial class MainActivity
         content.AddView(list);
         var more = LunetUi.Button(this, "Mostrar mais cursos", () =>
         {
-            _learningVisibleCount = Math.Min(60, _learningVisibleCount + 15);
+            _learningVisibleCount = Math.Min(LearningCatalog.Courses.Count, _learningVisibleCount + 15);
             ShowLearning();
         }, ButtonStyle.Quiet);
         content.AddView(more, LunetUi.FillWidth(Dp(48)));
+
         string? track = null;
         for (int i = 0; i < Math.Min(LearningCatalog.Courses.Count, _learningVisibleCount); i++)
         {
@@ -69,63 +83,127 @@ public sealed partial class MainActivity
             if (track != course.Track)
             {
                 track = course.Track;
-                var section = LunetUi.Label(this, track.ToUpperInvariant(), LunetUi.TextCaption, LunetUi.TextMuted, bold: true);
-                section.SetPadding(Dp(3), Dp(14), 0, Dp(4));
-                list.AddView(section);
+                var label = LunetUi.Label(this, track.ToUpperInvariant(),
+                    LunetUi.TextCaption, LunetUi.TextMuted, bold: true);
+                label.SetPadding(Dp(3), Dp(14), 0, Dp(4));
+                list.AddView(label);
             }
-            AddHomeAction(list, $"{course.Id} · {course.Title}",
-                course.Available ? "Primeiro projeto disponível · outros em breve" : "Disponível em breve",
+
+            int completed = progress is null ? 0 : LearningCatalog.Projects
+                .Where(p => p.CourseId == course.Id).Sum(p => progress.CompletedCountFor(p.Id));
+            AddHomeAction(list, course.Id + " · " + course.Title,
+                course.Available
+                    ? "2 projetos disponíveis · " + completed + "/8 objetivos declarados"
+                    : "Disponível em breve",
                 () =>
                 {
-                    if (course.Available) ShowLearningFirstProject();
+                    if (course.Available) ShowLearningCourse(course.Id);
                     else new AlertDialog.Builder(this)!.SetTitle(course.Title)!
-                        .SetMessage("Disponível em breve. Este curso está planejado, mas seus projetos ainda não foram implementados.")!
+                        .SetMessage("Disponível em breve. Os projetos deste curso ainda não foram implementados.")!
                         .SetPositiveButton("Entendi", (_, _) => { })!.Show();
                 });
         }
-        more.Visibility = _learningVisibleCount < LearningCatalog.Courses.Count ? ViewStates.Visible : ViewStates.Gone;
+
+        more.Visibility = _learningVisibleCount < LearningCatalog.Courses.Count
+            ? ViewStates.Visible : ViewStates.Gone;
         scroll.AddView(content);
         root.AddView(scroll, Fill(1));
         root.AddView(BuildLauncherNavigation("learn"));
         SetContentView(root);
     }
 
-    private void ShowLearningFirstProject()
+    private void ShowLearningCourse(string courseId)
     {
+        var course = LearningCatalog.Find(courseId);
+        if (course is null || !course.Available) { ShowLearning(); return; }
+
         EnterLauncherSurface("learn");
         var root = Vertical();
         root.SetBackgroundColor(LunetUi.Background);
         root.SetPadding(Dp(16), Dp(12), Dp(16), Dp(8));
-        var header = LunetUi.Row(this, 8);
-        header.AddView(LunetUi.Button(this, "← Aprender", ShowLearning, ButtonStyle.Quiet));
-        root.AddView(header);
-        root.AddView(LunetUi.Label(this, "Aprendendo movimento", LunetUi.TextHero, LunetUi.Text, bold: true));
-        root.AddView(LunetUi.Label(this, "LRN-001 · Projeto 1 de 2 · iniciante", LunetUi.TextCaption, LunetUi.AccentText));
+        root.AddView(LunetUi.Button(this, "← Aprender", ShowLearning, ButtonStyle.Quiet));
+        root.AddView(LunetUi.Label(this, course.Title, LunetUi.TextHero, LunetUi.Text, bold: true));
+        root.AddView(LunetUi.Label(this, course.Id + " · Trilha 1 · 2 projetos",
+            LunetUi.TextCaption, LunetUi.AccentText));
+
+        var scroll = new ScrollView(this) { FillViewport = true };
+        var content = LunetUi.Column(this, 12);
+        content.SetPadding(0, Dp(18), 0, Dp(16));
+        content.AddView(LunetUi.Label(this,
+            "Cada desafio resulta em um jogo C# normal, aberto no editor e no Preview. Você decide como implementar.",
+            LunetUi.TextBody, LunetUi.Text));
+        var progress = LearningProgress();
+        foreach (var project in LearningCatalog.Projects.Where(p => p.CourseId == courseId))
+        {
+            int done = progress?.CompletedCountFor(project.Id) ?? 0;
+            AddHomeAction(content, project.Title,
+                project.Id + " · " + done + "/4 objetivos declarados · Disponível",
+                () => ShowLearningProject(project.Id));
+            content.AddView(LunetUi.Label(this, project.Mission,
+                LunetUi.TextBody, LunetUi.TextMuted));
+            var bar = new ProgressBar(this, null, global::Android.Resource.Attribute.ProgressBarStyleHorizontal)
+            { Max = project.Steps.Count, Progress = done };
+            content.AddView(bar, LunetUi.FillWidth(Dp(8)));
+        }
+        content.AddView(LunetUi.Label(this,
+            "Os objetivos são verificáveis no Preview, mas as caixas registram apenas sua declaração. " +
+            "O segundo projeto de cada curso exige aplicar o conhecimento com mais autonomia.",
+            LunetUi.TextCaption, LunetUi.TextMuted));
+        scroll.AddView(content);
+        root.AddView(scroll, Fill(1));
+        root.AddView(BuildLauncherNavigation("learn"));
+        SetContentView(root);
+    }
+
+    private void ShowLearningFirstProject() => ShowLearningProject(LearningCatalog.FirstProjectId);
+
+    private void ShowLearningProject(string projectId)
+    {
+        var challenge = LearningCatalog.FindProject(projectId);
+        if (challenge is null) { ShowLearning(); return; }
+        EnterLauncherSurface("learn");
+        var root = Vertical();
+        root.SetBackgroundColor(LunetUi.Background);
+        root.SetPadding(Dp(16), Dp(12), Dp(16), Dp(8));
+        root.AddView(LunetUi.Button(this, "← Curso", () => ShowLearningCourse(challenge.CourseId), ButtonStyle.Quiet));
+        root.AddView(LunetUi.Label(this, challenge.Title, LunetUi.TextHero, LunetUi.Text, bold: true));
+        root.AddView(LunetUi.Label(this,
+            challenge.Id + " · " + (challenge.Id.EndsWith("P1", StringComparison.Ordinal)
+                ? "Projeto 1 de 2" : "Projeto 2 de 2"),
+            LunetUi.TextCaption, LunetUi.AccentText));
+
         var scroll = new ScrollView(this) { FillViewport = true };
         var body = LunetUi.Column(this, 12);
         body.SetPadding(0, Dp(18), 0, Dp(16));
-        body.AddView(LunetUi.Label(this,
-            "Missão: crie um pequeno jogo em C# no qual o jogador controla um quadrado e vence ao tocar um círculo. " +
-            "Você decide como construir. Não existe solução pronta nem dependência da IA.",
-            LunetUi.TextBody, LunetUi.Text));
+        body.AddView(LunetUi.Label(this, "MISSÃO", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+        body.AddView(LunetUi.Label(this, challenge.Mission, LunetUi.TextBody, LunetUi.Text));
+
         var progress = LearningProgress();
         if (progress is null)
         {
-            body.AddView(LunetUi.Label(this, _learningProgressError ?? "Progresso indisponível", LunetUi.TextBody, LunetUi.Warning));
+            body.AddView(LunetUi.Label(this, _learningProgressError ?? "Progresso indisponível",
+                LunetUi.TextBody, LunetUi.Warning));
         }
         else
         {
-            var summary = LunetUi.Label(this, $"{progress.CompletedCount} / 4 objetivos declarados", LunetUi.TextBody, LunetUi.Text, bold: true);
+            var count = progress.CompletedCountFor(challenge.Id);
+            var summary = LunetUi.Label(this,
+                count + " / " + challenge.Steps.Count + " objetivos declarados",
+                LunetUi.TextBody, LunetUi.Text, bold: true);
             body.AddView(summary);
-            foreach (var step in LearningCatalog.FirstProjectSteps)
+            var bar = new ProgressBar(this, null, global::Android.Resource.Attribute.ProgressBarStyleHorizontal)
+            { Max = challenge.Steps.Count, Progress = count };
+            body.AddView(bar, LunetUi.FillWidth(Dp(12)));
+
+            foreach (var step in challenge.Steps)
             {
                 var check = new CheckBox(this)
                 {
                     Text = step.Objective,
-                    Checked = progress.Completed(step.Id),
+                    Checked = progress.Completed(challenge.Id, step.Id),
                 };
                 check.SetTextColor(LunetUi.Text);
-                check.SetPadding(Dp(2), Dp(5), Dp(2), Dp(5));
+                check.SetPadding(Dp(2), Dp(6), Dp(2), Dp(6));
                 check.ContentDescription = "Declarar objetivo concluído: " + step.Objective;
                 bool restoring = false;
                 check.CheckedChange += (_, args) =>
@@ -133,79 +211,105 @@ public sealed partial class MainActivity
                     if (restoring) return;
                     try
                     {
-                        progress.SetCompleted(step.Id, args.IsChecked);
-                        summary.Text = $"{progress.CompletedCount} / 4 objetivos declarados";
+                        progress.SetCompleted(challenge.Id, step.Id, args.IsChecked);
+                        int updated = progress.CompletedCountFor(challenge.Id);
+                        summary.Text = updated + " / " + challenge.Steps.Count + " objetivos declarados";
+                        bar.Progress = updated;
                     }
                     catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                     {
-                        Toast.MakeText(this, "Não foi possível salvar o progresso: " + e.Message, ToastLength.Long)?.Show();
+                        Toast.MakeText(this, "Não foi possível salvar: " + e.Message, ToastLength.Long)?.Show();
                         restoring = true;
-                        check.Checked = progress.Completed(step.Id);
+                        check.Checked = progress.Completed(challenge.Id, step.Id);
                         restoring = false;
                     }
                 };
                 body.AddView(check, LunetUi.FillWidth());
             }
         }
+
         body.AddView(LunetUi.Label(this,
-            "Marque os objetivos somente depois de testar seu jogo. A marcação é sua declaração, não uma verificação automática de código.",
+            "Marque depois de testar no Preview. A marcação é sua declaração, não um teste automático de jogabilidade.",
             LunetUi.TextCaption, LunetUi.TextMuted));
-        var linkedName = progress?.ProjectName;
+        body.AddView(LunetUi.Label(this, "PESQUISAR", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+        body.AddView(LunetUi.Label(this, challenge.Investigate, LunetUi.TextBody, LunetUi.Text));
+        body.AddView(LunetUi.Button(this, "Abrir documentação offline", ShowReference, ButtonStyle.Secondary),
+            LunetUi.FillWidth(Dp(48)));
+        body.AddView(LunetUi.Label(this, "CRITÉRIOS DE ACEITE", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+        body.AddView(LunetUi.Label(this, challenge.Acceptance, LunetUi.TextBody, LunetUi.Text));
+        body.AddView(LunetUi.Label(this, "DESAFIO EXTRA", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+        body.AddView(LunetUi.Label(this, challenge.Transfer, LunetUi.TextBody, LunetUi.TextMuted));
+
+        var linkedName = progress?.ProjectNameFor(challenge.Id);
         bool linked = false;
         if (linkedName is not null && _store.List().Contains(linkedName, StringComparer.Ordinal))
         {
-            try { linked = _store.Open(linkedName).Manifest.GameId == progress?.ProjectGameId; }
+            try
+            {
+                linked = _store.Open(linkedName).Manifest.GameId == progress?.ProjectGameIdFor(challenge.Id);
+            }
             catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException)
             {
                 linked = false;
             }
         }
+
         if (linked)
         {
-            body.AddView(LunetUi.Button(this, "Continuar no editor · " + linkedName, () => OpenProject(linkedName!), ButtonStyle.Primary),
-                LunetUi.FillWidth(Dp(52)));
-            body.AddView(LunetUi.Button(this, "Pedir ajuda da IA (pistas)", () =>
+            body.AddView(LunetUi.Button(this, "Continuar no editor · " + linkedName,
+                () => OpenLearningEditor(challenge.Id, linkedName!), ButtonStyle.Primary), LunetUi.FillWidth(Dp(52)));
+            body.AddView(LunetUi.Button(this, "Pedir uma pista da IA (opcional)", () =>
             {
-                OpenProject(linkedName!);
-                OpenAiPanel("Estou fazendo o primeiro desafio do Lunet Aprender: desenhar um quadrado, mover por toque, desenhar um círculo e vencer ao encostar. Dê somente uma pista conceitual, sem alterar meus arquivos.");
+                OpenLearningEditor(challenge.Id, linkedName!);
+                OpenAiPanel("Estou estudando no Lunet Aprender, desafio " + challenge.Id + " (" +
+                    challenge.Title + "). Objetivo: " + challenge.Mission +
+                    " Estou investigando: " + challenge.Investigate +
+                    " Dê uma pista conceitual, não escreva o jogo nem altere arquivos sem minha autorização.");
             }, ButtonStyle.Secondary));
         }
-        else
+        else if (progress is not null)
         {
-            body.AddView(LunetUi.Button(this, "Criar projeto para o desafio", CreateLearningProject, ButtonStyle.Primary),
+            body.AddView(LunetUi.Button(this, "Criar projeto para este desafio",
+                () => CreateLearningProject(challenge.Id), ButtonStyle.Primary),
                 LunetUi.FillWidth(Dp(52)));
         }
-        body.AddView(LunetUi.Button(this, "Associar um projeto existente", AssociateLearningProject, ButtonStyle.Quiet));
-        body.AddView(LunetUi.Label(this, "Próximo projeto: Caça ao alvo · Disponível em breve", LunetUi.TextCaption, LunetUi.TextMuted));
+
+        if (progress is not null)
+            body.AddView(LunetUi.Button(this, "Associar um projeto existente",
+                () => AssociateLearningProject(challenge.Id), ButtonStyle.Quiet));
+
         scroll.AddView(body);
         root.AddView(scroll, Fill(1));
         root.AddView(BuildLauncherNavigation("learn"));
         SetContentView(root);
     }
 
-    private void CreateLearningProject()
+    private void CreateLearningProject(string projectId)
     {
+        var challenge = LearningCatalog.FindProject(projectId);
         var progress = LearningProgress();
-        if (progress is null) return;
+        if (challenge is null || progress is null) return;
         try
         {
             var existing = _store.List();
-            string name = "AprendendoMovimento";
+            string name = "Aprender" + challenge.Id.Replace("-", "", StringComparison.Ordinal);
+            string baseName = name;
             int suffix = 2;
             while (existing.Contains(name, StringComparer.OrdinalIgnoreCase))
-                name = "AprendendoMovimento" + suffix++;
-            var project = _store.Create(name, ProjectTemplate.Blank);
-            progress.LinkProject(name, project.Manifest.GameId);
-            OpenProject(name);
+                name = baseName + suffix++;
+            var project = _store.Create(name, ProjectTemplate.Blank, challenge.Orientation);
+            progress.LinkProject(projectId, name, project.Manifest.GameId);
+            OpenLearningEditor(projectId, name);
         }
         catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException or ArgumentException)
         {
-            Toast.MakeText(this, "Não foi possível criar desafio: " + e.Message, ToastLength.Long)?.Show();
+            Toast.MakeText(this, "Não foi possível criar o desafio: " + e.Message, ToastLength.Long)?.Show();
         }
     }
 
-    private void AssociateLearningProject()
+    private void AssociateLearningProject(string projectId)
     {
+        if (LearningCatalog.FindProject(projectId) is null) return;
         var progress = LearningProgress();
         if (progress is null) return;
         var names = _store.List().ToArray();
@@ -215,14 +319,14 @@ public sealed partial class MainActivity
             return;
         }
         new AlertDialog.Builder(this)!
-            .SetTitle("Escolha seu projeto para Aprendendo movimento")!
+            .SetTitle("Associe seu jogo a " + projectId)!
             .SetItems(names, (_, e) =>
             {
                 try
                 {
                     var project = _store.Open(names[e.Which]);
-                    progress.LinkProject(names[e.Which], project.Manifest.GameId);
-                    ShowLearningFirstProject();
+                    progress.LinkProject(projectId, names[e.Which], project.Manifest.GameId);
+                    OpenLearningEditor(projectId, names[e.Which]);
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
                 {

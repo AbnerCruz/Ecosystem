@@ -1,3 +1,11 @@
+## LUNET-520-UX1 — painel Aprender no editor (22/11/2026)
+
+- [ ] **LUNET-520-UX1** — desafio acompanha o GameId no editor; aba Aprender acessível ao lado de Console/Problemas, com missão, etapas, barra, rubrica e referências offline. Ao criar/associar/retomar pelo curso, abrir painel; salvar marcações no mesmo LearningProgressStore V2, restauração após Preview e layout salvo, escolher missão se mesmo jogo foi associado a várias; ocultar aba de jogos sem vínculo e preservar erros. TDD: WorkspaceLayoutTests + LearningTrackOneTests. Implementação no PR #1023, sem DEVICE; CI/merge/release oficial pendentes.
+
+## LUNET-520-T01 — trilha Primeiros jogos e orientação completa (22/11/2026)
+
+- [ ] **LUNET-520-T01** — disponibilizar cinco cursos LRN-001–005 e dez missões reais com 40 objetivos, referências offline, rubrica de Preview, desafio de transferência, orientação horizontal na arena de dois controles, criação/associação de Game.cs normal, progresso declarado por missão, migração segura V1→V2 e ajuda conceitual opt-in. Branch feat/lunet-aprender-t01-completo-20261122; verificar CI combinado, merge e release 1000584 antes de fechar. Sem DEVICE/avaliação automática. Documento: docs/learning/T01-ESTUDO-VALIDACAO.md. Os 55 cursos seguintes continuam indisponíveis.
+
 ## Nova frente: Lunet Aprender e IA na área de trabalho — LUNET-520/521 (22/11/2026)
 
 Fonte normativa e matrizes de cursos em [docs/learning/MANIFESTO.md](docs/learning/MANIFESTO.md), [MATRIZ-CURRICULAR.md](docs/learning/MATRIZ-CURRICULAR.md), [PESQUISA.md](docs/learning/PESQUISA.md) e [IMPLEMENTACAO.md](docs/learning/IMPLEMENTACAO.md). O projeto foi autorizado para implementação incremental. **As 60 entradas do catálogo não significam 60 cursos lançados.**

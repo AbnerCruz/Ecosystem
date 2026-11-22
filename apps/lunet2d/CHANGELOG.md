@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.1-dev.1000584 — Trilha inicial Aprender completa
+
+- **Aprender no editor:** missão, quatro passos, rubrica de teste, referências e progresso visíveis numa aba do painel já usado por Console/Problemas. Abertura automática ao iniciar pelo curso, vínculo por GameId, seleção entre múltiplas missões do mesmo jogo e restauração após Preview; layouts e abas horizontais suportados.
+
+- **T01:** todos os cinco cursos e dez missões de Primeiros jogos e orientação no Lunet, com 40 objetivos, rubricas de Preview, pistas da documentação offline e desafio de transferência; outras 55 entradas permanecem Disponível em breve.
+- **Navegação e progresso:** páginas por curso/projeto, associação independente por GameId, projetos comuns em branco e resume. Barra do total 40 objetivos e de cada missão.
+- **Integridade:** progresso V2 por projeto, leitura/migração V1 não destrutiva, escrita atômica, validação contra IDs inexistentes. LRN-004-P2 inicia projeto landscape.
+- **Metodologia:** nenhuma solução pré-codificada; checkbox significa declaração do aluno, não verificação automática. IA dá pistas por escolha. Sem DEVICE afirmado; CI será confirmado no PR.
+- **Testes:** LearningTrackOneTests e atualização de LearningFeatureTests; guia e estudo técnico do T01.
+
+
 ## 0.0.1-dev.1000583 — Lunet Aprender e IA global
 
 - **Aprender:** 60 cursos de 12 trilhas listados. Somente LRN-001-P1 (Aprendendo movimento) liberado; demais 119 projetos identificados como “Disponível em breve”.

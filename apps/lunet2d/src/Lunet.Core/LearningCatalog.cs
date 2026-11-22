@@ -3,9 +3,9 @@ using System.Linq;
 
 namespace Lunet.Core;
 
-/// <summary>Projeção inicial dos 60 cursos de docs/learning/MATRIZ-CURRICULAR.md.
-/// Somente LRN-001-P1 está disponível; os demais NÃO estão implementados.
-/// Nunca usar essa lista como prova de conclusão dos cursos.</summary>
+/// <summary>Projeção dos 60 cursos de docs/learning/MATRIZ-CURRICULAR.md.
+/// Apenas T01 (cinco cursos e dez projetos) está disponível para o estudante.
+/// Disponibilidade não prova conclusão individual nem validação da jogabilidade.</summary>
 public sealed record LearningCourse(string Id, string Title, string Track, bool Available);
 public sealed record LearningStep(string Id, string Objective);
 public static class LearningCatalog
@@ -30,10 +30,10 @@ public static class LearningCatalog
     public static IReadOnlyList<LearningCourse> Courses { get; } = new LearningCourse[]
     {
         new("LRN-001", "Aprendendo movimento", Tracks[0], true),
-        new("LRN-002", "Estados de partida", Tracks[0], false),
-        new("LRN-003", "Pontos e tempo", Tracks[0], false),
-        new("LRN-004", "Controles mobile", Tracks[0], false),
-        new("LRN-005", "Microjogo completo", Tracks[0], false),
+        new("LRN-002", "Estados de partida", Tracks[0], true),
+        new("LRN-003", "Pontos e tempo", Tracks[0], true),
+        new("LRN-004", "Controles mobile", Tracks[0], true),
+        new("LRN-005", "Microjogo completo", Tracks[0], true),
         new("LRN-006", "Tipos, variáveis e operações", Tracks[1], false),
         new("LRN-007", "Condições e repetição", Tracks[1], false),
         new("LRN-008", "Métodos, eventos e responsabilidade", Tracks[1], false),
@@ -90,13 +90,12 @@ public static class LearningCatalog
         new("LRN-059", "Distribuição e manutenção Android", Tracks[11], false),
         new("LRN-060", "Projeto autoral de conclusão", Tracks[11], false),
     };
-    public static IReadOnlyList<LearningStep> FirstProjectSteps { get; } = new LearningStep[]
-    {
-        new("LRN-001-P1-S1", "Desenhe um quadrado visível na tela."),
-        new("LRN-001-P1-S2", "Faça o quadrado se mover por toque ou controle virtual."),
-        new("LRN-001-P1-S3", "Desenhe um círculo distante da posição inicial do quadrado."),
-        new("LRN-001-P1-S4", "Quando o quadrado tocar o círculo, encerre a partida com uma indicação de vitória. Permita reiniciar."),
-    };
+    public static IReadOnlyList<LearningProject> Projects => LearningTrackOne.Projects;
+    public static IReadOnlyList<LearningStep> FirstProjectSteps =>
+        FindProject(FirstProjectId)!.Steps;
+
     public static LearningCourse? Find(string id) => Courses.FirstOrDefault(c => c.Id == id);
-    public static bool IsProjectAvailable(string id) => id == FirstProjectId;
+    public static LearningProject? FindProject(string id) =>
+        Projects.FirstOrDefault(p => p.Id == id);
+    public static bool IsProjectAvailable(string id) => FindProject(id) is not null;
 }
