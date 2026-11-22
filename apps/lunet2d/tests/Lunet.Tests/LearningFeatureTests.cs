@@ -15,16 +15,18 @@ public sealed class LearningFeatureTests : IDisposable
     }
 
     [Fact]
-    public void CatalogListsAllCoursesButOnlyFirstChallengeIsAvailable()
+    public void CatalogListsAllCoursesAndMakesOnlyFirstTrackAvailable()
     {
         Assert.Equal(12, LearningCatalog.Tracks.Count);
         Assert.Equal(60, LearningCatalog.Courses.Count);
         Assert.Equal(60, LearningCatalog.Courses.Select(c => c.Id).Distinct().Count());
-        Assert.Equal(1, LearningCatalog.Courses.Count(c => c.Available));
+        Assert.Equal(5, LearningCatalog.Courses.Count(c => c.Available));
         Assert.Equal("LRN-001", LearningCatalog.Courses.First(c => c.Available).Id);
         Assert.True(LearningCatalog.IsProjectAvailable("LRN-001-P1"));
-        Assert.False(LearningCatalog.IsProjectAvailable("LRN-001-P2"));
-        Assert.False(LearningCatalog.IsProjectAvailable("LRN-002-P1"));
+        Assert.True(LearningCatalog.IsProjectAvailable("LRN-001-P2"));
+        Assert.True(LearningCatalog.IsProjectAvailable("LRN-002-P1"));
+        Assert.Equal(10, LearningCatalog.Projects.Count);
+        Assert.False(LearningCatalog.IsProjectAvailable("LRN-006-P1"));
         Assert.Equal(4, LearningCatalog.FirstProjectSteps.Count);
         Assert.Equal(4, LearningCatalog.FirstProjectSteps.Select(s => s.Id).Distinct().Count());
         Assert.All(LearningCatalog.FirstProjectSteps, s => Assert.False(string.IsNullOrWhiteSpace(s.Objective)));
