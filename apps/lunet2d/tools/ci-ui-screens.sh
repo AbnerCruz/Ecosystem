@@ -47,6 +47,7 @@ shoot 07-note note 12
 shoot 08-sprite sprite 12
 shoot 09-ai-settings ai-settings 12
 shoot 10-problems problems 12
+shoot 10a-learn learn 12
 shoot 11-files files 12
 shoot 12-run run 25
 shoot 13-image image 12
