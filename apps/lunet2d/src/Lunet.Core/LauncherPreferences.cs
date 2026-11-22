@@ -83,7 +83,7 @@ public sealed class LauncherPreferences
         _state = next; // Persist first: failed writes never produce a fictitious successful state.
     }
 
-    private static bool ValidSection(string? section) => section is "home" or "projects" or "studios" or "explore";
+    private static bool ValidSection(string? section) => section is "home" or "projects" or "studios" or "explore" or "learn";
 
     private static bool ValidName(string? name) => !string.IsNullOrWhiteSpace(name) && name.Length <= 120 &&
         name == name.Trim() && name.IndexOfAny(['/', '\\', '\0']) < 0;
