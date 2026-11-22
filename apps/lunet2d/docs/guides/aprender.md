@@ -14,6 +14,17 @@ Os demais 55 cursos ficam marcados **Disponível em breve**. O catálogo exibe o
 6. Toque **Continuar no editor** para retomar seu próprio Game.cs. O jogo continua visível em Projetos mesmo após completar o curso; você pode associar qualquer projeto existente à missão sem copiá-lo ou reescrevê-lo.
 7. Após concluir quatro objetivos, abra a segunda missão do curso. O segundo projeto transfere conhecimentos e exige nova solução, não copiar código. No LRN-005-P2, desenvolva um microjogo de uma tela com regra própria.
 
+### Missão dentro do editor — painel sincronizado
+
+Ao tocar **Criar projeto**, **Continuar no editor** ou **Associar projeto**, o Lunet abre o jogo **com a aba Aprender visível** no painel que já contém Console, Problemas e Profiler. O painel mostra missão, quatro objetivos marcáveis, barra de progresso, referências, como verificar no Preview e desafio extra. Não é necessário sair do código para reler o enunciado.
+
+- O painel é redimensionável (embaixo em retrato, lateral em paisagem, segundo o layout escolhido). Em telas estreitas, a fileira de abas pode ser rolada horizontalmente.
+- Para alternar de **Console/Problemas/Profiler** de volta às instruções, toque **Aprender**. Ocultar o painel para focar no código não apaga as etapas.
+- As marcações são registradas na mesma base de progresso da aba Aprender, sincronizadas por **GameId**. Ao voltar ao catálogo, o progresso já está atualizado.
+- Se vários desafios foram associados ao mesmo jogo, use **Trocar missão associada**, sem apagar código ou progresso.
+- Ao parar o Preview depois de iniciar com Aprender, as instruções reaparecem. Erros de compilação continuam acessíveis no painel Problemas.
+- Um jogo sem vínculo de aprendizagem não ganha uma aba vazia nem herda a missão de outro jogo.
+
 ### Acompanhamento e recuperação
 
 - A aba Aprender mostra o total de **40 objetivos declarados** da trilha (0–100%) e o próximo projeto incompleto; cada curso mostra 0–8 objetivos e cada missão 0–4.
