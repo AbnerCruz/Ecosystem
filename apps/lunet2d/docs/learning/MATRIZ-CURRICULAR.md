@@ -38,7 +38,7 @@
 
 - [ ] **LRN-001 — Aprendendo movimento** · Competência: formas, coordenadas, toque, estados e contato. Pré-requisito: nenhum.
 
-  - [ ] **LRN-001-P1 — Aprendendo movimento**
+  - [x] **LRN-001-P1 — Aprendendo movimento**
 
     1. Desenhe um quadrado na tela.
     2. Movimente-o por toque ou controle virtual.
