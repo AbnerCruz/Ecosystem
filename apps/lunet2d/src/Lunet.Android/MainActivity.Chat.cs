@@ -71,7 +71,7 @@ public sealed partial class MainActivity
             _aiInput.Text = prefill;
             _aiInput.SetSelection(_aiInput.Text?.Length ?? 0);
         }
-        if (!Ai.IsConfigured) ShowAiSettings(autoSend ? SendAi : null);
+        if (!Ai.IsConfigured) Toast.MakeText(this, "Configure provedor e chave na área de trabalho → Lunet IA.", ToastLength.Long)?.Show();
         else if (autoSend && !string.IsNullOrWhiteSpace(prefill)) SendAi();
         else if (prefill is not null) FocusComposer();
     }
@@ -127,7 +127,7 @@ public sealed partial class MainActivity
         _aiSubtitle.Ellipsize = TextUtils.TruncateAt.End;
         titles.AddView(_aiSubtitle);
         header.AddView(titles, LunetUi.Weight());
-        _aiModelChip = LunetUi.Chip(this, "", () => ShowAiSettings());
+        _aiModelChip = LunetUi.Chip(this, "", ShowAiModelPicker);
         _aiModelChip.SetMaxWidth(Dp(150));
         _aiModelChip.Ellipsize = TextUtils.TruncateAt.End;
         header.AddView(_aiModelChip);
@@ -263,7 +263,7 @@ public sealed partial class MainActivity
             _aiSession?.ClearHistory();
             RenderConversation();
         }),
-        ("Configurar provedor, modelo e chave", () => ShowAiSettings()),
+        ("Trocar modelo", ShowAiModelPicker),
         ("Copiar a conversa inteira", () => CopyToClipboard(string.Join("\n\n", (_aiSession?.History ?? []).Select(t => t.Role + ":\n" + t.Text)))),
         ("O que a IA sabe e consegue fazer", () => OpenAiPanel("O que você consegue fazer neste projeto e o que o Lunet ainda não tem?", autoSend: true)),
     ]);
@@ -274,7 +274,7 @@ public sealed partial class MainActivity
     {
         if (_aiModelChip is null) return;
         var ai = Ai;
-        _aiModelChip.Text = ai.IsConfigured ? ShortModel(ai.Settings.Model) + "  ▾" : "Configurar  ▾";
+        _aiModelChip.Text = ai.IsConfigured ? ShortModel(ai.Settings.Model) + "  ▾" : "Modelo ▾";
         if (_aiSubtitle is not null)
             _aiSubtitle.Text = (_project?.Name ?? "") + (ai.IsConfigured ? " · " + LunetAiProviders.Find(ai.Settings.ProviderId).Name : "") +
                                (ai.IsConfigured && !ai.Settings.AllowWrites ? " · só leitura" : "");
@@ -790,7 +790,7 @@ public sealed partial class MainActivity
             prompt = "Veja o anexo e me diga como podemos usá-lo no jogo.";
         if (prompt.Length == 0 || _project is null || _aiSession is null) return;
         var ai = Ai;
-        if (!ai.IsConfigured) { ShowAiSettings(SendAi); return; }
+        if (!ai.IsConfigured) { Toast.MakeText(this, "Configure a IA na área de trabalho → Lunet IA.", ToastLength.Long)?.Show(); return; }
 
         SaveCurrent();
         var context = CurrentAiContext();
