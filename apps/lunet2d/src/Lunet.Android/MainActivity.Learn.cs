@@ -233,6 +233,8 @@ public sealed partial class MainActivity
             LunetUi.TextCaption, LunetUi.TextMuted));
         body.AddView(LunetUi.Label(this, "PESQUISAR", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         body.AddView(LunetUi.Label(this, challenge.Investigate, LunetUi.TextBody, LunetUi.Text));
+        body.AddView(LunetUi.Button(this, "Abrir documentação offline", ShowReference, ButtonStyle.Secondary),
+            LunetUi.FillWidth(Dp(48)));
         body.AddView(LunetUi.Label(this, "CRITÉRIOS DE ACEITE", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         body.AddView(LunetUi.Label(this, challenge.Acceptance, LunetUi.TextBody, LunetUi.Text));
         body.AddView(LunetUi.Label(this, "DESAFIO EXTRA", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
