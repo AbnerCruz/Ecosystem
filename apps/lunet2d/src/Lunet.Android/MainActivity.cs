@@ -1241,7 +1241,7 @@ public sealed partial class MainActivity : Activity
             return;
         }
         _status!.Text = "Compilado" + DescribeChange(_pendingChange, result.FromCache);
-        SetPanel(false);
+        if (_layoutStore.Current.PanelTab != "learn") SetPanel(false);
         ShowPreview(result);
     }
 
@@ -1299,6 +1299,8 @@ public sealed partial class MainActivity : Activity
             SaveLayouts();
             RefreshWorkbenchNavigation();
         }
+        else if (_selectedLearningProjectId is not null && _layoutStore.Current.PanelTab == "learn")
+            OpenLearningWorkbenchPanel();
         else OpenWorkbenchPanel(true);
     }
 
