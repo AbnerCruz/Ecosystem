@@ -1,4 +1,4 @@
-> **Consolidação integral aprovada (23/11/2026):** [Plano de desenvolvimento F1–F8 com checkboxes e evidências](docs/plans/lunet-plano-desenvolvimento-2026-11-23.md) e [estudos completos](docs/research/lunet-estudos-completos-2026-11-23.md). O **ROADMAP continua sendo a autoridade do status canônico**; caixas do plano distinguem incrementos implementados de aceite final, sem fechar fases sem CI/integração/release pertinentes.
+> **Consolidação integral aprovada (23/11/2026):** [Plano de desenvolvimento F1–F8 com checkboxes e evidências](../../docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md) e [estudos completos](../../docs/architecture/audits/lunet-estudos-completos-2026-11-23.md). O **ROADMAP continua sendo a autoridade do status canônico**; caixas do plano distinguem incrementos implementados de aceite final, sem fechar fases sem CI/integração/release pertinentes.
 
 ## LUNET-511 / LUNET-513 — Recuperação F1 do plano aprovado (23/11/2026)
 
