@@ -1,3 +1,10 @@
+## 0.0.1-dev.1000585 — Recuperação de Studios globais e co-work (candidata; CI pendente)
+
+- Recuperação seletiva: Sprite, Music e Sound Designer globais sem jogo; rascunhos e publicação de versões na biblioteca existente.
+- Assistente compacto no editor, passos reais, acesso ao histórico, contexto e modo visíveis, fechamento com foco restaurado, redução de renders e atualização do disco menos frequente.
+- Segurança: WAV final consistente antes de publicar; recusa de links no workspace e testes de independência entre jogos.
+- Pendente: CI, integração, APK publicado e demais frentes F2–F8; não confundir com release 1000584.
+
 # Changelog
 
 ## 0.0.1-dev.1000584 — Trilha inicial Aprender completa

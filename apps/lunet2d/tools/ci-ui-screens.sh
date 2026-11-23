@@ -27,6 +27,13 @@ shoot() {
     adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
     adb shell am start -W -n "$package/$activity" --es lunet.demo "$demo" >/dev/null
     sleep "$wait"
+    case "$name" in
+      03c-ai-compact|05a-studios-global|05b-sprite-global|05c-music-global)
+        # A PNG of the Android home screen is not evidence of a working Studio.
+        pid="$(adb shell pidof "$package" | tr -d '\r' || true)"
+        test -n "$pid" || { echo "F1 application exited before screenshot: $name"; exit 1; }
+        ;;
+    esac
     adb shell screencap -p "/sdcard/$name.png"
     adb pull "/sdcard/$name.png" "$out/$name.png" >/dev/null
 }
@@ -40,8 +47,14 @@ shoot 01-projects projects 10
 shoot 02-workspace workspace 12
 shoot 03-ai ai 12
 shoot 03b-ai-empty ai-empty 12
+# F1: non-modal cowork; code stays visible behind the compact pop-up.
+shoot 03c-ai-compact ai-compact 12
 shoot 04-palette palette 12
 shoot 05-studio studio 12
+# F1: real launcher + two editors opened without selecting or creating a game.
+shoot 05a-studios-global studios-global 12
+shoot 05b-sprite-global sprite-global 12
+shoot 05c-music-global music-global 12
 shoot 06-notes notes 12
 shoot 07-note note 12
 shoot 08-sprite sprite 12
@@ -51,6 +64,11 @@ shoot 10a-learn learn 12
 shoot 11-files files 12
 shoot 12-run run 25
 shoot 13-image image 12
+
+# These screens must exist and contain PNG bytes from the Android emulator.
+for screen in 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do
+    test -s "$out/$screen.png" || { echo "F1 screen missing: $screen"; exit 1; }
+done
 
 adb logcat -d > "$out/logcat.txt" || true
 grep -E "FATAL EXCEPTION|AndroidRuntime" -A20 "$out/logcat.txt" | head -80 || true

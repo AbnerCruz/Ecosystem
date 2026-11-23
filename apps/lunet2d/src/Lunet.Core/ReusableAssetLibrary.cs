@@ -81,8 +81,37 @@ public sealed class ReusableAssetLibrary
         string? existingAssetId = null)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return PublishFromFiles(project.Directory, project.ListFiles(), primaryPath,
+            title, author, license, attribution, tags, existingAssetId);
+    }
+
+    /// <summary>Publishes editable Studio drafts without requiring a game project.</summary>
+    public LibraryAssetVersion PublishWorkspace(string workspaceRoot, string primaryPath, string title,
+        string author, string license, string attribution = "", IEnumerable<string>? tags = null,
+        string? existingAssetId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(workspaceRoot);
+        string root = Path.GetFullPath(workspaceRoot);
+        if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Workspace do Studio não encontrado.");
+        if (File.GetAttributes(root).HasFlag(FileAttributes.ReparsePoint))
+            throw new IOException("O Studio não publica através de links.");
+        var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Select(p => Path.GetRelativePath(root, p).Replace('\\', '/')).ToArray();
+        foreach (var path in files)
+        {
+            ValidatePath(path);
+            EnsureNoLinks(root, path);
+        }
+        return PublishFromFiles(root, files, primaryPath,
+            title, author, license, attribution, tags, existingAssetId);
+    }
+
+    private LibraryAssetVersion PublishFromFiles(string sourceRoot, IReadOnlyList<string> sourceFiles,
+        string primaryPath, string title, string author, string license,
+        string attribution, IEnumerable<string>? tags, string? existingAssetId)
+    {
         ValidatePath(primaryPath);
-        var asset = ProjectAssetCatalog.Build(project.ListFiles())
+        var asset = ProjectAssetCatalog.Build(sourceFiles)
             .SingleOrDefault(a => string.Equals(a.Path, primaryPath, StringComparison.Ordinal));
         if (asset is null) throw new ArgumentException("Selecione um asset real de Assets/ ou Content/.", nameof(primaryPath));
 
@@ -93,7 +122,7 @@ public sealed class ReusableAssetLibrary
             primaryPath.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase))
         {
             var wave = primaryPath[..primaryPath.LastIndexOf('.', primaryPath.LastIndexOf('.') - 1)] + ".wav";
-            if (project.ListFiles().Contains(wave, StringComparer.Ordinal)) paths.Add(wave);
+            if (sourceFiles.Contains(wave, StringComparer.Ordinal)) paths.Add(wave);
         }
 
         var id = existingAssetId ?? Guid.NewGuid().ToString("D");
@@ -133,9 +162,8 @@ public sealed class ReusableAssetLibrary
             foreach (var path in paths)
             {
                 ValidatePath(path);
-                project.EnsureInsideProject(path);
-                var original = Path.Combine(project.Directory, path.Replace('/', Path.DirectorySeparatorChar));
-                EnsureNoLinks(project.Directory, path);
+                var original = Path.Combine(sourceRoot, path.Replace('/', Path.DirectorySeparatorChar));
+                EnsureNoLinks(sourceRoot, path);
                 if (!File.Exists(original)) throw new FileNotFoundException("Arquivo de origem não encontrado.", path);
                 var before = HashFile(original);
                 var copy = FilePath(Path.Combine(staging, "files"), path);

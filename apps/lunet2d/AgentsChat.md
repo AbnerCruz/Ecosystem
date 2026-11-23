@@ -823,3 +823,16 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Alterações: LearningTrackOne.cs com dez missões (quatro objetivos/rubrica/referências offline/transferência), LearningCatalog.cs T01 disponível, MainActivity.Learn.cs páginas de curso/projeto e progresso, LearningProgressStore.cs V2 por missão com migração V1, testes LearningTrackOneTests.cs + atualização LearningFeatureTests.cs; docs, ROADMAP, CHANGELOG e VERSION 1000584.
 - Distinção de evidência: código e testes comprometidos em branch; xUnit e Android compilação dependem do CI do PR, não foram executados neste ambiente. Nenhuma captura/validação física declarada; checkbox de aluno é autodeclaração, não verificação. Não embutir soluções no Game.cs.
 - Próximo passo: passar CI combinado, resolver regressões, integrar pelo processo autorizado, confirmar release 1000584 e fornecer APK real. Não alterar versão/estágio fora da release solicitada.
+
+### 20261123-chatgpt-lunet-f1-recovery — 23/11/2026 — ChatGPT → integrador — em verificação
+- Missão: F1 do plano aprovado; recuperar #1018 que foi mesclado numa branch-base e não integrou a main. Base `94230eab33a3309f994639ca3487b46c695f25c5`; branch `feat/lunet-f1-recover-studios-cowork-20261123`.
+- Estudo: arquivos anexos `Lunet-estudos-completos.md` e `Lunet-plano-de-desenvolvimento.md`, protocolo, MANIFEST, AGENTS, ROADMAP, DEVELOPMENT, histórico #962/#1018 e código vigente.
+- Código: global Studio sem projeto com rascunhos/fontes/derivados, Library PublishWorkspace; co-work compacto; reconciliação cirúrgica com Aprender e chat global; testes StudioAssetWorkspaceTests e LunetAiPromptSpeedTests; música verifica WAV final.
+- Evidência: commits na branch. Sem .NET/Android SDK neste runtime: testes/CI ainda não executados; no aparelho não verificado.
+- Pendências: abrir PR, confirmar CI do head combinado, correções, integrar/release; F2–F8 e global Tile/Paleta/Partículas/Dados abertos.
+
+### 20261123-chatgpt-f1-plano-integral — 23/11/2026 — ChatGPT → integrador — documentação e evidências
+- Mandato: registrar o plano completo e marcar exclusivamente os checkboxes sustentados por código/CI/integração. O documento original de 95 caixas ficou preservado, com 3 caixas existentes concluídas (recorte vinculado, reconciliação seletiva F1 em branch, inventário real Aprender T01) e quadro adicional granular para separar implementação e entrega.
+- Fontes persistidas, sem resumos: `docs/plans/lunet-plano-desenvolvimento-2026-11-23.md`, `docs/research/lunet-estudos-completos-2026-11-23.md` relativos a `apps/lunet2d/`; ROADMAP mantém autoridade de estado e aponta para os documentos.
+- Evidência: PR #1024; `lunet2d-ci` (run 45223355635) e `consistency` (run 45223355843) passaram no commit de código `004dcc6`. CI da documentação nova/último head, Android UI, release e integração ainda requerem confirmação; não declarar produto finalizado.
+- Estágio preservado: candidato `0.0.1-dev.1000585`; `main` e release 1000584 permanecem base até atualização governada.

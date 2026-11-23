@@ -1,3 +1,13 @@
+> **Consolidação integral aprovada (23/11/2026):** [Plano de desenvolvimento F1–F8 com checkboxes e evidências](../../docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md) e [estudos completos](../../docs/architecture/audits/lunet-estudos-completos-2026-11-23.md). O **ROADMAP continua sendo a autoridade do status canônico**; caixas do plano distinguem incrementos implementados de aceite final, sem fechar fases sem CI/integração/release pertinentes.
+
+## LUNET-511 / LUNET-513 — Recuperação F1 do plano aprovado (23/11/2026)
+
+- [ ] **LUNET-511 / Studios independentes:** recuperar seletivamente Sprite, Música e Sound Designer globais da branch histórica do #1018, sem abrir nem criar projeto. Rascunhos locais persistentes, publicação de fonte+derivados na biblioteca versionada existente e cópias independentes para um jogo. Manter leitura de versões anteriores e importação com preflight. Testar com StudioAssetWorkspaceTests e CI da main combinada. Tile, Paleta, Partículas e Dados globais permanecem F6.
+- [ ] **LUNET-513 / co-work:** compositor compacto, execução por etapas reais, chat expansível, limitação de renderização e sync, sem perder buffer, permissão nem histórico do projeto. Testar prompt rápido, cancelamento, alteração concorrente e fluxo Android. Não afirmar desempenho de provedor sem medição.
+- [ ] **Publicação WAV:** gerar derivado da fonte de música final antes de oferecer publicação e impedir resultado obsoleto de sobrescrever versão recente. Confirmar em regressão/CI.
+
+Base: main 94230eab33a3309f994639ca3487b46c695f25c5; branch feat/lunet-f1-recover-studios-cowork-20261123; estudos anexados 23/11, plano F1, PR #1018 (fonte histórica). Nenhuma caixa é marcada antes de CI e integração.
+
 ## LUNET-520-UX1 — painel Aprender no editor (22/11/2026)
 
 - [ ] **LUNET-520-UX1** — desafio acompanha o GameId no editor; aba Aprender acessível ao lado de Console/Problemas, com missão, etapas, barra, rubrica e referências offline. Ao criar/associar/retomar pelo curso, abrir painel; salvar marcações no mesmo LearningProgressStore V2, restauração após Preview e layout salvo, escolher missão se mesmo jogo foi associado a várias; ocultar aba de jogos sem vínculo e preservar erros. TDD: WorkspaceLayoutTests + LearningTrackOneTests. Implementação no PR #1023, sem DEVICE; CI/merge/release oficial pendentes.

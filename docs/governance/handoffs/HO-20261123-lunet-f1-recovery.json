@@ -1,0 +1,151 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261123-lunet-f1-recovery",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-23T16:59:20.220Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f1",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-511",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f1-recover-studios-cowork-20261123",
+  "base_commit": "94230eab33a3309f994639ca3487b46c695f25c5",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1024",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
+    "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GlobalStudio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AiCompact.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Music.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/StudioAssetWorkspaceTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiPromptSpeedTests.cs",
+    "apps/lunet2d/docs/guides/cowork-studio-global.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261123-lunet-f1-recovery.json",
+    "apps/lunet2d/docs/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "apps/lunet2d/docs/research/lunet-estudos-completos-2026-11-23.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "docs/architecture/audits/lunet-estudos-completos-2026-11-23.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh"
+  ],
+  "work_completed": [
+    "Reconciled PR #1018 selectively with main without reverting T01 and global AI.",
+    "Recovered project-independent editable Studio drafts and versioned Library publish/import using existing asset contracts.",
+    "Recovered compact cowork and throttled events/chat updates; quick conceptual prompts avoid irrelevant context.",
+    "Final saved music source rendered to WAV before offering publication; stale render cannot replace a newer source.",
+    "Restored xUnit tests for standalone publishing/import isolation and prompt optimization.",
+    "Registered the complete approved F1–F8 plan and full prior research inside apps/lunet2d/docs, linked directly from canonical ROADMAP, and annotated both fine-grained completed milestones and pending acceptance tasks without treating branch-only work as a release.",
+    "Preserved the full approved plan and complete research verbatim in docs/architecture/, with compatibility link stubs in apps/lunet2d/docs/; CHK-ARCH-REFS scans Product files and falsely regarded cross-product discussion in research text as code coupling. This relocation preserves every study term and avoids relaxing architecture checks.",
+    "Added Android 13 UI screenshot demo routes and smoke captures for projectless Studio gallery, Sprite/Music Studio and compact cowork; script checks app process is still running for each new F1 screen.",
+    "Compact cowork now displays active file/mode and hides keyboard, restoring editor focus when dismissed without stopping the agent; reply snippet is bounded to avoid oversized TextView updates."
+  ],
+  "verification": [
+    {
+      "check": "lunet2d-ci on code head 004dcc6 (includes 1154 .NET tests in previous verification)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "004dcc6762afd64eff14b2de806e7618ab99b936",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45223355635"
+    },
+    {
+      "check": "Ecosystem consistency on code head 004dcc6",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "004dcc6762afd64eff14b2de806e7618ab99b936",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45223355843"
+    },
+    {
+      "check": "Lunet Android UI screenshot on previous head f3cfb6a",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "f3cfb6af80808d757e79a09f7a39621c7c83c1f8",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45225883272"
+    },
+    {
+      "check": "Final PR head: xUnit + consistency + Android 13 UI capture + release-package checks",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1024"
+    }
+  ],
+  "known_issues": [
+    "No .NET or Android SDK available in this runtime; no local tests performed.",
+    "No physical Android device check performed.",
+    "Only F1 historical Sprite/Music/SoundDesigner and compact assistant recovered; global Tile/Palette/Particle/Data and F2-F8 remain open.",
+    "Integrator blocked earlier PR head on CHK-ARCH-REFS because full technical studies mentioned other products within apps/lunet2d; moved full documents outside Product tree without changing verification rules. Recheck CI on new head."
+  ],
+  "blockers": [
+    "Await combined CI, governed integration, and official release from matching main commit."
+  ],
+  "next_actions": [
+    "Confirm consistency, xUnit, Android UI screenshot smoke and Android release APK build for the final PR head.",
+    "Integrate the PR through the governed integrator only when combined-main checks are green.",
+    "Confirm actual dev.1000585 APK release, version, package identity and source SHA; then record completed F1 checklist evidence.",
+    "Continue independent F2 tasks, then F3-F8, without overstating pending F1 UI end-to-end cases."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ReusableAssetLibrary is still the canonical published-asset authority; Studio only holds drafts."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Code changes are restricted to the Lunet product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch/task/scope/evidence and pending checks recorded."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP records all accepted changes and open gates."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Normative sources inspected."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Explicit asset import and link/path checks maintained."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "No physical-device validation claimed."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Checklist remains open until automated checks and integration."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-global-studios-library",
+      "status": "product-specific",
+      "rationale": "Reuse of existing Lunet asset catalog and versioned Library avoids an unproven cross-product extraction."
+    }
+  ]
+}
