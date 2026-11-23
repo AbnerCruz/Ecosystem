@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261123-lunet-f1-recovery",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-23T16:59:20.220Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f1",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-511",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f1-recover-studios-cowork-20261123",
+  "base_commit": "94230eab33a3309f994639ca3487b46c695f25c5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
+    "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GlobalStudio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AiCompact.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Music.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/StudioAssetWorkspaceTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiPromptSpeedTests.cs",
+    "apps/lunet2d/docs/guides/cowork-studio-global.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261123-lunet-f1-recovery.json"
+  ],
+  "work_completed": [
+    "Reconciled PR #1018 selectively with main without reverting T01 and global AI.",
+    "Recovered project-independent editable Studio drafts and versioned Library publish/import using existing asset contracts.",
+    "Recovered compact cowork and throttled events/chat updates; quick conceptual prompts avoid irrelevant context.",
+    "Final saved music source rendered to WAV before offering publication; stale render cannot replace a newer source.",
+    "Restored xUnit tests for standalone publishing/import isolation and prompt optimization."
+  ],
+  "verification": [
+    {
+      "check": "Lunet .NET/Android/UI automated CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "New PR needed"
+    },
+    {
+      "check": "Ecosystem consistency and handoff gate",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "New PR needed"
+    }
+  ],
+  "known_issues": [
+    "No .NET or Android SDK available in this runtime; no local tests performed.",
+    "No physical Android device check performed.",
+    "Only F1 historical Sprite/Music/SoundDesigner and compact assistant recovered; global Tile/Palette/Particle/Data and F2-F8 remain open.",
+    "CI/integration/release not yet verified; do not claim these features shipped."
+  ],
+  "blockers": [
+    "Await combined CI, governed integration, and official release from matching main commit."
+  ],
+  "next_actions": [
+    "Create PR and verify CI.",
+    "Fix failing checks without bypassing gates.",
+    "Confirm integration, official release and APK provenance.",
+    "Continue remaining F1 and F2–F8."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ReusableAssetLibrary is still the canonical published-asset authority; Studio only holds drafts."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Code changes are restricted to the Lunet product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch/task/scope/evidence and pending checks recorded."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP records all accepted changes and open gates."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Normative sources inspected."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Explicit asset import and link/path checks maintained."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "No physical-device validation claimed."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Checklist remains open until automated checks and integration."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "Lunet global Studios / Library",
+      "status": "product-specific",
+      "rationale": "Reuse of existing Lunet asset catalog and versioned Library avoids an unproven cross-product extraction."
+    }
+  ]
+}
