@@ -37,7 +37,9 @@
     "apps/lunet2d/VERSION",
     "apps/lunet2d/VERSION_CODE",
     "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md",
-    "docs/architecture/audits/lunet-estudos-completos-2026-11-23.md"
+    "docs/architecture/audits/lunet-estudos-completos-2026-11-23.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh"
   ],
   "work_completed": [
     "Reconciled PR #1018 selectively with main without reverting T01 and global AI.",
@@ -46,7 +48,9 @@
     "Final saved music source rendered to WAV before offering publication; stale render cannot replace a newer source.",
     "Restored xUnit tests for standalone publishing/import isolation and prompt optimization.",
     "Registered the complete approved F1–F8 plan and full prior research inside apps/lunet2d/docs, linked directly from canonical ROADMAP, and annotated both fine-grained completed milestones and pending acceptance tasks without treating branch-only work as a release.",
-    "Preserved the full approved plan and complete research verbatim in docs/architecture/, with compatibility link stubs in apps/lunet2d/docs/; CHK-ARCH-REFS scans Product files and falsely regarded cross-product discussion in research text as code coupling. This relocation preserves every study term and avoids relaxing architecture checks."
+    "Preserved the full approved plan and complete research verbatim in docs/architecture/, with compatibility link stubs in apps/lunet2d/docs/; CHK-ARCH-REFS scans Product files and falsely regarded cross-product discussion in research text as code coupling. This relocation preserves every study term and avoids relaxing architecture checks.",
+    "Added Android 13 UI screenshot demo routes and smoke captures for projectless Studio gallery, Sprite/Music Studio and compact cowork; script checks app process is still running for each new F1 screen.",
+    "Compact cowork now displays active file/mode and hides keyboard, restoring editor focus when dismissed without stopping the agent; reply snippet is bounded to avoid oversized TextView updates."
   ],
   "verification": [
     {
@@ -64,17 +68,17 @@
       "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45223355843"
     },
     {
-      "check": "Android UI, release-build verification and consistency on latest head after plan registration",
-      "kind": "automated",
-      "result": "pending",
-      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1024"
-    },
-    {
       "check": "Lunet Android UI screenshot on previous head f3cfb6a",
       "kind": "automated",
       "result": "passed",
       "tested_commit": "f3cfb6af80808d757e79a09f7a39621c7c83c1f8",
       "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45225883272"
+    },
+    {
+      "check": "Final PR head: xUnit + consistency + Android 13 UI capture + release-package checks",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1024"
     }
   ],
   "known_issues": [
@@ -87,10 +91,10 @@
     "Await combined CI, governed integration, and official release from matching main commit."
   ],
   "next_actions": [
-    "Recheck CHK-ARCH-REFS with root-level research location before governed integration; keep document compatibility stubs in the Product tree.",
-    "Confirm all CI checks for the latest PR head, including new plan and handoff, and correct failures without bypassing gates.",
-    "Integrate through the repository's governed integrator; confirm main SHA, release 0.0.1-dev.1000585 and signed APK hash before closing broad F1 checklist.",
-    "Continue F2–F8 and remaining global Studio types, with all progress recorded in ROADMAP and the full attached plan."
+    "Confirm consistency, xUnit, Android UI screenshot smoke and Android release APK build for the final PR head.",
+    "Integrate the PR through the governed integrator only when combined-main checks are green.",
+    "Confirm actual dev.1000585 APK release, version, package identity and source SHA; then record completed F1 checklist evidence.",
+    "Continue independent F2 tasks, then F3-F8, without overstating pending F1 UI end-to-end cases."
   ],
   "decisions_required": [],
   "normative_sources": [
