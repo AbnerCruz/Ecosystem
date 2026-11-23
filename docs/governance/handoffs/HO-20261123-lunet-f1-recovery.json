@@ -14,7 +14,7 @@
   "branch": "feat/lunet-f1-recover-studios-cowork-20261123",
   "base_commit": "94230eab33a3309f994639ca3487b46c695f25c5",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1024",
   "files_changed": [
     "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
     "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
@@ -31,27 +31,40 @@
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/AgentsChat.md",
-    "docs/governance/handoffs/HO-20261123-lunet-f1-recovery.json"
+    "docs/governance/handoffs/HO-20261123-lunet-f1-recovery.json",
+    "apps/lunet2d/docs/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "apps/lunet2d/docs/research/lunet-estudos-completos-2026-11-23.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE"
   ],
   "work_completed": [
     "Reconciled PR #1018 selectively with main without reverting T01 and global AI.",
     "Recovered project-independent editable Studio drafts and versioned Library publish/import using existing asset contracts.",
     "Recovered compact cowork and throttled events/chat updates; quick conceptual prompts avoid irrelevant context.",
     "Final saved music source rendered to WAV before offering publication; stale render cannot replace a newer source.",
-    "Restored xUnit tests for standalone publishing/import isolation and prompt optimization."
+    "Restored xUnit tests for standalone publishing/import isolation and prompt optimization.",
+    "Registered the complete approved F1–F8 plan and full prior research inside apps/lunet2d/docs, linked directly from canonical ROADMAP, and annotated both fine-grained completed milestones and pending acceptance tasks without treating branch-only work as a release."
   ],
   "verification": [
     {
-      "check": "Lunet .NET/Android/UI automated CI",
+      "check": "lunet2d-ci on code head 004dcc6 (includes 1154 .NET tests in previous verification)",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "New PR needed"
+      "result": "passed",
+      "tested_commit": "004dcc6762afd64eff14b2de806e7618ab99b936",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45223355635"
     },
     {
-      "check": "Ecosystem consistency and handoff gate",
+      "check": "Ecosystem consistency on code head 004dcc6",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "004dcc6762afd64eff14b2de806e7618ab99b936",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45223355843"
+    },
+    {
+      "check": "Android UI, release-build verification and consistency on latest head after plan registration",
       "kind": "automated",
       "result": "pending",
-      "evidence": "New PR needed"
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1024"
     }
   ],
   "known_issues": [
@@ -64,10 +77,9 @@
     "Await combined CI, governed integration, and official release from matching main commit."
   ],
   "next_actions": [
-    "Create PR and verify CI.",
-    "Fix failing checks without bypassing gates.",
-    "Confirm integration, official release and APK provenance.",
-    "Continue remaining F1 and F2–F8."
+    "Confirm all CI checks for the latest PR head, including new plan and handoff, and correct failures without bypassing gates.",
+    "Integrate through the repository's governed integrator; confirm main SHA, release 0.0.1-dev.1000585 and signed APK hash before closing broad F1 checklist.",
+    "Continue F2–F8 and remaining global Studio types, with all progress recorded in ROADMAP and the full attached plan."
   ],
   "decisions_required": [],
   "normative_sources": [
