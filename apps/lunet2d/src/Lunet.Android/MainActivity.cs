@@ -458,7 +458,7 @@ public sealed partial class MainActivity : Activity
         _status.Ellipsize = TextUtils.TruncateAt.Middle;
         titleBlock.AddView(_status);
         bar.AddView(titleBlock, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
-        var aiButton = LunetUi.Button(this, "✦ IA", ToggleAiPanel, ButtonStyle.Selected, description: "Abrir a IA");
+        var aiButton = LunetUi.Button(this, "✦ IA", ShowQuickAssistant, ButtonStyle.Selected, description: "Abrir assistente compacto sem sair do editor");
         bar.AddView(aiButton, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
         var runButton = LunetUi.Button(this, "▶ Rodar", Run, ButtonStyle.Primary, description: "Compilar e rodar o jogo");
         bar.AddView(runButton, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
@@ -516,6 +516,7 @@ public sealed partial class MainActivity : Activity
         _workspaceFrame = frame;
         _aiPanel = null;
         SetContentView(frame);
+        BuildAiCompact(frame);
         if (_layoutStore.Current.PanelTab == "learn" && _selectedLearningProjectId is not null) SetLearningWorkbenchPanel();
         else if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
         else SetPanel(_showConsole);
