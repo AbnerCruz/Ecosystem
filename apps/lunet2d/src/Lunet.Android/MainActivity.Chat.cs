@@ -774,6 +774,7 @@ public sealed partial class MainActivity
 
     private LunetAiWork? _aiLastAppliedWork;
     private int _aiUiRefreshQueued;
+    private long _aiLastFileSyncMs;
 
     private void SendAi()
     {
@@ -828,8 +829,15 @@ public sealed partial class MainActivity
             var work = LunetAiRuns.Current;
             if (work is null || work.ProjectId != _project.Manifest.GameId) return;
 
-            // Keep the editor in step with the AI, while it works and after it ends (success, cancel or failure).
-            SyncEditorWithDisk();
+            // Avoid reloading the editor on each progress event. Always sync once when done.
+            long tick = Environment.TickCount64;
+            if (!work.IsRunning || (work.Steps.Any(step =>
+                    step.Kind is LunetAiStepKind.Edit or LunetAiStepKind.Create or LunetAiStepKind.Art) &&
+                tick - _aiLastFileSyncMs >= 500))
+            {
+                _aiLastFileSyncMs = tick;
+                SyncEditorWithDisk();
+            }
             if (!work.IsRunning && !ReferenceEquals(_aiLastAppliedWork, work))
             {
                 _aiLastAppliedWork = work;
@@ -838,7 +846,13 @@ public sealed partial class MainActivity
                     _problems = [];
             }
 
-            if (AiPanelOpen) RenderConversation();
+            UpdateAiCompact();
+            long now = Environment.TickCount64;
+            if (AiPanelOpen && (!work.IsRunning || now - _aiLastConversationRenderMs >= 400))
+            {
+                _aiLastConversationRenderMs = now;
+                RenderConversation();
+            }
             RefreshSendButton();
         });
     }
