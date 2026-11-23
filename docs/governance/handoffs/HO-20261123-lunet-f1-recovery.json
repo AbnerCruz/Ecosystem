@@ -116,7 +116,7 @@
   ],
   "reuse_assessment": [
     {
-      "subject": "Lunet global Studios / Library",
+      "subject": "lunet-global-studios-library",
       "status": "product-specific",
       "rationale": "Reuse of existing Lunet asset catalog and versioned Library avoids an unproven cross-product extraction."
     }
