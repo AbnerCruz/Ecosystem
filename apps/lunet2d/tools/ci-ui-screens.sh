@@ -27,6 +27,13 @@ shoot() {
     adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
     adb shell am start -W -n "$package/$activity" --es lunet.demo "$demo" >/dev/null
     sleep "$wait"
+    case "$name" in
+      03c-ai-compact|05a-studios-global|05b-sprite-global|05c-music-global)
+        # A PNG of the Android home screen is not evidence of a working Studio.
+        pid="$(adb shell pidof "$package" | tr -d '\r' || true)"
+        test -n "$pid" || { echo "F1 application exited before screenshot: $name"; exit 1; }
+        ;;
+    esac
     adb shell screencap -p "/sdcard/$name.png"
     adb pull "/sdcard/$name.png" "$out/$name.png" >/dev/null
 }
