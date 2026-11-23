@@ -15,12 +15,25 @@ public sealed partial class MainActivity
     {
         var screen = intent?.GetStringExtra("lunet.demo");
         if (string.IsNullOrEmpty(screen)) return;
+        // These screenshots must work with _project == null: no temporary game, no project context.
+        if (screen == "studios-global") { Post(ShowLauncherStudios); return; }
+        if (screen == "sprite-global")
+        {
+            Post(() =>
+            {
+                var path = StandaloneWorkspace.NewPath("Assets", "demo", ".sprite.json");
+                EditStandaloneSprite(path, SpriteDocument.Create(32));
+            });
+            return;
+        }
+        if (screen == "music-global") { Post(NewStandaloneMusic); return; }
         foreach (var name in new[] { "BosqueLumi", "NaveEstelar" })
             if (!_store.List().Contains(name)) _store.Create(name, ProjectTemplate.CoinCatcher);
         if (screen == "projects") { ShowProjects(); return; }
         OpenProject("BosqueLumi");
         switch (screen)
         {
+            case "ai-compact": Post(ShowQuickAssistant); break;
             case "palette": Post(ShowCommandPalette); break;
             case "studio": Post(ShowStudioHub); break;
             case "ai-settings": Post(() => ShowAiSettings()); break;
