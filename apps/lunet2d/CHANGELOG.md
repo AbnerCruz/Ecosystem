@@ -1,4 +1,4 @@
-## Em desenvolvimento — Recuperação de Studios e co-work (não distribuída)
+## 0.0.1-dev.1000585 — Recuperação de Studios globais e co-work (candidata; CI pendente)
 
 - Recuperação seletiva: Sprite, Music e Sound Designer globais sem jogo; rascunhos e publicação de versões na biblioteca existente.
 - Assistente compacto no editor, passos reais, acesso ao histórico, redução de renders e atualização do disco menos frequente.
