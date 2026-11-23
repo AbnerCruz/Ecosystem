@@ -16,6 +16,7 @@ public sealed partial class MainActivity
     private TextView? _aiCompactStatus;
     private LinearLayout? _aiQuickPopup;
     private TextView? _aiQuickStatus;
+    private TextView? _aiQuickContext;
     private EditText? _aiQuickInput;
     private Button? _aiQuickAction;
     private long _aiLastConversationRenderMs;
@@ -24,6 +25,7 @@ public sealed partial class MainActivity
     {
         _aiQuickPopup = null;
         _aiQuickStatus = null;
+        _aiQuickContext = null;
         _aiQuickInput = null;
         _aiQuickAction = null;
 
@@ -71,9 +73,13 @@ public sealed partial class MainActivity
         var head = LunetUi.Row(this, 6);
         head.AddView(LunetUi.Label(this, "✦ IA · cowork", LunetUi.TextLabel, LunetUi.AccentText, bold: true),
             new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
-        head.AddView(LunetUi.Icon(this, "✕", "Fechar pop-up", () => popup.Visibility = ViewStates.Gone),
+        head.AddView(LunetUi.Icon(this, "✕", "Fechar pop-up e voltar ao código", CloseQuickAssistant),
             new LinearLayout.LayoutParams(Dp(38), Dp(38)));
         popup.AddView(head);
+        _aiQuickContext = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
+        _aiQuickContext.SetSingleLine(true);
+        _aiQuickContext.Ellipsize = TextUtils.TruncateAt.Middle;
+        popup.AddView(_aiQuickContext);
         _aiQuickStatus = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
         _aiQuickStatus.SetMaxLines(3);
         _aiQuickStatus.Ellipsize = TextUtils.TruncateAt.End;
@@ -110,7 +116,7 @@ public sealed partial class MainActivity
                 {
                     SendAi();
                     input.Text = "";
-                    popup.Visibility = ViewStates.Gone;
+                    CloseQuickAssistant();
                 });
                 return;
             }
@@ -118,13 +124,13 @@ public sealed partial class MainActivity
             if (LunetAiRuns.Current is { IsRunning: true } run && run.ProjectId == _project?.Manifest.GameId)
             {
                 input.Text = "";
-                popup.Visibility = ViewStates.Gone;
+                CloseQuickAssistant();
             }
         }, ButtonStyle.Primary);
         actions.AddView(_aiQuickAction, new LinearLayout.LayoutParams(0, Dp(46), 1f));
         actions.AddView(LunetUi.Button(this, "Expandir", () =>
         {
-            popup.Visibility = ViewStates.Gone;
+            CloseQuickAssistant();
             OpenAiPanel(null);
         }, ButtonStyle.Secondary), new LinearLayout.LayoutParams(0, Dp(46), 1f));
         popup.AddView(actions);
@@ -134,6 +140,16 @@ public sealed partial class MainActivity
         { LeftMargin = Dp(8), RightMargin = Dp(8), BottomMargin = Dp(122) });
         _aiQuickPopup = popup;
         UpdateAiCompact();
+    }
+
+    /// <summary>Dismiss only the composer; preserve the running agent and the editor state.</summary>
+    private void CloseQuickAssistant()
+    {
+        if (_aiQuickPopup is not null) _aiQuickPopup.Visibility = ViewStates.Gone;
+        if (_aiQuickInput is not null)
+            (GetSystemService(InputMethodService) as global::Android.Views.InputMethods.InputMethodManager)?
+                .HideSoftInputFromWindow(_aiQuickInput.WindowToken, 0);
+        _editor?.RequestFocus();
     }
 
     /// <summary>Only small labels change on every event; Markdown history is never rebuilt while compact.</summary>
@@ -167,7 +183,19 @@ public sealed partial class MainActivity
         }
         _aiCompactStatus.Text = same && work!.IsRunning
             ? headline + " · " + details : headline;
-        if (_aiQuickStatus is not null) _aiQuickStatus.Text = details;
+        if (_aiQuickContext is not null)
+        {
+            var mode = _aiMode switch
+            {
+                LunetAiMode.Teach => "Ensinar",
+                LunetAiMode.Do => "Fazer",
+                _ => "Auto"
+            };
+            var file = _openFile is { Length: > 0 } ? System.IO.Path.GetFileName(_openFile) : "Projeto";
+            _aiQuickContext.Text = "Contexto: " + file + " · Modo: " + mode;
+        }
+        if (_aiQuickStatus is not null)
+            _aiQuickStatus.Text = details.Length > 420 ? details[..420] + "…" : details;
         if (_aiQuickAction is not null) _aiQuickAction.Text =
             same && work!.IsRunning ? "Parar" : "Enviar";
     }
