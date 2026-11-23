@@ -1,3 +1,5 @@
+> **Consolidação integral aprovada (23/11/2026):** [Plano de desenvolvimento F1–F8 com checkboxes e evidências](docs/plans/lunet-plano-desenvolvimento-2026-11-23.md) e [estudos completos](docs/research/lunet-estudos-completos-2026-11-23.md). O **ROADMAP continua sendo a autoridade do status canônico**; caixas do plano distinguem incrementos implementados de aceite final, sem fechar fases sem CI/integração/release pertinentes.
+
 ## LUNET-511 / LUNET-513 — Recuperação F1 do plano aprovado (23/11/2026)
 
 - [ ] **LUNET-511 / Studios independentes:** recuperar seletivamente Sprite, Música e Sound Designer globais da branch histórica do #1018, sem abrir nem criar projeto. Rascunhos locais persistentes, publicação de fonte+derivados na biblioteca versionada existente e cópias independentes para um jogo. Manter leitura de versões anteriores e importação com preflight. Testar com StudioAssetWorkspaceTests e CI da main combinada. Tile, Paleta, Partículas e Dados globais permanecem F6.
