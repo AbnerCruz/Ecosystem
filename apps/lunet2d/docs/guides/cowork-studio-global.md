@@ -1,7 +1,7 @@
 # IA compacta e Studios sem projeto — incremento 21/11/2026
 
 ## O que esta branch implementa
-- O botão **✦ IA** no editor abre um compositor pequeno e não modal. Digite e envie sem sair do código. Use **Expandir** para o histórico completo, diffs e checkpoints; o serviço de execução existente continua mesmo fechando o pop-up.
+- O botão **✦ IA** no editor abre um compositor pequeno e não modal. Digite e envie sem sair do código. O pop-up mostra o arquivo de contexto e o modo ativo (Auto, Ensinar ou Fazer); **Fechar** oculta o teclado e devolve o foco ao editor sem cancelar a tarefa. Use **Expandir** para o histórico completo, diffs e checkpoints; o serviço de execução existente continua mesmo fechando o pop-up.
 - Uma cápsula no rodapé mostra "Trabalhando" e o último passo real. Eventos não abrem nem reconstroem o histórico de Markdown a cada chamada: a conversa completa é atualizada no máximo a cada 400 ms enquanto visível; sincronização do editor durante etapas de escrita em intervalos de 500 ms, e sempre no término.
 - Perguntas conceituais curtas (que não se refiram a código/arquivo/projeto, não tenham seleção nem erros/anexos) não carregam o conteúdo de um arquivo irrelevante nem fazem parsing do mapa Roslyn completo. Mudanças de código e perguntas específicas continuam com o contexto integral.
 - **Home → Studios** deixa de escolher um jogo. Sprite Studio, Music Studio e Sound Designer trabalham em arquivos reais e persistentes em `FilesDir/StudioWorkspace`, independentemente de projetos.
