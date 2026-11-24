@@ -178,6 +178,8 @@ public sealed class InspirationLibrary
         return parsed.ToString("D");
     }
 
+    public static bool TextMatches(string value, string query) => Normalize(value).Contains(Normalize(query.Trim()), StringComparison.Ordinal);
+
     private static string Normalize(string value)
     {
         var text = value.Normalize(NormalizationForm.FormD);
