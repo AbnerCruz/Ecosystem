@@ -35,6 +35,7 @@ public sealed class RenderTarget2D : IDisposable
     }
 
     internal int Handle { get; }
+    internal GraphicsDevice Device => _device;
 
     /// <summary>Conteúdo desenhado, para usar com <see cref="SpriteBatch"/>.</summary>
     public Texture2D Texture { get; }
@@ -50,6 +51,7 @@ public sealed class RenderTarget2D : IDisposable
     public void Dispose()
     {
         if (IsDisposed) return;
+        if (ReferenceEquals(_device.RenderTarget, this)) _device.GuardSortedState();
         IsDisposed = true;
         if (ReferenceEquals(_device.RenderTarget, this)) _device.SetRenderTarget(null);
         _device.Backend.DeleteRenderTarget(Handle);

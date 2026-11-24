@@ -32,6 +32,7 @@ public sealed class Texture2D : IDisposable
     /// <summary>Verdadeiro depois de liberada.</summary>
     public bool IsDisposed { get; private set; }
     internal int Handle { get; }
+    internal GraphicsDevice Device => _device;
 
     /// <summary>Cria uma textura a partir de pixels RGBA (largura × altura × 4 bytes).</summary>
     /// <param name="device">Dispositivo gráfico do jogo.</param>
