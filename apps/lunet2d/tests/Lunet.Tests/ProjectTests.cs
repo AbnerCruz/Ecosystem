@@ -159,7 +159,7 @@ public class ProjectTests : IDisposable
         project.WriteText("Code/Player.cs", "class P { }");
         project.WriteText("Tests/T.cs", "class T { }");
         project.WriteText(".lunet/cache/x.cs", "class X { }");
-        Assert.Equal(["Code/Player.cs", "Game.cs"], project.LoadSources().Select(s => s.Path).Order().ToArray());
+        Assert.Equal(["Code/Player.cs", "Game.cs", "Project/Imports.cs"], project.LoadSources().Select(s => s.Path).Order().ToArray());
     }
 
     [Fact]
