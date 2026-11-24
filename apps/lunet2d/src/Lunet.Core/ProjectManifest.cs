@@ -15,6 +15,9 @@ public sealed class ProjectManifest
     public string Version { get; set; } = "0.1.0";
     public string FrameworkVersion { get; set; } = "0.1.0";
     public string EntryPoint { get; set; } = "Game.cs";
+    // Missing/zero retains the legacy SDK policy. The import list itself lives in C#.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int SdkImportsVersion { get; set; }
     public string Orientation { get; set; } = "portrait";
     public int VirtualWidth { get; set; } = 360;
     public int VirtualHeight { get; set; } = 640;
