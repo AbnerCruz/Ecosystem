@@ -37,7 +37,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Equal(new[] { "Content/Art/wing.sprite.json" }, conflicts);
         Assert.Equal("manual edit", destination.ReadText("Content/Art/wing.sprite.json"));
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
-        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, asset.Version, destination));
+        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, asset.Version, destination, TestContext.Current.CancellationToken));
         Assert.Equal("manual edit", destination.ReadText("Content/Art/wing.sprite.json"));
     }
 
@@ -71,7 +71,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
 
         var conflicts = Library.FindImportConflicts(asset.Id, asset.Version, destination);
         Assert.Equal(2, conflicts.Count);
-        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, asset.Version, destination));
+        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, asset.Version, destination, TestContext.Current.CancellationToken));
         Assert.Equal("manual content", destination.ReadText("Content/Art"));
         Assert.Equal(before, destination.ReadText("Game.cs"));
         Assert.False(Directory.Exists(Path.Combine(destination.Directory, ".lunet", "import-")));
@@ -126,7 +126,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Contains(package.Files, x => x.Path.EndsWith(".png"));
         Assert.Single(library.List());
 
-        var imported = library.ImportToProject(package.Id, 1, other);
+        var imported = library.ImportToProject(package.Id, 1, other, TestContext.Current.CancellationToken);
         Assert.Equal(2, imported.Count);
         Assert.Equal(source.ReadText("Content/Art/wing.sprite.json"),
             other.ReadText("Content/Art/wing.sprite.json"));
@@ -155,8 +155,8 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         Assert.Equal(2, library.List().Count);
         var oldGame = Projects.Create("Old");
         var newGame = Projects.Create("New");
-        library.ImportToProject(first.Id, 1, oldGame);
-        library.ImportToProject(first.Id, 2, newGame);
+        library.ImportToProject(first.Id, 1, oldGame, TestContext.Current.CancellationToken);
+        library.ImportToProject(first.Id, 2, newGame, TestContext.Current.CancellationToken);
         Assert.Equal("primeira versão", oldGame.ReadText("Content/Art/wing.sprite.json"));
         Assert.Equal("segunda versão", newGame.ReadText("Content/Art/wing.sprite.json"));
     }
@@ -170,7 +170,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         var destination = Projects.Create("Destination");
         destination.WriteText("Content/Art/wing.sprite.json", "edição pessoal");
 
-        Assert.Throws<IOException>(() => library.ImportToProject(asset.Id, 1, destination));
+        Assert.Throws<IOException>(() => library.ImportToProject(asset.Id, 1, destination, TestContext.Current.CancellationToken));
         Assert.Equal("edição pessoal", destination.ReadText("Content/Art/wing.sprite.json"));
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
     }
@@ -185,7 +185,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         File.WriteAllBytes(png, [99, 98, 97]);
 
         var destination = Projects.Create("Target");
-        Assert.Throws<InvalidDataException>(() => library.ImportToProject(asset.Id, 1, destination));
+        Assert.Throws<InvalidDataException>(() => library.ImportToProject(asset.Id, 1, destination, TestContext.Current.CancellationToken));
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.sprite.json")));
         Assert.True(File.Exists(png)); // preserved for repair, never silently deleted.
@@ -203,7 +203,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
 
         var target = Projects.Create("Target");
         var before = target.ReadText("Game.cs");
-        Assert.Throws<InvalidDataException>(() => library.ImportToProject(asset.Id, 1, target));
+        Assert.Throws<InvalidDataException>(() => library.ImportToProject(asset.Id, 1, target, TestContext.Current.CancellationToken));
         Assert.Equal(before, target.ReadText("Game.cs"));
         Assert.Contains("../../Game.cs", File.ReadAllText(manifest));
     }
@@ -231,7 +231,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         var destination = Projects.Create("Destination");
         var originalGame = destination.ReadText("Game.cs");
 
-        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, destination));
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, destination, TestContext.Current.CancellationToken));
         Assert.Equal(originalGame, destination.ReadText("Game.cs"));
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.png")));
         Assert.Equal(malformed, File.ReadAllText(manifestPath));
@@ -269,7 +269,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         var originalGame = target.ReadText("Game.cs");
 
         Assert.Throws<InvalidDataException>(() => Library.List());
-        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, target));
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, target, TestContext.Current.CancellationToken));
         Assert.Equal(originalGame, target.ReadText("Game.cs"));
         Assert.False(File.Exists(Path.Combine(target.Directory, "Content/Art/wing.sprite.json")));
         Assert.Equal(original, File.ReadAllText(manifestPath));
@@ -452,7 +452,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         var gameBefore = target.ReadText("Game.cs");
 
         Assert.Throws<InvalidDataException>(() => Library.Find(asset.Id, asset.Version));
-        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, asset.Version, target));
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, asset.Version, target, TestContext.Current.CancellationToken));
         Assert.Equal(gameBefore, target.ReadText("Game.cs"));
         Assert.Equal(malformed, File.ReadAllText(manifestPath));
     }
@@ -471,7 +471,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
 
         var conflicts = Library.FindImportConflicts(asset.Id, 1, destination);
         Assert.NotEmpty(conflicts);
-        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, 1, destination));
+        Assert.Throws<IOException>(() => Library.ImportToProject(asset.Id, 1, destination, TestContext.Current.CancellationToken));
         Assert.Equal("personal data", destination.ReadText(conflictingPath));
         Assert.Equal(originalGame, destination.ReadText("Game.cs"));
         Assert.False(File.Exists(Path.Combine(destination.Directory, "Content/Art/wing.sprite.json")));
@@ -498,7 +498,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
         var zip = Path.Combine(_root, "invalid-ancestor.zip");
 
         Assert.Throws<InvalidDataException>(() => Library.Find(asset.Id, 1));
-        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, target));
+        Assert.Throws<InvalidDataException>(() => Library.ImportToProject(asset.Id, 1, target, TestContext.Current.CancellationToken));
         Assert.Throws<InvalidDataException>(() => Library.ExportZip(asset.Id, 1, zip));
         Assert.Equal(originalGame, target.ReadText("Game.cs"));
         Assert.False(File.Exists(zip));
@@ -529,7 +529,7 @@ public sealed class ReusableAssetLibraryTests : IDisposable
 
         Library.VerifyIntegrity(asset.Id, 1);
         var destination = Projects.Create("LowercaseTarget");
-        Assert.Equal(2, Library.ImportToProject(asset.Id, 1, destination).Count);
+        Assert.Equal(2, Library.ImportToProject(asset.Id, 1, destination, TestContext.Current.CancellationToken).Count);
         Assert.Equal(source.ReadText("Content/Art/wing.sprite.json"),
             destination.ReadText("Content/Art/wing.sprite.json"));
         Assert.Equal(File.ReadAllBytes(Path.Combine(source.Directory, "Content", "Art", "wing.png")),

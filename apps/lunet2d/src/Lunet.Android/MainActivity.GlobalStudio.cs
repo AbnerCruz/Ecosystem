@@ -25,37 +25,24 @@ public sealed partial class MainActivity
         new AlertDialog.Builder(this)!.SetTitle("Novo sprite · Studio independente")!
             .SetItems(new[] { "16 × 16", "32 × 32", "64 × 64" }, (_, e) =>
             {
-                var path = StandaloneWorkspace.NewPath("Assets", "sprite", ".sprite.json");
+                var path = StandaloneWorkspace.NewPath("Content/Textures", "sprite", ".sprite.json");
                 EditStandaloneSprite(path, SpriteDocument.Create(new[] { 16, 32, 64 }[e.Which]));
             })!.SetNegativeButton("Voltar", (_, _) => { })!.Show();
     }
 
-    private void EditStandaloneSprite(string path, SpriteDocument doc)
+    private void EditStandaloneSprite(string path, SpriteDocument doc, Action? afterClose = null, int tileSize = 0)
     {
-        var storage = StandaloneWorkspace;
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
-        var view = new SpriteStudioView(this, doc, current =>
-        {
-            storage.WriteText(path, current.ToJson());
-            int width = checked(current.Width * current.Frames.Count);
-            byte[] rgba = current.SheetRgba();
-            var pixels = new int[checked(width * current.Height)];
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = unchecked((int)((uint)rgba[i * 4 + 3] << 24 |
-                    (uint)rgba[i * 4] << 16 | (uint)rgba[i * 4 + 1] << 8 | rgba[i * 4 + 2]));
-            using var bmp = Bitmap.CreateBitmap(pixels, width, current.Height, Bitmap.Config.Argb8888!)!;
-            using var memory = new MemoryStream();
-            if (!bmp.Compress(Bitmap.CompressFormat.Png!, 100, memory))
-                throw new IOException("Falha ao gerar PNG do sprite.");
-            storage.WriteBytes(path[..^".sprite.json".Length] + ".png", memory.ToArray());
-        }, _ => Toast.MakeText(this, "Fonte editável e PNG salvos no Studio.", ToastLength.Short)?.Show(),
-        () =>
-        {
-            _spriteStudio?.Save();
-            dialog.Dismiss();
-            _spriteStudio = null;
-            AskPublishStandaloneAsset(path);
-        });
+        var view = new SpriteStudioView(this, doc,
+            current => SaveStudioSprite(StandaloneWorkspace, path, current),
+            _ => Toast.MakeText(this, "Fonte editável e PNG salvos no Studio.", ToastLength.Short)?.Show(),
+            () =>
+            {
+                _spriteStudio?.Save();
+                dialog.Dismiss();
+                _spriteStudio = null;
+                if (afterClose is not null) afterClose(); else AskPublishStandaloneAsset(path);
+            }, tileSize);
         _spriteStudio = view;
         dialog.SetContentView(view);
         dialog.SetCancelable(false);
@@ -139,33 +126,99 @@ public sealed partial class MainActivity
             .Show();
     }
 
-    private void PublishStandaloneAsset(string path)
+    private void PublishStandaloneAsset(string path) => ShowAssetPublishForm(null, path, null);
+
+    private LibraryAssetRender? PrepareLibraryRender(string path, StudioAssetWorkspace storage)
     {
-        try
+        if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase))
         {
-            string title = Path.GetFileName(path).Split('.')[0];
-            var asset = AssetLibrary.PublishWorkspace(StandaloneWorkspace.RootDirectory, path,
-                title, "", "Uso próprio");
-            new AlertDialog.Builder(this)!.SetTitle("Asset na Biblioteca")!
-                .SetMessage("Versão " + asset.Version + " salva. Deseja enviar uma cópia para algum projeto?")!
-                .SetNegativeButton("Mais tarde", (_, _) => { })!
-                .SetPositiveButton("Usar em…", (_, _) => ChooseAssetDestination(asset))!.Show();
+            var snapshot = storage.ReadBytes(path);
+            using var reader = new StreamReader(new MemoryStream(snapshot, writable: false));
+            var source = reader.ReadToEnd();
+            var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(snapshot));
+            if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))
+                return new(hash, SpriteSheetPath(path), SpritePng(SpriteDocument.Parse(source)));
+            if (path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase))
+                return new(hash, path[..^MusicSongExtension.Length] + ".wav", new MusicRenderer().RenderWav(MusicSong.Parse(source)));
+            return new(hash, path[..^SoundEffectExtension.Length] + ".wav", SoundDesigner.RenderWav(SoundDesigner.Parse(source)));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
-            InvalidDataException or ArgumentException or InvalidOperationException)
+
+        if (IsDataTable(path) && storage.Exists(SchemaPath(path)))
         {
-            new AlertDialog.Builder(this)!.SetTitle("Não foi possível publicar")!
-                .SetMessage(ex.Message + "\nO original continua salvo no Studio.")!
-                .SetPositiveButton("OK", (_, _) => { })!.Show();
+            var table = Lunet.Studio.Data.DataTable.Parse(storage.ReadText(path), storage.ReadText(SchemaPath(path)));
+            var issues = table.Validate(DataTableKeys(path, storage));
+            if (issues.Count > 0) throw new InvalidDataException("Corrija a tabela no Data Studio: " + issues[0].Message);
         }
+        return null;
+    }
+
+    private static bool IsStandaloneDraft(string path) =>
+        new[] { ".sprite.json", MusicSongExtension, SoundEffectExtension, ".tilemap.json", ".palette.json", ParticleExtension }
+            .Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase)) ||
+        IsDataTable(path) || path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase);
+
+    private void NewStandaloneTileMap()
+    {
+        new AlertDialog.Builder(this)!.SetTitle("Tamanho do mapa")!
+            .SetItems(new[] { "16 × 16", "32 × 32", "64 × 64" }, (_, e) =>
+                CreateEditableTileMap(new[] { 16, 32, 64 }[e.Which], 16, standalone: true))!
+            .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+    }
+
+    private void NewStandalonePalette()
+    {
+        var palette = new ProjectPalette();
+        var path = StandaloneWorkspace.NewPath("Assets", "paleta", ".palette.json");
+        StandaloneWorkspace.WriteTextPair(path, palette.ToJson(), path[..^".palette.json".Length] + ".gpl", palette.ToGpl());
+        OpenPaletteStudio(palette, path, StandaloneWorkspace);
+    }
+
+    private void NewStandaloneParticles()
+    {
+        var presets = ParticlePresets.All;
+        new AlertDialog.Builder(this)!.SetTitle("Começar de")!
+            .SetItems(presets.Select(p => p.Name).ToArray(), (_, e) =>
+                OpenParticleStudio(StandaloneWorkspace.NewPath("Content/Effects", presets[e.Which].Id, ParticleExtension),
+                    ParticleDraft.From(presets[e.Which]), StandaloneWorkspace))!
+            .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+    }
+
+    private void NewStandaloneData()
+    {
+        var path = StandaloneWorkspace.NewPath("Content/Data", "tabela", ".json");
+        var table = Lunet.Studio.Data.DataTable.Create("Registro",
+            new Lunet.Studio.Data.DataColumn { Name = "id", Key = true, Required = true },
+            new Lunet.Studio.Data.DataColumn { Name = "nome" });
+        StandaloneWorkspace.WriteTextPair(path, table.ToJson(), SchemaPath(path), table.SchemaToJson());
+        OpenDataTable(path, StandaloneWorkspace);
+    }
+
+    private void OpenStandaloneDraft(string path)
+    {
+        var storage = StandaloneWorkspace;
+        if (path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenWaveAudio(WaveAudioDocument.Parse(storage.ReadBytes(path)), Path.GetFileNameWithoutExtension(path), storage, path);
+            return;
+        }
+        var source = storage.ReadText(path);
+        if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase)) EditStandaloneSprite(path, SpriteDocument.Parse(source));
+        else if (path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase)) EditStandaloneMusic(path, MusicSong.Parse(source));
+        else if (path.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase)) OpenSoundDesigner(path, SoundDesigner.Parse(source));
+        else if (path.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase)) OpenTileMap(path, Lunet.Graphics.TileMap.Parse(source), storage);
+        else if (path.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)) OpenPaletteStudio(ProjectPalette.Parse(source), path, storage);
+        else if (path.EndsWith(ParticleExtension, StringComparison.OrdinalIgnoreCase)) OpenSavedParticle(path, storage, standalone: true);
+        else if (IsDataTable(path)) OpenDataTable(path, storage);
     }
 
     private void ShowStandaloneDrafts()
     {
         var drafts = StandaloneWorkspace.ListFiles()
-            .Where(path => path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) ||
-                           path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase) ||
-                           path.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase))
+            .Where(IsStandaloneDraft)
+            .Where(path => !path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
+                !StandaloneWorkspace.Exists(path[..^4] + MusicSongExtension) && !StandaloneWorkspace.Exists(path[..^4] + SoundEffectExtension))
             .ToArray();
         if (drafts.Length == 0)
         {
@@ -182,13 +235,7 @@ public sealed partial class MainActivity
                         if (action.Which == 1) { PublishStandaloneAsset(path); return; }
                         try
                         {
-                            string source = StandaloneWorkspace.ReadText(path);
-                            if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))
-                                EditStandaloneSprite(path, SpriteDocument.Parse(source));
-                            else if (path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase))
-                                EditStandaloneMusic(path, MusicSong.Parse(source));
-                            else
-                                OpenSoundDesigner(path, SoundDesigner.Parse(source));
+                            OpenStandaloneDraft(path);
                         }
                         catch (Exception ex)
                         {

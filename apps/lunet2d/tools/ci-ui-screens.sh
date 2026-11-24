@@ -101,6 +101,21 @@ adb shell uiautomator dump /sdcard/lunet-f5.xml >/dev/null
 adb pull /sdcard/lunet-f5.xml "$out/f5-return.xml" >/dev/null
 grep -q "Aba Game.cs" "$out/f5-return.xml"
 
+# F6: global editors without a project and a native map inside Notes.
+shoot 17-f6-mindmap mindmap 8
+adb shell uiautomator dump /sdcard/lunet-f6.xml >/dev/null
+adb pull /sdcard/lunet-f6.xml "$out/f6-map.xml" >/dev/null
+grep -q "Planejar o jogo" "$out/f6-map.xml"
+grep -q "Mapa mental" "$out/f6-map.xml"
+shoot 18-f6-tile tile-global 8
+adb shell uiautomator dump /sdcard/lunet-f6.xml >/dev/null
+adb pull /sdcard/lunet-f6.xml "$out/f6-tile.xml" >/dev/null
+grep -qi "tile" "$out/f6-tile.xml"
+shoot 19-f6-data data-global 8
+adb shell uiautomator dump /sdcard/lunet-f6.xml >/dev/null
+adb pull /sdcard/lunet-f6.xml "$out/f6-data.xml" >/dev/null
+grep -qi "tabela" "$out/f6-data.xml"
+
 # These screens must exist and contain PNG bytes from the Android emulator.
 for screen in 01a-home 01b-home-resume 01c-home-missing 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do
     test -s "$out/$screen.png" || { echo "F1 screen missing: $screen"; exit 1; }

@@ -1,3 +1,7 @@
+## LUNET-524 · F6 — Mapas mentais e Studios
+
+- [ ] Confirmar mapas, Studios globais, pacotes versionados e APK oficial. [Manual e operações](docs/manual/mapas-e-studios.md).
+
 ## LUNET-523 · F5 — Aprender e manual offline
 
 - [ ] Confirmar a entrega F5 no CI integrado e APK oficial. Catálogo T01, recuperação por GameId, manual editorial, exemplos executáveis e evidência em [F5](docs/learning/F5-ENTREGA.md).

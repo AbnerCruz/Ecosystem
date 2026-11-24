@@ -3,6 +3,7 @@ using Android.App;
 using Android.Graphics;
 using Android.Views;
 using Android.Widget;
+using Lunet.Core;
 using Lunet.Studio;
 using AColor = Android.Graphics.Color;
 using Path = System.IO.Path;
@@ -42,6 +43,23 @@ public sealed partial class MainActivity
         if (_project is null) return;
         SaveCurrent();
         var existing = LoadProjectPalette();
+        var copies = _project.ListFiles().Where(path => path.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (copies.Length > 0)
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Paletas do jogo")!
+                .SetItems(new[] { "Paleta ativa" }.Concat(copies).ToArray(), (_, e) =>
+                {
+                    if (e.Which == 0) OpenPaletteStudio(existing ?? new ProjectPalette());
+                    else
+                    {
+                        var path = copies[e.Which - 1];
+                        try { OpenPaletteStudio(ProjectPalette.Parse(_project.ReadText(path)), path); }
+                        catch (Exception ex) when (ex is IOException or ArgumentException or System.Text.Json.JsonException)
+                        { Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show(); }
+                    }
+                })!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+            return;
+        }
         if (existing is not null) { OpenPaletteStudio(existing); return; }
         var presets = ProjectPalette.Presets;
         var items = new[] { "Extrair das artes do projeto", "Começar vazia" }
@@ -100,8 +118,16 @@ public sealed partial class MainActivity
         }
     }
 
-    private void OpenPaletteStudio(ProjectPalette palette)
+    private void OpenPaletteStudio(ProjectPalette palette, string? draftPath = null, StudioAssetWorkspace? workspace = null)
     {
+        var project = _project;
+        var storage = workspace ?? new StudioAssetWorkspace(project!.Directory);
+        var path = draftPath ?? ProjectPalette.DefaultPath;
+        void Save()
+        {
+            if (draftPath is null) SaveProjectPalette(palette);
+            else storage.WriteTextPair(path, palette.ToJson(), path[..^".palette.json".Length] + ".gpl", palette.ToGpl());
+        }
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
         var root = LunetUi.Column(this, 0);
         root.SetBackgroundColor(LunetUi.Background);
@@ -128,8 +154,9 @@ public sealed partial class MainActivity
         int selected = -1;
         void Changed()
         {
-            SaveProjectPalette(palette);
-            Render();
+            try { Save(); Render(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+            { Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show(); }
         }
 
         void Render()
@@ -137,7 +164,7 @@ public sealed partial class MainActivity
             title.Text = palette.Name;
             subtitle.Text = palette.Colors.Count == 0
                 ? "Sem cores. Toque em ＋ Cor ou gere uma rampa."
-                : $"{palette.Colors.Count} cores · {ProjectPalette.DefaultPath} · toque para editar, segure para mais";
+                : $"{palette.Colors.Count} cores · {path} · toque para editar, segure para mais";
             grid.RemoveAllViews();
             for (int i = 0; i < palette.Colors.Count; i++)
             {
@@ -207,6 +234,8 @@ public sealed partial class MainActivity
                     Changed();
                 })!.Show();
         });
+        if (workspace is null)
+        {
         Action("Das artes do projeto", () => ChooseNumber("Quantas cores principais extrair?", [4, 8, 12, 16, 24], count =>
         {
             int added = palette.AddRange(ProjectPalette.FromPixels(ProjectArtPixels(), count));
@@ -228,7 +257,6 @@ public sealed partial class MainActivity
                             "Exporte de novo sempre que mudar a paleta.")!
                 .SetPositiveButton("OK", (_, _) => { })!.Show();
         });
-        Action("Contraste", () => ShowContrast(palette));
         Action("Importar .gpl / hex", () =>
         {
             var files = _project!.ListFiles().Where(f => f.EndsWith(".gpl", StringComparison.OrdinalIgnoreCase) ||
@@ -252,6 +280,15 @@ public sealed partial class MainActivity
             RefreshExplorer();
             Toast.MakeText(this, "Exportado " + target + " (GIMP, Krita, Aseprite).", ToastLength.Long)?.Show();
         });
+        if (draftPath is not null)
+            Action("Usar como paleta ativa", () =>
+                new AlertDialog.Builder(this)!.SetTitle("Trocar a paleta ativa do jogo?")!
+                    .SetMessage("A cópia editável continua guardada. As cores dos sprites existentes não mudam.")!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!
+                    .SetPositiveButton("Usar paleta", (_, _) => SaveProjectPalette(palette))!.Show());
+        }
+        else Action("Publicar", () => { try { Save(); AskPublishStandaloneAsset(path); } catch (IOException e) { Toast.MakeText(this, e.Message, ToastLength.Long)?.Show(); } });
+        Action("Contraste", () => ShowContrast(palette));
         var actionScroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false };
         actionScroll.AddView(actions);
         root.AddView(LunetUi.Divider(this));

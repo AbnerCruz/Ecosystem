@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Lunet.Core;
 
-public enum NoteKind { Text, Sketch, Image, File }
+public enum NoteKind { Text, Sketch, Image, File, MindMap }
 
 public sealed record ProjectNote(string Path, string Title, NoteKind Kind, DateTime ModifiedUtc);
 
@@ -22,7 +22,9 @@ public static class ProjectNotes
         {
             var full = System.IO.Path.Combine(project.Directory, path);
             var modified = File.GetLastWriteTimeUtc(full);
-            if (path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+            if (path.EndsWith(ProjectMindMap.Extension, StringComparison.OrdinalIgnoreCase))
+                result.Add(new ProjectNote(path, System.IO.Path.GetFileName(path)[..^ProjectMindMap.Extension.Length], NoteKind.MindMap, modified));
+            else if (path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
             {
                 string head;
                 try { head = ReadHead(full); } catch (IOException) { head = ""; }
@@ -63,6 +65,14 @@ public static class ProjectNotes
         title = string.IsNullOrWhiteSpace(title) ? "Nova nota" : title.Trim();
         var path = Unique(project, Slug(title), ".md");
         project.WriteText(path, "# " + title + "\n\n");
+        return path;
+    }
+
+    public static string CreateMindMap(LunetProject project, string title)
+    {
+        var map = ProjectMindMap.Create(title);
+        string path = Unique(project, Slug(map.Topics[0].Text), ProjectMindMap.Extension);
+        project.WriteText(path, map.Serialize());
         return path;
     }
 

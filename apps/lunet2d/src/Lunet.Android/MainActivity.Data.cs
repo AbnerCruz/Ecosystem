@@ -62,37 +62,38 @@ public sealed partial class MainActivity
 
     private void SaveDataTable(string path, DataTable table)
     {
-        _project!.WriteText(path, table.ToJson());
-        _project.WriteText(SchemaPath(path), table.SchemaToJson());
+        new StudioAssetWorkspace(_project!.Directory).WriteTextPair(path, table.ToJson(), SchemaPath(path), table.SchemaToJson());
         RefreshExplorer();
     }
 
     /// <summary>Key values of every other table, by file name (for reference columns).</summary>
-    private Dictionary<string, HashSet<string>> DataTableKeys(string except)
+    private Dictionary<string, HashSet<string>> DataTableKeys(string except, StudioAssetWorkspace? workspace = null)
     {
         var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (var path in _project!.ListFiles().Where(IsDataTable).Where(p => p != except))
+        var storage = workspace ?? new StudioAssetWorkspace(_project!.Directory);
+        foreach (var path in storage.ListFiles().Where(IsDataTable).Where(p => p != except))
         {
             try
             {
                 var schemaPath = SchemaPath(path);
-                var schema = File.Exists(Path.Combine(_project.Directory, schemaPath)) ? _project.ReadText(schemaPath) : null;
-                result[Path.GetFileNameWithoutExtension(path)] = DataTable.Parse(_project.ReadText(path), schema).KeyValues();
+                var schema = storage.Exists(schemaPath) ? storage.ReadText(schemaPath) : null;
+                result[Path.GetFileNameWithoutExtension(path)] = DataTable.Parse(storage.ReadText(path), schema).KeyValues();
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException) { }
         }
         return result;
     }
 
-    private void OpenDataTable(string path)
+    private void OpenDataTable(string path, StudioAssetWorkspace? workspace = null)
     {
-        var project = _project!;
+        var project = _project;
+        var storage = workspace ?? new StudioAssetWorkspace(project!.Directory);
         DataTable table;
         try
         {
             var schemaPath = SchemaPath(path);
-            var schema = File.Exists(Path.Combine(project.Directory, schemaPath)) ? project.ReadText(schemaPath) : null;
-            table = DataTable.Parse(project.ReadText(path), schema, Lunet.Studio.ProjectPalette.Identifier(Path.GetFileNameWithoutExtension(path).TrimEnd('s')));
+            var schema = storage.Exists(schemaPath) ? storage.ReadText(schemaPath) : null;
+            table = DataTable.Parse(storage.ReadText(path), schema, Lunet.Studio.ProjectPalette.Identifier(Path.GetFileNameWithoutExtension(path).TrimEnd('s')));
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or ProjectException)
         {
@@ -100,9 +101,19 @@ public sealed partial class MainActivity
             return;
         }
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
-        var view = new DataStudioView(this, table, path, t => SaveDataTable(path, t), t =>
+        var view = new DataStudioView(this, table, path, t =>
         {
-            var game = project.ReadText(project.Manifest.EntryPoint);
+            if (workspace is null) SaveDataTable(path, t);
+            else storage.WriteTextPair(path, t.ToJson(), SchemaPath(path), t.SchemaToJson());
+        }, t =>
+        {
+            if (workspace is not null)
+            {
+                storage.WriteTextPair(path, t.ToJson(), SchemaPath(path), t.SchemaToJson());
+                AskPublishStandaloneAsset(path);
+                return;
+            }
+            var game = project!.ReadText(project.Manifest.EntryPoint);
             var ns = Regex.Match(game, @"^\s*namespace\s+([\w.]+)", RegexOptions.Multiline) is { Success: true } m ? m.Groups[1].Value : null;
             var className = Lunet.Studio.ProjectPalette.Identifier(t.Schema.ClassName);
             var target = "Data/" + className + ".cs";
@@ -113,7 +124,7 @@ public sealed partial class MainActivity
                 .SetMessage($"{target}\n\nNo LoadContent:\nvar lista = Content.LoadJson<List<{className}>>(\"{path["Content/".Length..]}\");\n\n" +
                             "Gere de novo quando mudar as colunas.")!
                 .SetPositiveButton("OK", (_, _) => { })!.Show();
-        }, () => DataTableKeys(path), () => dialog.Dismiss());
+        }, () => DataTableKeys(path, workspace), () => dialog.Dismiss(), workspace is not null ? "Publicar na Biblioteca" : null);
         dialog.SetContentView(view);
         dialog.Show();
         dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);

@@ -40,8 +40,8 @@ public sealed class StudioAssetWorkspaceTests : IDisposable
         Assert.Equal(2, published.Files.Length);
         var p1 = Projects.Create("First");
         var p2 = Projects.Create("Second");
-        library.ImportToProject(published.Id, published.Version, p1);
-        library.ImportToProject(published.Id, published.Version, p2);
+        library.ImportToProject(published.Id, published.Version, p1, TestContext.Current.CancellationToken);
+        library.ImportToProject(published.Id, published.Version, p2, TestContext.Current.CancellationToken);
         Assert.Equal("editable-source", p1.ReadText("Assets/hero.sprite.json"));
         Assert.Equal("editable-source", p2.ReadText("Assets/hero.sprite.json"));
 
@@ -86,7 +86,7 @@ public sealed class StudioAssetWorkspaceTests : IDisposable
             "heroi", "me", "Uso próprio");
         var game = Projects.Create("Game");
         game.WriteText("Assets/heroi.sprite.json", "manual edits");
-        Assert.Throws<IOException>(() => Library.ImportToProject(pub.Id, 1, game));
+        Assert.Throws<IOException>(() => Library.ImportToProject(pub.Id, 1, game, TestContext.Current.CancellationToken));
         Assert.Equal("manual edits", game.ReadText("Assets/heroi.sprite.json"));
         Assert.False(File.Exists(Path.Combine(game.Directory, "Assets", "heroi.png")));
     }

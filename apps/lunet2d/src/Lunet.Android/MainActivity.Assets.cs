@@ -283,6 +283,13 @@ public sealed partial class MainActivity
                     if (asset.Kind == ProjectAssetKind.Sprite) OpenSpriteStudio(asset.Path, SpriteDocument.Parse(project.ReadText(asset.Path)));
                     else if (asset.Kind == ProjectAssetKind.TileMap) OpenTileMap(asset.Path, TileMap.Parse(project.ReadText(asset.Path)));
                     else if (asset.Kind == ProjectAssetKind.Audio) OpenWaveAudio(asset.Path);
+                    else if (asset.Path.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase))
+                        OpenPaletteStudio(ProjectPalette.Parse(project.ReadText(asset.Path)), asset.Path);
+                    else if (asset.Path.EndsWith(ParticleExtension, StringComparison.OrdinalIgnoreCase))
+                        OpenSavedParticle(asset.Path, new StudioAssetWorkspace(project.Directory));
+                    else if (asset.Path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase)) OpenSong(asset.Path);
+                    else if (asset.Path.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase)) OpenDesignedSound(asset.Path);
+                    else if (IsDataTable(asset.Path)) OpenDataTable(asset.Path);
                     else OpenFile(asset.Path);
                 }
                 catch (Exception ex) when (ex is IOException or InvalidDataException or ProjectException or ArgumentException)

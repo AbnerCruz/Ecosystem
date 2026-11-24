@@ -126,19 +126,21 @@ public sealed partial class MainActivity
     private void ChooseAssetToPublish(string? existingId)
     {
         var names = _store.List().ToArray();
-        if (names.Length == 0)
-        {
-            new AlertDialog.Builder(this)!.SetTitle("Nenhum projeto")!
-                .SetMessage("Crie um jogo e produza um asset antes de publicá-lo na biblioteca.")!
-                .SetPositiveButton("Fechar", (_, _) => { })!.Show();
-            return;
-        }
-        new AlertDialog.Builder(this)!.SetTitle("Escolher projeto de origem")!
-            .SetItems(names, (_, args) =>
+        new AlertDialog.Builder(this)!.SetTitle("Escolher origem")!
+            .SetItems(new[] { "Criações do Studio" }.Concat(names).ToArray(), (_, args) =>
             {
+                if (args.Which == 0)
+                {
+                    var drafts = StandaloneWorkspace.ListFiles().Where(IsStandaloneDraft).ToArray();
+                    if (drafts.Length == 0) { Toast.MakeText(this, "Nenhuma criação salva.", ToastLength.Short)?.Show(); return; }
+                    new AlertDialog.Builder(this)!.SetTitle("Escolher rascunho")!
+                        .SetItems(drafts, (_, e) => ShowAssetPublishForm(null, drafts[e.Which], existingId))!
+                        .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+                    return;
+                }
                 try
                 {
-                    var project = _store.Open(names[args.Which]);
+                    var project = _store.Open(names[args.Which - 1]);
                     var files = ProjectAssetCatalog.Build(project.ListFiles());
                     var choices = files.Select(a => a.Path).ToArray();
                     if (choices.Length == 0)
@@ -155,7 +157,7 @@ public sealed partial class MainActivity
             })!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
     }
 
-    private void ShowAssetPublishForm(LunetProject project, string source, string? existingId)
+    private void ShowAssetPublishForm(LunetProject? project, string source, string? existingId)
     {
         var panel = LunetUi.Column(this, 8);
         panel.SetPadding(Dp(16), Dp(10), Dp(16), Dp(10));
@@ -179,12 +181,19 @@ public sealed partial class MainActivity
             {
                 var parsedTags = (tags.Text ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries |
                     StringSplitOptions.TrimEntries);
-                AssetLibrary.Publish(project, source, title.Text ?? "", author.Text ?? "",
-                    license.Text ?? "", attribution.Text ?? "", tags: parsedTags, existingAssetId: existingId);
+                if (project is null)
+                {
+                    var rendered = PrepareLibraryRender(source, StandaloneWorkspace);
+                    AssetLibrary.PublishWorkspace(StandaloneWorkspace.RootDirectory, source, title.Text ?? "",
+                        author.Text ?? "", license.Text ?? "", attribution.Text ?? "", parsedTags, existingId, rendered);
+                }
+                else AssetLibrary.Publish(project, source, title.Text ?? "", author.Text ?? "",
+                    license.Text ?? "", attribution.Text ?? "", tags: parsedTags, existingAssetId: existingId,
+                    render: PrepareLibraryRender(source, new StudioAssetWorkspace(project.Directory)));
                 dialog?.Dismiss();
                 ShowReusableAssetLibrary();
             }
-            catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException or InvalidOperationException)
             {
                 Toast.MakeText(this, "Não foi possível publicar: " + ex.Message, ToastLength.Long)?.Show();
             }
@@ -287,7 +296,7 @@ public sealed partial class MainActivity
                         return;
                     }
                 }
-                catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException)
+                catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException or InvalidOperationException)
                 {
                     Toast.MakeText(this, "Não foi possível verificar o destino: " + ex.Message, ToastLength.Long)?.Show();
                     return;
@@ -310,7 +319,7 @@ public sealed partial class MainActivity
                                 .SetNegativeButton("Fechar", (_, _) => { })!
                                 .SetPositiveButton("Abrir projeto", (_, _) => OpenProject(selectedName))!.Show();
                         }
-                        catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException)
+                        catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or ProjectException or UnauthorizedAccessException or InvalidOperationException)
                         {
                             new AlertDialog.Builder(this)!.SetTitle("Importação não realizada")!
                                 .SetMessage(ex.Message + "\nO Lunet não sobrescreveu arquivos existentes.")!

@@ -128,20 +128,27 @@ public sealed partial class MainActivity
         }
     }
 
-    private void OpenWaveAudio(WaveAudioDocument doc, string name)
+    private void OpenWaveAudio(WaveAudioDocument doc, string name, StudioAssetWorkspace? workspace = null, string? draftPath = null)
     {
-        if (_project is null) return;
+        if (_project is null && workspace is null) return;
         var project = _project;
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
         var view = new WaveAudioStudioView(this, doc, Path.Combine(CacheDir!.AbsolutePath, "audio-studio"),
             bytes =>
             {
+                if (workspace is not null)
+                {
+                    string path = draftPath ??= workspace.NewPath("Content/Audio", "audio", ".wav");
+                    workspace.WriteBytes(path, bytes);
+                    AskPublishStandaloneAsset(path);
+                    return;
+                }
                 // Uma nova cópia por gravação: nunca sobrescrever um arquivo já existente do usuário.
                 string safe = new string(name.Where(c => char.IsAsciiLetterOrDigit(c) || c == '-').Take(32).ToArray());
                 if (safe.Length == 0) safe = "som";
                 string filename = safe + "-edit-" + Guid.NewGuid().ToString("N")[..8] + ".wav";
                 using var stream = new MemoryStream(bytes, writable: false);
-                project.Import("Content/Audio", filename, stream);
+                project!.Import("Content/Audio", filename, stream);
                 RefreshExplorer();
             },
             () => dialog.Dismiss());

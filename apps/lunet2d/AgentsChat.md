@@ -866,3 +866,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 - LUNET-523. A trilha T01 preserva as dez missões autorais. O leitor usa catálogo público, rotas offline e exemplos verificados. Progresso e compilação têm evidências separadas.
 - Auditoria e critérios em `docs/learning/F5-ENTREGA.md`. A validação física fica registrada como não executada.
+
+### Lunet F6 · Mapas mentais e Studios
+
+- LUNET-524. Schema de mapa com hierarquia, ligações e referência local. Studios globais usam os mesmos componentes nativos do projeto.
+- Biblioteca resolve dependências e guarda a procedência de cada fork. Evidência em `docs/plans/f6-validacao.md`.

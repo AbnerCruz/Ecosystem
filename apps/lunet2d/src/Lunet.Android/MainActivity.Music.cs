@@ -247,8 +247,8 @@ public sealed partial class MainActivity
             var wav = SoundDesigner.RenderWav(effect);
             if (project is null)
             {
-                StandaloneWorkspace.WriteText(source, json);
-                StandaloneWorkspace.WriteBytes(AudioFolder + "/" + name + ".wav", wav);
+                StandaloneWorkspace.WriteBundle((source, System.Text.Encoding.UTF8.GetBytes(json)),
+                    (AudioFolder + "/" + name + ".wav", wav));
                 AskPublishStandaloneAsset(source);
                 return;
             }

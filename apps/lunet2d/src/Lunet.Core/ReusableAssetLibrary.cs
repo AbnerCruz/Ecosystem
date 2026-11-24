@@ -9,10 +9,17 @@ namespace Lunet.Core;
 /// <summary>Arquivo versionado da biblioteca, preservando a localização original dentro do jogo.</summary>
 public sealed record LibraryAssetFile(string Path, string Sha256, long Length);
 
+/// <summary>Export rendered from a specific source revision, prepared before committing the library version.</summary>
+public sealed record LibraryAssetRender(string SourceSha256, string Path, byte[] Bytes);
+
 /// <summary>Manifesto imutável de uma versão; importação em jogos é sempre uma cópia, nunca um link global.</summary>
 public sealed record LibraryAssetVersion(
     string Id, int Version, string Title, ProjectAssetKind Kind, string Author, string License,
-    string Attribution, string[] Tags, LibraryAssetFile[] Files, DateTime CreatedUtc);
+    string Attribution, string[] Tags, LibraryAssetFile[] Files, DateTime CreatedUtc)
+{
+    public string? PrimaryPath { get; init; }
+    public int? BasedOnVersion { get; init; }
+}
 
 /// <summary>
 /// Biblioteca local e versionada de assets do usuário. Não faz rede nem altera um projeto ao publicar.
@@ -78,24 +85,26 @@ public sealed class ReusableAssetLibrary
 
     public LibraryAssetVersion Publish(LunetProject project, string primaryPath, string title,
         string author, string license, string attribution = "", IEnumerable<string>? tags = null,
-        string? existingAssetId = null)
+        string? existingAssetId = null, LibraryAssetRender? render = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         return PublishFromFiles(project.Directory, project.ListFiles(), primaryPath,
-            title, author, license, attribution, tags, existingAssetId);
+            title, author, license, attribution, tags, existingAssetId, render);
     }
 
     /// <summary>Publishes editable Studio drafts without requiring a game project.</summary>
     public LibraryAssetVersion PublishWorkspace(string workspaceRoot, string primaryPath, string title,
         string author, string license, string attribution = "", IEnumerable<string>? tags = null,
-        string? existingAssetId = null)
+        string? existingAssetId = null, LibraryAssetRender? render = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceRoot);
         string root = Path.GetFullPath(workspaceRoot);
         if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Workspace do Studio não encontrado.");
         if (File.GetAttributes(root).HasFlag(FileAttributes.ReparsePoint))
             throw new IOException("O Studio não publica através de links.");
-        var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+        foreach (var directory in new[] { "Assets", "Content" }) EnsureNoLinks(root, directory);
+        var files = new[] { "Assets", "Content" }.Select(folder => Path.Combine(root, folder)).Where(Directory.Exists)
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
             .Select(p => Path.GetRelativePath(root, p).Replace('\\', '/')).ToArray();
         foreach (var path in files)
         {
@@ -103,27 +112,30 @@ public sealed class ReusableAssetLibrary
             EnsureNoLinks(root, path);
         }
         return PublishFromFiles(root, files, primaryPath,
-            title, author, license, attribution, tags, existingAssetId);
+            title, author, license, attribution, tags, existingAssetId, render);
     }
 
     private LibraryAssetVersion PublishFromFiles(string sourceRoot, IReadOnlyList<string> sourceFiles,
         string primaryPath, string title, string author, string license,
-        string attribution, IEnumerable<string>? tags, string? existingAssetId)
+        string attribution, IEnumerable<string>? tags, string? existingAssetId, LibraryAssetRender? render)
     {
         ValidatePath(primaryPath);
+        if (render is not null)
+        {
+            string? expected = primaryPath.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase)
+                ? primaryPath[..^".sprite.json".Length] + ".png"
+                : primaryPath.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase) ||
+                  primaryPath.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase)
+                    ? primaryPath[..primaryPath.LastIndexOf('.', primaryPath.Length - 6)] + ".wav" : null;
+            if (render.Path != expected || render.Bytes.Length == 0)
+                throw new ArgumentException("Derivado não corresponde à fonte.", nameof(render));
+            sourceFiles = [.. sourceFiles, render.Path];
+        }
         var asset = ProjectAssetCatalog.Build(sourceFiles)
             .SingleOrDefault(a => string.Equals(a.Path, primaryPath, StringComparison.Ordinal));
         if (asset is null) throw new ArgumentException("Selecione um asset real de Assets/ ou Content/.", nameof(primaryPath));
 
-        var paths = new List<string> { asset.Path };
-        if (asset.PreviewPath is { } preview && !paths.Contains(preview, StringComparer.Ordinal))
-            paths.Add(preview);
-        if (primaryPath.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase) ||
-            primaryPath.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase))
-        {
-            var wave = primaryPath[..primaryPath.LastIndexOf('.', primaryPath.LastIndexOf('.') - 1)] + ".wav";
-            if (sourceFiles.Contains(wave, StringComparer.Ordinal)) paths.Add(wave);
-        }
+        var paths = CollectFiles(sourceRoot, sourceFiles, asset);
 
         var id = existingAssetId ?? Guid.NewGuid().ToString("D");
         ValidateId(id);
@@ -145,7 +157,8 @@ public sealed class ReusableAssetLibrary
         var manifest = new LibraryAssetVersion(id, version,
             Bounded(title, 160, "Título"), asset.Kind,
             Bounded(author, 120, "Autor", true), Bounded(license, 120, "Licença"),
-            Bounded(attribution, 500, "Atribuição", true), safeTags, [], DateTime.UtcNow);
+            Bounded(attribution, 500, "Atribuição", true), safeTags, [], DateTime.UtcNow)
+        { PrimaryPath = primaryPath, BasedOnVersion = version > 1 ? version - 1 : null };
 
         // A pre-existing library ID directory may be a symlink to an unrelated location.
         // Never publish a revision through such a link.
@@ -162,18 +175,31 @@ public sealed class ReusableAssetLibrary
             foreach (var path in paths)
             {
                 ValidatePath(path);
-                var original = Path.Combine(sourceRoot, path.Replace('/', Path.DirectorySeparatorChar));
-                EnsureNoLinks(sourceRoot, path);
-                if (!File.Exists(original)) throw new FileNotFoundException("Arquivo de origem não encontrado.", path);
-                var before = HashFile(original);
                 var copy = FilePath(Path.Combine(staging, "files"), path);
                 Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-                File.Copy(original, copy, overwrite: false);
-                var after = HashFile(copy);
-                if (before != after || HashFile(original) != before)
-                    throw new IOException("O asset foi alterado durante a publicação; tente novamente.");
+                string after;
+                if (render is not null && path == render.Path)
+                {
+                    File.WriteAllBytes(copy, render.Bytes);
+                    after = HashFile(copy);
+                }
+                else
+                {
+                    var original = FilePath(sourceRoot, path);
+                    EnsureNoLinks(sourceRoot, path);
+                    if (!File.Exists(original)) throw new FileNotFoundException("Arquivo de origem não encontrado.", path);
+                    var before = HashFile(original);
+                    if (render is not null && path == primaryPath && before != render.SourceSha256)
+                        throw new IOException("A fonte mudou depois de gerar o derivado. Gere e publique novamente.");
+                    File.Copy(original, copy, overwrite: false);
+                    after = HashFile(copy);
+                    if (before != after || HashFile(original) != before)
+                        throw new IOException("O asset foi alterado durante a publicação; tente novamente.");
+                }
                 files.Add(new LibraryAssetFile(path, after, new FileInfo(copy).Length));
             }
+            if (render is not null && HashFile(FilePath(sourceRoot, primaryPath)) != render.SourceSha256)
+                throw new IOException("A fonte mudou antes de publicar a revisão.");
             manifest = manifest with { Files = files.ToArray() };
             File.WriteAllText(Path.Combine(staging, "asset.json"), JsonSerializer.Serialize(manifest, JsonOptions));
             Directory.Move(staging, target);
@@ -183,6 +209,75 @@ public sealed class ReusableAssetLibrary
         {
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
         }
+    }
+
+    private static IReadOnlyList<string> CollectFiles(string root, IReadOnlyList<string> files, ProjectAsset primary)
+    {
+        var available = files.ToHashSet(StringComparer.Ordinal);
+        var paths = new List<string>();
+        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string path, bool required = true)
+        {
+            ValidatePath(path);
+            if (!available.Contains(path))
+            {
+                if (required) throw new FileNotFoundException("Dependência não encontrada: " + path, path);
+                return;
+            }
+            if (included.Add(path)) paths.Add(path);
+        }
+        JsonDocument Read(string path)
+        {
+            EnsureNoLinks(root, path);
+            try { return JsonDocument.Parse(File.ReadAllText(FilePath(root, path))); }
+            catch (JsonException ex) { throw new InvalidDataException("JSON inválido: " + path, ex); }
+        }
+
+        Add(primary.Path);
+        if (primary.PreviewPath is { } preview) Add(preview);
+        for (int i = 0; i < paths.Count; i++)
+        {
+            string path = paths[i];
+            if (path.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase))
+            {
+                using var map = Read(path);
+                if (!map.RootElement.TryGetProperty("texture", out var texture) || texture.ValueKind != JsonValueKind.String)
+                    throw new InvalidDataException("O mapa precisa declarar o caminho do tileset.");
+                var atlas = "Content/" + texture.GetString();
+                Add(atlas);
+                if (atlas.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    Add(atlas[..^4] + ".sprite.json", required: false);
+            }
+            else if (path.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase) ||
+                     path.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase))
+            {
+                Add(path[..path.LastIndexOf('.', path.Length - 6)] + ".wav", required: false);
+            }
+            else if (path.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase))
+            {
+                Add(path[..^".palette.json".Length] + ".gpl", required: false);
+            }
+            else if (path.StartsWith("Content/Data/", StringComparison.Ordinal) &&
+                     path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) &&
+                     !path.EndsWith(".schema.json", StringComparison.OrdinalIgnoreCase))
+            {
+                string schema = path[..^5] + ".schema.json";
+                Add(schema, required: false);
+                if (!available.Contains(schema)) continue;
+                using var doc = Read(schema);
+                if (!doc.RootElement.TryGetProperty("Columns", out var columns) || columns.ValueKind != JsonValueKind.Array)
+                    throw new InvalidDataException("Esquema de dados sem colunas: " + schema);
+                foreach (var column in columns.EnumerateArray())
+                {
+                    if (!column.TryGetProperty("ReferenceTable", out var reference) || reference.ValueKind == JsonValueKind.Null) continue;
+                    var name = reference.GetString();
+                    if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(['/', '\\', ':']) >= 0)
+                        throw new InvalidDataException("Nome de tabela referenciada inválido.");
+                    Add("Content/Data/" + name + ".json");
+                }
+            }
+        }
+        return paths;
     }
 
     /// <summary>
@@ -240,14 +335,19 @@ public sealed class ReusableAssetLibrary
     /// Pré-valida a versão inteira; rejeita colisões sem sobrescrita. Staging e rollback impedem
     /// importação parcial em erros de IO. Uma edição concorrente nunca é apagada pelo rollback.
     /// </summary>
-    public IReadOnlyList<string> ImportToProject(string assetId, int version, LunetProject destination)
+    public IReadOnlyList<string> ImportToProject(string assetId, int version, LunetProject destination) =>
+        ImportToProject(assetId, version, destination, CancellationToken.None);
+
+    public IReadOnlyList<string> ImportToProject(string assetId, int version, LunetProject destination, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(destination);
+        cancellationToken.ThrowIfCancellationRequested();
         var manifest = Find(assetId, version);
         var root = VersionDirectory(assetId, version);
         var checkedFiles = new List<(string Relative, string Source, string Target, string Hash)>();
         foreach (var item in manifest.Files)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ValidatePath(item.Path);
             destination.EnsureInsideProject(item.Path);
             EnsureNoLinks(destination.Directory, item.Path);
@@ -279,6 +379,7 @@ public sealed class ReusableAssetLibrary
         {
             foreach (var item in checkedFiles)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var temporary = FilePath(staging, item.Relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(temporary)!);
                 File.Copy(item.Source, temporary, overwrite: false);
@@ -287,11 +388,21 @@ public sealed class ReusableAssetLibrary
             }
             foreach (var item in checkedFiles)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 EnsureNoLinks(destination.Directory, item.Relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(item.Target)!);
                 File.Move(FilePath(staging, item.Relative), item.Target, overwrite: false);
                 created.Add((item.Target, item.Hash));
             }
+            cancellationToken.ThrowIfCancellationRequested();
+            const string forks = ".lunet/asset-forks";
+            EnsureNoLinks(destination.Directory, forks);
+            var records = FilePath(destination.Directory, forks);
+            Directory.CreateDirectory(records);
+            var receipt = Path.Combine(records, Guid.NewGuid().ToString("N") + ".json");
+            var pendingReceipt = Path.Combine(staging, "fork.json");
+            File.WriteAllText(pendingReceipt, JsonSerializer.Serialize(manifest, JsonOptions));
+            File.Move(pendingReceipt, receipt, overwrite: false);
             return checkedFiles.Select(x => x.Relative).ToArray();
         }
         catch
@@ -423,6 +534,9 @@ public sealed class ReusableAssetLibrary
             throw new InvalidDataException("Manifesto contém colisão entre arquivo e diretório; dados preservados.");
         // The manifest is local persisted input, not trusted code. Reject malformed metadata
         // before Android renders it or the import workflow reads it.
+        if (item.PrimaryPath is { } primary && !paths.Contains(primary) ||
+            item.BasedOnVersion is { } parent && (parent < 1 || parent >= item.Version))
+            throw new InvalidDataException("Origem da revisão inválida.");
         if (item.Title is null || item.License is null || item.Author is null ||
             item.Attribution is null || item.Tags is null || item.Tags.Any(t => t is null))
             throw new InvalidDataException("Metadados incompletos no manifesto de asset; dados preservados.");

@@ -1,6 +1,20 @@
 {
   "entries": [
     {
+      "id": "mapas-e-studios",
+      "title": "Organize ideias e reutilize criações",
+      "category": "tasks",
+      "terms": [
+        "notas",
+        "mapa mental",
+        "biblioteca",
+        "fork",
+        "studio",
+        "dependências"
+      ],
+      "since": "0.0.1-dev.1000591"
+    },
+    {
       "id": "criar-e-rodar",
       "title": "Crie e rode um projeto vazio",
       "category": "tutorials",

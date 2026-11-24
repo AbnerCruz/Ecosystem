@@ -43,6 +43,9 @@ internal static class ProjectZipImporter
                 var relative = path[prefix.Length..];
                 var directory = relative.EndsWith('/');
                 var normalized = relative.TrimEnd('/');
+                if (normalized.Equals(StudioAssetWorkspace.RecoveryFolder, StringComparison.OrdinalIgnoreCase) ||
+                    normalized.StartsWith(StudioAssetWorkspace.RecoveryFolder + "/", StringComparison.OrdinalIgnoreCase))
+                    throw new ProjectException("O ZIP contém metadados internos de recuperação do Studio.");
                 if (!paths.Add(normalized)) throw new ProjectException("ZIP contém caminhos duplicados.");
                 // ZIP de projeto não pode criar links, dispositivos ou sockets.
                 var unixType = (entry.ExternalAttributes >> 16) & 0xF000;

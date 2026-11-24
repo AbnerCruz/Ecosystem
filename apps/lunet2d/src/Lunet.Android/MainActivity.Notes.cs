@@ -72,12 +72,13 @@ public sealed partial class MainActivity
     {
         if (_project is null) return;
         SaveCurrent();
-        var root = OverlayScaffold("Notas e esboços", out var actions);
+        var root = OverlayScaffold("Notas", out var actions);
         actions.AddView(LunetUi.Button(this, "＋ Nota", AskNewNote, ButtonStyle.Primary), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
         actions.AddView(LunetUi.Button(this, "✎ Esboço", () => OpenSketch(null)), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
         actions.AddView(LunetUi.Icon(this, "⇩", "Importar imagens ou arquivos para Notes/", () => PickFileForImport(NotesImportRequestCode)), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
 
         var list = LunetUi.Column(this, 8);
+        list.AddView(LunetUi.Button(this, "+ Mapa mental", AskNewMindMap, ButtonStyle.Secondary), LunetUi.FillWidth());
         list.SetPadding(Dp(12), Dp(12), Dp(12), Dp(12));
         var notes = ProjectNotes.List(_project);
         if (notes.Count == 0)
@@ -100,6 +101,7 @@ public sealed partial class MainActivity
             {
                 switch (captured.Kind)
                 {
+                    case NoteKind.MindMap: OpenMindMap(captured.Path); break;
                     case NoteKind.Sketch: OpenSketch(captured.Path); break;
                     case NoteKind.Image: OpenImageNote(captured.Path); break;
                     case NoteKind.File: OpenOtherNote(captured); break;
@@ -107,10 +109,10 @@ public sealed partial class MainActivity
                 }
             };
             card.LongClick += (_, e) => { ConfirmDeleteNote(captured); e.Handled = true; };
-            card.AddView(LunetUi.Label(this, note.Kind switch { NoteKind.Sketch => "✎", NoteKind.Image => "▦", NoteKind.File => "📎", _ => "¶" }, 22, LunetUi.AccentText));
+            card.AddView(LunetUi.Label(this, note.Kind switch { NoteKind.MindMap => "◇", NoteKind.Sketch => "✎", NoteKind.Image => "▦", NoteKind.File => "📎", _ => "¶" }, 22, LunetUi.AccentText));
             var text = LunetUi.Column(this, 2);
             text.AddView(LunetUi.Label(this, note.Title, LunetUi.TextBody, LunetUi.Text, bold: true));
-            text.AddView(LunetUi.Label(this, (note.Kind switch { NoteKind.Sketch => "Esboço · ", NoteKind.Image => "Imagem · ", NoteKind.File => "Arquivo · ", _ => "Nota · " }) +
+            text.AddView(LunetUi.Label(this, (note.Kind switch { NoteKind.MindMap => "Mapa mental · ", NoteKind.Sketch => "Esboço · ", NoteKind.Image => "Imagem · ", NoteKind.File => "Arquivo · ", _ => "Nota · " }) +
                 note.ModifiedUtc.ToLocalTime().ToString("dd/MM HH:mm"), LunetUi.TextCaption, LunetUi.TextMuted));
             card.AddView(text, LunetUi.Weight());
             list.AddView(card, LunetUi.FillWidth());
