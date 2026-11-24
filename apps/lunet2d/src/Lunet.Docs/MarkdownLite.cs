@@ -6,9 +6,9 @@ public enum InlineStyle { Normal, Bold, Italic, Code }
 
 public readonly record struct InlineRun(string Text, InlineStyle Style);
 
-public enum MarkdownBlockKind { Heading, Paragraph, Code, Bullet }
+public enum MarkdownBlockKind { Heading, Paragraph, Code, Bullet, Link }
 
-public sealed record MarkdownBlock(MarkdownBlockKind Kind, string Text, int Level = 0);
+public sealed record MarkdownBlock(MarkdownBlockKind Kind, string Text, int Level = 0, string? Target = null, string? Language = null);
 
 /// <summary>Markdown mínimo dos guias e comentários: títulos, parágrafos, listas, blocos de código, **negrito**, *itálico* e `código`.</summary>
 public static class MarkdownLite
@@ -32,6 +32,7 @@ public static class MarkdownLite
             if (line.TrimStart().StartsWith("```", StringComparison.Ordinal))
             {
                 FlushParagraph();
+                var language = line.TrimStart()[3..].Trim();
                 var code = new StringBuilder();
                 i++;
                 while (i < lines.Length && !lines[i].TrimStart().StartsWith("```", StringComparison.Ordinal))
@@ -39,7 +40,7 @@ public static class MarkdownLite
                     code.Append(lines[i]).Append('\n');
                     i++;
                 }
-                blocks.Add(new MarkdownBlock(MarkdownBlockKind.Code, code.ToString().TrimEnd('\n')));
+                blocks.Add(new MarkdownBlock(MarkdownBlockKind.Code, code.ToString().TrimEnd('\n'), Language: language));
                 continue;
             }
             if (line.StartsWith('#'))
@@ -51,6 +52,17 @@ public static class MarkdownLite
                 continue;
             }
             var trimmed = line.TrimStart();
+            int divider = trimmed.IndexOf("](", StringComparison.Ordinal);
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(')') && divider > 1)
+            {
+                string target = trimmed[(divider + 2)..^1];
+                if (target.StartsWith("guide:", StringComparison.Ordinal) || target.StartsWith("id:", StringComparison.Ordinal))
+                {
+                    FlushParagraph();
+                    blocks.Add(new MarkdownBlock(MarkdownBlockKind.Link, trimmed[1..divider], Target: target));
+                    continue;
+                }
+            }
             if (trimmed.StartsWith("- ", StringComparison.Ordinal) || trimmed.StartsWith("* ", StringComparison.Ordinal))
             {
                 FlushParagraph();

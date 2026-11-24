@@ -901,6 +901,9 @@ public sealed partial class MainActivity : Activity
         }
         else
         {
+            if (_selectedLearningProjectId is not null)
+                _panelList.AddView(LunetUi.Button(this, "Voltar à missão", OpenLearningWorkbenchPanel, ButtonStyle.Quiet),
+                    LunetUi.FillWidth(Dp(48)));
             int errors = _problems.Count(p => p.Severity == DiagnosticSeverity.Error);
             if (errors > 0)
             {
@@ -922,6 +925,14 @@ public sealed partial class MainActivity : Activity
                 card.AddView(LunetUi.Label(this, (error ? "✕ " : "! ") + problem.Message, 13, error ? LunetUi.Danger : LunetUi.Warning));
                 card.AddView(LunetUi.Label(this, $"{problem.FilePath ?? "projeto"}:{problem.Line} · {problem.Id} · toque para ir", 11, LunetUi.TextMuted));
                 _panelList.AddView(card, LunetUi.FillWidth());
+                if (error)
+                {
+                    string target = captured.Id.StartsWith("CS", StringComparison.Ordinal)
+                        ? "guide:ler-erros#erro-de-compilacao" : "guide:ler-erros#erro-durante-o-jogo";
+                    var help = LunetUi.Button(this, "Ajuda para " + captured.Id, () => DocumentationPanel.Open(this, target),
+                        ButtonStyle.Quiet);
+                    _panelList.AddView(help, LunetUi.FillWidth());
+                }
                 var spacer = new View(this);
                 _panelList.AddView(spacer, LunetUi.FillWidth(Dp(6)));
             }
@@ -1163,17 +1174,22 @@ public sealed partial class MainActivity : Activity
     {
         if (_project is not { } project) return;
         if (_settings.FormatOnRun) FormatDocument(silent: true);
-        SaveCurrent();
+        if (!SaveCurrent()) return;
         _status!.Text = "Compilando… (a primeira compilação demora mais)";
         var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
         _pendingChange = _previousRun is null ? null : ChangeClassifier.Classify(_previousRun, sources);
         _previousRun = sources;
         var run = ++_compileCounter;
+        var mission = _selectedLearningProjectId;
         var assemblyName = $"LunetGame{run}";
         Task.Run(() => SharedCompiler.Value.Compile(assemblyName, sources)).ContinueWith(task =>
             RunOnUiThread(() =>
             {
-                if (!IsDestroyed && ReferenceEquals(_project, project) && _compileCounter == run) OnCompiled(task);
+                if (!IsDestroyed && ReferenceEquals(_project, project) && _compileCounter == run)
+                {
+                    RememberLearningCompilation(mission, project.Manifest.GameId, task.IsCompletedSuccessfully && task.Result.Success);
+                    OnCompiled(task);
+                }
             }));
     }
 
@@ -1256,7 +1272,9 @@ public sealed partial class MainActivity : Activity
         _openFile = null;
         ShowWorkspace();
         if (file is null || !OpenFile(file)) ShowEditorWithoutFile();
-        if (_lastProfilerReport is not null)
+        if (_selectedLearningProjectId is not null && _layoutStore.Current.PanelTab == "learn")
+            OpenLearningWorkbenchPanel();
+        else if (_lastProfilerReport is not null)
         {
             _layoutStore.Current.OpenPanel("profiler");
             SetProfilerPanel();
@@ -1264,8 +1282,6 @@ public sealed partial class MainActivity : Activity
             SaveLayouts();
             RefreshWorkbenchNavigation();
         }
-        else if (_selectedLearningProjectId is not null && _layoutStore.Current.PanelTab == "learn")
-            OpenLearningWorkbenchPanel();
         else OpenWorkbenchPanel(true);
     }
 

@@ -14,14 +14,14 @@ public sealed partial class MainActivity
     private LearningProgressStore? _learningProgress;
     private string? _learningProgressError;
     private int _learningVisibleCount = 15;
+    private string LearningProgressPath => System.IO.Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json");
 
     private LearningProgressStore? LearningProgress()
     {
         if (_learningProgress is not null) return _learningProgress;
         try
         {
-            _learningProgress = new LearningProgressStore(
-                System.IO.Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"));
+            _learningProgress = new LearningProgressStore(LearningProgressPath);
             _learningProgressError = null;
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -47,7 +47,11 @@ public sealed partial class MainActivity
         content.SetPadding(0, Dp(12), 0, Dp(18));
         var progress = LearningProgress();
         if (_learningProgressError is not null)
+        {
             content.AddView(LunetUi.Label(this, _learningProgressError, LunetUi.TextLabel, LunetUi.Warning));
+            if (LearningProgressStore.HasRecovery(LearningProgressPath))
+                content.AddView(LunetUi.Button(this, "Restaurar cópia do progresso", RestoreLearningProgress, ButtonStyle.Secondary));
+        }
 
         if (progress is not null)
         {
@@ -233,26 +237,16 @@ public sealed partial class MainActivity
             LunetUi.TextCaption, LunetUi.TextMuted));
         body.AddView(LunetUi.Label(this, "PESQUISAR", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         body.AddView(LunetUi.Label(this, challenge.Investigate, LunetUi.TextBody, LunetUi.Text));
-        body.AddView(LunetUi.Button(this, "Abrir documentação offline", ShowReference, ButtonStyle.Secondary),
+        body.AddView(LunetUi.Button(this, "Abrir referência da missão", () => DocumentationPanel.Open(this, challenge.ReferenceTarget), ButtonStyle.Secondary),
             LunetUi.FillWidth(Dp(48)));
         body.AddView(LunetUi.Label(this, "CRITÉRIOS DE ACEITE", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         body.AddView(LunetUi.Label(this, challenge.Acceptance, LunetUi.TextBody, LunetUi.Text));
         body.AddView(LunetUi.Label(this, "DESAFIO EXTRA", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         body.AddView(LunetUi.Label(this, challenge.Transfer, LunetUi.TextBody, LunetUi.TextMuted));
 
-        var linkedName = progress?.ProjectNameFor(challenge.Id);
-        bool linked = false;
-        if (linkedName is not null && _store.List().Contains(linkedName, StringComparer.Ordinal))
-        {
-            try
-            {
-                linked = _store.Open(linkedName).Manifest.GameId == progress?.ProjectGameIdFor(challenge.Id);
-            }
-            catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException)
-            {
-                linked = false;
-            }
-        }
+        RefreshLauncherCatalog();
+        var linkedName = LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, progress?.ProjectGameIdFor(challenge.Id));
+        bool linked = linkedName is not null;
 
         if (linked)
         {
@@ -261,14 +255,16 @@ public sealed partial class MainActivity
             body.AddView(LunetUi.Button(this, "Pedir uma pista da IA (opcional)", () =>
             {
                 OpenLearningEditor(challenge.Id, linkedName!);
-                OpenAiPanel("Estou estudando no Lunet Aprender, desafio " + challenge.Id + " (" +
-                    challenge.Title + "). Objetivo: " + challenge.Mission +
-                    " Estou investigando: " + challenge.Investigate +
-                    " Dê uma pista conceitual, não escreva o jogo nem altere arquivos sem minha autorização.", study: true);
+                if (_project?.Manifest.GameId == progress?.ProjectGameIdFor(challenge.Id))
+                    AskLearningHint(challenge);
             }, ButtonStyle.Secondary));
         }
         else if (progress is not null)
         {
+            if (progress.ProjectGameIdFor(projectId) is not null)
+                body.AddView(LunetUi.Label(this, "O jogo vinculado está ausente ou tem identidade duplicada. " +
+                    "Reimporte o jogo original ou associe outro. As marcações do jogo anterior ficam guardadas.",
+                    LunetUi.TextBody, LunetUi.TextMuted));
             body.AddView(LunetUi.Button(this, "Criar projeto para este desafio",
                 () => CreateLearningProject(challenge.Id), ButtonStyle.Primary),
                 LunetUi.FillWidth(Dp(52)));
@@ -283,6 +279,43 @@ public sealed partial class MainActivity
         _restoreLauncherChild = () => ShowLearningProject(projectId);
         _backFromLauncherChild = () => ShowLearningCourse(challenge.CourseId);
         SetLauncherContent(root, "learn", scroll, "learn-project-" + projectId);
+    }
+
+    private void RestoreLearningProgress()
+    {
+        new AlertDialog.Builder(this)!.SetTitle("Restaurar a gravação anterior?")!
+            .SetMessage("A cópia pode não conter a última marcação. O arquivo atual fica preservado.")!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Restaurar", (_, _) =>
+            {
+                try
+                {
+                    LearningProgressStore.RestoreBackup(LearningProgressPath);
+                    _learningProgress = null;
+                    ShowLearning();
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+                { Toast.MakeText(this, e.Message, ToastLength.Long)?.Show(); }
+            })!.Show();
+    }
+
+    private void AskLearningHint(LearningProject challenge)
+    {
+        if (_project is null) return;
+        var game = _project;
+        var progress = LearningProgress();
+        var choices = challenge.Steps.Select(step =>
+            (Label: (progress?.Completed(challenge.Id, step.Id) == true ? "✓ " : "") + step.Objective,
+             Objective: step.Objective)).Append((Label: "Desafio extra", Objective: challenge.Transfer)).ToArray();
+        new AlertDialog.Builder(this)!.SetTitle("Pista para qual objetivo?")!
+            .SetItems(choices.Select(choice => choice.Label).ToArray(), (_, e) =>
+            {
+                if (!ReferenceEquals(game, _project)) return;
+                OpenAiPanel($"Estou estudando {challenge.Id} ({challenge.Title}). " +
+                    $"Objetivo: {choices[e.Which].Objective} " +
+                    $"Arquivo atual: {_openFile ?? "nenhum"}. Referência offline: {challenge.ReferenceTarget}. " +
+                    "Dê uma pista conceitual para eu implementar e testar. Evite entregar a solução inteira.", study: true);
+            })!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
     }
 
     private void CreateLearningProject(string projectId)
@@ -313,10 +346,13 @@ public sealed partial class MainActivity
         if (LearningCatalog.FindProject(projectId) is null) return;
         var progress = LearningProgress();
         if (progress is null) return;
-        var names = _store.List().ToArray();
+        RefreshLauncherCatalog();
+        var names = _launcherCatalog.Where(entry =>
+                LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, entry.GameId) == entry.FolderName)
+            .Select(entry => entry.FolderName).ToArray();
         if (names.Length == 0)
         {
-            Toast.MakeText(this, "Crie um projeto primeiro.", ToastLength.Short)?.Show();
+            Toast.MakeText(this, "Crie ou restaure um projeto com identidade única.", ToastLength.Short)?.Show();
             return;
         }
         new AlertDialog.Builder(this)!

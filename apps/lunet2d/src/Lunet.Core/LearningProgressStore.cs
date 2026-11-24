@@ -10,7 +10,9 @@ public sealed class LearningProgressStore
 {
     private sealed record LegacyDocument(int Version, string? ProjectName, string? ProjectGameId,
         string[] CompletedStepIds);
-    private sealed record ProjectProgress(string Id, string? Name, string? GameId, string[] CompletedStepIds);
+    private sealed record GameProgress(string Name, string GameId, string[] CompletedStepIds);
+    private sealed record ProjectProgress(string Id, string? Name, string? GameId, string[] CompletedStepIds,
+        GameProgress[]? PreviousGames = null);
     private sealed record Document(int Version, ProjectProgress[] Projects);
 
     private readonly string _path;
@@ -22,9 +24,6 @@ public sealed class LearningProgressStore
         if (!File.Exists(_path)) return;
         try
         {
-            if (new FileInfo(_path).Length > 128_000)
-                throw new InvalidDataException("Progresso excede o tamanho esperado.");
-
             var content = File.ReadAllText(_path);
             using var json = JsonDocument.Parse(content);
             if (json.RootElement.ValueKind != JsonValueKind.Object ||
@@ -81,12 +80,32 @@ public sealed class LearningProgressStore
         {
             var reference = LearningCatalog.FindProject(project.Id);
             if (reference is null || !ValidLink(project.Name, project.GameId) ||
-                project.CompletedStepIds is null ||
-                project.CompletedStepIds.Length > reference.Steps.Count ||
-                project.CompletedStepIds.Distinct(StringComparer.Ordinal).Count() != project.CompletedStepIds.Length ||
-                project.CompletedStepIds.Any(id => !reference.Steps.Any(s => s.Id == id)))
+                !ValidSteps(reference, project.CompletedStepIds) ||
+                project.PreviousGames is { } previous &&
+                (previous.Any(game => game is null || game.Name is null || game.GameId is null || game.GameId == project.GameId ||
+                    !ValidLink(game.Name, game.GameId) || !ValidSteps(reference, game.CompletedStepIds)) ||
+                 previous.Select(game => game.GameId).Distinct(StringComparer.Ordinal).Count() != previous.Length))
                 throw new InvalidDataException("Progresso V2 inválido; arquivo original preservado.");
         }
+    }
+
+    private static bool ValidSteps(LearningProject project, string[]? ids) =>
+        ids is not null && ids.Length <= project.Steps.Count && ids.Distinct(StringComparer.Ordinal).Count() == ids.Length &&
+        ids.All(id => project.Steps.Any(step => step.Id == id));
+
+    public static bool HasRecovery(string path)
+    {
+        try { return File.Exists(path + ".bak") && new LearningProgressStore(path + ".bak")._state.Version == 2; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { return false; }
+    }
+
+    public static void RestoreBackup(string path)
+    {
+        if (!File.Exists(path + ".bak")) throw new FileNotFoundException("Cópia do progresso não encontrada.");
+        var backup = new LearningProgressStore(path + ".bak");
+        if (File.Exists(path))
+            File.Copy(path, path + ".preserved-" + Guid.NewGuid().ToString("N"));
+        AtomicFile.WriteAllText(path, JsonSerializer.Serialize(backup._state));
     }
 
     private static LearningProject RequireProject(string projectId) =>
@@ -133,7 +152,23 @@ public sealed class LearningProgressStore
         RequireProject(projectId);
         if (!ValidLink(name, gameId) || name is null || gameId is null)
             throw new ArgumentException("Identidade do projeto inválida.");
-        UpdateProject(projectId, p => p with { Name = name, GameId = gameId });
+        UpdateProject(projectId, current =>
+        {
+            if (current.GameId is null || current.GameId == gameId)
+                return current with { Name = name, GameId = gameId };
+
+            var previous = (current.PreviousGames ?? []).ToList();
+            var restored = previous.Find(game => game.GameId == gameId);
+            if (restored is not null) previous.Remove(restored);
+            previous.Add(new(current.Name!, current.GameId, current.CompletedStepIds));
+            return current with
+            {
+                Name = name,
+                GameId = gameId,
+                CompletedStepIds = restored?.CompletedStepIds ?? [],
+                PreviousGames = previous.ToArray()
+            };
+        });
     }
 
     public void SetCompleted(string projectId, string stepId, bool completed)
@@ -165,16 +200,14 @@ public sealed class LearningProgressStore
     private void Save(Document next)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-        var temp = _path + ".tmp";
-        try
+        if (File.Exists(_path))
         {
-            File.WriteAllText(temp, JsonSerializer.Serialize(next));
-            File.Move(temp, _path, overwrite: true);
-            _state = next;
+            // Retain a verified previous write. An interruption while replacing the current file
+            // leaves either the original state or the new state, plus the old valid snapshot.
+            var previous = new LearningProgressStore(_path);
+            AtomicFile.WriteAllText(_path + ".bak", JsonSerializer.Serialize(previous._state));
         }
-        finally
-        {
-            try { if (File.Exists(temp)) File.Delete(temp); } catch (IOException) { }
-        }
+        AtomicFile.WriteAllText(_path, JsonSerializer.Serialize(next));
+        _state = next;
     }
 }

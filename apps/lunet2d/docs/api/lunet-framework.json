@@ -1506,14 +1506,12 @@
       "namespace": "Lunet",
       "kind": "struct",
       "signature": "public readonly struct GameTime",
-      "summary": "Tempo de uma atualiza\u00E7\u00E3o. \u0060GameTime.DeltaSeconds\u0060 \u00E9 sempre o passo fixo configurado.",
+      "summary": "Tempo fornecido ao c\u00F3digo do jogo, em segundos, durante a atualiza\u00E7\u00E3o e o desenho.",
       "remarks": "",
       "examples": [
         "\u0060\u0060\u0060\nposition \u002B= velocity * time.DeltaSeconds;\ndouble seconds = time.TotalSeconds;\n\u0060\u0060\u0060"
       ],
-      "related": [
-        "P:Lunet.GameTime.DeltaSeconds"
-      ],
+      "related": [],
       "since": "0.0.1",
       "members": [
         {
@@ -1550,7 +1548,7 @@
           "name": "DeltaSeconds",
           "kind": "property",
           "signature": "public float DeltaSeconds { get; }",
-          "summary": "Dura\u00E7\u00E3o do passo de atualiza\u00E7\u00E3o (fixa nas atualiza\u00E7\u00F5es; tempo real do quadro no desenho).",
+          "summary": "Dura\u00E7\u00E3o em segundos. Em Update, \u00E9 o passo fixo configurado (1/60 s por padr\u00E3o). Em Draw, \u00E9 o intervalo real do quadro.",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -1576,7 +1574,7 @@
           "name": "TotalSeconds",
           "kind": "property",
           "signature": "public double TotalSeconds { get; }",
-          "summary": "Tempo simulado desde o in\u00EDcio do jogo.",
+          "summary": "Tempo simulado acumulado desde o in\u00EDcio do jogo, em segundos. Avan\u00E7a com os passos executados.",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -6129,7 +6127,7 @@
             {
               "name": "filter",
               "type": "TextureFilter",
-              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
+              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave, padr\u00E3o)."
             }
           ],
           "returns": "O atlas carregado.",
@@ -6248,7 +6246,7 @@
           "kind": "method",
           "signature": "public Texture2D LoadTexture(string path, TextureFilter filter = TextureFilter.Linear)",
           "summary": "Carrega um PNG (ex.: \u0060\u0022Textures/hero.png\u0022\u0060). Chamadas repetidas devolvem a mesma textura.",
-          "remarks": "",
+          "remarks": "Carregue em Game.LoadContent e reutilize em Draw. O caminho \u00E9 relativo a Content e deve incluir a extens\u00E3o. Um arquivo ausente ou PNG inv\u00E1lido gera erro de leitura. A primeira carga de cada caminho define o filtro at\u00E9 a textura ser descartada.",
           "parameters": [
             {
               "name": "path",
@@ -6258,7 +6256,7 @@
             {
               "name": "filter",
               "type": "TextureFilter",
-              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
+              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave, padr\u00E3o)."
             }
           ],
           "returns": "A textura carregada (a mesma inst\u00E2ncia nas pr\u00F3ximas chamadas).",
@@ -8541,7 +8539,7 @@
             {
               "name": "color",
               "type": "Color",
-              "description": "Cor de tinta (multiplica as cores da imagem)."
+              "description": "Cor de preenchimento do alvo atual."
             }
           ],
           "returns": "",

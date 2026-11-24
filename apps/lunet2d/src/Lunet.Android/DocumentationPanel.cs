@@ -14,6 +14,10 @@ namespace Lunet.Android;
 internal sealed class DocumentationPanel
 {
     private static DocumentationBrowser? s_browser;
+    private static string s_lastTarget = "home";
+    private static string s_lastQuery = "";
+    private static readonly Dictionary<string, int> Positions = new(StringComparer.Ordinal);
+    private readonly bool _rememberReader;
 
     private readonly Activity _activity;
     private readonly DocumentationBrowser _browser;
@@ -24,10 +28,11 @@ internal sealed class DocumentationPanel
     private readonly EditText _search;
     private readonly int _pad;
 
-    private DocumentationPanel(Activity activity, DocumentationBrowser browser)
+    private DocumentationPanel(Activity activity, DocumentationBrowser browser, bool rememberReader)
     {
         _activity = activity;
         _browser = browser;
+        _rememberReader = rememberReader;
         _pad = (int)(12 * activity.Resources!.DisplayMetrics!.Density);
 
         var root = new LinearLayout(activity) { Orientation = Orientation.Vertical };
@@ -66,6 +71,7 @@ internal sealed class DocumentationPanel
 
         _dialog = new Dialog(activity, global::Android.Resource.Style.ThemeBlackNoTitleBarFullScreen);
         _dialog.SetContentView(root);
+        _dialog.DismissEvent += (_, _) => RememberPosition();
         _dialog.KeyPress += (_, e) =>
         {
             if (e.KeyCode == Keycode.Back && e.Event?.Action == KeyEventActions.Up && _browser.CanGoBack)
@@ -89,9 +95,11 @@ internal sealed class DocumentationPanel
             Toast.MakeText(activity, "Documentação indisponível: " + ex.Message, ToastLength.Long)?.Show();
             return false;
         }
-        var panel = new DocumentationPanel(activity, s_browser);
+        bool remember = target == "home";
+        var panel = new DocumentationPanel(activity, s_browser.NewNavigation(), remember);
+        if (remember) panel._search.Text = s_lastQuery;
         panel._dialog.Show();
-        panel.Show(target);
+        panel.Show(remember ? s_lastTarget : target);
         return true;
     }
 
@@ -123,7 +131,7 @@ internal sealed class DocumentationPanel
         foreach (var file in assets.List("docs/guides") ?? [])
             if (file.EndsWith(".md", StringComparison.Ordinal))
                 guides[System.IO.Path.GetFileNameWithoutExtension(file)] = ReadAll("docs/guides/" + file);
-        return new DocumentationBrowser(api, guides);
+        return new DocumentationBrowser(api, guides, ManualCatalog.Read(ReadAll("docs/manual-catalog.json")));
     }
 
     private Button MakeButton(string label, Action action)
@@ -133,19 +141,36 @@ internal sealed class DocumentationPanel
 
     private void GoBack()
     {
+        if (!_browser.CanGoBack) { _dialog.Dismiss(); return; }
+        RememberPosition();
         var page = _browser.Back();
         if (page is null) _dialog.Dismiss();
         else Render(page);
     }
 
-    private void Show(string target) => Render(_browser.Navigate(target));
+    private void RememberPosition()
+    {
+        if (_browser.Current is { } current) Positions[current] = _scroll.ScrollY;
+        if (!_rememberReader || _browser.Current is null) return;
+        s_lastTarget = _browser.Current;
+        s_lastQuery = _search.Text ?? "";
+    }
+
+    private void Show(string target)
+    {
+        RememberPosition();
+        Render(_browser.Navigate(target));
+    }
 
     private void Render(DocPage page)
     {
         _title.Text = page.Title;
         _content.RemoveAllViews();
         foreach (var block in page.Blocks) _content.AddView(BuildBlock(block));
-        _scroll.ScrollTo(0, 0);
+        if (page.Target.StartsWith("search:", StringComparison.Ordinal))
+            _search.Text = page.Target["search:".Length..];
+        int y = Positions.GetValueOrDefault(page.Target);
+        _scroll.Post(() => { if (_browser.Current == page.Target) _scroll.ScrollTo(0, y); });
     }
 
     private View BuildBlock(DocBlock block)

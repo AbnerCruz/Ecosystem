@@ -34,7 +34,9 @@
     <!-- Baked standalone Android host, compiled only when producing the IDE release; never fetched on the phone. -->
     <AndroidAsset Include="..\..\dist\template\game-runtime.apk" Link="templates\game-runtime.apk" Condition="Exists('$(MSBuildThisFileDirectory)..\..\dist\template\game-runtime.apk')" />
     <AndroidAsset Include="..\..\docs\api\lunet-framework.json" Link="Assets\docs\lunet-framework.json" />
-    <AndroidAsset Include="..\..\docs\guides\*.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\..\docs\guides\*.md" Exclude="..\..\docs\guides\primeiros-passos.md;..\..\docs\guides\loop-e-tempo.md;..\..\docs\guides\offline-game-apk.md;..\..\docs\guides\end-to-end-journey.md;..\..\docs\guides\game-apk-signing-regression.md;..\..\docs\guides\game-apk-smoke.md;..\..\docs\guides\gate-framework-advanced.md;..\..\docs\guides\validacao-studios-icones.md;..\..\docs\guides\f2-home-continuity-gameid.md;..\..\docs\guides\f2-workspace.md;..\..\docs\guides\f3-ai-workspace.md;..\..\docs\guides\f4-editor-keyboard.md;..\..\docs\guides\profiler-preview.md;..\..\docs\guides\networking-foundation.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\..\docs\manual\*.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\..\docs\manual\catalog.json" Link="Assets\docs\manual-catalog.json" />
     <AndroidAsset Include="..\..\..\..\docs\contracts\bindings\android-binder-v1.trust.json" Link="Assets\ecosystem\android-binder-v1.trust.json" />
   </ItemGroup>
   <ItemGroup>

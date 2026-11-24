@@ -1,3 +1,7 @@
+## LUNET-523 · F5 — Aprender e manual offline
+
+- [ ] Confirmar a entrega F5 no CI integrado e APK oficial. Catálogo T01, recuperação por GameId, manual editorial, exemplos executáveis e evidência em [F5](docs/learning/F5-ENTREGA.md).
+
 ## LUNET-522 · F4 — editor nativo e teclado de programação
 
 - [ ] Validar no fluxo oficial as teclas de código, edição atômica, assinatura e busca semântica e continuidade por aba. [Escopo, roteiro e limites da evidência](docs/guides/f4-editor-keyboard.md).

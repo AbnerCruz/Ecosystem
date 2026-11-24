@@ -1,0 +1,450 @@
+{
+  "entries": [
+    {
+      "id": "criar-e-rodar",
+      "title": "Crie e rode um projeto vazio",
+      "category": "tutorials",
+      "terms": [
+        "projeto vazio",
+        "tela preta",
+        "tela azul",
+        "preview"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "responder-ao-toque",
+      "title": "Faça seu primeiro jogo responder ao toque",
+      "category": "tutorials",
+      "terms": [
+        "touch",
+        "TouchPhase.Pressed",
+      "WasPressed",
+        "input",
+        "toque",
+        "posição virtual"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "tempo-do-jogo",
+      "title": "Tempo e laço do jogo",
+      "category": "concepts",
+      "terms": [
+        "Update",
+        "Draw",
+        "DeltaSeconds",
+        "TotalSeconds",
+        "cronômetro",
+        "loop"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "desenhar-sprite",
+      "title": "Carregue e desenhe um sprite",
+      "category": "tutorials",
+      "terms": [
+        "LoadTexture",
+        "GraphicsDevice.Clear",
+        "Content",
+        "PNG",
+        "textura"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "ler-erros",
+      "title": "Leia e corrija um erro no editor",
+      "category": "tasks",
+      "terms": [
+        "CS1002",
+        "CS0103",
+        "CS0246",
+        "erro de compilação",
+        "diagnóstico",
+        "console"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "instalar-apk",
+      "title": "Gere e instale o APK do jogo",
+      "category": "tasks",
+      "terms": [
+        "exportar",
+        "android",
+        "pacote",
+        "assinar",
+        "instalar",
+        "apk"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "editar-no-celular",
+      "title": "Edite código no celular",
+      "category": "tasks",
+      "terms": [
+        "teclado",
+        "IntelliSense",
+        "aba",
+        "Roslyn",
+        "refazer"
+      ],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "animacao",
+      "title": "Animação de sprites e tweening",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "aprender",
+      "title": "Aprender — primeira trilha completa",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "assets-panel",
+      "title": "Organize os arquivos do jogo",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "audio",
+      "title": "Áudio",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "audio-studio",
+      "title": "Edite áudio no Audio Studio",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "biblioteca-global",
+      "title": "Reutilize assets da biblioteca",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "botoes-ui",
+      "title": "Botões de UI por toque",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "camera",
+      "title": "Câmera 2D",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "colisao",
+      "title": "Colisão simples",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "conteudo-e-dados",
+      "title": "Conteúdo e dados",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "cowork-studio-global",
+      "title": "Use o Studio e a IA na sua área de trabalho",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "data-studio",
+      "title": "Data Studio",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "entrada",
+      "title": "Entrada",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "estudio-de-musica",
+      "title": "Música e efeitos sonoros",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "fisica-box2d",
+      "title": "Corpos e colisões com Box2D",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "fontes-bitmap",
+      "title": "Fontes bitmap personalizadas",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "fontes-truetype",
+      "title": "Carregue fontes TrueType",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "fotos-no-jogo",
+      "title": "Fotos da galeria dentro do jogo",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "git",
+      "title": "Git no Lunet",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "grade-ui",
+      "title": "Monte um inventário responsivo e tocável",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "graficos",
+      "title": "Gráficos 2D",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "home-workspace",
+      "title": "Navegue e retome seus projetos",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "ia-lunet",
+      "title": "IA do Lunet",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "importar-projeto",
+      "title": "Importar um projeto ZIP",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "inspector",
+      "title": "Inspector",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "inspiracao",
+      "title": "Encontre referências para criar jogos",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "laboratorio",
+      "title": "Explore os exemplos do Laboratório",
+      "category": "tutorials",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "laboratorio-botoes",
+      "title": "Botões no Laboratório",
+      "category": "tutorials",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "laboratorio-cenas",
+      "title": "Explore cenas e componentes",
+      "category": "tutorials",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "laboratorio-debug",
+      "title": "Explore o desenho de depuração",
+      "category": "tutorials",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "layout-ui",
+      "title": "Layout de UI por âncoras e margens",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "lista-ui",
+      "title": "Crie uma lista com seleção por toque",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "multiplayer",
+      "title": "Multiplayer no Lunet",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "nine-slice",
+      "title": "Painéis redimensionáveis com nine-slice",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "paleta-de-cores",
+      "title": "Paleta de cores do jogo",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "particle-studio",
+      "title": "Particle Studio",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "particulas",
+      "title": "Partículas",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "pathfinding",
+      "title": "Rotas com A*",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "profiler-workspace",
+      "title": "Inspecione o desempenho no Profiler",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "recuperacao",
+      "title": "Recuperar alterações não salvas",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "scroll-ui",
+      "title": "Crie uma interface rolável por toque",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "sliders-ui",
+      "title": "Sliders de UI",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "sprite-studio",
+      "title": "Desenhe e anime sprites",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "stack-ui",
+      "title": "Organize elementos com layout responsivo",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "temas-ui",
+      "title": "Aplique temas de interface",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "tile-studio",
+      "title": "Edite mapas no Tile Studio",
+      "category": "tasks",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "tilemaps",
+      "title": "Mapas de tiles, colisão e caminhos",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    },
+    {
+      "id": "toggle-ui",
+      "title": "Crie um controle de alternância",
+      "category": "concepts",
+      "terms": [],
+      "since": "0.0.1-dev.1000590"
+    }
+  ],
+  "redirects": {
+    "primeiros-passos": "criar-e-rodar",
+    "loop-e-tempo": "tempo-do-jogo",
+    "offline-game-apk": "instalar-apk",
+    "end-to-end-journey": "criar-e-rodar",
+    "game-apk-signing-regression": "instalar-apk",
+    "game-apk-smoke": "instalar-apk",
+    "gate-framework-advanced": "graficos",
+    "validacao-studios-icones": "sprite-studio",
+    "f2-home-continuity-gameid": "home-workspace",
+    "f2-workspace": "home-workspace",
+    "f3-ai-workspace": "ia-lunet",
+    "f4-editor-keyboard": "editar-no-celular",
+    "profiler-preview": "profiler-workspace",
+    "networking-foundation": "multiplayer"
+  }
+}
