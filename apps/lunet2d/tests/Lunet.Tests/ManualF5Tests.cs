@@ -30,6 +30,9 @@ public sealed class ManualF5Tests
         var groups = Directory.GetFiles(Path.Combine(root, "docs", "guides"), "*.md");
         var manual = Directory.GetFiles(Path.Combine(root, "docs", "manual"), "*.md");
         var project = XDocument.Load(Path.Combine(root, "src", "Lunet.Android", "Lunet.Android.csproj"));
+        var newArticles = project.Descendants("AndroidAsset").Single(e =>
+            (string?)e.Attribute("Include") == @"..\..\docs\manual\*.md");
+        Assert.Equal(@"Assets\docs\guides\%(Filename)%(Extension)", (string?)newArticles.Attribute("Link"));
         var exclusions = project.Descendants("AndroidAsset").Single(e =>
             (string?)e.Attribute("Include") == @"..\..\docs\guides\*.md")
             .Attribute("Exclude")!.Value.Split(';').Select(p => Path.GetFileNameWithoutExtension(p.Replace('\\', '/')));
