@@ -15,6 +15,71 @@ public sealed partial class MainActivity
     private string? _launcherPreferenceIssue;
     private string _launcherSection = "home";
     private string _projectFilter = "";
+    private IReadOnlyList<LauncherProjectEntry> _launcherCatalog = [];
+    private bool _returnHomeAfterGame;
+
+    private void RefreshLauncherCatalog()
+    {
+        _launcherCatalog = LauncherProjectCatalog.Scan(_store);
+        PersistLauncher(p => p.UpgradeProjectReferences(_launcherCatalog));
+    }
+
+    private string? LauncherId(string name) =>
+        LauncherProjectCatalog.UniqueIdForName(_launcherCatalog, name);
+
+    private bool IsLauncherPinned(string name)
+    {
+        var id = LauncherId(name);
+        return id is not null ? _launcherPreferences?.IsPinnedProject(id) == true
+            : _launcherPreferences?.IsPinned(name) == true;
+    }
+
+    private void ToggleLauncherPin(string name)
+    {
+        var id = LauncherId(name);
+        PersistLauncher(p =>
+        {
+            if (id is not null) p.SetPinnedProject(name, id, !p.IsPinnedProject(id));
+            else p.SetPinned(name, !p.IsPinned(name));
+        });
+        if (_launcherSection == "home") ShowHome();
+        else ShowProjects();
+    }
+
+    private void TrackLauncherOpen(string folderName)
+    {
+        var id = LauncherId(folderName);
+        PersistLauncher(p =>
+        {
+            if (id is null) p.MarkOpened(folderName);
+            else p.MarkOpenedProject(folderName, id);
+        });
+    }
+
+    private void PlayFromLauncher(string folderName)
+    {
+        try
+        {
+            var candidate = _store.Open(folderName);
+            if (new AutosaveJournal(candidate).FindRecoveries().Count > 0)
+            {
+                new AlertDialog.Builder(this)!.SetTitle("Edição recuperável")!
+                    .SetMessage("Este jogo tem alterações não salvas. Abra o editor e decida se deseja recuperá-las antes de jogar.")!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!
+                    .SetPositiveButton("Abrir editor", (_, _) => OpenProject(folderName))!.Show();
+                return;
+            }
+        }
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+        {
+            Toast.MakeText(this, "Não foi possível abrir o jogo: " + ex.Message, ToastLength.Long)?.Show();
+            return;
+        }
+        _returnHomeAfterGame = true;
+        OpenProject(folderName);
+        if (_project is null) { _returnHomeAfterGame = false; return; }
+        Run();
+    }
 
     private void LoadLauncherPreferences()
     {
@@ -78,6 +143,7 @@ public sealed partial class MainActivity
         _workbenchNavButtons.Clear();
         _inspirationOpen = false;
         _launcherSection = section;
+        _returnHomeAfterGame = false;
         PersistLauncher(p => p.SelectSection(section));
     }
 
@@ -110,7 +176,7 @@ public sealed partial class MainActivity
         card.SetPadding(Dp(12), Dp(12), Dp(8), Dp(12));
         card.Background = LunetUi.Pressable(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
         card.Clickable = true;
-        card.ContentDescription = "Abrir projeto " + name;
+        card.ContentDescription = "Editar projeto " + name;
         card.Click += (_, _) => OpenProject(name);
         card.LongClick += (_, e) => { ShowProjectMenu(name); e.Handled = true; };
         var initial = LunetUi.Label(this, name.Length > 0 ? name[..1].ToUpperInvariant() : "?", 18,
@@ -127,15 +193,13 @@ public sealed partial class MainActivity
         card.AddView(details, LunetUi.Weight());
         if (_launcherPreferences is not null)
         {
-            var pinned = _launcherPreferences.IsPinned(name);
-            var pin = LunetUi.Icon(this, pinned ? "★" : "☆", pinned ? "Desafixar " + name : "Fixar " + name, () =>
-            {
-                PersistLauncher(p => p.SetPinned(name, !p.IsPinned(name)));
-                if (_launcherSection == "home") ShowHome();
-                else ShowProjects();
-            });
+            var pinned = IsLauncherPinned(name);
+            var pin = LunetUi.Icon(this, pinned ? "★" : "☆",
+                pinned ? "Desafixar " + name : "Fixar " + name, () => ToggleLauncherPin(name));
             card.AddView(pin, new LinearLayout.LayoutParams(Dp(44), Dp(48)));
         }
+        card.AddView(LunetUi.Icon(this, "▶", "Jogar " + name, () => PlayFromLauncher(name)),
+            new LinearLayout.LayoutParams(Dp(44), Dp(48)));
         card.AddView(LunetUi.Icon(this, "⋮", "Opções de " + name, () => ShowProjectMenu(name)),
             new LinearLayout.LayoutParams(Dp(44), Dp(48)));
         return card;
@@ -147,7 +211,7 @@ public sealed partial class MainActivity
         var all = _store.List();
         var matches = all.Where(name => string.IsNullOrWhiteSpace(query) ||
                 name.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(name => _launcherPreferences?.IsPinned(name) == true)
+            .OrderByDescending(IsLauncherPinned)
             .ThenByDescending(ProjectTouched)
             .ThenBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray();
 
@@ -183,6 +247,7 @@ public sealed partial class MainActivity
     private void ShowHome()
     {
         EnterLauncherSurface("home");
+        RefreshLauncherCatalog();
         var root = Vertical();
         root.SetPadding(Dp(16), Dp(16), Dp(16), Dp(8));
         root.SetBackgroundColor(LunetUi.Background);
@@ -205,23 +270,60 @@ public sealed partial class MainActivity
                 _launcherPreferenceIssue, LunetUi.TextLabel, LunetUi.Warning));
 
         var names = _store.List();
-        var last = _launcherPreferences?.LastProject;
-        if (last is not null && names.Contains(last, StringComparer.Ordinal))
-            content.AddView(LunetUi.Button(this, "Continuar: " + last, () => OpenProject(last),
-                ButtonStyle.Primary), LunetUi.FillWidth(Dp(54)));
-        else
-            content.AddView(LunetUi.Button(this, "＋ Criar projeto", AskForProjectName,
-                ButtonStyle.Primary), LunetUi.FillWidth(Dp(54)));
+        var lastId = _launcherPreferences?.LastProjectId;
+        var last = lastId is not null
+            ? LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, lastId)
+            : _launcherPreferences?.LastProject;
+        if (last is not null && !names.Contains(last, StringComparer.Ordinal)) last = null;
+        if (last is not null)
+        {
+            content.AddView(LunetUi.Label(this, "CONTINUAR", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+            content.AddView(LunetUi.Label(this, last, LunetUi.TextBody, LunetUi.Text, bold: true));
+            var resume = LunetUi.Row(this, 8);
+            resume.AddView(LunetUi.Button(this, "Editar", () => OpenProject(last), ButtonStyle.Primary),
+                new LinearLayout.LayoutParams(0, Dp(54), 1f));
+            resume.AddView(LunetUi.Button(this, "▶ Jogar", () => PlayFromLauncher(last), ButtonStyle.Secondary),
+                new LinearLayout.LayoutParams(0, Dp(54), 1f));
+            content.AddView(resume);
+        }
+        else if (names.Count > 0 && (lastId is not null || _launcherPreferences?.LastProject is not null))
+        {
+            content.AddView(LunetUi.Label(this,
+                "O último projeto não está disponível ou tem identidade duplicada. Seus arquivos não foram alterados; escolha outro jogo em Projetos.",
+                LunetUi.TextBody, LunetUi.Warning));
+            content.AddView(LunetUi.Button(this, "Abrir projetos", ShowProjects, ButtonStyle.Secondary),
+                LunetUi.FillWidth(Dp(48)));
+        }
+        content.AddView(LunetUi.Button(this, "＋ Criar projeto", AskForProjectName,
+            last is null ? ButtonStyle.Primary : ButtonStyle.Quiet), LunetUi.FillWidth(Dp(50)));
 
-        var pinned = _launcherPreferences?.PinnedProjects
-            .Where(n => names.Contains(n, StringComparer.Ordinal)).ToArray() ?? [];
-        content.AddView(LunetUi.Label(this, pinned.Length > 0 ? "PROJETOS FIXADOS" : "PROJETOS RECENTES",
-            LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
-        var cards = pinned.Length > 0 ? pinned : names.OrderByDescending(ProjectTouched).Take(3).ToArray();
-        if (cards.Length == 0)
+        var pinned = (_launcherPreferences?.PinnedProjectIds ?? [])
+            .Select(id => LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, id))
+            .Where(name => name is not null).Select(name => name!).Distinct(StringComparer.Ordinal).ToArray();
+        var legacyPins = (_launcherPreferences?.PinnedProjects ?? [])
+            .Where(name => names.Contains(name, StringComparer.Ordinal) && LauncherId(name) is null);
+        pinned = pinned.Concat(legacyPins).Distinct(StringComparer.Ordinal).ToArray();
+
+        if (pinned.Length > 0)
+        {
+            content.AddView(LunetUi.Label(this, "PROJETOS FIXADOS", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+            foreach (var name in pinned.Take(4))
+                content.AddView(LauncherProjectCard(name), LunetUi.FillWidth());
+        }
+
+        var recent = (_launcherPreferences?.RecentProjectIds ?? [])
+            .Select(id => LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, id))
+            .Where(name => name is not null).Select(name => name!)
+            .Where(name => !pinned.Contains(name, StringComparer.Ordinal))
+            .Distinct(StringComparer.Ordinal).Take(3).ToArray();
+        if (recent.Length == 0)
+            recent = names.Where(name => !pinned.Contains(name, StringComparer.Ordinal))
+                .OrderByDescending(ProjectTouched).Take(3).ToArray();
+        content.AddView(LunetUi.Label(this, "PROJETOS RECENTES", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
+        if (recent.Length == 0 && pinned.Length == 0)
             content.AddView(LunetUi.Label(this, "Ainda não há projetos. Crie um jogo para começar.",
                 LunetUi.TextBody, LunetUi.TextMuted));
-        foreach (var name in cards)
+        foreach (var name in recent)
             content.AddView(LauncherProjectCard(name), LunetUi.FillWidth());
 
         content.AddView(LunetUi.Label(this, "FERRAMENTAS", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
