@@ -43,6 +43,25 @@ public sealed class InspirationCatalogPopulationTests : IDisposable
     }
 
     [Fact]
+    public void EveryCuratedMechanicHasAnOfflineExperimentAndSearchableFacet()
+    {
+        var catalog = new InspirationLibrary(CatalogPath);
+        foreach (var reference in catalog.All)
+        {
+            foreach (var mechanic in reference.Mechanics)
+            {
+                Assert.StartsWith(mechanic + " — ", InspirationLibrary.SuggestExperiment(reference, mechanic));
+                Assert.NotEmpty(InspirationLibrary.GuideFor(mechanic));
+                Assert.Contains(catalog.SearchFacets(new InspirationFilter(Mechanics: [mechanic])),
+                    entry => entry.Id == reference.Id);
+            }
+        }
+        Assert.Equal("entrada", InspirationLibrary.GuideFor("Dash"));
+        Assert.True(InspirationLibrary.TextMatches("Construção", "construcao"));
+        Assert.False(File.Exists(CatalogPath));
+    }
+
+    [Fact]
     public void Search_FindsCrossGenreMechanicsAndAerialMovement()
     {
         var catalog = new InspirationLibrary(CatalogPath);
