@@ -6,6 +6,7 @@ using Android.Widget;
 using Lunet.Android.Gles;
 using Lunet.Compiler;
 using Lunet.Core;
+using Path = System.IO.Path;
 
 namespace Lunet.Android;
 
@@ -135,7 +136,7 @@ public sealed partial class MainActivity
 
     private static string GameplayToolchain() => string.Join("|",
         new[] { typeof(Game).Assembly, typeof(GameCompiler).Assembly, typeof(MainActivity).Assembly,
-            typeof(Lunet.Runtime.GameHost).Assembly }.Select(a => a.ManifestModule.ModuleVersionId.ToString("N"))) +
+            typeof(Lunet.Runtime.GameLoader).Assembly }.Select(a => a.ManifestModule.ModuleVersionId.ToString("N"))) +
         "|" + Environment.Version;
 
     private async Task PrepareGameplay(string folderName)
