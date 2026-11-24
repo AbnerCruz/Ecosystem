@@ -26,7 +26,7 @@ internal sealed class CanvasGestures
     public event Action? Undo;
     public event Action? Redo;
 
-    public CanvasGestures(Context context, View view)
+    public CanvasGestures(global::Android.Content.Context context, View view)
     {
         _view = view;
         _scale = new ScaleGestureDetector(context, new Listener(this));

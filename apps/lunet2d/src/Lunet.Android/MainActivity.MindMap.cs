@@ -192,7 +192,7 @@ internal sealed class MindMapCanvas : View
     public Action<Guid>? Selected { get; set; }
     public Action<Guid, Guid>? Moved { get; set; }
 
-    public MindMapCanvas(Context context) : base(context)
+    public MindMapCanvas(global::Android.Content.Context context) : base(context)
     {
         _density = Resources!.DisplayMetrics!.Density;
         _detector = new ScaleGestureDetector(context, new ZoomListener(this));
