@@ -140,7 +140,7 @@ public sealed class ProjectStore
     public static string ValidateName(string rawName)
     {
         var name = (rawName ?? "").Trim();
-        if (name.Length is < 1 or > 60 || name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
+        if (name.Length is < 1 or > 60 || name.Any(c => !char.IsLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ProjectException("Use de 1 a 60 caracteres: letras, números, _ ou -.");
         return name;
     }
@@ -210,7 +210,7 @@ public sealed class ProjectStore
     {
         var parts = name.Split(['-', '_'], StringSplitOptions.RemoveEmptyEntries);
         var identifier = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0]) + p[1..]));
-        if (identifier.Length == 0 || char.IsAsciiDigit(identifier[0])) identifier = "Game" + identifier;
+        if (identifier.Length == 0 || char.IsDigit(identifier[0])) identifier = "Game" + identifier;
         return identifier;
     }
 }

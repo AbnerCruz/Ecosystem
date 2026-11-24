@@ -26,6 +26,7 @@ public sealed partial class MainActivity
         _settingsStore = new SettingsStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "settings.json"));
         _settings = _settingsStore.Load();
         ApplyWindowSettings();
+        ApplyWorkspaceTheme();
         LoadLayouts();
         _gitAccounts = new GitAccountStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "git-account.json"));
     }
@@ -38,7 +39,7 @@ public sealed partial class MainActivity
 
     private void ApplyEditorSettings()
     {
-        _editor?.ApplySettings(_settings.FontSize, _settings.ShowLineNumbers);
+        _editor?.ApplySettings(_settings.FontSize, _settings.ShowLineNumbers, _settings.Font);
         // On phones the minimap would take ~11% of the code width; it appears from 600dp up.
         if (_minimap is not null) _minimap.Visibility = _settings.ShowMinimap && LunetUi.WidthDp(this) >= 600 ? ViewStates.Visible : ViewStates.Gone;
     }
@@ -58,12 +59,20 @@ public sealed partial class MainActivity
         return frame;
     }
 
+    private AlertDialog? _editorSettingsDialog;
+
     private void ShowSettings()
     {
         var draft = _settings.Clone();
         var form = Vertical();
         form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
 
+        form.AddView(LunetUi.Button(this, "Aparência", () => { _editorSettingsDialog?.Dismiss(); ShowAppearance(); }));
+        if (_project is null)
+        {
+            form.AddView(LunetUi.Button(this, "Pasta de projetos", () => { _editorSettingsDialog?.Dismiss(); ShowProjectFolder(); }));
+            form.AddView(LunetUi.Button(this, "Configurar IA", () => { _editorSettingsDialog?.Dismiss(); ShowAiSettings(); }));
+        }
         var fontLabel = new TextView(this) { TextSize = 14 };
         var fontSlider = new SeekBar(this) { Max = EditorSettings.MaxFontSize - EditorSettings.MinFontSize, Progress = draft.FontSize - EditorSettings.MinFontSize };
         void UpdateLabel() => fontLabel.Text = $"Tamanho da fonte do editor: {draft.FontSize}";
@@ -92,18 +101,13 @@ public sealed partial class MainActivity
 
         var scroll = new ScrollView(this);
         scroll.AddView(form);
-        new AlertDialog.Builder(this)!
+        _editorSettingsDialog = new AlertDialog.Builder(this)!
             .SetTitle("Configurações")!
             .SetView(scroll)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Salvar", (_, _) =>
             {
-                _settings = draft.Normalized();
-                try { _settingsStore.Save(_settings); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-                {
-                    Toast.MakeText(this, "Não foi possível salvar as configurações: " + ex.Message, ToastLength.Long)?.Show();
-                }
+                if (!TrySaveWorkspaceSettings(draft)) return;
                 ApplyEditorSettings();
                 ApplyWindowSettings();
             })!.Show();

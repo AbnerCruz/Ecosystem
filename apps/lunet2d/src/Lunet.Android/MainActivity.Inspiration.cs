@@ -18,6 +18,8 @@ public sealed partial class MainActivity
     private string _inspirationPerspective = "";
     private string _inspirationStyle = "";
     private bool _inspirationFavorites;
+    private const int InspirationPageSize = 18;
+    private int _inspirationVisibleCount = InspirationPageSize;
 
     private void OpenInspirationExplorer()
     {
@@ -88,8 +90,6 @@ public sealed partial class MainActivity
         void ShowProblem(Exception ex) =>
             Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show();
 
-        const int pageSize = 18;
-        int visibleCount = pageSize;
 
         void Refresh()
         {
@@ -104,7 +104,7 @@ public sealed partial class MainActivity
                 return;
             }
 
-            foreach (var reference in matches.Take(visibleCount))
+            foreach (var reference in matches.Take(_inspirationVisibleCount))
             {
                 var item = reference;
                 var card = LunetUi.Column(this, 7);
@@ -178,12 +178,12 @@ public sealed partial class MainActivity
                         ButtonStyle.Quiet));
                 items.AddView(card, LunetUi.FillWidth());
             }
-            if (matches.Count > visibleCount)
+            if (matches.Count > _inspirationVisibleCount)
             {
                 items.AddView(LunetUi.Button(this,
-                    $"Mostrar mais ({matches.Count - visibleCount} restantes)", () =>
+                    $"Mostrar mais ({matches.Count - _inspirationVisibleCount} restantes)", () =>
                     {
-                        visibleCount += pageSize;
+                        _inspirationVisibleCount += InspirationPageSize;
                         Refresh();
                     }, ButtonStyle.Secondary));
             }
@@ -202,7 +202,8 @@ public sealed partial class MainActivity
             spinner.ItemSelected += (_, args) =>
             {
                 set(args.Position == 0 ? "" : options[args.Position]);
-                visibleCount = pageSize;
+                if (!spinner.IsAttachedToWindow) return;
+                _inspirationVisibleCount = InspirationPageSize;
                 Refresh();
             };
             return spinner;
@@ -213,11 +214,10 @@ public sealed partial class MainActivity
         AddFilter("perspectiva", library.Perspectives, _inspirationPerspective,
             value => _inspirationPerspective = value);
         AddFilter("estilo", library.Styles, _inspirationStyle, value => _inspirationStyle = value);
-        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; visibleCount = pageSize; Refresh(); };
-        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; visibleCount = pageSize; Refresh(); };
+        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; _inspirationVisibleCount = InspirationPageSize; Refresh(); };
+        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; _inspirationVisibleCount = InspirationPageSize; Refresh(); };
         Refresh();
-        root.AddView(BuildLauncherNavigation("explore"));
-        SetContentView(root);
+        SetLauncherContent(root, "explore", scroll);
     }
 
     private void EditInspirationNotes(InspirationReference reference, Action refresh)

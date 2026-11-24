@@ -119,7 +119,6 @@ public class ProjectTests : IDisposable
     [InlineData("a b")]
     [InlineData("../evil")]
     [InlineData("..")]
-    [InlineData("ação")]
     public void Create_RejectsInvalidNames(string name) =>
         Assert.Throws<ProjectException>(() => new ProjectStore(_root).Create(name));
 

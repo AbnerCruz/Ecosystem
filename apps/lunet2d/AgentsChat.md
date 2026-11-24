@@ -843,3 +843,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Implementação em branch `feat/lunet-f2-home-continuity-gameid-20261123`: leitura de identidade persistente sem inventar GameId de manifestos inválidos, migrador V1→V2 de preferências, últimos oito jogos, fixados, Editar/Jogar/Criar separados, retorno à seção de origem, Play bloqueado diante de recuperações não resolvidas; seis testes de núcleo e três rotas de screenshots Android.
 - Salvaguardas: preferências separadas de `Projects/`; nomes legacy não resolvidos não são vinculados arbitrariamente; ID duplicado não escolhe pasta; nenhum projeto, fonte, save ou manifesto migrado silenciosamente.
 - Evidência futura: CI xUnit, Android 13, consistência, integração governada, release 1000586; validação física no aparelho não realizada. O ROADMAP e o plano integral distinguem trabalho em branch de aceite de fase.
+
+
+### 20261123-chatgpt-lunet-f2-workspace — 23/11/2026 — ChatGPT → integrador — F2/LUNET-510
+- Base integrada `7251ccd9`, release `1000586`. Ramo `feat/lunet-f2-workspace`, restrito ao produto Lunet.
+- Home adaptativa e primeiro uso, tema e fonte nas preferências, escolha de pasta Android e snapshots verificados com cópia de trabalho recuperável. A decisão de storage preserva o filesystem local que Roslyn, Git e Studios já usam.
+- Verificação e limitações no [guia da F2](docs/guides/f2-workspace.md) e no handoff da entrega. A versão mantém o estágio dev.

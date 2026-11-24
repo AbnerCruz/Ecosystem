@@ -31,15 +31,15 @@ internal sealed class DocumentationPanel
         _pad = (int)(12 * activity.Resources!.DisplayMetrics!.Density);
 
         var root = new LinearLayout(activity) { Orientation = Orientation.Vertical };
-        root.SetBackgroundColor(AndroidColor.Argb(255, 24, 26, 32));
+        root.SetBackgroundColor(LunetUi.Background);
 
         var bar = new LinearLayout(activity) { Orientation = Orientation.Horizontal };
         bar.SetPadding(_pad / 2, _pad / 2, _pad / 2, _pad / 2);
         bar.AddView(MakeButton("←", GoBack));
         bar.AddView(MakeButton("⌂", () => Show("home")));
         _search = new EditText(activity) { Hint = "Buscar na API", TextSize = 14 };
-        _search.SetTextColor(AndroidColor.White);
-        _search.SetHintTextColor(AndroidColor.Argb(255, 150, 155, 165));
+        _search.SetTextColor(LunetUi.Text);
+        _search.SetHintTextColor(LunetUi.TextMuted);
         _search.SetSingleLine(true);
         _search.ImeOptions = global::Android.Views.InputMethods.ImeAction.Search;
         _search.EditorAction += (_, e) =>
@@ -53,6 +53,7 @@ internal sealed class DocumentationPanel
         root.AddView(bar);
 
         _title = new TextView(activity) { TextSize = 20 };
+        _title.SetTextColor(LunetUi.Text);
         _title.SetTypeface(null, TypefaceStyle.Bold);
         _title.SetPadding(_pad, _pad / 2, _pad, _pad / 2);
         root.AddView(_title);
@@ -150,7 +151,7 @@ internal sealed class DocumentationPanel
     private View BuildBlock(DocBlock block)
     {
         var view = new TextView(_activity) { TextSize = 14 };
-        view.SetTextColor(AndroidColor.Argb(255, 220, 223, 228));
+        view.SetTextColor(LunetUi.Text);
         view.SetPadding(0, _pad / 3, 0, _pad / 3);
         switch (block.Kind)
         {
@@ -162,7 +163,7 @@ internal sealed class DocumentationPanel
             case DocBlockKind.Heading:
                 view.TextSize = 17;
                 view.SetTypeface(null, TypefaceStyle.Bold);
-                view.SetTextColor(AndroidColor.Argb(255, 130, 180, 255));
+                view.SetTextColor(LunetUi.AccentText);
                 view.SetPadding(0, _pad, 0, _pad / 3);
                 view.Text = block.Text;
                 break;
@@ -176,7 +177,7 @@ internal sealed class DocumentationPanel
                 break;
             case DocBlockKind.Note:
                 view.TextSize = 12;
-                view.SetTextColor(AndroidColor.Argb(255, 150, 155, 165));
+                view.SetTextColor(LunetUi.TextMuted);
                 view.Text = block.Text;
                 break;
             case DocBlockKind.Bullet:
@@ -187,7 +188,7 @@ internal sealed class DocumentationPanel
                 text.SetSpan(new StyleSpan(TypefaceStyle.Bold), 0, text.Length(), SpanTypes.ExclusiveExclusive);
                 if (!string.IsNullOrEmpty(block.Detail)) text.Append("\n" + block.Detail);
                 view.TextFormatted = text;
-                view.SetTextColor(AndroidColor.Argb(255, 130, 180, 255));
+                view.SetTextColor(LunetUi.AccentText);
                 view.SetPadding(0, _pad / 2, 0, _pad / 2);
                 var target = block.Target!;
                 view.Click += (_, _) => Show(target);

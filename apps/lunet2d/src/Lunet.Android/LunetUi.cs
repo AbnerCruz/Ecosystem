@@ -5,6 +5,7 @@ using Android.Text;
 using Android.Views;
 using Android.Widget;
 using Lunet.Studio;
+using Lunet.Core;
 using AColor = Android.Graphics.Color;
 
 namespace Lunet.Android;
@@ -15,23 +16,43 @@ namespace Lunet.Android;
 /// </summary>
 internal static class LunetUi
 {
-    // Color tokens (dark, "night sky" — Lunet).
-    public static readonly AColor Background = AColor.Rgb(13, 16, 23);
-    public static readonly AColor Surface = AColor.Rgb(21, 26, 35);
-    public static readonly AColor SurfaceRaised = AColor.Rgb(29, 35, 47);
-    public static readonly AColor SurfaceHigh = AColor.Rgb(38, 46, 61);
-    public static readonly AColor Border = AColor.Rgb(44, 53, 69);
-    public static readonly AColor Text = AColor.Rgb(230, 236, 245);
-    public static readonly AColor TextMuted = AColor.Rgb(141, 153, 172);
-    public static readonly AColor TextFaint = AColor.Rgb(98, 109, 128);
-    public static readonly AColor Accent = AColor.Rgb(124, 108, 255);
-    public static readonly AColor AccentSoft = AColor.Argb(46, 124, 108, 255);
-    public static readonly AColor AccentText = AColor.Rgb(186, 176, 255);
-    public static readonly AColor Success = AColor.Rgb(63, 185, 80);
-    public static readonly AColor SuccessSoft = AColor.Argb(40, 63, 185, 80);
-    public static readonly AColor Danger = AColor.Rgb(248, 81, 73);
-    public static readonly AColor DangerSoft = AColor.Argb(40, 248, 81, 73);
-    public static readonly AColor Warning = AColor.Rgb(210, 153, 34);
+    internal static bool IsLight { get; private set; }
+
+    internal static bool ApplyTheme(Context context, WorkspaceTheme theme)
+    {
+        var light = UsesLightTheme(context, theme);
+        bool changed = IsLight != light;
+        IsLight = light;
+        return changed;
+    }
+
+    internal static bool UsesLightTheme(Context context, WorkspaceTheme theme) =>
+        theme == WorkspaceTheme.Light ||
+        (theme == WorkspaceTheme.System && (context.Resources!.Configuration!.UiMode & global::Android.Content.Res.UiMode.NightMask)
+            != global::Android.Content.Res.UiMode.NightYes);
+
+    internal static Typeface EditorTypeface(EditorFont font) => font switch
+    {
+        EditorFont.Condensed => Typeface.Create("sans-serif-condensed", TypefaceStyle.Normal)!,
+        EditorFont.Serif => Typeface.Serif!,
+        _ => Typeface.Monospace!,
+    };
+    public static AColor Background => IsLight ? AColor.Rgb(247, 248, 253) : AColor.Rgb(13, 16, 23);
+    public static AColor Surface => IsLight ? AColor.Rgb(255, 255, 255) : AColor.Rgb(21, 26, 35);
+    public static AColor SurfaceRaised => IsLight ? AColor.Rgb(239, 241, 249) : AColor.Rgb(29, 35, 47);
+    public static AColor SurfaceHigh => IsLight ? AColor.Rgb(228, 232, 244) : AColor.Rgb(38, 46, 61);
+    public static AColor Border => IsLight ? AColor.Rgb(165, 173, 192) : AColor.Rgb(44, 53, 69);
+    public static AColor Text => IsLight ? AColor.Rgb(27, 35, 54) : AColor.Rgb(230, 236, 245);
+    public static AColor TextMuted => IsLight ? AColor.Rgb(72, 84, 109) : AColor.Rgb(141, 153, 172);
+    public static AColor TextFaint => IsLight ? AColor.Rgb(81, 93, 117) : AColor.Rgb(145, 156, 176);
+    public static AColor Accent => IsLight ? AColor.Rgb(75, 56, 179) : AColor.Rgb(91, 69, 207);
+    public static AColor AccentSoft => IsLight ? AColor.Rgb(228, 223, 255) : AColor.Argb(46, 124, 108, 255);
+    public static AColor AccentText => IsLight ? AColor.Rgb(65, 46, 167) : AColor.Rgb(186, 176, 255);
+    public static AColor Success => IsLight ? AColor.Rgb(22, 108, 42) : AColor.Rgb(63, 185, 80);
+    public static AColor SuccessSoft => IsLight ? AColor.Rgb(222, 242, 225) : AColor.Argb(40, 63, 185, 80);
+    public static AColor Danger => IsLight ? AColor.Rgb(169, 35, 36) : AColor.Rgb(248, 81, 73);
+    public static AColor DangerSoft => IsLight ? AColor.Rgb(254, 229, 228) : AColor.Argb(40, 248, 81, 73);
+    public static AColor Warning => IsLight ? AColor.Rgb(116, 77, 2) : AColor.Rgb(210, 153, 34);
     public static readonly AColor Scrim = AColor.Argb(150, 0, 0, 0);
 
     public const int RadiusSmall = 8, Radius = 12, RadiusLarge = 18;
@@ -57,7 +78,7 @@ internal static class LunetUi
     public static Drawable Pressable(Context context, AColor fill, float radius = Radius, AColor? stroke = null)
     {
         var mask = Shape(context, AColor.White, radius);
-        return new RippleDrawable(global::Android.Content.Res.ColorStateList.ValueOf(AColor.Argb(48, 255, 255, 255)),
+        return new RippleDrawable(global::Android.Content.Res.ColorStateList.ValueOf(IsLight ? AColor.Argb(36, 0, 0, 0) : AColor.Argb(48, 255, 255, 255)),
             Shape(context, fill, radius, stroke), mask);
     }
 
@@ -103,7 +124,7 @@ internal static class LunetUi
         var button = new IconButton(context) { TextSize = TextLabel };
         button.SetAllCaps(false);
         button.SetMinWidth(0); button.SetMinimumWidth(0);
-        button.SetMinHeight(Dp(context, 40)); button.SetMinimumHeight(Dp(context, 40));
+        button.SetMinHeight(Dp(context, 40)); button.SetMinimumHeight(Dp(context, 48));
         button.SetPadding(Dp(context, 14), 0, Dp(context, 14), 0);
         button.StateListAnimator = null;
         button.Elevation = 0;
@@ -154,7 +175,7 @@ internal static class LunetUi
         var button = new IconButton(context) { TextSize = TextLabel };
         button.SetAllCaps(false);
         button.SetMinWidth(0); button.SetMinimumWidth(0);
-        button.SetMinHeight(Dp(context, 40)); button.SetMinimumHeight(Dp(context, 40));
+        button.SetMinHeight(Dp(context, 40)); button.SetMinimumHeight(Dp(context, 48));
         button.SetPadding(0, 0, 0, 0);
         button.StateListAnimator = null;
         button.Elevation = 0;

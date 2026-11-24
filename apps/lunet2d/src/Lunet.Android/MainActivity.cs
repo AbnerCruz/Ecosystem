@@ -23,7 +23,7 @@ namespace Lunet.Android;
 
 [Activity(Label = "Lunet", MainLauncher = true, Exported = true, Theme = "@android:style/Theme.DeviceDefault.NoActionBar",
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation | global::Android.Content.PM.ConfigChanges.ScreenSize |
-                           global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout,
+                           global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout | global::Android.Content.PM.ConfigChanges.UiMode,
     WindowSoftInputMode = SoftInput.AdjustResize)]
 public sealed partial class MainActivity : Activity
 {
@@ -75,18 +75,20 @@ public sealed partial class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         LunetAiRuns.Changed += OnAiRunChanged;
-        // Edge colors follow the app instead of the system default (LUNET-483).
-        Window?.SetStatusBarColor(LunetUi.Background);
-        Window?.SetNavigationBarColor(LunetUi.Background);
-        _store = new ProjectStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "Projects"));
         _pendingExport = savedInstanceState?.GetString("pendingExport");
         _pendingLibraryAssetId = savedInstanceState?.GetString("pendingLibraryAssetId");
         _pendingLibraryAssetVersion = savedInstanceState?.GetInt("pendingLibraryAssetVersion") ?? 0;
         _pendingGameApkPath = savedInstanceState?.GetString("pendingGameApkPath");
         _pendingGameApkName = savedInstanceState?.GetString("pendingGameApkName");
         LoadSettings();
+        LoadProjectFolder();
         LoadLauncherPreferences();
+        _projectFilter = savedInstanceState?.GetString("projectFilter") ?? "";
+        foreach (var section in new[] { "home", "projects", "studios", "explore", "learn" })
+            _launcherPositions[section] = savedInstanceState?.GetInt("scroll-" + section) ?? 0;
         RestoreLauncherSection();
+        _folderPickerFromSetup = savedInstanceState?.GetBoolean("folderPickerFromSetup") ?? false;
+        if (_settings.FirstUseStep < 3 && !_folderPickerFromSetup && !IsUiDemo()) ShowFirstUse();
 #if LUNET_UI_DEMO
         RunDemo(Intent);
 #endif
@@ -174,8 +176,7 @@ public sealed partial class MainActivity : Activity
         footer.AddView(LunetUi.Label(this, $"v{BuildInfo.Version} · projetos neste aparelho · exporte ZIP para backup", LunetUi.TextCaption, LunetUi.TextFaint), LunetUi.Weight());
         footer.AddView(LunetUi.Button(this, "Conexões", ShowEcosystemConnection, ButtonStyle.Quiet), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(36)));
         root.AddView(footer);
-        root.AddView(BuildLauncherNavigation("projects"));
-        SetContentView(root);
+        SetLauncherContent(root, "projects", scroll);
     }
 
     private DateTime ProjectTouched(string name)
@@ -188,16 +189,11 @@ public sealed partial class MainActivity : Activity
     {
         try
         {
-            var directory = System.IO.Path.Combine(_store.RootDirectory, name);
-            var files = Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-                .Where(f => !f.Contains(System.IO.Path.DirectorySeparatorChar + ".")).ToArray();
-            int code = files.Count(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase));
-            int art = files.Count(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
             var when = ProjectTouched(name).ToLocalTime();
             var age = DateTime.Now - when;
             var ago = age.TotalMinutes < 2 ? "agora" : age.TotalHours < 1 ? $"há {(int)age.TotalMinutes} min"
                 : age.TotalDays < 1 ? $"há {(int)age.TotalHours} h" : when.ToString("dd/MM");
-            return $"{code} arquivo(s) C# · {art} imagem(ns) · {ago}";
+            return when == DateTime.FromFileTimeUtc(0).ToLocalTime() ? "Projeto local" : "Atualizado " + ago;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return "projeto local"; }
     }
@@ -205,16 +201,19 @@ public sealed partial class MainActivity : Activity
     private void ShowProjectMenu(string name)
     {
         var pinned = IsLauncherPinned(name);
-        var items = new[] { pinned ? "Desafixar do início" : "Fixar no início", "Exportar ZIP", "Excluir projeto" };
-        new AlertDialog.Builder(this)!.SetTitle(name)!.SetItems(items, (_, args) =>
+        var items = new List<(string Label, Action Action)>
         {
-            if (args.Which == 0)
+            (pinned ? "Desafixar do início" : "Fixar no início", () => ToggleLauncherPin(name)),
+            ("Exportar ZIP", () => ExportProject(name)),
+            ("Excluir projeto", () => ConfirmDeleteProject(name)),
+        };
+        if (pinned)
+            items.Insert(1, ("Mover fixado para o início", () =>
             {
-                ToggleLauncherPin(name);
-            }
-            else if (args.Which == 1) ExportProject(name);
-            else ConfirmDeleteProject(name);
-        })!.Show();
+                PersistLauncher(p => p.MovePinToStart(name, LauncherId(name)));
+                ReturnToLauncherOrigin();
+            }));
+        ShowActionMenu(name, items);
     }
 
     private void ConfirmDeleteProject(string name)
@@ -359,6 +358,7 @@ public sealed partial class MainActivity : Activity
         _inspirationOpen = false;
         try
         {
+            RememberLauncherPosition();
             _project = _store.Open(name);
             RefreshLauncherCatalog();
             TrackLauncherOpen(name);
@@ -1211,16 +1211,20 @@ public sealed partial class MainActivity : Activity
 
     private void Run()
     {
-        if (_project is null) return;
+        if (_project is not { } project) return;
         if (_settings.FormatOnRun) FormatDocument(silent: true);
         SaveCurrent();
         _status!.Text = "Compilando… (a primeira compilação demora mais)";
-        var sources = _project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
+        var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
         _pendingChange = _previousRun is null ? null : ChangeClassifier.Classify(_previousRun, sources);
         _previousRun = sources;
-        var assemblyName = $"LunetGame{++_compileCounter}";
+        var run = ++_compileCounter;
+        var assemblyName = $"LunetGame{run}";
         Task.Run(() => SharedCompiler.Value.Compile(assemblyName, sources)).ContinueWith(task =>
-            RunOnUiThread(() => OnCompiled(task)));
+            RunOnUiThread(() =>
+            {
+                if (!IsDestroyed && ReferenceEquals(_project, project) && _compileCounter == run) OnCompiled(task);
+            }));
     }
 
     private void OnCompiled(Task<CompileResult> task)
@@ -1293,14 +1297,27 @@ public sealed partial class MainActivity : Activity
         if (_returnHomeAfterGame)
         {
             _returnHomeAfterGame = false;
-            ShowHome();
+            ReturnToLauncherOrigin();
             return;
         }
         SaveCurrent(); // o editor antigo ainda guarda o texto; salva antes de a tela ser recriada
         var file = _openFile;
+        var previousEditor = _editor;
+        int start = previousEditor?.SelectionStart ?? 0;
+        int end = previousEditor?.SelectionEnd ?? 0;
+        int scrollX = previousEditor?.ScrollX ?? 0;
+        int scrollY = previousEditor?.ScrollY ?? 0;
         _openFile = null;
         ShowWorkspace();
-        if (file is not null) OpenFile(file);
+        if (file is not null)
+        {
+            OpenFile(file);
+            if (_editor is { } editor)
+            {
+                editor.SetSelection(Math.Clamp(start, 0, editor.Length()), Math.Clamp(end, 0, editor.Length()));
+                editor.Post(() => editor.ScrollTo(scrollX, scrollY));
+            }
+        }
         if (_lastProfilerReport is not null)
         {
             _layoutStore.Current.OpenPanel("profiler");
@@ -1418,6 +1435,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (HandleProjectFolderResult(requestCode, resultCode, data)) return;
         if (HandleAttachmentResult(requestCode, resultCode, data)) return;
         if (requestCode == AndroidGameImagePicker.RequestCode)
         {
@@ -1469,6 +1487,10 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnSaveInstanceState(Bundle outState)
     {
+        outState.PutString("projectFilter", _projectFilter);
+        outState.PutBoolean("folderPickerFromSetup", _folderPickerFromSetup);
+        foreach (var (section, position) in _launcherPositions)
+            outState.PutInt("scroll-" + section, section == _launcherScrollKey && _launcherScroll is not null ? _launcherScroll.ScrollY : position);
         outState.PutString("pendingExport", _pendingExport);
         outState.PutString("pendingLibraryAssetId", _pendingLibraryAssetId);
         outState.PutInt("pendingLibraryAssetVersion", _pendingLibraryAssetVersion);
@@ -1511,7 +1533,8 @@ public sealed partial class MainActivity : Activity
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ReturnToLauncherOrigin();
-        else if (_inspirationOpen || _launcherSection != "home") ShowHome();
+        else if (_backFromLauncherChild is { } back) back();
+        else if (_globalChatVisible || _inspirationOpen || _launcherSection != "home") ShowHome();
         else base.OnBackPressed();
     }
 }

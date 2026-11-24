@@ -40,7 +40,8 @@ public sealed partial class MainActivity
     {
         if (_workspaceChatInput is not null && _workspaceChatOpen)
             _workspaceChatDraft = _workspaceChatInput.Text ?? "";
-        EnterLauncherSurface("home"); // chat global é uma superfície da Home, não um sexto destino.
+        EnterLauncherSurface("home");
+        _globalChatVisible = true;
         _workspaceChatOpen = true;
         var root = Vertical();
         root.SetBackgroundColor(LunetUi.Background);
@@ -76,8 +77,7 @@ public sealed partial class MainActivity
             new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(52)));
         root.AddView(compose);
         root.AddView(LunetUi.Button(this, "Nova conversa", ConfirmResetWorkspaceAi, ButtonStyle.Quiet));
-        root.AddView(BuildLauncherNavigation("home"));
-        SetContentView(root);
+        SetLauncherContent(root, "home");
         RenderWorkspaceAi();
     }
 

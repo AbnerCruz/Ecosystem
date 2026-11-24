@@ -17,6 +17,7 @@
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
     <!-- Roslyn e o Preview dependem de reflexão sobre assemblies; sem trimming. -->
     <PublishTrimmed>false</PublishTrimmed>
+    <RunAOTCompilation>false</RunAOTCompilation>
     <AndroidLinkMode>None</AndroidLinkMode>
     <!-- Assinatura estável das builds de desenvolvimento: sem ela cada build usa uma chave nova e o Android
          recusa atualizar uma versão sobre a outra (ADR 0004). Chave pública, só para desenvolvimento. -->
