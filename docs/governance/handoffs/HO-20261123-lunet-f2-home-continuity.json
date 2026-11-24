@@ -1,0 +1,137 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261123-lunet-f2-home-continuity",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T00:28:00.000Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f2",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-510",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f2-home-continuity-gameid-20261123",
+  "base_commit": "9200ab7cdc479367c5c60d343ed189ebef6d4bc6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/LauncherProjectCatalog.cs",
+    "apps/lunet2d/src/Lunet.Core/LauncherPreferences.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LauncherContinuityTests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "apps/lunet2d/docs/guides/f2-home-continuity-gameid.md",
+    "apps/lunet2d/docs/guides/home-workspace.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "docs/governance/handoffs/HO-20261123-lunet-f2-home-continuity.json"
+  ],
+  "work_completed": [
+    "Verified F1 PR #1024 integrated to main 9200ab7 and official release 0.0.1-dev.1000585 with signed APK on GitHub; next task explicitly authorized by user.",
+    "Studied approved F2 plan, 2026-11-15 and 2026-11-23 research, existing Home/ProjectStore/AutosaveJournal/Back navigation, Android official Views state and SAF contracts.",
+    "Added stable read-only launcher identity scanner with no fabricated GameIds on legacy/corrupt files and no arbitrary selection for duplicated GameIds.",
+    "Extended launcher preferences with backward compatible name-only V1 to GameId V2 migration, MRU of eight and safe deletion of shortcuts.",
+    "Separated Editar, Jogar and Criar in Home; restored Back to launcher origin; Home-run gameplay returns to Home; recovery-aware Play does not bypass crash buffers.",
+    "Created six xUnit regression tests plus three Android 13 Home screenshot scenarios with process-smoke checks.",
+    "Updated staged F2/1 roadmap, changelog and acceptance guide. Full SAF migration, onboarding, themes and physical-device acceptance remain open."
+  ],
+  "verification": [
+    {
+      "check": "F2/1 xUnit including legacy preference migration/identity regressions",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI after PR"
+    },
+    {
+      "check": "F2/1 Android 13 Home/new/resume/missing screenshot smoke",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI after PR"
+    },
+    {
+      "check": "Combined main consistency and governed integration",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI after PR"
+    }
+  ],
+  "known_issues": [
+    "No Android SDK or .NET SDK on local agent runtime; CI required.",
+    "No physical Android device test performed; UI acceptance remains open.",
+    "ProjectStore remains file-path based; SAF permission/staging/migration requires independent design and tests.",
+    "Legacy records without a durable gameId remain name-only and are not assigned invented identities; duplicate gameIds are intentionally unresolved."
+  ],
+  "blockers": [
+    "CI and integration pending before official 0.0.1-dev.1000586 release"
+  ],
+  "next_actions": [
+    "Open PR for LUNET-510 F2/1, run xUnit, Android UI screenshots and consistency; repair compile/regression failures.",
+    "Wait for integration policy checks, merge through authorized integrator and verify release 0.0.1-dev.1000586 with source SHA and APK.",
+    "Request physical Android 13 UI acceptance (including upgrade from 1000585, legacy preferences and recovery on Play) before marking end-to-end checklist complete.",
+    "Continue remaining F2 onboarding, SAF staging/migration, accessibility and personalization as independent increments."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ReusableAssetLibrary is still the canonical published-asset authority; Studio only holds drafts."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Code changes are restricted to the Lunet product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch/task/scope/evidence and pending checks recorded."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP records all accepted changes and open gates."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Normative sources inspected."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Explicit asset import and link/path checks maintained."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "No physical-device validation claimed."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Checklist remains open until automated checks and integration."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "launcher-preferences",
+      "status": "reused",
+      "rationale": "Extend existing JSON/AtomicFile preferences without replacing legacy V1 or modifying project manifests"
+    },
+    {
+      "subject": "projectstore-and-autosave",
+      "status": "reused",
+      "rationale": "Read canonical gameId from existing manifests and use AutosaveJournal before launcher Play"
+    }
+  ]
+}
