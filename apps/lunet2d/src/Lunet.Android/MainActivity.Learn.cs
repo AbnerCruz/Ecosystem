@@ -338,10 +338,13 @@ public sealed partial class MainActivity
         if (LearningCatalog.FindProject(projectId) is null) return;
         var progress = LearningProgress();
         if (progress is null) return;
-        var names = _store.List().ToArray();
+        RefreshLauncherCatalog();
+        var names = _launcherCatalog.Where(entry =>
+                LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, entry.GameId) == entry.FolderName)
+            .Select(entry => entry.FolderName).ToArray();
         if (names.Length == 0)
         {
-            Toast.MakeText(this, "Crie um projeto primeiro.", ToastLength.Short)?.Show();
+            Toast.MakeText(this, "Crie ou restaure um projeto com identidade única.", ToastLength.Short)?.Show();
             return;
         }
         new AlertDialog.Builder(this)!

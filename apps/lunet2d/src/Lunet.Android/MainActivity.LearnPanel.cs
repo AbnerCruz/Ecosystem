@@ -22,9 +22,12 @@ public sealed partial class MainActivity
 
     private void ResolveLearningWorkspaceContext()
     {
-        if (_project is null)
+        if (_project is null) { _selectedLearningProjectId = null; return; }
+
+        if (LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, _project.Manifest.GameId) != _project.Name)
         {
             _selectedLearningProjectId = null;
+            if (_layoutStore.Current.PanelTab == "learn") _layoutStore.Current.PanelTab = "problems";
             return;
         }
 
