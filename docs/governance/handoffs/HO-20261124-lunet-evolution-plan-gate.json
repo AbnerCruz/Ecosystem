@@ -2,15 +2,15 @@
   "$schema": "../../contracts/schemas/handoff.schema.json",
   "schemaVersion": 1,
   "message_id": "HO-20261124-lunet-evolution-plan-gate",
-  "category": "BLOCKER",
-  "timestamp": "2026-11-24T16:41:48.861Z",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T17:26:52.213Z",
   "agent": {
     "id": "chatgpt-lunet-evolution",
     "kind": "ai-agent"
   },
   "task_id": "LUNET-302.1",
   "component": "lunet2d",
-  "state": "blocked",
+  "state": "verifying",
   "branch": "fix/lunet-evolution-plan-gate",
   "base_commit": "9b26d2988b54ff6f8d8ded03f054c28a6bcddb00",
   "commit": null,
@@ -43,10 +43,10 @@
     "Ambiente local sem SDK .NET, acesso Git direto ou emulador. Não foi reproduzida a baseline pós-F8."
   ],
   "blockers": [
-    "Plano aprovado exige merge de F8 antes de E1–E3; F7 e F8 ainda abertas."
+    "E1–E3 dependem da integração F8; este PR documental está pronto para verificação, independente da implementação."
   ],
   "next_actions": [
-    "Confirmar integração oficial das três correções; fixar nova base pós-F8, reproduzir baseline e executar E1–E3 sem reabrir estudos."
+    "Integrar este PR documental pelo portão oficial quando os checks passarem; depois revalidar F7/F8 e executar E1–E3."
   ],
   "decisions_required": [],
   "normative_sources": [
