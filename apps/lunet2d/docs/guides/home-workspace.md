@@ -4,7 +4,7 @@
 
 A tela Início é uma área de trabalho sem jogo aberto. A preferência de última seção pode reabrir Projetos, Studios ou Explorar, mas nunca um jogo automaticamente. A barra de navegação oferece Início, Projetos, Studios e Explorar; botões têm pelo menos 48 dp de altura. Projetos recentes e fixados são acessíveis na Home, assim como Documentação (API offline) e Configurações.
 
-A tela Projetos preserva novo jogo com formulário completo, importação ZIP, clonagem Git, exportação e exclusão confirmada. Acrescenta pesquisa por nome e fixação/desafixação por estrela ou menu. A tela Studios oferece escolha explícita de um projeto existente e abre o painel de Studios real; não há Library global fictícia nem criação de projeto oculto. Explorar é o módulo offline LUNET-512 existente.
+A tela Projetos preserva novo jogo com formulário completo, importação ZIP, clonagem Git, exportação e exclusão confirmada. Acrescenta pesquisa por nome e fixação/desafixação por estrela ou menu. A tela Studios agora abre Sprite, Music e Sound Designer globais sem projeto (F1 integrada na release 1000585), com rascunhos e biblioteca real. Tilemap, paleta, partículas e dados permanecem em adaptação. Explorar é o módulo offline LUNET-512 existente.
 
 Os dados da Home são armazenados em launcher-preferences.json no armazenamento privado do aplicativo, fora de Projects/. Guardam seção, último projeto aberto e nomes fixados. O ProjectStore continua a autoridade exclusiva dos diretórios dos jogos; referências a um projeto excluído deixam de aparecer. A persistência é atômica. Um JSON inválido permanece preservado e não impede o acesso aos jogos.
 
