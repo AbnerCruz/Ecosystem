@@ -11,7 +11,8 @@ public sealed record LunetAiEditorContext(
     string? Selection,
     int CaretLine,
     IReadOnlyList<string> Diagnostics,
-    IReadOnlyList<string> ConsoleTail)
+    IReadOnlyList<string> ConsoleTail,
+    bool IncludeProject = true, string? Revision = null, string? ReferenceId = null)
 {
     public const int MaxLength = 12_000;
     public static LunetAiEditorContext Empty { get; } = new(null, null, 0, [], []);
@@ -21,12 +22,14 @@ public sealed record LunetAiEditorContext(
         var text = new StringBuilder();
         if (!string.IsNullOrWhiteSpace(OpenFile))
             text.Append("Arquivo aberto no editor: ").Append(OpenFile)
-                .Append(CaretLine > 0 ? $" (cursor na linha {CaretLine})" : "").AppendLine();
+                .Append(CaretLine > 0 ? $" (cursor na linha {CaretLine})" : "")
+                .Append(Revision is { Length: > 0 } ? $" · SHA-256 {Revision}" : "").AppendLine();
         if (!string.IsNullOrWhiteSpace(Selection))
         {
             var selection = Selection.Length > 6_000 ? Selection[..6_000] + "\n…(seleção truncada)" : Selection;
             text.AppendLine("Trecho selecionado pela pessoa:").AppendLine("```csharp").AppendLine(selection).AppendLine("```");
         }
+        if (!string.IsNullOrWhiteSpace(ReferenceId)) text.AppendLine("Referência offline escolhida: " + ReferenceId);
         if (Diagnostics.Count > 0)
         {
             text.AppendLine("Diagnósticos atuais da compilação:");
@@ -146,6 +149,7 @@ public sealed class LunetAiBuildTool : ITool
 /// <summary>One file the agent changed, with its content before the run (null = the agent created it).</summary>
 public sealed record LunetAiChange(string Path, string? Before, string After)
 {
+    public bool HasLaterEdits { get; init; }
     public IReadOnlyList<DiffLine> Diff() => LunetAiDiff.Lines(Before, After);
 }
 
@@ -164,6 +168,7 @@ public sealed class LunetAiCheckpoint
     private readonly Dictionary<string, byte[]?> _originals = new(StringComparer.Ordinal);
     // Only the agent's last successfully persisted bytes may be reverted. Missing hashes are fail-closed.
     private readonly Dictionary<string, string?> _lastWrittenHashes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, byte[]?> _lastWritten = new(StringComparer.Ordinal);
     private readonly List<string> _order = [];
     private readonly List<string> _reverted = [];
     private readonly object _gate = new();
@@ -195,6 +200,7 @@ public sealed class LunetAiCheckpoint
             foreach (var entry in data.Entries)
             {
                 var path = Normalize(entry.Path);
+                checkpoint.Resolve(path);
                 if (checkpoint._originals.ContainsKey(path)) continue;
                 byte[]? bytes = null;
                 if (entry.Blob is not null)
@@ -206,20 +212,24 @@ public sealed class LunetAiCheckpoint
                 checkpoint._originals[path] = bytes;
                 checkpoint._order.Add(path);
                 if (entry.LastWriteKnown) checkpoint._lastWrittenHashes[path] = entry.LastSha256;
+                if (entry.LastBlob is { } after)
+                {
+                    var persisted = System.IO.Path.Combine(storeDirectory, System.IO.Path.GetFileName(after));
+                    if (File.Exists(persisted) && File.ReadAllBytes(persisted) is { } snapshot &&
+                        Sha256(snapshot) == entry.LastSha256)
+                        checkpoint._lastWritten[path] = snapshot;
+                }
             }
             checkpoint._reverted.AddRange(data.Reverted ?? []);
             return checkpoint;
         }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException) { return null; }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or InvalidOperationException or ArgumentException) { return null; }
     }
 
     internal void Capture(string relativePath)
     {
         var path = Normalize(relativePath);
-        var root = System.IO.Path.GetFullPath(_project.Directory).TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
-        var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, path));
-        // Never track (and therefore never restore) anything outside the project folder.
-        if (!full.StartsWith(root, StringComparison.Ordinal)) return;
+        var full = Resolve(path);
         lock (_gate)
         {
             if (_originals.ContainsKey(path)) return;
@@ -233,19 +243,20 @@ public sealed class LunetAiCheckpoint
     }
 
     /// <summary>Records the exact on-disk result of a successful agent write, including deleted files.</summary>
-    internal void RecordWrite(string relativePath)
+    internal void RecordWrite(string relativePath, string? expectedSha256 = null)
     {
         var path = Normalize(relativePath);
-        var root = System.IO.Path.GetFullPath(_project.Directory).TrimEnd(System.IO.Path.DirectorySeparatorChar)
-            + System.IO.Path.DirectorySeparatorChar;
-        var full = System.IO.Path.GetFullPath(System.IO.Path.Combine(root, path));
-        if (!full.StartsWith(root, StringComparison.Ordinal))
-            throw new InvalidOperationException("O checkpoint não pode registrar arquivos fora do projeto.");
+        var full = Resolve(path);
         lock (_gate)
         {
             if (!_originals.ContainsKey(path))
                 throw new InvalidOperationException("A versão anterior não foi registrada; não é seguro confirmar a edição.");
-            _lastWrittenHashes[path] = File.Exists(full) ? Sha256(File.ReadAllBytes(full)) : null;
+            var bytes = File.Exists(full) ? File.ReadAllBytes(full) : null;
+            var hash = bytes is null ? null : Sha256(bytes);
+            if (expectedSha256 is not null && !string.Equals(hash, expectedSha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("A edição foi alterada antes de confirmar a gravação; não pode ser desfeita automaticamente.");
+            _lastWrittenHashes[path] = hash;
+            _lastWritten[path] = bytes;
             Persist();
         }
     }
@@ -263,15 +274,30 @@ public sealed class LunetAiCheckpoint
             var result = new List<LunetAiChange>();
             foreach (var path in _order)
             {
-                var full = System.IO.Path.Combine(_project.Directory, path);
-                var after = File.Exists(full) ? File.ReadAllBytes(full) : null;
+                byte[]? live;
+                try
+                {
+                    var full = Resolve(path);
+                    live = File.Exists(full) ? File.ReadAllBytes(full) : null;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+                {
+                    continue;
+                }
+                var known = _lastWritten.TryGetValue(path, out var after);
+                if (!known) after = live;
                 var before = _originals[path];
                 if (before is null && after is null) continue;
                 if (before is not null && after is not null && before.AsSpan().SequenceEqual(after)) continue;
                 bool text = TextExtensions.Contains(System.IO.Path.GetExtension(path));
                 string? Show(byte[]? bytes) => bytes is null ? null
                     : text ? System.Text.Encoding.UTF8.GetString(bytes) : $"[arquivo binário · {bytes.Length} bytes]";
-                result.Add(new LunetAiChange(path, Show(before), Show(after) ?? ""));
+                result.Add(new LunetAiChange(path, Show(before), Show(after) ?? "")
+                {
+                    HasLaterEdits = known ? !SameBytes(after, live) :
+                        !_lastWrittenHashes.TryGetValue(path, out var expected) ||
+                        !string.Equals(expected, live is null ? null : Sha256(live), StringComparison.Ordinal)
+                });
             }
             return result;
         }
@@ -290,7 +316,7 @@ public sealed class LunetAiCheckpoint
             var conflicts = new List<string>();
             foreach (var path in selected)
             {
-                var full = System.IO.Path.Combine(_project.Directory, path);
+                var full = Resolve(path);
                 var current = File.Exists(full) ? File.ReadAllBytes(full) : null;
                 if (SameBytes(_originals[path], current)) continue; // already at the original; nothing to lose
                 if (!_lastWrittenHashes.TryGetValue(path, out var expected) ||
@@ -306,7 +332,7 @@ public sealed class LunetAiCheckpoint
             foreach (var path in selected)
             {
                 var before = _originals[path];
-                var full = System.IO.Path.Combine(_project.Directory, path);
+                var full = Resolve(path);
                 if (before is null) { if (File.Exists(full)) _project.DeleteFile(path); }
                 else
                 {
@@ -317,6 +343,7 @@ public sealed class LunetAiCheckpoint
                 }
                 _originals.Remove(path);
                 _lastWrittenHashes.Remove(path);
+                _lastWritten.Remove(path);
                 _order.Remove(path);
                 restored.Add(path);
             }
@@ -345,7 +372,19 @@ public sealed class LunetAiCheckpoint
                     File.Move(target + ".tmp", target, overwrite: true);
                 }
             }
-            entries.Add(new StoredEntry(path, blob, _lastWrittenHashes.GetValueOrDefault(path), _lastWrittenHashes.ContainsKey(path)));
+            var hash = _lastWrittenHashes.GetValueOrDefault(path);
+            string? lastBlob = null;
+            if (_lastWritten.TryGetValue(path, out var last) && last is not null)
+            {
+                lastBlob = hash + ".after";
+                var afterPath = System.IO.Path.Combine(_store, lastBlob);
+                if (!File.Exists(afterPath))
+                {
+                    File.WriteAllBytes(afterPath + ".tmp", last);
+                    File.Move(afterPath + ".tmp", afterPath, overwrite: true);
+                }
+            }
+            entries.Add(new StoredEntry(path, blob, hash, _lastWrittenHashes.ContainsKey(path), lastBlob));
         }
         var manifest = System.IO.Path.Combine(_store, "checkpoint.json");
         File.WriteAllText(manifest + ".tmp", JsonSerializer.Serialize(new StoredCheckpoint(entries, _reverted.ToList())));
@@ -353,10 +392,36 @@ public sealed class LunetAiCheckpoint
     }
 
     // Optional fields preserve reads of older checkpoints, but legacy entries may not undo changed files.
-    private sealed record StoredEntry(string Path, string? Blob, string? LastSha256 = null, bool LastWriteKnown = false);
+    private sealed record StoredEntry(string Path, string? Blob, string? LastSha256 = null, bool LastWriteKnown = false, string? LastBlob = null);
     private sealed record StoredCheckpoint(List<StoredEntry> Entries, List<string>? Reverted);
 
-    private static string Normalize(string path) => path.Replace('\\', '/').TrimStart('/');
+    private static string Normalize(string path) => path.Replace('\\', '/');
+
+    private string Resolve(string path)
+    {
+        var segments = path.Split('/');
+        if (path.IndexOfAny([':', '\0']) >= 0 || segments.Any(part => part.Length == 0 || part.StartsWith('.')))
+            throw new InvalidOperationException("Caminho de checkpoint inválido.");
+        var current = _project.Directory;
+        CheckLink(current);
+        foreach (var segment in segments)
+        {
+            current = System.IO.Path.Combine(current, segment);
+            CheckLink(current);
+        }
+        return current;
+    }
+
+    private static void CheckLink(string path)
+    {
+        try
+        {
+            if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidOperationException("O checkpoint não pode acessar links simbólicos.");
+        }
+        catch (FileNotFoundException) { }
+        catch (DirectoryNotFoundException) { }
+    }
 }
 
 /// <summary>Wraps a write tool so the checkpoint captures the file before it changes.</summary>
@@ -373,7 +438,8 @@ internal sealed class CheckpointedTool(ITool inner, LunetAiCheckpoint checkpoint
         {
             relativePath = relative;
             try { checkpoint.Capture(relative); }
-            catch (ArgumentException) { /* invalid path: the tool itself rejects it */ }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            { return ToolOutcome.Error(ex.Message); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // Without a saved original there is no way back: refuse the write instead of risking the file.
@@ -382,7 +448,8 @@ internal sealed class CheckpointedTool(ITool inner, LunetAiCheckpoint checkpoint
         }
         var outcome = await inner.InvokeAsync(invocation, context, cancellationToken);
         if (!outcome.IsError && relativePath is not null)
-            checkpoint.RecordWrite(relativePath);
+            checkpoint.RecordWrite(relativePath, outcome.Artifacts.FirstOrDefault(artifact =>
+                artifact.Kind == "lunet.text-file" && artifact.Location == relativePath)?.Id);
         return outcome;
     }
 }
@@ -399,5 +466,7 @@ public sealed record LunetAiRequest(
     ILunetAiImages? Images = null,
     IReadOnlyList<string>? Attachments = null,
     IProgress<LunetAiStep>? Steps = null,
-    LunetAiMode Mode = LunetAiMode.Auto,
-    ILunetAiWeb? Web = null);
+    LunetAiMode Mode = LunetAiMode.Teach,
+    ILunetAiWeb? Web = null,
+    IProgress<string>? PartialText = null,
+    bool? ModelTools = null);

@@ -1,0 +1,139 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-f3-ai-workspace",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T07:25:00.000Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f3",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-521",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f3-ai-workspace",
+  "base_commit": "28f09752bd29fd6b02e639d4451fe8543000a9e3",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Core/AgentRunner.cs",
+    "apps/ecosystem-ai/src/AgentRuntime.Core/Model.cs",
+    "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/ChatCompletionsProvider.cs",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/guides/f3-ai-workspace.md",
+    "apps/lunet2d/src/Lunet.Ai/Generated/Core/AgentRunner.cs",
+    "apps/lunet2d/src/Lunet.Ai/Generated/Core/Model.cs",
+    "apps/lunet2d/src/Lunet.Ai/Generated/Providers/ChatCompletionsProvider.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiModelCatalog.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectModels.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSettings.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSteps.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiStream.cs",
+    "apps/lunet2d/src/Lunet.Ai/WorkspaceAiChat.cs",
+    "apps/lunet2d/src/Lunet.Android/AiRunCoordinator.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AiCompact.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Attachments.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GlobalAi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Learn.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.LearnPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorSession.cs",
+    "apps/lunet2d/src/Lunet.Core/LunetProject.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LearningFeatureTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiAssetsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiCoworkTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiExpertiseTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiF3Tests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiIntentTests.cs",
+    "docs/governance/handoffs/HO-20261124-lunet-f3-ai-workspace.json"
+  ],
+  "work_completed": [
+    "Reviewed F3 plan, current native chat/settings and shared runtime, provider model contracts and interruption reports.",
+    "Provided project model override and global fallback, explicit Study/Do, context and offline reference selection, cache and paginated catalogue.",
+    "Persisted response text and tool states with session-scoped identity and resumed display; gated project writes with version checks and recoverable diff.",
+    "Added opt-in unpriced response handling to the canonical adapter and synchronized the Lunet projection. Strict behavior remains default."
+  ],
+  "verification": [
+    {
+      "check": "Lunet tests and F3 regressions in-process",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetAiF3Tests.cs"
+    },
+    {
+      "check": "Governed combined checks and official signed package",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "Validation uses controlled provider responses; no provider account credential supplied.",
+    "Chat requires a Chat Completions compatible endpoint. Native catalogue pagination does not imply a native inference dialect.",
+    "An interrupted process reopens its text and checkpoints without automatically replaying writes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verify governed merge and signed 1000588 release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "platform/agent-runtime/ARCHITECTURE.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "The shared runtime stays canonical. Model config belongs to a provider/game and chat history stays private."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "The Lunet builds its existing projection offline without a product reference; Urbe untouched."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff and roadmap link task, intent, branch, and verification."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Guide and changelog describe feature and scope."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Accepted unification direction and source projection used."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "No physical or real-provider validation claimed."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "agent-runtime-chat-completions",
+      "status": "product-specific",
+      "rationale": "Extend the existing canonical provider with an opt-in for the Lunet host. Strict metering remains the default for other callers. No extraction or new runtime."
+    },
+    {
+      "subject": "project-tools-and-checkpoints",
+      "status": "product-specific",
+      "rationale": "Reuse existing ProjectStore, knowledge, sprites, compilation, and authorization with product-specific context."
+    }
+  ]
+}

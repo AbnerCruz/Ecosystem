@@ -91,7 +91,7 @@ public sealed class LunetAiIntentTests
             var session = new LunetAiSession(project, Path.Combine(root, "h.json"));
             await session.AskAsync("crie um inimigo", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m" }, "chave-de-teste-123456789", LunetAiEditorContext.Empty,
-                Build: new NoBuild(), Provider: provider), TestContext.Current.CancellationToken);
+                Build: new NoBuild(), Provider: provider, Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
             Assert.Equal(LunetAiMode.Do, session.LastMode);
             var request = provider.Requests[0];
             Assert.Contains(LunetAiProjectTool.WriteName, request.Tools.Select(t => t.Name));
@@ -275,7 +275,9 @@ public sealed class LunetAiIntentTests
             var vault = new MemorySecretVault();
             vault.Set(LunetAiSettingsStore.SecretName, "chave-antiga-compartilhada-123");
             var store = new LunetAiSettingsStore(Path.Combine(root, "s.json"), vault);
+            Assert.Equal("chave-antiga-compartilhada-123", store.Load().ApiKey);
             Assert.Equal("chave-antiga-compartilhada-123", store.KeyFor("openrouter"));
+            Assert.Null(store.KeyFor("openai"));
             store.Save(LunetAiSettings.Default with { ProviderId = "openai", Model = "gpt" }, "chave-openai-1234567890");
             store.Save(LunetAiSettings.Default with { ProviderId = "groq", Model = "llama" }, "chave-groq-1234567890");
             Assert.Equal("chave-openai-1234567890", store.KeyFor("openai"));
@@ -300,7 +302,7 @@ public sealed class LunetAiIntentTests
             var store = new LunetAiSettingsStore(path, new MemorySecretVault());
             var old = store.Load().Settings;
             Assert.True(old.WebResearch);
-            Assert.Equal(LunetAiMode.Auto, old.DefaultMode);
+            Assert.Equal(LunetAiMode.Teach, old.DefaultMode);
             store.Save(old with { WebResearch = false, DefaultMode = LunetAiMode.Teach }, null);
             var reloaded = store.Load().Settings;
             Assert.False(reloaded.WebResearch);

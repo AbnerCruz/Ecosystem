@@ -162,7 +162,7 @@ public sealed class LunetAiCoworkTests
             var session = new LunetAiSession(project, Path.Combine(root, "history.json"));
             var reply = await session.AskAsync("adicione um comentário", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
-                LunetAiEditorContext.Empty, build, provider), TestContext.Current.CancellationToken);
+                LunetAiEditorContext.Empty, build, provider, Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
 
             Assert.Equal(RunStatus.Succeeded, reply.Status);
             Assert.True(build.Compilations >= 2);
@@ -194,7 +194,7 @@ public sealed class LunetAiCoworkTests
             var session = new LunetAiSession(project, Path.Combine(root, "h.json"));
             var reply = await session.AskAsync("crie um inimigo", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
-                LunetAiEditorContext.Empty, new FakeBuild(project), provider), TestContext.Current.CancellationToken);
+                LunetAiEditorContext.Empty, new FakeBuild(project), provider, Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
             Assert.Equal(RunStatus.Succeeded, reply.Status);
             var change = Assert.Single(reply.Changes);
             Assert.Null(change.Before);
@@ -223,7 +223,7 @@ public sealed class LunetAiCoworkTests
             var session = new LunetAiSession(project, Path.Combine(root, "history.json"));
             var reply = await session.AskAsync("crie um inimigo e comente o jogo", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
-                LunetAiEditorContext.Empty, new FakeBuild(project), provider), TestContext.Current.CancellationToken);
+                LunetAiEditorContext.Empty, new FakeBuild(project), provider, Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
 
             Assert.Equal(RunStatus.Succeeded, reply.Status);
             project.WriteText(entry, editedByAi + "// edição posterior da pessoa\n");
@@ -254,7 +254,7 @@ public sealed class LunetAiCoworkTests
             var session = new LunetAiSession(project, historyPath);
             var reply = await session.AskAsync("crie o inimigo", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
-                LunetAiEditorContext.Empty, new FakeBuild(project), provider), TestContext.Current.CancellationToken);
+                LunetAiEditorContext.Empty, new FakeBuild(project), provider, Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
             Assert.Equal(RunStatus.Succeeded, reply.Status);
             var reopened = new LunetAiSession(project, historyPath);
             var checkpoint = Assert.IsType<LunetAiCheckpoint>(reopened.CheckpointFor(reopened.History.Last()));

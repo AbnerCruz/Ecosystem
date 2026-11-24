@@ -41,6 +41,10 @@ public sealed record Usage(long InputTokens, long OutputTokens, Money Cost)
 {
     // Adapters que recebem custo sem contagem não podem apresentar zero como medição.
     public bool TokensKnown { get; init; } = true;
+
+    // For hosts that opt into unpriced responses, Cost settles an internal reservation only.
+    // Do not expose it as a provider charge.
+    public bool CostKnown { get; init; } = true;
 }
 
 public sealed record ModelResponse(IReadOnlyList<ContentBlock> Content, StopReason Stop, Usage Usage);

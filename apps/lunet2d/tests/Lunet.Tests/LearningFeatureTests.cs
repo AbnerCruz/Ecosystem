@@ -131,8 +131,10 @@ public sealed class LearningFeatureTests : IDisposable
             new LunetAiSettings("openrouter", "https://openrouter.ai/api/v1/chat/completions", "test-model", 16, false),
             "test-secret-key-00000");
         await Assert.ThrowsAsync<HttpRequestException>(() => chat.AskAsync("Teste", ai, TestContext.Current.CancellationToken));
-        Assert.Empty(chat.History);
-        Assert.False(File.Exists(path));
+        Assert.Equal("Teste", chat.History[0].Text);
+        Assert.True(chat.History[1].Interrupted);
+        Assert.False(chat.History[1].Pending);
+        Assert.True(new WorkspaceAiChat(path, http).History[1].Interrupted);
     }
 
     [Fact]

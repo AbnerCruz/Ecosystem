@@ -81,7 +81,7 @@ public sealed class LunetAiAssetsTests
             var provider = new ScriptedEscape();
             var session = new LunetAiSession(project, Path.Combine(root, "h.json"));
             var reply = await session.AskAsync("x", new LunetAiRequest(LunetAiSettings.Default with { Model = "m" },
-                "chave-de-teste-123456789", LunetAiEditorContext.Empty, null, provider), TestContext.Current.CancellationToken);
+                "chave-de-teste-123456789", LunetAiEditorContext.Empty, null, provider, Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
             File.WriteAllText(outside, "alterado por outro processo");
             reply.Checkpoint.Revert();
             Assert.Equal("alterado por outro processo", File.ReadAllText(outside));

@@ -171,7 +171,7 @@ public sealed class AgentRunner(
                     .Where(b => b is not ReasoningBlock)
                     .Select(b => b is TextBlock t ? t with { Text = _redactor.Redact(t.Text) } : b)
                     .ToList();
-                await EmitAsync(run, EventKind.ModelResponded, model: profile.Model, cost: response.Usage.Cost,
+                await EmitAsync(run, EventKind.ModelResponded, model: profile.Model, cost: response.Usage.CostKnown ? response.Usage.Cost : null,
                     payload: ContentSerializer.ToJson(content),
                     data: response.Usage.TokensKnown && response.Usage.InputTokens >= 0 && response.Usage.OutputTokens >= 0
                         ? Data(("inputTokens", response.Usage.InputTokens.ToString(System.Globalization.CultureInfo.InvariantCulture)),

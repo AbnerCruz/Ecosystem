@@ -163,7 +163,7 @@ public sealed partial class MainActivity
         {
             OpenAiPanel("Estou fazendo " + challenge.Id + " (" + challenge.Title +
                 "). Missão: " + challenge.Mission +
-                " Dê somente uma pista conceitual; não altere meu jogo sem autorização.");
+                " Dê somente uma pista conceitual; não altere meu jogo sem autorização.", study: true);
         }, ButtonStyle.Secondary), LunetUi.FillWidth(Dp(48)));
 
         var other = progress.LinkedProjectIdsForGameId(_project.Manifest.GameId);

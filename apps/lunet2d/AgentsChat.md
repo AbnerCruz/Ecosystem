@@ -849,3 +849,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Base integrada `7251ccd9`, release `1000586`. Ramo `feat/lunet-f2-workspace`, restrito ao produto Lunet.
 - Home adaptativa e primeiro uso, tema e fonte nas preferências, escolha de pasta Android e snapshots verificados com cópia de trabalho recuperável. A decisão de storage preserva o filesystem local que Roslyn, Git e Studios já usam.
 - Verificação e limitações no [guia da F2](docs/guides/f2-workspace.md) e no handoff da entrega. A versão mantém o estágio dev.
+
+
+### 20261124-chatgpt-lunet-f3 — 24/11/2026 — ChatGPT → integrador — F3
+- Base oficial `28f09752` / `1000587`. Ramo `feat/lunet-f3-ai-workspace`. Escopo LUNET-521, LUNET-AI-002, LUNET-513/514.
+- Estudo primeiro, Fazer explícito, catálogo comum, preferência por GameId, contexto observável, texto parcial e etapas duráveis, revisão e desfazer. Mantida a fonte canônica do runtime e sua projeção sincronizada. O patch mantém as fronteiras de produto.
+- [Guia da F3](docs/guides/f3-ai-workspace.md), suite xUnit e workflow de release fornecem a evidência de código e distribuição.

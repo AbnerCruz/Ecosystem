@@ -37,7 +37,14 @@ public sealed partial class MainActivity
     private LinearLayout? _aiPills;
     private LunetAiSession? _aiSession;
     private string? _aiSessionProject;
+    private string? _aiSessionDirectory;
+    private LunetAiWork? _aiRenderedWork;
+    private LinearLayout? _aiLiveSteps;
+    private TextView? _aiLiveText;
+    private IReadOnlyList<LunetAiStep> _aiRenderedSteps = [];
     private string? _aiPendingSelection;
+    private string? _aiPendingSelectionFile;
+    private LunetAiDocHit? _aiReference;
     private string? _aiLastPrompt;
     private readonly HashSet<string> _aiExcludedContext = new(StringComparer.Ordinal);
 
@@ -51,20 +58,39 @@ public sealed partial class MainActivity
         else OpenAiPanel(null);
     }
 
-    private void OpenAiPanel(string? prefill, bool autoSend = false)
+    private void OpenAiPanel(string? prefill, bool autoSend = false, bool study = false)
     {
         if (_project is null || _workspaceFrame is null)
         {
             Toast.MakeText(this, "Abra um projeto para usar a IA.", ToastLength.Short)?.Show();
             return;
         }
+        if (LunetAiRuns.Current is { IsRunning: true } active && active.ProjectId == _project.Manifest.GameId &&
+            !active.BelongsTo(_project))
+        {
+            Toast.MakeText(this, "A IA ainda trabalha em outra cópia deste jogo.", ToastLength.Long)?.Show();
+            return;
+        }
         _aiPendingSelection = SelectedEditorText();
-        _aiExcludedContext.Clear();
+        _aiPendingSelectionFile = _openFile;
+        if (_aiSessionProject != _project.Manifest.GameId)
+        {
+            _aiExcludedContext.Clear();
+            _aiReference = null;
+            _aiMode = LunetAiMode.Teach;
+            _aiModeOnce = null;
+        }
+        if (study)
+        {
+            _aiMode = LunetAiMode.Teach;
+            _aiModeOnce = null;
+        }
         EnsureAiSession();
         if (_aiPanel is null || _aiPanel.Parent != _workspaceFrame) BuildChat(_workspaceFrame);
         _aiPanel!.Visibility = ViewStates.Visible;
         _aiPanel.BringToFront();
         RefreshAiHeader();
+        PaintAiModes();
         RenderConversation();
         if (prefill is not null && _aiInput is not null)
         {
@@ -93,22 +119,27 @@ public sealed partial class MainActivity
     private void EnsureAiSession()
     {
         var project = _project!;
-        if (_aiSession is not null && _aiSessionProject == project.Manifest.GameId) return;
+        if (_aiSession is not null && _aiSessionProject == project.Manifest.GameId && _aiSessionDirectory == project.Directory) return;
         var active = LunetAiRuns.Current;
-        if (active is { IsRunning: true } && active.ProjectId == project.Manifest.GameId)
+        if (active is { IsRunning: true } && active.BelongsTo(project))
         {
             _aiSession = active.Session;
             _aiSessionProject = project.Manifest.GameId;
+            _aiSessionDirectory = project.Directory;
             return;
         }
         var identifier = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
         _aiSession = new LunetAiSession(project, System.IO.Path.Combine(FilesDir!.AbsolutePath, "ai", identifier + ".json"));
         _aiSessionProject = project.Manifest.GameId;
+        _aiSessionDirectory = project.Directory;
         _aiSession.MarkInterruptedIfPending();
         _aiAttachments.Clear();
     }
 
     // ---------- Layout ----------
+
+    private global::Android.Content.ISharedPreferences AiDrafts =>
+        GetSharedPreferences("lunet-ai-drafts", global::Android.Content.FileCreationMode.Private)!;
 
     private void BuildChat(FrameLayout host)
     {
@@ -145,12 +176,21 @@ public sealed partial class MainActivity
         // Composer: context pills + attachments + input box
         var composerArea = new LinearLayout(this) { Orientation = Orientation.Vertical };
         composerArea.SetPadding(Dp(10), Dp(6), Dp(10), Dp(10));
-        _aiMode = Ai.Settings.DefaultMode;
+        _aiModeChips.Clear();
         var modeRow = LunetUi.Row(this, 6);
         modeRow.SetPadding(Dp(2), 0, Dp(2), Dp(6));
         foreach (var (mode, label, description) in AiModes)
         {
-            var chip = LunetUi.Chip(this, label, () => { _aiMode = mode; PaintAiModes(); });
+            var chip = LunetUi.Chip(this, label, () =>
+            {
+                if (mode == LunetAiMode.Do && (!Ai.Settings.AllowWrites || _aiExcludedContext.Contains("project")))
+                {
+                    Toast.MakeText(this, "Fazer requer contexto do projeto e permissão de escrita nas configurações globais.", ToastLength.Long)?.Show();
+                    return;
+                }
+                _aiMode = mode;
+                PaintAiModes();
+            });
             chip.ContentDescription = description;
             _aiModeChips.Add((mode, chip));
             modeRow.AddView(chip);
@@ -187,7 +227,14 @@ public sealed partial class MainActivity
         _aiInput.SetMinLines(1);
         _aiInput.SetMaxLines(6);
         _aiInput.InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagCapSentences;
-        _aiInput.TextChanged += (_, _) => RefreshSendButton();
+        var draftKey = "project:" + _aiSessionProject;
+        _aiInput.Text = AiDrafts.GetString(draftKey, "") ?? "";
+        var draftInput = _aiInput;
+        _aiInput.TextChanged += (_, _) =>
+        {
+            AiDrafts.Edit()!.PutString(draftKey, draftInput.Text ?? "")!.Apply();
+            if (ReferenceEquals(_aiInput, draftInput)) RefreshSendButton();
+        };
         PaintAiModes();
         box.AddView(_aiInput, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
         _aiSend = LunetUi.Icon(this, "↑", "Enviar", SendAi, accent: true);
@@ -214,12 +261,11 @@ public sealed partial class MainActivity
 
     private static readonly (LunetAiMode Mode, string Label, string Description)[] AiModes =
     [
-        (LunetAiMode.Auto, "✦ Auto", "A IA entende pelo pedido se deve explicar ou fazer"),
-        (LunetAiMode.Teach, "📖 Ensinar", "Explica como você mesmo faz, sem alterar o projeto"),
+        (LunetAiMode.Teach, "📖 Estudo", "Explica como você mesmo faz, sem alterar o projeto"),
         (LunetAiMode.Do, "⚒ Fazer", "A IA implementa no projeto, com checkpoint para desfazer"),
     ];
 
-    private LunetAiMode _aiMode = LunetAiMode.Auto;
+    private LunetAiMode _aiMode = LunetAiMode.Teach;
     private LunetAiMode? _aiModeOnce;
     private readonly List<(LunetAiMode Mode, TextView Chip)> _aiModeChips = [];
 
@@ -244,7 +290,7 @@ public sealed partial class MainActivity
     {
         if (_aiSend is null) return;
         bool running = LunetAiRuns.Current is { IsRunning: true } current &&
-            current.ProjectId == _project?.Manifest.GameId;
+            current.BelongsTo(_project);
         bool hasText = !string.IsNullOrWhiteSpace(_aiInput?.Text) || _aiAttachments.Count > 0;
         LunetUi.SetLabel(_aiSend, running ? "■" : "↑");
         _aiSend.ContentDescription = running ? "Parar a IA" : "Enviar";
@@ -255,7 +301,7 @@ public sealed partial class MainActivity
     [
         ("Nova conversa", () =>
         {
-            if (LunetAiRuns.Current is { IsRunning: true } current && current.ProjectId == _project?.Manifest.GameId)
+            if (LunetAiRuns.Current is { IsRunning: true } current && current.BelongsTo(_project))
             {
                 Toast.MakeText(this, "Pare a execução antes de iniciar outra conversa.", ToastLength.Short)?.Show();
                 return;
@@ -273,7 +319,7 @@ public sealed partial class MainActivity
     private void RefreshAiHeader()
     {
         if (_aiModelChip is null) return;
-        var ai = Ai;
+        var ai = ProjectAi;
         _aiModelChip.Text = ai.IsConfigured ? ShortModel(ai.Settings.Model) + "  ▾" : "Modelo ▾";
         if (_aiSubtitle is not null)
             _aiSubtitle.Text = (_project?.Name ?? "") + (ai.IsConfigured ? " · " + LunetAiProviders.Find(ai.Settings.ProviderId).Name : "") +
@@ -306,12 +352,55 @@ public sealed partial class MainActivity
             chip.ContentDescription = (off ? "Incluir " : "Excluir do contexto: ") + text;
             _aiPills.AddView(chip);
         }
+        Pill("project", "Projeto");
+        _aiPills.AddView(LunetUi.Chip(this, "Conferir contexto", ShowEffectiveAiContext, selected: false));
+        _aiPills.AddView(LunetUi.Chip(this, _aiReference is { } doc ? "📖 " + doc.Title : "＋ Referência offline",
+            ChooseAiReference, _aiReference is not null));
         if (context.OpenFile is not null) Pill("file", "📄 " + System.IO.Path.GetFileName(context.OpenFile) + (context.CaretLine > 0 ? ":" + context.CaretLine : ""));
         if (!string.IsNullOrEmpty(context.Selection)) Pill("selection", "✂ seleção · " + context.Selection.Split('\n').Length + " linha(s)");
         int errors = context.Diagnostics.Count(d => d.Contains(": error", StringComparison.Ordinal));
         if (errors > 0) Pill("errors", "⚠ " + errors + " erro(s)");
         if (context.ConsoleTail.Count > 0) Pill("console", "❯ console");
         _aiPills.Visibility = _aiPills.ChildCount == 0 ? ViewStates.Gone : ViewStates.Visible;
+    }
+
+    private void ChooseAiReference()
+    {
+        var input = LunetUi.Input(this, "Buscar na documentação do Lunet");
+        var dialog = new AlertDialog.Builder(this)!.SetTitle("Referência para o pedido")!.SetView(input)!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetNeutralButton("Remover", (_, _) => { _aiReference = null; RefreshPills(); })!
+            .SetPositiveButton("Buscar", (_, _) =>
+            {
+                var hits = AiKnowledge().Search(input.Text ?? "");
+                if (hits.Count == 0)
+                {
+                    Toast.MakeText(this, "Nenhuma referência encontrada.", ToastLength.Short)?.Show();
+                    return;
+                }
+                new AlertDialog.Builder(this)!.SetTitle("Incluir referência offline")!
+                    .SetItems(hits.Select(hit => hit.Title).ToArray(), (_, e) => { _aiReference = hits[e.Which]; RefreshPills(); })!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+            })!;
+        dialog.Show();
+    }
+
+    private void ShowEffectiveAiContext()
+    {
+        var context = CurrentAiContext();
+        var text = context.IncludeProject
+            ? $"Projeto {_project?.Name} · GameId {_project?.Manifest.GameId}\n" + context.Describe() +
+                (_aiAttachments.Count == 0 ? "" : "\nAnexos: " + string.Join(", ", _aiAttachments)) +
+                "\nA IA também pode consultar os arquivos do projeto e as referências offline."
+            : "Sem arquivos, anexos, histórico do projeto, diagnósticos ou seleção. A documentação offline continua disponível." +
+                (_aiReference is { } doc ? "\nReferência escolhida: " + doc.Title : "");
+        var scroll = new ScrollView(this);
+        var body = LunetUi.Label(this, text);
+        body.SetPadding(Dp(16), Dp(12), Dp(16), Dp(12));
+        body.SetTextIsSelectable(true);
+        scroll.AddView(body);
+        new AlertDialog.Builder(this)!.SetTitle("Contexto do próximo pedido")!.SetView(scroll)!
+            .SetPositiveButton("Fechar", (_, _) => { })!.Show();
     }
 
     private string? SelectedEditorText()
@@ -333,20 +422,25 @@ public sealed partial class MainActivity
             .Where(p => p.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning)
             .Select(p => $"{p.FilePath ?? "?"}({p.Line},{p.Column}): {(p.Severity == DiagnosticSeverity.Error ? "error" : "warning")} {p.Id}: {p.Message}")
             .ToArray();
-        return new LunetAiEditorContext(_openNote ?? _openFile, _openNote is null ? SelectedEditorText() ?? _aiPendingSelection : null,
-            caretLine, diagnostics, _console.TakeLast(30).ToArray());
+        var path = _openNote ?? _openFile;
+        var revision = _openNote is null && _editor is not null ? LunetAiProjectFiles.Hash(_editor.Text ?? "") : null;
+        return new LunetAiEditorContext(path, _openNote is null ? SelectedEditorText() ?? (_aiPendingSelectionFile == _openFile ? _aiPendingSelection : null) : null,
+            caretLine, diagnostics, _console.TakeLast(30).ToArray(), Revision: revision, ReferenceId: _aiReference?.Id);
     }
 
     /// <summary>The context actually sent: the full context minus what the person turned off.</summary>
     private LunetAiEditorContext CurrentAiContext()
     {
         var c = FullAiContext();
+        if (_aiExcludedContext.Contains("project"))
+            return LunetAiEditorContext.Empty with { IncludeProject = false, ReferenceId = _aiReference?.Id };
         return new LunetAiEditorContext(
             _aiExcludedContext.Contains("file") ? null : c.OpenFile,
             _aiExcludedContext.Contains("selection") ? null : c.Selection,
             _aiExcludedContext.Contains("file") ? 0 : c.CaretLine,
             _aiExcludedContext.Contains("errors") ? [] : c.Diagnostics,
-            _aiExcludedContext.Contains("console") ? [] : c.ConsoleTail);
+            _aiExcludedContext.Contains("console") ? [] : c.ConsoleTail,
+            Revision: _aiExcludedContext.Contains("file") ? null : c.Revision, ReferenceId: c.ReferenceId);
     }
 
     // ---------- Conversation rendering ----------
@@ -355,10 +449,14 @@ public sealed partial class MainActivity
     {
         if (_aiLog is null || _aiSession is null) return;
         var work = LunetAiRuns.Current;
-        bool belongs = work is not null && work.ProjectId == _project?.Manifest.GameId;
+        bool belongs = work is not null && work.BelongsTo(_project);
         int oldY = _aiScroll?.ScrollY ?? 0;
         bool followBottom = _aiScroll is null || _aiLog.Height - oldY - _aiScroll.Height < Dp(96);
 
+        _aiRenderedWork = null;
+        _aiLiveText = null;
+        _aiLiveSteps = null;
+        _aiRenderedSteps = [];
         _aiLog.RemoveAllViews();
         var history = _aiSession.History;
         if (history.Count == 0 && !(belongs && work!.IsRunning)) { RenderEmptyState(); return; }
@@ -367,16 +465,17 @@ public sealed partial class MainActivity
             var turn = history[i];
             if (turn.Role == "Você") { AddUserMessage(turn.Text); continue; }
             // A pending turn of the live run shows its progress below; its changes appear when it ends.
-            bool live = belongs && work!.IsRunning && i == history.Count - 1;
+            bool live = belongs && work!.IsRunning && turn.Pending;
             if (live) continue;
             AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você"
                 ? StripAttachments(history[i - 1].Text) : null, taught: turn.Mode == LunetAiMode.Teach,
-                checkpoint: _aiSession.CheckpointFor(turn), verified: turn.Verified);
+                checkpoint: _aiSession.CheckpointFor(turn), verified: turn.Verified,
+                steps: turn.Steps ?? (belongs && !work!.IsRunning && i == history.Count - 1 ? work.Steps : null));
         }
         if (belongs && work!.IsRunning)
         {
             // During the few milliseconds before the service persists the pending turn, show the request.
-            if (history.Count == 0 || history[^1].Role != "Lunet") AddUserMessage(work.Prompt);
+            if (history.Count == 0 || !history[^1].Pending) AddUserMessage(work.Prompt);
             AddAiWorkStatus(work);
         }
         else if (belongs && work!.Error is { } error)
@@ -391,21 +490,40 @@ public sealed partial class MainActivity
 
     private void AddAiWorkStatus(LunetAiWork work)
     {
-        var state = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        var state = LunetUi.Column(this, 8);
         state.AddView(LunetUi.Label(this, "✦ Lunet · trabalhando em segundo plano",
             LunetUi.TextLabel, LunetUi.AccentText, bold: true));
-        var steps = work.Steps;
-        if (steps.Count == 0)
-            state.AddView(LunetUi.Label(this, "Iniciando…", LunetUi.TextBody, LunetUi.TextMuted));
-        else
-        {
-            var box = new LinearLayout(this) { Orientation = Orientation.Vertical };
-            box.SetPadding(Dp(10), Dp(8), Dp(10), Dp(8));
-            box.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
-            foreach (var step in steps.TakeLast(12)) box.AddView(StepRow(step));
-            state.AddView(box, Spaced(LunetUi.FillWidth(), 8));
-        }
+        _aiLiveText = LunetUi.Label(this, "", LunetUi.TextBody, LunetUi.Text);
+        _aiLiveText.SetTextIsSelectable(true);
+        state.AddView(_aiLiveText);
+        _aiLiveSteps = LunetUi.Column(this, 4);
+        state.AddView(_aiLiveSteps);
         _aiLog!.AddView(state, Spaced(LunetUi.FillWidth(), 14));
+        _aiRenderedWork = work;
+        RefreshLiveAi(work);
+    }
+
+    private void RefreshLiveAi(LunetAiWork work)
+    {
+        if (!ReferenceEquals(_aiRenderedWork, work) || _aiLiveText is null || _aiLiveSteps is null)
+        {
+            RenderConversation();
+            return;
+        }
+        bool follow = _aiScroll is null || _aiLog!.Height - _aiScroll.ScrollY - _aiScroll.Height < Dp(64);
+        var text = work.PartialText;
+        if (_aiLiveText.Text != text) _aiLiveText.Text = text;
+        _aiLiveText.Visibility = text.Length == 0 ? ViewStates.Gone : ViewStates.Visible;
+        var steps = work.Steps.TakeLast(12).ToArray();
+        if (!_aiRenderedSteps.SequenceEqual(steps))
+        {
+            _aiLiveSteps.RemoveAllViews();
+            foreach (var step in steps) _aiLiveSteps.AddView(StepRow(step));
+            _aiRenderedSteps = steps;
+        }
+        if (_aiLiveSteps.ChildCount == 0)
+            _aiLiveSteps.AddView(LunetUi.Label(this, "Aguardando o modelo…", LunetUi.TextBody, LunetUi.TextMuted));
+        if (follow) ScrollAiToEnd();
     }
 
     private static string StripAttachments(string text)
@@ -781,7 +899,7 @@ public sealed partial class MainActivity
         var ongoing = LunetAiRuns.Current;
         if (ongoing is { IsRunning: true })
         {
-            if (ongoing.ProjectId == _project?.Manifest.GameId) ongoing.Cancel();
+            if (ongoing.BelongsTo(_project)) ongoing.Cancel();
             else Toast.MakeText(this, "A IA já trabalha em outro projeto. Aguarde ou cancele a tarefa atual.", ToastLength.Long)?.Show();
             return;
         }
@@ -790,18 +908,30 @@ public sealed partial class MainActivity
         if (prompt.Length == 0 && _aiAttachments.Count > 0)
             prompt = "Veja o anexo e me diga como podemos usá-lo no jogo.";
         if (prompt.Length == 0 || _project is null || _aiSession is null) return;
-        var ai = Ai;
+        var ai = ProjectAi;
         if (!ai.IsConfigured) { Toast.MakeText(this, "Configure a IA na área de trabalho → Lunet IA.", ToastLength.Long)?.Show(); return; }
 
         SaveCurrent();
         var context = CurrentAiContext();
-        var attachments = _aiAttachments.ToArray();
+        var attachments = context.IncludeProject ? _aiAttachments.ToArray() : [];
         var project = _project;
         var mode = _aiModeOnce ?? _aiMode;
-        _aiModeOnce = null;
+        if (mode == LunetAiMode.Do && (!ai.Settings.AllowWrites || !context.IncludeProject))
+        {
+            Toast.MakeText(this, "Fazer requer contexto do projeto e permissão de escrita nas configurações globais.", ToastLength.Long)?.Show();
+            return;
+        }
+        bool? tools = null;
+        try { tools = ModelCatalog.KnownTools(ai); }
+        catch (ArgumentException) { }
+        if (mode == LunetAiMode.Do && tools == false)
+        {
+            Toast.MakeText(this, "Este modelo não oferece ferramentas. Escolha outro modelo ou use Estudo.", ToastLength.Long)?.Show();
+            return;
+        }
         var request = new LunetAiRequest(ai.Settings, ai.ApiKey!, context, new AndroidAiBuild(project),
             Knowledge: AiKnowledge(), Images: new AndroidAiImages(), Attachments: attachments, Mode: mode,
-            Web: ai.Settings.WebResearch ? AiWeb : null);
+            Web: ai.Settings.WebResearch ? AiWeb : null, ModelTools: tools);
         var work = new LunetAiWork(project, _aiSession, prompt, request);
         if (!LunetAiRuns.TryStart(this, work, out var error))
         {
@@ -809,6 +939,9 @@ public sealed partial class MainActivity
             return;
         }
 
+        _aiModeOnce = null;
+        _aiMode = LunetAiMode.Teach;
+        PaintAiModes();
         _aiPendingSelection = null;
         _aiInput!.Text = "";
         _aiAttachments.Clear();
@@ -827,7 +960,7 @@ public sealed partial class MainActivity
             System.Threading.Interlocked.Exchange(ref _aiUiRefreshQueued, 0);
             if (IsDestroyed || _project is null) return;
             var work = LunetAiRuns.Current;
-            if (work is null || work.ProjectId != _project.Manifest.GameId) return;
+            if (work is null || !work.BelongsTo(_project)) return;
 
             // Avoid reloading the editor on each progress event. Always sync once when done.
             long tick = Environment.TickCount64;
@@ -848,10 +981,11 @@ public sealed partial class MainActivity
 
             UpdateAiCompact();
             long now = Environment.TickCount64;
-            if (AiPanelOpen && (!work.IsRunning || now - _aiLastConversationRenderMs >= 400))
+            if (AiPanelOpen && (!work.IsRunning || now - _aiLastConversationRenderMs >= 100))
             {
                 _aiLastConversationRenderMs = now;
-                RenderConversation();
+                if (work.IsRunning) RefreshLiveAi(work);
+                else RenderConversation();
             }
             RefreshSendButton();
         });
@@ -909,7 +1043,11 @@ public sealed partial class MainActivity
         catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException) { }
     }
 
-    private void ScrollAiToEnd() => _aiScroll?.Post(() => _aiScroll?.FullScroll(FocusSearchDirection.Down));
+    private void ScrollAiToEnd()
+    {
+        if (_aiScroll is { } scroll && _aiLog is { } log)
+            scroll.Post(() => scroll.ScrollTo(0, log.Height));
+    }
 
 #if LUNET_UI_DEMO
     /// <summary>Screenshot content: a finished exchange with steps, code and changes summary.</summary>

@@ -10,7 +10,7 @@ public enum LunetAiStepStatus { Running, Done, Failed }
 /// One visible thing the agent did (LUNET-490): people need to see which files it read and changed and what it ran,
 /// instead of "coding blind". Labels are written for the person, not for logs.
 /// </summary>
-public sealed record LunetAiStep(string Id, LunetAiStepKind Kind, string Label, string? Detail, LunetAiStepStatus Status, string? Error = null)
+public sealed record LunetAiStep(string Id, LunetAiStepKind Kind, string Label, string? Detail, LunetAiStepStatus Status, string? Error = null, long? ElapsedMilliseconds = null)
 {
     /// <summary>"Explorou 2 itens · editou 1 arquivo · compilou 1×" — the collapsed line shown after the run.</summary>
     public static string Summarize(IEnumerable<LunetAiStep> steps)
@@ -60,20 +60,26 @@ internal sealed class ReportingTool(ITool inner, IProgress<LunetAiStep> progress
     {
         var (kind, label, detail) = LunetAiStep.Describe(Descriptor.CapabilityId, invocation.Arguments);
         var id = invocation.CallId;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         progress.Report(new LunetAiStep(id, kind, label, detail, LunetAiStepStatus.Running));
         try
         {
             var outcome = await inner.InvokeAsync(invocation, context, cancellationToken);
             if (kind == LunetAiStepKind.Compile && !outcome.IsError && outcome.Content.Contains("\"success\":false", StringComparison.Ordinal))
-                progress.Report(new LunetAiStep(id, kind, "Compilação com erros", detail, LunetAiStepStatus.Failed));
+                progress.Report(new LunetAiStep(id, kind, "Compilação com erros", detail, LunetAiStepStatus.Failed, ElapsedMilliseconds: stopwatch.ElapsedMilliseconds));
             else
                 progress.Report(new LunetAiStep(id, kind, label, detail, outcome.IsError ? LunetAiStepStatus.Failed : LunetAiStepStatus.Done,
-                    outcome.IsError ? (outcome.Content.Length > 160 ? outcome.Content[..160] + "…" : outcome.Content) : null));
+                    outcome.IsError ? (outcome.Content.Length > 160 ? outcome.Content[..160] + "…" : outcome.Content) : null, stopwatch.ElapsedMilliseconds));
             return outcome;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException)
         {
-            progress.Report(new LunetAiStep(id, kind, label, detail, LunetAiStepStatus.Failed, ex.Message));
+            progress.Report(new LunetAiStep(id, kind, label, detail, LunetAiStepStatus.Failed, "Cancelada.", stopwatch.ElapsedMilliseconds));
+            throw;
+        }
+        catch (Exception ex)
+        {
+            progress.Report(new LunetAiStep(id, kind, label, detail, LunetAiStepStatus.Failed, ex.Message, stopwatch.ElapsedMilliseconds));
             throw;
         }
     }
