@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-estudos-arquiteturais",
+  "category": "RESULT",
+  "timestamp": "2026-11-24T12:23:12Z",
+  "agent": {
+    "id": "chatgpt-lunet-estudos-arquiteturais",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-302.1",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "docs/lunet-estudos-arquiteturais-20261124",
+  "base_commit": "952659e8e7f08a3a8ebdd8d60186697aef6c7b5a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-consolidacao-arquitetural.md",
+    "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-estudo-dependencias-contextuais.md",
+    "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-estudo-importacoes-globais.md",
+    "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-estudo-ordenacao-renderizacao.md",
+    "docs/governance/handoffs/HO-20261124-lunet-estudos-arquiteturais.json"
+  ],
+  "work_completed": [
+    "Estudo solicitado pelo proprietário, com LUNET-302 como referência histórica da direção code-first, e registro das três auditorias e da análise conjunta.",
+    "Três agentes examinaram importações, contexto e renderização. A consolidação local validou achados, completou as seções e conferiu referências fixadas na base.",
+    "Registro exclusivamente documental em docs/architecture/audits, sem ativar o gatilho de release do Lunet em apps/lunet2d."
+  ],
+  "verification": [
+    {
+      "check": "Leitura canônica e medição de 26 namespaces com Roslyn, SDK externo e servidor",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-estudo-importacoes-globais.md"
+    },
+    {
+      "check": "Sondas isoladas de contexto e renderização no Linux",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-consolidacao-arquitetural.md"
+    },
+    {
+      "check": "Lunet.Tests Debug no runner xUnit, 1179 casos aprovados",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-consolidacao-arquitetural.md"
+    },
+    {
+      "check": "Recorte gráfico Release, 132 de 133 aprovados",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "docs/architecture/audits/lunet-evolucoes-2026-11-24/Lunet-estudo-ordenacao-renderizacao.md"
+    }
+  ],
+  "known_issues": [
+    "No recorte Release do código de partida, o teste existente de alocação com toque e gestos falhou em Linux. Isso não atribui causa ao SpriteBatch.",
+    "Ensaios de compilação em Linux não estabelecem paridade Android da configuração de importações. Sem validação física ou benchmark das propostas.",
+    "Trechos de documentação analisados isoladamente podem não ligar todos os símbolos. Corpus e denominadores estão registrados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar nova ordem sobre as propostas. O resultado é um estudo para decisão, sem mudança de API ou autorização de desenvolvimento."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0002-modelo-de-compilacao-e-camadas.md",
+    "apps/lunet2d/docs/adr/0006-preview-rapido-e-isolado.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O C# real é a fonte proposta; organização visual funciona como projeção."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Base imutável, branch, artefatos, testes e pendências documentados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Recomendações condicionais e experimentos de estudo, sem decisão normativa ou alteração de contratos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Separadas as saídas de Roslyn/SDK, xUnit e rasterizador CPU da evidência física Android."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração de infraestrutura; o possível reuso descrito restringe-se a jornadas de validação."
+    }
+  ]
+}
