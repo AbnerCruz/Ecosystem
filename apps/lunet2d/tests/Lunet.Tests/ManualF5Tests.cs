@@ -126,6 +126,27 @@ public sealed class ManualF5Tests
     }
 
     [Fact]
+    public void AGameMovedOnDiskStillResolvesTheMissionByItsOriginalId()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var projects = new ProjectStore(Path.Combine(root, "games"));
+            var game = projects.Create("Original");
+            var progress = new LearningProgressStore(Path.Combine(root, "progress.json"));
+            progress.LinkProject("Original", game.Manifest.GameId);
+            progress.SetCompleted("LRN-001-P1-S1", true);
+            Directory.Move(game.Directory, Path.Combine(Path.GetDirectoryName(game.Directory)!, "Movido"));
+            var name = LauncherProjectCatalog.UniqueNameForId(LauncherProjectCatalog.Scan(projects), progress.ProjectGameId);
+            Assert.Equal("Movido", name);
+            Assert.Equal("Original", projects.Open(name!).Manifest.Name);
+            Assert.True(progress.Completed("LRN-001-P1-S1"));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
     public void RebindingIsolatesGamesAndRecoveryPreservesTheDamagedFile()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

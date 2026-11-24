@@ -24,7 +24,8 @@ public sealed partial class MainActivity
     {
         if (_project is null) { _selectedLearningProjectId = null; return; }
 
-        if (LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, _project.Manifest.GameId) != _project.Name)
+        var folder = System.IO.Path.GetFileName(_project.Directory);
+        if (LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, _project.Manifest.GameId) != folder)
         {
             _selectedLearningProjectId = null;
             if (_layoutStore.Current.PanelTab == "learn") _layoutStore.Current.PanelTab = "problems";
