@@ -4,6 +4,7 @@ using Android.OS;
 using Android.Text;
 using Android.Text.Style;
 using Android.Views;
+using Android.Views.InputMethods;
 using Android.Widget;
 using Lunet.Editor;
 using AndroidColor = Android.Graphics.Color;
@@ -72,6 +73,7 @@ internal sealed partial class CodeEditText : EditText
         SetTypeface(Typeface.Monospace, TypefaceStyle.Normal);
         SetHorizontallyScrolling(true);
         InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagNoSuggestions | InputTypes.TextVariationVisiblePassword;
+        ImeOptions = (ImeAction)(ImeFlags.NoExtractUi | ImeFlags.NoFullscreen);
         SetBackgroundColor(LunetUi.Background);
         SetTextColor(LunetUi.Text);
         SetLineSpacing(0, 1.12f);
