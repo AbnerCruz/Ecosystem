@@ -901,6 +901,9 @@ public sealed partial class MainActivity : Activity
         }
         else
         {
+            if (_selectedLearningProjectId is not null)
+                _panelList.AddView(LunetUi.Button(this, "Voltar à missão", OpenLearningWorkbenchPanel, ButtonStyle.Quiet),
+                    LunetUi.FillWidth(Dp(48)));
             int errors = _problems.Count(p => p.Severity == DiagnosticSeverity.Error);
             if (errors > 0)
             {

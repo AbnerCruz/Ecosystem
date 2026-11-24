@@ -302,12 +302,20 @@ public sealed partial class MainActivity
     private void AskLearningHint(LearningProject challenge)
     {
         if (_project is null) return;
+        var game = _project;
         var progress = LearningProgress();
-        var step = challenge.Steps.FirstOrDefault(s => progress?.Completed(challenge.Id, s.Id) == false);
-        OpenAiPanel($"Estou estudando {challenge.Id} ({challenge.Title}). " +
-            $"Objetivo: {step?.Objective ?? challenge.Transfer} " +
-            $"Arquivo atual: {_openFile ?? "nenhum"}. Referência offline: {challenge.ReferenceTarget}. " +
-            "Dê uma pista conceitual para eu implementar e testar. Evite entregar a solução inteira.", study: true);
+        var choices = challenge.Steps.Select(step =>
+            (Label: (progress?.Completed(challenge.Id, step.Id) == true ? "✓ " : "") + step.Objective,
+             Objective: step.Objective)).Append((Label: "Desafio extra", Objective: challenge.Transfer)).ToArray();
+        new AlertDialog.Builder(this)!.SetTitle("Pista para qual objetivo?")!
+            .SetItems(choices.Select(choice => choice.Label).ToArray(), (_, e) =>
+            {
+                if (!ReferenceEquals(game, _project)) return;
+                OpenAiPanel($"Estou estudando {challenge.Id} ({challenge.Title}). " +
+                    $"Objetivo: {choices[e.Which].Objective} " +
+                    $"Arquivo atual: {_openFile ?? "nenhum"}. Referência offline: {challenge.ReferenceTarget}. " +
+                    "Dê uma pista conceitual para eu implementar e testar. Evite entregar a solução inteira.", study: true);
+            })!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
     }
 
     private void CreateLearningProject(string projectId)
