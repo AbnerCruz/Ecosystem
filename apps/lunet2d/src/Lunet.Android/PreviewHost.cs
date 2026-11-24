@@ -38,7 +38,7 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     private float _padLeftTrigger, _padRightTrigger;
     private bool _padSeen;
 
-    public PreviewHost(Activity activity, PreviewRenderer renderer, Func<IReadOnlyList<string>> projectFiles, Action onStop, bool highRefresh) : base(activity)
+    public PreviewHost(Activity activity, PreviewRenderer renderer, Func<IReadOnlyList<string>> projectFiles, Action onStop, bool highRefresh, bool gameplay = false) : base(activity)
     {
         _activity = activity;
         _renderer = renderer;
@@ -95,6 +95,11 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
         _console.SetBackgroundColor(AndroidColor.Argb(110, 0, 0, 0));
         AddView(_console, new LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Bottom));
 
+        if (gameplay)
+        {
+            controls.Visibility = ViewStates.Gone;
+            _console.Visibility = ViewStates.Gone;
+        }
         RequestHighRefreshRate(highRefresh);
         _glView.LayoutChange += (_, _) => UpdateDisplayInfo();
         _glView.Post(UpdateDisplayInfo);
