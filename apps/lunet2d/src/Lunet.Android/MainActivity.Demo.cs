@@ -49,6 +49,25 @@ public sealed partial class MainActivity
                 Post(() => PlayFromLauncher(screen == "gameplay-landscape" ? landscape : portrait));
             return;
         }
+        if (screen.StartsWith("explore-f8", StringComparison.Ordinal))
+        {
+            LoadInspirationView();
+            _inspirationQuery = "";
+            _inspirationGenre = [];
+            _inspirationMechanic = ["Dash"];
+            _inspirationPerspective = [];
+            _inspirationStyle = ["Pixel art"];
+            _inspirationFavorites = false;
+            _inspirationVisibleCount = InspirationPageSize;
+            _inspirationComparison.Clear();
+            _inspirationComparison.Add("ref.celeste");
+            _inspirationComparison.Add("ref.hyperlight");
+            OpenInspirationExplorer();
+            if (screen == "explore-f8-compare") Post(ShowInspirationComparison);
+            if (screen == "explore-f8-detail")
+                Post(() => ShowInspirationDetail(_inspirationLibrary!.All.Single(e => e.Id == "ref.celeste"), OpenInspirationExplorer));
+            return;
+        }
         if (screen == "projects") { ShowProjects(); return; }
         if (screen == "home") { ShowHome(); return; }
         if (screen == "home-resume")
