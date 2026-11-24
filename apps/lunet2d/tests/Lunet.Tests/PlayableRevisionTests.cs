@@ -1,4 +1,6 @@
 using Lunet.Core;
+using Lunet.Compiler;
+using Lunet.Runtime;
 
 namespace Lunet.Tests;
 
@@ -65,6 +67,36 @@ public sealed class PlayableRevisionTests : IDisposable
         Assert.Null(cache.TryRead(original.GameId, original.Key));
         cache.Publish(original.GameId, original.Key, [4, 5]);
         Assert.Equal(new byte[] { 4, 5 }, cache.TryRead(original.GameId, original.Key));
+    }
+
+    [Fact]
+    public void RealCompilerColdWarmFailureAndIndependentGameIds()
+    {
+        var store = Store;
+        var first = store.Create("GameA");
+        var second = store.Create("GameB", ProjectTemplate.Blank, "landscape");
+        var compiler = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+        var cache = new PlayableBuildCache(Cache);
+        using var original = PlayableRevision.Capture(first, Staging, "engine");
+        var compiled = compiler.Compile("first", original.Sources.Select(s => new SourceFile(s.Path, s.Text)).ToArray());
+        Assert.True(compiled.Success, string.Join("\n", compiled.Diagnostics));
+        cache.Publish(original.GameId, original.Key, compiled.Assembly!);
+        using var warm = PlayableRevision.Capture(first, Staging, "engine");
+        Assert.Equal(original.Key, warm.Key);
+        using (var game = GameLoader.Load(cache.TryRead(warm.GameId, warm.Key)!))
+            Assert.NotNull(game.Game);
+        using var landscape = PlayableRevision.Capture(second, Staging, "engine");
+        Assert.Equal("landscape", landscape.Manifest.Orientation);
+        Assert.NotEqual(warm.GameId, landscape.GameId);
+        Assert.Null(cache.TryRead(landscape.GameId, landscape.Key));
+        var secondBuild = compiler.Compile("second", landscape.Sources.Select(s => new SourceFile(s.Path, s.Text)).ToArray());
+        Assert.True(secondBuild.Success, string.Join("\n", secondBuild.Diagnostics));
+        first.WriteText("Game.cs", "this is not C#");
+        using var broken = PlayableRevision.Capture(first, Staging, "engine");
+        var failed = compiler.Compile("broken", broken.Sources.Select(s => new SourceFile(s.Path, s.Text)).ToArray());
+        Assert.False(failed.Success);
+        Assert.Null(cache.TryRead(broken.GameId, broken.Key));
+        Assert.NotNull(cache.TryRead(original.GameId, original.Key));
     }
 
     public void Dispose()
