@@ -13,17 +13,24 @@ public sealed class StudioAssetWorkspace
 {
     private static readonly object BundleGate = new();
     private sealed record BundleFile(string Relative, string? Before, string After);
-    private const string StagePrefix = ".studio-stage-";
+    public const string RecoveryFolder = ".lunet/studio-recovery";
+    private string RecoveryDirectory => Path.Combine(RootDirectory, RecoveryFolder);
+    private const string StagePrefix = "stage-";
     public StudioAssetWorkspace(string rootDirectory)
     {
         RootDirectory = Path.GetFullPath(rootDirectory);
         Directory.CreateDirectory(RootDirectory);
         lock (BundleGate)
-            foreach (var stage in Directory.EnumerateDirectories(RootDirectory, StagePrefix + "*"))
+        {
+            RejectLinkedRecoveryRoot();
+            if (!Directory.Exists(RecoveryDirectory)) return;
+            foreach (var stage in Directory.EnumerateDirectories(RecoveryDirectory, StagePrefix + "*"))
             {
-                if (File.GetAttributes(stage).HasFlag(FileAttributes.ReparsePoint)) continue;
+                if (!Guid.TryParseExact(Path.GetFileName(stage)[StagePrefix.Length..], "N", out _) ||
+                    File.GetAttributes(stage).HasFlag(FileAttributes.ReparsePoint)) continue;
                 Recover(stage);
             }
+        }
     }
 
     public string RootDirectory { get; }
@@ -68,7 +75,8 @@ public sealed class StudioAssetWorkspace
             if (entries.Select(entry => entry.Target).Distinct(StringComparer.OrdinalIgnoreCase).Count() != entries.Length)
                 throw new ArgumentException("Arquivos duplicados no pacote.");
 
-            var staging = Path.Combine(RootDirectory, StagePrefix + Guid.NewGuid().ToString("N"));
+            RejectLinkedRecoveryRoot();
+            var staging = Path.Combine(RecoveryDirectory, StagePrefix + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(staging);
             string journal = Path.Combine(staging, "journal.json");
             try
@@ -101,6 +109,13 @@ public sealed class StudioAssetWorkspace
             }
             finally { Recover(staging); }
         }
+    }
+
+    private void RejectLinkedRecoveryRoot()
+    {
+        foreach (var directory in new[] { Path.Combine(RootDirectory, ".lunet"), RecoveryDirectory })
+            if (Directory.Exists(directory) && File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint))
+                throw new IOException("A recuperação do Studio não usa links.");
     }
 
     private void Recover(string staging)

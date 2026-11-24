@@ -100,6 +100,11 @@ public sealed class F6CreativeWorkspaceTests : IDisposable
             var second = store.Create("Jogo" + expected.Keys.ToList().IndexOf(path) + "B");
             library.ImportToProject(revision.Id, revision.Version, first, TestContext.Current.CancellationToken);
             library.ImportToProject(revision.Id, revision.Version, second, TestContext.Current.CancellationToken);
+            using var zip = new MemoryStream();
+            second.ExportZip(zip);
+            zip.Position = 0;
+            using var exported = new System.IO.Compression.ZipArchive(zip, System.IO.Compression.ZipArchiveMode.Read);
+            foreach (var file in revision.Files) Assert.NotNull(exported.GetEntry(second.Name + "/" + file.Path));
             string original = second.ReadText(path);
             first.WriteText(path, "{}");
             Assert.Equal(original, second.ReadText(path));
@@ -136,7 +141,7 @@ public sealed class F6CreativeWorkspaceTests : IDisposable
         var studio = new StudioAssetWorkspace(Path.Combine(_root, "studio"));
         studio.WriteText("Assets/fonte.json", "novo");
         studio.WriteText("Assets/derivado.png", "original");
-        var stage = Path.Combine(studio.RootDirectory, ".studio-stage-interrupted");
+        var stage = Path.Combine(studio.RootDirectory, StudioAssetWorkspace.RecoveryFolder, "stage-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(stage);
         File.WriteAllText(Path.Combine(stage, "0.before"), "anterior");
         File.WriteAllText(Path.Combine(stage, "1.next"), "incompleto");

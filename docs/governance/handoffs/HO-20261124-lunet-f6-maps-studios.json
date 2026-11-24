@@ -40,6 +40,7 @@
     "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
     "apps/lunet2d/src/Lunet.Core/ProjectMindMap.cs",
     "apps/lunet2d/src/Lunet.Core/ProjectNotes.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectZipImporter.cs",
     "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
     "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
     "apps/lunet2d/tests/Lunet.Tests/F6CreativeWorkspaceTests.cs",

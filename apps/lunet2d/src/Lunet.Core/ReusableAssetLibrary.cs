@@ -99,7 +99,9 @@ public sealed class ReusableAssetLibrary
         if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Workspace do Studio não encontrado.");
         if (File.GetAttributes(root).HasFlag(FileAttributes.ReparsePoint))
             throw new IOException("O Studio não publica através de links.");
-        var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+        foreach (var directory in new[] { "Assets", "Content" }) EnsureNoLinks(root, directory);
+        var files = new[] { "Assets", "Content" }.Select(folder => Path.Combine(root, folder)).Where(Directory.Exists)
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories))
             .Select(p => Path.GetRelativePath(root, p).Replace('\\', '/')).ToArray();
         foreach (var path in files)
         {

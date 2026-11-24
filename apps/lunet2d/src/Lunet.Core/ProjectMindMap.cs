@@ -9,6 +9,7 @@ public sealed record MindPlacement(MindTopic Topic, int Depth, int Row);
 public sealed record ProjectMindMap(int Version, MindTopic[] Topics, MindConnection[] Connections)
 {
     public const string Extension = ".mindmap.json";
+    [System.Text.Json.Serialization.JsonIgnore]
     public Guid Root => Topics[0].Id;
 
     public static ProjectMindMap Create(string title) =>
