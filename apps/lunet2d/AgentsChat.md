@@ -853,5 +853,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261124-chatgpt-lunet-f3 — 24/11/2026 — ChatGPT → integrador — F3
 - Base oficial `28f09752` / `1000587`. Ramo `feat/lunet-f3-ai-workspace`. Escopo LUNET-521, LUNET-AI-002, LUNET-513/514.
-- Estudo primeiro, Fazer explícito, catálogo comum, preferência por GameId, contexto observável, texto parcial e etapas duráveis, revisão e desfazer. Mantida a fonte canônica do runtime e sua projeção sincronizada. Nenhum arquivo do Urbe alterado.
+- Estudo primeiro, Fazer explícito, catálogo comum, preferência por GameId, contexto observável, texto parcial e etapas duráveis, revisão e desfazer. Mantida a fonte canônica do runtime e sua projeção sincronizada. O patch mantém as fronteiras de produto.
 - [Guia da F3](docs/guides/f3-ai-workspace.md), suite xUnit e workflow de release fornecem a evidência de código e distribuição.
