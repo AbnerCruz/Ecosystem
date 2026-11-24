@@ -7,8 +7,12 @@ using Lunet.Graphics;
 namespace Lunet.Android.Gles;
 
 /// <summary>Backend gráfico OpenGL ES 3.0. Deve ser usado somente na thread do GLSurfaceView.</summary>
-internal sealed class GlesBackend : IGraphicsBackend, IDisposable
+internal sealed class GlesBackend : IGraphicsBackend, IContextGraphicsAuthority, IDisposable
 {
+    private readonly int _glThread = Environment.CurrentManagedThreadId;
+    // Renderer enters Start/Tick/Step only from GLSurfaceView callbacks. Never
+    // authorize ambient access during teardown (the old EGL context can be lost).
+    bool IContextGraphicsAuthority.ContextGraphicsAllowed => Environment.CurrentManagedThreadId == _glThread;
     private const string VertexShader = """
         #version 300 es
         layout(location = 0) in vec2 aPos;

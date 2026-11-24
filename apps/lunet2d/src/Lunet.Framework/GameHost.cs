@@ -32,6 +32,11 @@ public sealed class GameHost
     private bool _paused;
     private bool _started;
     private bool _profileFrameTimings;
+    private bool _contextAttached;
+    private bool _contextActive;
+    internal int ContextGeneration { get; private set; }
+    internal bool IsContextActive(int generation) => _contextActive && ContextGeneration == generation;
+    internal bool ContextGraphicsAllowed => _backend is not IContextGraphicsAuthority authority || authority.ContextGraphicsAllowed;
 
     // Usado pelo Preview para consumir bordas de toque apenas após um Update real.
     internal long CompletedUpdateSteps { get; private set; }
@@ -104,16 +109,18 @@ public sealed class GameHost
             var device = new GraphicsDevice(_backend, configuration.VirtualWidth, configuration.VirtualHeight);
             _content = new ContentManager(_contentSource, device, _audio);
             _game.Attach(device, Input, _content, new SaveData(_saveStore), _haptics, _backend is HeadlessGraphicsBackend);
+            _contextAttached = _contextActive = true;
+            ContextGeneration++;
             GraphicsDevice = device;
             GraphicsDevice.SetDisplay(_display.Density, _display.Left, _display.Top, _display.Right, _display.Bottom);
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);
-            _game.RunInitialize();
+            using (Context.Enter(this, _game, graphics: true)) _game.RunInitialize();
             configuration.Validate();
             GraphicsDevice.SetVirtualResolution(configuration.VirtualWidth, configuration.VirtualHeight);
             GraphicsDevice.ViewportScaling = configuration.ViewportScaling;
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);
             _loop = new FixedTimestepLoop(configuration.UpdatesPerSecond, configuration.MaxFrameSeconds);
-            _game.RunLoadContent();
+            using (Context.Enter(this, _game, graphics: true)) _game.RunLoadContent();
         });
     }
 
@@ -155,7 +162,7 @@ public sealed class GameHost
         if (_paused) return;
         _paused = true;
         _content?.Audio.PauseAll();
-        if (!IsFaulted && _started) Guard(_game.RunPause);
+        if (!IsFaulted && _started) Guard(RunPause);
     }
 
     /// <summary>Retoma a simulação e o áudio.</summary>
@@ -164,7 +171,7 @@ public sealed class GameHost
         if (!_paused) return;
         _paused = false;
         _content?.Audio.ResumeAll();
-        if (!IsFaulted && _started) Guard(_game.RunResume);
+        if (!IsFaulted && _started) Guard(RunResume);
     }
 
     /// <summary>Um quadro: executa os passos fixos devidos e desenha. Sem alocações no caminho normal.</summary>
@@ -183,14 +190,14 @@ public sealed class GameHost
                 LastDrawCpuMilliseconds = 0;
                 LastUpdateSteps = 0;
             }
-            _game.RunDispatcher();
+            _game.Dispatcher.RunPending(this, _game);
             if (!_paused)
             {
                 var steps = _loop.Advance(elapsedSeconds);
                 var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
                 for (var i = 0; i < steps; i++)
                 {
-                    _game.RunUpdate(_loop.CompleteStep());
+                    using (Context.Enter(this, _game, graphics: true)) _game.RunUpdate(_loop.CompleteStep());
                     CompletedUpdateSteps++;
                     Input.ClearGestures(); // cada gesto é entregue a um único passo
                 }
@@ -201,7 +208,7 @@ public sealed class GameHost
                 }
             }
             var drawStart = profile ? Stopwatch.GetTimestamp() : 0;
-            _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation));
+            using (Context.Enter(this, _game, graphics: true)) _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation));
             if (profile) LastDrawCpuMilliseconds = Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         }
         catch (Exception ex)
@@ -224,7 +231,7 @@ public sealed class GameHost
                 LastUpdateSteps = 0;
             }
             var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
-            _game.RunUpdate(_loop.CompleteStep());
+            using (Context.Enter(this, _game, graphics: true)) _game.RunUpdate(_loop.CompleteStep());
             CompletedUpdateSteps++;
             if (profile)
             {
@@ -232,7 +239,7 @@ public sealed class GameHost
                 LastUpdateSteps = 1;
             }
             var drawStart = profile ? Stopwatch.GetTimestamp() : 0;
-            _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f));
+            using (Context.Enter(this, _game, graphics: true)) _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f));
             if (profile) LastDrawCpuMilliseconds = Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         }
         catch (Exception ex)
@@ -247,10 +254,40 @@ public sealed class GameHost
         if (!_started) return;
         _started = false;
         ProfileFrameTimings = false;
-        Guard(_game.RunUnloadContent);
-        _content?.Dispose();
-        _content = null;
-        GraphicsDevice?.ReleaseResources();
+        try
+        {
+            // A fault invalidates old scopes. Unload may still access the attached
+            // session's non-graphical services, but never assumes EGL is current.
+            _contextActive = _contextAttached;
+            ContextGeneration++;
+            Guard(RunUnload);
+            _content?.Dispose();
+            _content = null;
+            GraphicsDevice?.ReleaseResources();
+        }
+        finally
+        {
+            _contextAttached = _contextActive = false;
+            ContextGeneration++;
+        }
+    }
+
+    private void RunPause()
+    {
+        using var scope = Context.Enter(this, _game, graphics: false);
+        _game.RunPause();
+    }
+
+    private void RunResume()
+    {
+        using var scope = Context.Enter(this, _game, graphics: false);
+        _game.RunResume();
+    }
+
+    private void RunUnload()
+    {
+        using var scope = Context.Enter(this, _game, graphics: false);
+        _game.RunUnloadContent();
     }
 
     private bool Guard(Action action)
@@ -269,6 +306,8 @@ public sealed class GameHost
 
     private void Fail(Exception ex)
     {
+        _contextActive = false;
+        ContextGeneration++;
         Fault = ex;
         _game.Log.Error($"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
     }
