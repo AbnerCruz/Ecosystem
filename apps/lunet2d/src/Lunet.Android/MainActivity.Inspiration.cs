@@ -13,10 +13,52 @@ public sealed partial class MainActivity
     private InspirationLibrary? _inspirationLibrary;
     private bool _inspirationOpen;
     private string _inspirationQuery = "";
-    private string _inspirationGenre = "";
-    private string _inspirationMechanic = "";
-    private string _inspirationPerspective = "";
-    private string _inspirationStyle = "";
+    private string[] _inspirationGenre = [];
+    private string[] _inspirationMechanic = [];
+    private string[] _inspirationPerspective = [];
+    private string[] _inspirationStyle = [];
+    private readonly HashSet<string> _inspirationComparison = new(StringComparer.Ordinal);
+    private bool _inspirationViewLoaded;
+    private string InspirationViewPath => System.IO.Path.Combine(FilesDir!.AbsolutePath, "inspiration-view.json");
+
+    private void LoadInspirationView()
+    {
+        if (_inspirationViewLoaded) return;
+        _inspirationViewLoaded = true;
+        try
+        {
+            if (!File.Exists(InspirationViewPath)) return;
+            var filter = System.Text.Json.JsonSerializer.Deserialize<InspirationFilter>(File.ReadAllText(InspirationViewPath));
+            if (filter is null) return;
+            _inspirationQuery = filter.Query ?? "";
+            _inspirationGenre = filter.Genres ?? [];
+            _inspirationMechanic = filter.Mechanics ?? [];
+            _inspirationPerspective = filter.Perspectives ?? [];
+            _inspirationStyle = filter.Styles ?? [];
+            _inspirationFavorites = filter.FavoritesOnly;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            global::Android.Util.Log.Warn("Lunet.Explore", ex.Message);
+        }
+    }
+
+    private InspirationFilter CurrentInspirationFilter() => new(_inspirationQuery, _inspirationGenre,
+        _inspirationMechanic, _inspirationPerspective, _inspirationStyle, _inspirationFavorites);
+
+    private void SaveInspirationView()
+    {
+        try
+        {
+            var path = InspirationViewPath;
+            File.WriteAllText(path + ".tmp", System.Text.Json.JsonSerializer.Serialize(CurrentInspirationFilter()));
+            File.Move(path + ".tmp", path, true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            global::Android.Util.Log.Warn("Lunet.Explore", ex.Message);
+        }
+    }
     private bool _inspirationFavorites;
     private const int InspirationPageSize = 18;
     private int _inspirationVisibleCount = InspirationPageSize;
@@ -37,7 +79,9 @@ public sealed partial class MainActivity
             return;
         }
 
+        LoadInspirationView();
         EnterLauncherSurface("explore");
+        RefreshLauncherCatalog();
         _inspirationOpen = true;
         var library = _inspirationLibrary!;
         var root = Vertical();
@@ -70,15 +114,23 @@ public sealed partial class MainActivity
         toggles.AddView(favorites);
         toggles.AddView(LunetUi.Button(this, "Limpar filtros", () =>
         {
-            _inspirationGenre = "";
-            _inspirationMechanic = "";
-            _inspirationPerspective = "";
-            _inspirationStyle = "";
+            _inspirationGenre = [];
+            _inspirationMechanic = [];
+            _inspirationPerspective = [];
+            _inspirationStyle = [];
             _inspirationFavorites = false;
             _inspirationQuery = "";
+            _inspirationVisibleCount = InspirationPageSize;
+            _inspirationComparison.Clear();
+            SaveInspirationView();
             OpenInspirationExplorer();
         }, ButtonStyle.Quiet));
         root.AddView(toggles);
+        var compareBar = LunetUi.Row(this, 8);
+        var compareButton = LunetUi.Button(this, "Comparar (0/2)", () => ShowInspirationComparison(), ButtonStyle.Secondary);
+        compareBar.AddView(compareButton, LunetUi.Weight());
+        compareBar.AddView(LunetUi.Button(this, "Arquivadas", () => ShowArchivedInspiration(OpenInspirationExplorer), ButtonStyle.Quiet));
+        root.AddView(compareBar);
 
         var resultCount = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextFaint);
         root.AddView(resultCount);
@@ -93,9 +145,13 @@ public sealed partial class MainActivity
 
         void Refresh()
         {
+            int position = scroll.ScrollY;
             items.RemoveAllViews();
-            var matches = library.Search(_inspirationQuery, _inspirationGenre, _inspirationMechanic,
-                _inspirationPerspective, _inspirationStyle, _inspirationFavorites);
+            var matches = library.SearchFacets(CurrentInspirationFilter());
+            _inspirationComparison.RemoveWhere(id => !matches.Any(e => e.Id == id));
+            compareButton.Text = $"Comparar ({_inspirationComparison.Count}/2)";
+            compareButton.Enabled = _inspirationComparison.Count == 2;
+            scroll.Post(() => scroll.ScrollTo(0, position));
             resultCount.Text = $"{matches.Count} referências · {library.All.Count} no catálogo";
             if (matches.Count == 0)
             {
@@ -127,26 +183,45 @@ public sealed partial class MainActivity
                     $"{item.Genre} · {item.Perspective} · {item.VisualStyle}", LunetUi.TextLabel, LunetUi.AccentText));
                 card.AddView(LunetUi.Label(this, "Mecânicas: " + string.Join(" · ", item.Mechanics),
                     LunetUi.TextLabel, LunetUi.TextMuted));
+                card.AddView(LunetUi.Label(this, item.Curated ? "Catálogo Lunet" : "Referência pessoal", LunetUi.TextCaption, LunetUi.TextMuted));
                 card.AddView(LunetUi.Label(this, item.StudyIdea, LunetUi.TextBody, LunetUi.Text));
+                var selection = new CheckBox(this) { Text = "Selecionar para comparar", Checked = _inspirationComparison.Contains(item.Id) };
+                selection.SetTextColor(LunetUi.Text);
+                selection.CheckedChange += (_, args) =>
+                {
+                    if (args.IsChecked && !_inspirationComparison.Contains(item.Id) && _inspirationComparison.Count >= 2)
+                    {
+                        selection.Checked = false;
+                        Toast.MakeText(this, "Desmarque uma referência antes de selecionar outra.", ToastLength.Short)?.Show();
+                        return;
+                    }
+                    if (args.IsChecked) _inspirationComparison.Add(item.Id); else _inspirationComparison.Remove(item.Id);
+                    compareButton.Text = $"Comparar ({_inspirationComparison.Count}/2)";
+                    compareButton.Enabled = _inspirationComparison.Count == 2;
+                };
+                card.AddView(selection);
                 if (!string.IsNullOrWhiteSpace(item.Notes))
                     card.AddView(LunetUi.Label(this, "Suas notas: " + item.Notes, LunetUi.TextLabel, LunetUi.TextMuted));
-                if (!string.IsNullOrWhiteSpace(item.ProjectName))
-                    card.AddView(LunetUi.Label(this, "Projeto associado: " + item.ProjectName,
+                var linkedFolder = InspirationLibrary.ResolveProject(item, _launcherCatalog);
+                if (!string.IsNullOrWhiteSpace(item.ProjectName) || !string.IsNullOrWhiteSpace(item.ProjectId))
+                    card.AddView(LunetUi.Label(this, linkedFolder is not null ? "Projeto associado: " + linkedFolder :
+                        "Vínculo não resolvido: " + item.ProjectName + " (reassociar em Notas)",
                         LunetUi.TextCaption, LunetUi.TextMuted));
 
                 var actions = LunetUi.Row(this, 6);
+                actions.AddView(LunetUi.Button(this, "Ficha", () => ShowInspirationDetail(item, Refresh), ButtonStyle.Quiet));
                 actions.AddView(LunetUi.Button(this, "Notas", () => EditInspirationNotes(item, Refresh),
                     ButtonStyle.Secondary));
                 if (!item.Curated)
                 {
                     actions.AddView(LunetUi.Button(this, "Editar", () => EditInspiration(item, OpenInspirationExplorer),
                         ButtonStyle.Quiet));
-                    actions.AddView(LunetUi.Button(this, "Excluir", () =>
+                    actions.AddView(LunetUi.Button(this, "Arquivar", () =>
                     {
-                        new AlertDialog.Builder(this)!.SetTitle("Excluir referência pessoal?")!
-                            .SetMessage($"Excluir \"{item.Title}\" da sua biblioteca?")!
+                        new AlertDialog.Builder(this)!.SetTitle("Arquivar referência pessoal?")!
+                            .SetMessage($"Arquivar \"{item.Title}\"? Suas notas e vínculos poderão ser recuperados.")!
                             .SetNegativeButton("Cancelar", (_, _) => { })!
-                            .SetPositiveButton("Excluir", (_, _) =>
+                            .SetPositiveButton("Arquivar", (_, _) =>
                             {
                                 try { library.Delete(item.Id); OpenInspirationExplorer(); }
                                 catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
@@ -172,9 +247,14 @@ public sealed partial class MainActivity
                             Toast.MakeText(this, "O Android bloqueou a abertura deste link.", ToastLength.Long)?.Show();
                         }
                     }, ButtonStyle.Quiet));
-                if (!string.IsNullOrWhiteSpace(item.ProjectName) &&
-                    _store.List().Contains(item.ProjectName, StringComparer.Ordinal))
-                    card.AddView(LunetUi.Button(this, "Abrir projeto associado", () => OpenProject(item.ProjectName),
+                if (linkedFolder is not null)
+                    card.AddView(LunetUi.Button(this, "Abrir projeto associado", () =>
+                    {
+                        RefreshLauncherCatalog();
+                        var folder = InspirationLibrary.ResolveProject(item, _launcherCatalog);
+                        if (folder is not null) OpenProject(folder);
+                        else Toast.MakeText(this, "Projeto não encontrado. O vínculo foi preservado.", ToastLength.Long)?.Show();
+                    },
                         ButtonStyle.Quiet));
                 items.AddView(card, LunetUi.FillWidth());
             }
@@ -189,33 +269,54 @@ public sealed partial class MainActivity
             }
         }
 
-        Spinner AddFilter(string description, IReadOnlyList<string> values, string selected, Action<string> set)
+        void AddFilter(string description, IReadOnlyList<string> values, string[] selected, Action<string[]> set)
         {
-            var options = new[] { "Todos · " + description }.Concat(values).ToArray();
-            var adapter = new ArrayAdapter<string>(this, global::Android.Resource.Layout.SimpleSpinnerItem, options);
-            adapter.SetDropDownViewResource(global::Android.Resource.Layout.SimpleSpinnerDropDownItem);
-            var spinner = new Spinner(this) { Adapter = adapter };
-            spinner.ContentDescription = "Filtrar por " + description;
-            filterRow.AddView(spinner, new LinearLayout.LayoutParams(Dp(175), Dp(48)));
-            int index = Array.FindIndex(options, x => x.Equals(selected, StringComparison.OrdinalIgnoreCase));
-            spinner.SetSelection(Math.Max(0, index));
-            spinner.ItemSelected += (_, args) =>
+            var button = LunetUi.Button(this, description + $" ({selected.Length})", () =>
             {
-                set(args.Position == 0 ? "" : options[args.Position]);
-                if (!spinner.IsAttachedToWindow) return;
-                _inspirationVisibleCount = InspirationPageSize;
-                Refresh();
-            };
-            return spinner;
+                var chosen = new HashSet<string>(selected, StringComparer.OrdinalIgnoreCase);
+                var list = LunetUi.Column(this, 4);
+                var filterSearch = LunetUi.Input(this, "Buscar opções", "");
+                var choices = LunetUi.Column(this, 2);
+                void RenderOptions()
+                {
+                    choices.RemoveAllViews();
+                    var query = filterSearch.Text ?? "";
+                    foreach (var value in values.Where(v => v.Contains(query, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var check = new CheckBox(this) { Text = value, Checked = chosen.Contains(value) };
+                        check.SetTextColor(LunetUi.Text);
+                        check.CheckedChange += (_, args) => { if (args.IsChecked) chosen.Add(value); else chosen.Remove(value); };
+                        choices.AddView(check);
+                    }
+                }
+                list.AddView(filterSearch);
+                var optionsScroll = new ScrollView(this);
+                optionsScroll.AddView(choices);
+                list.AddView(optionsScroll, LunetUi.FillWidth(Dp(320)));
+                filterSearch.TextChanged += (_, _) => RenderOptions();
+                RenderOptions();
+                new AlertDialog.Builder(this)!.SetTitle("Filtrar por " + description)!
+                    .SetMessage(description == "Mecânicas" ? "Todas as mecânicas escolhidas devem existir." : "Qualquer opção escolhida nesta categoria.")!
+                    .SetView(list)!
+                    .SetNegativeButton("Cancelar", (_, _) => { })!
+                    .SetNeutralButton("Limpar", (_, _) => { set([]); _inspirationVisibleCount = InspirationPageSize; SaveInspirationView(); OpenInspirationExplorer(); })!
+                    .SetPositiveButton("Aplicar", (_, _) =>
+                    {
+                        set(chosen.ToArray());
+                        _inspirationVisibleCount = InspirationPageSize;
+                        SaveInspirationView();
+                        OpenInspirationExplorer();
+                    })!.Show();
+            }, ButtonStyle.Secondary);
+            filterRow.AddView(button, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(48)));
         }
 
-        AddFilter("gênero", library.Genres, _inspirationGenre, value => _inspirationGenre = value);
-        AddFilter("mecânica", library.Mechanics, _inspirationMechanic, value => _inspirationMechanic = value);
-        AddFilter("perspectiva", library.Perspectives, _inspirationPerspective,
-            value => _inspirationPerspective = value);
-        AddFilter("estilo", library.Styles, _inspirationStyle, value => _inspirationStyle = value);
-        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; _inspirationVisibleCount = InspirationPageSize; Refresh(); };
-        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; _inspirationVisibleCount = InspirationPageSize; Refresh(); };
+        AddFilter("Gêneros", library.Genres, _inspirationGenre, value => _inspirationGenre = value);
+        AddFilter("Mecânicas", library.Mechanics, _inspirationMechanic, value => _inspirationMechanic = value);
+        AddFilter("Perspectivas", library.Perspectives, _inspirationPerspective, value => _inspirationPerspective = value);
+        AddFilter("Estéticas", library.Styles, _inspirationStyle, value => _inspirationStyle = value);
+        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; _inspirationVisibleCount = InspirationPageSize; SaveInspirationView(); Refresh(); };
+        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; _inspirationVisibleCount = InspirationPageSize; SaveInspirationView(); Refresh(); };
         Refresh();
         SetLauncherContent(root, "explore", scroll);
     }
@@ -229,21 +330,28 @@ public sealed partial class MainActivity
         notes.SetMinLines(4);
         form.AddView(notes);
         form.AddView(LunetUi.Label(this, "Associar a um projeto (opcional)", LunetUi.TextLabel, LunetUi.TextMuted));
-        var names = new[] { "Sem projeto" }.Concat(_store.List()).ToArray();
+        RefreshLauncherCatalog();
+        var entries = _launcherCatalog.Where(e => LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, e.GameId) == e.FolderName).ToArray();
+        var names = new[] { "Manter vínculo atual", "Sem projeto" }.Concat(entries.Select(e => e.FolderName + " · " + e.GameId[..8])).ToArray();
         var adapter = new ArrayAdapter<string>(this, global::Android.Resource.Layout.SimpleSpinnerItem, names);
         adapter.SetDropDownViewResource(global::Android.Resource.Layout.SimpleSpinnerDropDownItem);
         var project = new Spinner(this) { Adapter = adapter };
-        int index = Array.IndexOf(names, reference.ProjectName);
-        project.SetSelection(Math.Max(0, index));
+        project.SetSelection(0);
         form.AddView(project);
+        if (!string.IsNullOrEmpty(reference.ProjectName))
+            form.AddView(LunetUi.Label(this, "Vínculo registrado: " + reference.ProjectName,
+                LunetUi.TextCaption, LunetUi.TextMuted));
 
         AlertDialog? dialog = null;
         form.AddView(LunetUi.Button(this, "Salvar notas", () =>
         {
             try
             {
-                _inspirationLibrary!.SetPersonalDetails(reference.Id, reference.Favorite,
-                    notes.Text ?? "", project.SelectedItemPosition == 0 ? "" : names[project.SelectedItemPosition]);
+                int selected = project.SelectedItemPosition;
+                var chosen = selected >= 2 ? entries[selected - 2] : null;
+                _inspirationLibrary!.SetPersonalDetails(reference.Id, reference.Favorite, notes.Text ?? "",
+                    selected == 0 ? reference.ProjectName : chosen?.FolderName ?? "",
+                    selected == 0 ? reference.ProjectId : chosen?.GameId ?? "");
                 dialog?.Dismiss();
                 refresh();
             }
@@ -276,6 +384,8 @@ public sealed partial class MainActivity
         var idea = Field("O que estudar", "Que decisões ou mecânicas merecem atenção?",
             original?.StudyIdea ?? "", multiline: true);
         var url = Field("Link (opcional, http ou https)", "https://...", original?.Url ?? "");
+        var author = Field("Autoria (opcional)", "Autor ou fonte original", original?.Author ?? "");
+        var license = Field("Licença (opcional)", "Licença conhecida; vazio se desconhecida", original?.License ?? "");
         var scroll = new ScrollView(this);
         var footer = LunetUi.Row(this, 8);
         AlertDialog? dialog = null;
@@ -288,13 +398,14 @@ public sealed partial class MainActivity
                     StringSplitOptions.TrimEntries);
                 if (original is null)
                     _inspirationLibrary!.Add(title.Text ?? "", genre.Text ?? "",
-                        perspective.Text ?? "", style.Text ?? "", tags, idea.Text ?? "", url.Text ?? "");
+                        perspective.Text ?? "", style.Text ?? "", tags, idea.Text ?? "", url.Text ?? "",
+                        author: author.Text ?? "", license: license.Text ?? "");
                 else
                     _inspirationLibrary!.Update(original with
                     {
                         Title = title.Text ?? "", Genre = genre.Text ?? "", Perspective = perspective.Text ?? "",
                         VisualStyle = style.Text ?? "", Mechanics = tags, StudyIdea = idea.Text ?? "",
-                        Url = url.Text ?? ""
+                        Url = url.Text ?? "", Author = author.Text ?? "", License = license.Text ?? ""
                     });
                 dialog?.Dismiss();
                 refresh();
