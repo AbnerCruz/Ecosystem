@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261123-lunet-f2-workspace",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T01:41:00.000Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f2-workspace",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-510",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f2-workspace",
+  "base_commit": "7251ccd9249471ef50de3bcf15f00fa2846c9747",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/guides/f2-workspace.md",
+    "apps/lunet2d/src/Lunet.Android/AndroidProjectFolder.cs",
+    "apps/lunet2d/src/Lunet.Android/DocumentationPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.cs",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/src/Lunet.Android/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Appearance.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GlobalAi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Layout.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Learn.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.ProjectFolder.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorSettings.cs",
+    "apps/lunet2d/src/Lunet.Core/LauncherPreferences.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectFolderSnapshot.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LauncherPreferencesTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectFolderSnapshotTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectTests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "docs/governance/handoffs/HO-20261123-lunet-f2-workspace.json"
+  ],
+  "work_completed": [
+    "Reconciled F2/1 with integrated PR #1025 and release 1000586.",
+    "Implemented adaptive launcher, restoration of Home/Projects/Studios position, project search state, pinned project ordering and origin-aware Back.",
+    "Implemented resumable first use with internal storage, Android folder picker, appearance and optional IA settings.",
+    "Published SAF revision files through a temporary document, SHA-256 readback and rename, with private working copies for Roslyn and Git.",
+    "Implemented themes, editor font preview and migration of existing preferences."
+  ],
+  "verification": [
+    {
+      "check": "xUnit in-process, 1165 passing, including storage, project compilation, ZIP and Git round trip",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/ProjectFolderSnapshotTests.cs"
+    },
+    {
+      "check": "Governed integration and Android UI workflow",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "SAF publishes explicit whole-tree revisions. Edit/compile/Git use a private local copy; the provider must support rename and reread.",
+    "Provider behavior, large trees, font scaling and accessibility require Android-specific evidence. No physical validation claimed."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verify combined checks, Android evidence and official signed 1000587 release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "SettingsStore is the sole app authority for active working copy and onboarding stage; the provider stores verified revisions."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Changes touch only the Lunet product, approved plan or handoff."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Roadmap, branch, source base and checks recorded."
+    },
+    {
+      "id": "NN-012",
+      "evidence": "Migration copies before switching; the old internal tree is retained."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Android emulation, automated tests and physical device validation are distinct."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "F2 stays open pending evidence and distribution."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "project-folder-and-appearance",
+      "status": "product-specific",
+      "rationale": "Reuse existing ProjectStore, ZIP and SettingsStore contracts. SAF stores Git-compatible whole-project revisions specific to Lunet."
+    }
+  ]
+}

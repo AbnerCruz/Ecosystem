@@ -16,6 +16,8 @@ public sealed partial class MainActivity
         var screen = intent?.GetStringExtra("lunet.demo");
         if (string.IsNullOrEmpty(screen)) return;
         // These screenshots must work with _project == null: no temporary game, no project context.
+        if (screen == "first-use") { ShowFirstUse(); return; }
+        if (screen == "appearance") { ShowHome(); ShowAppearance(); return; }
         if (screen == "studios-global") { Post(ShowLauncherStudios); return; }
         if (screen == "sprite-global")
         {

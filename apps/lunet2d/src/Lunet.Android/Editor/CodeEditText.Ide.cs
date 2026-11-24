@@ -37,10 +37,13 @@ internal sealed partial class CodeEditText
 
     public int ExtraCursorCount => _extras.Count;
 
-    public void ApplySettings(int fontSize, bool showLineNumbers)
+    public void ApplySettings(int fontSize, bool showLineNumbers, Lunet.Core.EditorFont font)
     {
         _lineNumbers = showLineNumbers;
         TextSize = fontSize;
+        var face = LunetUi.EditorTypeface(font);
+        SetTypeface(face, global::Android.Graphics.TypefaceStyle.Normal);
+        _gutterPaint.SetTypeface(face);
         UpdateGutter();
         Invalidate();
     }

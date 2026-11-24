@@ -25,7 +25,14 @@ public sealed partial class MainActivity
     public override void OnConfigurationChanged(global::Android.Content.Res.Configuration newConfig)
     {
         base.OnConfigurationChanged(newConfig);
+        bool themeChanged = ApplyWorkspaceTheme();
         if (_body is not null) ApplyWorkspaceLayout();
+        if (_project is null && _launcherShell?.IsAttachedToWindow == true)
+        {
+            if (!themeChanged) ArrangeLauncher();
+            else if (_globalChatVisible) ShowWorkspaceAi();
+            else ReturnToLauncherOrigin();
+        }
     }
 
     /// <summary>Monta o corpo do workspace (editor + painel inferior + divisória) na orientação e proporção do layout atual.</summary>

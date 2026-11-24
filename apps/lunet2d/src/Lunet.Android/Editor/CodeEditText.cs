@@ -29,8 +29,20 @@ internal sealed partial class CodeEditText : EditText
         [TokenKind.Method] = AndroidColor.Rgb(0x8C, 0xC8, 0xFF),
     };
 
+    private static readonly Dictionary<TokenKind, AndroidColor> LightPalette = new()
+    {
+        [TokenKind.Keyword] = AndroidColor.Rgb(78, 45, 150),
+        [TokenKind.ControlKeyword] = AndroidColor.Rgb(141, 36, 105),
+        [TokenKind.Type] = AndroidColor.Rgb(10, 100, 91),
+        [TokenKind.String] = AndroidColor.Rgb(137, 70, 12),
+        [TokenKind.Number] = AndroidColor.Rgb(52, 100, 34),
+        [TokenKind.Comment] = AndroidColor.Rgb(80, 91, 112),
+        [TokenKind.Preprocessor] = AndroidColor.Rgb(68, 79, 100),
+        [TokenKind.Method] = AndroidColor.Rgb(23, 83, 148),
+    };
+
     /// <summary>Syntax color of a token kind, shared with code shown in the AI chat.</summary>
-    internal static AndroidColor? ColorOf(TokenKind kind) => Palette.TryGetValue(kind, out var color) ? color : null;
+    internal static AndroidColor? ColorOf(TokenKind kind) => (LunetUi.IsLight ? LightPalette : Palette).TryGetValue(kind, out var color) ? color : null;
 
     private const int SettleDelayMilliseconds = 250;
 
@@ -41,7 +53,7 @@ internal sealed partial class CodeEditText : EditText
     private int _dirtyStart = int.MaxValue, _dirtyFromEnd = int.MaxValue;
     private readonly Handler _handler = new(Looper.MainLooper!);
     private readonly Paint _gutterPaint = new(PaintFlags.AntiAlias);
-    private readonly Paint _gutterBackground = new() { Color = AndroidColor.Rgb(16, 19, 27) };
+    private readonly Paint _gutterBackground = new() { Color = LunetUi.Background };
     private readonly Action _settle;
     private readonly float _density;
     private string _removed = "";
@@ -60,11 +72,11 @@ internal sealed partial class CodeEditText : EditText
         SetTypeface(Typeface.Monospace, TypefaceStyle.Normal);
         SetHorizontallyScrolling(true);
         InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagNoSuggestions | InputTypes.TextVariationVisiblePassword;
-        SetBackgroundColor(AndroidColor.Rgb(16, 19, 27));
-        SetTextColor(AndroidColor.Rgb(226, 232, 242));
+        SetBackgroundColor(LunetUi.Background);
+        SetTextColor(LunetUi.Text);
         SetLineSpacing(0, 1.12f);
         SetHighlightColor(AndroidColor.Argb(90, 124, 108, 255));
-        _gutterPaint.Color = AndroidColor.Rgb(88, 98, 116);
+        _gutterPaint.Color = LunetUi.TextMuted;
         _gutterPaint.TextAlign = global::Android.Graphics.Paint.Align.Right;
         _gutterPaint.SetTypeface(Typeface.Monospace);
         _settle = OnSettled;
@@ -92,6 +104,17 @@ internal sealed partial class CodeEditText : EditText
         UpdateGutter();
         _handler.RemoveCallbacks(_settle);
         _handler.Post(_settle);
+    }
+
+    internal void RefreshPalette()
+    {
+        SetBackgroundColor(LunetUi.Background);
+        SetTextColor(LunetUi.Text);
+        _gutterBackground.Color = LunetUi.Surface;
+        _gutterPaint.Color = LunetUi.TextMuted;
+        _dirtyStart = _dirtyFromEnd = 0;
+        ApplyHighlight(_appliedTokens);
+        Invalidate();
     }
 
     public void Undo() => Apply(_history.Undo());
@@ -239,7 +262,7 @@ internal sealed partial class CodeEditText : EditText
         for (int i = prefix; i < tokens.Count - suffix; i++)
         {
             var span = tokens[i];
-            if (span.Start < 0 || span.Start + span.Length > length || !Palette.TryGetValue(span.Kind, out var color)) continue;
+            if (span.Start < 0 || span.Start + span.Length > length || ColorOf(span.Kind) is not { } color) continue;
             var colored = new ForegroundColorSpan(color);
             editable.SetSpan(colored, span.Start, span.Start + span.Length, SpanTypes.ExclusiveExclusive);
             rebuilt.Add(colored);

@@ -6,8 +6,7 @@ using Lunet.Core;
 namespace Lunet.Android;
 
 /// <summary>
-/// Home mobile-first (LUNET-510). A shell sem projeto usa os serviços existentes e mantém o trabalho da IA
-/// independente das telas. O Studio ainda precisa de projeto; Library global é responsabilidade do LUNET-511.
+/// Home adaptativa (LUNET-510), independente do projeto e das execuções da IA.
 /// </summary>
 public sealed partial class MainActivity
 {
@@ -17,6 +16,67 @@ public sealed partial class MainActivity
     private string _projectFilter = "";
     private IReadOnlyList<LauncherProjectEntry> _launcherCatalog = [];
     private bool _returnHomeAfterGame;
+    private bool _globalChatVisible;
+    private LinearLayout? _launcherShell;
+    private LinearLayout? _launcherBody;
+    private LinearLayout? _launcherNav;
+    private ScrollView? _launcherScroll;
+    private bool? _launcherWide;
+    private readonly Dictionary<string, int> _launcherPositions = new(StringComparer.Ordinal);
+
+    private void RememberLauncherPosition()
+    {
+        if (_launcherScroll is { IsAttachedToWindow: true } scroll)
+            _launcherPositions[_launcherSection] = scroll.ScrollY;
+        _launcherScroll = null;
+    }
+
+    private void SetLauncherContent(LinearLayout body, string section, ScrollView? scroll = null)
+    {
+        _launcherBody = body;
+        _launcherNav = BuildLauncherNavigation(section);
+        _launcherShell = new LinearLayout(this);
+        _launcherWide = null;
+        _launcherShell.SetBackgroundColor(LunetUi.Background);
+        _launcherScroll = scroll;
+        ArrangeLauncher();
+        SetContentView(_launcherShell);
+        if (scroll is not null && _launcherPositions.TryGetValue(section, out var position))
+            scroll.Post(() => scroll.ScrollTo(0, position));
+    }
+
+    private void ArrangeLauncher()
+    {
+        if (_launcherShell is null || _launcherBody is null || _launcherNav is null) return;
+        bool wide = Resources!.Configuration!.ScreenWidthDp >= 600;
+        if (_launcherWide == wide) return;
+        _launcherWide = wide;
+        int? position = _launcherScroll?.ScrollY;
+        var focused = _launcherBody.FindFocus();
+        _launcherShell.RemoveAllViews();
+        _launcherShell.Orientation = wide ? Orientation.Horizontal : Orientation.Vertical;
+        _launcherNav.Orientation = wide ? Orientation.Vertical : Orientation.Horizontal;
+        foreach (var button in Enumerable.Range(0, _launcherNav.ChildCount).Select(_launcherNav.GetChildAt))
+        {
+            if (button is null) continue;
+            button.LayoutParameters = wide
+                ? new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
+                : new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1);
+        }
+        if (wide)
+        {
+            _launcherShell.AddView(_launcherNav, new LinearLayout.LayoutParams(Dp(132), ViewGroup.LayoutParams.MatchParent));
+            _launcherShell.AddView(_launcherBody, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MatchParent, 1));
+        }
+        else
+        {
+            _launcherShell.AddView(_launcherBody, Fill(1));
+            _launcherShell.AddView(_launcherNav, LunetUi.FillWidth());
+        }
+        if (position is { } y && _launcherScroll is { } scroll)
+            scroll.Post(() => scroll.ScrollTo(0, y));
+        if (focused is not null) focused.RequestFocus();
+    }
 
     private void RefreshLauncherCatalog()
     {
@@ -133,6 +193,8 @@ public sealed partial class MainActivity
     /// <summary>Desmonta somente a superfície do editor; não cancela o coordenador de IA em segundo plano.</summary>
     private void EnterLauncherSurface(string section)
     {
+        RememberLauncherPosition();
+        _globalChatVisible = false;
         SaveCurrent();
         DisposePreview();
         _session.Unload();
@@ -171,8 +233,9 @@ public sealed partial class MainActivity
                 description: "Abrir " + label);
             button.TextSize = 12;
             button.SetPadding(0, 0, 0, 0);
-            button.SetSingleLine(true);
-            nav.AddView(button, new LinearLayout.LayoutParams(0, Dp(52), 1f));
+            button.SetMinimumHeight(Dp(52));
+            button.Selected = id == selected;
+            nav.AddView(button);
         }
         Item("home", "Início", ShowHome);
         Item("projects", "Projetos", ShowProjects);
@@ -208,12 +271,12 @@ public sealed partial class MainActivity
             var pinned = IsLauncherPinned(name);
             var pin = LunetUi.Icon(this, pinned ? "★" : "☆",
                 pinned ? "Desafixar " + name : "Fixar " + name, () => ToggleLauncherPin(name));
-            card.AddView(pin, new LinearLayout.LayoutParams(Dp(44), Dp(48)));
+            card.AddView(pin, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         }
         card.AddView(LunetUi.Icon(this, "▶", "Jogar " + name, () => PlayFromLauncher(name)),
-            new LinearLayout.LayoutParams(Dp(44), Dp(48)));
+            new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         card.AddView(LunetUi.Icon(this, "⋮", "Opções de " + name, () => ShowProjectMenu(name)),
-            new LinearLayout.LayoutParams(Dp(44), Dp(48)));
+            new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         return card;
     }
 
@@ -270,9 +333,6 @@ public sealed partial class MainActivity
             new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         root.AddView(brand);
         root.AddView(LunetUi.Label(this, "Área de trabalho", LunetUi.TextHero, LunetUi.Text, bold: true));
-        root.AddView(LunetUi.Label(this,
-            "Seus projetos, ferramentas e referências. Nada é aberto automaticamente.",
-            LunetUi.TextLabel, LunetUi.TextMuted));
         var scroll = new ScrollView(this) { FillViewport = true };
         var content = LunetUi.Column(this, 12);
         content.SetPadding(0, Dp(16), 0, Dp(12));
@@ -298,7 +358,7 @@ public sealed partial class MainActivity
                 new LinearLayout.LayoutParams(0, Dp(54), 1f));
             content.AddView(resume);
         }
-        else if (names.Count > 0 && (lastId is not null || _launcherPreferences?.LastProject is not null))
+        else if (lastId is not null || _launcherPreferences?.LastProject is not null)
         {
             content.AddView(LunetUi.Label(this,
                 "O último projeto não está disponível ou tem identidade duplicada. Seus arquivos não foram alterados; escolha outro jogo em Projetos.",
@@ -338,20 +398,22 @@ public sealed partial class MainActivity
         foreach (var name in recent)
             content.AddView(LauncherProjectCard(name), LunetUi.FillWidth());
 
+        if (_settings.UseSharedProjectFolder)
+        {
+            var storageTip = _settings.ProjectWorkingCopy is { } copy && Directory.Exists(WorkingCopy(copy))
+                ? "Grave uma revisão para levar as alterações à pasta escolhida"
+                : "Cópia de trabalho ausente. Recupere uma revisão ou retome os projetos internos.";
+            AddHomeAction(content, "Pasta de projetos", storageTip, ShowProjectFolder);
+        }
+
         content.AddView(LunetUi.Label(this, "FERRAMENTAS", LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
-        AddHomeAction(content, "Projetos", "Pesquisar, fixar, criar, importar e exportar", ShowProjects);
-        AddHomeAction(content, "Studios", "Sprite, tilemap, áudio, paleta, partículas e dados", ShowLauncherStudios);
         AddHomeAction(content, "Biblioteca pessoal", "Assets versionados e reutilizáveis entre jogos", ShowReusableAssetLibrary);
-        AddHomeAction(content, "Explorar", "Ideias, gêneros e mecânicas para seus jogos", OpenInspirationExplorer);
-        AddHomeAction(content, "Aprender", "Cursos por projetos e progresso real", ShowLearning);
         AddHomeAction(content, "Lunet IA", "Chat global e configurações de IA; separado dos projetos", ShowWorkspaceAi);
         AddHomeAction(content, "Documentação", "API, exemplos e guias disponíveis offline", ShowReference);
-        AddHomeAction(content, "Configurações", "Preferências do ambiente e do editor", ShowSettings);
         content.AddView(LunetUi.Button(this, "Importar projeto ZIP", ImportProject, ButtonStyle.Quiet));
         scroll.AddView(content);
         root.AddView(scroll, Fill(1));
-        root.AddView(BuildLauncherNavigation("home"));
-        SetContentView(root);
+        SetLauncherContent(root, "home", scroll);
     }
 
     /// <summary>Studios do Lunet não exigem escolher nem abrir um jogo.</summary>
@@ -379,7 +441,6 @@ public sealed partial class MainActivity
             LunetUi.TextCaption, LunetUi.TextMuted));
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
-        root.AddView(BuildLauncherNavigation("studios"));
-        SetContentView(root);
+        SetLauncherContent(root, "studios", scroll);
      }
 }

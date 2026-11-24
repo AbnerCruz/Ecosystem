@@ -1,3 +1,10 @@
+## 0.0.1-dev.1000587 — F2: área de trabalho, primeiro uso e aparência
+
+- Barra de destinos em retrato e navegação lateral em janelas largas. A Home preserva rolagem e volta à origem. Projetos fixados podem ser reordenados.
+- Primeiro uso em três etapas. Os projetos internos continuam acessíveis. A pasta escolhida pelo Android guarda revisões verificadas com recuperação por cópia de trabalho.
+- Tema claro, escuro ou do sistema e fonte do editor com prévia. As escolhas persistem com as preferências anteriores.
+- [Guia da F2 e limites do provedor Android](docs/guides/f2-workspace.md).
+
 ## 0.0.1-dev.1000586 — F2/1: Home e continuidade por GameId (candidata)
 
 - Continuar edição, Jogar e Criar separados na Home; fixados e recentes em listas distintas.

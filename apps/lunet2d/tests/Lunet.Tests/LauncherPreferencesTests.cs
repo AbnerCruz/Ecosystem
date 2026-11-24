@@ -48,6 +48,21 @@ public sealed class LauncherPreferencesTests : IDisposable
     }
 
     [Fact]
+    public void MovingPinToStartPersistsWithoutChangingMostRecentProject()
+    {
+        var prefs = new LauncherPreferences(FilePath);
+        var first = Guid.NewGuid().ToString("D");
+        var second = Guid.NewGuid().ToString("D");
+        prefs.SetPinnedProject("JogoA", first, true);
+        prefs.SetPinnedProject("JogoB", second, true);
+        prefs.MarkOpenedProject("JogoA", first);
+        prefs.MovePinToStart("JogoB", second);
+        var reopened = new LauncherPreferences(FilePath);
+        Assert.Equal(new[] { second, first }, reopened.PinnedProjectIds);
+        Assert.Equal(first, reopened.LastProjectId);
+    }
+
+    [Fact]
     public void DeletingAProject_ClearsItsShortcutsWithoutTouchingOtherPins()
     {
         var prefs = new LauncherPreferences(FilePath);

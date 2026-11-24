@@ -216,8 +216,7 @@ public sealed partial class MainActivity
         favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; visibleCount = pageSize; Refresh(); };
         search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; visibleCount = pageSize; Refresh(); };
         Refresh();
-        root.AddView(BuildLauncherNavigation("explore"));
-        SetContentView(root);
+        SetLauncherContent(root, "explore");
     }
 
     private void EditInspirationNotes(InspirationReference reference, Action refresh)

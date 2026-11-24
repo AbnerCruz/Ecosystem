@@ -142,6 +142,22 @@ public sealed class LauncherPreferences
             PinnedProjects = _state.PinnedProjects.Where(x => x != name).ToArray() });
     }
 
+    public void MovePinToStart(string name, string? gameId)
+    {
+        RequireName(name);
+        if (gameId is null)
+        {
+            if (IsPinned(name) && _state.PinnedProjects[0] != name)
+                Save(_state with { PinnedProjects = _state.PinnedProjects.Where(p => p != name).Prepend(name).ToArray() });
+            return;
+        }
+
+        var id = RequireGameId(gameId);
+        var pins = _state.PinnedProjectIds ?? [];
+        if (!IsPinnedProject(id) || pins[0].Equals(id, StringComparison.OrdinalIgnoreCase)) return;
+        Save(_state with { PinnedProjectIds = pins.Where(p => !p.Equals(id, StringComparison.OrdinalIgnoreCase)).Prepend(id).ToArray() });
+    }
+
     public void ForgetProject(string name, string? gameId)
     {
         RequireName(name);
