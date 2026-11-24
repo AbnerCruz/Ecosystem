@@ -12,7 +12,11 @@ public sealed record LibraryAssetFile(string Path, string Sha256, long Length);
 /// <summary>Manifesto imutável de uma versão; importação em jogos é sempre uma cópia, nunca um link global.</summary>
 public sealed record LibraryAssetVersion(
     string Id, int Version, string Title, ProjectAssetKind Kind, string Author, string License,
-    string Attribution, string[] Tags, LibraryAssetFile[] Files, DateTime CreatedUtc);
+    string Attribution, string[] Tags, LibraryAssetFile[] Files, DateTime CreatedUtc)
+{
+    public string? PrimaryPath { get; init; }
+    public int? BasedOnVersion { get; init; }
+}
 
 /// <summary>
 /// Biblioteca local e versionada de assets do usuário. Não faz rede nem altera um projeto ao publicar.
@@ -115,15 +119,7 @@ public sealed class ReusableAssetLibrary
             .SingleOrDefault(a => string.Equals(a.Path, primaryPath, StringComparison.Ordinal));
         if (asset is null) throw new ArgumentException("Selecione um asset real de Assets/ ou Content/.", nameof(primaryPath));
 
-        var paths = new List<string> { asset.Path };
-        if (asset.PreviewPath is { } preview && !paths.Contains(preview, StringComparer.Ordinal))
-            paths.Add(preview);
-        if (primaryPath.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase) ||
-            primaryPath.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase))
-        {
-            var wave = primaryPath[..primaryPath.LastIndexOf('.', primaryPath.LastIndexOf('.') - 1)] + ".wav";
-            if (sourceFiles.Contains(wave, StringComparer.Ordinal)) paths.Add(wave);
-        }
+        var paths = CollectFiles(sourceRoot, sourceFiles, asset);
 
         var id = existingAssetId ?? Guid.NewGuid().ToString("D");
         ValidateId(id);
@@ -145,7 +141,8 @@ public sealed class ReusableAssetLibrary
         var manifest = new LibraryAssetVersion(id, version,
             Bounded(title, 160, "Título"), asset.Kind,
             Bounded(author, 120, "Autor", true), Bounded(license, 120, "Licença"),
-            Bounded(attribution, 500, "Atribuição", true), safeTags, [], DateTime.UtcNow);
+            Bounded(attribution, 500, "Atribuição", true), safeTags, [], DateTime.UtcNow)
+        { PrimaryPath = primaryPath, BasedOnVersion = version > 1 ? version - 1 : null };
 
         // A pre-existing library ID directory may be a symlink to an unrelated location.
         // Never publish a revision through such a link.
@@ -183,6 +180,75 @@ public sealed class ReusableAssetLibrary
         {
             if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true);
         }
+    }
+
+    private static IReadOnlyList<string> CollectFiles(string root, IReadOnlyList<string> files, ProjectAsset primary)
+    {
+        var available = files.ToHashSet(StringComparer.Ordinal);
+        var paths = new List<string>();
+        var included = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string path, bool required = true)
+        {
+            ValidatePath(path);
+            if (!available.Contains(path))
+            {
+                if (required) throw new FileNotFoundException("Dependência não encontrada: " + path, path);
+                return;
+            }
+            if (included.Add(path)) paths.Add(path);
+        }
+        JsonDocument Read(string path)
+        {
+            EnsureNoLinks(root, path);
+            try { return JsonDocument.Parse(File.ReadAllText(FilePath(root, path))); }
+            catch (JsonException ex) { throw new InvalidDataException("JSON inválido: " + path, ex); }
+        }
+
+        Add(primary.Path);
+        if (primary.PreviewPath is { } preview) Add(preview);
+        for (int i = 0; i < paths.Count; i++)
+        {
+            string path = paths[i];
+            if (path.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase))
+            {
+                using var map = Read(path);
+                if (!map.RootElement.TryGetProperty("texture", out var texture) || texture.ValueKind != JsonValueKind.String)
+                    throw new InvalidDataException("O mapa precisa declarar o caminho do tileset.");
+                var atlas = "Content/" + texture.GetString();
+                Add(atlas);
+                if (atlas.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    Add(atlas[..^4] + ".sprite.json", required: false);
+            }
+            else if (path.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase) ||
+                     path.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase))
+            {
+                Add(path[..path.LastIndexOf('.', path.Length - 6)] + ".wav", required: false);
+            }
+            else if (path.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase))
+            {
+                Add(path[..^".palette.json".Length] + ".gpl", required: false);
+            }
+            else if (path.StartsWith("Content/Data/", StringComparison.Ordinal) &&
+                     path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) &&
+                     !path.EndsWith(".schema.json", StringComparison.OrdinalIgnoreCase))
+            {
+                string schema = path[..^5] + ".schema.json";
+                Add(schema, required: false);
+                if (!available.Contains(schema)) continue;
+                using var doc = Read(schema);
+                if (!doc.RootElement.TryGetProperty("Columns", out var columns) || columns.ValueKind != JsonValueKind.Array)
+                    throw new InvalidDataException("Esquema de dados sem colunas: " + schema);
+                foreach (var column in columns.EnumerateArray())
+                {
+                    if (!column.TryGetProperty("ReferenceTable", out var reference) || reference.ValueKind == JsonValueKind.Null) continue;
+                    var name = reference.GetString();
+                    if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(['/', '\\', ':']) >= 0)
+                        throw new InvalidDataException("Nome de tabela referenciada inválido.");
+                    Add("Content/Data/" + name + ".json");
+                }
+            }
+        }
+        return paths;
     }
 
     /// <summary>
@@ -240,14 +306,19 @@ public sealed class ReusableAssetLibrary
     /// Pré-valida a versão inteira; rejeita colisões sem sobrescrita. Staging e rollback impedem
     /// importação parcial em erros de IO. Uma edição concorrente nunca é apagada pelo rollback.
     /// </summary>
-    public IReadOnlyList<string> ImportToProject(string assetId, int version, LunetProject destination)
+    public IReadOnlyList<string> ImportToProject(string assetId, int version, LunetProject destination) =>
+        ImportToProject(assetId, version, destination, CancellationToken.None);
+
+    public IReadOnlyList<string> ImportToProject(string assetId, int version, LunetProject destination, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(destination);
+        cancellationToken.ThrowIfCancellationRequested();
         var manifest = Find(assetId, version);
         var root = VersionDirectory(assetId, version);
         var checkedFiles = new List<(string Relative, string Source, string Target, string Hash)>();
         foreach (var item in manifest.Files)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ValidatePath(item.Path);
             destination.EnsureInsideProject(item.Path);
             EnsureNoLinks(destination.Directory, item.Path);
@@ -279,6 +350,7 @@ public sealed class ReusableAssetLibrary
         {
             foreach (var item in checkedFiles)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var temporary = FilePath(staging, item.Relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(temporary)!);
                 File.Copy(item.Source, temporary, overwrite: false);
@@ -287,11 +359,21 @@ public sealed class ReusableAssetLibrary
             }
             foreach (var item in checkedFiles)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 EnsureNoLinks(destination.Directory, item.Relative);
                 Directory.CreateDirectory(Path.GetDirectoryName(item.Target)!);
                 File.Move(FilePath(staging, item.Relative), item.Target, overwrite: false);
                 created.Add((item.Target, item.Hash));
             }
+            cancellationToken.ThrowIfCancellationRequested();
+            const string forks = ".lunet/asset-forks";
+            EnsureNoLinks(destination.Directory, forks);
+            var records = FilePath(destination.Directory, forks);
+            Directory.CreateDirectory(records);
+            var receipt = Path.Combine(records, Guid.NewGuid().ToString("N") + ".json");
+            var pendingReceipt = Path.Combine(staging, "fork.json");
+            File.WriteAllText(pendingReceipt, JsonSerializer.Serialize(manifest, JsonOptions));
+            File.Move(pendingReceipt, receipt, overwrite: false);
             return checkedFiles.Select(x => x.Relative).ToArray();
         }
         catch
@@ -423,6 +505,9 @@ public sealed class ReusableAssetLibrary
             throw new InvalidDataException("Manifesto contém colisão entre arquivo e diretório; dados preservados.");
         // The manifest is local persisted input, not trusted code. Reject malformed metadata
         // before Android renders it or the import workflow reads it.
+        if (item.PrimaryPath is { } primary && !paths.Contains(primary) ||
+            item.BasedOnVersion is { } parent && (parent < 1 || parent >= item.Version))
+            throw new InvalidDataException("Origem da revisão inválida.");
         if (item.Title is null || item.License is null || item.Author is null ||
             item.Attribution is null || item.Tags is null || item.Tags.Any(t => t is null))
             throw new InvalidDataException("Metadados incompletos no manifesto de asset; dados preservados.");

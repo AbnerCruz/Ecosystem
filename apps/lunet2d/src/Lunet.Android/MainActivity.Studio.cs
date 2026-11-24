@@ -66,8 +66,7 @@ public sealed partial class MainActivity
                 saved = false;
                 // JSON is the editable source; the PNG sheet is a derived asset
                 // that follows every save, including frame and timing edits.
-                project.WriteText(path, doc.ToJson());
-                SaveSpriteSheet(path, doc);
+                SaveStudioSprite(new StudioAssetWorkspace(project.Directory), path, doc);
                 saved = true;
             },
             doc => ShowSpriteUsage(path, doc),
@@ -83,9 +82,8 @@ public sealed partial class MainActivity
     private static string SpriteSheetPath(string path) =>
         path[..^".sprite.json".Length] + ".png";
 
-    private void SaveSpriteSheet(string path, SpriteDocument doc)
+    private static byte[] SpritePng(SpriteDocument doc)
     {
-        string png = SpriteSheetPath(path);
         int width = checked(doc.Width * doc.Frames.Count);
         byte[] rgba = doc.SheetRgba();
         var pixels = new int[checked(width * doc.Height)];
@@ -97,13 +95,16 @@ public sealed partial class MainActivity
         using var stream = new MemoryStream();
         if (!bitmap.Compress(Bitmap.CompressFormat.Png!, 100, stream))
             throw new IOException("Falha ao gerar spritesheet PNG.");
-        stream.Position = 0;
-        _project!.Import(Path.GetDirectoryName(png)!.Replace('\\', '/'), Path.GetFileName(png), stream);
+        return stream.ToArray();
     }
+
+    private static void SaveStudioSprite(StudioAssetWorkspace storage, string path, SpriteDocument doc) =>
+        storage.WriteBundle((path, System.Text.Encoding.UTF8.GetBytes(doc.ToJson())), (SpriteSheetPath(path), SpritePng(doc)));
 
     private void ShowSpriteUsage(string path, SpriteDocument doc)
     {
         string png = SpriteSheetPath(path);
+        if (png.StartsWith("Content/", StringComparison.Ordinal)) png = png["Content/".Length..];
         var frames = string.Join(", ", Enumerable.Range(0, doc.Frames.Count));
         new AlertDialog.Builder(this)!.SetTitle("Animação pronta para o jogo")!.SetMessage(
             $"{png}\n{doc.Frames.Count} frames · {doc.Width}×{doc.Height} · {doc.Fps} FPS\n" +
@@ -172,9 +173,9 @@ public sealed partial class MainActivity
             })!.Show();
     }
 
-    private void CreateEditableTileMap(int cells, int tile)
+    private void CreateEditableTileMap(int cells, int tile, bool standalone = false)
     {
-        var project = _project!;
+        var storage = standalone ? StandaloneWorkspace : new StudioAssetWorkspace(_project!.Directory);
         var name = "tiles-" + Guid.NewGuid().ToString("N")[..8];
         string source = "Content/Textures/" + name + ".sprite.json";
         string png = SpriteSheetPath(source);
@@ -193,32 +194,24 @@ public sealed partial class MainActivity
                 atlas.Rectangle(0, x, y, x + tile - 1, y + tile - 1, colors[i], filled: true);
             }
 
-            project.WriteText(source, atlas.ToJson());
-            SaveSpriteSheet(source, atlas);
             var map = Lunet.Graphics.TileMap.Create("Textures/" + name + ".png", cells, cells, tile, tile);
-            project.WriteText(mapPath, map.ToJson());
-            RefreshExplorer();
-            OpenTileMap(mapPath, map);
+            storage.WriteBundle((source, System.Text.Encoding.UTF8.GetBytes(atlas.ToJson())), (png, SpritePng(atlas)),
+                (mapPath, System.Text.Encoding.UTF8.GetBytes(map.ToJson())));
+            if (!standalone) RefreshExplorer();
+            OpenTileMap(mapPath, map, standalone ? storage : null);
         }
         catch (Exception ex)
         {
-            // These paths contain a new random ID and belong exclusively to this operation.
-            // Never delete or rewrite older maps while handling a creation failure.
-            foreach (string path in new[] { mapPath, png, source })
-            {
-                try { if (project.ListFiles().Contains(path)) project.DeleteFile(path); }
-                catch (IOException) { /* preserve original failure */ }
-            }
             Toast.MakeText(this, "Não foi possível criar o mapa: " + ex.Message, ToastLength.Long)?.Show();
         }
     }
 
-    private void EditTileMapTileset(string mapPath, Lunet.Graphics.TileMap map, Action closeMap)
+    private void EditTileMapTileset(string mapPath, Lunet.Graphics.TileMap map, Action closeMap, StudioAssetWorkspace? workspace = null)
     {
-        var project = _project!;
+        var storage = workspace ?? new StudioAssetWorkspace(_project!.Directory);
         string png = "Content/" + map.TexturePath;
         string source = png[..^".png".Length] + ".sprite.json";
-        if (!project.ListFiles().Contains(source))
+        if (!storage.Exists(source))
         {
             new AlertDialog.Builder(this)!.SetTitle("Tileset sem fonte editável")!
                 .SetMessage("Este mapa utiliza um PNG importado. Crie um novo tilemap para desenhar o próprio tileset no Lunet.")!
@@ -227,13 +220,13 @@ public sealed partial class MainActivity
         }
         try
         {
-            var document = SpriteDocument.Parse(project.ReadText(source));
+            var document = SpriteDocument.Parse(storage.ReadText(source));
             if (document.Frames.Count != 1 || document.Width % map.TileWidth != 0 || document.Height % map.TileHeight != 0)
                 throw new InvalidDataException("O tileset precisa ter um frame e dimensões múltiplas do tile.");
             closeMap();
-            OpenSpriteStudio(source, document,
-                () => OpenTileMap(mapPath, Lunet.Graphics.TileMap.Parse(project.ReadText(mapPath))),
-                map.TileWidth);
+            void ReturnToMap() => OpenTileMap(mapPath, Lunet.Graphics.TileMap.Parse(storage.ReadText(mapPath)), workspace);
+            if (workspace is null) OpenSpriteStudio(source, document, ReturnToMap, map.TileWidth);
+            else EditStandaloneSprite(source, document, ReturnToMap, map.TileWidth);
         }
         catch (Exception ex)
         {
@@ -241,15 +234,15 @@ public sealed partial class MainActivity
         }
     }
 
-    private void OpenTileMap(string path, Lunet.Graphics.TileMap map)
+    private void OpenTileMap(string path, Lunet.Graphics.TileMap map, StudioAssetWorkspace? workspace = null)
     {
-        var project = _project!;
+        var storage = workspace ?? new StudioAssetWorkspace(_project!.Directory);
         Bitmap? bitmap = null;
         try
         {
             string relative = Path.Combine("Content", map.TexturePath.Replace('/', Path.DirectorySeparatorChar));
-            string absolute = Path.GetFullPath(Path.Combine(project.Directory, relative));
-            string contentRoot = Path.GetFullPath(Path.Combine(project.Directory, "Content")) + Path.DirectorySeparatorChar;
+            string absolute = Path.GetFullPath(Path.Combine(storage.RootDirectory, relative));
+            string contentRoot = Path.GetFullPath(Path.Combine(storage.RootDirectory, "Content")) + Path.DirectorySeparatorChar;
             if (!absolute.StartsWith(contentRoot, StringComparison.Ordinal)) throw new InvalidDataException("Tileset fora de Content.");
             using var options = new BitmapFactory.Options { InJustDecodeBounds = true };
             BitmapFactory.DecodeFile(absolute, options)?.Dispose();
@@ -264,14 +257,14 @@ public sealed partial class MainActivity
             var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
             bool saved = false;
             var view = new TileStudioView(this, edit, bitmap,
-                json => { saved = false; project.WriteText(path, json); saved = true; },
+                json => { saved = false; storage.WriteText(path, json); saved = true; },
                 () => EditTileMapTileset(path, map, () =>
                 {
                     _tileStudio?.Save();
                     _tileStudio = null;
                     dialog.Dismiss();
                     bitmap.Dispose();
-                }),
+                }, workspace),
                 () =>
                 {
                     _tileStudio?.Save();
@@ -279,7 +272,7 @@ public sealed partial class MainActivity
                     _tileStudio = null;
                     dialog.Dismiss();
                     bitmap.Dispose();
-                    RefreshExplorer();
+                    if (workspace is null) RefreshExplorer(); else AskPublishStandaloneAsset(path);
                 });
             _tileStudio = view;
             dialog.SetContentView(view);

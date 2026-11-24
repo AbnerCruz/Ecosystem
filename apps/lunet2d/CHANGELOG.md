@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.1-dev.1000591 — F6 · Mapas mentais e Studios
+
+- Mapas mentais em Notas, com ramos, ligações, arraste, zoom, histórico, referências e apresentação.
+- Tilemaps, paletas, partículas, dados e edição WAV disponíveis no Studio global. Publicação e cópias independentes pela Biblioteca.
+- Pacotes de tile e tabelas levam suas dependências. Importações registram a origem e preservam arquivos em conflito.
+
 ## 0.0.1-dev.1000590 — F5 · Aprender e manual offline
 
 - Dez missões com referência direta, botão de Preview e pista contextual em Estudo.

@@ -38,20 +38,23 @@ public sealed partial class MainActivity
                     return;
                 }
                 var path = effects[e.Which - 1];
-                try
-                {
-                    var json = _project.ReadText(path);
-                    var draft = ParticleDraft.From(ParticleSettings.FromJson(json));
-                    using var doc = System.Text.Json.JsonDocument.Parse(json);
-                    if (doc.RootElement.TryGetProperty("EmissionRate", out var rate)) draft.EmissionRate = rate.GetSingle();
-                    if (doc.RootElement.TryGetProperty("MaxParticles", out var max)) draft.MaxParticles = max.GetInt32();
-                    OpenParticleStudio(path, draft);
-                }
-                catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException or ProjectException)
-                {
-                    Toast.MakeText(this, "Não foi possível abrir o efeito: " + ex.Message, ToastLength.Long)?.Show();
-                }
+                OpenSavedParticle(path, new StudioAssetWorkspace(_project.Directory));
             })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
+    }
+
+    private void OpenSavedParticle(string path, StudioAssetWorkspace storage, bool standalone = false)
+    {
+        try
+        {
+            var json = storage.ReadText(path);
+            var draft = ParticleDraft.From(ParticleSettings.FromJson(json));
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("EmissionRate", out var rate)) draft.EmissionRate = rate.GetSingle();
+            if (doc.RootElement.TryGetProperty("MaxParticles", out var max)) draft.MaxParticles = max.GetInt32();
+            OpenParticleStudio(path, draft, standalone ? storage : null);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException or ProjectException)
+        { Toast.MakeText(this, "Não foi possível abrir o efeito: " + ex.Message, ToastLength.Long)?.Show(); }
     }
 
     private string UniqueEffectName(string baseName)
@@ -61,16 +64,17 @@ public sealed partial class MainActivity
         return name;
     }
 
-    private void OpenParticleStudio(string path, ParticleDraft draft)
+    private void OpenParticleStudio(string path, ParticleDraft draft, StudioAssetWorkspace? workspace = null)
     {
-        var project = _project!;
+        var storage = workspace ?? new StudioAssetWorkspace(_project!.Directory);
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
         var name = Path.GetFileName(path)[..^ParticleExtension.Length];
         var view = new ParticleStudioView(this, draft, name, current =>
         {
             try
             {
-                project.WriteText(path, current.ToJson());
+                storage.WriteText(path, current.ToJson());
+                if (workspace is not null) { AskPublishStandaloneAsset(path); return; }
                 RefreshExplorer();
                 var load = path["Content/".Length..];
                 new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!

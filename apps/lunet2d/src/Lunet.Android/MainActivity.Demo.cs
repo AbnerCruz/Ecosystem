@@ -20,6 +20,8 @@ public sealed partial class MainActivity
         if (screen == "first-use") { ShowFirstUse(); return; }
         if (screen == "appearance") { ShowHome(); ShowAppearance(); return; }
         if (screen == "studios-global") { Post(ShowLauncherStudios); return; }
+        if (screen == "tile-global") { Post(() => CreateEditableTileMap(16, 16, standalone: true)); return; }
+        if (screen == "data-global") { Post(NewStandaloneData); return; }
         if (screen == "sprite-global")
         {
             Post(() =>
@@ -86,6 +88,13 @@ public sealed partial class MainActivity
             case "palette": Post(ShowCommandPalette); break;
             case "studio": Post(ShowStudioHub); break;
             case "ai-settings": Post(() => ShowAiSettings()); break;
+            case "mindmap":
+                var mapPath = ProjectNotes.CreateMindMap(_project!, "Planejar o jogo");
+                var map = ProjectMindMap.Parse(_project!.ReadText(mapPath));
+                map = map.Add(map.Root, "Mecânicas").Add(map.Root, "Arte");
+                _project.WriteText(mapPath, map.Serialize());
+                Post(() => OpenMindMap(mapPath));
+                break;
             case "notes":
                 if (ProjectNotes.List(_project!).Count == 0)
                 {

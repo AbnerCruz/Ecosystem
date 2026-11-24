@@ -455,11 +455,14 @@ public sealed partial class MainActivity
         AddHomeAction(list, "Music Studio", "Compor e exportar música sem projeto aberto", NewStandaloneMusic);
         AddHomeAction(list, "Sound Designer", "Efeitos sintetizados e editáveis", () =>
             OpenSoundDesigner(null, Lunet.Studio.Music.SoundDesigner.Generate("coin", Environment.TickCount)));
+        AddHomeAction(list, "Tile Studio", "Mapas em camadas e tilesets editáveis", NewStandaloneTileMap);
+        AddHomeAction(list, "Paleta de cores", "Cores nomeadas e exportação GPL", NewStandalonePalette);
+        AddHomeAction(list, "Particle Studio", "Presets editáveis e prévia de partículas", NewStandaloneParticles);
+        AddHomeAction(list, "Data Studio", "Edite tabelas e esquemas do jogo", NewStandaloneData);
+        AddHomeAction(list, "Editor WAV", "Crie um tom e edite o áudio em um rascunho", () =>
+            OpenWaveAudio(Lunet.Studio.WaveAudioDocument.CreateEffect(440, 0.5, Lunet.Studio.WaveShape.Sine), "audio", StandaloneWorkspace));
         AddHomeAction(list, "Minhas criações", "Retomar rascunhos e publicar para reutilizar", ShowStandaloneDrafts);
         AddHomeAction(list, "Biblioteca pessoal", "Versões de assets · Usar em qualquer projeto · exportar ZIP", ShowReusableAssetLibrary);
-        list.AddView(LunetUi.Label(this,
-            "Tile, paleta, partículas e dados ainda precisam de adaptação ao workspace global; não é necessário criar um jogo para usar os Studios disponíveis acima.",
-            LunetUi.TextCaption, LunetUi.TextMuted));
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
         SetLauncherContent(root, "studios", scroll);

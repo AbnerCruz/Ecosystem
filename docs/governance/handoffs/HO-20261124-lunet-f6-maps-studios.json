@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-f6-maps-studios",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T14:02:02.711Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f6",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-524",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f6-maps-studios",
+  "base_commit": "e2d03e2dc8fda9f79c779b379ffadab48b889ff9",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/manual/catalog.json",
+    "apps/lunet2d/docs/manual/mapas-e-studios.md",
+    "apps/lunet2d/docs/plans/f6-validacao.md",
+    "apps/lunet2d/src/Lunet.Android/DataStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AssetLibrary.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Assets.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AudioStudio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Data.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GlobalStudio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.MindMap.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Music.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Notes.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Palette.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Particles.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectMindMap.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectNotes.cs",
+    "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
+    "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
+    "apps/lunet2d/tests/Lunet.Tests/F6CreativeWorkspaceTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ReusableAssetLibraryTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/StudioAssetWorkspaceTests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "docs/governance/handoffs/HO-20261124-lunet-f6-maps-studios.json"
+  ],
+  "work_completed": [
+    "Implement native mind maps in Notes with saved versioned hierarchy and session history.",
+    "Reuse native Tile, Palette, Particle, Data and WAV Studio in the standalone workspace.",
+    "Include assets required by maps and data and retain the imported revision provenance."
+  ],
+  "verification": [
+    {
+      "check": "F6 maps, derived files and independent project copies",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/F6CreativeWorkspaceTests.cs"
+    },
+    {
+      "check": "Android 13 captures and official APK",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "No physical handset or TalkBack test. The native map is a tree with supplementary connections, without external format interchange."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirm governed merge and published APK provenance."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Project files and standalone drafts are authoritative; published versions are immutable copies."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulator and physical-device evidence are distinguished."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Map topic IDs and library versions survive local file moves."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "studio-workspace",
+      "status": "product-specific",
+      "rationale": "Existing Studio views, library, and project notes extended in place."
+    }
+  ]
+}
