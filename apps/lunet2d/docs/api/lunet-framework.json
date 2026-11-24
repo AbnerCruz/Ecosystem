@@ -12114,6 +12114,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.SpriteBatch.CancelSorted",
+          "name": "CancelSorted",
+          "kind": "method",
+          "signature": "public void CancelSorted()",
+          "summary": "Abandona a passagem ordenada sem emitir os quads pendentes.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.Graphics.Texture2D,System.Numerics.Vector2,Lunet.Graphics.Color,System.Single)",
           "name": "Draw",
           "kind": "method",
@@ -12191,19 +12204,6 @@
               "description": "Chave de ordena\u00E7\u00E3o finita."
             }
           ],
-          "returns": "",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
-          "id": "M:Lunet.Graphics.SpriteBatch.CancelSorted",
-          "name": "CancelSorted",
-          "kind": "method",
-          "signature": "public void CancelSorted()",
-          "summary": "Abandona a passagem ordenada sem emitir os quads pendentes.",
-          "remarks": "",
-          "parameters": [],
           "returns": "",
           "examples": [],
           "related": [],
