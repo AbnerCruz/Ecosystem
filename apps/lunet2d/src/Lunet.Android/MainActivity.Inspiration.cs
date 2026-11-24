@@ -19,6 +19,7 @@ public sealed partial class MainActivity
     private string[] _inspirationStyle = [];
     private readonly HashSet<string> _inspirationComparison = new(StringComparer.Ordinal);
     private bool _inspirationViewLoaded;
+    private sealed record InspirationViewState(InspirationFilter Filter, int VisibleCount, int ScrollY, string[] ComparedIds);
     private string InspirationViewPath => System.IO.Path.Combine(FilesDir!.AbsolutePath, "inspiration-view.json");
 
     private void LoadInspirationView()
@@ -28,8 +29,12 @@ public sealed partial class MainActivity
         try
         {
             if (!File.Exists(InspirationViewPath)) return;
-            var filter = System.Text.Json.JsonSerializer.Deserialize<InspirationFilter>(File.ReadAllText(InspirationViewPath));
-            if (filter is null) return;
+            var state = System.Text.Json.JsonSerializer.Deserialize<InspirationViewState>(File.ReadAllText(InspirationViewPath));
+            if (state?.Filter is not { } filter) return;
+            _inspirationVisibleCount = Math.Max(InspirationPageSize, state.VisibleCount);
+            _launcherPositions["explore"] = Math.Max(0, state.ScrollY);
+            foreach (var id in (state.ComparedIds ?? []).Take(2))
+                if (!string.IsNullOrWhiteSpace(id)) _inspirationComparison.Add(id);
             _inspirationQuery = filter.Query ?? "";
             _inspirationGenre = filter.Genres ?? [];
             _inspirationMechanic = filter.Mechanics ?? [];
@@ -51,7 +56,12 @@ public sealed partial class MainActivity
         try
         {
             var path = InspirationViewPath;
-            File.WriteAllText(path + ".tmp", System.Text.Json.JsonSerializer.Serialize(CurrentInspirationFilter()));
+            if (!_inspirationViewLoaded) return;
+            var position = _launcherScrollKey == "explore" && _launcherScroll is { IsAttachedToWindow: true } scroll
+                ? scroll.ScrollY : _launcherPositions.GetValueOrDefault("explore");
+            var state = new InspirationViewState(CurrentInspirationFilter(), _inspirationVisibleCount,
+                position, _inspirationComparison.ToArray());
+            File.WriteAllText(path + ".tmp", System.Text.Json.JsonSerializer.Serialize(state));
             File.Move(path + ".tmp", path, true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -122,6 +132,7 @@ public sealed partial class MainActivity
             _inspirationQuery = "";
             _inspirationVisibleCount = InspirationPageSize;
             _inspirationComparison.Clear();
+            _launcherScroll?.ScrollTo(0, 0);
             SaveInspirationView();
             OpenInspirationExplorer();
         }, ButtonStyle.Quiet));
@@ -148,6 +159,7 @@ public sealed partial class MainActivity
             int position = scroll.ScrollY;
             items.RemoveAllViews();
             var matches = library.SearchFacets(CurrentInspirationFilter());
+            _inspirationVisibleCount = Math.Clamp(_inspirationVisibleCount, InspirationPageSize, Math.Max(InspirationPageSize, matches.Count));
             _inspirationComparison.RemoveWhere(id => !matches.Any(e => e.Id == id));
             compareButton.Text = $"Comparar ({_inspirationComparison.Count}/2)";
             compareButton.Enabled = _inspirationComparison.Count == 2;
@@ -281,7 +293,7 @@ public sealed partial class MainActivity
                 {
                     choices.RemoveAllViews();
                     var query = filterSearch.Text ?? "";
-                    foreach (var value in values.Where(v => v.Contains(query, StringComparison.OrdinalIgnoreCase)))
+                    foreach (var value in values.Where(v => InspirationLibrary.TextMatches(v, query)))
                     {
                         var check = new CheckBox(this) { Text = value, Checked = chosen.Contains(value) };
                         check.SetTextColor(LunetUi.Text);
@@ -299,11 +311,12 @@ public sealed partial class MainActivity
                     .SetMessage(description == "Mecânicas" ? "Todas as mecânicas escolhidas devem existir." : "Qualquer opção escolhida nesta categoria.")!
                     .SetView(list)!
                     .SetNegativeButton("Cancelar", (_, _) => { })!
-                    .SetNeutralButton("Limpar", (_, _) => { set([]); _inspirationVisibleCount = InspirationPageSize; SaveInspirationView(); OpenInspirationExplorer(); })!
+                    .SetNeutralButton("Limpar", (_, _) => { set([]); _inspirationVisibleCount = InspirationPageSize; scroll.ScrollTo(0, 0); SaveInspirationView(); OpenInspirationExplorer(); })!
                     .SetPositiveButton("Aplicar", (_, _) =>
                     {
                         set(chosen.ToArray());
                         _inspirationVisibleCount = InspirationPageSize;
+                        scroll.ScrollTo(0, 0);
                         SaveInspirationView();
                         OpenInspirationExplorer();
                     })!.Show();
@@ -315,8 +328,8 @@ public sealed partial class MainActivity
         AddFilter("Mecânicas", library.Mechanics, _inspirationMechanic, value => _inspirationMechanic = value);
         AddFilter("Perspectivas", library.Perspectives, _inspirationPerspective, value => _inspirationPerspective = value);
         AddFilter("Estéticas", library.Styles, _inspirationStyle, value => _inspirationStyle = value);
-        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; _inspirationVisibleCount = InspirationPageSize; SaveInspirationView(); Refresh(); };
-        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; _inspirationVisibleCount = InspirationPageSize; SaveInspirationView(); Refresh(); };
+        favorites.CheckedChange += (_, args) => { _inspirationFavorites = args.IsChecked; _inspirationVisibleCount = InspirationPageSize; scroll.ScrollTo(0, 0); Refresh(); };
+        search.TextChanged += (_, _) => { _inspirationQuery = search.Text ?? ""; _inspirationVisibleCount = InspirationPageSize; scroll.ScrollTo(0, 0); Refresh(); };
         Refresh();
         SetLauncherContent(root, "explore", scroll);
     }
