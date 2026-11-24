@@ -13,6 +13,7 @@ public sealed partial class MainActivity
     private readonly Dictionary<string, (string Text, UndoHistory History)> _documentHistories = new(StringComparer.Ordinal);
     private readonly Stack<(string Path, EditorViewport View)> _navigationHistory = new();
     private LinearLayout? _documentTabs;
+    private View? _documentTabsStrip;
     private View? _documentEmpty;
     private string? _documentsFile;
 
@@ -70,6 +71,7 @@ public sealed partial class MainActivity
         _documentTabs = LunetUi.Row(this, 2);
         var scroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false };
         scroll.AddView(_documentTabs);
+        _documentTabsStrip = scroll;
         return scroll;
     }
 

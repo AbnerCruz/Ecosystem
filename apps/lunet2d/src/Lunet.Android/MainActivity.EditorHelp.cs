@@ -150,7 +150,22 @@ public sealed partial class MainActivity
             _chips.AddView(chip, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(44)));
         }
         _chipScroll.ScrollTo(0, 0);
-        _chipScroll.Visibility = items.Count == 0 ? ViewStates.Gone : ViewStates.Visible;
+        RefreshCompletionVisibility();
+    }
+
+    private void RefreshCompletionVisibility()
+    {
+        if (_chipScroll is null) return;
+        bool signatureInLandscape = IsLandscape && _keyboardVisible && _signatureRow?.Visibility == ViewStates.Visible;
+        _chipScroll.Visibility = _chips?.ChildCount > 0 && !signatureInLandscape ? ViewStates.Visible : ViewStates.Gone;
+    }
+
+    private void CloseCurrentSignature()
+    {
+        _dismissedCall = _visibleSignature?.CallStart;
+        _visibleSignature = null;
+        if (_signatureRow is not null) _signatureRow.Visibility = ViewStates.Gone;
+        RefreshCompletionVisibility();
     }
 
     private void ShowSignature(CallSignatureHelp? help)
@@ -209,10 +224,11 @@ public sealed partial class MainActivity
         var scroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false };
         scroll.AddView(text);
         row.AddView(scroll, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
-        row.AddView(LunetUi.Icon(this, "×", "Fechar ajuda de assinatura", () => DismissEditorHelp(), keepsKeyboard: true),
+        row.AddView(LunetUi.Icon(this, "×", "Fechar ajuda de assinatura", CloseCurrentSignature, keepsKeyboard: true),
             new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         row.SetGravity(GravityFlags.CenterVertical);
         row.Visibility = ViewStates.Visible;
+        RefreshCompletionVisibility();
         if (start >= 0) scroll.Post(() => scroll.ScrollTo((int)text.Paint!.MeasureText(label[..start]) - Dp(12), 0));
     }
 

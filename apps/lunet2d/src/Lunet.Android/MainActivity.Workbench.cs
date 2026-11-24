@@ -200,6 +200,9 @@ public sealed partial class MainActivity
         _keyboardVisible = keyboard;
         if (_extraKeys is not null) _extraKeys.Visibility = editing ? ViewStates.Visible : ViewStates.Gone;
         if (_workbenchNav is not null) _workbenchNav.Visibility = keyboard ? ViewStates.Gone : ViewStates.Visible;
+        if (_documentTabsStrip is not null)
+            _documentTabsStrip.Visibility = IsLandscape && editing ? ViewStates.Gone : ViewStates.Visible;
+        RefreshCompletionVisibility();
     }
 
     private void FocusWorkbenchCode()
