@@ -48,6 +48,10 @@ public sealed class PlayableRevision : IDisposable
             Append(hash, Encoding.UTF8.GetBytes("lunet-playable-v1"));
             Append(hash, Encoding.UTF8.GetBytes(toolchainIdentity));
             var inputs = Enumerate(root, "", cancellation).Where(IsInput).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            var checksums = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+            // Content source expects a directory even for a blank project.
+            IoDirectory.CreateDirectory(Path.Combine(folder, "Content"));
+            IoDirectory.CreateDirectory(Path.Combine(folder, "Assets"));
             foreach (var relative in inputs)
             {
                 cancellation.ThrowIfCancellationRequested();
@@ -59,7 +63,20 @@ public sealed class PlayableRevision : IDisposable
                     input.CopyTo(output);
                 using var captured = File.OpenRead(target);
                 Append(hash, Encoding.UTF8.GetBytes(relative));
-                Append(hash, SHA256.HashData(captured));
+                var checksum = SHA256.HashData(captured);
+                checksums.Add(relative, checksum);
+                Append(hash, checksum);
+            }
+            // Reject a changed file list or bytes during capture; never silently combine revisions.
+            var currentInputs = Enumerate(root, "", cancellation).Where(IsInput).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            if (!inputs.SequenceEqual(currentInputs, StringComparer.Ordinal))
+                throw new ProjectException("Os arquivos do jogo mudaram durante a captura. Tente novamente.");
+            foreach (var relative in currentInputs)
+            {
+                cancellation.ThrowIfCancellationRequested();
+                using var current = File.OpenRead(Path.Combine(root, relative));
+                if (!CryptographicOperations.FixedTimeEquals(checksums[relative], SHA256.HashData(current)))
+                    throw new ProjectException("O jogo mudou durante a captura. Tente novamente.");
             }
             var manifest = ProjectManifest.Parse(File.ReadAllText(Path.Combine(folder, ProjectStore.ManifestFileName)));
             if (!Guid.TryParse(manifest.GameId, out var gameId) || gameId == Guid.Empty ||
@@ -144,10 +161,19 @@ public sealed class PlayableBuildCache(string root)
             var envelope = File.ReadAllBytes(path);
             if (envelope.Length <= 32) return null;
             var bytes = envelope.AsSpan(32).ToArray();
-            return CryptographicOperations.FixedTimeEquals(envelope.AsSpan(0, 32), SHA256.HashData(bytes)) ? bytes : null;
+            return CryptographicOperations.FixedTimeEquals(envelope.AsSpan(0, 32), Checksum(gameId, key, bytes)) ? bytes : null;
         }
         catch (IOException) { return null; }
         catch (UnauthorizedAccessException) { return null; }
+    }
+
+    private static byte[] Checksum(Guid gameId, string key, byte[] assembly)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        hash.AppendData(gameId.ToByteArray());
+        hash.AppendData(Encoding.ASCII.GetBytes(key.ToUpperInvariant()));
+        hash.AppendData(assembly);
+        return hash.GetHashAndReset();
     }
 
     public void Publish(Guid gameId, string key, byte[] assembly)
@@ -161,7 +187,7 @@ public sealed class PlayableBuildCache(string root)
         {
             using (var stream = File.Create(temp))
             {
-                stream.Write(SHA256.HashData(assembly));
+                stream.Write(Checksum(gameId, key, assembly));
                 stream.Write(assembly);
                 stream.Flush(flushToDisk: true);
             }
