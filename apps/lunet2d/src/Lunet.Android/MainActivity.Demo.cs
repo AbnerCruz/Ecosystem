@@ -34,6 +34,21 @@ public sealed partial class MainActivity
         if (screen == "music-global") { Post(NewStandaloneMusic); return; }
         foreach (var name in new[] { "BosqueLumi", "NaveEstelar" })
             if (!_store.List().Contains(name)) _store.Create(name, ProjectTemplate.CoinCatcher);
+        if (screen.StartsWith("gameplay-", StringComparison.Ordinal))
+        {
+            const string portrait = "LauncherF7Portrait";
+            const string landscape = "LauncherF7Landscape";
+            var game = _store.List().Contains(portrait) ? _store.Open(portrait)
+                : _store.Create(portrait, ProjectTemplate.CoinCatcher);
+            if (!_store.List().Contains(landscape))
+                _store.Create(landscape, ProjectTemplate.CoinCatcher, "landscape");
+            if (screen == "gameplay-broken")
+                game.WriteText("Game.cs", "invalid F7 source");
+            ShowGameLauncher();
+            if (screen != "gameplay-grid")
+                Post(() => PlayFromLauncher(screen == "gameplay-landscape" ? landscape : portrait));
+            return;
+        }
         if (screen == "projects") { ShowProjects(); return; }
         if (screen == "home") { ShowHome(); return; }
         if (screen == "home-resume")
