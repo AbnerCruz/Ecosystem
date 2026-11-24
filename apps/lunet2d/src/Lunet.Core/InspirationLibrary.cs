@@ -8,7 +8,15 @@ namespace Lunet.Core;
 public sealed record InspirationReference(
     string Id, string Title, string Genre, string Perspective, string VisualStyle,
     string[] Mechanics, string StudyIdea, string Url = "", string ProjectName = "",
-    string Notes = "", bool Favorite = false, bool Curated = false);
+    string Notes = "", bool Favorite = false, bool Curated = false,
+    string ProjectId = "", string Author = "", string License = "", bool Archived = false);
+
+/// <summary>Alternatives within genre, perspective and style; all selected mechanics are required.</summary>
+public sealed record InspirationFilter(string Query = "", string[]? Genres = null, string[]? Mechanics = null,
+    string[]? Perspectives = null, string[]? Styles = null, bool FavoritesOnly = false);
+
+public sealed record InspirationComparison(InspirationReference First, InspirationReference Second,
+    string[] SharedMechanics, string[] FirstOnly, string[] SecondOnly);
 
 /// <summary>
 /// Catálogo offline-first com referências curadas e referências pessoais. Os dados locais são a única fonte
@@ -28,7 +36,7 @@ public sealed class InspirationLibrary
         try
         {
             var loaded = JsonSerializer.Deserialize<SavedState>(File.ReadAllText(_path));
-            if (loaded is null || loaded.Version != 1 || loaded.Entries is null)
+            if (loaded is null || loaded.Version is not (1 or 2) || loaded.Entries is null)
                 throw new InvalidDataException("Formato da biblioteca de inspiração não reconhecido; o arquivo foi preservado.");
             var stored = loaded.Entries;
             if (stored.Any(e => e is null) || stored.GroupBy(e => e.Id, StringComparer.Ordinal).Any(g => g.Count() > 1))
@@ -43,7 +51,8 @@ public sealed class InspirationLibrary
                     {
                         Favorite = entry.Favorite,
                         Notes = Bounded(entry.Notes, 6000, nameof(entry.Notes), allowEmpty: true),
-                        ProjectName = Bounded(entry.ProjectName, 80, nameof(entry.ProjectName), allowEmpty: true)
+                        ProjectName = Bounded(entry.ProjectName, 80, nameof(entry.ProjectName), allowEmpty: true),
+                        ProjectId = ValidProjectId(entry.ProjectId)
                     };
                 }
                 else
@@ -76,8 +85,11 @@ public sealed class InspirationLibrary
         }
     }
 
-    public IReadOnlyList<InspirationReference> All => _entries.OrderByDescending(e => e.Favorite)
+    public IReadOnlyList<InspirationReference> All => _entries.Where(e => !e.Archived).OrderByDescending(e => e.Favorite)
         .ThenBy(e => e.Title, StringComparer.OrdinalIgnoreCase).ToArray();
+
+    public IReadOnlyList<InspirationReference> Archived => _entries.Where(e => e.Archived)
+        .OrderBy(e => e.Title, StringComparer.OrdinalIgnoreCase).ToArray();
 
     public IReadOnlyList<string> Genres => Facets(e => new[] { e.Genre });
     public IReadOnlyList<string> Perspectives => Facets(e => new[] { e.Perspective });
@@ -85,24 +97,86 @@ public sealed class InspirationLibrary
     public IReadOnlyList<string> Mechanics => Facets(e => e.Mechanics);
 
     private IReadOnlyList<string> Facets(Func<InspirationReference, IEnumerable<string>> selector) =>
-        _entries.SelectMany(selector).Where(s => !string.IsNullOrWhiteSpace(s))
+        _entries.Where(e => !e.Archived).SelectMany(selector).Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s, StringComparer.OrdinalIgnoreCase).ToArray();
 
     public IReadOnlyList<InspirationReference> Search(string? query = null, string? genre = null,
         string? mechanic = null, string? perspective = null, string? style = null, bool favoritesOnly = false)
     {
-        var terms = Normalize(query ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return All.Where(e => (!favoritesOnly || e.Favorite) &&
-            ExactOrAll(e.Genre, genre) && ExactOrAll(e.Perspective, perspective) &&
-            ExactOrAll(e.VisualStyle, style) &&
-            (string.IsNullOrWhiteSpace(mechanic) || e.Mechanics.Any(m => ExactOrAll(m, mechanic))) &&
-            terms.All(term => Normalize(string.Join(" ", new[] { e.Title, e.Genre, e.Perspective,
-                e.VisualStyle, e.StudyIdea, e.Notes, e.ProjectName }.Concat(e.Mechanics))).Contains(term, StringComparison.Ordinal)))
-            .ToArray();
+        return SearchFacets(new InspirationFilter(query ?? "", One(genre), One(mechanic), One(perspective), One(style), favoritesOnly));
     }
 
-    private static bool ExactOrAll(string actual, string? wanted) =>
-        string.IsNullOrWhiteSpace(wanted) || Normalize(actual) == Normalize(wanted);
+    private static string[] One(string? value) => string.IsNullOrWhiteSpace(value) ? [] : [value];
+
+    public IReadOnlyList<InspirationReference> SearchFacets(InspirationFilter filter)
+    {
+        var terms = Normalize(filter.Query ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var genres = NormalizeSet(filter.Genres);
+        var mechanics = NormalizeSet(filter.Mechanics);
+        var perspectives = NormalizeSet(filter.Perspectives);
+        var styles = NormalizeSet(filter.Styles);
+        return All.Where(e =>
+        {
+            if ((filter.FavoritesOnly && !e.Favorite) ||
+                !Matches(e.Genre, genres) || !Matches(e.Perspective, perspectives) || !Matches(e.VisualStyle, styles))
+                return false;
+            var tags = NormalizeSet(e.Mechanics);
+            if (!mechanics.IsSubsetOf(tags)) return false;
+            var haystack = Normalize(string.Join(" ", new[] { e.Title, e.Genre, e.Perspective,
+                e.VisualStyle, e.StudyIdea, e.Notes, e.ProjectName, e.Author, e.License }.Concat(e.Mechanics)));
+            return terms.All(term => haystack.Contains(term, StringComparison.Ordinal));
+        }).ToArray();
+    }
+
+    private static HashSet<string> NormalizeSet(IEnumerable<string>? values) =>
+        (values ?? []).Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => Normalize(v.Trim()))
+            .ToHashSet(StringComparer.Ordinal);
+
+    private static bool Matches(string value, HashSet<string> wanted) =>
+        wanted.Count == 0 || wanted.Contains(Normalize(value));
+
+    public static string? ResolveProject(InspirationReference reference, IEnumerable<LauncherProjectEntry> catalog) =>
+        LauncherProjectCatalog.UniqueNameForId(catalog, reference.ProjectId);
+
+    public InspirationComparison Compare(string firstId, string secondId)
+    {
+        if (firstId == secondId) throw new ArgumentException("Selecione duas referências distintas.");
+        var first = All.FirstOrDefault(e => e.Id == firstId) ?? throw new InvalidOperationException("Primeira referência ausente.");
+        var second = All.FirstOrDefault(e => e.Id == secondId) ?? throw new InvalidOperationException("Segunda referência ausente.");
+        var a = NormalizeSet(first.Mechanics);
+        var b = NormalizeSet(second.Mechanics);
+        return new InspirationComparison(first, second,
+            first.Mechanics.Where(t => b.Contains(Normalize(t))).ToArray(),
+            first.Mechanics.Where(t => !b.Contains(Normalize(t))).ToArray(),
+            second.Mechanics.Where(t => !a.Contains(Normalize(t))).ToArray());
+    }
+
+    /// <summary>Original proposed study activity, not an assertion about a commercial game's implementation.</summary>
+    public static string SuggestExperiment(InspirationReference reference, string? mechanic = null)
+    {
+        var selected = reference.Mechanics.FirstOrDefault(m => Normalize(m) == Normalize(mechanic ?? "")) ?? reference.Mechanics.First();
+        var tag = Normalize(selected);
+        var design = tag switch
+        {
+            "dash" => "Implemente duas distâncias de dash e meça tempo de recuperação e erros de posicionamento.",
+            "voo" or "montarias" => "Faça uma área de teste com decolagem, controle e pouso. Compare duas velocidades e registre colisões.",
+            "combate" => "Prototipe um ataque com aviso visual e compare duas durações do aviso.",
+            "turnos" => "Modele três turnos e compare ordem fixa e ordem alternada. Registre decisões e erros.",
+            "construcao" or "crafting" => "Prototipe duas receitas ou peças com custos diferentes e registre tempo e escolhas.",
+            "plataforma de precisao" or "respawn" => "Crie um obstáculo curto e compare dois tempos de retomada após falhar.",
+            "ia de agentes" => "Implemente duas prioridades concorrentes e registre a escolha em cinco situações.",
+            _ => "Crie um protótipo mínimo com esta mecânica, altere uma variável por vez e registre o resultado de duas tentativas."
+        };
+        return selected + " — " + design + " Use código e assets próprios.";
+    }
+
+    private static string ValidProjectId(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return "";
+        if (!Guid.TryParse(id, out var parsed) || parsed == Guid.Empty)
+            throw new ArgumentException("GameId inválido.");
+        return parsed.ToString("D");
+    }
 
     private static string Normalize(string value)
     {
@@ -117,10 +191,11 @@ public sealed class InspirationLibrary
     }
 
     public InspirationReference Add(string title, string genre, string perspective, string visualStyle,
-        IEnumerable<string> mechanics, string studyIdea, string url = "", string projectName = "")
+        IEnumerable<string> mechanics, string studyIdea, string url = "", string projectName = "",
+        string author = "", string license = "")
     {
         var entry = Validate(new InspirationReference(Guid.NewGuid().ToString("D"),
-            title, genre, perspective, visualStyle, mechanics.ToArray(), studyIdea, url, projectName));
+            title, genre, perspective, visualStyle, mechanics.ToArray(), studyIdea, url, projectName, Author: author, License: license));
         Commit(_entries.Append(entry).ToList());
         return entry;
     }
@@ -138,7 +213,7 @@ public sealed class InspirationLibrary
         return validated;
     }
 
-    public void SetPersonalDetails(string id, bool favorite, string notes, string projectName)
+    public void SetPersonalDetails(string id, bool favorite, string notes, string projectName, string? projectId = null)
     {
         var current = _entries.FirstOrDefault(e => e.Id == id) ??
             throw new InvalidOperationException("Referência não encontrada.");
@@ -147,7 +222,8 @@ public sealed class InspirationLibrary
         {
             Favorite = favorite,
             Notes = Bounded(notes, 6000, "Notas", allowEmpty: true),
-            ProjectName = Bounded(projectName, 80, "Projeto", allowEmpty: true)
+            ProjectName = Bounded(projectName, 80, "Projeto", allowEmpty: true),
+            ProjectId = projectId is null && projectName == current.ProjectName ? current.ProjectId : ValidProjectId(projectId)
         };
         Commit(next);
     }
@@ -157,13 +233,21 @@ public sealed class InspirationLibrary
         var item = _entries.FirstOrDefault(e => e.Id == id) ??
             throw new InvalidOperationException("Referência não encontrada.");
         if (item.Curated) throw new InvalidOperationException("Referências curadas não podem ser excluídas.");
-        Commit(_entries.Where(e => e.Id != id).ToList());
+        // Explicit deletion is recoverable; retain the note, attribution and stable project link.
+        Commit(_entries.Select(e => e.Id == id ? e with { Archived = true } : e).ToList());
+    }
+
+    public void Restore(string id)
+    {
+        if (!_entries.Any(e => e.Id == id && e.Archived && !e.Curated))
+            throw new InvalidOperationException("Referência arquivada não encontrada.");
+        Commit(_entries.Select(e => e.Id == id ? e with { Archived = false } : e).ToList());
     }
 
     private void Commit(List<InspirationReference> next)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-        AtomicFile.WriteAllText(_path, JsonSerializer.Serialize(new SavedState(1, next),
+        AtomicFile.WriteAllText(_path, JsonSerializer.Serialize(new SavedState(2, next),
             new JsonSerializerOptions { WriteIndented = true }));
         _entries = next; // Never report success on a failed disk write.
     }
@@ -187,7 +271,10 @@ public sealed class InspirationLibrary
             StudyIdea = Bounded(entry.StudyIdea, 1000, "O que estudar"),
             Url = url,
             ProjectName = Bounded(entry.ProjectName, 80, "Projeto", allowEmpty: true),
-            Notes = Bounded(entry.Notes, 6000, "Notas", allowEmpty: true)
+            Notes = Bounded(entry.Notes, 6000, "Notas", allowEmpty: true),
+            ProjectId = ValidProjectId(entry.ProjectId),
+            Author = Bounded(entry.Author, 200, "Autoria", allowEmpty: true),
+            License = Bounded(entry.License, 200, "Licença", allowEmpty: true)
         };
     }
 
