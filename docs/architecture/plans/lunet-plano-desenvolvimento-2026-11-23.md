@@ -1,5 +1,16 @@
 # Lunet — Plano de desenvolvimento
 
+## Controle de execução — atualização F2/1 em 23/11/2026
+
+**Situação posterior à auditoria inicial:** PR #1024 integrado na `main@9200ab7cdc479367c5c60d343ed189ebef6d4bc6`; a release oficial `lunet2d-v0.0.1-dev.1000585` com APK arm64 foi publicada. Capturas Android 13 e CI foram aprovados; testes manuais físicos e demais Studios F6 seguem pendentes. O parágrafo histórico da base 1000584 abaixo é preservado como registro da auditoria, não como estado atual.
+
+**F2/1 — recorte LUNET-510:** Home/continuidade por GameId, migrador V1→V2, últimos oito projetos, botões Editar/Jogar/Criar, recuperação antes de Jogar e volta à origem. Branch `feat/lunet-f2-home-continuity-gameid-20261123` baseada em `main@9200ab7`; novo guia `apps/lunet2d/docs/guides/f2-home-continuity-gameid.md`.
+
+- [x] **F2/1 · Implementação registrada em branch:** identidade durável de projeto sem criação de `GameId` fictício, compatibilidade das preferências V1, ações de Home e testes xUnit/rotas do emulador. **Ainda não é aceite de produto nem entrega oficial.**
+- [ ] **F2/1 · Aprovação de CI, integração e release 1000586:** confirmar `lunet2d-ci`, consistência combinada, capturas Android 13, build de APK, merge e rastreabilidade da tag.
+- [ ] **F2/1 · DEVICE e fluxo completo:** atualização sem apagar dados, projeto renomeado, ausência/duplicidade de ID, recuperação antes do Play, voltar ao projeto/à origem e acessibilidade no aparelho físico.
+- [ ] **F2 · Resto da frente:** primeiro uso, SAF e suas permissões/staging, migração recuperável, personalização, scroll e adaptação extensa; nenhuma dessas tarefas foi considerada concluída.
+
 ## Controle de execução — conferência em 23/11/2026
 
 **Autoridade de progresso:** `apps/lunet2d/ROADMAP.md`. Este documento mantém integralmente as oito frentes e o detalhamento aprovado; os checkboxes assinalados abaixo distinguem **código demonstravelmente escrito** de **funcionalidade integrada, testada e publicada**. As caixas abrangentes permanecem abertas enquanto qualquer critério de aceite estiver pendente. O resumo da base histórica abaixo continua válido apenas para a data da auditoria; não substitui a consulta ao HEAD de cada nova sessão.
@@ -11,7 +22,7 @@
 - [x] **F1 · Consistência no commit `004dcc6`:** workflow [#45223355843](https://github.com/AbnerCruz/Ecosystem/actions/runs/45223355843) concluído com sucesso.
 - [x] **F1 · Cenários UI implementados:** o harness `MainActivity.Demo.cs` e `tools/ci-ui-screens.sh` agora têm capturas dedicadas à galeria global, Sprite/Música sem projeto e ao compositor compacto. **Estado:** testes adicionados à branch; o checkbox não equivale à confirmação do CI Android na revisão final.
 - [ ] **F1 · Interface nativa e build do APK do commit final:** confirmar CI Android/capturas, ciclo de salvar/reabrir/publicar/importar e ausência de regressão nos Studios. Workflows anteriores à atualização deste arquivo ainda estavam em execução.
-- [ ] **F1 · Integração e publicação:** PR #1024 precisa entrar pela governança e aparecer em uma release nova `0.0.1-dev.1000585`, com artefato, SHA e roteiro de validação rastreáveis.
+- [x] **F1 · Integração e publicação:** PR #1024 integrado a `main@9200ab7`; release oficial `0.0.1-dev.1000585` e APK arm64 publicados, com testes .NET, consistência e capturas Android 13 aprovados. Não confundir com validação física/aceite integral dos fluxos de F1.
 - [x] **F2 · Base existente na main:** Home abre sem jogo e oferece projetos, pesquisa, fixados, Biblioteca, Aprender, Explorar e IA global; **não** implica conclusão da F2, do SAF, da personalização nem do novo Launcher.
 - [x] **F3 · Base existente na main:** sessão de IA global independente do GameId e configurações na Home, histórico de jogo por GameId; **não** implica conclusão de Estudo/Fazer, catálogo dinâmico, streaming e ferramentas.
 - [x] **F5 · Catálogo inicial integrado:** cinco cursos `LRN-001–005` com dez missões e 40 objetivos, demais 55 cursos indisponíveis; evidência `LearningCatalog.cs`, `LearningTrackOne.cs` e PR #1023 integrado à `main`. **Não** encerra a reescrita do manual nem todos os casos de integração pedagógica.
