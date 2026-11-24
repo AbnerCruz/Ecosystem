@@ -84,7 +84,7 @@ public sealed partial class MainActivity : Activity
         LoadProjectFolder();
         LoadLauncherPreferences();
         _projectFilter = savedInstanceState?.GetString("projectFilter") ?? "";
-        foreach (var section in new[] { "home", "projects", "studios" })
+        foreach (var section in new[] { "home", "projects", "studios", "explore", "learn" })
             _launcherPositions[section] = savedInstanceState?.GetInt("scroll-" + section) ?? 0;
         RestoreLauncherSection();
         _folderPickerFromSetup = savedInstanceState?.GetBoolean("folderPickerFromSetup") ?? false;
@@ -1211,16 +1211,20 @@ public sealed partial class MainActivity : Activity
 
     private void Run()
     {
-        if (_project is null) return;
+        if (_project is not { } project) return;
         if (_settings.FormatOnRun) FormatDocument(silent: true);
         SaveCurrent();
         _status!.Text = "Compilando… (a primeira compilação demora mais)";
-        var sources = _project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
+        var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
         _pendingChange = _previousRun is null ? null : ChangeClassifier.Classify(_previousRun, sources);
         _previousRun = sources;
-        var assemblyName = $"LunetGame{++_compileCounter}";
+        var run = ++_compileCounter;
+        var assemblyName = $"LunetGame{run}";
         Task.Run(() => SharedCompiler.Value.Compile(assemblyName, sources)).ContinueWith(task =>
-            RunOnUiThread(() => OnCompiled(task)));
+            RunOnUiThread(() =>
+            {
+                if (!IsDestroyed && ReferenceEquals(_project, project) && _compileCounter == run) OnCompiled(task);
+            }));
     }
 
     private void OnCompiled(Task<CompileResult> task)
@@ -1298,9 +1302,22 @@ public sealed partial class MainActivity : Activity
         }
         SaveCurrent(); // o editor antigo ainda guarda o texto; salva antes de a tela ser recriada
         var file = _openFile;
+        var previousEditor = _editor;
+        int start = previousEditor?.SelectionStart ?? 0;
+        int end = previousEditor?.SelectionEnd ?? 0;
+        int scrollX = previousEditor?.ScrollX ?? 0;
+        int scrollY = previousEditor?.ScrollY ?? 0;
         _openFile = null;
         ShowWorkspace();
-        if (file is not null) OpenFile(file);
+        if (file is not null)
+        {
+            OpenFile(file);
+            if (_editor is { } editor)
+            {
+                editor.SetSelection(Math.Clamp(start, 0, editor.Length()), Math.Clamp(end, 0, editor.Length()));
+                editor.Post(() => editor.ScrollTo(scrollX, scrollY));
+            }
+        }
         if (_lastProfilerReport is not null)
         {
             _layoutStore.Current.OpenPanel("profiler");
@@ -1473,7 +1490,7 @@ public sealed partial class MainActivity : Activity
         outState.PutString("projectFilter", _projectFilter);
         outState.PutBoolean("folderPickerFromSetup", _folderPickerFromSetup);
         foreach (var (section, position) in _launcherPositions)
-            outState.PutInt("scroll-" + section, section == _launcherSection && _launcherScroll is not null ? _launcherScroll.ScrollY : position);
+            outState.PutInt("scroll-" + section, section == _launcherScrollKey && _launcherScroll is not null ? _launcherScroll.ScrollY : position);
         outState.PutString("pendingExport", _pendingExport);
         outState.PutString("pendingLibraryAssetId", _pendingLibraryAssetId);
         outState.PutInt("pendingLibraryAssetVersion", _pendingLibraryAssetVersion);
@@ -1516,6 +1533,7 @@ public sealed partial class MainActivity : Activity
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ReturnToLauncherOrigin();
+        else if (_backFromLauncherChild is { } back) back();
         else if (_globalChatVisible || _inspirationOpen || _launcherSection != "home") ShowHome();
         else base.OnBackPressed();
     }

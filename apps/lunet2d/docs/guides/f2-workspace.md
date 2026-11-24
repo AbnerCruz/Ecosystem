@@ -4,7 +4,7 @@
 
 O Lunet permite manter os projetos internos ou escolher uma pasta no seletor do Android. A escolha de tema e fonte vem a seguir. A configuração de IA é opcional. Cada etapa confirmada é salva nas preferências privadas. Em Configurações é possível rever a pasta e a aparência, inclusive voltar ao tema escuro e à fonte monoespaçada.
 
-Em janelas compactas os destinos ficam embaixo. A partir de 600 dp a mesma navegação ocupa a lateral. Início, Projetos e Studios retomam a rolagem na mesma sessão. A busca de jogos é restaurada quando o Android recria a atividade. O menu de um projeto fixado permite movê-lo ao início. O botão Voltar fecha o chat global e os diálogos e recupera a área de origem do editor e do jogo.
+Em janelas compactas os destinos ficam embaixo. A partir de 600 dp a mesma navegação ocupa a lateral. Início, Projetos, Studios, Explorar e Aprender retomam a rolagem na mesma sessão. A busca de jogos é restaurada quando o Android recria a atividade. O menu de um projeto fixado permite movê-lo ao início. O botão Voltar fecha o chat global e os diálogos e recupera a área de origem do editor e do jogo.
 
 ## Armazenamento
 
@@ -24,3 +24,5 @@ A gravação é explícita e precisa de espaço para o ZIP temporário e para a 
 - [Termux](https://github.com/termux/termux-tasker#termux-storage-access-framework-saf) documenta a visibilidade variável de pastas ocultas por provedor. O Lunet usa um documento por revisão para reduzir as chamadas Android por arquivo e guardar a árvore do Git.
 
 Os testes de núcleo exercitam projetos com acentos, assets binários, notas, Git, compilação, importação ZIP, restauração e revisões corrompidas. As capturas da interface incluem primeiro uso e aparência. A operação com o provedor Android e seus limites de tempo e E/S precisam de evidência própria. A validação física depende de relatos de uso e não é etapa de aprovação.
+
+Medição local em Linux, uma amostra por cenário, sem chamadas ao provedor. Um asset de 64 MiB gerou 67.110.765 bytes em 330 ms e foi recuperado em 254 ms. Uma árvore de 2.048 assets de 8 KiB gerou 17.051.201 bytes em 140 ms e foi recuperada em 113 ms. Os tempos cobrem a criação, validação e restauração do ZIP no filesystem local. Downloads, leitura de volta do provedor e transferências entre volumes afetam a duração no Android.

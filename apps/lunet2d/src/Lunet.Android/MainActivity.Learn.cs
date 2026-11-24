@@ -108,7 +108,7 @@ public sealed partial class MainActivity
             ? ViewStates.Visible : ViewStates.Gone;
         scroll.AddView(content);
         root.AddView(scroll, Fill(1));
-        SetLauncherContent(root, "learn");
+        SetLauncherContent(root, "learn", scroll);
     }
 
     private void ShowLearningCourse(string courseId)
@@ -150,7 +150,9 @@ public sealed partial class MainActivity
             LunetUi.TextCaption, LunetUi.TextMuted));
         scroll.AddView(content);
         root.AddView(scroll, Fill(1));
-        SetLauncherContent(root, "learn");
+        _restoreLauncherChild = () => ShowLearningCourse(courseId);
+        _backFromLauncherChild = ShowLearning;
+        SetLauncherContent(root, "learn", scroll, "learn-course-" + courseId);
     }
 
     private void ShowLearningFirstProject() => ShowLearningProject(LearningCatalog.FirstProjectId);
@@ -278,7 +280,9 @@ public sealed partial class MainActivity
 
         scroll.AddView(body);
         root.AddView(scroll, Fill(1));
-        SetLauncherContent(root, "learn");
+        _restoreLauncherChild = () => ShowLearningProject(projectId);
+        _backFromLauncherChild = () => ShowLearningCourse(challenge.CourseId);
+        SetLauncherContent(root, "learn", scroll, "learn-project-" + projectId);
     }
 
     private void CreateLearningProject(string projectId)

@@ -22,16 +22,19 @@ public sealed partial class MainActivity
     private LinearLayout? _launcherNav;
     private ScrollView? _launcherScroll;
     private bool? _launcherWide;
+    private string _launcherScrollKey = "home";
+    private Action? _restoreLauncherChild;
+    private Action? _backFromLauncherChild;
     private readonly Dictionary<string, int> _launcherPositions = new(StringComparer.Ordinal);
 
     private void RememberLauncherPosition()
     {
         if (_launcherScroll is { IsAttachedToWindow: true } scroll)
-            _launcherPositions[_launcherSection] = scroll.ScrollY;
+            _launcherPositions[_launcherScrollKey] = scroll.ScrollY;
         _launcherScroll = null;
     }
 
-    private void SetLauncherContent(LinearLayout body, string section, ScrollView? scroll = null)
+    private void SetLauncherContent(LinearLayout body, string section, ScrollView? scroll = null, string? scrollKey = null)
     {
         _launcherBody = body;
         _launcherNav = BuildLauncherNavigation(section);
@@ -39,9 +42,10 @@ public sealed partial class MainActivity
         _launcherWide = null;
         _launcherShell.SetBackgroundColor(LunetUi.Background);
         _launcherScroll = scroll;
+        _launcherScrollKey = scrollKey ?? section;
         ArrangeLauncher();
         SetContentView(_launcherShell);
-        if (scroll is not null && _launcherPositions.TryGetValue(section, out var position))
+        if (scroll is not null && _launcherPositions.TryGetValue(_launcherScrollKey, out var position))
             scroll.Post(() => scroll.ScrollTo(0, position));
     }
 
@@ -118,6 +122,11 @@ public sealed partial class MainActivity
 
     private void ReturnToLauncherOrigin()
     {
+        if (_restoreLauncherChild is { } restore)
+        {
+            restore();
+            return;
+        }
         switch (_launcherSection)
         {
             case "projects": ShowProjects(); break;
@@ -194,6 +203,7 @@ public sealed partial class MainActivity
     private void EnterLauncherSurface(string section)
     {
         RememberLauncherPosition();
+        _restoreLauncherChild = _backFromLauncherChild = null;
         _globalChatVisible = false;
         SaveCurrent();
         DisposePreview();
