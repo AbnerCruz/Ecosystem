@@ -9,6 +9,9 @@ namespace Lunet.Core;
 /// <summary>Arquivo versionado da biblioteca, preservando a localização original dentro do jogo.</summary>
 public sealed record LibraryAssetFile(string Path, string Sha256, long Length);
 
+/// <summary>Export rendered from a specific source revision, prepared before committing the library version.</summary>
+public sealed record LibraryAssetRender(string SourceSha256, string Path, byte[] Bytes);
+
 /// <summary>Manifesto imutável de uma versão; importação em jogos é sempre uma cópia, nunca um link global.</summary>
 public sealed record LibraryAssetVersion(
     string Id, int Version, string Title, ProjectAssetKind Kind, string Author, string License,
@@ -82,17 +85,17 @@ public sealed class ReusableAssetLibrary
 
     public LibraryAssetVersion Publish(LunetProject project, string primaryPath, string title,
         string author, string license, string attribution = "", IEnumerable<string>? tags = null,
-        string? existingAssetId = null)
+        string? existingAssetId = null, LibraryAssetRender? render = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         return PublishFromFiles(project.Directory, project.ListFiles(), primaryPath,
-            title, author, license, attribution, tags, existingAssetId);
+            title, author, license, attribution, tags, existingAssetId, render);
     }
 
     /// <summary>Publishes editable Studio drafts without requiring a game project.</summary>
     public LibraryAssetVersion PublishWorkspace(string workspaceRoot, string primaryPath, string title,
         string author, string license, string attribution = "", IEnumerable<string>? tags = null,
-        string? existingAssetId = null)
+        string? existingAssetId = null, LibraryAssetRender? render = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceRoot);
         string root = Path.GetFullPath(workspaceRoot);
@@ -109,14 +112,25 @@ public sealed class ReusableAssetLibrary
             EnsureNoLinks(root, path);
         }
         return PublishFromFiles(root, files, primaryPath,
-            title, author, license, attribution, tags, existingAssetId);
+            title, author, license, attribution, tags, existingAssetId, render);
     }
 
     private LibraryAssetVersion PublishFromFiles(string sourceRoot, IReadOnlyList<string> sourceFiles,
         string primaryPath, string title, string author, string license,
-        string attribution, IEnumerable<string>? tags, string? existingAssetId)
+        string attribution, IEnumerable<string>? tags, string? existingAssetId, LibraryAssetRender? render)
     {
         ValidatePath(primaryPath);
+        if (render is not null)
+        {
+            string? expected = primaryPath.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase)
+                ? primaryPath[..^".sprite.json".Length] + ".png"
+                : primaryPath.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase) ||
+                  primaryPath.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase)
+                    ? primaryPath[..primaryPath.LastIndexOf('.', primaryPath.Length - 6)] + ".wav" : null;
+            if (render.Path != expected || render.Bytes.Length == 0)
+                throw new ArgumentException("Derivado não corresponde à fonte.", nameof(render));
+            sourceFiles = [.. sourceFiles, render.Path];
+        }
         var asset = ProjectAssetCatalog.Build(sourceFiles)
             .SingleOrDefault(a => string.Equals(a.Path, primaryPath, StringComparison.Ordinal));
         if (asset is null) throw new ArgumentException("Selecione um asset real de Assets/ ou Content/.", nameof(primaryPath));
@@ -161,18 +175,31 @@ public sealed class ReusableAssetLibrary
             foreach (var path in paths)
             {
                 ValidatePath(path);
-                var original = Path.Combine(sourceRoot, path.Replace('/', Path.DirectorySeparatorChar));
-                EnsureNoLinks(sourceRoot, path);
-                if (!File.Exists(original)) throw new FileNotFoundException("Arquivo de origem não encontrado.", path);
-                var before = HashFile(original);
                 var copy = FilePath(Path.Combine(staging, "files"), path);
                 Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-                File.Copy(original, copy, overwrite: false);
-                var after = HashFile(copy);
-                if (before != after || HashFile(original) != before)
-                    throw new IOException("O asset foi alterado durante a publicação; tente novamente.");
+                string after;
+                if (render is not null && path == render.Path)
+                {
+                    File.WriteAllBytes(copy, render.Bytes);
+                    after = HashFile(copy);
+                }
+                else
+                {
+                    var original = FilePath(sourceRoot, path);
+                    EnsureNoLinks(sourceRoot, path);
+                    if (!File.Exists(original)) throw new FileNotFoundException("Arquivo de origem não encontrado.", path);
+                    var before = HashFile(original);
+                    if (render is not null && path == primaryPath && before != render.SourceSha256)
+                        throw new IOException("A fonte mudou depois de gerar o derivado. Gere e publique novamente.");
+                    File.Copy(original, copy, overwrite: false);
+                    after = HashFile(copy);
+                    if (before != after || HashFile(original) != before)
+                        throw new IOException("O asset foi alterado durante a publicação; tente novamente.");
+                }
                 files.Add(new LibraryAssetFile(path, after, new FileInfo(copy).Length));
             }
+            if (render is not null && HashFile(FilePath(sourceRoot, primaryPath)) != render.SourceSha256)
+                throw new IOException("A fonte mudou antes de publicar a revisão.");
             manifest = manifest with { Files = files.ToArray() };
             File.WriteAllText(Path.Combine(staging, "asset.json"), JsonSerializer.Serialize(manifest, JsonOptions));
             Directory.Move(staging, target);

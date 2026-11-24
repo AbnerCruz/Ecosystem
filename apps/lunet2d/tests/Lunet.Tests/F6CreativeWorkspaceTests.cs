@@ -157,5 +157,26 @@ public sealed class F6CreativeWorkspaceTests : IDisposable
         Assert.False(Directory.Exists(stage));
     }
 
+    [Fact]
+    public void PublishingRenderedOutputUsesExactSourceAndDoesNotRewriteTheDraft()
+    {
+        var studio = new StudioAssetWorkspace(Path.Combine(_root, "studio"));
+        var library = new ReusableAssetLibrary(Path.Combine(_root, "library"));
+        const string source = "Content/Audio/som.sfx.json";
+        const string wave = "Content/Audio/som.wav";
+        var fx = SoundDesigner.Generate("coin", 73);
+        studio.WriteText(source, SoundDesigner.ToJson(fx));
+        studio.WriteBytes(wave, [1, 2, 3]);
+        var render = new LibraryAssetRender(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(studio.ReadBytes(source))),
+            wave, SoundDesigner.RenderWav(fx));
+        var revision = library.PublishWorkspace(studio.RootDirectory, source, "Original", "", "Uso privado", render: render);
+        Assert.Equal([1, 2, 3], studio.ReadBytes(wave));
+        Assert.Equal(render.Bytes.Length, revision.Files.Single(f => f.Path == wave).Length);
+        studio.WriteText(source, SoundDesigner.ToJson(SoundDesigner.Generate("coin", 82)));
+        Assert.Throws<IOException>(() => library.PublishWorkspace(studio.RootDirectory, source, "Revision", "", "Uso privado",
+            existingAssetId: revision.Id, render: render));
+        Assert.Single(library.List());
+    }
+
     public void Dispose() { if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true); }
 }

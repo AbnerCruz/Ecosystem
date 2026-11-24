@@ -183,12 +183,13 @@ public sealed partial class MainActivity
                     StringSplitOptions.TrimEntries);
                 if (project is null)
                 {
-                    PrepareStandaloneDerivatives(source);
+                    var rendered = PrepareLibraryRender(source, StandaloneWorkspace);
                     AssetLibrary.PublishWorkspace(StandaloneWorkspace.RootDirectory, source, title.Text ?? "",
-                        author.Text ?? "", license.Text ?? "", attribution.Text ?? "", parsedTags, existingId);
+                        author.Text ?? "", license.Text ?? "", attribution.Text ?? "", parsedTags, existingId, rendered);
                 }
                 else AssetLibrary.Publish(project, source, title.Text ?? "", author.Text ?? "",
-                    license.Text ?? "", attribution.Text ?? "", tags: parsedTags, existingAssetId: existingId);
+                    license.Text ?? "", attribution.Text ?? "", tags: parsedTags, existingAssetId: existingId,
+                    render: PrepareLibraryRender(source, new StudioAssetWorkspace(project.Directory)));
                 dialog?.Dismiss();
                 ShowReusableAssetLibrary();
             }

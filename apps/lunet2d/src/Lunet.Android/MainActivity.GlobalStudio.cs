@@ -128,24 +128,30 @@ public sealed partial class MainActivity
 
     private void PublishStandaloneAsset(string path) => ShowAssetPublishForm(null, path, null);
 
-    private void PrepareStandaloneDerivatives(string path)
+    private LibraryAssetRender? PrepareLibraryRender(string path, StudioAssetWorkspace storage)
     {
-        var storage = StandaloneWorkspace;
-        if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))
-            storage.WriteBytes(SpriteSheetPath(path), SpritePng(SpriteDocument.Parse(storage.ReadText(path))));
-        else if (path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase))
-            storage.WriteBytes(path[..^MusicSongExtension.Length] + ".wav",
-                new MusicRenderer().RenderWav(MusicSong.Parse(storage.ReadText(path))));
-        else if (path.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase))
-            storage.WriteBytes(path[..^SoundEffectExtension.Length] + ".wav",
-                SoundDesigner.RenderWav(SoundDesigner.Parse(storage.ReadText(path))));
-        else if (IsDataTable(path))
+        if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase))
         {
-            var schema = SchemaPath(path);
-            var table = Lunet.Studio.Data.DataTable.Parse(storage.ReadText(path), storage.Exists(schema) ? storage.ReadText(schema) : null);
+            var snapshot = storage.ReadBytes(path);
+            using var reader = new StreamReader(new MemoryStream(snapshot, writable: false));
+            var source = reader.ReadToEnd();
+            var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(snapshot));
+            if (path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))
+                return new(hash, SpriteSheetPath(path), SpritePng(SpriteDocument.Parse(source)));
+            if (path.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase))
+                return new(hash, path[..^MusicSongExtension.Length] + ".wav", new MusicRenderer().RenderWav(MusicSong.Parse(source)));
+            return new(hash, path[..^SoundEffectExtension.Length] + ".wav", SoundDesigner.RenderWav(SoundDesigner.Parse(source)));
+        }
+
+        if (IsDataTable(path) && storage.Exists(SchemaPath(path)))
+        {
+            var table = Lunet.Studio.Data.DataTable.Parse(storage.ReadText(path), storage.ReadText(SchemaPath(path)));
             var issues = table.Validate(DataTableKeys(path, storage));
             if (issues.Count > 0) throw new InvalidDataException("Corrija a tabela no Data Studio: " + issues[0].Message);
         }
+        return null;
     }
 
     private static bool IsStandaloneDraft(string path) =>
