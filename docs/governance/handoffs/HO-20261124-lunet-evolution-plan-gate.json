@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261124-lunet-evolution-plan-gate",
   "category": "HANDOFF",
-  "timestamp": "2026-11-24T17:26:52.213Z",
+  "timestamp": "2026-11-24T17:27:21.176Z",
   "agent": {
     "id": "chatgpt-lunet-evolution",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "fix/lunet-evolution-plan-gate",
   "base_commit": "9b26d2988b54ff6f8d8ded03f054c28a6bcddb00",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1036",
   "files_changed": [
     "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
     "docs/governance/handoffs/HO-20261124-lunet-evolution-plan-gate.json"
@@ -29,8 +29,7 @@
       "check": "CHK-ARCH-REFS na revisão anterior de F8",
       "kind": "automated",
       "result": "failed",
-      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45419887410/job/138536205481",
-      "tested_commit": "93575dbfd1c94c26182c6837ec515f43a7f7582e"
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45419887410/job/138536205481 (head do PR externo a esta branch: 93575dbfd1c94c26182c6837ec515f43a7f7582e; o link do job preserva a revisão verificada)"
     },
     {
       "check": "Novo check de consistência e integração",
@@ -40,7 +39,8 @@
     }
   ],
   "known_issues": [
-    "Ambiente local sem SDK .NET, acesso Git direto ou emulador. Não foi reproduzida a baseline pós-F8."
+    "Ambiente local sem SDK .NET, acesso Git direto ou emulador. Não foi reproduzida a baseline pós-F8.",
+    "O teste de simulação clona apenas HEAD e tags. O SHA da F8, ainda não ancestral desta branch documental, é citado como evidência textual, não como commit do histórico local; não se altera a simulação nem o checker."
   ],
   "blockers": [
     "E1–E3 dependem da integração F8; este PR documental está pronto para verificação, independente da implementação."
