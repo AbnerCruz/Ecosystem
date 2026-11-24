@@ -5,9 +5,9 @@ using Lunet.Input;
 namespace Lunet.Android;
 
 /// <summary>Vibração pelo motor do aparelho (permissão VIBRATE no manifesto).</summary>
-internal sealed class AndroidHaptics(Context context) : IHaptics
+internal sealed class AndroidHaptics(global::Android.Content.Context context) : IHaptics
 {
-    private readonly Vibrator? _vibrator = context.GetSystemService(Context.VibratorService) as Vibrator;
+    private readonly Vibrator? _vibrator = context.GetSystemService(global::Android.Content.Context.VibratorService) as Vibrator;
 
     public void Vibrate(int milliseconds, float intensity = 1f)
     {

@@ -23,7 +23,7 @@ internal sealed class FramePreviewView : View
     private int _index;
     private bool _playing;
 
-    public FramePreviewView(Context context, IEnumerable<Bitmap> frames, int fps = 8) : base(context)
+    public FramePreviewView(global::Android.Content.Context context, IEnumerable<Bitmap> frames, int fps = 8) : base(context)
     {
         _frames = frames.ToList();
         _fps = Math.Clamp(fps, 1, 60);
@@ -36,7 +36,7 @@ internal sealed class FramePreviewView : View
     public int FrameCount => _frames.Count;
 
     /// <summary>Converte um sprite do Studio em bitmaps (um por frame), sem criar arquivos.</summary>
-    public static FramePreviewView FromSprite(Context context, SpriteDocument document)
+    public static FramePreviewView FromSprite(global::Android.Content.Context context, SpriteDocument document)
     {
         var bitmaps = document.Frames.Select(pixels =>
         {

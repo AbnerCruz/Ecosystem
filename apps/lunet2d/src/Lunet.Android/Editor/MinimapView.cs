@@ -15,7 +15,7 @@ internal sealed class MinimapView : View
     private int[] _length = [];
     private bool[] _comment = [];
 
-    public MinimapView(Context context, CodeEditText editor) : base(context)
+    public MinimapView(global::Android.Content.Context context, CodeEditText editor) : base(context)
     {
         _editor = editor;
         editor.ScrollPositionChanged += Invalidate;

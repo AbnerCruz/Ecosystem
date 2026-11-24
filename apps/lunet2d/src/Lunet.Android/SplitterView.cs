@@ -12,7 +12,7 @@ internal sealed class SplitterView : View
     private bool _horizontal;
 
     /// <param name="body">Contêiner cujas dimensões definem a fração.</param>
-    public SplitterView(Context context, View body) : base(context)
+    public SplitterView(global::Android.Content.Context context, View body) : base(context)
     {
         _body = body;
         SetBackgroundColor(Color.Argb(255, 34, 37, 44));

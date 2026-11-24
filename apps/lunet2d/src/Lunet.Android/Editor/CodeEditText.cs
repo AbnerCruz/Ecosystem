@@ -65,7 +65,7 @@ internal sealed partial class CodeEditText : EditText
     private int _gutterDigits = 2;
     private bool _lineNumbers = true;
 
-    public CodeEditText(Context context) : base(context)
+    public CodeEditText(global::Android.Content.Context context) : base(context)
     {
         _density = context.Resources!.DisplayMetrics!.Density;
         TextSize = 14;

@@ -14,7 +14,7 @@ internal sealed class EcosystemHostClient : IDisposable
     const string KeyAlias = "ecosystem.ipc.caller.v1";
     const string TrustFile = "ecosystem-ipc-provider-v1.json";
     const string PendingTrustFile = "ecosystem-ipc-provider-pending-v1.json";
-    readonly Context _context;
+    readonly global::Android.Content.Context _context;
     readonly AndroidInstallationKey _key = new(KeyAlias);
     readonly AndroidBindingTrustPolicy? _trustPolicy;
     readonly LifecycleToken _lifecycleToken = new();
@@ -26,7 +26,7 @@ internal sealed class EcosystemHostClient : IDisposable
     string? _sessionId;
     bool _disposed;
 
-    internal EcosystemHostClient(Context context)
+    internal EcosystemHostClient(global::Android.Content.Context context)
     {
         _context = context.ApplicationContext!;
         _trustPolicy = AndroidBindingTrustPolicy.Load(_context);
