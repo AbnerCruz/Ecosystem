@@ -139,7 +139,7 @@ public sealed partial class MainActivity
             typeof(Lunet.Runtime.GameLoader).Assembly }.Select(a => a.ManifestModule.ModuleVersionId.ToString("N"))) +
         "|" + Environment.Version;
 
-    private async Task PrepareGameplay(string folderName)
+    private async Task PrepareGameplay(string folderName, string? expectedId)
     {
         if (_gameplayPreparing || _gameplaySession is not null) return;
         _gameplayPreparing = true;
@@ -150,9 +150,11 @@ public sealed partial class MainActivity
         try
         {
             ShowGameLauncher();
-            var id = LauncherId(folderName);
-            if (id is null || LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, id) != folderName)
+            var id = expectedId ?? LauncherId(folderName);
+            var resolved = LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, id);
+            if (id is null || resolved is null)
                 throw new ProjectException("Este jogo não tem um GameId persistente e único. Abra o projeto para corrigir a identidade.");
+            folderName = resolved;
             var project = _store.Open(folderName);
             if (new AutosaveJournal(project).FindRecoveries().Count > 0)
                 throw new ProjectException("Há alterações não recuperadas. Abra o editor e decida como restaurá-las antes de jogar.");
@@ -239,7 +241,7 @@ public sealed partial class MainActivity
             catch (UnauthorizedAccessException ex) { global::Android.Util.Log.Warn("Lunet.Gameplay", ex.Message); }
         }
         ShowGameLauncher();
-        folder = LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, gameId) ?? folder;
+        folder = gameId is not null ? LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, gameId) : folder;
         if (result != Result.Ok)
             ShowGameplayError(folder, data?.GetStringExtra(GameplayActivity.ErrorExtra) ??
                 "A sessão terminou inesperadamente. O projeto e os saves persistidos foram preservados.");
