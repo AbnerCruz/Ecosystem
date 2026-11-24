@@ -9,6 +9,7 @@ namespace Lunet;
 /// <summary>Fachada contextual experimental, disponível somente em callbacks síncronos do host.</summary>
 /// <remarks>Não flui para workers ou continuações assíncronas. Use as APIs explícitas para dependências retidas.
 /// Graphics e Content exigem autorização gráfica na fase corrente.</remarks>
+/// <example><code>var current = Context.Input;</code></example>
 public static class Context
 {
     [ThreadStatic] private static Frame _current;

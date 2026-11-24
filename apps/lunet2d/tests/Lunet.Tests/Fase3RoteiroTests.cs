@@ -141,7 +141,7 @@ public sealed class Fase3RoteiroTests : IDisposable
         var messy = string.Join('\n', GameText.Split('\n').Select(l => l.TrimStart()));
         var formatted = CodeFormatter.Format(messy);
         Assert.Equal(formatted, CodeFormatter.Format(formatted));
-        var result = new GameCompiler(References).Compile("c1", [new SourceFile("Game.cs", formatted)]);
+        var result = new GameCompiler(References).Compile("c1", _project.LoadSources().Select(s => new SourceFile(s.Path, s.Path == "Game.cs" ? formatted : s.Text)).ToList());
         Assert.True(result.Success, string.Join("\n", result.Diagnostics));
     }
 
@@ -154,7 +154,7 @@ public sealed class Fase3RoteiroTests : IDisposable
         var result = analyzer.Rename("Game.cs", position, "points");
         Assert.True(result.Success, result.Error);
         var renamed = TextChanges.Apply(text, result.Edits.Single().Changes);
-        var compiled = new GameCompiler(References).Compile("c2", [new SourceFile("Game.cs", renamed)]);
+        var compiled = new GameCompiler(References).Compile("c2", _project.LoadSources().Select(s => new SourceFile(s.Path, s.Path == "Game.cs" ? renamed : s.Text)).ToList());
         Assert.True(compiled.Success, string.Join("\n", compiled.Diagnostics));
         Assert.DoesNotContain(" score", renamed.Replace("[Inspect, Tooltip(\"Pontos desta partida\")] int points", ""));
 
@@ -169,6 +169,8 @@ public sealed class Fase3RoteiroTests : IDisposable
         var analyzer = Analyzer();
         var code = "class A\n{\n    void M()\n    {\n        var l = new List<int>();\n        int score = 1;\n        scor = 2;\n    }\n}\n";
         analyzer.SetFile("A.cs", code);
+        Assert.DoesNotContain(analyzer.GetQuickFixes("A.cs", code.IndexOf("List", StringComparison.Ordinal) + 1), f => f.Title == "using System.Collections.Generic;");
+        analyzer.SetFile("Project/Imports.cs", _project.ReadText("Project/Imports.cs").Replace("global using System.Collections.Generic;", "", StringComparison.Ordinal));
         var listFix = analyzer.GetQuickFixes("A.cs", code.IndexOf("List", StringComparison.Ordinal) + 1);
         Assert.Contains(listFix, f => f.Title == "using System.Collections.Generic;");
         Assert.Contains(analyzer.GetQuickFixes("A.cs", code.IndexOf("scor =", StringComparison.Ordinal) + 1), f => f.Title.Contains("score", StringComparison.Ordinal));

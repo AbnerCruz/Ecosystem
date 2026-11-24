@@ -114,6 +114,11 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Abre uma passagem ordenada por chave finita; empates preservam a submissão.</summary>
+    /// <param name="blend">Estado de mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Estado de amostragem; nulo usa o da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="clip">Área de recorte em coordenadas virtuais.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
     public void BeginSorted(BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)
     {
         if (_begun) throw new InvalidOperationException("End() deve ser chamado antes de outro Begin().");
@@ -137,6 +142,12 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Abre passagem ordenada com snapshot da câmera.</summary>
+    /// <param name="camera">Câmera capturada no início da passagem.</param>
+    /// <param name="blend">Estado de mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Estado de amostragem; nulo usa o da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="clip">Área de recorte em coordenadas virtuais.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
     public void BeginSorted(Camera2D camera, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)
     {
         ArgumentNullException.ThrowIfNull(camera);
@@ -147,6 +158,12 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Abre passagem ordenada em uma região da tela dividida.</summary>
+    /// <param name="camera">Câmera capturada no início da passagem.</param>
+    /// <param name="region">Região da vista em coordenadas virtuais.</param>
+    /// <param name="blend">Estado de mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Estado de amostragem; nulo usa o da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
     public void BeginSorted(Camera2D camera, RectangleF region, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)
     {
         ArgumentNullException.ThrowIfNull(camera);
@@ -158,6 +175,8 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Abre passagem ordenada com o estado do material.</summary>
+    /// <param name="material">Material da passagem.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
     public void BeginSorted(Material material, SpriteSortDirection direction = SpriteSortDirection.Ascending)
     {
         ArgumentNullException.ThrowIfNull(material);
@@ -175,6 +194,7 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Define a chave para as próximas operações do lote ordenado.</summary>
+    /// <param name="order">Chave de ordenação finita.</param>
     public void SetOrder(float order)
     {
         RequireSorted();
@@ -183,6 +203,10 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Desenha com chave explícita sem alterar a chave corrente.</summary>
+    /// <param name="texture">Textura a desenhar.</param>
+    /// <param name="position">Posição em coordenadas virtuais.</param>
+    /// <param name="color">Cor de multiplicação.</param>
+    /// <param name="order">Chave de ordenação finita.</param>
     [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
     public void Draw(Texture2D texture, Vector2 position, Color color, float order)
     {
@@ -193,6 +217,13 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Desenha um recorte com chave explícita sem alterar a chave corrente.</summary>
+    /// <param name="texture">Textura a desenhar.</param>
+    /// <param name="destination">Retângulo de destino.</param>
+    /// <param name="source">Recorte em pixels; nulo usa a textura inteira.</param>
+    /// <param name="color">Cor de multiplicação.</param>
+    /// <param name="rotation">Rotação em radianos.</param>
+    /// <param name="origin">Origem em pixels da textura.</param>
+    /// <param name="order">Chave de ordenação finita.</param>
     public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin, float order)
     {
         RequireSorted();
