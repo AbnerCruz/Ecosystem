@@ -25,7 +25,7 @@ internal sealed class WaveAudioStudioView : LinearLayout, IDisposable
     private readonly TextView _details;
     private bool _disposed;
 
-    public WaveAudioStudioView(Context context, WaveAudioDocument audio, string cacheDirectory,
+    public WaveAudioStudioView(global::Android.Content.Context context, WaveAudioDocument audio, string cacheDirectory,
         Action<byte[]> save, Action close) : base(context)
     {
         _audio = audio;

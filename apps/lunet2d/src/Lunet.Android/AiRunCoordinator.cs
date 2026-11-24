@@ -111,7 +111,7 @@ internal static class LunetAiRuns
 
     public static LunetAiWork? Current { get { lock (Gate) return _current; } }
 
-    public static bool TryStart(Context context, LunetAiWork work, out string? failure)
+    public static bool TryStart(global::Android.Content.Context context, LunetAiWork work, out string? failure)
     {
         failure = null;
         lock (Gate)

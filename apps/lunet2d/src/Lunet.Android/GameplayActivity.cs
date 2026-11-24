@@ -23,9 +23,9 @@ public sealed class GameplayActivity : Activity
     private AndroidGameImagePicker? _picker;
     private int _finished;
 
-    internal static string Staging(Context context) => Path.Combine(context.CacheDir!.AbsolutePath, "gameplay-snapshots");
-    internal static string Cache(Context context) => Path.Combine(context.CacheDir!.AbsolutePath, "gameplay-builds");
-    internal static string Data(Context context, Guid id) => Path.Combine(context.FilesDir!.AbsolutePath, "gameplay", id.ToString("N"));
+    internal static string Staging(global::Android.Content.Context context) => Path.Combine(context.CacheDir!.AbsolutePath, "gameplay-snapshots");
+    internal static string Cache(global::Android.Content.Context context) => Path.Combine(context.CacheDir!.AbsolutePath, "gameplay-builds");
+    internal static string Data(global::Android.Content.Context context, Guid id) => Path.Combine(context.FilesDir!.AbsolutePath, "gameplay", id.ToString("N"));
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
