@@ -7,7 +7,22 @@ namespace Lunet.Core;
 public sealed record LearningProject(
     string Id, string CourseId, string Title, string Mission,
     IReadOnlyList<LearningStep> Steps, string Investigate,
-    string Acceptance, string Transfer, string Orientation = "portrait");
+    string Acceptance, string Transfer, string Orientation = "portrait")
+{
+    public int ContentVersion => 1;
+
+    public string ReferenceTarget => Id switch
+    {
+        "LRN-001-P1" => "guide:responder-ao-toque#inicio-do-toque",
+        "LRN-001-P2" or "LRN-002-P1" => "guide:colisao",
+        "LRN-002-P2" or "LRN-003-P2" or "LRN-005-P1" => "guide:tempo-do-jogo#segundos-e-velocidade",
+        "LRN-003-P1" => "guide:fontes-bitmap",
+        "LRN-004-P1" => "guide:responder-ao-toque#mais-de-um-dedo",
+        "LRN-004-P2" => "guide:entrada#joysticks-de-movimento-e-mira-com-dedos-separados",
+        "LRN-005-P2" => "guide:criar-e-rodar",
+        _ => throw new InvalidOperationException("Missão sem referência offline."),
+    };
+}
 
 /// <summary>
 /// T01 — dez projetos publicáveis. Objetivos coincidem com a matriz editorial;

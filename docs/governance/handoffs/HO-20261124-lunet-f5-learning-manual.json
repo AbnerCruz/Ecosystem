@@ -1,0 +1,118 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-f5-learning-manual",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T12:53:38.792Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f5",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-523",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f5-learning-manual",
+  "base_commit": "7d1c170da98b21e266a38f48c02590ee80700d3b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/entrada.md",
+    "apps/lunet2d/docs/learning/F5-ENTREGA.md",
+    "apps/lunet2d/docs/manual/catalog.json",
+    "apps/lunet2d/docs/manual/criar-e-rodar.md",
+    "apps/lunet2d/docs/manual/desenhar-sprite.md",
+    "apps/lunet2d/docs/manual/editar-no-celular.md",
+    "apps/lunet2d/docs/manual/instalar-apk.md",
+    "apps/lunet2d/docs/manual/ler-erros.md",
+    "apps/lunet2d/docs/manual/responder-ao-toque.md",
+    "apps/lunet2d/docs/manual/tempo-do-jogo.md",
+    "apps/lunet2d/src/Lunet.Android/DocumentationPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Learn.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.LearnPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/LearningProgressStore.cs",
+    "apps/lunet2d/src/Lunet.Core/LearningTrackOne.cs",
+    "apps/lunet2d/src/Lunet.Docs/DocumentationBrowser.cs",
+    "apps/lunet2d/src/Lunet.Docs/ManualCatalog.cs",
+    "apps/lunet2d/src/Lunet.Docs/MarkdownLite.cs",
+    "apps/lunet2d/src/Lunet.Framework/Content/ContentManager.cs",
+    "apps/lunet2d/src/Lunet.Framework/GameTime.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/GraphicsDevice.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ManualF5Tests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "docs/governance/handoffs/HO-20261124-lunet-f5-learning-manual.json"
+  ],
+  "work_completed": [
+    "Audit and consolidate the real initial learning track and the public offline manual.",
+    "Preserve learning marks by mission and game, resolve renamed games by GameId and recover the previous verified write.",
+    "Provide exact offline sections, contextual Study hints and a separate compilation result in the learning panel.",
+    "Compile and execute handbook examples from their actual Markdown, and update the generated API reference."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit and manual examples",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/ManualF5Tests.cs"
+    },
+    {
+      "check": "Editor and handbook smoke in Android 13",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "apps/lunet2d/tools/ci-ui-screens.sh"
+    },
+    {
+      "check": "Combined main and signed dev.1000590",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "No physical-device observation. The tutorial examples and mission contracts are automated; the learner judges gameplay against the rubric. The remaining planned courses are not yet published."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verify automatic integration and APK provenance."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/learning/MATRIZ-CURRICULAR.md",
+    "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Generated API reference and curriculum authority with verified public guide list."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Distinguish automated, emulator and physical evidence."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "GameId maintains study history independently of folder name."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "learning-manual",
+      "status": "product-specific",
+      "rationale": "Extends the existing Lunet browser, editor and progress store without extracting infrastructure."
+    }
+  ]
+}

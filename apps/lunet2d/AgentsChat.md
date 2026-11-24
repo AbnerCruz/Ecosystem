@@ -861,3 +861,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Escopo do plano F4, vinculado a LUNET-522. Reuso de EditText, UndoHistory, CodeAnalyzer, EditorAssistant, layout existente e documentação offline.
 - Base 251573e1b38a5f437735d8ab419ae9597116d16e. Edições atômicas, assinatura semântica e navegação por símbolos e documentos na mesma superfície nativa.
 - Evidência de testes e roteiro em `docs/guides/f4-editor-keyboard.md`. Sem prova no aparelho físico. O próximo passo é verificar integração e pacote 1000589.
+
+### Lunet F5 · Aprender e manual offline
+
+- LUNET-523. A trilha T01 preserva as dez missões autorais. O leitor usa catálogo público, rotas offline e exemplos verificados. Progresso e compilação têm evidências separadas.
+- Auditoria e critérios em `docs/learning/F5-ENTREGA.md`. A validação física fica registrada como não executada.

@@ -16,6 +16,7 @@ public sealed partial class MainActivity
         var screen = intent?.GetStringExtra("lunet.demo");
         if (string.IsNullOrEmpty(screen)) return;
         // These screenshots must work with _project == null: no temporary game, no project context.
+        if (screen == "manual-f5") { ShowHome(); Post(ShowReference); return; }
         if (screen == "first-use") { ShowFirstUse(); return; }
         if (screen == "appearance") { ShowHome(); ShowAppearance(); return; }
         if (screen == "studios-global") { Post(ShowLauncherStudios); return; }
@@ -138,6 +139,7 @@ public sealed partial class MainActivity
                     DemoConversation();
                 });
                 break;
+            case "learn-f5-doc":
             case "learn":
                 Post(() =>
                 {
@@ -145,6 +147,11 @@ public sealed partial class MainActivity
                     if (progress is null || _project is null) return;
                     progress.LinkProject(LearningCatalog.FirstProjectId, _project.Name, _project.Manifest.GameId);
                     OpenLearningEditor(LearningCatalog.FirstProjectId, _project.Name);
+                    if (screen == "learn-f5-doc")
+                    {
+                        var challenge = LearningCatalog.FindProject(LearningCatalog.FirstProjectId)!;
+                        Post(() => DocumentationPanel.Open(this, challenge.ReferenceTarget));
+                    }
                 });
                 break;
             case "problems": Post(() => OpenWorkbenchPanel(false)); break;

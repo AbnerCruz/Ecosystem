@@ -84,6 +84,23 @@ adb shell uiautomator dump /sdcard/lunet-f4.xml >/dev/null
 adb pull /sdcard/lunet-f4.xml "$out/f4-closed-ime.xml" >/dev/null
 grep -q "Aba Game.cs" "$out/f4-closed-ime.xml"
 
+# F5: a fresh offline manual and a section opened from the real Aprender workspace.
+shoot 15-f5-manual manual-f5 8
+adb shell uiautomator dump /sdcard/lunet-f5.xml >/dev/null
+adb pull /sdcard/lunet-f5.xml "$out/f5-manual.xml" >/dev/null
+for category in "Tutoriais" "Tarefas" "Referência de API" "Conceitos"; do
+    grep -q "$category" "$out/f5-manual.xml"
+done
+shoot 16-f5-mission-doc learn-f5-doc 9
+adb shell uiautomator dump /sdcard/lunet-f5.xml >/dev/null
+adb pull /sdcard/lunet-f5.xml "$out/f5-mission-doc.xml" >/dev/null
+grep -q "Início do toque" "$out/f5-mission-doc.xml"
+adb shell input keyevent KEYCODE_BACK
+sleep 2
+adb shell uiautomator dump /sdcard/lunet-f5.xml >/dev/null
+adb pull /sdcard/lunet-f5.xml "$out/f5-return.xml" >/dev/null
+grep -q "Aba Game.cs" "$out/f5-return.xml"
+
 # These screens must exist and contain PNG bytes from the Android emulator.
 for screen in 01a-home 01b-home-resume 01c-home-missing 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do
     test -s "$out/$screen.png" || { echo "F1 screen missing: $screen"; exit 1; }

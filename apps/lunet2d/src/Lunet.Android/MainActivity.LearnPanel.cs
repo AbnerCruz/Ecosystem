@@ -12,6 +12,13 @@ namespace Lunet.Android;
 public sealed partial class MainActivity
 {
     private string? _selectedLearningProjectId;
+    private readonly Dictionary<(string GameId, string MissionId), string> _learningCompileResults = new();
+
+    private void RememberLearningCompilation(string? missionId, string gameId, bool success)
+    {
+        if (missionId is null) return;
+        _learningCompileResults[(gameId, missionId)] = success ? "Compilou" : "Falhou";
+    }
 
     private void ResolveLearningWorkspaceContext()
     {
@@ -106,6 +113,11 @@ public sealed partial class MainActivity
         var bar = new ProgressBar(this, null, global::Android.Resource.Attribute.ProgressBarStyleHorizontal)
         { Max = challenge.Steps.Count, Progress = count };
         _panelList.AddView(bar, LunetUi.FillWidth(Dp(10)));
+        if (_learningCompileResults.TryGetValue((_project.Manifest.GameId, challenge.Id), out var result))
+            _panelList.AddView(LunetUi.Label(this,
+                "Última compilação nesta sessão: " + result + ". Teste o resultado no Preview.",
+                LunetUi.TextCaption, LunetUi.TextMuted));
+
 
         foreach (var step in challenge.Steps)
         {
@@ -147,7 +159,7 @@ public sealed partial class MainActivity
             LunetUi.TextCaption, LunetUi.TextMuted, bold: true));
         _panelList.AddView(LunetUi.Label(this, challenge.Investigate,
             LunetUi.TextBody, LunetUi.Text));
-        _panelList.AddView(LunetUi.Button(this, "Documentação offline", ShowReference, ButtonStyle.Secondary),
+        _panelList.AddView(LunetUi.Button(this, "Abrir referência da missão", () => DocumentationPanel.Open(this, challenge.ReferenceTarget), ButtonStyle.Secondary),
             LunetUi.FillWidth(Dp(48)));
 
         _panelList.AddView(LunetUi.Label(this, "COMO TESTAR NO PREVIEW",
@@ -159,12 +171,10 @@ public sealed partial class MainActivity
         _panelList.AddView(LunetUi.Label(this, challenge.Transfer,
             LunetUi.TextBody, LunetUi.TextMuted));
 
-        _panelList.AddView(LunetUi.Button(this, "Pedir uma pista à IA", () =>
-        {
-            OpenAiPanel("Estou fazendo " + challenge.Id + " (" + challenge.Title +
-                "). Missão: " + challenge.Mission +
-                " Dê somente uma pista conceitual; não altere meu jogo sem autorização.", study: true);
-        }, ButtonStyle.Secondary), LunetUi.FillWidth(Dp(48)));
+        _panelList.AddView(LunetUi.Button(this, "Rodar no Preview", Run, ButtonStyle.Primary),
+            LunetUi.FillWidth(Dp(48)));
+        _panelList.AddView(LunetUi.Button(this, "Pedir uma pista à IA", () => AskLearningHint(challenge),
+            ButtonStyle.Secondary), LunetUi.FillWidth(Dp(48)));
 
         var other = progress.LinkedProjectIdsForGameId(_project.Manifest.GameId);
         if (other.Count > 1)

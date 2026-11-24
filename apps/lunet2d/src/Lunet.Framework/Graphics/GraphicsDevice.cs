@@ -188,7 +188,7 @@ public sealed class GraphicsDevice
     }
 
     /// <summary>Limpa o alvo com a cor fornecida. Em Fit, as barras ficam pretas; em Fill, o desenho cobre toda a superfície.</summary>
-    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
+    /// <param name="color">Cor de preenchimento do alvo atual.</param>
     public void Clear(Color color)
     {
         if (RenderTarget is { } rt)

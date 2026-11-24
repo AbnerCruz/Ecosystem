@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000590 — F5 · Aprender e manual offline
+
+- Dez missões com referência direta, botão de Preview e pista contextual em Estudo.
+- Retomada por GameId após renomear. Marcações isoladas por jogo com recuperação da gravação anterior.
+- Manual com Tutoriais, Tarefas, Referência de API e Conceitos. Percurso de jogo em branco até APK com exemplos executáveis.
+- [Escopo e conferência da F5](docs/learning/F5-ENTREGA.md).
+
 ## 0.0.1-dev.1000589 — F4 · Editor nativo e teclado
 
 - Complemento de programação sobre o teclado Android com desfazer/refazer fixos, pares, blocos, recuo, cursor e busca.

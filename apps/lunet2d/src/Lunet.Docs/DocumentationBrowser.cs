@@ -15,16 +15,22 @@ public sealed class DocumentationBrowser
 {
     private readonly Stack<string> _history = new();
     private readonly IReadOnlyDictionary<string, string> _guides;
+    private readonly ManualCatalog? _manual;
+    private static readonly (string Id, string Title)[] Categories =
+        [("tutorials", "Tutoriais"), ("tasks", "Tarefas"), ("api", "Referência de API"), ("concepts", "Conceitos")];
 
-    public DocumentationBrowser(ApiDocumentation api, IReadOnlyDictionary<string, string> guides)
+    public DocumentationBrowser(ApiDocumentation api, IReadOnlyDictionary<string, string> guides, ManualCatalog? manual = null)
     {
         Api = api;
         _guides = guides;
+        _manual = manual;
     }
 
     public ApiDocumentation Api { get; }
 
     public IEnumerable<string> GuideNames => _guides.Keys.OrderBy(k => k, StringComparer.Ordinal);
+
+    public DocumentationBrowser NewNavigation() => new(Api, _guides, _manual);
 
     public string? Current { get; private set; }
 
@@ -59,6 +65,7 @@ public sealed class DocumentationBrowser
         return kind switch
         {
             "guide" => Guide(rest),
+            "category" => Category(rest),
             "id" => ById(rest),
             "ns" => Namespace(rest),
             "search" => Search(rest),
@@ -68,6 +75,10 @@ public sealed class DocumentationBrowser
 
     private DocPage Home()
     {
+        if (_manual is not null)
+            return new("home", "Documentação", Categories.Select(category =>
+                new DocBlock(DocBlockKind.Link, category.Title, "category:" + category.Id)).ToArray());
+
         var blocks = new List<DocBlock>
         {
             new(DocBlockKind.Paragraph, "Documentação do Lunet, funciona sem internet. Comece pelos guias; a referência da API traz cada tipo e membro com exemplos."),
@@ -81,6 +92,18 @@ public sealed class DocumentationBrowser
         return new DocPage("home", "Documentação", blocks);
     }
 
+    private DocPage Category(string id)
+    {
+        var category = Categories.FirstOrDefault(c => c.Id == id);
+        if (_manual is null || category.Id is null) return NotFound("category:" + id);
+        IEnumerable<DocBlock> blocks = id == "api"
+            ? Api.Types.GroupBy(t => t.Namespace).OrderBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => new DocBlock(DocBlockKind.Link, group.Key, "ns:" + group.Key, $"{group.Count()} tipos"))
+            : _manual.Entries.Where(entry => entry.Category == id)
+                .Select(entry => new DocBlock(DocBlockKind.Link, entry.Title, "guide:" + entry.Id));
+        return new("category:" + id, category.Title, blocks.ToArray());
+    }
+
     private DocPage Namespace(string ns)
     {
         var blocks = new List<DocBlock>();
@@ -91,19 +114,39 @@ public sealed class DocumentationBrowser
 
     private DocPage Guide(string name)
     {
-        if (!_guides.TryGetValue(name, out var markdown)) return NotFound("guide:" + name);
+        var parts = name.Split('#', 2);
+        string id = parts[0];
+        if (_manual?.Redirects.TryGetValue(id, out var replacement) == true) id = replacement;
+        if (!_guides.TryGetValue(id, out var markdown)) return NotFound("guide:" + name);
+        var parsed = MarkdownLite.Parse(markdown);
+        var target = "guide:" + id;
+        string title = GuideTitle(id);
         var blocks = new List<DocBlock>();
-        foreach (var block in MarkdownLite.Parse(markdown))
+        IEnumerable<MarkdownBlock> visible = parsed;
+        if (parts.Length > 1)
         {
+            target += "#" + parts[1];
+            var section = parsed.FirstOrDefault(block => block.Kind == MarkdownBlockKind.Heading && ManualCatalog.Anchor(block.Text) == parts[1]);
+            if (section is null)
+                return new(target, "Seção não encontrada", [new(DocBlockKind.Link, "Abrir " + title, "guide:" + id)]);
+            blocks.Add(new(DocBlockKind.Link, "Ver artigo inteiro", "guide:" + id));
+            visible = parsed.SkipWhile(block => !ReferenceEquals(block, section)).Skip(1)
+                .TakeWhile(block => block.Kind != MarkdownBlockKind.Heading || block.Level > section.Level);
+            title = section.Text;
+        }
+        foreach (var block in visible)
+        {
+            if (_manual is not null && block.Kind == MarkdownBlockKind.Heading && block.Level == 1) continue;
             blocks.Add(block.Kind switch
             {
                 MarkdownBlockKind.Heading => new DocBlock(block.Level == 1 ? DocBlockKind.Title : DocBlockKind.Heading, block.Text),
                 MarkdownBlockKind.Code => new DocBlock(DocBlockKind.Code, block.Text),
                 MarkdownBlockKind.Bullet => new DocBlock(DocBlockKind.Bullet, block.Text),
+                MarkdownBlockKind.Link => new DocBlock(DocBlockKind.Link, block.Text, block.Target),
                 _ => new DocBlock(DocBlockKind.Paragraph, block.Text),
             });
         }
-        return new DocPage("guide:" + name, GuideTitle(name), blocks);
+        return new DocPage(target, title, blocks);
     }
 
     private DocPage ById(string id)
@@ -169,8 +212,18 @@ public sealed class DocumentationBrowser
         var results = Api.Search(query);
         foreach (var result in results)
             blocks.Add(new DocBlock(DocBlockKind.Link, result.Title, "id:" + result.Id, $"{result.Kind} · {FirstSentence(result.Summary)}"));
-        foreach (var guide in _guides.Where(g => g.Value.Contains(query, StringComparison.OrdinalIgnoreCase) || GuideTitle(g.Key).Contains(query, StringComparison.OrdinalIgnoreCase)))
-            blocks.Add(new DocBlock(DocBlockKind.Link, "Guia: " + GuideTitle(guide.Key), "guide:" + guide.Key));
+        if (_manual is null)
+        {
+            foreach (var guide in _guides.Where(g => g.Value.Contains(query, StringComparison.OrdinalIgnoreCase) || GuideTitle(g.Key).Contains(query, StringComparison.OrdinalIgnoreCase)))
+                blocks.Add(new(DocBlockKind.Link, "Guia: " + GuideTitle(guide.Key), "guide:" + guide.Key));
+        }
+        else
+        {
+            var terms = ManualCatalog.Normalize(query).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var entry in _manual.Entries.Where(entry => terms.Length > 0 && terms.All(term =>
+                ManualCatalog.Normalize(entry.Title + " " + string.Join(' ', entry.Terms) + " " + _guides.GetValueOrDefault(entry.Id)).Contains(term, StringComparison.Ordinal))))
+                blocks.Add(new(DocBlockKind.Link, entry.Title, "guide:" + entry.Id));
+        }
         if (blocks.Count == 0) blocks.Add(new DocBlock(DocBlockKind.Paragraph, $"Nada encontrado para \"{query}\"."));
         return new DocPage("search:" + query, $"Busca: {query}", blocks);
     }
@@ -180,6 +233,7 @@ public sealed class DocumentationBrowser
 
     private string GuideTitle(string name)
     {
+        if (_manual?.Entries.FirstOrDefault(e => e.Id == name) is { } entry) return entry.Title;
         if (!_guides.TryGetValue(name, out var markdown)) return name;
         var heading = MarkdownLite.Parse(markdown).FirstOrDefault(b => b.Kind == MarkdownBlockKind.Heading);
         return heading?.Text ?? name;

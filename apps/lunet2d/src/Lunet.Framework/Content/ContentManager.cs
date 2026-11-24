@@ -46,8 +46,10 @@ public sealed class ContentManager : IDisposable
 
     /// <summary>Carrega um PNG (ex.: <c>"Textures/hero.png"</c>). Chamadas repetidas devolvem a mesma textura.</summary>
     /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
-    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave).</param>
+    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave, padrão).</param>
     /// <returns>A textura carregada (a mesma instância nas próximas chamadas).</returns>
+    /// <remarks>Carregue em Game.LoadContent e reutilize em Draw. O caminho é relativo a Content e deve incluir a extensão.
+    /// Um arquivo ausente ou PNG inválido gera erro de leitura. A primeira carga de cada caminho define o filtro até a textura ser descartada.</remarks>
     public Texture2D LoadTexture(string path, TextureFilter filter = TextureFilter.Linear)
     {
         if (_textures.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
@@ -137,7 +139,7 @@ public sealed class ContentManager : IDisposable
 
     /// <summary>Carrega um atlas de texturas (JSON com a textura e as regiões nomeadas). Cacheado.</summary>
     /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
-    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave).</param>
+    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave, padrão).</param>
     /// <returns>O atlas carregado.</returns>
     public TextureAtlas LoadAtlas(string path, TextureFilter filter = TextureFilter.Point)
     {

@@ -1,6 +1,6 @@
 namespace Lunet;
 
-/// <summary>Tempo de uma atualização. <see cref="DeltaSeconds"/> é sempre o passo fixo configurado.</summary>
+/// <summary>Tempo fornecido ao código do jogo, em segundos, durante a atualização e o desenho.</summary>
 /// <example>
 /// <code>
 /// position += velocity * time.DeltaSeconds;
@@ -20,10 +20,10 @@ public readonly struct GameTime
         Interpolation = interpolation;
     }
 
-    /// <summary>Tempo simulado desde o início do jogo.</summary>
+    /// <summary>Tempo simulado acumulado desde o início do jogo, em segundos. Avança com os passos executados.</summary>
     public double TotalSeconds { get; }
 
-    /// <summary>Duração do passo de atualização (fixa nas atualizações; tempo real do quadro no desenho).</summary>
+    /// <summary>Duração em segundos. Em Update, é o passo fixo configurado (1/60 s por padrão). Em Draw, é o intervalo real do quadro.</summary>
     public float DeltaSeconds { get; }
 
     /// <summary>Fração (0–1) entre a última atualização e a próxima, útil para interpolar o desenho.</summary>
