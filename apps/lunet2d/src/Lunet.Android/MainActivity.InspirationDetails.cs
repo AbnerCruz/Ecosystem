@@ -59,7 +59,9 @@ public sealed partial class MainActivity
         body.AddView(LunetUi.Button(this, "Documentação offline", () =>
         {
             dialog?.Dismiss();
-            ShowReference();
+            var position = mechanic.SelectedItemPosition;
+            var selected = position >= 0 && position < reference.Mechanics.Length ? reference.Mechanics[position] : null;
+            if (!DocumentationPanel.Open(this, "guide:" + InspirationLibrary.GuideFor(selected))) ShowReference();
         }, ButtonStyle.Quiet));
         dialog = new AlertDialog.Builder(this)!.SetTitle(reference.Title)!.SetView(scroll)!
             .SetNegativeButton("Voltar", (_, _) => { })!.Create();
