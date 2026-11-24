@@ -56,6 +56,18 @@ public sealed partial class MainActivity
         });
     }
 
+    private void ReturnToLauncherOrigin()
+    {
+        switch (_launcherSection)
+        {
+            case "projects": ShowProjects(); break;
+            case "learn": ShowLearning(); break;
+            case "studios": ShowLauncherStudios(); break;
+            case "explore": OpenInspirationExplorer(); break;
+            default: ShowHome(); break;
+        }
+    }
+
     private void PlayFromLauncher(string folderName)
     {
         try
