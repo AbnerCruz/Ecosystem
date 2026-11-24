@@ -170,6 +170,18 @@ public sealed class InspirationLibrary
         return selected + " — " + design + " Use código e assets próprios.";
     }
 
+    /// <summary>Links to existing first-party offline articles, never to third-party code.</summary>
+    public static string GuideFor(string? mechanic) => Normalize(mechanic ?? "") switch
+    {
+        "dash" or "mira" or "voo" or "montarias" => "entrada",
+        "plataforma de precisao" or "respawn" => "tempo-do-jogo",
+        "construcao" or "crafting" or "automacao" => "conteudo-e-dados",
+        "fisica" or "colisao" => "colisao",
+        "camera" => "camera",
+        "animacao" => "animacao",
+        _ => "inspiracao"
+    };
+
     private static string ValidProjectId(string? id)
     {
         if (string.IsNullOrWhiteSpace(id)) return "";
