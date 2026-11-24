@@ -1,3 +1,7 @@
+## LUNET-525 · F7 — Launcher de jogos (Issue #1032)
+
+- [ ] Grade Jogar por identidade persistente, preparação offline com revisão de fontes, recursos, manifesto e toolchain; cache atômico verificado; atividade gameplay em processo separado, saves por GameId e retorno à grade; diagnóstico com opção de editar. CI, integração combinada, smoke Android e release ainda não verificados. Evidências e limitações em `docs/plans/f7-validacao.md`. Não confundir com Fase 7 Networking.
+
 ## LUNET-524 · F6 — Mapas mentais e Studios
 
 - [ ] Confirmar mapas, Studios globais, pacotes versionados e APK oficial. [Manual e operações](docs/manual/mapas-e-studios.md).

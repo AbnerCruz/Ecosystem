@@ -17,6 +17,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private readonly byte[] _assembly;
     private readonly byte[]? _symbols;
     private readonly Action<LogLevel, string> _log;
+    private readonly Action<string>? _onFatal;
+    private readonly Action? _onStarted;
     private readonly IContentSource _content;
     private readonly Func<IAudioBackend> _audioFactory;
     private IAudioBackend? _audio;
@@ -61,7 +63,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         _performance.Reset();
     }
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log, IGameImagePicker? imagePicker = null)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log, IGameImagePicker? imagePicker = null, Action<string>? onFatal = null, Action? onStarted = null)
     {
         _save = save;
         _haptics = haptics;
@@ -71,6 +73,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         _assembly = assembly;
         _symbols = symbols;
         _log = log;
+        _onFatal = onFatal;
+        _onStarted = onStarted;
     }
 
     /// <summary>Instância do jogo em execução (nula antes de iniciar ou após parar); o Inspector lê dela.</summary>
@@ -134,6 +138,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         catch (Exception ex)
         {
             _log(LogLevel.Error, "OpenGL ES 3.0 indisponível: " + ex.Message);
+            _onFatal?.Invoke("OpenGL ES 3.0 indisponível: " + ex.Message);
         }
     }
 
@@ -225,6 +230,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             _reportedFault = true;
             _log(LogLevel.Error, "O jogo parou por uma exceção. Corrija o código e aperte Run ou Restart.");
+            _onFatal?.Invoke("O jogo parou por uma exceção. Consulte o diagnóstico no editor.");
         }
     }
 
@@ -239,12 +245,15 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
             _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory(), _save, _haptics);
             lock (_inputLock) { _host.SetDisplay(_display.Density, _display.Left, _display.Top, _display.Right, _display.Bottom); _displayDirty = false; }
             _host.Start(_width, _height);
+            if (_host.IsFaulted) _onFatal?.Invoke("Falha ao inicializar o jogo.");
+            else _onStarted?.Invoke();
             _clock.Restart();
             return true;
         }
         catch (GameLoadException ex)
         {
             _log(LogLevel.Error, ex.Message);
+            _onFatal?.Invoke(ex.Message);
             DisposeSession();
             return false;
         }

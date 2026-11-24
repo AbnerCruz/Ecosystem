@@ -116,6 +116,45 @@ adb shell uiautomator dump /sdcard/lunet-f6.xml >/dev/null
 adb pull /sdcard/lunet-f6.xml "$out/f6-data.xml" >/dev/null
 grep -qi "tabela" "$out/f6-data.xml"
 
+# F7: exercise the actual dedicated gameplay Activity, return to the grade,
+# reuse a warm build, launch a second orientation, and reject an invalid revision.
+shoot 20-f7-launcher gameplay-grid 8
+adb shell uiautomator dump /sdcard/lunet-f7.xml >/dev/null
+adb pull /sdcard/lunet-f7.xml "$out/f7-grid.xml" >/dev/null
+grep -q "Seus jogos locais" "$out/f7-grid.xml"
+
+launch_gameplay() {
+    local demo="$1" screen="$2"
+    adb shell am force-stop "$package"
+    adb shell am start -W -n "$package/$activity" --es lunet.demo "$demo" >/dev/null
+    local launched=0
+    for i in $(seq 1 45); do
+        if adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -q 'GameplayActivity'; then
+            launched=1
+            break
+        fi
+        sleep 2
+    done
+    test "$launched" = 1 || { adb logcat -d -t 300; echo "GameplayActivity not resumed: $demo"; return 1; }
+    sleep 5
+    test -n "$(adb shell pidof "$package:gameplay" | tr -d '\r')"
+    adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -q 'GameplayActivity'
+    adb exec-out screencap -p > "$out/$screen.png"
+    adb shell input keyevent KEYCODE_BACK
+    sleep 4
+    adb shell uiautomator dump /sdcard/lunet-f7.xml >/dev/null
+    adb pull /sdcard/lunet-f7.xml "$out/$screen-return.xml" >/dev/null
+    grep -q "Seus jogos locais" "$out/$screen-return.xml"
+}
+launch_gameplay gameplay-portrait 21-f7-cold
+launch_gameplay gameplay-portrait 22-f7-warm
+launch_gameplay gameplay-landscape 23-f7-landscape
+shoot 24-f7-error gameplay-broken 20
+adb shell uiautomator dump /sdcard/lunet-f7.xml >/dev/null
+adb pull /sdcard/lunet-f7.xml "$out/f7-error.xml" >/dev/null
+grep -q "Não foi possível jogar" "$out/f7-error.xml"
+grep -q "Editar projeto" "$out/f7-error.xml"
+
 # These screens must exist and contain PNG bytes from the Android emulator.
 for screen in 01a-home 01b-home-resume 01c-home-missing 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do
     test -s "$out/$screen.png" || { echo "F1 screen missing: $screen"; exit 1; }
