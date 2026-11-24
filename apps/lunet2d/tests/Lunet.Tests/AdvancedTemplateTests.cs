@@ -32,15 +32,15 @@ public class AdvancedTemplateTests
             existing.WriteText("Content/custom.txt", "asset do usuário");
             var manifestBytes = File.ReadAllBytes(Path.Combine(existing.Directory, "lunet.json"));
             var project = store.Create(name, template);
-            Assert.Equal(code.Trim(), project.ReadText("Game.cs").Trim());
+            Assert.Equal(ProjectImports.RemoveCoveredFromGenerated(code).Trim(), project.ReadText("Game.cs").Trim());
             Assert.True(Directory.Exists(Path.Combine(project.Directory, "Content")));
             Assert.Equal("// conteúdo do usuário", store.Open("Existing").ReadText("Game.cs"));
             Assert.Equal("asset do usuário", store.Open("Existing").ReadText("Content/custom.txt"));
             Assert.Equal(manifestBytes, File.ReadAllBytes(Path.Combine(existing.Directory, "lunet.json")));
             Assert.Throws<ProjectException>(() => store.Create(name, template));
-            Assert.Equal(code.Trim(), store.Open(name).ReadText("Game.cs").Trim());
+            Assert.Equal(ProjectImports.RemoveCoveredFromGenerated(code).Trim(), store.Open(name).ReadText("Game.cs").Trim());
             var compiler = new Lunet.Compiler.GameCompiler(new Lunet.Compiler.LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
-            var compiled = compiler.Compile(name, [new Lunet.Compiler.SourceFile("Game.cs", project.ReadText("Game.cs"))]);
+            var compiled = compiler.Compile(name, project.LoadSources().Select(s => new Lunet.Compiler.SourceFile(s.Path, s.Text)).ToList());
             Assert.True(compiled.Success, string.Join("\n", compiled.Diagnostics));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }

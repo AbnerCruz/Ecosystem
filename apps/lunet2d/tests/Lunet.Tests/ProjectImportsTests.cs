@@ -31,4 +31,26 @@ public sealed class ProjectImportsTests
         Assert.Equal(0, manifest.SdkImportsVersion);
         Assert.DoesNotContain("sdkImportsVersion", manifest.ToJson());
     }
+
+    [Fact]
+    public void AllNewTemplatesCompileWithBothPresets()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "lunet-imports-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new ProjectStore(root);
+            var compiler = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+            foreach (var template in Enum.GetValues<ProjectTemplate>())
+            {
+                var project = store.Create("Preset" + template, template);
+                foreach (bool broad in new[] { false, true })
+                {
+                    project.WriteText(ProjectImports.Path, ProjectImports.Source(broad));
+                    var result = compiler.Compile(project.Name, project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList());
+                    Assert.True(result.Success, template + " / " + broad + ": " + string.Join("\n", result.Diagnostics));
+                }
+            }
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

@@ -6,7 +6,7 @@ public sealed class ContextTests
 {
     private sealed class Probe : Game
     {
-        public Action? DuringInitialize, DuringUpdate, DuringDraw, DuringUnload;
+        public Action? DuringUpdate;
         public int Calls;
         private void Verify(bool graphics)
         {
@@ -29,13 +29,13 @@ public sealed class ContextTests
             }
             Calls++;
         }
-        protected override void Initialize() { Verify(true); DuringInitialize?.Invoke(); }
+        protected override void Initialize() => Verify(true);
         protected override void LoadContent() => Verify(true);
         protected override void Update(GameTime time) { Verify(true); DuringUpdate?.Invoke(); }
-        protected override void Draw(GameTime time) { Verify(true); DuringDraw?.Invoke(); }
+        protected override void Draw(GameTime time) => Verify(true);
         protected override void OnPause() => Verify(false);
         protected override void OnResume() => Verify(false);
-        protected override void UnloadContent() { Verify(false); DuringUnload?.Invoke(); }
+        protected override void UnloadContent() => Verify(false);
     }
 
     [Fact]
@@ -59,6 +59,7 @@ public sealed class ContextTests
         first.Dispatcher.Post(() => { Assert.Same(first.Dispatcher, Context.Dispatcher); dispatcherRan = true; });
         a.Tick(1.0 / 30);
         Assert.True(dispatcherRan);
+        Assert.True(first.Calls > 0);
         Assert.False(a.IsFaulted, a.Fault?.ToString());
         a.Pause(); a.Step(); a.Resume();
         Assert.False(a.IsFaulted, a.Fault?.ToString());

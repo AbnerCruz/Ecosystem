@@ -28,11 +28,13 @@ public sealed class SpriteBatch
     private float _order;
     private SpriteSortDirection _direction;
     private List<SortedQuad>? _pending;
+    private List<OrderEntry>? _orders;
 
-    private readonly record struct SortedQuad(Texture2D Texture, float Order, int Ordinal, SpriteVertex A, SpriteVertex B, SpriteVertex C, SpriteVertex D);
-    private static readonly Comparison<SortedQuad> Ascending = static (a, b) => Compare(a, b, false);
-    private static readonly Comparison<SortedQuad> Descending = static (a, b) => Compare(a, b, true);
-    private static int Compare(SortedQuad a, SortedQuad b, bool descending)
+    private readonly record struct SortedQuad(Texture2D Texture, SpriteVertex A, SpriteVertex B, SpriteVertex C, SpriteVertex D);
+    private readonly record struct OrderEntry(float Order, int Ordinal);
+    private static readonly Comparison<OrderEntry> Ascending = static (a, b) => Compare(a, b, false);
+    private static readonly Comparison<OrderEntry> Descending = static (a, b) => Compare(a, b, true);
+    private static int Compare(OrderEntry a, OrderEntry b, bool descending)
     {
         int key = descending ? b.Order.CompareTo(a.Order) : a.Order.CompareTo(b.Order);
         return key != 0 ? key : a.Ordinal.CompareTo(b.Ordinal);
@@ -123,6 +125,7 @@ public sealed class SpriteBatch
         if (target is not null && !ReferenceEquals(target.Device, _device)) throw new InvalidOperationException("Alvo de outro dispositivo.");
         var state = new DrawState((blend ?? BlendState.Alpha).Mode, sampler, clip is { } area ? _device.ToScissor(area) : null, shader?.Handle ?? 0, null);
         _pending ??= new List<SortedQuad>();
+        _orders ??= new List<OrderEntry>();
         _device.OpenBatch(true, shader);
         _state = state;
         _shader = shader;
@@ -180,6 +183,7 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Desenha com chave explícita sem alterar a chave corrente.</summary>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
     public void Draw(Texture2D texture, Vector2 position, Color color, float order)
     {
         RequireSorted();
@@ -261,7 +265,10 @@ public sealed class SpriteBatch
         if (_sorted)
         {
             var pending = _pending!;
-            pending.Add(new SortedQuad(texture, order, pending.Count, _vertices[0], _vertices[1], _vertices[2], _vertices[3]));
+            var ordinal = pending.Count;
+            pending.Add(new SortedQuad(texture, _vertices[0], _vertices[1], _vertices[2], _vertices[3]));
+            try { _orders!.Add(new OrderEntry(order, ordinal)); }
+            catch { pending.RemoveAt(ordinal); throw; }
         }
         else _quads++;
     }
@@ -354,9 +361,11 @@ public sealed class SpriteBatch
             if (_device.RenderTarget is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
             foreach (var quad in pending)
                 if (quad.Texture.IsDisposed) throw new ObjectDisposedException(nameof(Texture2D));
-            pending.Sort(_direction == SpriteSortDirection.Ascending ? Ascending : Descending);
-            foreach (var quad in pending)
+            var orders = _orders!;
+            orders.Sort(_direction == SpriteSortDirection.Ascending ? Ascending : Descending);
+            foreach (var entry in orders)
             {
+                var quad = pending[entry.Ordinal];
                 if (_texture is not null && !ReferenceEquals(_texture, quad.Texture)) Flush();
                 if (_quads == MaxQuads) Flush();
                 _texture = quad.Texture;
@@ -382,6 +391,7 @@ public sealed class SpriteBatch
     private void CloseSorted()
     {
         _pending!.Clear();
+        _orders!.Clear();
         _quads = 0;
         _texture = null;
         _shader = null;

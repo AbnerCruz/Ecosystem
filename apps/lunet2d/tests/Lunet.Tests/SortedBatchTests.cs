@@ -43,7 +43,7 @@ public sealed class SortedBatchTests
         Assert.Empty(backend.Batches);
         batch.End();
         Assert.Equal(count, backend.Batches.Sum(x => x.QuadCount));
-        Assert.Equal(count - 1, backend.Batches[0].Vertices[0].Position.X);
+        Assert.Equal((float)(count - 1), backend.Batches[0].Vertices[0].Position.X);
         Assert.Equal(0f, backend.Batches[^1].Vertices[^4].Position.X);
         Assert.Equal((count + SpriteBatch.MaxQuads - 1) / SpriteBatch.MaxQuads, backend.Batches.Count);
     }
@@ -92,5 +92,32 @@ public sealed class SortedBatchTests
         Assert.Empty(backend.Batches);
         batch.Begin();
         batch.End();
+    }
+
+    [Fact]
+    public void SoftwarePixelsKeepInterleavedAlphaOrder()
+    {
+        var backend = new Lunet.Runtime.SoftwareGraphicsBackend(16, 16);
+        var device = new GraphicsDevice(backend, 16, 16);
+        device.Resize(16, 16);
+        device.Clear(Color.Black);
+        using var red = Texture2D.CreateSolid(device, 16, 16, new Color(255, 0, 0, 128));
+        using var blue = Texture2D.CreateSolid(device, 16, 16, new Color(0, 0, 255, 128));
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(red, Vector2.Zero, Color.White, 2);
+        batch.Draw(red, Vector2.Zero, Color.White, 0);
+        batch.Draw(blue, Vector2.Zero, Color.White, 1);
+        batch.End();
+        var sorted = backend.ScreenPixel(8, 8);
+        device.Clear(Color.Black);
+        batch.Begin();
+        batch.Draw(red, Vector2.Zero, Color.White);
+        batch.Draw(blue, Vector2.Zero, Color.White);
+        batch.Draw(red, Vector2.Zero, Color.White);
+        batch.End();
+        Assert.Equal(backend.ScreenPixel(8, 8), sorted);
+        Assert.InRange(sorted.R, 158, 162);
+        Assert.InRange(sorted.B, 62, 66);
     }
 }
