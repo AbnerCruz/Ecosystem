@@ -120,8 +120,8 @@ public sealed class InspirationLibrary
             if ((filter.FavoritesOnly && !e.Favorite) ||
                 !Matches(e.Genre, genres) || !Matches(e.Perspective, perspectives) || !Matches(e.VisualStyle, styles))
                 return false;
-            var tags = NormalizeSet(e.Mechanics);
-            if (!mechanics.IsSubsetOf(tags)) return false;
+            if (mechanics.Count != 0 && !mechanics.IsSubsetOf(NormalizeSet(e.Mechanics))) return false;
+            if (terms.Length == 0) return true;
             var haystack = Normalize(string.Join(" ", new[] { e.Title, e.Genre, e.Perspective,
                 e.VisualStyle, e.StudyIdea, e.Notes, e.ProjectName, e.Author, e.License }.Concat(e.Mechanics)));
             return terms.All(term => haystack.Contains(term, StringComparison.Ordinal));
