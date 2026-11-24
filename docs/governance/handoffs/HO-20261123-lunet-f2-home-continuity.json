@@ -14,7 +14,7 @@
   "branch": "feat/lunet-f2-home-continuity-gameid-20261123",
   "base_commit": "9200ab7cdc479367c5c60d343ed189ebef6d4bc6",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1025",
   "files_changed": [
     "apps/lunet2d/src/Lunet.Core/LauncherProjectCatalog.cs",
     "apps/lunet2d/src/Lunet.Core/LauncherPreferences.cs",
@@ -47,19 +47,19 @@
       "check": "F2/1 xUnit including legacy preference migration/identity regressions",
       "kind": "automated",
       "result": "pending",
-      "evidence": "CI after PR"
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1025"
     },
     {
       "check": "F2/1 Android 13 Home/new/resume/missing screenshot smoke",
       "kind": "automated",
       "result": "pending",
-      "evidence": "CI after PR"
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1025"
     },
     {
       "check": "Combined main consistency and governed integration",
       "kind": "automated",
       "result": "pending",
-      "evidence": "CI after PR"
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1025"
     }
   ],
   "known_issues": [
