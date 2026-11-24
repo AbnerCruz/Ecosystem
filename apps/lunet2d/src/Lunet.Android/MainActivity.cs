@@ -1462,6 +1462,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnPause()
     {
+        if (_inspirationOpen) SaveInspirationView();
         _spriteStudio?.Suspend();
         _tileStudio?.Suspend();
         _audioStudio?.Suspend();
