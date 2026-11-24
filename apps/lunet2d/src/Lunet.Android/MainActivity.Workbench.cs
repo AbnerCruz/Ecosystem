@@ -5,6 +5,7 @@ using Android.Views;
 using Android.Widget;
 using Lunet.Compiler;
 using Lunet.Core;
+using Lunet.Editor;
 using AndroidColor = Android.Graphics.Color;
 
 namespace Lunet.Android;
@@ -93,67 +94,115 @@ public sealed partial class MainActivity
     /// Symbols that are slow to reach on phone keyboards, plus undo/redo/find. Buttons never take focus,
     /// so the keyboard stays open (Acode #2374, Godot proposals #7639).
     /// </summary>
+    private Button? _undoKey, _redoKey;
+    private View? _keyboardRoot;
+
     private View BuildExtraKeys()
     {
-        var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        row.SetPadding(Dp(4), Dp(3), Dp(4), Dp(3));
-        void Key(string label, string description, Action action)
+        var bar = LunetUi.Row(this, 2);
+        bar.SetBackgroundColor(LunetUi.Surface);
+        bar.Visibility = ViewStates.Gone;
+        var row = LunetUi.Row(this, 2);
+        var scroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false };
+        scroll.AddView(row);
+
+        Button Key(LinearLayout host, string label, string description, Action action)
         {
             var key = LunetUi.Button(this, label, action, ButtonStyle.Secondary, keepsKeyboard: true, description: description);
             key.TextSize = 15;
-            key.SetTypeface(LunetUi.Mono, global::Android.Graphics.TypefaceStyle.Normal);
-            key.SetPadding(Dp(10), 0, Dp(10), 0);
-            var p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40));
-            p.SetMargins(Dp(2), 0, Dp(2), 0);
-            row.AddView(key, p);
+            key.SetPadding(Dp(5), 0, Dp(5), 0);
+            key.SetMinimumWidth(Dp(48));
+            key.SetMinWidth(Dp(48));
+            host.AddView(key, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(48)));
+            return key;
         }
-        Key("⇥", "Tab", () => InsertCode("    "));
-        Key("↶", "Desfazer", () => _editor?.Undo());
-        Key("↷", "Refazer", () => _editor?.Redo());
-        foreach (var symbol in new[] { "{", "}", "(", ")", ";", "=", "\"", ".", ",", "<", ">", "[", "]", "+", "-", "*", "/", "!", "&", "|", "_" })
-            Key(symbol, symbol, () => InsertCode(symbol));
-        Key("←", "Cursor para a esquerda", () => MoveCaret(-1));
-        Key("→", "Cursor para a direita", () => MoveCaret(1));
-        Key("⌕", "Localizar no arquivo", ShowFind);
-        var scroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false, Visibility = ViewStates.Gone };
-        scroll.SetBackgroundColor(LunetUi.Surface);
-        scroll.AddView(row);
-        _extraKeys = scroll;
-        return scroll;
+        _undoKey = Key(bar, "↶", "Desfazer", () => HandleCommand(EditorCommand.Undo));
+        _redoKey = Key(bar, "↷", "Refazer", () => HandleCommand(EditorCommand.Redo));
+        void Command(string label, string description, EditorCommand command) =>
+            Key(row, label, description, () => HandleCommand(command));
+        Command("{ }", "Inserir bloco", EditorCommand.InsertBlock);
+        Command("( )", "Inserir par de parênteses", EditorCommand.PairParen);
+        Command("[ ]", "Inserir par de colchetes", EditorCommand.PairBracket);
+        Command("\" \"", "Inserir par de aspas duplas", EditorCommand.PairDoubleQuote);
+        Command("' '", "Inserir par de aspas simples", EditorCommand.PairSingleQuote);
+        Command("⇥", "Tab", EditorCommand.InsertTab);
+        Command("⇤", "Reduzir indentação", EditorCommand.Outdent);
+        foreach (var symbol in new[] { "{", "}", "(", ")", ";", "=", ".", ",", "<", ">", "[", "]", "+", "-", "*", "/", "!", "&", "|", "_" })
+            Key(row, symbol, "Inserir " + symbol, () => InsertCode(symbol));
+        Command("←", "Cursor para a esquerda", EditorCommand.CursorLeft);
+        Command("→", "Cursor para a direita", EditorCommand.CursorRight);
+        Command("↑", "Cursor para cima", EditorCommand.CursorUp);
+        Command("↓", "Cursor para baixo", EditorCommand.CursorDown);
+        Command("⌕", "Localizar no arquivo", EditorCommand.Find);
+        bar.AddView(scroll, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
+        _extraKeys = bar;
+        RefreshUndoButtons();
+        return bar;
     }
 
-    private void InsertCode(string text)
+    private void RefreshUndoButtons()
     {
-        if (_editor is null) return;
-        int start = Math.Min(_editor.SelectionStart, _editor.SelectionEnd);
-        int end = Math.Max(_editor.SelectionStart, _editor.SelectionEnd);
-        if (start < 0) return;
-        _editor.Replace(start, end - start, text);
+        void Update(Button? button, bool enabled)
+        {
+            if (button is null) return;
+            button.Enabled = enabled;
+            button.Alpha = enabled ? 1f : 0.45f;
+        }
+
+        Update(_undoKey, _editor is { HasComposition: false, CanUndo: true } && _openFile is not null);
+        Update(_redoKey, _editor is { HasComposition: false, CanRedo: true } && _openFile is not null);
     }
 
-    private void MoveCaret(int delta)
+    private void InsertCode(string text) => EditLines((source, start, end) =>
     {
-        if (_editor is null) return;
-        var length = _editor.Text?.Length ?? 0;
-        var target = Math.Clamp(_editor.SelectionEnd + delta, 0, length);
-        _editor.SetSelection(target);
+        if (text == "}" && start == end && IndentationService.CloseBrace(source, start) is { } brace)
+            return new(brace.Start, brace.DeleteLength, brace.Insert, brace.CaretAfter, brace.CaretAfter);
+        return new(start, end - start, text, start + text.Length, start + text.Length);
+    });
+
+    private void MoveCaret(int horizontal, int vertical = 0)
+    {
+        if (_editor is not { HasComposition: false } editor) return;
+        if (vertical != 0) { editor.MoveCaretLine(vertical); return; }
+        var text = editor.Text ?? "";
+        int target = Math.Clamp(editor.SelectionEnd + horizontal, 0, text.Length);
+        if (target > 0 && target < text.Length && char.IsHighSurrogate(text[target - 1]) && char.IsLowSurrogate(text[target]))
+            target += horizontal;
+        editor.SetSelection(target);
+        editor.BringPointIntoView(target);
     }
 
-    /// <summary>While typing: show the code keys and hide the bottom navigation, giving the code the space.</summary>
     private void WatchKeyboard(View root)
     {
+        _keyboardRoot = root;
         root.ViewTreeObserver!.GlobalLayout += (_, _) =>
         {
-            var visible = new global::Android.Graphics.Rect();
-            root.GetWindowVisibleDisplayFrame(visible);
-            var screen = root.RootView!.Height;
-            bool keyboard = screen - visible.Bottom > screen * 0.18;
-            if (keyboard == _keyboardVisible) return;
-            _keyboardVisible = keyboard;
-            bool editing = keyboard && _editor?.HasFocus == true;
-            if (_extraKeys is not null) _extraKeys.Visibility = editing ? ViewStates.Visible : ViewStates.Gone;
-            if (_workbenchNav is not null) _workbenchNav.Visibility = keyboard ? ViewStates.Gone : ViewStates.Visible;
+            if (ReferenceEquals(root, _keyboardRoot)) RefreshKeyboard();
         };
+        RefreshKeyboard();
+    }
+
+    private void RefreshKeyboard()
+    {
+        var root = _keyboardRoot;
+        if (root is null || !root.IsAttachedToWindow) return;
+        bool keyboard;
+        if (OperatingSystem.IsAndroidVersionAtLeast(30))
+            keyboard = root.RootWindowInsets?.IsVisible(WindowInsets.Type.Ime()) == true;
+        else
+        {
+            using var visible = new global::Android.Graphics.Rect();
+            root.GetWindowVisibleDisplayFrame(visible);
+            keyboard = root.RootView?.Height - visible.Bottom > Dp(120);
+        }
+        bool editing = keyboard && _editor?.HasFocus == true && _openFile is not null;
+        if (_keyboardVisible && !keyboard) DismissEditorHelp();
+        _keyboardVisible = keyboard;
+        if (_extraKeys is not null) _extraKeys.Visibility = editing ? ViewStates.Visible : ViewStates.Gone;
+        if (_workbenchNav is not null) _workbenchNav.Visibility = keyboard ? ViewStates.Gone : ViewStates.Visible;
+        if (_documentTabsStrip is not null)
+            _documentTabsStrip.Visibility = IsLandscape && editing ? ViewStates.Gone : ViewStates.Visible;
+        RefreshCompletionVisibility();
     }
 
     private void FocusWorkbenchCode()
@@ -231,11 +280,14 @@ public sealed partial class MainActivity
             ("Buscar texto no projeto", ShowProjectSearch),
             ("Localizar e substituir", ShowFind),
             ("Ir para definição", GoToDefinition),
+            ("Buscar símbolo no projeto", ShowProjectSymbols),
+            ("Voltar à posição anterior", () => BackToEditorPosition()),
+            ("Inserir bloco", () => HandleCommand(EditorCommand.InsertBlock)),
             ("Estrutura do arquivo", ShowOutline),
-            ("Salvar arquivo", SaveCurrent),
+            ("Salvar arquivo", () => SaveCurrent()),
             ("Formatar documento", () => FormatDocument(silent: false)),
-            ("Desfazer", () => _editor?.Undo()),
-            ("Refazer", () => _editor?.Redo()),
+            ("Desfazer", () => HandleCommand(EditorCommand.Undo)),
+            ("Refazer", () => HandleCommand(EditorCommand.Redo)),
             ("Erros de compilação", () => OpenWorkbenchPanel(false)),
             ("Console do jogo", () => OpenWorkbenchPanel(true)),
             ("Studio · sprites, tilemaps, áudio", ShowStudioHub),

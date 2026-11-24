@@ -1,3 +1,7 @@
+## LUNET-522 · F4 — editor nativo e teclado de programação
+
+- [ ] Validar no fluxo oficial as teclas de código, edição atômica, assinatura e busca semântica e continuidade por aba. [Escopo, roteiro e limites da evidência](docs/guides/f4-editor-keyboard.md).
+
 ## F3 · IA global e co-work no projeto (LUNET-521, LUNET-AI-002, LUNET-513/514)
 
 - [ ] **Verificar entrega F3:** modelos por jogo, catálogo paginado, Estudo/Fazer, escopo de contexto, streaming e checkpoints recuperáveis. Evidências e compatibilidade no [guia da F3](docs/guides/f3-ai-workspace.md). A distribuição é validada pelo CI. Teste com fornecedor externo depende de credencial de teste.

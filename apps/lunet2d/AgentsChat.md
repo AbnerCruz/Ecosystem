@@ -855,3 +855,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Base oficial `28f09752` / `1000587`. Ramo `feat/lunet-f3-ai-workspace`. Escopo LUNET-521, LUNET-AI-002, LUNET-513/514.
 - Estudo primeiro, Fazer explícito, catálogo comum, preferência por GameId, contexto observável, texto parcial e etapas duráveis, revisão e desfazer. Mantida a fonte canônica do runtime e sua projeção sincronizada. O patch mantém as fronteiras de produto.
 - [Guia da F3](docs/guides/f3-ai-workspace.md), suite xUnit e workflow de release fornecem a evidência de código e distribuição.
+
+### Lunet F4 · editor nativo e teclado (24/11/2026)
+
+- Escopo do plano F4, vinculado a LUNET-522. Reuso de EditText, UndoHistory, CodeAnalyzer, EditorAssistant, layout existente e documentação offline.
+- Base 251573e1b38a5f437735d8ab419ae9597116d16e. Edições atômicas, assinatura semântica e navegação por símbolos e documentos na mesma superfície nativa.
+- Evidência de testes e roteiro em `docs/guides/f4-editor-keyboard.md`. Sem prova no aparelho físico. O próximo passo é verificar integração e pacote 1000589.

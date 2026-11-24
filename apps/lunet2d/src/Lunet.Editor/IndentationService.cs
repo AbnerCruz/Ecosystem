@@ -38,6 +38,20 @@ public static class IndentationService
     /// <summary>Insere um nível de indentação (tecla Tab).</summary>
     public static TextEdit Tab(int caret, int selectionLength = 0) => new(caret, selectionLength, Indent, caret + Indent.Length);
 
+    public static EditResult InsertPair(string text, int start, int end, string open, string close) =>
+        new(start, end - start, open + text[start..end] + close, start + open.Length, end + open.Length);
+
+    public static EditResult InsertBlock(string text, int start, int end)
+    {
+        var indent = LeadingWhitespace(text.AsSpan(LineStart(text, start), start - LineStart(text, start)));
+        var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+        var prefix = "{" + newline + indent + Indent;
+        var lines = text[start..end].Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var content = string.Join(newline, lines.Select((line, index) =>
+            index == 0 ? line : Indent + (line.StartsWith(indent, StringComparison.Ordinal) ? line : indent + line)));
+        return new(start, end - start, prefix + content + newline + indent + "}", start + prefix.Length, start + prefix.Length);
+    }
+
     private static int LineStart(string text, int caret)
     {
         var i = Math.Clamp(caret, 0, text.Length);

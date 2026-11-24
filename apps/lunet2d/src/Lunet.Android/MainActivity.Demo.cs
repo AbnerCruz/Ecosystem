@@ -45,6 +45,39 @@ public sealed partial class MainActivity
             ShowHome();
             return;
         }
+        if (screen == "editor-f4")
+        {
+            var project = _store.List().Contains("EditorF4") ? _store.Open("EditorF4") : _store.Create("EditorF4");
+            project.WriteText("Game.cs", """
+                class Sample
+                {
+                    void Run()
+                    {
+                        Helpers.Measure(quantidade: 2, texto: "olá");
+                    }
+                }
+                """);
+            project.WriteText("Helpers.cs", """
+                static class Helpers
+                {
+                    public static void Measure(string texto, int quantidade) { }
+                    public static void Measure(string texto) { }
+                }
+                """);
+            OpenProject("EditorF4");
+            OpenFile("Game.cs");
+            Post(() =>
+            {
+                if (_editor is not { } editor) return;
+                var source = editor.Text ?? "";
+                int caret = source.IndexOf("texto:", StringComparison.Ordinal) + "texto: ".Length;
+                editor.RequestFocus();
+                editor.SetSelection(caret);
+                var ime = GetSystemService(InputMethodService) as global::Android.Views.InputMethods.InputMethodManager;
+                ime?.ShowSoftInput(editor, global::Android.Views.InputMethods.ShowFlags.Implicit);
+            });
+            return;
+        }
         OpenProject("BosqueLumi");
         switch (screen)
         {

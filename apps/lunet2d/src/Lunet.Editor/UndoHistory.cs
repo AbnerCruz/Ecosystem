@@ -3,7 +3,7 @@ namespace Lunet.Editor;
 /// <summary>Histórico de desfazer/refazer com junção de digitação contínua.</summary>
 public sealed class UndoHistory
 {
-    private sealed record Entry(int Start, string Removed, string Inserted, int CaretBefore, long Time);
+    private sealed record Entry(int Start, string Removed, string Inserted, int CaretBefore, long Time, Selection? Before = null, Selection? After = null);
 
     private readonly List<Entry> _undo = [];
     private readonly List<Entry> _redo = [];
@@ -25,9 +25,9 @@ public sealed class UndoHistory
         if (_undo.Count > 0)
         {
             var last = _undo[^1];
-            var typing = removed.Length == 0 && last.Removed.Length == 0 && inserted.Length == 1 && inserted[0] != '\n'
+            var typing = last.Before is null && removed.Length == 0 && last.Removed.Length == 0 && inserted.Length == 1 && inserted[0] != '\n'
                 && start == last.Start + last.Inserted.Length && timeMs - last.Time <= CoalesceMilliseconds && !last.Inserted.Contains('\n');
-            var backspace = inserted.Length == 0 && last.Inserted.Length == 0 && removed.Length == 1
+            var backspace = last.Before is null && inserted.Length == 0 && last.Inserted.Length == 0 && removed.Length == 1
                 && start + 1 == last.Start && timeMs - last.Time <= CoalesceMilliseconds;
             if (typing)
             {
@@ -44,23 +44,36 @@ public sealed class UndoHistory
         if (_undo.Count > _capacity) _undo.RemoveAt(0);
     }
 
+    public void RecordAtomic(EditResult edit, string removed, int selectionStart, int selectionEnd)
+    {
+        if (removed == edit.Insert) return;
+        _redo.Clear();
+        _undo.Add(new Entry(edit.Start, removed, edit.Insert, selectionStart, 0,
+            new Selection(selectionStart, selectionEnd), new Selection(edit.SelectionStart, edit.SelectionEnd)));
+        if (_undo.Count > _capacity) _undo.RemoveAt(0);
+    }
+
+    public TextEdit? Undo() => UndoWithSelection()?.Edit;
+    public TextEdit? Redo() => RedoWithSelection()?.Edit;
+
     /// <summary>Edição que desfaz o último passo, ou nulo.</summary>
-    public TextEdit? Undo()
+    public (TextEdit Edit, Selection Selection)? UndoWithSelection()
     {
         if (_undo.Count == 0) return null;
         var entry = _undo[^1];
         _undo.RemoveAt(_undo.Count - 1);
         _redo.Add(entry);
-        return new TextEdit(entry.Start, entry.Inserted.Length, entry.Removed, entry.CaretBefore);
+        return (new(entry.Start, entry.Inserted.Length, entry.Removed, entry.CaretBefore), entry.Before ?? new Selection(entry.CaretBefore, entry.CaretBefore));
     }
 
-    public TextEdit? Redo()
+    public (TextEdit Edit, Selection Selection)? RedoWithSelection()
     {
         if (_redo.Count == 0) return null;
         var entry = _redo[^1];
         _redo.RemoveAt(_redo.Count - 1);
         _undo.Add(entry);
-        return new TextEdit(entry.Start, entry.Removed.Length, entry.Inserted, entry.Start + entry.Inserted.Length);
+        int caret = entry.Start + entry.Inserted.Length;
+        return (new(entry.Start, entry.Removed.Length, entry.Inserted, entry.After?.End ?? caret), entry.After ?? new Selection(caret, caret));
     }
 
     /// <summary>Troca o último passo (usado quando uma regra do editor reescreve o que acabou de ser digitado).</summary>

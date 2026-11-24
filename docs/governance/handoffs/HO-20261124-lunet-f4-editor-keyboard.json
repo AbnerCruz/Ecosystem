@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-f4-editor-keyboard",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T11:08:58.568Z",
+  "agent": {
+    "id": "chatgpt-gpt6-lunet-f4",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-522",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f4-editor-keyboard",
+  "base_commit": "251573e1b38a5f437735d8ab419ae9597116d16e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/guides/f4-editor-keyboard.md",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/EditorAssistant.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.EditorDocuments.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.EditorHelp.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorDocuments.cs",
+    "apps/lunet2d/src/Lunet.Editor/CodeAnalyzer.Navigation.cs",
+    "apps/lunet2d/src/Lunet.Editor/CodeAnalyzer.cs",
+    "apps/lunet2d/src/Lunet.Editor/IndentationService.cs",
+    "apps/lunet2d/src/Lunet.Editor/Shortcuts.cs",
+    "apps/lunet2d/src/Lunet.Editor/UndoHistory.cs",
+    "apps/lunet2d/tests/Lunet.Tests/EditorF4Tests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "docs/governance/handoffs/HO-20261124-lunet-f4-editor-keyboard.json"
+  ],
+  "work_completed": [
+    "Reused native Android IME, command routing and editor history for the programming accessory.",
+    "Used the existing Roslyn compilation for signatures, project symbols and source navigation.",
+    "Preserved editor positions and explicit extra tabs by GameId and history across file swaps in a session."
+  ],
+  "verification": [
+    {
+      "check": "Editor F4 contract tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/EditorF4Tests.cs"
+    },
+    {
+      "check": "Android 13 keyboard, signature and Back",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "apps/lunet2d/tools/ci-ui-screens.sh"
+    },
+    {
+      "check": "Governed combined checks and 1000589 Android package",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "No physical-device IME composition, TalkBack or latency claim. UndoHistory is in-memory and is invalidated after an external write."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirm combined CI and official APK from the integrated commit."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "One editor command path and one undo history per loaded document."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulator evidence documented separately from physical-device testing."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Session file keyed by the stable validated GameId."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "native-code-editor",
+      "status": "product-specific",
+      "rationale": "Reuses the Lunet-native editor and compiler types without a platform extraction."
+    }
+  ]
+}

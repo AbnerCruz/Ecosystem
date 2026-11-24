@@ -47,7 +47,15 @@ public sealed partial class MainActivity
     private View BuildEditorHost()
     {
         var editor = new CodeEditText(this);
-        editor.Settled += OnEditorSettled;
+        editor.Settled += (text, version, caret) => OnEditorSettled(editor, text, version, caret);
+        editor.EditorStateChanged += () => OnEditorStateChanged(editor);
+        editor.FocusChange += (_, _) =>
+        {
+            RefreshKeyboard();
+            if (!editor.HasFocus) DismissEditorHelp();
+            else OnEditorStateChanged(editor);
+        };
+        editor.DismissCodeHelp = DismissEditorHelp;
         editor.CommandRequested += HandleCommand;
         editor.CustomSelectionActionModeCallback = new AiSelectionCallback(this);
         _editor = editor;
@@ -55,6 +63,10 @@ public sealed partial class MainActivity
         var frame = new FrameLayout(this);
         frame.AddView(editor, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
         frame.AddView(_minimap, new FrameLayout.LayoutParams(Dp(44), ViewGroup.LayoutParams.MatchParent, GravityFlags.Right));
+        _documentEmpty = LunetUi.Button(this, "Abrir arquivo", ToggleExplorer, ButtonStyle.Secondary);
+        _documentEmpty.Visibility = ViewStates.Gone;
+        frame.AddView(_documentEmpty, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent,
+            ViewGroup.LayoutParams.WrapContent, GravityFlags.Center));
         ApplyEditorSettings();
         return frame;
     }
@@ -142,6 +154,8 @@ public sealed partial class MainActivity
     [
         ("Estrutura do arquivo", () => HandleCommand(EditorCommand.Outline)),
         ("Ir para definição", () => HandleCommand(EditorCommand.GoToDefinition)),
+        ("Buscar símbolo no projeto", ShowProjectSymbols),
+        ("Voltar à posição anterior", () => BackToEditorPosition()),
         ("Referências do símbolo", ShowReferences),
         ("Buscar no projeto", ShowProjectSearch),
         ("Localizar e substituir", ShowFind),
@@ -197,7 +211,7 @@ public sealed partial class MainActivity
     private void ShowGit()
     {
         if (_project is null) return;
-        GitPanel.Show(this, _project.Directory, _gitAccounts, SaveCurrent, ReloadProjectFromDisk);
+        GitPanel.Show(this, _project.Directory, _gitAccounts, () => SaveCurrent(), ReloadProjectFromDisk);
     }
 
     /// <summary>Baixa um projeto Lunet de um repositório Git (por exemplo, do GitHub) para a lista de projetos.</summary>
@@ -264,6 +278,8 @@ public sealed partial class MainActivity
     private void ReloadProjectFromDisk()
     {
         if (_project is null) return;
+        CaptureDocument();
+        _documents.Reconcile(_project.ListFiles().Where(IsTextFile));
         _session.Unload();
         var open = _openFile;
         _openFile = null;
@@ -297,8 +313,7 @@ public sealed partial class MainActivity
         switch (command)
         {
             case EditorCommand.Save:
-                SaveCurrent();
-                Toast.MakeText(this, "Salvo", ToastLength.Short)?.Show();
+                if (SaveCurrent()) Toast.MakeText(this, "Salvo", ToastLength.Short)?.Show();
                 break;
             case EditorCommand.Run: Run(); break;
             case EditorCommand.Find: ShowFind(); break;
@@ -313,6 +328,20 @@ public sealed partial class MainActivity
             case EditorCommand.ToggleComment: EditLines((t, a, b) => LineOperations.ToggleComment(t, a, b)); break;
             case EditorCommand.Indent: EditLines((t, a, b) => LineOperations.Indent(t, a, b)); break;
             case EditorCommand.Outdent: EditLines((t, a, b) => LineOperations.Outdent(t, a, b)); break;
+            case EditorCommand.InsertTab: EditLines((t, a, b) =>
+                a == b ? new(a, 0, IndentationService.Indent, a + IndentationService.Indent.Length, a + IndentationService.Indent.Length)
+                       : LineOperations.Indent(t, a, b)); break;
+            case EditorCommand.InsertBlock: EditLines((t, a, b) => IndentationService.InsertBlock(t, a, b)); break;
+            case EditorCommand.PairParen: EditLines((t, a, b) => IndentationService.InsertPair(t, a, b, "(", ")")); break;
+            case EditorCommand.PairBracket: EditLines((t, a, b) => IndentationService.InsertPair(t, a, b, "[", "]")); break;
+            case EditorCommand.PairDoubleQuote: EditLines((t, a, b) => IndentationService.InsertPair(t, a, b, "\"", "\"")); break;
+            case EditorCommand.PairSingleQuote: EditLines((t, a, b) => IndentationService.InsertPair(t, a, b, "'", "'")); break;
+            case EditorCommand.CursorLeft: MoveCaret(-1); break;
+            case EditorCommand.CursorRight: MoveCaret(1); break;
+            case EditorCommand.CursorUp: MoveCaret(0, -1); break;
+            case EditorCommand.CursorDown: MoveCaret(0, 1); break;
+            case EditorCommand.ProjectSymbols: ShowProjectSymbols(); break;
+            case EditorCommand.BackToPosition: BackToEditorPosition(); break;
             case EditorCommand.GoToDefinition: GoToDefinition(); break;
             case EditorCommand.Documentation: ExplainSymbol(); break;
             case EditorCommand.Rename: AskRename(); break;
@@ -330,7 +359,7 @@ public sealed partial class MainActivity
 
     private void EditLines(Func<string, int, int, EditResult?> operation)
     {
-        if (_editor is null) return;
+        if (_editor is not { HasComposition: false } || _openFile is null) return;
         var start = Math.Min(_editor.SelectionStart, _editor.SelectionEnd);
         var end = Math.Max(_editor.SelectionStart, _editor.SelectionEnd);
         if (operation(_editor.Text ?? "", start, end) is { } edit) _editor.ApplyEdit(edit);

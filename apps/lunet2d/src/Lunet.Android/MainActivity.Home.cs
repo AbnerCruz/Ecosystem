@@ -122,6 +122,12 @@ public sealed partial class MainActivity
 
     private void ReturnToLauncherOrigin()
     {
+        if (_project is not null)
+        {
+            if (!SaveCurrent()) return;
+            CaptureDocument();
+            PersistDocuments();
+        }
         if (_restoreLauncherChild is { } restore)
         {
             restore();
@@ -206,6 +212,11 @@ public sealed partial class MainActivity
         _restoreLauncherChild = _backFromLauncherChild = null;
         _globalChatVisible = false;
         SaveCurrent();
+        CaptureDocument();
+        PersistDocuments();
+        _documentsFile = null;
+        InvalidateEditorAnalysis();
+        _keyboardRoot = null;
         DisposePreview();
         _session.Unload();
         _project = null;

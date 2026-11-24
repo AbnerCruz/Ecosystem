@@ -28,7 +28,7 @@ shoot() {
     adb shell am start -W -n "$package/$activity" --es lunet.demo "$demo" >/dev/null
     sleep "$wait"
     case "$name" in
-      01a-home|01b-home-resume|01c-home-missing|01d-first-use|01e-appearance|03c-ai-compact|05a-studios-global|05b-sprite-global|05c-music-global)
+      01a-home|01b-home-resume|01c-home-missing|01d-first-use|01e-appearance|03c-ai-compact|05a-studios-global|05b-sprite-global|05c-music-global|14-f4-editor)
         # A PNG of the Android home screen is not evidence of a working Studio.
         pid="$(adb shell pidof "$package" | tr -d '\r' || true)"
         test -n "$pid" || { echo "Lunet application exited before screenshot: $name"; exit 1; }
@@ -69,6 +69,20 @@ shoot 10a-learn learn 12
 shoot 11-files files 12
 shoot 12-run run 25
 shoot 13-image image 12
+
+# F4: run the native editor with an actual IME and a Roslyn-resolved call.
+adb shell settings put secure show_ime_with_hard_keyboard 1
+shoot 14-f4-editor editor-f4 13
+adb shell uiautomator dump /sdcard/lunet-f4.xml >/dev/null
+adb pull /sdcard/lunet-f4.xml "$out/f4-editor.xml" >/dev/null
+grep -q "Desfazer" "$out/f4-editor.xml"
+grep -q "Refazer" "$out/f4-editor.xml"
+grep -q "Parâmetro ativo: texto" "$out/f4-editor.xml"
+adb shell input keyevent KEYCODE_BACK
+sleep 2
+adb shell uiautomator dump /sdcard/lunet-f4.xml >/dev/null
+adb pull /sdcard/lunet-f4.xml "$out/f4-closed-ime.xml" >/dev/null
+grep -q "Aba Game.cs" "$out/f4-closed-ime.xml"
 
 # These screens must exist and contain PNG bytes from the Android emulator.
 for screen in 01a-home 01b-home-resume 01c-home-missing 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do

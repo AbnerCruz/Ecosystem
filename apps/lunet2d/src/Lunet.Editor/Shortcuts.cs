@@ -5,7 +5,8 @@ public enum EditorCommand
 {
     None, Save, Run, Find, FindInProject, Undo, Redo, Format, DuplicateLine, DeleteLine, MoveLineUp, MoveLineDown,
     ToggleComment, Indent, Outdent, GoToDefinition, Documentation, Rename, QuickFix, Outline, SelectNextOccurrence,
-    SelectAllOccurrences, ToggleFold, ToggleExplorer, ShowSymbolInfo,
+    SelectAllOccurrences, ToggleFold, ToggleExplorer, ShowSymbolInfo, InsertTab, InsertBlock, PairParen, PairBracket, PairDoubleQuote, PairSingleQuote,
+    CursorLeft, CursorRight, CursorUp, CursorDown, ProjectSymbols, BackToPosition,
 }
 
 /// <summary>Mapa de atalhos (estilo VS Code). As teclas são nomes independentes de plataforma: "S", "F5", "Enter", "Slash"…</summary>
@@ -13,6 +14,9 @@ public static class Shortcuts
 {
     private static readonly Dictionary<(string Key, bool Ctrl, bool Shift, bool Alt), EditorCommand> Map = new()
     {
+        [("T", true, false, false)] = EditorCommand.ProjectSymbols,
+        [("Left", false, false, true)] = EditorCommand.BackToPosition,
+        [("B", true, true, false)] = EditorCommand.InsertBlock,
         [("S", true, false, false)] = EditorCommand.Save,
         [("F5", false, false, false)] = EditorCommand.Run,
         [("Enter", true, false, false)] = EditorCommand.Run,
