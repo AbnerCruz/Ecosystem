@@ -19,6 +19,7 @@ public sealed partial class MainActivity
     private TextView? _aiQuickContext;
     private EditText? _aiQuickInput;
     private Button? _aiQuickAction;
+    private Button? _aiQuickMode;
     private long _aiLastConversationRenderMs;
 
     private void BuildAiCompact(FrameLayout host)
@@ -28,6 +29,7 @@ public sealed partial class MainActivity
         _aiQuickContext = null;
         _aiQuickInput = null;
         _aiQuickAction = null;
+        _aiQuickMode = null;
 
         var dock = LunetUi.Row(this, 6);
         dock.SetPadding(Dp(10), Dp(4), Dp(8), Dp(4));
@@ -53,9 +55,17 @@ public sealed partial class MainActivity
     private void ShowQuickAssistant()
     {
         if (_workspaceFrame is null || _project is null) return;
+        if (LunetAiRuns.Current is { IsRunning: true } work && work.ProjectId == _project.Manifest.GameId &&
+            !work.BelongsTo(_project))
+        {
+            Toast.MakeText(this, "A IA ainda trabalha em outra cópia deste jogo.", ToastLength.Long)?.Show();
+            return;
+        }
         EnsureAiSession();
         if (_aiQuickPopup is not null && _aiQuickPopup.Parent == _workspaceFrame)
         {
+            if (_aiQuickInput is { } existing && _aiInput is { } composer && existing.Text != composer.Text)
+                existing.Text = composer.Text;
             _aiQuickPopup.Visibility = ViewStates.Visible;
             _aiQuickPopup.BringToFront();
             UpdateAiCompact();
@@ -86,7 +96,8 @@ public sealed partial class MainActivity
         popup.AddView(_aiQuickStatus);
         var input = new EditText(this)
         {
-            Hint = "Peça para criar, corrigir ou analisar…",
+            Text = _aiInput?.Text ?? "",
+            Hint = "Escreva um pedido…",
             TextSize = LunetUi.TextBody,
         };
         input.SetTextColor(LunetUi.Text);
@@ -96,8 +107,25 @@ public sealed partial class MainActivity
         input.InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagCapSentences;
         popup.AddView(input);
         _aiQuickInput = input;
+        input.TextChanged += (_, _) =>
+        {
+            if (_aiInput is { } composer && composer.Text != input.Text)
+                composer.Text = input.Text;
+        };
 
         var actions = LunetUi.Row(this, 8);
+        _aiQuickMode = LunetUi.Button(this, "Estudo", () =>
+        {
+            var modes = ProjectAi.Settings.AllowWrites && !_aiExcludedContext.Contains("project")
+                ? new[] { "Estudo", "Fazer" } : ["Estudo"];
+            ShowActionMenu("Modo do próximo pedido", modes.Select((label, index) => (label, (Action)(() =>
+            {
+                _aiMode = index == 1 ? LunetAiMode.Do : LunetAiMode.Teach;
+                PaintAiModes();
+                UpdateAiCompact();
+            }))).ToArray());
+        }, ButtonStyle.Quiet);
+        actions.AddView(_aiQuickMode, new LinearLayout.LayoutParams(0, Dp(46), 1f));
         _aiQuickAction = LunetUi.Button(this, "Enviar", () =>
         {
             var ongoing = LunetAiRuns.Current;
@@ -110,14 +138,9 @@ public sealed partial class MainActivity
             if (request.Length == 0) return;
             if (_aiInput is null) return;
             _aiInput.Text = request;
-            if (!Ai.IsConfigured)
+            if (!ProjectAi.IsConfigured)
             {
-                ShowAiSettings(() =>
-                {
-                    SendAi();
-                    input.Text = "";
-                    CloseQuickAssistant();
-                });
+                Toast.MakeText(this, "Configure a IA em Início → Lunet IA → ⚙.", ToastLength.Long)?.Show();
                 return;
             }
             SendAi();
@@ -159,12 +182,14 @@ public sealed partial class MainActivity
         var work = LunetAiRuns.Current;
         bool same = work is not null && work.BelongsTo(_project);
         string headline, details;
+        string partial = "";
         if (same && work!.IsRunning)
         {
             var step = work.Steps.LastOrDefault(x => x.Status == LunetAiStepStatus.Running)
                 ?? work.Steps.LastOrDefault();
             headline = "✦ Trabalhando";
             details = step?.Label ?? "Preparando execução…";
+            partial = work.PartialText;
         }
         else if (same && work!.Error is { } error)
         {
@@ -185,7 +210,7 @@ public sealed partial class MainActivity
             ? headline + " · " + details : headline;
         if (_aiQuickContext is not null)
         {
-            var mode = _aiMode switch
+            var mode = (same && work!.IsRunning ? work.Request.Mode : _aiMode) switch
             {
                 LunetAiMode.Teach => "Estudo",
                 LunetAiMode.Do => "Fazer",
@@ -194,8 +219,19 @@ public sealed partial class MainActivity
             var file = _openFile is { Length: > 0 } ? System.IO.Path.GetFileName(_openFile) : "Projeto";
             _aiQuickContext.Text = "Contexto: " + file + " · Modo: " + mode;
         }
+        if (_aiQuickMode is { } selector)
+        {
+            LunetUi.SetLabel(selector, _aiMode == LunetAiMode.Do ? "Fazer" : "Estudo");
+            selector.Enabled = !same || !work!.IsRunning;
+        }
         if (_aiQuickStatus is not null)
-            _aiQuickStatus.Text = details.Length > 420 ? details[..420] + "…" : details;
+        {
+            var visible = partial.Length > 420 ? "…" + partial[^420..] : partial;
+            if (visible.Length == 0) visible = details.Length > 420 ? details[..420] + "…" : details;
+            else if (same && work!.Steps.Any(step => step.Status == LunetAiStepStatus.Running))
+                visible = details + "\n" + visible;
+            if (_aiQuickStatus.Text != visible) _aiQuickStatus.Text = visible;
+        }
         if (_aiQuickAction is not null) _aiQuickAction.Text =
             same && work!.IsRunning ? "Parar" : "Enviar";
     }
