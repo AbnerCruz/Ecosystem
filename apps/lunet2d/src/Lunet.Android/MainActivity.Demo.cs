@@ -30,6 +30,19 @@ public sealed partial class MainActivity
         foreach (var name in new[] { "BosqueLumi", "NaveEstelar" })
             if (!_store.List().Contains(name)) _store.Create(name, ProjectTemplate.CoinCatcher);
         if (screen == "projects") { ShowProjects(); return; }
+        if (screen == "home") { ShowHome(); return; }
+        if (screen == "home-resume")
+        {
+            OpenProject("BosqueLumi");
+            ShowHome();
+            return;
+        }
+        if (screen == "home-missing")
+        {
+            _launcherPreferences?.MarkOpenedProject("Projeto ausente", Guid.NewGuid().ToString("D"));
+            ShowHome();
+            return;
+        }
         OpenProject("BosqueLumi");
         switch (screen)
         {
