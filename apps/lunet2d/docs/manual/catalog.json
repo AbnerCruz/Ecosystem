@@ -1,6 +1,13 @@
 {
   "entries": [
     {
+      "id": "ordenacao-importacoes-contexto",
+      "title": "Ordene sprites e organize importações e dependências",
+      "category": "concepts",
+      "terms": ["BeginSorted", "SetOrder", "CancelSorted", "SpriteSortDirection", "Y-sort", "Imports.cs", "global using", "Context"],
+      "since": "0.0.1"
+    },
+    {
       "id": "mapas-e-studios",
       "title": "Organize ideias e reutilize criações",
       "category": "tasks",

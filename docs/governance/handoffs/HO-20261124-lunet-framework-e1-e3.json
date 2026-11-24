@@ -1,0 +1,149 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-framework-e1-e3",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T18:42:23.339Z",
+  "agent": {
+    "id": "chatgpt-lunet-framework-evolution",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-302.1",
+  "component": "lunet2d",
+  "state": "working",
+  "branch": "feat/lunet-framework-e1-e3",
+  "base_commit": "0a7d1b0871d825c3d8c306882eb604337996121a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1037",
+  "files_changed": [
+    ".github/workflows/lunet2d-release.yml",
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj",
+    "apps/lunet2d/samples/framework-evolution-context/Game.cs",
+    "apps/lunet2d/samples/framework-evolution-context/Player.cs",
+    "apps/lunet2d/samples/framework-evolution-context/Project/Imports.cs",
+    "apps/lunet2d/samples/framework-evolution-context/lunet.json",
+    "apps/lunet2d/samples/framework-evolution-explicit/Game.cs",
+    "apps/lunet2d/samples/framework-evolution-explicit/Player.cs",
+    "apps/lunet2d/samples/framework-evolution-explicit/lunet.json",
+    "apps/lunet2d/src/Lunet.Android/AiRunCoordinator.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidBindingTrustPolicy.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidHaptics.cs",
+    "apps/lunet2d/src/Lunet.Android/AudioPreviewView.cs",
+    "apps/lunet2d/src/Lunet.Android/DataStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/EcosystemHostClient.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/MinimapView.cs",
+    "apps/lunet2d/src/Lunet.Android/FramePreviewView.cs",
+    "apps/lunet2d/src/Lunet.Android/GameplayActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/GlesBackend.cs",
+    "apps/lunet2d/src/Lunet.Android/IconDrawable.cs",
+    "apps/lunet2d/src/Lunet.Android/InspectorPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/IsolatedPreview.cs",
+    "apps/lunet2d/src/Lunet.Android/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MusicStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/ParticleStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/SplitterView.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/TileStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/WaveAudioStudioView.cs",
+    "apps/lunet2d/src/Lunet.Core/GitHubGameBuildWorkflow.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectImports.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectManifest.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Framework/Context.cs",
+    "apps/lunet2d/src/Lunet.Framework/GameHost.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/GraphicsDevice.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/IContextGraphicsAuthority.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/RenderTarget2D.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/Shader.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteSortDirection.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/Texture2D.cs",
+    "apps/lunet2d/src/Lunet.Framework/Utilities/Dispatcher.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AdvancedTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ContextTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/FrameworkEvolutionSampleTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectImportsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectJourneyTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SortedBatchTests.cs",
+    "apps/lunet2d/docs/manual/ordenacao-importacoes-contexto.md",
+    "apps/lunet2d/docs/guides/graficos.md",
+    "apps/lunet2d/docs/guides/primeiros-passos.md",
+    "apps/lunet2d/docs/manual/catalog.json",
+    "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
+    "apps/lunet2d/CHANGELOG.md",
+    ".github/workflows/lunet2d-ci.yml",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261124-lunet-framework-e1-e3.json"
+  ],
+  "work_completed": [
+    "E1: BeginSorted, SetOrder, Draw explícito, CancelSorted, fila e guarda; testes escritos.",
+    "E2: Project/Imports.cs físico, presets e metadado SDK, Explorer; testes escritos.",
+    "E3: Context thread-local, autorização de fase/thread, escopos de host e Dispatcher; testes escritos.",
+    "Exemplos explícito/contextual e guia offline, registro de validação no plano."
+  ],
+  "verification": [
+    {
+      "check": "E1/E2/E3 compilação, Debug/Release, integração",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1037"
+    },
+    {
+      "check": "APK e screenshots de emulador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "Sem SDK .NET ou adb local; nenhuma execução de testes nesta sessão. Sem teste físico ou benchmark medido.",
+    "Preset Amplo não confirmado no Android; Essencial provisório. SDK externo exige parâmetro correspondente ao manifesto.",
+    "Graphics/Content não autorizados contextualmente em Pause/Resume/Unload; sem propagação async. Testes de todos os consumidores, afinidade EGL, screenshots, geração mecânica API e matriz completa de rotas ainda incompletos."
+  ],
+  "blockers": [
+    "F8 ainda aberta durante preparação da branch candidata; validar estado integrado antes de promover PR."
+  ],
+  "next_actions": [
+    "Reconciliar sobre main pós-F8, executar baseline e suíte, corrigir regressões, fechar evidências do plano e liberar draft ao integrador. Confirmar tag, SHA e APK publicados."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Imports.cs é fonte única de imports; metadado controla só política SDK."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR, base, código e lacunas registrados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegação de execução no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Candidato não integrado nem publicado, critérios integrais não marcados."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mudanças locais ao framework, sem novo container de dependências ou render graph."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "framework-evolution",
+      "status": "product-specific",
+      "rationale": "API e ergonomia de jogos Lunet; não extrair abstrações sem consumidor."
+    }
+  ]
+}

@@ -14,6 +14,18 @@ Base consultada: `9b26d2988b54ff6f8d8ded03f054c28a6bcddb00`. O pré-requisito p�
 - [ ] Registrar baseline de testes Debug/Release, diagnóstico e alocação em main antes de modificar. Estudos relataram 1179/1179 Debug e 132/133 no recorte gráfico Release, com falha preexistente de alocação toque/gestos; reproduzir, distinguir de regressão e não maquiar números.
 - [ ] Marcar checkbox somente com evidência (teste/arquivo/commit; execução não realizada fica pendente ou bloqueada com motivo). Atualizar este documento em cada PR. Usar CI e testes específicos por fase; suíte completa no gate final. Não criar oito novas fases nem novos sistemas para problemas fora deste escopo.
 
+## Registro de execução candidata — PR #1037
+
+Base da branch de trabalho: F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996121a`, contendo F7 e a correção documental da main `720586aba966930c8edf8753009559c7d7306a97`. A integração F7/F8 ainda não estava confirmada quando a implementação candidata foi preparada; não autoriza merge antecipado.
+
+- [x] Código candidato E1: `2200cb64`, refinado em `1544136d`: fila de quads completos e descritores de ordem, desempate ordinal, guardas, duas sobrecargas com chave, cancelamento e limpeza.
+- [x] Código candidato E2: `46ae6c56`: fonte real, Explorer, presets, metadado SDK e workflow cloud. Essencial é provisório; Amplo continua experimental até a matriz de referências Android.
+- [x] Código candidato E3: `44407feb`, compatibilidade de tipos Android `66ef4e84` e `bafee571`: fachada ThreadStatic, geração da sessão, escopos síncronos e restrição gráfica de fases.
+- [x] Testes escritos: SortedBatchTests, ContextTests, ProjectImportsTests, FrameworkEvolutionSampleTests, atualização de jornadas/templates; exemplos em samples/framework-evolution-*.
+- [ ] Baseline real Debug/Release pós-F8, CI da revisão E1–E3, testes completos dos consumidores, desempenho, paridade de SDK e Android, screenshots de imports, referência gerada e release integrada.
+
+Os checkboxes acima distinguem código candidato de validação. Os checkboxes normativos E1–E3 e do gate final abaixo permanecem abertos onde o critério integral ainda não foi comprovado. O SDK .NET, adb e acesso Git direto não estão disponíveis no ambiente de trabalho. Não foram executados testes localmente. A restrição a Graphics/Content em Pause/Resume/UnloadContent é deliberadamente conservadora; nenhum teste em EGL físico foi feito. A referência pública foi descrita no guia; a regeneração mecânica da referência depende do SDK.
+
 ## E1 — Ordenação nativa de renderização (primeira prioridade)
 
 ### Contrato decidido

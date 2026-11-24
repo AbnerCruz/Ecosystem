@@ -49,3 +49,5 @@ jobs:
         run: cd ../../platform/text-inspection && dotnet test --project tests/Ecosystem.TextInspection.Tests/Ecosystem.TextInspection.Tests.csproj
       - name: Test (framework, compiler, runtime, projects, architecture)
         run: dotnet test --project tests/Lunet.Tests
+      - name: Test Release (framework, compiler, runtime, projects, architecture)
+        run: dotnet test --project tests/Lunet.Tests -c Release
