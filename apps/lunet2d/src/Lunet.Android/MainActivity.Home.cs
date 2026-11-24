@@ -29,6 +29,7 @@ public sealed partial class MainActivity
 
     private void RememberLauncherPosition()
     {
+        if (_launcherScrollKey == "explore" && _launcherScroll is not null) SaveInspirationView();
         if (_launcherScroll is { IsAttachedToWindow: true } scroll)
             _launcherPositions[_launcherScrollKey] = scroll.ScrollY;
         _launcherScroll = null;
