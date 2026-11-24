@@ -45,7 +45,9 @@ public sealed partial class CodeAnalyzer
     /// <summary>Define o conteúdo de um arquivo (novo ou alterado). Chame a cada pausa na digitação.</summary>
     public void SetFile(string path, string text)
     {
-        var tree = CSharpSyntaxTree.ParseText(text, new CSharpParseOptions(LanguageVersion.Latest), path, System.Text.Encoding.UTF8);
+        if (_trees.TryGetValue(path, out var existing) && existing.GetText().ToString() == text) return;
+        var tree = existing?.WithChangedText(Microsoft.CodeAnalysis.Text.SourceText.From(text, System.Text.Encoding.UTF8))
+            ?? CSharpSyntaxTree.ParseText(text, new CSharpParseOptions(LanguageVersion.Latest), path, System.Text.Encoding.UTF8);
         if (_trees.TryGetValue(path, out var old)) _compilation = _compilation.ReplaceSyntaxTree(old, tree);
         else _compilation = _compilation.AddSyntaxTrees(tree);
         _trees[path] = tree;

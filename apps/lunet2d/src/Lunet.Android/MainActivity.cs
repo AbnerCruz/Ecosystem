@@ -376,8 +376,9 @@ public sealed partial class MainActivity : Activity
         _assistant = new EditorAssistant();
         _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(f => (f.Path, f.Text)).ToList());
         _journal = new AutosaveJournal(_project);
+        LoadEditorDocuments();
         ShowWorkspace();
-        OpenFile(_project.Manifest.EntryPoint);
+        if (!OpenFile(_documents.Current ?? _project.Manifest.EntryPoint)) ShowEditorWithoutFile();
         OfferRecovery();
     }
 
@@ -435,6 +436,7 @@ public sealed partial class MainActivity : Activity
     private void ShowWorkspace()
     {
         DisposePreview();
+        InvalidateEditorAnalysis();
         _session.Unload(); // novo editor: nenhum buffer antigo deve ser gravado antes da carga
         var project = _project!;
         var root = Vertical();
@@ -466,6 +468,7 @@ public sealed partial class MainActivity : Activity
         bar.AddView(LunetUi.Icon(this, "⋯", "Todas as ações", ShowCommandPalette), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
         root.AddView(bar);
         root.AddView(LunetUi.Divider(this));
+        root.AddView(BuildDocumentTabs());
 
         _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
@@ -507,7 +510,7 @@ public sealed partial class MainActivity : Activity
         var tabsScroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false, FillViewport = true };
         tabsScroll.AddView(tabs);
         _showConsole = _layoutStore.Current.PanelTab == "console";
-        root.AddView(BuildBody(BuildEditorHost(), _chipScroll, tabsScroll, panelScroll), Fill(1));
+        root.AddView(BuildBody(BuildEditorHost(), BuildEditorHelp(), tabsScroll, panelScroll), Fill(1));
         root.AddView(BuildExtraKeys());
         root.AddView(BuildWorkbenchNavigation());
 
@@ -640,19 +643,19 @@ public sealed partial class MainActivity : Activity
                 Toast.MakeText(this, "Sem prévia para este arquivo. Use-o pelo código (ex.: Content.LoadTexture).", ToastLength.Short)?.Show();
             return;
         }
-        OpenFile(entry.Path);
-        ToggleExplorer();
+        if (OpenFile(entry.Path)) ToggleExplorer();
     }
 
     private void ShowEntryMenu(ExplorerEntry entry)
     {
         var items = entry.IsDirectory
             ? new[] { "Novo arquivo aqui", "Nova pasta aqui", "Renomear", "Excluir" }
-            : new[] { "Renomear", "Excluir" };
+            : IsTextFile(entry.Path) ? new[] { "Abrir em nova aba", "Renomear", "Excluir" } : new[] { "Renomear", "Excluir" };
         new AlertDialog.Builder(this)!.SetTitle(entry.Path)!.SetItems(items, (_, args) =>
         {
             switch (items[args.Which])
             {
+                case "Abrir em nova aba": if (OpenFile(entry.Path, additional: true)) ToggleExplorer(); break;
                 case "Novo arquivo aqui": AskForNewEntry(entry.Path + "/", isDirectory: false); break;
                 case "Nova pasta aqui": AskForNewEntry(entry.Path + "/", isDirectory: true); break;
                 case "Renomear": AskToRename(entry); break;
@@ -770,43 +773,61 @@ public sealed partial class MainActivity : Activity
         _journal?.Discard(open);
         _session.Unload(); // o arquivo antigo não existe mais: não pode ser regravado
         _openFile = null;
+        _documents.Reconcile(_project.ListFiles().Where(IsTextFile));
         if (to is not null) OpenFile(to + open[from.Length..]);
-        else OpenFile(_project.Manifest.EntryPoint);
+        else if (!OpenFile(_documents.Current ?? _project.Manifest.EntryPoint)) ShowEditorWithoutFile();
     }
 
-    private void OpenFile(string path)
+    private bool OpenFile(string path, bool additional = false)
     {
-        if (_editor is null) return;
-        SaveCurrent();
+        if (_editor is not { } editor || _project is not { } project) return false;
+        if (_openFile == path && _session.Path == path) return true;
+        if (!SaveCurrent()) return false;
         try
         {
+            var text = project.ReadText(path);
+            CaptureDocument();
+            InvalidateEditorAnalysis();
+            _documents.Open(path, additional);
             _openFile = path;
-            HideChips();
-            var text = _project!.ReadText(path);
-            _editor.LoadText(text);
             _session.Load(path, text);
+            var history = _documentHistories.TryGetValue(path, out var previous) && previous.Text == text
+                ? previous.History : null;
+            editor.LoadText(text, history);
+            editor.Visibility = ViewStates.Visible;
+            if (_documentEmpty is not null) _documentEmpty.Visibility = ViewStates.Gone;
+            ApplyEditorSettings();
             _status!.Text = path;
+            RestoreDocumentViewport(_documents.Viewport);
+            RefreshDocumentTabs();
+            RefreshUndoButtons();
+            RefreshKeyboard();
+            return true;
         }
-        catch (Exception ex) when (ex is ProjectException or IOException)
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
         {
             Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+            return false;
         }
     }
 
-    private void SaveCurrent()
+    private bool SaveCurrent()
     {
-        if (_project is null || _editor is null) return;
+        if (_project is null || _editor is null) return true;
         try
         {
             _session.TrySave(_project, _editor.Text ?? "", _journal);
+            return true;
         }
         catch (EditorConflictException conflict)
         {
             ShowEditorConflict(conflict);
+            return false;
         }
         catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
         {
             Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show();
+            return false;
         }
     }
 
@@ -918,8 +939,10 @@ public sealed partial class MainActivity : Activity
 
     private void Jump(string path, int line, int column)
     {
-        if (_editor is null) return;
-        if (path != _openFile) OpenFile(path);
+        if (_editor is not { } editor) return;
+        var previousPath = _openFile;
+        var previous = CurrentEditorViewport(editor);
+        if (!OpenFile(path)) return;
         var text = _editor.Text ?? "";
         var offset = 0;
         for (var current = 1; current < line && offset < text.Length; current++)
@@ -932,72 +955,14 @@ public sealed partial class MainActivity : Activity
         _editor.RequestFocus();
         _editor.SetSelection(offset);
         _editor.BringPointIntoView(offset);
+        if (previousPath is not null && (path != previousPath || offset != previous.End))
+        {
+            _navigationHistory.Push((previousPath, previous));
+            RefreshDocumentTabs();
+        }
     }
 
     // ---------- Assistência do editor ----------
-
-    private void OnEditorSettled(string text, int version, int caret)
-    {
-        var path = _openFile;
-        _minimap?.Refresh(text);
-        if (path is not null && _session.IsDirty(text))
-        {
-            try { _journal?.WriteBuffer(path, text); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
-            {
-                // O diário é uma rede de segurança extra; o salvamento normal e o botão Salvar seguem funcionando.
-            }
-        }
-        if (path is null || _assistant is null || !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
-        {
-            HideChips();
-            return;
-        }
-        _assistant.AnalyzeAsync(path, text, caret, version).ContinueWith(task => RunOnUiThread(() =>
-        {
-            if (task.IsFaulted || _editor is null || _editor.Version != task.Result.Version || _openFile != path) return;
-            _problems = task.Result.Diagnostics;
-            if (!_showConsole && !_showProfiler && _layoutStore.Current.PanelTab != "learn") SetPanel(false);
-            ShowChips(task.Result.Completions);
-            _assistant?.RunAsync(a => a.GetFoldRegions(path)).ContinueWith(folds => RunOnUiThread(() =>
-            {
-                if (!folds.IsFaulted && _editor is not null && _openFile == path) _editor.FoldRegions = folds.Result;
-            }));
-        }));
-    }
-
-    private void HideChips()
-    {
-        _chips?.RemoveAllViews();
-        if (_chipScroll is not null) _chipScroll.Visibility = ViewStates.Gone;
-    }
-
-    private void ShowChips(IReadOnlyList<CompletionItem> items)
-    {
-        if (_chips is null || _chipScroll is null) return;
-        _chips.RemoveAllViews();
-        foreach (var item in items.Take(30))
-        {
-            var captured = item;
-            var chip = LunetUi.Button(this, $"{Symbol(item.Kind)} {item.Label}", () => { }, ButtonStyle.Secondary, keepsKeyboard: true);
-            chip.TextSize = 13;
-            chip.SetTypeface(LunetUi.Mono, TypefaceStyle.Normal);
-            chip.SetMinimumHeight(Dp(36));
-            chip.SetMinHeight(Dp(36));
-            chip.SetPadding(Dp(10), 0, Dp(10), 0);
-            var chipMargins = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(38));
-            chipMargins.SetMargins(Dp(3), Dp(3), Dp(3), Dp(3));
-            chip.LayoutParameters = chipMargins;
-            chip.Click += (_, _) =>
-            {
-                _editor?.Replace(captured.ReplaceStart, captured.ReplaceLength, captured.InsertText);
-                _editor?.SetSelection(captured.ReplaceStart + captured.InsertText.Length);
-                HideChips();
-            };
-            _chips.AddView(chip);
-        }
-        _chipScroll.Visibility = items.Count == 0 ? ViewStates.Gone : ViewStates.Visible;
-    }
 
     private static string Symbol(CompletionKind kind) => kind switch
     {
@@ -1009,21 +974,6 @@ public sealed partial class MainActivity : Activity
         CompletionKind.Local or CompletionKind.Parameter => "•",
         _ => "·",
     };
-
-    private void GoToDefinition()
-    {
-        if (_editor is null || _openFile is null || _assistant is null) return;
-        var path = _openFile;
-        var caret = _editor.SelectionStart;
-        SaveCurrent();
-        _assistant.RunAsync(a => a.GetDefinition(path, caret)).ContinueWith(task => RunOnUiThread(() =>
-        {
-            if (task.IsFaulted || task.Result is null)
-                Toast.MakeText(this, "Definição não encontrada (símbolos do framework não têm código-fonte aqui).", ToastLength.Short)?.Show();
-            else
-                Jump(task.Result.FilePath, task.Result.Line, task.Result.Column);
-        }));
-    }
 
     private void ShowHover()
     {
@@ -1300,24 +1250,12 @@ public sealed partial class MainActivity : Activity
             ReturnToLauncherOrigin();
             return;
         }
-        SaveCurrent(); // o editor antigo ainda guarda o texto; salva antes de a tela ser recriada
+        SaveCurrent();
+        CaptureDocument();
         var file = _openFile;
-        var previousEditor = _editor;
-        int start = previousEditor?.SelectionStart ?? 0;
-        int end = previousEditor?.SelectionEnd ?? 0;
-        int scrollX = previousEditor?.ScrollX ?? 0;
-        int scrollY = previousEditor?.ScrollY ?? 0;
         _openFile = null;
         ShowWorkspace();
-        if (file is not null)
-        {
-            OpenFile(file);
-            if (_editor is { } editor)
-            {
-                editor.SetSelection(Math.Clamp(start, 0, editor.Length()), Math.Clamp(end, 0, editor.Length()));
-                editor.Post(() => editor.ScrollTo(scrollX, scrollY));
-            }
-        }
+        if (file is null || !OpenFile(file)) ShowEditorWithoutFile();
         if (_lastProfilerReport is not null)
         {
             _layoutStore.Current.OpenPanel("profiler");
@@ -1506,6 +1444,8 @@ public sealed partial class MainActivity : Activity
         _audioStudio?.Suspend();
         SaveCurrent();
         _preview?.Pause();
+        CaptureDocument();
+        PersistDocuments();
         base.OnPause();
     }
 
@@ -1532,6 +1472,7 @@ public sealed partial class MainActivity : Activity
         else if (AiPanelOpen) CloseAiPanel();
         else if (OverlayOpen) CloseOverlay();
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
+        else if (_project is not null && DismissEditorHelp()) { }
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ReturnToLauncherOrigin();
         else if (_backFromLauncherChild is { } back) back();

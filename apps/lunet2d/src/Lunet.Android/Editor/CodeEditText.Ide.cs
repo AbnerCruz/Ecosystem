@@ -34,6 +34,7 @@ internal sealed partial class CodeEditText
 
     public event Action<EditorCommand>? CommandRequested;
     public event Action? ScrollPositionChanged;
+    public Func<bool>? DismissCodeHelp { get; set; }
 
     public int ExtraCursorCount => _extras.Count;
 
@@ -55,6 +56,12 @@ internal sealed partial class CodeEditText
         if (keyCode == Keycode.Escape && _extras.Count > 0)
         {
             ClearExtraCursors();
+            return true;
+        }
+        if (keyCode == Keycode.Escape && DismissCodeHelp?.Invoke() == true) return true;
+        if (keyCode == Keycode.Tab && e is { IsCtrlPressed: false, IsAltPressed: false })
+        {
+            CommandRequested?.Invoke(e.IsShiftPressed ? EditorCommand.Outdent : EditorCommand.InsertTab);
             return true;
         }
         if (e is not null && (e.IsCtrlPressed || e.IsAltPressed || keyCode is >= Keycode.F1 and <= Keycode.F12 || keyCode == Keycode.Enter && e.IsCtrlPressed))
@@ -83,10 +90,18 @@ internal sealed partial class CodeEditText
     /// <summary>Aplica uma edição (como as de <see cref="LineOperations"/>) entrando no histórico de desfazer.</summary>
     public void ApplyEdit(EditResult edit)
     {
-        var editable = EditableText;
-        if (editable is null) return;
+        if (HasComposition || EditableText is not { } editable) return;
+        var removed = editable.SubSequenceFormatted(edit.Start, edit.Start + edit.DeleteLength)?.ToString() ?? "";
+        var beforeStart = SelectionStart;
+        var beforeEnd = SelectionEnd;
+        ClearExtraCursors();
+        UnfoldAll();
+        _applying = true;
         editable.Replace(edit.Start, edit.Start + edit.DeleteLength, edit.Insert);
         SetSelectionSafe(edit.SelectionStart, edit.SelectionEnd);
+        _applying = false;
+        _history.RecordAtomic(edit, removed, beforeStart, beforeEnd);
+        AfterProgrammaticChange();
     }
 
     /// <summary>Troca o texto inteiro alterando só o trecho que difere (mantém o cursor e cria um único passo de desfazer).</summary>
@@ -97,8 +112,20 @@ internal sealed partial class CodeEditText
         var old = editable.ToString();
         if (old == newText) return;
         var (prefix, removed, inserted) = Diff(old, newText);
-        editable.Replace(prefix, prefix + removed.Length, inserted);
-        SetSelectionSafe(caret ?? Math.Min(SelectionStart, newText.Length), caret ?? Math.Min(SelectionStart, newText.Length));
+        int position = caret ?? Math.Min(SelectionStart, newText.Length);
+        ApplyEdit(new(prefix, removed.Length, inserted, position, position));
+    }
+
+    public void MoveCaretLine(int delta)
+    {
+        if (Layout is not { } layout || SelectionEnd < 0) return;
+        var line = layout.GetLineForOffset(SelectionEnd);
+        var next = Math.Clamp(line + delta, 0, layout.LineCount - 1);
+        if (line == next) return;
+        var target = layout.GetOffsetForHorizontal(next, layout.GetPrimaryHorizontal(SelectionEnd));
+        SetSelectionSafe(target, target);
+        BringPointIntoView(target);
+        EditorStateChanged?.Invoke();
     }
 
     private void SetSelectionSafe(int start, int end)
@@ -157,7 +184,9 @@ internal sealed partial class CodeEditText
     protected override void OnSelectionChanged(int selStart, int selEnd)
     {
         base.OnSelectionChanged(selStart, selEnd);
-        if (_extras.Count > 0 && !_inTextChange && !_settingSelection && !_applying) ClearExtraCursors();
+        if (_extras is null || _inTextChange || _settingSelection || _applying) return;
+        if (_extras.Count > 0) ClearExtraCursors();
+        EditorStateChanged?.Invoke();
     }
 
     private void ReplicateToExtras(IEditable s)

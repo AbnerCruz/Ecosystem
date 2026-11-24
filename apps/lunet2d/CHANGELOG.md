@@ -1,3 +1,12 @@
+# Changelog
+
+## 0.0.1-dev.1000589 — F4 · Editor nativo e teclado
+
+- Complemento de programação sobre o teclado Android com desfazer/refazer fixos, pares, blocos, recuo, cursor e busca.
+- Parâmetro ativo e sobrecargas de uma chamada com Roslyn. Busca por símbolo, definição, documentação offline e retorno à posição anterior.
+- Aba padrão substituível, abas extras por escolha explícita e restauração de arquivo, seleção e rolagem por jogo.
+- [Guia e validação da F4](docs/guides/f4-editor-keyboard.md).
+
 ## 0.0.1-dev.1000588 — F3 · IA global e co-work
 
 - Modelo por jogo, fallback para o padrão global, catálogo pesquisável e ID manual.

@@ -46,7 +46,7 @@ internal sealed partial class CodeEditText : EditText
 
     private const int SettleDelayMilliseconds = 250;
 
-    private readonly UndoHistory _history = new();
+    private UndoHistory _history = new();
     private List<ForegroundColorSpan> _spans = new();
     private IReadOnlyList<TokenSpan> _appliedTokens = [];
     private int _appliedLength;
@@ -87,23 +87,30 @@ internal sealed partial class CodeEditText : EditText
     /// <summary>Disparado 250 ms depois da última mudança: (texto, versão, posição do cursor).</summary>
     public event Action<string, int, int>? Settled;
 
+    public event Action? EditorStateChanged;
     public int Version => _version;
+    internal UndoHistory History => _history;
+    public bool HasComposition => EditableText is ISpannable text &&
+        global::Android.Views.InputMethods.BaseInputConnection.GetComposingSpanStart(text) >= 0;
     public bool CanUndo => _history.CanUndo;
     public bool CanRedo => _history.CanRedo;
 
     /// <summary>Carrega um arquivo, zerando o histórico de desfazer.</summary>
-    public void LoadText(string text)
+    public void LoadText(string text, UndoHistory? history = null)
     {
+        ClearExtraCursors();
+        UnfoldAll();
         _applying = true;
         SetText(text, BufferType.Editable);
         _applying = false;
         _spans.Clear();
         _appliedTokens = [];
-        _history.Clear();
+        _history = history ?? new();
         _version++;
         UpdateGutter();
         _handler.RemoveCallbacks(_settle);
         _handler.Post(_settle);
+        EditorStateChanged?.Invoke();
     }
 
     internal void RefreshPalette()
@@ -117,9 +124,9 @@ internal sealed partial class CodeEditText : EditText
         Invalidate();
     }
 
-    public void Undo() => Apply(_history.Undo());
+    public void Undo() { if (!HasComposition) ApplyHistory(_history.UndoWithSelection()); }
 
-    public void Redo() => Apply(_history.Redo());
+    public void Redo() { if (!HasComposition) ApplyHistory(_history.RedoWithSelection()); }
 
     /// <summary>Substitui um trecho como uma edição normal (entra no histórico).</summary>
     public void Replace(int start, int length, string text)
@@ -129,13 +136,16 @@ internal sealed partial class CodeEditText : EditText
         editable.Replace(start, start + length, text);
     }
 
-    private void Apply(TextEdit? edit)
+    private void ApplyHistory((TextEdit Edit, Lunet.Editor.Selection Selection)? step)
     {
-        if (edit is not { } e || EditableText is not { } editable) return;
+        if (step is not { } change || EditableText is not { } editable) return;
+        ClearExtraCursors();
+        UnfoldAll();
+        var edit = change.Edit;
         _applying = true;
-        editable.Replace(e.Start, e.Start + e.DeleteLength, e.Insert);
+        editable.Replace(edit.Start, edit.Start + edit.DeleteLength, edit.Insert);
+        SetSelectionSafe(change.Selection.Start, change.Selection.End);
         _applying = false;
-        SetSelection(System.Math.Clamp(e.CaretAfter, 0, editable.Length()));
         AfterProgrammaticChange();
     }
 
@@ -145,6 +155,7 @@ internal sealed partial class CodeEditText : EditText
         UpdateGutter();
         _handler.RemoveCallbacks(_settle);
         _handler.PostDelayed(_settle, SettleDelayMilliseconds);
+        EditorStateChanged?.Invoke();
     }
 
     // ---------- Observação de mudanças ----------
@@ -191,13 +202,14 @@ internal sealed partial class CodeEditText : EditText
         TryAutoIndent(s);
         _handler.RemoveCallbacks(_settle);
         _handler.PostDelayed(_settle, SettleDelayMilliseconds);
+        EditorStateChanged?.Invoke();
     }
 
     private void TryAutoIndent(IEditable s)
     {
         var caret = SelectionStart;
         if (_extras.Count > 0) { _typedSingle = false; return; }
-        if (!_typedSingle || caret < 1 || caret > s.Length()) return;
+        if (HasComposition || !_typedSingle || caret < 1 || caret > s.Length()) return;
         _typedSingle = false;
         var typed = s.CharAt(caret - 1);
         if (typed != '\n' && typed != '}') return;

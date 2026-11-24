@@ -1014,6 +1014,8 @@ public sealed partial class MainActivity
         }
         if (_openFile is { } opened && changed.Contains(opened))
         {
+            if (_editor is null || _session.IsDirty(_editor.Text ?? "")) return;
+            CaptureDocument();
             _session.Unload();
             _openFile = null;
             OpenFile(opened);
@@ -1032,12 +1034,10 @@ public sealed partial class MainActivity
         try
         {
             var text = _project.ReadText(_openFile);
-            int caret = Math.Min(_editor.SelectionStart, text.Length);
-            int scroll = _editor.ScrollY;
+            var view = CurrentEditorViewport(_editor);
             _editor.LoadText(text);
             _session.Load(_openFile, text);
-            if (caret >= 0) _editor.SetSelection(caret);
-            _editor.Post(() => _editor?.ScrollTo(0, scroll));
+            RestoreDocumentViewport(view);
             try { _assistant?.SetFile(_openFile, text); } catch (IOException) { }
         }
         catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException) { }
