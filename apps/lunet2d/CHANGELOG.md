@@ -1,3 +1,11 @@
+## 0.0.1-dev.1000586 — F2/1: Home e continuidade por GameId (candidata)
+
+- Continuar edição, Jogar e Criar separados na Home; fixados e recentes em listas distintas.
+- Projeto identificado por `GameId` e não nome de pasta; migração atômica V1→V2 das preferências e MRU dos oito últimos projetos.
+- Projeto ausente, manifesto danificado ou ID duplicado não vira atalho para outro jogo; não altera arquivos do projeto.
+- Jogar verifica recuperações pendentes; Preview aberto da Home devolve à Home e erros de compilação retornam ao editor; Back respeita a origem.
+- Testes xUnit e três novas capturas Android 13; SAF, primeira instalação, temas e F2 completa ainda pendentes.
+
 ## 0.0.1-dev.1000585 — Recuperação de Studios globais e co-work (candidata; CI pendente)
 
 - Recuperação seletiva: Sprite, Music e Sound Designer globais sem jogo; rascunhos e publicação de versões na biblioteca existente.
