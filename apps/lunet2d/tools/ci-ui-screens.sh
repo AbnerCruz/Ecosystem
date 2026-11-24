@@ -28,7 +28,7 @@ shoot() {
     adb shell am start -W -n "$package/$activity" --es lunet.demo "$demo" >/dev/null
     sleep "$wait"
     case "$name" in
-      03c-ai-compact|05a-studios-global|05b-sprite-global|05c-music-global)
+      01a-home|01b-home-resume|01c-home-missing|03c-ai-compact|05a-studios-global|05b-sprite-global|05c-music-global)
         # A PNG of the Android home screen is not evidence of a working Studio.
         pid="$(adb shell pidof "$package" | tr -d '\r' || true)"
         test -n "$pid" || { echo "F1 application exited before screenshot: $name"; exit 1; }
@@ -44,6 +44,9 @@ sleep 25
 
 # Portrait phone
 shoot 01-projects projects 10
+shoot 01a-home home 10
+shoot 01b-home-resume home-resume 10
+shoot 01c-home-missing home-missing 10
 shoot 02-workspace workspace 12
 shoot 03-ai ai 12
 shoot 03b-ai-empty ai-empty 12
@@ -66,7 +69,7 @@ shoot 12-run run 25
 shoot 13-image image 12
 
 # These screens must exist and contain PNG bytes from the Android emulator.
-for screen in 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do
+for screen in 01a-home 01b-home-resume 01c-home-missing 03c-ai-compact 05a-studios-global 05b-sprite-global 05c-music-global; do
     test -s "$out/$screen.png" || { echo "F1 screen missing: $screen"; exit 1; }
 done
 
