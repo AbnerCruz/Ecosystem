@@ -144,7 +144,7 @@ public sealed partial class MainActivity
         }
     }
 
-    private void PlayFromLauncher(string folderName) => _ = PrepareGameplay(folderName);
+    private void PlayFromLauncher(string folderName) => _ = PrepareGameplay(folderName, LauncherId(folderName));
 
     private void LoadLauncherPreferences()
     {
