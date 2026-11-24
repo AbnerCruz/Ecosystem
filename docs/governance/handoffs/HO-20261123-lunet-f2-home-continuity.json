@@ -125,12 +125,12 @@
   "reuse_assessment": [
     {
       "subject": "launcher-preferences",
-      "status": "reused",
+      "status": "product-specific",
       "rationale": "Extend existing JSON/AtomicFile preferences without replacing legacy V1 or modifying project manifests"
     },
     {
       "subject": "projectstore-and-autosave",
-      "status": "reused",
+      "status": "product-specific",
       "rationale": "Read canonical gameId from existing manifests and use AutosaveJournal before launcher Play"
     }
   ]
