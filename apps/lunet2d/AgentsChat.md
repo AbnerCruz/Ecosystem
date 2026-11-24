@@ -836,3 +836,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Fontes persistidas, sem resumos: `docs/plans/lunet-plano-desenvolvimento-2026-11-23.md`, `docs/research/lunet-estudos-completos-2026-11-23.md` relativos a `apps/lunet2d/`; ROADMAP mantém autoridade de estado e aponta para os documentos.
 - Evidência: PR #1024; `lunet2d-ci` (run 45223355635) e `consistency` (run 45223355843) passaram no commit de código `004dcc6`. CI da documentação nova/último head, Android UI, release e integração ainda requerem confirmação; não declarar produto finalizado.
 - Estágio preservado: candidato `0.0.1-dev.1000585`; `main` e release 1000584 permanecem base até atualização governada.
+
+### 20261123-chatgpt-f2-home-gameid — 23/11/2026 — ChatGPT → integrador — F2/1 em CI
+- Pedido do proprietário: executar a próxima etapa do plano após F1. Confirmei PR #1024 integrado `main@9200ab7` e release oficial 1000585. Recorte formal: LUNET-510 Home/continuidade por GameId, **não** SAF/migração de projetos, personalização integral ou encerramento da F2.
+- Estudo: plano e auditorias de 15/11 e 23/11; Home, preferências, `ProjectStore`, `ProjectManifest`, `AutosaveJournal`, retorno do Preview; referências Android oficiais de estado e document provider. Registro detalhado em `docs/guides/f2-home-continuity-gameid.md`.
+- Implementação em branch `feat/lunet-f2-home-continuity-gameid-20261123`: leitura de identidade persistente sem inventar GameId de manifestos inválidos, migrador V1→V2 de preferências, últimos oito jogos, fixados, Editar/Jogar/Criar separados, retorno à seção de origem, Play bloqueado diante de recuperações não resolvidas; seis testes de núcleo e três rotas de screenshots Android.
+- Salvaguardas: preferências separadas de `Projects/`; nomes legacy não resolvidos não são vinculados arbitrariamente; ID duplicado não escolhe pasta; nenhum projeto, fonte, save ou manifesto migrado silenciosamente.
+- Evidência futura: CI xUnit, Android 13, consistência, integração governada, release 1000586; validação física no aparelho não realizada. O ROADMAP e o plano integral distinguem trabalho em branch de aceite de fase.

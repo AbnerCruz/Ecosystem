@@ -1,3 +1,9 @@
+## LUNET-510 · F2/1 — continuidade de Home por GameId (23/11/2026)
+
+- [ ] **F2/1 · Continuidade, não fase concluída (código em branch; CI/DEVICE pendentes):** migrar atalhos de `launcher-preferences.json` V1 por nome para V2 por `GameId` sem alterar os jogos; resolver renomeações, IDs duplicados/corrompidos e projeto ausente; últimos oito projetos, fixação independente e limpeza após exclusão. Na Home, ações separadas Editar/Jogar/Criar, Preview iniciado no launcher retorna à Home e Back do editor restaura origem. A execução Jogar recusa ignorar autosave recuperável. Testes: `LauncherContinuityTests`, `LauncherPreferencesTests` e capturas Android 13 `home`, `home-resume`, `home-missing`.
+- **Base:** `main@9200ab7cdc479367c5c60d343ed189ebef6d4bc6`, release oficial `lunet2d-v0.0.1-dev.1000585`; branch `feat/lunet-f2-home-continuity-gameid-20261123`. Estudo de implementação: [F2 Home e GameId](docs/guides/f2-home-continuity-gameid.md).
+- **Próximas parcelas F2:** navegação adaptativa/posição, onboarding, seleção de pasta via SAF com staging e migração recuperável, tipografia/temas e DEVICE físico. Nenhuma caixa da F2 integral será fechada por este recorte.
+
 > **Consolidação integral aprovada (23/11/2026):** [Plano de desenvolvimento F1–F8 com checkboxes e evidências](../../docs/architecture/plans/lunet-plano-desenvolvimento-2026-11-23.md) e [estudos completos](../../docs/architecture/audits/lunet-estudos-completos-2026-11-23.md). O **ROADMAP continua sendo a autoridade do status canônico**; caixas do plano distinguem incrementos implementados de aceite final, sem fechar fases sem CI/integração/release pertinentes.
 
 ## LUNET-511 / LUNET-513 — Recuperação F1 do plano aprovado (23/11/2026)

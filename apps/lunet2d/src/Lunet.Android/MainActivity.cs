@@ -122,6 +122,7 @@ public sealed partial class MainActivity : Activity
     private void ShowProjects()
     {
         EnterLauncherSurface("projects");
+        RefreshLauncherCatalog();
 
         var root = Vertical();
         root.SetPadding(Dp(20), Dp(22), Dp(20), Dp(10));
@@ -203,15 +204,13 @@ public sealed partial class MainActivity : Activity
 
     private void ShowProjectMenu(string name)
     {
-        var pinned = _launcherPreferences?.IsPinned(name) == true;
+        var pinned = IsLauncherPinned(name);
         var items = new[] { pinned ? "Desafixar do início" : "Fixar no início", "Exportar ZIP", "Excluir projeto" };
         new AlertDialog.Builder(this)!.SetTitle(name)!.SetItems(items, (_, args) =>
         {
             if (args.Which == 0)
             {
-                PersistLauncher(p => p.SetPinned(name, !p.IsPinned(name)));
-                if (_launcherSection == "home") ShowHome();
-                else ShowProjects();
+                ToggleLauncherPin(name);
             }
             else if (args.Which == 1) ExportProject(name);
             else ConfirmDeleteProject(name);
@@ -228,8 +227,9 @@ public sealed partial class MainActivity : Activity
             {
                 try
                 {
+                    var gameId = LauncherId(name);
                     _store.Delete(name);
-                    PersistLauncher(p => p.ForgetProject(name));
+                    PersistLauncher(p => p.ForgetProject(name, gameId));
                     ShowProjects();
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
@@ -360,9 +360,10 @@ public sealed partial class MainActivity : Activity
         try
         {
             _project = _store.Open(name);
-            PersistLauncher(p => p.MarkOpened(name));
+            RefreshLauncherCatalog();
+            TrackLauncherOpen(name);
         }
-        catch (ProjectException ex)
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
         {
             Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
             return;
@@ -443,7 +444,7 @@ public sealed partial class MainActivity : Activity
         var bar = LunetUi.Row(this, 4);
         bar.SetPadding(Dp(4), Dp(6), Dp(6), Dp(6));
         bar.SetBackgroundColor(LunetUi.Background);
-        bar.AddView(LunetUi.Icon(this, "‹", "Voltar para os projetos", ShowProjects), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
+        bar.AddView(LunetUi.Icon(this, "‹", "Voltar à origem", ReturnToLauncherOrigin), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
         var titleBlock = new LinearLayout(this) { Orientation = Orientation.Vertical, Clickable = true };
         titleBlock.Background = LunetUi.Pressable(this, LunetUi.Background, LunetUi.RadiusSmall);
         titleBlock.SetPadding(Dp(6), Dp(2), Dp(6), Dp(2));
@@ -1227,6 +1228,7 @@ public sealed partial class MainActivity : Activity
         if (_project is null) return;
         if (task.IsFaulted)
         {
+            _returnHomeAfterGame = false;
             var message = task.Exception?.GetBaseException().Message ?? "erro desconhecido";
             _problems = [new LunetDiagnostic(DiagnosticSeverity.Error, "LUNET0002", "Falha interna do compilador: " + message, null, 0, 0, 0, 0)];
             _status!.Text = "Falha ao compilar";
@@ -1237,6 +1239,7 @@ public sealed partial class MainActivity : Activity
         _problems = result.Diagnostics;
         if (!result.Success)
         {
+            _returnHomeAfterGame = false;
             _status!.Text = $"Compilação falhou: {result.ErrorCount} erro(s)";
             OpenWorkbenchPanel(false);
             return;
@@ -1287,6 +1290,12 @@ public sealed partial class MainActivity : Activity
     {
         DisposePreview();
         if (_project is null) return;
+        if (_returnHomeAfterGame)
+        {
+            _returnHomeAfterGame = false;
+            ShowHome();
+            return;
+        }
         SaveCurrent(); // o editor antigo ainda guarda o texto; salva antes de a tela ser recriada
         var file = _openFile;
         _openFile = null;
@@ -1501,7 +1510,7 @@ public sealed partial class MainActivity : Activity
         else if (OverlayOpen) CloseOverlay();
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
-        else if (_project is not null) ShowHome();
+        else if (_project is not null) ReturnToLauncherOrigin();
         else if (_inspirationOpen || _launcherSection != "home") ShowHome();
         else base.OnBackPressed();
     }
