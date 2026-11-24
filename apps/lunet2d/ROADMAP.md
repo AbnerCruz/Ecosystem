@@ -1,3 +1,11 @@
+## LUNET-512 · F8 — Explorar referências e experimentos (Issue #1034)
+
+- [ ] Preservar 131 fichas, filtros de seleção múltipla, comparação, experimentos autorais e artigos offline; vínculo por GameId com recuperação, autoria/licença e referências arquivadas; persistência da vista. Código e testes propostos na branch F8, evidências e limites em `docs/plans/f8-validacao.md`. CI integrado, emulador e distribuição ainda por confirmar.
+
+## LUNET-525 · F7 — Launcher de jogos (Issue #1032)
+
+- [ ] Grade Jogar por identidade persistente, preparação offline com revisão de fontes, recursos, manifesto e toolchain; cache atômico verificado; atividade gameplay em processo separado, saves por GameId e retorno à grade; diagnóstico com opção de editar. CI, integração combinada, smoke Android e release ainda não verificados. Evidências e limitações em `docs/plans/f7-validacao.md`. Não confundir com Fase 7 Networking.
+
 ## LUNET-524 · F6 — Mapas mentais e Studios
 
 - [ ] Confirmar mapas, Studios globais, pacotes versionados e APK oficial. [Manual e operações](docs/manual/mapas-e-studios.md).

@@ -80,11 +80,14 @@ public sealed partial class MainActivity : Activity
         _pendingLibraryAssetVersion = savedInstanceState?.GetInt("pendingLibraryAssetVersion") ?? 0;
         _pendingGameApkPath = savedInstanceState?.GetString("pendingGameApkPath");
         _pendingGameApkName = savedInstanceState?.GetString("pendingGameApkName");
+        _gameplaySession = savedInstanceState?.GetString("gameplaySession");
+        _gameplayId = savedInstanceState?.GetString("gameplayId");
+        _gameplayFolder = savedInstanceState?.GetString("gameplayFolder");
         LoadSettings();
         LoadProjectFolder();
         LoadLauncherPreferences();
         _projectFilter = savedInstanceState?.GetString("projectFilter") ?? "";
-        foreach (var section in new[] { "home", "projects", "studios", "explore", "learn" })
+        foreach (var section in new[] { "home", "projects", "play", "studios", "explore", "learn" })
             _launcherPositions[section] = savedInstanceState?.GetInt("scroll-" + section) ?? 0;
         RestoreLauncherSection();
         _folderPickerFromSetup = savedInstanceState?.GetBoolean("folderPickerFromSetup") ?? false;
@@ -1389,6 +1392,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode == GameplayActivity.RequestCode) { CompleteGameplay(resultCode, data); return; }
         if (HandleProjectFolderResult(requestCode, resultCode, data)) return;
         if (HandleAttachmentResult(requestCode, resultCode, data)) return;
         if (requestCode == AndroidGameImagePicker.RequestCode)
@@ -1441,6 +1445,9 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnSaveInstanceState(Bundle outState)
     {
+        outState.PutString("gameplaySession", _gameplaySession);
+        outState.PutString("gameplayId", _gameplayId);
+        outState.PutString("gameplayFolder", _gameplayFolder);
         outState.PutString("projectFilter", _projectFilter);
         outState.PutBoolean("folderPickerFromSetup", _folderPickerFromSetup);
         foreach (var (section, position) in _launcherPositions)
@@ -1455,6 +1462,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnPause()
     {
+        if (_inspirationOpen) SaveInspirationView();
         _spriteStudio?.Suspend();
         _tileStudio?.Suspend();
         _audioStudio?.Suspend();

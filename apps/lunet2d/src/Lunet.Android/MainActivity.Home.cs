@@ -29,6 +29,7 @@ public sealed partial class MainActivity
 
     private void RememberLauncherPosition()
     {
+        if (_launcherScrollKey == "explore" && _launcherScroll is not null) SaveInspirationView();
         if (_launcherScroll is { IsAttachedToWindow: true } scroll)
             _launcherPositions[_launcherScrollKey] = scroll.ScrollY;
         _launcherScroll = null;
@@ -136,6 +137,7 @@ public sealed partial class MainActivity
         switch (_launcherSection)
         {
             case "projects": ShowProjects(); break;
+            case "play": ShowGameLauncher(); break;
             case "learn": ShowLearning(); break;
             case "studios": ShowLauncherStudios(); break;
             case "explore": OpenInspirationExplorer(); break;
@@ -143,30 +145,7 @@ public sealed partial class MainActivity
         }
     }
 
-    private void PlayFromLauncher(string folderName)
-    {
-        try
-        {
-            var candidate = _store.Open(folderName);
-            if (new AutosaveJournal(candidate).FindRecoveries().Count > 0)
-            {
-                new AlertDialog.Builder(this)!.SetTitle("Edição recuperável")!
-                    .SetMessage("Este jogo tem alterações não salvas. Abra o editor e decida se deseja recuperá-las antes de jogar.")!
-                    .SetNegativeButton("Cancelar", (_, _) => { })!
-                    .SetPositiveButton("Abrir editor", (_, _) => OpenProject(folderName))!.Show();
-                return;
-            }
-        }
-        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
-        {
-            Toast.MakeText(this, "Não foi possível abrir o jogo: " + ex.Message, ToastLength.Long)?.Show();
-            return;
-        }
-        _returnHomeAfterGame = true;
-        OpenProject(folderName);
-        if (_project is null) { _returnHomeAfterGame = false; return; }
-        Run();
-    }
+    private void PlayFromLauncher(string folderName) => _ = PrepareGameplay(folderName, LauncherId(folderName));
 
     private void LoadLauncherPreferences()
     {
@@ -188,6 +167,7 @@ public sealed partial class MainActivity
         switch (_launcherPreferences?.Section)
         {
             case "projects": ShowProjects(); break;
+            case "play": ShowGameLauncher(); break;
             case "studios": ShowLauncherStudios(); break;
             case "explore": OpenInspirationExplorer(); break;
             case "learn": ShowLearning(); break;
@@ -260,6 +240,7 @@ public sealed partial class MainActivity
         }
         Item("home", "Início", ShowHome);
         Item("projects", "Projetos", ShowProjects);
+        Item("play", "Jogar", ShowGameLauncher);
         Item("studios", "Studios", ShowLauncherStudios);
         Item("explore", "Explorar", OpenInspirationExplorer);
         Item("learn", "Aprender", ShowLearning);

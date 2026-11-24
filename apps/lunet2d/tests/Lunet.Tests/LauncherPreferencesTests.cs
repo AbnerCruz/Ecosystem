@@ -48,6 +48,16 @@ public sealed class LauncherPreferencesTests : IDisposable
     }
 
     [Fact]
+    public void GameLauncherSectionSurvivesRestartWithoutOpeningAProject()
+    {
+        var prefs = new LauncherPreferences(FilePath);
+        prefs.SelectSection("play");
+        var reopened = new LauncherPreferences(FilePath);
+        Assert.Equal("play", reopened.Section);
+        Assert.Null(reopened.LastProjectId);
+    }
+
+    [Fact]
     public void MovingPinToStartPersistsWithoutChangingMostRecentProject()
     {
         var prefs = new LauncherPreferences(FilePath);
@@ -84,7 +94,7 @@ public sealed class LauncherPreferencesTests : IDisposable
         prefs.SetPinned("MeuJogo", true);
         var before = File.ReadAllText(FilePath);
 
-        Assert.Throws<ArgumentException>(() => prefs.SelectSection("play"));
+        Assert.Throws<ArgumentException>(() => prefs.SelectSection("invalid"));
         Assert.Throws<ArgumentException>(() => prefs.SetPinned("../Jogo", true));
         Assert.Throws<ArgumentException>(() => prefs.MarkOpened("a/b"));
         Assert.Equal(before, File.ReadAllText(FilePath));

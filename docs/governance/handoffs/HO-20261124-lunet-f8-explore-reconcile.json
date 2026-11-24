@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261124-lunet-f8-explore-reconcile",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-24T16:41:33.570Z",
+  "agent": {
+    "id": "chatgpt-lunet-reconcile",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-512",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-f8-explore",
+  "base_commit": "b8324da3d5a498e601ba51321dfb61fa45f0c93d",
+  "commit": "93575dbfd1c94c26182c6837ec515f43a7f7582e",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1035",
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/guides/inspiracao.md",
+    "apps/lunet2d/docs/plans/f8-validacao.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Inspiration.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.InspirationDetails.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/InspirationLibrary.cs",
+    "apps/lunet2d/tests/Lunet.Tests/InspirationCatalogPopulationTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/InspirationF8Tests.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "docs/governance/handoffs/HO-20261124-lunet-f8-explore-reconcile.json"
+  ],
+  "work_completed": [
+    "Registro do trabalho já publicado em #1035: filtros combinados, comparação, experiências, GameId, autoria/licença e recuperação de referências."
+  ],
+  "verification": [
+    {
+      "check": "Testes .NET",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45419887623/job/138536206611",
+      "tested_commit": "93575dbfd1c94c26182c6837ec515f43a7f7582e"
+    },
+    {
+      "check": "APK CI",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45419887623/job/138538421175",
+      "tested_commit": "93575dbfd1c94c26182c6837ec515f43a7f7582e"
+    },
+    {
+      "check": "Screenshots emulador: download SDK Premature EOF",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45419887904/job/138536206784",
+      "tested_commit": "93575dbfd1c94c26182c6837ec515f43a7f7582e"
+    },
+    {
+      "check": "Foundation: CHK-ARCH-REFS no plano",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/45419887410/job/138536205481",
+      "tested_commit": "93575dbfd1c94c26182c6837ec515f43a7f7582e"
+    },
+    {
+      "check": "Estado combinado com main após handoff",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1035"
+    }
+  ],
+  "known_issues": [
+    "Sem captura de emulador aprovada nesta revisão e sem teste físico."
+  ],
+  "blockers": [
+    "Integrador recusou por ausência de handoff; correção do plano e nova execução combinada necessárias; F7 ainda aberta."
+  ],
+  "next_actions": [
+    "Reexecutar CI e verificar integração automática; não forçar merge nem publicar artefato de PR como release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Registro de trabalho, revisão, PR e verificações com URLs."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Distinção de CI, emulador e aparelho físico."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não declara integração nem conclusão sem estado combinado verde."
+    }
+  ]
+}
