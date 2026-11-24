@@ -11,6 +11,7 @@ internal sealed class LunetAiWork
     private readonly CancellationTokenSource _cancel = new();
     private readonly Dictionary<string, LunetAiStep> _steps = new(StringComparer.Ordinal);
     private readonly LunetAiRequest _request;
+    private string _partialText = "";
     private Task? _task;
     private bool _running = true;
     private LunetAiReply? _reply;
@@ -20,6 +21,7 @@ internal sealed class LunetAiWork
     {
         ProjectId = project.Manifest.GameId;
         ProjectName = project.Name;
+        ProjectDirectory = project.Directory;
         Session = session;
         Prompt = prompt;
         _request = request;
@@ -27,6 +29,10 @@ internal sealed class LunetAiWork
 
     public string ProjectId { get; }
     public string ProjectName { get; }
+    public string ProjectDirectory { get; }
+    public string PartialText { get { lock (_gate) return _partialText; } }
+    public bool BelongsTo(LunetProject? project) => project is not null && ProjectId == project.Manifest.GameId &&
+        StringComparer.Ordinal.Equals(ProjectDirectory, project.Directory);
     public string Prompt { get; }
     public LunetAiSession Session { get; }
     public LunetAiRequest Request => _request;
@@ -56,7 +62,7 @@ internal sealed class LunetAiWork
     {
         try
         {
-            var result = await Session.AskAsync(Prompt, _request with { Steps = new StepObserver(this) },
+            var result = await Session.AskAsync(Prompt, _request with { Steps = new StepObserver(this), PartialText = new TextObserver(this) },
                 _cancel.Token);
             lock (_gate) _reply = result;
         }
@@ -73,6 +79,15 @@ internal sealed class LunetAiWork
         finally
         {
             lock (_gate) _running = false;
+            LunetAiRuns.Signal();
+        }
+    }
+
+    private sealed class TextObserver(LunetAiWork work) : IProgress<string>
+    {
+        public void Report(string text)
+        {
+            lock (work._gate) work._partialText = text;
             LunetAiRuns.Signal();
         }
     }

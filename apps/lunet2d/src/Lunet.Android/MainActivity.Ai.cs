@@ -33,48 +33,135 @@ public sealed partial class MainActivity
 
     private LunetAiLoadedSettings Ai => _ai ??= AiStore.Load();
 
-    /// <summary>Dentro do projeto, alterar somente o modelo. Provider, chaves e permissões ficam na Home.</summary>
+    private LunetAiProjectModels ProjectModels => new(
+        System.IO.Path.Combine(FilesDir!.AbsolutePath, "ai", "project-models"));
+
+    private LunetAiLoadedSettings ProjectAi
+    {
+        get
+        {
+            var global = Ai;
+            var model = _project is { } project ? ProjectModels.Get(project.Manifest.GameId, global.Settings) : null;
+            return string.IsNullOrWhiteSpace(model) ? global : global with { Settings = global.Settings with { Model = model } };
+        }
+    }
+
+    private static readonly LunetAiModelCatalog ModelCatalog = new(new HttpClient(
+        new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(25) });
+
+    /// <summary>Dentro do projeto, alterar somente o modelo.</summary>
     private void ShowAiModelPicker()
     {
         var ai = Ai;
-        if (!ai.IsConfigured)
+        var project = _project;
+        if (!ai.IsConfigured || project is null)
         {
             Toast.MakeText(this, "Configure a IA em Início → Lunet IA → ⚙.", ToastLength.Long)?.Show();
             return;
         }
-        var provider = LunetAiProviders.Find(ai.Settings.ProviderId);
-        var choices = new[] { "Digitar ID do modelo…" }.Concat(provider.SuggestedModels).ToArray();
-        new AlertDialog.Builder(this)!
-            .SetTitle("Modelo do projeto · " + provider.Name)!
-            .SetItems(choices, (_, e) =>
+
+        ShowModelCatalog(LunetAiProviders.Find(ai.Settings.ProviderId), ai.Settings.Endpoint, ai.ApiKey,
+            ProjectAi.Settings.Model, model =>
             {
-                if (e.Which > 0) { ApplyProjectAiModel(choices[e.Which]); return; }
-                var editor = LunetUi.Input(this, "Identificador do modelo", ai.Settings.Model);
-                new AlertDialog.Builder(this)!.SetTitle("Escolher modelo")!
-                    .SetView(editor)!
-                    .SetNegativeButton("Cancelar", (_, _) => { })!
-                    .SetPositiveButton("Aplicar", (_, _) => ApplyProjectAiModel((editor.Text ?? "").Trim()))!.Show();
-            })!
-            .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+                if (!ReferenceEquals(project, _project)) return;
+                try
+                {
+                    ProjectModels.Set(project.Manifest.GameId, ai.Settings, model);
+                    RefreshAiHeader();
+                    UpdateAiCompact();
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+                {
+                    Toast.MakeText(this, "Não foi possível trocar o modelo: " + ex.Message, ToastLength.Long)?.Show();
+                }
+            }, ai.Settings.Model);
     }
 
-    private void ApplyProjectAiModel(string model)
+    private void ShowModelCatalog(LunetAiProvider provider, string endpoint, string? key, string selected,
+        Action<string?> apply, string? globalDefault = null)
     {
-        if (string.IsNullOrWhiteSpace(model) || model.Length > 240)
+        var form = LunetUi.Column(this, 8);
+        form.SetPadding(Dp(14), Dp(8), Dp(14), Dp(8));
+        var search = LunetUi.Input(this, "Buscar por nome, ID ou alias");
+        var manual = LunetUi.Input(this, "ID manual", selected);
+        manual.SetSingleLine(true);
+        form.AddView(search);
+        form.AddView(manual);
+        var status = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
+        var list = LunetUi.Column(this, 6);
+        var scroll = new ScrollView(this);
+        scroll.AddView(list);
+        var lifetime = new CancellationTokenSource();
+        IReadOnlyList<LunetAiModelInfo> available = [];
+        AlertDialog? dialog = null;
+        void Pick(string? id)
         {
-            Toast.MakeText(this, "Identificador de modelo inválido.", ToastLength.Short)?.Show();
-            return;
+            apply(id);
+            dialog?.Dismiss();
         }
-        try
+
+        void Render()
         {
-            AiStore.Save(Ai.Settings with { Model = model }, null);
-            _ai = null;
-            RefreshAiHeader();
+            list.RemoveAllViews();
+            var query = search.Text?.Trim() ?? "";
+            var matches = available.Where(m => m.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                m.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                m.Alias?.Contains(query, StringComparison.OrdinalIgnoreCase) == true).ToArray();
+            var shownIds = matches.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+            foreach (var m in matches.Take(50))
+            {
+                var capabilities = m.Tools switch { true => "com ferramentas", false => "sem ferramentas", _ => "capacidade desconhecida" };
+                AddHomeAction(list, m.Id, "Provedor · " + capabilities +
+                    (m.Alias is null ? "" : " · " + m.Alias), () => Pick(m.Id));
+            }
+            if (matches.Length > 50)
+                list.AddView(LunetUi.Label(this, $"Exibindo 50 de {matches.Length}. Use a busca para filtrar."));
+            foreach (var id in provider.SuggestedModels.Where(id => !shownIds.Contains(id) && id.Contains(query, StringComparison.OrdinalIgnoreCase)))
+                AddHomeAction(list, id, "Sugestão · disponibilidade e ferramentas não confirmadas", () => Pick(id));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+
+        async void Load(bool refresh)
         {
-            Toast.MakeText(this, "Não foi possível trocar o modelo: " + ex.Message, ToastLength.Long)?.Show();
+            if (string.IsNullOrWhiteSpace(key)) { status.Text = "Adicione uma chave para consultar o provedor."; return; }
+            status.Text = "Consultando modelos…";
+            try
+            {
+                var models = await ModelCatalog.ListAsync(provider.Id, endpoint, key, lifetime.Token, refresh);
+                if (lifetime.IsCancellationRequested) return;
+                available = models;
+                status.Text = models.Count == 0 ? "O provedor devolveu uma lista vazia." :
+                    $"{models.Count} modelos do provedor." +
+                    (selected.Length > 0 && !models.Any(m => m.Id == selected) ? " O ID selecionado não consta na lista." : "");
+                Render();
+            }
+            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or ArgumentException)
+            {
+                if (!lifetime.IsCancellationRequested)
+                    status.Text = ex is OperationCanceledException ? "Tempo esgotado. O ID manual continua disponível." :
+                        "Catálogo indisponível. " + ex.Message;
+            }
         }
+
+        var actions = LunetUi.Row(this, 6);
+        actions.AddView(LunetUi.Button(this, "Atualizar", () => Load(true)));
+        actions.AddView(LunetUi.Button(this, "Usar ID", () =>
+        {
+            var id = manual.Text?.Trim() ?? "";
+            if (id.Length is 0 or > 240 || id.Any(char.IsControl)) { manual.Error = "ID inválido"; return; }
+            Pick(id);
+        }, ButtonStyle.Primary));
+        form.AddView(actions);
+        if (globalDefault is not null)
+            form.AddView(LunetUi.Button(this, "Usar padrão · " + globalDefault, () => Pick(null), ButtonStyle.Quiet));
+        form.AddView(status);
+        form.AddView(scroll, LunetUi.FillWidth(Dp(240)));
+        search.TextChanged += (_, _) => Render();
+        dialog = new AlertDialog.Builder(this)!.SetTitle("Modelos · " + provider.Name)!.SetView(form)!
+            .SetNegativeButton("Fechar", (_, _) => { })!.Create()!;
+        dialog.DismissEvent += (_, _) => lifetime.Cancel();
+        dialog.Show();
+        Render();
+        Load(false);
     }
 
     // ---------- Settings (configure once) ----------
@@ -117,30 +204,12 @@ public sealed partial class MainActivity
         // Models the provider really serves + a connection check (LUNET-498).
         var checkRow = LunetUi.Row(this, 6);
         var status = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
-        var catalog = new LunetAiModelCatalog(new HttpClient { Timeout = TimeSpan.FromSeconds(25) });
+        var catalog = ModelCatalog;
         string CurrentEndpoint() => selected.Id == "custom" ? (endpoint.Text ?? "").Trim() : selected.Endpoint;
         string? KeyForCheck() => (key.Text ?? "").Trim() is { Length: > 0 } typed ? typed : SavedKey();
-        checkRow.AddView(LunetUi.Button(this, "Ver modelos do provedor", async () =>
+        checkRow.AddView(LunetUi.Button(this, "Ver modelos do provedor", () =>
         {
-            if (KeyForCheck() is not { } k) { key.Error = "Cole a chave para listar os modelos"; return; }
-            status.Text = "Carregando modelos…";
-            try
-            {
-                var models = await catalog.ListAsync(selected.Id, CurrentEndpoint(), k, CancellationToken.None);
-                if (models.Count == 0) { status.Text = "O provedor não listou modelos; digite o id."; return; }
-                status.Text = models.Count + " modelos disponíveis.";
-                var labels = models.Select(m => m.Id + (m.Tools == false ? "  (sem ferramentas)" : "") +
-                                                (m.Context is { } c ? $"  · {c / 1000}k" : "")).ToArray();
-                new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
-                    .SetTitle("Modelos de " + selected.Name)!
-                    .SetItems(labels, (_, e) => model.Text = models[e.Which].Id)!
-                    .SetNegativeButton("Fechar", (_, _) => { })!
-                    .Show();
-            }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or ArgumentException)
-            {
-                status.Text = ex is TaskCanceledException ? "Tempo esgotado ao listar modelos." : ex.Message;
-            }
+            ShowModelCatalog(selected, CurrentEndpoint(), KeyForCheck(), model.Text ?? "", id => model.Text = id ?? "");
         }, ButtonStyle.Secondary));
         checkRow.AddView(LunetUi.Button(this, "Testar conexão", async () =>
         {
@@ -174,27 +243,8 @@ public sealed partial class MainActivity
         form.AddView(web);
 
         form.AddView(LunetUi.Label(this, "Modo inicial do chat", LunetUi.TextLabel, LunetUi.TextMuted));
-        var modeRow = LunetUi.Row(this, 6);
-        var defaultMode = current.Settings.DefaultMode;
-        var modeChips = new List<(LunetAiMode Mode, TextView Chip)>();
-        void PaintModes()
-        {
-            foreach (var (m, chip) in modeChips)
-            {
-                chip.Background = LunetUi.Pressable(this, m == defaultMode ? LunetUi.AccentSoft : LunetUi.SurfaceRaised, 99,
-                    m == defaultMode ? LunetUi.Accent : LunetUi.Border);
-                chip.SetTextColor(m == defaultMode ? LunetUi.AccentText : LunetUi.Text);
-            }
-        }
-        foreach (var (m, label, _) in AiModes)
-        {
-            var chip = LunetUi.Chip(this, label, () => { defaultMode = m; PaintModes(); });
-            modeChips.Add((m, chip));
-            modeRow.AddView(chip);
-        }
-        PaintModes();
-        form.AddView(modeRow);
-        form.AddView(LunetUi.Label(this, "Auto: perguntas (\"como faço…?\") são explicadas sem mexer no projeto; pedidos (\"crie…\") são implementados.",
+        const LunetAiMode defaultMode = LunetAiMode.Teach;
+        form.AddView(LunetUi.Label(this, "O chat começa em Estudo. Para editar o jogo, selecione Fazer antes de enviar.",
             LunetUi.TextCaption, LunetUi.TextFaint));
 
         form.AddView(LunetUi.Label(this, "Limite de passos por pedido", LunetUi.TextLabel, LunetUi.TextMuted));
@@ -225,6 +275,12 @@ public sealed partial class MainActivity
         var providerChips = new List<(LunetAiProvider Provider, TextView Chip)>();
         void SelectProvider(LunetAiProvider provider, bool fillEndpoint)
         {
+            if (selected.Id != provider.Id)
+            {
+                key.Text = "";
+                model.Text = provider.Id == current.Settings.ProviderId ? current.Settings.Model : "";
+                endpoint.Text = provider.Id == current.Settings.ProviderId ? current.Settings.Endpoint : provider.Endpoint;
+            }
             selected = provider;
             foreach (var (p, chip) in providerChips)
             {
@@ -243,8 +299,6 @@ public sealed partial class MainActivity
             suggestionRow.RemoveAllViews();
             foreach (var m in provider.SuggestedModels)
                 suggestionRow.AddView(LunetUi.Chip(this, m, () => model.Text = m));
-            if (fillEndpoint && provider.SuggestedModels.Count > 0 && string.IsNullOrWhiteSpace(model.Text))
-                model.Text = provider.SuggestedModels[0];
         }
         foreach (var provider in LunetAiProviders.All)
         {
@@ -253,7 +307,6 @@ public sealed partial class MainActivity
             providerRow.AddView(chip);
         }
         SelectProvider(selected, fillEndpoint: string.IsNullOrWhiteSpace(current.Settings.Endpoint));
-        if (string.IsNullOrWhiteSpace(model.Text) && selected.SuggestedModels.Count > 0) model.Text = selected.SuggestedModels[0];
 
         var scroll = new ScrollView(this);
         scroll.AddView(form);
@@ -373,6 +426,9 @@ public sealed partial class MainActivity
             row.AddView(LunetUi.Label(this, $"+{added}", LunetUi.TextCaption, LunetUi.Success));
             row.AddView(LunetUi.Label(this, $"−{removed}", LunetUi.TextCaption, LunetUi.Danger));
             row.AddView(LunetUi.Chip(this, "Ver", () => ShowDiff(change)));
+            if (change.HasLaterEdits)
+                card.AddView(LunetUi.Label(this, "A versão atual diverge da revisão da IA. O desfazer pode ser bloqueado.",
+                    LunetUi.TextCaption, LunetUi.Warning));
             card.AddView(row);
         }
         var actions = LunetUi.Row(this, 8);

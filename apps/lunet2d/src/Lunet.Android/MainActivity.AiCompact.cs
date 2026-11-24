@@ -103,7 +103,7 @@ public sealed partial class MainActivity
             var ongoing = LunetAiRuns.Current;
             if (ongoing is { IsRunning: true })
             {
-                if (ongoing.ProjectId == _project?.Manifest.GameId) ongoing.Cancel();
+                if (ongoing.BelongsTo(_project)) ongoing.Cancel();
                 return;
             }
             var request = (input.Text ?? "").Trim();
@@ -121,7 +121,7 @@ public sealed partial class MainActivity
                 return;
             }
             SendAi();
-            if (LunetAiRuns.Current is { IsRunning: true } run && run.ProjectId == _project?.Manifest.GameId)
+            if (LunetAiRuns.Current is { IsRunning: true } run && run.BelongsTo(_project))
             {
                 input.Text = "";
                 CloseQuickAssistant();
@@ -157,7 +157,7 @@ public sealed partial class MainActivity
     {
         if (_aiCompactStatus is null || _project is null) return;
         var work = LunetAiRuns.Current;
-        bool same = work is not null && work.ProjectId == _project.Manifest.GameId;
+        bool same = work is not null && work.BelongsTo(_project);
         string headline, details;
         if (same && work!.IsRunning)
         {
@@ -187,9 +187,9 @@ public sealed partial class MainActivity
         {
             var mode = _aiMode switch
             {
-                LunetAiMode.Teach => "Ensinar",
+                LunetAiMode.Teach => "Estudo",
                 LunetAiMode.Do => "Fazer",
-                _ => "Auto"
+                _ => "Estudo"
             };
             var file = _openFile is { Length: > 0 } ? System.IO.Path.GetFileName(_openFile) : "Projeto";
             _aiQuickContext.Text = "Contexto: " + file + " · Modo: " + mode;

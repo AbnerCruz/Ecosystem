@@ -65,6 +65,7 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         ArgumentNullException.ThrowIfNull(content);
         if (Encoding.UTF8.GetByteCount(content) > 120_000)
             throw new InvalidOperationException("Arquivo excede 120 KB; divida a alteração.");
+        string? observed = null;
         var exists = List().Contains(relativePath, StringComparer.Ordinal);
         if (exists)
         {
@@ -72,10 +73,12 @@ public sealed class LunetAiProjectFiles(LunetProject project)
             if (!string.Equals(current.Sha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Arquivo mudou desde a leitura. Leia novamente antes de escrever.");
             LunetAiWriteGuard.EnsureSafeOverwrite(relativePath, current.Content, content);
+            observed = current.Content;
         }
         else if (!string.IsNullOrEmpty(expectedSha256))
             throw new InvalidOperationException("Arquivo novo exige expected_sha256 vazio.");
-        project.WriteText(relativePath, content);
+        if (!project.WriteTextIfUnchanged(relativePath, observed, content, out _))
+            throw new InvalidOperationException("Arquivo mudou durante a edição. Leia novamente.");
         var saved = Read(relativePath);
         if (!string.Equals(saved.Content, content, StringComparison.Ordinal))
             throw new IOException("O arquivo persistido difere do solicitado.");
@@ -148,14 +151,15 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         var (start, length) = LunetAiTextMatch.FindUnique(current.Content, oldText);
         var updated = string.Concat(current.Content.AsSpan(0, start), newText, current.Content.AsSpan(start + length));
         // Replace is the explicit way to delete code, so it bypasses the overwrite guard on purpose.
-        return WriteUnguarded(relativePath, updated);
+        return WriteReplacement(relativePath, current.Content, updated);
     }
 
-    private LunetAiFileChange WriteUnguarded(string relativePath, string content)
+    private LunetAiFileChange WriteReplacement(string relativePath, string observed, string content)
     {
         if (Encoding.UTF8.GetByteCount(content) > 120_000)
             throw new InvalidOperationException("Arquivo excede 120 KB; divida a alteração.");
-        project.WriteText(relativePath, content);
+        if (!project.WriteTextIfUnchanged(relativePath, observed, content, out _))
+            throw new InvalidOperationException("Arquivo mudou durante a edição. Leia novamente.");
         var saved = Read(relativePath);
         if (!string.Equals(saved.Content, content, StringComparison.Ordinal))
             throw new IOException("O arquivo persistido difere do solicitado.");

@@ -10,7 +10,8 @@ namespace Lunet.Ai;
 /// <see cref="RunId"/> links an answer to its persisted checkpoint, so its changes can be reviewed and undone at any
 /// time, including after a cancel or an app restart (LUNET-507). <see cref="Verified"/>: the run passed verification.
 /// </summary>
-public sealed record LunetAiTurn(string Role, string Text, LunetAiMode? Mode = null, string? RunId = null, bool? Verified = null);
+public sealed record LunetAiTurn(string Role, string Text, LunetAiMode? Mode = null, string? RunId = null, bool? Verified = null,
+    string? MessageId = null, bool Pending = false, IReadOnlyList<LunetAiStep>? Steps = null);
 public sealed record LunetAiReply(string Text, IReadOnlyList<string> ChangedFiles, RunStatus Status,
     int ModelSteps, int ToolCalls, IReadOnlyList<string> Activity)
 {
@@ -155,8 +156,10 @@ public sealed class LunetAiSession
     {
         lock (_historyLock)
         {
-            if (_history.Count == 0 || _history[^1].Text != PendingText) return;
-            _history[^1] = _history[^1] with { Text = "⚠️ Execução interrompida. O Android pode ter encerrado o processo; confira as alterações abaixo e desfaça-as se quiser." };
+            if (_history.Count == 0 || (!_history[^1].Pending && _history[^1].Text != PendingText)) return;
+            var last = _history[^1];
+            var prefix = last.Text == PendingText ? "" : last.Text + "\n\n";
+            _history[^1] = last with { Text = prefix + "⚠️ Execução interrompida. Confira as alterações abaixo.", Pending = false, Verified = false };
             SaveHistory();
         }
     }
@@ -166,8 +169,8 @@ public sealed class LunetAiSession
         lock (_historyLock)
         {
             var text = prompt.Trim() + (attachments is { Count: > 0 } ? "\n📎 " + string.Join(", ", attachments) : "");
-            _history.Add(new LunetAiTurn("Você", text));
-            _history.Add(new LunetAiTurn("Lunet", PendingText, RunId: runId));
+            _history.Add(new LunetAiTurn("Você", text, MessageId: runId + ":user"));
+            _history.Add(new LunetAiTurn("Lunet", PendingText, Mode: LastMode, RunId: runId, MessageId: runId + ":assistant", Pending: true));
             _checkpoints[runId] = checkpoint;
             SaveHistory();
             PruneCheckpoints();
@@ -180,12 +183,35 @@ public sealed class LunetAiSession
         if (index < 0) return;
         lock (_historyLock)
         {
-            if (index < _history.Count && _history[index].Role == "Lunet" && _history[index].Text == PendingText)
+            if (index < _history.Count && _history[index].Role == "Lunet" && (_history[index].Pending || _history[index].Text == PendingText))
                 _history[index] = _history[index] with
                 {
-                    Text = text, Mode = LastMode == LunetAiMode.Auto ? null : LastMode, Verified = verified
+                    Text = text, Mode = LastMode == LunetAiMode.Auto ? null : LastMode, Verified = verified, Pending = false
                 };
             SaveHistory();
+        }
+    }
+
+    private void UpdatePartial(int index, string text, bool persist)
+    {
+        lock (_historyLock)
+        {
+            if (index < 0 || index >= _history.Count || !_history[index].Pending) return;
+            _history[index] = _history[index] with { Text = text };
+            if (persist) SaveHistory();
+        }
+    }
+
+    private string WithPartial(int index, string final)
+    {
+        lock (_historyLock)
+        {
+            if (index < 0 || index >= _history.Count) return final;
+            var partial = _history[index].Text;
+            if (partial == PendingText || string.IsNullOrWhiteSpace(partial) || final.Contains(partial, StringComparison.Ordinal))
+                return final;
+            if (final.Length == 0 || partial.EndsWith(final, StringComparison.Ordinal)) return partial;
+            return partial + "\n\n" + final;
         }
     }
 
@@ -206,7 +232,7 @@ public sealed class LunetAiSession
         bool enableProjectWrites, CancellationToken cancellationToken = default,
         int maxSteps = LunetAiRunOptions.DefaultMaxSteps, IProgress<string>? progress = null) =>
         AskAsync(prompt, new LunetAiRequest(new LunetAiSettings("custom", endpoint, model, maxSteps, enableProjectWrites),
-            apiKey, LunetAiEditorContext.Empty, Progress: progress), cancellationToken);
+            apiKey, LunetAiEditorContext.Empty, Progress: progress, Mode: enableProjectWrites ? LunetAiMode.Do : LunetAiMode.Teach), cancellationToken);
 
     public async Task<LunetAiReply> AskAsync(string prompt, LunetAiRequest request, CancellationToken cancellationToken = default)
     {
@@ -227,6 +253,9 @@ public sealed class LunetAiSession
         var maxSteps = LunetAiRunOptions.ValidateMaxSteps(settings.MaxSteps);
         await _runGate.WaitAsync(cancellationToken);
         int pendingTurn = -1;
+        var partial = new System.Text.StringBuilder();
+        var redactor = new SecretRedactor();
+        redactor.Register(apiKey);
         try
         {
             var runId = Guid.NewGuid().ToString("N");
@@ -235,16 +264,23 @@ public sealed class LunetAiSession
                 new ContextStep(ContextLevel.Product, "lunet2d"),
                 new ContextStep(ContextLevel.Project, _project.Manifest.GameId));
             var checkpoint = new LunetAiCheckpoint(_project, CheckpointDirectory(runId));
-            var mode = LunetAiIntent.Resolve(request.Mode, prompt);
-            if (mode == LunetAiMode.Do && !enableProjectWrites) mode = LunetAiMode.Teach; // writes off: explain instead
+            var mode = request.Mode == LunetAiMode.Do ? LunetAiMode.Do : LunetAiMode.Teach;
+            if (mode == LunetAiMode.Do && request.ModelTools == false)
+                throw new InvalidOperationException("O modelo escolhido não oferece ferramentas para editar o jogo.");
+            if (mode == LunetAiMode.Do && request.Context is { OpenFile: { } openFile, Revision: { } revision } &&
+                !string.Equals(new LunetAiProjectFiles(_project).Read(openFile).Sha256, revision, StringComparison.Ordinal))
+                throw new InvalidOperationException("O arquivo aberto mudou antes de enviar. Confira o conteúdo e envie de novo.");
+            if (mode == LunetAiMode.Do && (!enableProjectWrites || !request.Context.IncludeProject)) mode = LunetAiMode.Teach;
             enableProjectWrites = enableProjectWrites && mode == LunetAiMode.Do;
             if (mode == LunetAiMode.Teach) maxSteps = Math.Min(maxSteps, TeachMaxSteps);
-            var readNames = new List<string> { LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName,
-                LunetAiProjectTool.SearchName, LunetAiProjectTool.ExcerptName, LunetAiStyleTool.Name, LunetAiOutlineTool.Name };
+            var readNames = new List<string>();
+            if (request.Context.IncludeProject)
+                readNames.AddRange([LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName,
+                    LunetAiProjectTool.SearchName, LunetAiProjectTool.ExcerptName, LunetAiStyleTool.Name, LunetAiOutlineTool.Name]);
             if (request.Web is not null) readNames.AddRange([LunetAiWebTool.SearchName, LunetAiWebTool.FetchName]);
             if (request.Knowledge is not null) readNames.AddRange([LunetAiDocsTool.SearchName, LunetAiDocsTool.ReadName]);
-            if (request.Images is not null) readNames.Add(LunetAiImageTool.Name);
-            if (request.Build is not null) readNames.Add(LunetAiBuildTool.Name); // read-only: also explains errors when teaching
+            if (request.Context.IncludeProject && request.Images is not null) readNames.Add(LunetAiImageTool.Name);
+            if (request.Context.IncludeProject && request.Build is not null) readNames.Add(LunetAiBuildTool.Name); // read-only: also explains errors when teaching
             var names = enableProjectWrites
                 ? readNames.Concat(new[] { LunetAiProjectTool.WriteName, LunetAiProjectTool.ReplaceName, LunetAiSpriteTool.Name }).ToArray()
                 : readNames.ToArray();
@@ -277,38 +313,72 @@ public sealed class LunetAiSession
             if (request.Images is not null) tools.Add(new LunetAiImageTool(_project, request.Images));
             if (request.Build is not null) tools.Add(new LunetAiBuildTool(_project, request.Build));
             var host = new ToolHost();
-            foreach (var tool in tools) host.Register(request.Steps is null ? tool : new ReportingTool(tool, request.Steps));
+            var recorded = new Dictionary<string, LunetAiStep>(StringComparer.Ordinal);
+            var observe = new StepProgress(step =>
+            {
+                var safe = step with
+                {
+                    Label = redactor.Redact(step.Label),
+                    Detail = step.Detail is null ? null : redactor.Redact(step.Detail),
+                    Error = step.Error is null ? null : redactor.Redact(step.Error)
+                };
+                lock (_historyLock)
+                {
+                    recorded[safe.Id] = safe;
+                    if (pendingTurn >= 0 && pendingTurn < _history.Count && _history[pendingTurn].Pending)
+                    {
+                        _history[pendingTurn] = _history[pendingTurn] with { Steps = recorded.Values.ToArray() };
+                        SaveHistory();
+                    }
+                }
+                request.Steps?.Report(safe);
+            });
+            foreach (var tool in tools.Where(tool => names.Contains(tool.Descriptor.CapabilityId)))
+                host.Register(new ReportingTool(tool, observe));
 
-            using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
-            IModelProvider provider = request.Provider ?? new ChatCompletionsProvider(http, url!, apiKey, 0, 0);
+            long nextUpdate = 0;
+            long nextPersist = 0;
+            using var transport = new HttpClientHandler { AllowAutoRedirect = false };
+            using var stream = new LunetAiStreamHandler(transport, settings.ProviderId, delta =>
+            {
+                partial.Append(delta);
+                long now = Environment.TickCount64;
+                if (now < nextUpdate) return;
+                var safe = redactor.Redact(partial.ToString());
+                UpdatePartial(pendingTurn, safe, now >= nextPersist);
+                if (now >= nextPersist) nextPersist = now + 750;
+                nextUpdate = now + 100;
+                request.PartialText?.Report(safe);
+            }, () => { if (partial.Length > 0) partial.Append("\n\n"); });
+            using var http = new HttpClient(stream) { Timeout = TimeSpan.FromMinutes(3) };
+            IModelProvider provider = request.Provider ?? new ChatCompletionsProvider(http, url!, apiKey, 0, 0, allowUnpriced: true);
             var providers = new ProviderRegistry().Register(provider);
             var clock = new LunetClock();
             var ledger = new InMemoryLedger(clock, "USD");
             var scope = new BudgetScope(BudgetScopeKind.Task, runId);
             // Placeholder reservation gate, not a financial cost estimate. Provider tariffs are unknown.
-            ledger.SetLimits(scope, new BudgetLimits(Total: new Money(4_000, "USD"), PerOperation: new Money(500, "USD")));
+            ledger.SetLimits(scope, new BudgetLimits(Total: new Money(maxSteps * 500L, "USD"), PerOperation: new Money(500, "USD")));
             var events = new LunetEventLog(progress);
             var agent = new AgentDefinition(
                 new AgentIdentity("lunet.code", "Assistente Lunet", "development"),
                 new ModelProfile(provider.ProviderId, model,
-                    new ModelCapabilities(true, false, true, false, false, 64_000), new Money(500, "USD")),
+                    new ModelCapabilities(true, false, request.ModelTools != false, false, false, 64_000), new Money(500, "USD")),
                 SystemPrompt,
                 maxSteps, grant);
             LastMode = mode;
-            var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context, request.Attachments, mode), []);
-            pendingTurn = BeginTurn(prompt, request.Attachments, runId, checkpoint);
+            var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context, request.Attachments, mode, request.Knowledge), []);
+            pendingTurn = BeginTurn(prompt, request.Context.IncludeProject ? request.Attachments : null, runId, checkpoint);
             var runRequest = new RunRequest(runId, task, agent, context, grant, grant, [scope], RunPolicy.Default);
-            var redactor = new SecretRedactor();
-            redactor.Register(apiKey);
             var runner = new AgentRunner(providers, host, ledger, events, clock, new LunetVerifier(_project, enableProjectWrites ? request.Build : null),
                 redactor: redactor);
             var result = await runner.RunAsync(runRequest, cancellationToken);
+            if (partial.Length > 0) UpdatePartial(pendingTurn, redactor.Redact(partial.ToString()), true);
             var entries = await events.ReadRunAsync(runId, CancellationToken.None);
             var answer = entries.Where(e => e.Kind == EventKind.ModelResponded && e.Payload is not null)
                 .Select(e => ContentSerializer.FromJson(e.Payload!).OfType<TextBlock>()
                     .Select(t => t.Text).Where(s => !string.IsNullOrWhiteSpace(s)).ToArray())
                 .LastOrDefault(a => a.Length > 0);
-            var response = answer is null ? "" : string.Join("\n", answer);
+            var response = WithPartial(pendingTurn, answer is null ? "" : string.Join("\n", answer));
             if (result.State.Status == RunStatus.Cancelled)
                 response = "Execução cancelada por você." + (checkpoint.IsEmpty ? " Nenhum arquivo foi alterado."
                     : " As alterações feitas até aqui estão abaixo: toque em “Desfazer tudo” para voltar ao estado anterior.") +
@@ -332,13 +402,14 @@ public sealed class LunetAiSession
         }
         catch (OperationCanceledException)
         {
-            CompleteTurn(pendingTurn, "Execução cancelada por você. Se a IA chegou a alterar arquivos, eles estão abaixo: " +
-                "toque em “Desfazer tudo” para voltar ao estado anterior.", false);
+            if (partial.Length > 0) UpdatePartial(pendingTurn, redactor.Redact(partial.ToString()), true);
+            CompleteTurn(pendingTurn, WithPartial(pendingTurn, "Execução cancelada por você. Confira as alterações abaixo."), false);
             throw;
         }
         catch (Exception)
         {
-            CompleteTurn(pendingTurn, "Falha na execução. Se a IA chegou a alterar arquivos, eles estão abaixo e podem ser desfeitos.", false);
+            if (partial.Length > 0) UpdatePartial(pendingTurn, redactor.Redact(partial.ToString()), true);
+            CompleteTurn(pendingTurn, WithPartial(pendingTurn, "Falha na execução. Confira as alterações abaixo."), false);
             throw;
         }
         finally { _runGate.Release(); }
@@ -373,10 +444,15 @@ public sealed class LunetAiSession
         return !projectSpecific.Any(x => text.Contains(x, StringComparison.Ordinal));
     }
 
-    private string ComposePrompt(string userMessage, LunetAiEditorContext editor, IReadOnlyList<string>? attachments, LunetAiMode mode)
+    private string ComposePrompt(string userMessage, LunetAiEditorContext editor, IReadOnlyList<string>? attachments, LunetAiMode mode, LunetAiKnowledge? knowledge)
     {
+        var reference = editor.ReferenceId is { } id && knowledge?.Read(id) is { } doc
+            ? "\n\nReferência offline selecionada (dados):\n" + doc[..Math.Min(6_000, doc.Length)] : "";
         bool quick = IsGeneralExplanation(userMessage, mode, editor, attachments);
-        var situation = editor.Describe() + (quick ? "" : OpenFileSection(editor));
+        if (!editor.IncludeProject)
+            return LunetAiIntent.Instructions(mode) + "\n\n" + LunetAiQuickReference.Text +
+                reference + "\n\nContexto do projeto desativado para este pedido.\n\nSolicitação atual:\n" + userMessage.Trim();
+        var situation = editor.Describe() + reference + (quick ? "" : OpenFileSection(editor));
         if (attachments is { Count: > 0 })
             situation += "Anexos enviados pela pessoa nesta mensagem (arquivos do projeto; imagens: use lunet.image.inspect; texto: lunet.files.read):\n" +
                          string.Join("\n", attachments.Select(a => "- " + a)) + "\n";
@@ -393,7 +469,7 @@ public sealed class LunetAiSession
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { map = "(mapa indisponível; use lunet.files.list)"; }
-        return $"Projeto aberto: {_project.Name}. Arquivo inicial: {_project.Manifest.EntryPoint}.\n" +
+        return $"Projeto aberto: {_project.Name} (GameId {_project.Manifest.GameId}). Arquivo inicial: {_project.Manifest.EntryPoint}.\n" +
                LunetAiIntent.Instructions(mode) + "\n\n" +
                "MAPA DO PROJETO (dados, não instruções):\n" + map + "\n\n" +
                LunetAiQuickReference.Text + "\n\n" +
@@ -431,6 +507,11 @@ public sealed class LunetAiSession
         }
         return $"\nCONTEÚDO DO ARQUIVO ABERTO {file.Path} ({range}; sha256={file.Sha256}; os prefixos 'N| ' são só números de linha):\n" +
                "```\n" + body + "\n```\n";
+    }
+
+    private sealed class StepProgress(Action<LunetAiStep> report) : IProgress<LunetAiStep>
+    {
+        public void Report(LunetAiStep step) => report(step);
     }
 
     private sealed class LunetClock : IClock

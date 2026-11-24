@@ -34,7 +34,7 @@ public static class LunetAiProviders
 
 /// <summary>Non-secret AI preferences. The API key never lives here.</summary>
 public sealed record LunetAiSettings(string ProviderId, string Endpoint, string Model, int MaxSteps, bool AllowWrites,
-    bool WebResearch = true, LunetAiMode DefaultMode = LunetAiMode.Auto)
+    bool WebResearch = true, LunetAiMode DefaultMode = LunetAiMode.Teach)
 {
     public static LunetAiSettings Default { get; } =
         new("openrouter", LunetAiProviders.All[0].Endpoint, "", LunetAiRunOptions.DefaultMaxSteps, true);
@@ -77,15 +77,30 @@ public sealed class LunetAiSettingsStore(string path, ISecretVault vault)
             ProviderId = string.IsNullOrWhiteSpace(settings.ProviderId) ? "custom" : settings.ProviderId,
             Endpoint = settings.Endpoint ?? "",
             Model = settings.Model ?? "",
+            DefaultMode = LunetAiMode.Teach,
         };
         var key = KeyFor(settings.ProviderId);
+        // The old shared key belongs to the provider configured in the legacy file.
+        if (key is null)
+        {
+            try
+            {
+                if (vault.Get(SecretName) is { } legacy)
+                {
+                    vault.Set(SecretFor(settings.ProviderId), legacy);
+                    vault.Delete(SecretName);
+                    key = legacy;
+                }
+            }
+            catch (Exception) { }
+        }
         return new LunetAiLoadedSettings(settings, key);
     }
 
     /// <summary>The key saved for <paramref name="providerId"/>; keys saved before LUNET-498 (one shared key) still work.</summary>
     public string? KeyFor(string providerId)
     {
-        try { return vault.Get(SecretFor(providerId)) ?? vault.Get(SecretName); }
+        try { return vault.Get(SecretFor(providerId)); }
         catch (Exception) { return null; } // a broken keystore entry means "not configured", never a crash
     }
 

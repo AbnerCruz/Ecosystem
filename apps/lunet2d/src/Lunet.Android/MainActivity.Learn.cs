@@ -264,7 +264,7 @@ public sealed partial class MainActivity
                 OpenAiPanel("Estou estudando no Lunet Aprender, desafio " + challenge.Id + " (" +
                     challenge.Title + "). Objetivo: " + challenge.Mission +
                     " Estou investigando: " + challenge.Investigate +
-                    " Dê uma pista conceitual, não escreva o jogo nem altere arquivos sem minha autorização.");
+                    " Dê uma pista conceitual, não escreva o jogo nem altere arquivos sem minha autorização.", study: true);
             }, ButtonStyle.Secondary));
         }
         else if (progress is not null)

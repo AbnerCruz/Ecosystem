@@ -6,6 +6,7 @@ namespace Lunet.Core;
 public sealed class LunetProject
 {
     private static readonly string[] IgnoredDirectories = [".lunet", "bin", "obj", ".git"];
+    private static readonly object TextWrites = new();
     private const string TemporarySuffix = ".lunet-tmp";
 
     internal LunetProject(string directory, ProjectManifest manifest)
@@ -48,14 +49,31 @@ public sealed class LunetProject
     public void WriteText(string relativePath, string text)
     {
         var path = Resolve(relativePath);
-        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        AtomicFile.WriteAllText(path, text);
+        lock (TextWrites)
+        {
+            System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            AtomicFile.WriteAllText(path, text);
+        }
+    }
+
+    /// <summary>Atomically checks the observed text against other in-process text authors before writing.</summary>
+    public bool WriteTextIfUnchanged(string relativePath, string? expected, string text, out string? actual)
+    {
+        var path = Resolve(relativePath);
+        lock (TextWrites)
+        {
+            actual = File.Exists(path) ? File.ReadAllText(path) : null;
+            if (!string.Equals(actual, expected, StringComparison.Ordinal)) return false;
+            System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            AtomicFile.WriteAllText(path, text);
+            return true;
+        }
     }
 
     public void CreateFile(string relativePath, string text = "")
     {
-        if (File.Exists(Resolve(relativePath))) throw new ProjectException("Esse arquivo já existe.");
-        WriteText(relativePath, text);
+        if (!WriteTextIfUnchanged(relativePath, null, text, out _))
+            throw new ProjectException("Esse arquivo já existe.");
     }
 
     /// <summary>Copia um arquivo binário (imagem, áudio) para o projeto de forma atômica.</summary>

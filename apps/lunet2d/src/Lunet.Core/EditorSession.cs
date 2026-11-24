@@ -47,8 +47,18 @@ public sealed class EditorSession
             journal?.WriteBuffer(Path, currentText);
             throw new EditorConflictException(Path, disk);
         }
-        if (currentText != SavedText || !exists)
-            project.WriteText(Path, currentText);
+        if ((currentText != SavedText || !exists) &&
+            !project.WriteTextIfUnchanged(Path, exists ? SavedText : null, currentText, out var actual))
+        {
+            if (actual == currentText)
+            {
+                SavedText = currentText;
+                journal?.Discard(Path);
+                return true;
+            }
+            journal?.WriteBuffer(Path, currentText);
+            throw new EditorConflictException(Path, actual ?? "");
+        }
         SavedText = currentText;
         journal?.Discard(Path);
         return true;

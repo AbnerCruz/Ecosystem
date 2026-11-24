@@ -1,3 +1,7 @@
+## F3 · IA global e co-work no projeto (LUNET-521, LUNET-AI-002, LUNET-513/514)
+
+- [ ] **Verificar entrega F3:** modelos por jogo, catálogo paginado, Estudo/Fazer, escopo de contexto, streaming e checkpoints recuperáveis. Evidências e compatibilidade no [guia da F3](docs/guides/f3-ai-workspace.md). A distribuição é validada pelo CI. Teste com fornecedor externo depende de credencial de teste.
+
 ## LUNET-510 · F2/1 — continuidade de Home por GameId (23/11/2026)
 
 - [x] **F2/1 · Continuidade, integrada no PR #1025 e na release 1000586:** migrar atalhos de `launcher-preferences.json` V1 por nome para V2 por `GameId` sem alterar os jogos; resolver renomeações, IDs duplicados/corrompidos e projeto ausente; últimos oito projetos, fixação independente e limpeza após exclusão. Na Home, ações separadas Editar/Jogar/Criar, Preview iniciado no launcher retorna à Home e Back do editor restaura origem. A execução Jogar recusa ignorar autosave recuperável. Testes: `LauncherContinuityTests`, `LauncherPreferencesTests` e capturas Android 13 `home`, `home-resume`, `home-missing`.

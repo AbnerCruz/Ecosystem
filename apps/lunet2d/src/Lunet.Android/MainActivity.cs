@@ -1519,6 +1519,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnDestroy()
     {
         LunetAiRuns.Changed -= OnAiRunChanged;
+        if (_workspaceChat is not null) _workspaceChat.Changed -= OnWorkspaceChatChanged;
         _audioStudio?.Dispose();
         DisposeEcosystemConnection();
         DisposePreview();

@@ -228,7 +228,7 @@ public sealed class LunetAiExpertiseTests
             var reply = await session.AskAsync("transforme meu desenho em sprite", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m", AllowWrites = true }, "chave-de-teste-123456789",
                 LunetAiEditorContext.Empty, null, provider, Knowledge: RealKnowledge(), Images: new FakeImages(Drawing()),
-                Attachments: ["Notes/desenho.jpg"]), TestContext.Current.CancellationToken);
+                Attachments: ["Notes/desenho.jpg"], Mode: LunetAiMode.Do), TestContext.Current.CancellationToken);
 
             Assert.Equal(RunStatus.Succeeded, reply.Status);
             var first = provider.Requests[0];

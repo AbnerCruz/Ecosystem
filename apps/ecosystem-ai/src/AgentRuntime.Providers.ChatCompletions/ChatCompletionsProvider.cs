@@ -20,6 +20,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
     private readonly string? _token;
     private readonly decimal _inputUsdPerMillion;
     private readonly decimal _outputUsdPerMillion;
+    private readonly bool _allowUnpriced;
 
     public string ProviderId => "chat-completions";
     /// <summary>Verdadeiro se qualquer resposta válida deste provider precisou estimar custo.
@@ -35,7 +36,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
     }
 
     public ChatCompletionsProvider(HttpClient client, Uri endpoint, string? token,
-        decimal inputUsdPerMillion, decimal outputUsdPerMillion)
+        decimal inputUsdPerMillion, decimal outputUsdPerMillion, bool allowUnpriced = false)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(endpoint);
@@ -50,6 +51,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
         _token = string.IsNullOrWhiteSpace(token) ? null : token;
         _inputUsdPerMillion = inputUsdPerMillion;
         _outputUsdPerMillion = outputUsdPerMillion;
+        _allowUnpriced = allowUnpriced;
     }
 
     public async ValueTask<ModelResponse> CompleteAsync(ModelRequest request, CancellationToken cancellationToken)
@@ -197,10 +199,12 @@ public sealed class ChatCompletionsProvider : IModelProvider
                     }
                 }
                 if (prompt < 0 || completion < 0 || reportedUsd < 0) throw new JsonException("uso ou custo negativo");
-                if (reportedUsd is null && (!promptKnown || !completionKnown || (prompt == 0 && completion == 0) || (_inputUsdPerMillion == 0 && _outputUsdPerMillion == 0)))
+                bool unpriced = reportedUsd is null && (!promptKnown || !completionKnown || (prompt == 0 && completion == 0) ||
+                    (_inputUsdPerMillion == 0 && _outputUsdPerMillion == 0));
+                if (unpriced && !_allowUnpriced)
                     throw new ProviderException("cost-unknown", "Sem custo informado nem tarifa configurada; operação não pode ser conciliada com segurança.", false);
                 var usdAmount = reportedUsd ?? (prompt * _inputUsdPerMillion + completion * _outputUsdPerMillion) / 1_000_000m;
-                var cents = checked((long)decimal.Ceiling(usdAmount * 100m));
+                var accountingCost = unpriced ? request.Profile.MaxCostPerCall : new Money(checked((long)decimal.Ceiling(usdAmount * 100m)), "USD");
                 var finish = first.TryGetProperty("finish_reason", out var finishProperty) ? finishProperty.GetString() : null;
                 if (finish == "length")
                     throw new ProviderException("truncated", "Saída truncada não equivale a tarefa concluída.", false);
@@ -213,9 +217,9 @@ public sealed class ChatCompletionsProvider : IModelProvider
                     throw new JsonException("Provider encerrou para tools sem entregar chamadas");
                 var stop = hasToolCalls ? StopReason.ToolUse : StopReason.EndTurn;
                 var modelResponse = new ModelResponse(blocks, stop,
-                    new Usage(prompt, completion, new Money(cents, "USD")) { TokensKnown = promptKnown && completionKnown });
+                    new Usage(prompt, completion, accountingCost) { TokensKnown = promptKnown && completionKnown, CostKnown = !unpriced });
                 // Só contabilizar respostas válidas e nunca rebaixar estimativa anterior.
-                LastCostEstimated |= reportedUsd is null;
+                LastCostEstimated |= reportedUsd is null && !unpriced;
                 return modelResponse;
             }
             catch (ProviderException) { throw; }

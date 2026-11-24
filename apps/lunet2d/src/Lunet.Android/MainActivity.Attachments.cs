@@ -21,6 +21,7 @@ public sealed partial class MainActivity
     private static LunetAiKnowledge? _aiKnowledge;
     private readonly List<string> _aiAttachments = [];
     private LinearLayout? _aiAttachmentRow;
+    private LunetProject? _attachmentProject;
 
     /// <summary>The Framework API reference and guides already shipped in the APK, indexed once per process.</summary>
     private LunetAiKnowledge AiKnowledge()
@@ -77,13 +78,21 @@ public sealed partial class MainActivity
         intent.SetType("*/*");
         intent.PutExtra(Intent.ExtraMimeTypes, new[] { "image/*", "text/*", "application/json", "application/pdf", "*/*" });
         intent.PutExtra(Intent.ExtraAllowMultiple, true);
+        _attachmentProject = _project;
         StartActivityForResult(intent, requestCode);
     }
 
     private bool HandleAttachmentResult(int requestCode, Result resultCode, Intent? data)
     {
         if (requestCode is not (AiAttachRequestCode or NotesImportRequestCode)) return false;
-        if (resultCode != Result.Ok || data is null || _project is null) return true;
+        var target = _attachmentProject;
+        _attachmentProject = null;
+        if (resultCode != Result.Ok || data is null) return true;
+        if (target is null || !ReferenceEquals(target, _project))
+        {
+            Toast.MakeText(this, "Abra novamente o seletor no projeto que receberá o arquivo.", ToastLength.Long)?.Show();
+            return true;
+        }
         var uris = new List<AndroidUri>();
         if (data.ClipData is { } clip)
             for (int i = 0; i < clip.ItemCount; i++) if (clip.GetItemAt(i)?.Uri is { } u) uris.Add(u);

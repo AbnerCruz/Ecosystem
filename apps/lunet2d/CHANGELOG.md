@@ -1,3 +1,10 @@
+## 0.0.1-dev.1000588 — F3 · IA global e co-work
+
+- Modelo por jogo, fallback para o padrão global, catálogo pesquisável e ID manual.
+- Estudo é padrão e Fazer exige seleção explícita. É possível verificar ou desativar o contexto do projeto e escolher uma referência offline.
+- Texto em streaming nos dois chats, rascunhos privados, histórico parcial e registro de ferramentas. Checkpoints com revisão confirmada permitem revisar e desfazer sem substituir edições posteriores.
+- [Guia da F3](docs/guides/f3-ai-workspace.md).
+
 ## 0.0.1-dev.1000587 — F2: área de trabalho, primeiro uso e aparência
 
 - Barra de destinos em retrato e navegação lateral em janelas largas. A Home preserva rolagem e volta à origem. Projetos fixados podem ser reordenados.
