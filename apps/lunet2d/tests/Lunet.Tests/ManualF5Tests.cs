@@ -58,6 +58,27 @@ public sealed class ManualF5Tests
         Assert.Null(browser.NewNavigation().Current);
     }
 
+    [Fact]
+    public void EveryPublishedCompleteGameExampleCompiles()
+    {
+        var root = Root();
+        var failures = new List<string>();
+        foreach (var entry in Catalog().Entries)
+        {
+            var file = Path.Combine(root, "docs", "manual", entry.Id + ".md");
+            if (!File.Exists(file)) file = Path.Combine(root, "docs", "guides", entry.Id + ".md");
+            foreach (var block in MarkdownLite.Parse(File.ReadAllText(file)).Where(b => b.Kind == MarkdownBlockKind.Code &&
+                (b.Language == "csharp full" || (b.Language is "csharp" or "cs" or "") &&
+                    System.Text.RegularExpressions.Regex.IsMatch(b.Text, @"(?m)^\s*(?:public |internal )?(?:sealed )?class \w+\s*:\s*Game\b"))))
+            {
+                var result = Compile(block.Text);
+                if (!result.Success)
+                    failures.Add(entry.Id + ": " + string.Join(", ", result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));
+            }
+        }
+        Assert.True(failures.Count == 0, string.Join("\n", failures));
+    }
+
     private static string SourceOf(string lesson) => MarkdownLite.Parse(File.ReadAllText(
         Path.Combine(Root(), "docs", "manual", lesson + ".md"))).Single(b => b.Language == "csharp full").Text;
 
