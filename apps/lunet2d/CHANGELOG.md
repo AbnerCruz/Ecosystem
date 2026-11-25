@@ -1,6 +1,6 @@
 # Changelog
 
-## Próxima versão — evolução do Framework (candidata, não publicada)
+## 0.0.1-dev.1000593 — evolução do Framework (E1–E3, candidata)
 
 - SpriteBatch: passagem ordenada opt-in, chaves explícitas e estáveis, guarda de passagem e cancelamento; Begin convencional preservado.
 - Projetos novos: Project/Imports.cs visível, presets e política de compilação explícita. Essencial provisório até validação do Amplo.

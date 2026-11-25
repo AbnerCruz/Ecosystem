@@ -876,3 +876,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ## 24/11/2026 — evolução do Framework (E1–E3)
 
 PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996121a`. E1/E2/E3 possuem código candidato e testes escritos; não confundir com validação executada. Sem SDK local. Manter o PR fora da main até F8 integrada, baseline pós-F8 e checks completos. Plano: `docs/plans/lunet-plano-evolucao-framework-2026-11-24.md`. Próxima ação: executar CI, reproduzir baseline Release, completar lacunas de testes e evidências, integrar pelo gate oficial e verificar APK da main.
+
+
+## 24/11/2026 — correção de publicação E1–E3
+
+ChatGPT: PR #1037 integrado em `cd258e55d7d156456b5ae5fc2f3e811453d7bbfb`; CI Lunet 45514864221 verde, jobs test e apk da release 45514864247 verdes. Publicação recusada porque VERSION/VERSION_CODE 1000592 já pertencem ao commit `0f2874ec`. Corrigidos ambos para 1000593, mantendo estágio dev e tag anterior intacta; changelog identifica a candidata. Escopo apenas metadados de release, sem alteração de framework, jogos ou workflows. O artefato E1–E3 original permanece no run 45514864247 (lunet-apk, 14976694580). Próxima ação: integração pelo gate oficial, confirmação do novo pipeline e verificação dos assets e SHA da release. Sem teste físico e sem alegação de completar os critérios ainda abertos do plano.
