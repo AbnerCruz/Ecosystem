@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.1-dev.1000598 — Volta onde você parou
+
+- Ao abrir um jogo, o editor volta ao último arquivo, ao cursor e à linha em que você estava. Isso vale também depois de fechar o app.
+- Os arquivos que você abriu aparecem primeiro na faixa de arquivos.
+
 ## 0.0.1-dev.1000597 — Um só Lunet, com a interface nova
 
 - O Lunet abre na interface nova, com seus jogos, abas e o teclado próprio da IDE. Ele atualiza por cima do app instalado e encontra os mesmos jogos.

@@ -844,6 +844,44 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void EditorSession_ReopensTheGameOnTheFileAndCaretYouLeft()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var name = shell.State.Project!;
+                shell.Workspace.Write("Hero.cs", "public sealed class Hero\n{\n    public void Jump() { }\n}\n");
+                var editor = shell.WorkspaceView.Code;
+                editor.Load("Hero.cs");
+                editor.Surface.Caret = 30;
+                shell.GoHome();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+                shell.OpenProject(name);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Equal("Hero.cs", editor.OpenPath);
+                Assert.Equal(30, editor.Surface.Caret);
+                Assert.Equal("Hero.cs", editor.Session!.Current);
+                Assert.Contains("Hero.cs", editor.Session.Tabs);
+                // A second shell (the app opened again) finds the same session on disk.
+                var again = new LunetShell(root);
+                var window2 = new Window { Width = 412, Height = 915, Content = again };
+                window2.Show();
+                again.OpenProject(name);
+                Assert.Equal("Hero.cs", again.WorkspaceView.Code.OpenPath);
+                window.Close(); window2.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     /// <summary>Runs the UI dispatcher until a task started on it completes (headless tests).</summary>
     private static void Wait(Task task)
     {

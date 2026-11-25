@@ -1,0 +1,62 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-m4-sessao-editor",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T15:34:08Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "bb9a112",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-m4-sessao-editor.json"
+  ],
+  "work_completed": [
+    "M4: the shell keeps an editor session per game (EditorDocuments in .lunet/editor-session.json): last file, caret, selection and first visible line per file; reopening the game or the app returns there; opened files come first in the file strip."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite incl. EditorSession test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    }
+  ],
+  "known_issues": [
+    "The previous Android screens keep their own session store (launcher catalog id); both coexist until those screens are retired.",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "M5 GL preview, M6 inspector/profiler, A1–A6 Studios, P1–P8"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

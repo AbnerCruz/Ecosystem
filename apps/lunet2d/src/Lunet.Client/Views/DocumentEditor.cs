@@ -145,15 +145,71 @@ public sealed class DocumentEditor : UserControl
     }
     public bool IsDirty => OpenPath is not null && _surface.Text != _saved;
 
+    private Lunet.Core.EditorDocuments? _session;
+    private string? _sessionFile;
+
+    /// <summary>
+    /// The editor session of the open game (M4): the files you opened, the current one and where the caret and the
+    /// scroll were in each. Kept in the game itself (<c>.lunet/editor-session.json</c>), so it follows the game.
+    /// </summary>
+    public Lunet.Core.EditorDocuments? Session => _session;
+
+    /// <summary>Opens the game's session: back to the file and the line you were on, or the entry point.</summary>
+    public void OpenSession(string fallback)
+    {
+        _session = null;
+        _sessionFile = _shell.Workspace.Project is { } project ? Path.Combine(project.Directory, ".lunet", "editor-session.json") : null;
+        var session = _sessionFile is null ? new Lunet.Core.EditorDocuments() : Lunet.Core.EditorDocuments.Load(_sessionFile);
+        session.Reconcile(_shell.Workspace.Files().Where(f => ProjectFiles.For(_tab, [f]).Count > 0));
+        OpenPath = null; // the previous game's file must not be saved into this one
+        _saved = null;
+        _session = session;
+        Load(session.Current ?? fallback);
+    }
+
     public void Load(string? path)
     {
         Save();
+        CaptureViewport();
         if (path is null) path = ProjectFiles.For(_tab, _shell.Workspace.Files()).FirstOrDefault();
         OpenPath = path;
         _saved = path is null ? null : _shell.Workspace.Read(path);
         _surface.Text = _saved ?? "";
         if (_surface is CodeSurface loaded) { loaded.SetDiagnostics([]); _analysisDelay.Stop(); _analysisDelay.Start(); }
+        if (path is not null && _session is not null)
+        {
+            _session.Open(path, additional: true);
+            RestoreViewport(_session.Viewport);
+            SaveSession();
+        }
         Rebuild();
+    }
+
+    /// <summary>Remembers the caret, the selection and the first visible line of the open file.</summary>
+    public void CaptureViewport()
+    {
+        if (_session is null || OpenPath is null || _session.Current != OpenPath) return;
+        int top = _surface is CodeSurface code ? code.Editor.TextArea.TextView.GetDocumentLineByVisualTop(code.Editor.TextArea.TextView.ScrollOffset.Y)?.LineNumber ?? 1 : 1;
+        _session.Capture(new Lunet.Core.EditorViewport(_surface.SelectionStart, _surface.SelectionEnd, 0, top));
+    }
+
+    private void RestoreViewport(Lunet.Core.EditorViewport view)
+    {
+        var length = _surface.Text.Length;
+        if (view.Start == 0 && view.End == 0 && view.Y <= 1) return;
+        _surface.Select(Math.Min(view.Start, length), Math.Min(view.End, length));
+        if (_surface is CodeSurface code && view.Y > 1)
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => code.Editor.ScrollTo(Math.Min(view.Y, code.Editor.Document.LineCount), 1),
+                Avalonia.Threading.DispatcherPriority.Loaded);
+    }
+
+    /// <summary>Writes the session next to the game (a lost session never loses code: it is only positions).</summary>
+    public void SaveSession()
+    {
+        if (_session is null || _sessionFile is null) return;
+        CaptureViewport();
+        try { _session.Save(_sessionFile); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     /// <summary>Writes the open document when it changed, then reads it back; reports a failed write instead of hiding it.</summary>
@@ -188,7 +244,9 @@ public sealed class DocumentEditor : UserControl
     private void Rebuild()
     {
         var entries = new List<Control>();
-        foreach (var file in ProjectFiles.For(_tab, _shell.Workspace.Files()))
+        // Files you opened come first (most recent session order), then the rest of the game's files.
+        var open = _session?.Tabs.ToList() ?? [];
+        foreach (var file in ProjectFiles.For(_tab, _shell.Workspace.Files()).OrderBy(f => open.IndexOf(f) is var i && i >= 0 ? i : int.MaxValue))
         {
             var selected = file == OpenPath;
             var label = LunetUi.Text(file, LunetTokens.Type.Label, selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary,
