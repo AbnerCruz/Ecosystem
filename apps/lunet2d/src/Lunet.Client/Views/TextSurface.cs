@@ -5,6 +5,8 @@ using Avalonia.Input;
 using Avalonia.Media;
 using AvaloniaEdit;
 using AvaloniaEdit.Highlighting;
+using AvaloniaEdit.Rendering;
+using Lunet.Compiler;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
 
@@ -68,13 +70,40 @@ public sealed class CodeSurface : ITextSurface
         _editor.TextArea.SelectionCornerRadius = 3;
         _editor.TextArea.Caret.CaretBrush = LunetTokens.Brush(LunetTokens.Color.Primary);
         AutomationProperties.SetName(_editor.TextArea, "Editor de código");
+        _editor.TextArea.TextView.BackgroundRenderers.Add(_diagnostics);
+        _editor.Document.TextChanged += (_, _) => TextChanged?.Invoke();
         _editor.TextArea.GotFocus += (_, _) => Engaged?.Invoke();
         _editor.TextArea.AddHandler(InputElement.PointerReleasedEvent, (_, _) => Engaged?.Invoke(),
             Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
     }
 
+    private readonly DiagnosticsRenderer _diagnostics = new();
+
     /// <summary>The underlying editor (tests and the head's hardware shortcuts).</summary>
     public TextEditor Editor => _editor;
+
+    /// <summary>Raised after every change of the text (typing, keyboard edits, loading).</summary>
+    public event Action? TextChanged;
+
+    /// <summary>The diagnostics drawn under the code now (LUNET-536 M1).</summary>
+    public IReadOnlyList<LunetDiagnostic> Diagnostics => _diagnostics.Items;
+
+    /// <summary>Shows the analyzer's errors and warnings as wavy underlines (infos are not drawn).</summary>
+    public void SetDiagnostics(IReadOnlyList<LunetDiagnostic> diagnostics)
+    {
+        _diagnostics.Items = diagnostics.Where(d => d.Severity != DiagnosticSeverity.Info).ToArray();
+        _editor.TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
+    }
+
+    /// <summary>Puts the caret on a 1-based line and column and brings it into view (Problemas → código).</summary>
+    public void GoTo(int line, int column)
+    {
+        var doc = _editor.Document;
+        line = Math.Clamp(line, 1, doc.LineCount);
+        var l = doc.GetLineByNumber(line);
+        Caret = Math.Min(l.Offset + Math.Max(0, column - 1), l.EndOffset);
+        _editor.ScrollTo(line, column);
+    }
     public Control View => _editor;
     public InputElement InputTarget => _editor.TextArea;
     public event Action? Engaged;
@@ -142,6 +171,47 @@ public sealed class CodeSurface : ITextSurface
             color.Background = null;
         }
         return definition;
+    }
+}
+
+/// <summary>Draws a wavy underline under each diagnostic's span (red errors, amber warnings).</summary>
+internal sealed class DiagnosticsRenderer : IBackgroundRenderer
+{
+    public IReadOnlyList<LunetDiagnostic> Items { get; set; } = [];
+    public KnownLayer Layer => KnownLayer.Selection;
+
+    public void Draw(TextView textView, DrawingContext drawingContext)
+    {
+        if (Items.Count == 0 || textView.Document is not { } doc || !textView.VisualLinesValid) return;
+        foreach (var d in Items)
+        {
+            if (d.Line < 1 || d.Line > doc.LineCount) continue;
+            var startLine = doc.GetLineByNumber(d.Line);
+            int start = Math.Min(startLine.Offset + Math.Max(0, d.Column - 1), startLine.EndOffset);
+            int endLineNo = Math.Clamp(d.EndLine, d.Line, doc.LineCount);
+            var endLine = doc.GetLineByNumber(endLineNo);
+            int end = Math.Min(endLine.Offset + Math.Max(0, d.EndColumn - 1), endLine.EndOffset);
+            if (end <= start) end = Math.Min(start + 1, doc.TextLength);
+            if (end <= start) continue;
+            var pen = new Pen(LunetTokens.Brush(d.Severity == DiagnosticSeverity.Error ? LunetTokens.Color.Danger : LunetTokens.Color.Warning), 1.4);
+            var segment = new AvaloniaEdit.Document.TextSegment { StartOffset = start, EndOffset = end };
+            foreach (var rect in BackgroundGeometryBuilder.GetRectsForSegment(textView, segment))
+            {
+                var geometry = new StreamGeometry();
+                using (var g = geometry.Open())
+                {
+                    double y = rect.Bottom - 1, x = rect.Left;
+                    g.BeginFigure(new Point(x, y), false);
+                    for (bool up = true; x < rect.Right; up = !up)
+                    {
+                        x = Math.Min(x + 3, rect.Right);
+                        g.LineTo(new Point(x, up ? y - 2.5 : y));
+                    }
+                    g.EndFigure(false);
+                }
+                drawingContext.DrawGeometry(null, pen, geometry);
+            }
+        }
     }
 }
 

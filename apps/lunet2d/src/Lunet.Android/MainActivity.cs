@@ -378,7 +378,7 @@ public sealed partial class MainActivity : Activity
         _console.Clear();
         _lastProfilerReport = null;
         _openFile = null;
-        _assistant = new EditorAssistant();
+        _assistant = new EditorAssistant(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
         _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(f => (f.Path, f.Text)).ToList());
         _journal = new AutosaveJournal(_project);
         LoadEditorDocuments();

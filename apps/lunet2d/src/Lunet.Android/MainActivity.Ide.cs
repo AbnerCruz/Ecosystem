@@ -283,7 +283,7 @@ public sealed partial class MainActivity
         _session.Unload();
         var open = _openFile;
         _openFile = null;
-        _assistant = new EditorAssistant();
+        _assistant = new EditorAssistant(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
         _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(s => (s.Path, s.Text)));
         var target = open is not null && _project.ListFiles().Contains(open) ? open : _project.Manifest.EntryPoint;
         OpenFile(target);

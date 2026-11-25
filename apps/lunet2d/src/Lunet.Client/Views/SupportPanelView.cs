@@ -96,11 +96,42 @@ public sealed class SupportPanelView : UserControl
         return new ScrollViewer { Content = list };
     }
 
+    /// <summary>The analyzer's errors and warnings while typing (M1); a tap goes to the line in the code.</summary>
+    private Control LiveProblems()
+    {
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xs, Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.M) };
+        foreach (var d in _shell.LiveProblems.OrderBy(d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Error ? 0 : 1).ThenBy(d => d.Line))
+        {
+            var error = d.Severity == Lunet.Compiler.DiagnosticSeverity.Error;
+            var body = new StackPanel { Spacing = 2 };
+            body.Children.Add(LunetUi.Text($"Linha {d.Line} · {(error ? "erro" : "aviso")} {d.Id}", LunetTokens.Type.Caption, error ? LunetTokens.Color.Danger : LunetTokens.Color.Warning, FontWeight.SemiBold));
+            body.Children.Add(LunetUi.Text(d.Message, LunetTokens.Type.Label));
+            var row = new Button
+            {
+                Content = body, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(LunetTokens.Space.S), Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+                BorderBrush = LunetTokens.Brush(error ? LunetTokens.Color.Danger : LunetTokens.Color.Warning), BorderThickness = new Thickness(3, 0, 0, 0),
+                CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+            };
+            Avalonia.Automation.AutomationProperties.SetName(row, $"Ir para a linha {d.Line}: {d.Message}");
+            var diagnostic = d;
+            row.Click += (_, _) =>
+            {
+                _shell.State.ShowPanel(SupportPanel.None);
+                _shell.State.SelectTab(WorkspaceTab.Code);
+                if (_shell.WorkspaceView.Code.Surface is CodeSurface code) { code.GoTo(diagnostic.Line, diagnostic.Column); code.Focus(); }
+            };
+            list.Children.Add(row);
+        }
+        return new ScrollViewer { Content = list };
+    }
+
     private Control Problems()
     {
         var problems = _shell.Game.Problems;
+        if (problems.Count == 0 && _shell.LiveProblems.Count > 0) return LiveProblems();
         if (problems.Count == 0)
-            return LunetUi.EmptyState(LunetIcons.Problems, "Nenhum problema", "Quando o jogo não compilar ou parar com erro, cada problema aparece aqui.");
+            return LunetUi.EmptyState(LunetIcons.Problems, "Nenhum problema", "Erros e avisos do código aparecem aqui enquanto você digita, e também quando o jogo não compila ou para com erro.");
         var list = new StackPanel { Spacing = LunetTokens.Space.Xs, Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.M) };
         foreach (var p in problems)
         {

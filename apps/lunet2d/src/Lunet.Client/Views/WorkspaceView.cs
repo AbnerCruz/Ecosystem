@@ -31,6 +31,10 @@ public sealed class WorkspaceView : UserControl
     private readonly SupportPanelView _support;
     private readonly TextBlock _title = LunetUi.Title("");
     private Control? _tabBar, _sheet;
+    private readonly Border _topHost = new();
+
+    /// <summary>Redraws only the top bar (state, problems), never moving the editor (that would close the keyboard).</summary>
+    public void RefreshTopBar() => _topHost.Child = TopBar();
     private bool _keyboardOpen;
 
     /// <summary>
@@ -99,7 +103,9 @@ public sealed class WorkspaceView : UserControl
         var expanded = state.Layout == ShellLayout.Expanded;
 
         var root = new DockPanel();
-        var top = TopBar();
+        if (_topHost.Parent is Panel oldTop) oldTop.Children.Remove(_topHost);
+        _topHost.Child = TopBar();
+        var top = _topHost;
         DockPanel.SetDock(top, Dock.Top);
         root.Children.Add(top);
 
@@ -187,7 +193,8 @@ public sealed class WorkspaceView : UserControl
 
         // M3 top app bar (LUNET-537 D3): back, the game and its state, one panels button and the primary action.
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, VerticalAlignment = VerticalAlignment.Center };
-        var problems = _shell.Game.Problems.Count;
+        var liveErrors = _shell.LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
+        var problems = _shell.Game.Problems.Count > 0 ? _shell.Game.Problems.Count : liveErrors;
         var panels = LunetUi.IconButton(LunetIcons.More, problems > 0 ? $"Painéis — {problems} problema(s)" : "Painéis",
             () => _shell.State.TogglePanel(SupportPanel.More),
             _shell.State.Panel != SupportPanel.None ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
@@ -221,6 +228,7 @@ public sealed class WorkspaceView : UserControl
             GameState.Paused => "Pausado",
             GameState.CompileErrors => problems == 1 ? "1 problema" : $"{problems} problemas",
             GameState.Faulted => "Parou com erro",
+            _ when liveErrors > 0 => liveErrors == 1 ? "1 erro no código" : $"{liveErrors} erros no código",
             _ => "Parado",
         }, LunetTokens.Type.Caption, problems > 0 ? LunetTokens.Color.Danger : LunetTokens.Color.TextSecondary);
         status.TextWrapping = TextWrapping.NoWrap;

@@ -179,6 +179,36 @@ public sealed class LunetKeyboard : UserControl
         }
     }
 
+    private string? _analysisText;
+    private int _analysisCaret = -1;
+    private IReadOnlyList<Lunet.Editor.CompletionItem> _completions = [];
+    private Lunet.Editor.CallSignatureHelp? _signature;
+
+    /// <summary>The Roslyn completions shown now (empty when the strip shows the catalog or the signature).</summary>
+    public IReadOnlyList<Lunet.Editor.CompletionItem> Completions { get; private set; } = [];
+    /// <summary>The call signature shown in the strip, when the caret is inside a call.</summary>
+    public string? SignatureText { get; private set; }
+
+    /// <summary>The analyzer's answer for <paramref name="text"/> at <paramref name="caret"/> (M1/M2): used while it is current.</summary>
+    public void SetAnalysis(string text, int caret, IReadOnlyList<Lunet.Editor.CompletionItem> completions, Lunet.Editor.CallSignatureHelp? signature)
+    {
+        _analysisText = text;
+        _analysisCaret = caret;
+        _completions = completions;
+        _signature = signature;
+        RefreshSuggestions();
+    }
+
+    /// <summary>Applies a Roslyn completion: replaces what it covers; methods get parentheses with the caret inside.</summary>
+    public void AcceptCompletion(Lunet.Editor.CompletionItem item)
+    {
+        var method = item.Kind == Lunet.Editor.CompletionKind.Method;
+        var insert = item.InsertText + (method ? "()" : "");
+        var start = item.ReplaceStart;
+        Apply(new CodeEdit(start, start + item.ReplaceLength, insert, start + insert.Length - (method ? 1 : 0)));
+        Haptics.Confirm?.Invoke();
+    }
+
     /// <summary>Replaces the word being typed by the suggestion (as a call when it is a method) and records the use.</summary>
     public void AcceptSuggestion(CatalogMember member)
     {
@@ -191,12 +221,55 @@ public sealed class LunetKeyboard : UserControl
         RefreshSuggestions();
     }
 
+    /// <summary>"Draw(Texture2D texture, [Vector2 position], …)": the active parameter in brackets (M2).</summary>
+    public static string SignatureLabel(Lunet.Editor.CallSignatureHelp help)
+    {
+        var s = help.Signatures[Math.Clamp(help.Selected, 0, help.Signatures.Count - 1)];
+        var name = s.Label.Contains('(') ? s.Label[..s.Label.IndexOf('(')] : s.Label;
+        var parameters = s.Parameters.Select((p, i) => i == s.ActiveParameter ? "[" + p.Display + "]" : p.Display);
+        var more = help.Signatures.Count > 1 ? $"  +{help.Signatures.Count - 1}" : "";
+        return $"{name}({string.Join(", ", parameters)}){more}";
+    }
+
+    private Border Chip(string text, string help)
+    {
+        var chip = new Border
+        {
+            Height = 34, Padding = new Thickness(LunetTokens.Space.S, 0), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+            Background = LunetTokens.Brush(LunetTokens.Color.KeyModifier),
+            Child = new TextBlock
+            {
+                Text = text, FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Callout,
+                Foreground = LunetTokens.Brush(LunetTokens.Color.Code), VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+        AutomationProperties.SetName(chip, "Sugestão " + text);
+        AutomationProperties.SetHelpText(chip, help);
+        return chip;
+    }
+
     /// <summary>Recomputes the strip for the word before the caret (catalog + the game's members).</summary>
     public void RefreshSuggestions()
     {
         var prefix = MethodCatalog.WordBefore(_target.Text, _target.Caret);
-        Suggestions = prefix.Length == 0 ? [] : _catalog.Suggest(prefix, 8);
+        var fresh = _analysisText == _target.Text && _analysisCaret == _target.Caret;
+        Completions = fresh && prefix.Length > 0 ? _completions.Take(12).ToArray() : [];
+        Suggestions = Completions.Count > 0 || prefix.Length == 0 ? [] : _catalog.Suggest(prefix, 8);
+        SignatureText = fresh && prefix.Length == 0 && _signature is { Signatures.Count: > 0 } help ? SignatureLabel(help) : null;
         _suggestions.Children.Clear();
+        foreach (var item in Completions)
+        {
+            var chip = Chip(item.Label + (item.Kind == Lunet.Editor.CompletionKind.Method ? "()" : ""), item.Detail);
+            var completion = item;
+            OnTap(chip, () => AcceptCompletion(completion));
+            _suggestions.Children.Add(chip);
+        }
+        if (SignatureText is { } signature)
+            _suggestions.Children.Add(new TextBlock
+            {
+                Text = signature, FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Label, VerticalAlignment = VerticalAlignment.Center,
+                Foreground = LunetTokens.Brush(LunetTokens.Color.TextSecondary), Margin = new Thickness(LunetTokens.Space.Xs, 0),
+            });
         foreach (var m in Suggestions)
         {
             var chip = new Border

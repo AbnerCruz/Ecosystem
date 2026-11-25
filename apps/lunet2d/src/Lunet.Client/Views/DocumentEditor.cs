@@ -29,12 +29,46 @@ public sealed class DocumentEditor : UserControl
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         // Using the code (focus, or a tap with the keyboard hidden) brings the Lunet keyboard.
         if (tab == WorkspaceTab.Code) _surface.Engaged += ShowKeyboard;
+        if (_surface is CodeSurface code)
+        {
+            // M1: analyse a moment after typing stops (Roslyn runs off the UI thread; stale results are dropped).
+            _analysisDelay.Tick += (_, _) => { _analysisDelay.Stop(); _ = AnalyzeNow(); };
+            code.TextChanged += () => { _analysisDelay.Stop(); _analysisDelay.Start(); };
+        }
     }
 
     /// <summary>The project-relative path of the open document, or null.</summary>
     public string? OpenPath { get; private set; }
     /// <summary>The text of the open document (code editor or notes field).</summary>
     public ITextSurface Surface => _surface;
+    private readonly Avalonia.Threading.DispatcherTimer _analysisDelay = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    private CancellationTokenSource? _analysis;
+    private int _analysisVersion;
+    private long _analysisRevision;
+
+    /// <summary>
+    /// Analyses the open code now: errors and warnings under the code and in Problemas, completions and the call
+    /// signature in the keyboard strip. Returns when the result is applied (tests await it).
+    /// </summary>
+    public async Task AnalyzeNow()
+    {
+        if (_surface is not CodeSurface code || OpenPath is not { } path || _shell.Assistant is not { } assistant) return;
+        _analysis?.Cancel();
+        var cts = _analysis = new CancellationTokenSource();
+        var text = code.Text;
+        var caret = code.Caret;
+        var version = ++_analysisVersion;
+        try
+        {
+            var result = await assistant.AnalyzeAsync(path, text, caret, version, ++_analysisRevision, complete: KeyboardVisible, cts.Token);
+            if (version != _analysisVersion || path != OpenPath) return; // a newer edit or another file won
+            code.SetDiagnostics(result.Diagnostics);
+            _shell.SetLiveProblems(code.Diagnostics);
+            _keyboard?.SetAnalysis(text, caret, result.Completions, result.Signature);
+        }
+        catch (OperationCanceledException) { }
+    }
+
     private LunetKeyboard? _keyboard;
     private bool _keyboardWanted;
 
@@ -118,6 +152,7 @@ public sealed class DocumentEditor : UserControl
         OpenPath = path;
         _saved = path is null ? null : _shell.Workspace.Read(path);
         _surface.Text = _saved ?? "";
+        if (_surface is CodeSurface loaded) { loaded.SetDiagnostics([]); _analysisDelay.Stop(); _analysisDelay.Start(); }
         Rebuild();
     }
 

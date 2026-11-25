@@ -114,10 +114,35 @@ public sealed class LunetShell : UserControl
         _workspaceView.Support.Append(message);
     }
 
+    /// <summary>
+    /// The Roslyn analyzer of the open game (errors while typing, completions, signatures — LUNET-536 M1), loaded
+    /// with all its .cs files when the game opens. Runs off the UI thread.
+    /// </summary>
+    public Lunet.Editor.EditorAssistant? Assistant { get; private set; }
+
+    /// <summary>The analyzer's errors and warnings for the open code file (empty while none).</summary>
+    public IReadOnlyList<Lunet.Compiler.LunetDiagnostic> LiveProblems { get; private set; } = [];
+
+    /// <summary>Called by the code editor after each analysis; refreshes the top bar and an open Problemas panel.</summary>
+    public void SetLiveProblems(IReadOnlyList<Lunet.Compiler.LunetDiagnostic> problems)
+    {
+        var before = LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
+        LiveProblems = problems.Where(p => p.Severity != Lunet.Compiler.DiagnosticSeverity.Info).ToArray();
+        var after = LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
+        if (State.Panel == SupportPanel.Problems) _workspaceView.Support.Refresh();
+        if (before != after) _workspaceView.RefreshTopBar();
+    }
+
     public void OpenProject(string name)
     {
         StopGame();
         Workspace.Open(name);
+        Assistant = new Lunet.Editor.EditorAssistant(new Lunet.Compiler.LoadedAssembliesReferenceProvider(
+            typeof(Lunet.Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly));
+        LiveProblems = [];
+        var project = Workspace.Project!;
+        _ = Assistant.LoadProjectAsync(project.ListFiles().Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            .Select(f => (f, project.ReadText(f))).ToArray());
         State.OpenProject(name);
         _workspaceView.Load();
         Render();
@@ -281,6 +306,8 @@ public sealed class LunetShell : UserControl
             return;
         }
         if (!ReferenceEquals(Content, _workspaceView)) Content = _workspaceView;
+        // A panel the person opens takes the place of the keyboard (they are never stacked over the code).
+        if (State.Panel != SupportPanel.None) _workspaceView.Code.HideKeyboard();
         _workspaceView.Rebuild();
     }
 }

@@ -7,9 +7,9 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Recurso | Onde está hoje | Estado | Próximo passo |
 |---|---|---|---|
 | Editor de código com cores e números de linha | `CodeSurface` (AvaloniaEdit) | **casca** | — |
-| Teclado da IDE (Teclas, Atalhos, Métodos, sugestões) | `LunetKeyboard` | **casca** | Sugestões via Roslyn (`CodeAnalyzer.GetCompletions`) no lugar do catálogo. |
-| Diagnósticos no código (sublinhado e lista) | `MainActivity.EditorHelp`, `CodeAnalyzer` | Problemas só ao rodar | **M1**: diagnósticos ao vivo (sublinhado no AvaloniaEdit e painel Problemas sem rodar). |
-| Assinatura ao digitar `(` `,` | `MainActivity.EditorHelp` (`ShowSignature`) | rota (Editor completo) | **M2**: dica de assinatura sobre a faixa do teclado. |
+| Teclado da IDE (Teclas, Atalhos, Métodos, sugestões do Roslyn) | `LunetKeyboard` | **casca** | — |
+| Diagnósticos no código (sublinhado e lista) | `EditorAssistant` (agora em `Lunet.Editor`), `CodeAnalyzer` | **casca** (M1) | — |
+| Assinatura ao digitar `(` `,` | `EditorAssistant` | **casca** (M2) | — |
 | Ir para definição, referências, renomear, formatar, quick fixes, estrutura, símbolos | `MainActivity.Ide`, `EditorHelp` | rota | **M3**: paleta de comandos única na casca. |
 | Vários documentos abertos, histórico de posição | `MainActivity.EditorDocuments` | parcial (lista de arquivos) | **M4**: abas de documentos e retomada da posição. |
 | Rodar, pausar, passo, velocidade | `GameSession`/`GameView` | **casca** | — |
@@ -46,7 +46,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Git (commit, histórico, remoto) | `GitPanel`, `Lunet.Git` | rota | **P6**. |
 | Explorar referências | `MainActivity.Inspiration*` | rota | Congelado até o portão da Onda 2 (estudo de 24/11). |
 | Aparência, primeiro uso, ajustes | `MainActivity.Appearance`/`Ide.ShowSettings` | rota | **P7**. |
-| Conexão com o Ecosystem (IPC, capabilities) | `EcosystemHostClient`, `MainActivity.CapabilityHost`/`EcosystemIpc` | rota | **P8**, sem tornar o Hub obrigatório (NN-003). |
+| Conexão com o Ecosystem (IPC, capabilities) | `EcosystemHostClient`, `MainActivity.CapabilityHost`/`EcosystemIpc` | rota | **P8**, sem dependência obrigatória da plataforma de controle (NN-003). |
 | Benchmark e demonstrações | `MainActivity.Benchmark`/`Demo` | ferramentas internas | Ficam enquanto a tela anterior existir. |
 
 ## Regra de saída

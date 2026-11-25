@@ -1,20 +1,25 @@
 using Lunet.Compiler;
-using Lunet.Editor;
 
-namespace Lunet.Android.Editor;
+namespace Lunet.Editor;
 
 /// <summary>Resultado de uma análise para a posição do cursor.</summary>
-internal sealed record Analysis(int Version, IReadOnlyList<CompletionItem> Completions, IReadOnlyList<LunetDiagnostic> Diagnostics, IReadOnlyList<FoldRegion> Folds, CallSignatureHelp? Signature);
+public sealed record Analysis(int Version, IReadOnlyList<CompletionItem> Completions, IReadOnlyList<LunetDiagnostic> Diagnostics, IReadOnlyList<FoldRegion> Folds, CallSignatureHelp? Signature);
 
-/// <summary>Serializa o acesso ao <see cref="CodeAnalyzer"/> (que não é thread-safe) e roda a análise fora da thread de UI.</summary>
-internal sealed class EditorAssistant
+/// <summary>
+/// Serializa o acesso ao <see cref="CodeAnalyzer"/> (que não é thread-safe) e roda a análise fora da thread de UI.
+/// Portátil (LUNET-536 M1): usado pela casca Avalonia e pelas telas Android anteriores.
+/// </summary>
+public sealed class EditorAssistant
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, long> _revisions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (IReadOnlyList<LunetDiagnostic> Diagnostics, IReadOnlyList<FoldRegion> Folds)> _fileAnalysis = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _sources = new(StringComparer.Ordinal);
     private Task _loading = Task.CompletedTask;
-    private readonly CodeAnalyzer _analyzer = new(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+    private readonly CodeAnalyzer _analyzer;
+
+    /// <param name="references">The assemblies games compile against (the Framework, at least).</param>
+    public EditorAssistant(IReferenceProvider references) => _analyzer = new CodeAnalyzer(references);
 
     public Task LoadProjectAsync(IEnumerable<(string Path, string Text)> files) => _loading = Task.Run(() =>
     {

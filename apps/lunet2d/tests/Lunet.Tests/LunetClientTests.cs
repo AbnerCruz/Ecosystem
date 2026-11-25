@@ -613,6 +613,67 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void LiveAnalysis_ShowsErrorsWhileTyping_CompletesWithRoslyn_AndShowsTheSignature()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var editor = shell.WorkspaceView.Code;
+                var code = Assert.IsType<CodeSurface>(editor.Surface);
+                editor.ShowKeyboard();
+
+                // An error appears under the code and in Problemas without running the game.
+                code.Text = "using Lunet;\npublic sealed class G : Game\n{\n    void M() { int a = ; }\n}\n";
+                Wait(editor.AnalyzeNow());
+                Assert.Contains(code.Diagnostics, d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Error && d.Line == 4);
+                Assert.Contains(shell.LiveProblems, d => d.Line == 4);
+                shell.State.ShowPanel(SupportPanel.Problems);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var row = window.GetVisualDescendants().OfType<Button>().First(b => (Avalonia.Automation.AutomationProperties.GetName(b) ?? "").StartsWith("Ir para a linha 4"));
+                row.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal(4, code.Editor.TextArea.Caret.Line);
+
+                // Roslyn completions for a member access, accepted from the strip.
+                code.Text = "using Lunet;\nusing Lunet.Graphics;\npublic sealed class G : Game\n{\n    SpriteBatch b = null!;\n    void M() { b.Dr }\n}\n";
+                code.Caret = code.Text.IndexOf("b.Dr", StringComparison.Ordinal) + 4;
+                editor.ShowKeyboard();                              // a tap on the code brings the keyboard back
+                Wait(editor.AnalyzeNow());
+                var kb = editor.Keyboard!;
+                Assert.Contains(kb.Completions, c => c.Label == "Draw");
+                kb.AcceptCompletion(kb.Completions.First(c => c.Label == "Draw"));
+                Assert.Contains("b.Draw()", code.Text);
+
+                // Inside the call: the signature with the active parameter.
+                Wait(editor.AnalyzeNow());
+                Assert.NotNull(kb.SignatureText);
+                Assert.StartsWith("Draw(", kb.SignatureText);
+                Assert.Contains("[", kb.SignatureText);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    /// <summary>Runs the UI dispatcher until a task started on it completes (headless tests).</summary>
+    private static void Wait(Task task)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(60);
+        while (!task.IsCompleted && DateTime.UtcNow < deadline)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(10);
+        }
+        Assert.True(task.IsCompleted, "analysis did not finish");
+        task.GetAwaiter().GetResult();
+    }
+
     private static int CountRed(Avalonia.Media.Imaging.Bitmap frame)
     {
         var w = frame.PixelSize.Width; var h = frame.PixelSize.Height;
