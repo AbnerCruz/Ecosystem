@@ -311,3 +311,35 @@ public sealed class LunetClientGitTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>A5: the particles Studio in the shell.</summary>
+public sealed class LunetClientParticleTests
+{
+    [Fact]
+    public void ParticleStudio_RunsTheRealEmitter_BurstsAndSavesTheEffect()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-particles-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var studio = shell.WorkspaceView.NewParticles();
+                studio.Burst(new System.Numerics.Vector2(120, 120));
+                studio.Step(0.05);
+                Assert.True(studio.Alive > 0);
+                Assert.True(shell.Back());
+                var path = Path.Combine(shell.Workspace.Project!.Directory, "Content", "Effects", "efeito-1.particles.json");
+                Assert.True(File.Exists(path));
+                var settings = Lunet.Graphics.ParticleSettings.FromJson(File.ReadAllText(path));
+                Assert.True(settings.LifetimeSeconds > 0);
+                Assert.Null(shell.WorkspaceView.Studio);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

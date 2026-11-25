@@ -32,6 +32,11 @@
   - Uma frase e **Salvar versão** guardam tudo. O nome e o e-mail de quem assina são pedidos uma vez e ficam guardados no jogo.
   - A lista de versões mostra, para cada uma, os arquivos que mudaram.
   - Enviar e receber de um remoto (GitHub e outros) abre a tela própria, onde ficam os tokens.
+- **Partículas na interface nova** (Recursos → Novas partículas, ou toque num `.particles.json`):
+  - O efeito roda ao vivo com o mesmo emissor que o jogo usa.
+  - Comece de um modelo pronto e ajuste quantidade, explosão, velocidade, direção, abertura, gravidade, vida, tamanhos, cores do começo e do fim, e brilho somado.
+  - Tocar na prévia solta uma explosão naquele ponto.
+  - Voltar salva o `.particles.json`.
 - **Mapas mentais nas Notas** (Notas → Novo mapa mental):
   - Os mapas aparecem como uma lista de tópicos recuados, fácil de ler e editar no celular.
   - Tocar no texto edita; Enter cria o próximo tópico. **+** cria um tópico dentro. A seta recolhe um ramo.

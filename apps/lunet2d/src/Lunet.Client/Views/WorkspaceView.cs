@@ -145,6 +145,17 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens the particles Studio (A5).</summary>
+    public ParticleStudioView OpenParticles(string path)
+    {
+        var view = new ParticleStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    public ParticleStudioView NewParticles() => OpenParticles(ParticleStudioView.NewPath(_shell));
+
     /// <summary>Opens the Music Studio (A3).</summary>
     public MusicStudioView OpenMusic(string path)
     {
@@ -180,6 +191,7 @@ public sealed class WorkspaceView : UserControl
         MindMapView mind => mind.Close(),
         MusicStudioView music => music.Close(),
         GitView git => git.Close(),
+        ParticleStudioView particles => particles.Close(),
         _ => false,
     };
 
@@ -419,6 +431,10 @@ public sealed class WorkspaceView : UserControl
         newMusic.Name = "NewMusic";
         newMusic.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
         actions.Children.Add(newMusic);
+        var newParticles = LunetUi.Button("Novas partículas", ButtonKind.Secondary, LunetIcons.Art, () => NewParticles());
+        newParticles.Name = "NewParticles";
+        newParticles.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
+        actions.Children.Add(newParticles);
         if (_shell.OpenRoute is { } route)
         {
             var studios = LunetUi.Button("Outros Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
@@ -426,9 +442,10 @@ public sealed class WorkspaceView : UserControl
             actions.Children.Add(studios);
         }
         list.Children.Add(actions);
-        foreach (var (group, icon, label) in new[] { (WorkspaceTab.Art, LunetIcons.Art, "Arte"), (WorkspaceTab.Map, LunetIcons.Map, "Mapas"), (WorkspaceTab.Sound, LunetIcons.Sound, "Sons") })
+        foreach (var (group, icon, label) in new[] { (WorkspaceTab.Art, LunetIcons.Art, "Arte"), (WorkspaceTab.Map, LunetIcons.Map, "Mapas"), (WorkspaceTab.Sound, LunetIcons.Sound, "Sons"), (WorkspaceTab.Code, LunetIcons.Art, "Partículas") })
         {
-            var files = ProjectFiles.For(group, all);
+            // Partículas: the .particles.json effects (ProjectFiles has no tab for them).
+            var files = group == WorkspaceTab.Code ? all.Where(f => f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase)).ToList() : ProjectFiles.For(group, all);
             var heading = LunetUi.Text($"{label.ToUpperInvariant()} · {files.Count}", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
             heading.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
             list.Children.Add(heading);
@@ -438,7 +455,8 @@ public sealed class WorkspaceView : UserControl
                 var isMap = f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase);
                 var isSound = f.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase);
                 var isMusic = f.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase);
-                var editable = isMap || isSound || isMusic || f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
+                var isParticles = f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase);
+                var editable = isMap || isSound || isMusic || isParticles || f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
                 var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, VerticalAlignment = VerticalAlignment.Center };
                 row.Children.Add(LunetIcons.Create(icon, editable ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary));
                 var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
@@ -452,7 +470,7 @@ public sealed class WorkspaceView : UserControl
                     Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), Padding = new Thickness(0), Name = "OpenSprite-" + f,
                 };
                 Avalonia.Automation.AutomationProperties.SetName(open, "Editar " + f);
-                open.Click += (_, _) => { if (isMap) OpenMap(path); else if (isSound) OpenSound(path); else if (isMusic) OpenMusic(path); else OpenSprite(path); };
+                open.Click += (_, _) => { if (isMap) OpenMap(path); else if (isSound) OpenSound(path); else if (isMusic) OpenMusic(path); else if (isParticles) OpenParticles(path); else OpenSprite(path); };
                 list.Children.Add(open);
             }
         }

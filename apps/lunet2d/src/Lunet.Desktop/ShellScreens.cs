@@ -158,6 +158,10 @@ public static class ShellScreens
                 versions.Refresh();
                 Shot(window, output, size, "9-versoes", written);
                 shell.Back();
+                var fx = shell.WorkspaceView.NewParticles();
+                for (var i = 0; i < 20; i++) fx.Step(0.033);
+                Shot(window, output, size, "8g-particulas", written);
+                shell.Back();
                 shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();
