@@ -107,7 +107,7 @@ public sealed class DocumentEditor : UserControl
         var on = _keyboardWanted && KeyboardApplies;
         if (on && _keyboard is null)
         {
-            _keyboard = new LunetKeyboard(_surface, _shell.Methods, ProjectSources, UseSystemKeyboard);
+            _keyboard = new LunetKeyboard(_surface, _shell.Methods, ProjectSources, UseSystemKeyboard, () => _shell.OpenPalette());
             DockPanel.SetDock(_keyboard, Dock.Bottom);
             var hadFocus = _surface.IsFocused;
             Rebuild(); // places it in the layout, then comes back here

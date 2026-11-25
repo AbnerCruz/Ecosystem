@@ -661,6 +661,83 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void CommandPalette_ParsesPrefixes_MatchesFuzzily_AndPutsRecentsFirst()
+    {
+        Assert.Equal((PaletteMode.Outline, "Upd"), CommandPalette.Parse("@Upd"));
+        Assert.Equal((PaletteMode.Line, "42"), CommandPalette.Parse(":42"));
+        Assert.Equal((PaletteMode.Symbols, "Hero"), CommandPalette.Parse("#Hero"));
+        Assert.Equal((PaletteMode.Find, "speed"), CommandPalette.Parse("/speed"));
+        Assert.Equal((PaletteMode.Commands, "fmt"), CommandPalette.Parse(">fmt"));
+        Assert.Equal(42, CommandPalette.Line("42"));
+        Assert.Null(CommandPalette.Score("xyz", "Formatar documento"));
+        Assert.NotNull(CommandPalette.Score("fdoc", "Formatar documento"));
+        Assert.True(CommandPalette.Score("for", "Formatar documento") > CommandPalette.Score("for", "Fazer outro arquivo")); // word start + consecutive
+        PaletteItem I(string t) => new(t, "", () => { });
+        var items = new[] { I("Formatar documento"), I("Ir para definição"), I("Renomear símbolo…") };
+        Assert.Equal("Renomear símbolo…", CommandPalette.Rank(items, "", ["Renomear símbolo…"])[0].Title);
+        Assert.Equal("Ir para definição", CommandPalette.Rank(items, "def", [])[0].Title);
+    }
+
+    [Fact]
+    public void CommandPalette_FormatsGoesToLinesListsTheOutlineAndRenamesAcrossFiles()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.Workspace.Write("Hero.cs", "public sealed class Hero\n{\n    public void Jump() { }\n}\n");
+                var editor = shell.WorkspaceView.Code;
+                var code = Assert.IsType<CodeSurface>(editor.Surface);
+                code.Text = "using Lunet;\npublic sealed class G : Game\n{\nHero h = new();\nprotected override void Update(GameTime t) { h.Jump(); }\n}\n";
+                shell.Assistant!.SetFile("Hero.cs", shell.Workspace.Read("Hero.cs"));
+                var palette = shell.WorkspaceView.Support.Palette;
+                PaletteItem Find(string title) => palette.Items.First(i => i.Title == title);
+
+                shell.OpenPalette();
+                Assert.Equal(SupportPanel.Commands, shell.State.Panel);
+                palette.Run(Find("Formatar documento"));
+                Assert.Contains("    Hero h = new();", code.Text);              // indented by the formatter
+                Assert.Equal(SupportPanel.None, shell.State.Panel);
+
+                shell.OpenPalette(":4");
+                Wait(palette.RefreshAsync());
+                palette.Run(palette.Items.Single());
+                Assert.Equal(4, code.Editor.TextArea.Caret.Line);
+
+                shell.OpenPalette("@");
+                Wait(palette.RefreshAsync());
+                Assert.Contains(palette.Items, i => i.Title.Trim() == "Update");
+
+                // Rename Jump (caret on the call) in both files, the open one as one undo step.
+                code.Caret = code.Text.IndexOf("Jump", StringComparison.Ordinal) + 1;
+                shell.OpenPalette();
+                palette.Run(Find("Renomear símbolo…"));
+                palette.SetQuery("Pular");
+                var submit = (Task)typeof(CommandPaletteView).GetMethod("SubmitAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(palette, null)!;
+                Wait(submit);
+                Assert.Contains("h.Pular()", code.Text);
+                Assert.Contains("public void Pular()", shell.Workspace.Read("Hero.cs"));
+
+                // Go to definition opens Hero.cs at the declaration.
+                code.Caret = code.Text.IndexOf("Pular", StringComparison.Ordinal) + 1;
+                shell.OpenPalette();
+                palette.Run(Find("Ir para definição"));
+                var deadline = DateTime.UtcNow.AddSeconds(30);
+                while (editor.OpenPath != "Hero.cs" && DateTime.UtcNow < deadline) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+                Assert.Equal("Hero.cs", editor.OpenPath);
+                Assert.Equal(3, ((CodeSurface)editor.Surface).Editor.TextArea.Caret.Line);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     /// <summary>Runs the UI dispatcher until a task started on it completes (headless tests).</summary>
     private static void Wait(Task task)
     {

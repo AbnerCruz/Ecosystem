@@ -108,6 +108,14 @@ public sealed class LunetShell : UserControl
         }
     }
 
+    /// <summary>Opens the command palette (M3) with an optional prefix ("@", ":", "#", "/").</summary>
+    public void OpenPalette(string query = "")
+    {
+        if (State.Level != ShellLevel.Workspace) return;
+        State.ShowPanel(SupportPanel.Commands);
+        _workspaceView.Support.Palette.Open(query);
+    }
+
     public void Report(string message)
     {
         LastReport = message;
@@ -286,6 +294,8 @@ public sealed class LunetShell : UserControl
         if (e.Key == Key.Escape && BeforeBack()) e.Handled = true;
         else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { RunGame(); e.Handled = true; }
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
+        else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
+        else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
     }
 
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>

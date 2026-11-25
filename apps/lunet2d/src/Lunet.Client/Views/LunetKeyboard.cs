@@ -26,6 +26,7 @@ public sealed class LunetKeyboard : UserControl
     private readonly MethodCatalog _catalog;
     private readonly Func<IEnumerable<(string Path, string Text)>> _projectSources;
     private readonly Action _useSystemKeyboard;
+    private readonly Action? _openPalette;
     private readonly Border _body = new();
     private readonly StackPanel _tabs = new() { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
     private readonly StackPanel _suggestions = new() { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
@@ -38,8 +39,9 @@ public sealed class LunetKeyboard : UserControl
     private DateTime _lastShiftTap = DateTime.MinValue;
     private bool _symbols;
 
-    public LunetKeyboard(ITextSurface target, MethodCatalog catalog, Func<IEnumerable<(string Path, string Text)>> projectSources, Action useSystemKeyboard)
+    public LunetKeyboard(ITextSurface target, MethodCatalog catalog, Func<IEnumerable<(string Path, string Text)>> projectSources, Action useSystemKeyboard, Action? openPalette = null)
     {
+        _openPalette = openPalette;
         _target = target;
         _catalog = catalog;
         _projectSources = projectSources;
@@ -114,6 +116,19 @@ public sealed class LunetKeyboard : UserControl
             ToolTip.SetTip(chip, label);
             OnTap(chip, () => Show(t));
             _tabs.Children.Add(chip);
+        }
+        if (_openPalette is { } open)
+        {
+            // The command palette (M3): definition, references, rename, fixes, outline… one tap from the keys.
+            var palette = new Border
+            {
+                Width = 44, Height = 36, CornerRadius = new CornerRadius(LunetTokens.Radius.M), Background = LunetTokens.Brush("#00000000"),
+                Child = LunetIcons.Create(LunetIcons.Search, LunetTokens.Color.TextSecondary, 22),
+            };
+            AutomationProperties.SetName(palette, "Comandos");
+            ToolTip.SetTip(palette, "Comandos");
+            OnTap(palette, open);
+            _tabs.Children.Add(palette);
         }
         RefreshSuggestions();
         _body.Child = tab switch

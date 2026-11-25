@@ -12,6 +12,9 @@
   - O toque nas teclas vibra levemente.
 - **Erros enquanto você digita:** o código com erro ganha um sublinhado ondulado (vermelho para erro, amarelo para aviso), a barra de topo diz quantos erros há e o painel Problemas lista cada um. Tocar num item leva à linha, sem precisar rodar o jogo.
 - **Sugestões inteligentes:** depois de `.` o teclado sugere os membros reais daquele objeto, e dentro de uma chamada mostra a assinatura com o parâmetro atual entre colchetes.
+- **Paleta de comandos:** a lupa na faixa do teclado (ou Ctrl+Shift+P no computador) abre a paleta.
+  - Comandos: formatar, ir para a definição, ver referências, renomear em todos os arquivos, correções rápidas, comentar, duplicar, mover ou apagar linhas.
+  - Atalhos de busca: `@` mostra a estrutura do arquivo, `:` vai a uma linha, `#` busca no jogo inteiro e `/` busca no arquivo.
 - O app separado "Lunet Nova" deixa de existir. Quem o instalou pode desinstalá-lo; os jogos criados nele ficam na pasta dele e não aparecem no Lunet.
 
 ## 0.0.1-dev.1000596 — Teclado próprio da IDE (Lunet Nova)
