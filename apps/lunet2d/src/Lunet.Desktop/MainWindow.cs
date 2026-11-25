@@ -14,7 +14,7 @@ public sealed class MainWindow : Window
         Title = "Lunet";
         Width = 1280; Height = 800;
         MinWidth = 360; MinHeight = 480;
-        Shell = new LunetShell(projectsRoot);
+        Shell = new LunetShell(projectsRoot) { HardwareKeyboard = true };
         Content = Shell;
         Background = Shell.Background;
         Opened += (_, _) => Shell.Report($"Pronto em {Program.SinceLaunch.ElapsedMilliseconds} ms (partida a frio até a janela) · pasta: {projectsRoot}");

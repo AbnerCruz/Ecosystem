@@ -886,3 +886,8 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Missão do proprietário: mobile first, pesquisar antes de implementar, terminar o Lunet conforme o estudo de 24/11, com release. Estudo registrado em `docs/research/casca-android-avalonia-2026-11-25.md`.
 - Base `1b20fd8`. Novo `src/Lunet.Shell.Android` ("Lunet Nova", `io.lunet.studio.shell`), `KeyboardFit`, `CodeKeys`/`CodeKeyBar`; release passa a anexar `Lunet-Nova-<versão>-arm64.apk`; `tools/ci-android-shell.sh` testa no emulador.
 - Ambiente: .NET 10.0.404 + workload android + Android SDK instalados nesta sessão (USER precisa estar definido para `InstallAndroidDependencies`). Sem KVM aqui: o emulador roda só no CI. Próximo: LUNET-533 (view de código própria) e importar projetos do app atual por ZIP.
+
+### 20261125-claude-lunet-teclado — 25/11/2026 — Claude → próximos agentes — LUNET-534
+- Ordem do proprietário no PR #1040: teclado próprio da IDE com três abas (Teclas · Atalhos · Métodos), substituindo o IME do sistema na edição de código. Confirmado no chat e no PR. Estudo antes do código: `docs/research/teclado-nativo-ide-2026-11-25.md`.
+- Chave técnica: `InputMethod.IsInputMethodEnabled = false` no editor (fonte do Avalonia: sem cliente, `HideSoftInputFromWindow`; teclas físicas seguem como `TextInput`).
+- Evidência do PR #1040 no emulador Android 13 do CI: Lunet Nova abriu em 4.674 ms (TotalTime) e rodou um jogo (143 quadros, 0 problemas). Próximo: LUNET-535 (partida) e LUNET-533 (view de código própria).

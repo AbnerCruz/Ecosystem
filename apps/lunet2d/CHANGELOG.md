@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.1-dev.1000596 — Teclado próprio da IDE (Lunet Nova)
+
+- No editor de código do celular, o Lunet Nova usa o **teclado próprio da IDE** no lugar do teclado do sistema, com três abas na mesma superfície:
+  - **Teclas:** teclado completo como o do Gboard, com números em cima, Shift (dois toques travam as maiúsculas) e acentos no toque longo (á ã ç…). Arrastar no espaço move o cursor; arrastar o apagar para a esquerda apaga palavras; Enter mantém a indentação.
+  - **Atalhos:** as teclas de código de deslize, mais Desfazer, Refazer, início e fim da linha.
+  - **Métodos:** a API do Lunet e os métodos do seu jogo, por namespace e classe, com Recentes e Mais usados no topo. Um toque insere a chamada com o cursor dentro dos parênteses.
+- Trocar de aba não mexe no cursor nem na seleção. A tecla 🌐 volta ao teclado do sistema (ditado, outros idiomas), e "Teclado Lunet" traz o nosso de volta.
+- Com teclado físico conectado, o teclado Lunet sai da frente. Com leitor de tela ligado, o padrão é o teclado do sistema.
+- As Notas continuam com o teclado do sistema.
+
 ## 0.0.1-dev.1000595 — Lunet Nova no celular
 
 - Novo app **Lunet Nova** (`Lunet-Nova-…-arm64.apk` nesta release): a interface nova em Avalonia, no Android. Instala **ao lado** do Lunet atual, sem substituí-lo; cada um tem seus próprios jogos.

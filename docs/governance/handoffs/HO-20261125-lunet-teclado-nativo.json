@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-teclado-nativo",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T10:27:57Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-534",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "cbed990",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/research/teclado-nativo-ide-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/Lunet.Client.csproj",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/KeyboardLayout.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/MethodCatalog.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CodeKeyBar.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LunetKeyboard.cs",
+    "apps/lunet2d/src/Lunet.Desktop/MainWindow.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/src/Lunet.Shell.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "docs/governance/handoffs/HO-20261125-lunet-teclado-nativo.json"
+  ],
+  "work_completed": [
+    "Studied before implementing (owner's order on PR #1040): Avalonia InputMethodManager/AndroidInputMethod source, Gboard/LatinIME/FlorisBoard behaviour, Swift Playgrounds shortcut bar, community IME/accessibility issues; consolidated in apps/lunet2d/docs/research/teclado-nativo-ide-2026-11-25.md.",
+    "LunetKeyboard: one surface with Teclas (Gboard-like, PT-BR accents on long press, Shift/caps, repeat, glide cursor and glide delete, indent-keeping Enter), Atalhos (former CodeKeyBar plus undo/redo/line edges) and Métodos (generated API + game members via Roslyn, Recentes/Mais usados, overloads, context-aware insertion).",
+    "The system IME is disabled only on the code editor while the Lunet keyboard is shown; tabs never take focus; hardware keyboard and screen reader fall back to the system; 🌐 switches to the system keyboard.",
+    "Emulator hook and ci-android-shell.sh now type with the Lunet keyboard on Android 13 and check that the system IME is off."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite Debug and Release (1253 tests, incl. keyboard layout, catalog and headless focus/selection tests)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Lunet Nova arm64 and x64 APKs build locally",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Shell.Android/MainActivity.cs"
+    },
+    {
+      "check": "Lunet keyboard on the Android 13 emulator (ci-android-shell.sh)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "apps/lunet2d/tools/ci-android-shell.sh"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a physical device: accents, key latency, repeat timing and TalkBack behaviour remain to be tried by touch.",
+    "The editor surface is still the Avalonia TextBox; the own code view (LUNET-533) will take the same keyboard.",
+    "Cold start of Lunet Nova on the CI emulator was 4674 ms (Debug, no AOT): LUNET-535."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "LUNET-535 cold start",
+    "LUNET-533 own code view over PieceTable"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Keyboard lives in Lunet.Client; no reference to another Product."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "No global IME service or new Android permission: the keyboard is an in-app surface."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulator/headless results reported as automated; device behaviour listed as untested."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

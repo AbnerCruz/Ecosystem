@@ -67,11 +67,50 @@ public sealed class MainActivity : AvaloniaMainActivity
                 shell.RunGame();
                 await Task.Delay(4000);
                 Android.Util.Log.Info("lunet-e2e", $"estado={shell.Game.State} quadros={shell.Game.FramesRendered} problemas={shell.Game.Problems.Count}");
+                // The IDE keyboard: back to the code, type with it, and report whether the system keyboard stepped aside.
+                shell.StopGame();
+                shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
+                var editor = shell.WorkspaceView.Code;
+                editor.TextBox.Focus();
+                editor.ShowKeyboard();
+                editor.TextBox.CaretIndex = 0;
+                foreach (var key in "// ola".Select(c => new Lunet.Client.Shell.KeyDef(c == ' ' ? "espaço" : c.ToString(), c == ' ' ? Lunet.Client.Shell.KeyAction.Space : Lunet.Client.Shell.KeyAction.Text)))
+                    editor.Keyboard?.Press(key);
+                await Task.Delay(1500);
+                Android.Util.Log.Info("lunet-e2e", $"teclado={(editor.KeyboardVisible ? "visivel" : "oculto")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox) ? "on" : "off")} texto={(editor.TextBox.Text ?? "").Split('\n')[0]}");
             }
             catch (Exception ex) { Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
         }, Avalonia.Threading.DispatcherPriority.Background);
     }
 #endif
+
+    private static LunetShell? Shell =>
+        Avalonia.Application.Current?.ApplicationLifetime is ISingleViewApplicationLifetime { MainView: LunetShell shell } ? shell : null;
+
+    /// <summary>
+    /// Device facts the shell needs (study 25/11 §4): a physical keyboard types directly (the Lunet keyboard steps
+    /// aside); with a screen reader on, the system keyboard is the default (TalkBack works best with it).
+    /// </summary>
+    private void ApplyDevice(Android.Content.Res.Configuration? config)
+    {
+        if (Shell is not { } shell || config is null) return;
+        shell.HardwareKeyboard = config.Keyboard == Android.Content.Res.KeyboardType.Qwerty
+            && config.HardKeyboardHidden == Android.Content.Res.HardKeyboardHidden.No;
+        if (GetSystemService(AccessibilityService) is Android.Views.Accessibility.AccessibilityManager { IsTouchExplorationEnabled: true })
+            shell.PreferSystemKeyboard = true;
+    }
+
+    protected override void OnPostResume()
+    {
+        base.OnPostResume();
+        ApplyDevice(Resources?.Configuration);
+    }
+
+    public override void OnConfigurationChanged(Android.Content.Res.Configuration newConfig)
+    {
+        base.OnConfigurationChanged(newConfig);
+        ApplyDevice(newConfig);
+    }
 
     protected override void OnPause()
     {

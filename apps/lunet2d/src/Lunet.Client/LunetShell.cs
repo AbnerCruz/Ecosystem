@@ -25,6 +25,7 @@ public sealed class LunetShell : UserControl
     public LunetShell(string projectsRoot)
     {
         Workspace = new WorkspaceSession(projectsRoot);
+        Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
         _home = new HomeView(this);
         _workspaceView = new WorkspaceView(this);
@@ -44,6 +45,28 @@ public sealed class LunetShell : UserControl
     public GameSession Game { get; }
     public HomeView Home => _home;
     public WorkspaceView WorkspaceView => _workspaceView;
+
+    /// <summary>The "Métodos" catalog of the Lunet keyboard (API + the game's members + usage history).</summary>
+    public MethodCatalog Methods { get; }
+
+    private bool _hardwareKeyboard, _preferSystemKeyboard;
+
+    /// <summary>A physical keyboard is attached: it types directly and the Lunet keyboard steps aside (the head sets it).</summary>
+    public bool HardwareKeyboard
+    {
+        get => _hardwareKeyboard;
+        set { if (_hardwareKeyboard == value) return; _hardwareKeyboard = value; if (Workspace.Project is not null) _workspaceView.Code.Relayout(); }
+    }
+
+    /// <summary>
+    /// The person chose the system keyboard (🌐), or a screen reader is on (TalkBack works best with the system
+    /// keyboard — study 25/11 §3); "Teclado Lunet" brings ours back.
+    /// </summary>
+    public bool PreferSystemKeyboard
+    {
+        get => _preferSystemKeyboard;
+        set => _preferSystemKeyboard = value;
+    }
 
     /// <summary>The last message the shell had to tell you (a failed save, a failed open); also in the Console.</summary>
     public string? LastReport { get; private set; }
@@ -161,7 +184,7 @@ public sealed class LunetShell : UserControl
     public void SetKeyboard(bool open)
     {
         _keyboardShown = open;
-        _workspaceView.SetKeyboardOpen(open);
+        _workspaceView.SetKeyboardOpen(open || _workspaceView.Code.KeyboardVisible);
         FitKeyboard();
     }
 
@@ -203,7 +226,11 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
     }
 
-    private bool BeforeBack() => State.Back();
+    /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
+    private bool BeforeBack() => _workspaceView.Code.HideKeyboard() || State.Back();
+
+    /// <summary>The system Back, as the heads route it (public for tests).</summary>
+    public bool Back() => BeforeBack();
 
     private void Render()
     {

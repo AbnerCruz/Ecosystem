@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Lunet.Client.Shell;
@@ -35,13 +36,90 @@ public sealed class DocumentEditor : UserControl
         AutomationProperties.SetName(_text, tab == WorkspaceTab.Code ? "Editor de código" : "Editor de notas");
         if (tab == WorkspaceTab.Notes) { _text.FontFamily = LunetTokens.UiFont; _text.FontSize = LunetTokens.Type.Body; _text.TextWrapping = TextWrapping.Wrap; _text.Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary); }
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        if (tab == WorkspaceTab.Code)
+        {
+            _text.GotFocus += (_, _) => ShowKeyboard();
+            // A tap on the text with the keyboard hidden brings it back (focus may not change).
+            _text.AddHandler(PointerReleasedEvent, (_, _) => ShowKeyboard(), Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        }
     }
 
     /// <summary>The project-relative path of the open document, or null.</summary>
     public string? OpenPath { get; private set; }
     public TextBox TextBox => _text;
-    /// <summary>The code bar (phone layout, Código only); null elsewhere.</summary>
-    public CodeKeyBar? Keys { get; private set; }
+    private LunetKeyboard? _keyboard;
+    private bool _keyboardWanted;
+
+    /// <summary>The IDE keyboard of the Código tab (created on first use, kept across layouts so its tab survives).</summary>
+    public LunetKeyboard? Keyboard => _keyboard;
+
+    /// <summary>
+    /// True when the Lunet keyboard is on screen: phone layout, Código tab, the editor in use, no hardware keyboard and
+    /// the person did not switch to the system keyboard (study 25/11 §4).
+    /// </summary>
+    public bool KeyboardVisible => _keyboard?.IsVisible == true;
+
+    private bool KeyboardApplies => _tab == WorkspaceTab.Code && _shell.State.Layout == ShellLayout.Compact
+        && !_shell.HardwareKeyboard && !_shell.PreferSystemKeyboard;
+
+    /// <summary>Shows the Lunet keyboard for the editor (the editor keeps focus; the system keyboard steps aside).</summary>
+    public void ShowKeyboard()
+    {
+        _keyboardWanted = true;
+        UpdateKeyboard();
+    }
+
+    /// <summary>Hides the Lunet keyboard (Back, leaving the editor). Returns true when it was visible.</summary>
+    public bool HideKeyboard()
+    {
+        var was = KeyboardVisible;
+        _keyboardWanted = false;
+        UpdateKeyboard();
+        return was;
+    }
+
+    /// <summary>Applies the current rules: visibility, the system IME on the editor, and the shell's tab bar.</summary>
+    public void UpdateKeyboard()
+    {
+        var on = _keyboardWanted && KeyboardApplies;
+        if (on && _keyboard is null)
+        {
+            _keyboard = new LunetKeyboard(_text, _shell.Methods, ProjectSources, UseSystemKeyboard);
+            DockPanel.SetDock(_keyboard, Dock.Bottom);
+            var hadFocus = _text.IsFocused;
+            Rebuild(); // places it in the layout, then comes back here
+            if (hadFocus) _text.Focus(); // moving the editor into the new layout must not drop the caret or focus
+            return;
+        }
+        if (_keyboard is not null)
+        {
+            _keyboard.IsVisible = on;
+            if (on) _keyboard.Height = Math.Clamp((_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800) * 0.4, 220, 320);
+        }
+        // Only the code editor loses the system keyboard, and only while the Lunet keyboard is there.
+        InputMethod.SetIsInputMethodEnabled(_text, !(_tab == WorkspaceTab.Code && on));
+        if (_tab == WorkspaceTab.Code) _shell.WorkspaceView.SetKeyboardOpen(on || _shell.KeyboardOpen);
+    }
+
+    private IEnumerable<(string Path, string Text)> ProjectSources() =>
+        _shell.Workspace.Project is null ? [] : _shell.Workspace.Files()
+            .Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            .Select(f => (f, _shell.Workspace.Read(f)));
+
+    private void UseSystemKeyboard()
+    {
+        _shell.PreferSystemKeyboard = true;
+        Rebuild();
+        _text.Focus();
+    }
+
+    private void UseLunetKeyboard()
+    {
+        _shell.PreferSystemKeyboard = false;
+        _keyboardWanted = true;
+        Rebuild();
+        _text.Focus();
+    }
     public bool IsDirty => OpenPath is not null && (_text.Text ?? "") != _saved;
 
     public void Load(string? path)
@@ -143,14 +221,17 @@ public sealed class DocumentEditor : UserControl
             DockPanel.SetDock(stripHost, Dock.Top);
             root.Children.Add(stripHost);
         }
-        Keys = null;
-        if (_tab == WorkspaceTab.Code && _shell.State.Layout == ShellLayout.Compact)
+        if (_tab == WorkspaceTab.Code && _shell.State.Layout == ShellLayout.Compact && !_shell.HardwareKeyboard && _shell.PreferSystemKeyboard)
         {
-            // Mobile first: the code bar sits right above the keyboard (the tab bar hides while typing).
-            Keys = new CodeKeyBar(() => _text);
-            DockPanel.SetDock(Keys, Dock.Bottom);
-            root.Children.Add(Keys);
+            // Back to the Lunet keyboard after using the system's (dictation, another language).
+            var back = LunetUi.Button("Teclado Lunet", ButtonKind.Ghost, LunetIcons.Code, UseLunetKeyboard);
+            back.MinHeight = 40;
+            DockPanel.SetDock(back, Dock.Bottom);
+            root.Children.Add(back);
         }
+        if (_keyboard?.Parent is Panel kp) kp.Children.Remove(_keyboard);
+        if (_keyboard is not null) root.Children.Add(_keyboard);
+        UpdateKeyboard();
         if (_text.Parent is Panel p) p.Children.Remove(_text);
         root.Children.Add(_text);
         Content = root;
