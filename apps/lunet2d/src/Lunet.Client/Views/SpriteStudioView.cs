@@ -246,6 +246,7 @@ public sealed class SpriteStudioView : UserControl
     private readonly TextBlock _title = LunetUi.Title("");
     private readonly TextBlock _info = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
     private readonly Avalonia.Threading.DispatcherTimer _playTimer = new();
+    private readonly Border _picker = new() { IsVisible = false, Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S) };
     private bool _dirty;
     private bool _playing;
 
@@ -286,7 +287,7 @@ public sealed class SpriteStudioView : UserControl
         var bottom = new StackPanel
         {
             Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            Children = { framesRow, colorsRow, new Border { Child = _tools, Padding = new Thickness(0, 0, 0, LunetTokens.Space.Xs) } },
+            Children = { _picker, framesRow, colorsRow, new Border { Child = _tools, Padding = new Thickness(0, 0, 0, LunetTokens.Space.Xs) } },
         };
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
@@ -424,7 +425,20 @@ public sealed class SpriteStudioView : UserControl
         _tools.Children.Add(Action("↷", "Refazer", Redo, _history.CanRedo));
 
         _colors.Children.Clear();
-        foreach (var c in Palette.Contains(Color) ? Palette : Palette.Prepend(Color))
+        // The first swatch is the colour in use: a tap opens the picker (hue, saturation, brightness, alpha, hex).
+        var current = new Button
+        {
+            Width = 44, Height = 36, Padding = new Thickness(0), CornerRadius = new CornerRadius(LunetTokens.Radius.M),
+            Background = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromUInt32(Color)),
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.TextPrimary), BorderThickness = new Thickness(2), Name = "ColorPicker",
+            Content = LunetIcons.Create(LunetIcons.Edit, ((Color >> 16 & 0xff) * 0.3 + (Color >> 8 & 0xff) * 0.59 + (Color & 0xff) * 0.11) > 140 ? "#000000" : "#ffffff", 16),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
+        };
+        AutomationProperties.SetName(current, "Escolher cor, atual " + SpriteColor.ToHex(Color));
+        current.Click += (_, _) => TogglePicker();
+        _colors.Children.Add(current);
+        _colors.Children.Add(new Border { Width = 1, Height = 24, Margin = new Thickness(2, 0), Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong), VerticalAlignment = VerticalAlignment.Center });
+        foreach (var c in Palette)
         {
             var selected = c == Color && Tool is SpriteTool.Pencil or SpriteTool.Fill;
             var swatch = new Button
@@ -460,6 +474,67 @@ public sealed class SpriteStudioView : UserControl
         _frames.Children.Add(Action("+", "Novo quadro vazio", () => AddFrame(duplicate: false), true));
         _frames.Children.Add(Action("⧉", "Duplicar este quadro", () => AddFrame(duplicate: true), true));
         _frames.Children.Add(Action("✕", "Apagar este quadro", RemoveFrame, Document.Frames.Count > 1));
+    }
+
+    /// <summary>Opens or closes the colour picker above the palette.</summary>
+    public void TogglePicker()
+    {
+        _picker.IsVisible = !_picker.IsVisible;
+        if (_picker.IsVisible) BuildPicker();
+    }
+
+    public bool PickerOpen => _picker.IsVisible;
+
+    private void BuildPicker()
+    {
+        var (h, sat, v, a) = SpriteColor.ToHsv(Color);
+        var updating = false;
+        var hex = new TextBox { Text = SpriteColor.ToHex(Color), Width = 120, MinHeight = LunetTokens.MinTouch, FontFamily = LunetTokens.MonoFont, VerticalContentAlignment = VerticalAlignment.Center, Name = "ColorHex" };
+        AutomationProperties.SetName(hex, "Cor em hexadecimal");
+        Slider Make(string label, double max, double value, string name)
+        {
+            var slider = new Slider { Minimum = 0, Maximum = max, Value = value, MinHeight = 40, Name = name };
+            AutomationProperties.SetName(slider, label);
+            return slider;
+        }
+        var hue = Make("Matiz", 360, h, "Hue");
+        var saturation = Make("Saturação", 100, sat * 100, "Saturation");
+        var value = Make("Brilho", 100, v * 100, "Brightness");
+        var alpha = Make("Opacidade", 255, a, "Alpha");
+        void FromSliders()
+        {
+            if (updating) return;
+            Color = SpriteColor.FromHsv((float)hue.Value, (float)(saturation.Value / 100), (float)(value.Value / 100), (int)alpha.Value);
+            updating = true; hex.Text = SpriteColor.ToHex(Color); updating = false;
+            if (Tool is SpriteTool.Eraser or SpriteTool.Picker) Tool = SpriteTool.Pencil;
+            Refresh(frames: false);
+        }
+        foreach (var slider in new[] { hue, saturation, value, alpha }) slider.ValueChanged += (_, _) => FromSliders();
+        hex.TextChanged += (_, _) =>
+        {
+            if (updating || SpriteColor.ParseHex(hex.Text) is not { } parsed) return;
+            Color = parsed;
+            var (nh, ns, nv, na) = SpriteColor.ToHsv(parsed);
+            updating = true; hue.Value = nh; saturation.Value = ns * 100; value.Value = nv * 100; alpha.Value = na; updating = false;
+            Refresh(frames: false);
+        };
+        Control Row(string label, Slider slider)
+        {
+            var row = new DockPanel();
+            var t = LunetUi.Text(label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+            t.Width = 72; t.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(t, Dock.Left);
+            row.Children.Add(t);
+            row.Children.Add(slider);
+            return row;
+        }
+        var close = LunetUi.Button("Pronto", ButtonKind.Ghost, null, TogglePicker);
+        var top = new DockPanel();
+        DockPanel.SetDock(close, Dock.Right);
+        top.Children.Add(close);
+        top.Children.Add(hex);
+        _picker.Child = new StackPanel { Spacing = 2, Children = { top, Row("Matiz", hue), Row("Saturação", saturation), Row("Brilho", value), Row("Opacidade", alpha) } };
+        _picker.Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised);
     }
 
     private static Button Action(string face, string label, Action act, bool enabled)

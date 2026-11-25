@@ -122,6 +122,9 @@ public static class ShellScreens
                 sprite.SelectTool(Lunet.Client.Views.SpriteTool.Fill);
                 sprite.Paint(7, 7, first: true);
                 Shot(window, output, size, "8b-sprite", written);
+                sprite.TogglePicker();
+                Shot(window, output, size, "8c-cor", written);
+                sprite.TogglePicker();
                 shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();

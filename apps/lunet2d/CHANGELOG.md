@@ -10,6 +10,7 @@
   - O quadro anterior aparece clarinho por baixo, para animar.
   - Lápis, borracha, balde, conta-gotas, desfazer e refazer embaixo, com a paleta e os quadros (novo, duplicar, apagar) logo acima.
   - Prévia da animação.
+  - O primeiro quadradinho da paleta é a cor em uso. Tocar nele abre o seletor: matiz, saturação, brilho, opacidade e código hex.
   - Dois dedos aproximam e arrastam a tela; um dedo sempre pinta. Se o segundo dedo encosta no meio de um traço, o ponto deixado pelo primeiro é desfeito. No computador, a roda do mouse aproxima. Um botão volta a mostrar o sprite inteiro.
   - Voltar salva o `.sprite.json` e o `.png` juntos, no mesmo formato de antes.
 - A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.

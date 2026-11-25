@@ -57,6 +57,17 @@ public sealed class LunetClientSpriteTests
                 Assert.Equal(0xFFFF004Du, studio.Color);
                 Assert.Equal(SpriteTool.Pencil, studio.Tool);
 
+                studio.TogglePicker();                                    // the colour picker: hex sets the colour
+                Assert.True(studio.PickerOpen);
+                var hex = Avalonia.LogicalTree.LogicalExtensions.GetLogicalDescendants(studio).OfType<TextBox>().Single(t => t.Name == "ColorHex");
+                hex.Text = "#00E436";
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Equal(0xFF00E436u, studio.Color);
+                hex.Text = "#FF004D";
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                studio.TogglePicker();
+                Assert.False(studio.PickerOpen);
+
                 studio.AddFrame(duplicate: true);
                 Assert.Equal(2, studio.Document.Frames.Count);
                 Assert.Equal(1, studio.Frame);
