@@ -211,6 +211,93 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Theory]
+    [InlineData(915, double.NaN, false, 0)]       // keyboard closed
+    [InlineData(915, 600, true, 0)]               // Android ≤ 14, adjustResize: the system already shrank the window
+    [InlineData(915, 600, false, 315)]            // Android 15+, edge-to-edge: the shell leaves the keyboard's height
+    [InlineData(915, 1000, false, 0)]             // keyboard below the window (rotating): nothing covered
+    public void KeyboardFit_CoversOnlyAnEdgeToEdgeWindow(double window, double keyboardTop, bool shrinks, double expected) =>
+        Assert.Equal(expected, KeyboardFit.Cover(window, keyboardTop, shrinks));
+
+    [Theory]
+    [InlineData(0, 0, SwipeDirection.None)]
+    [InlineData(10, -12, SwipeDirection.None)]
+    [InlineData(0, -30, SwipeDirection.Up)]
+    [InlineData(4, 25, SwipeDirection.Down)]
+    [InlineData(-40, 10, SwipeDirection.Left)]
+    [InlineData(30, -20, SwipeDirection.Right)]
+    public void CodeKeys_ResolvesTapsAndSwipes(double dx, double dy, SwipeDirection expected) =>
+        Assert.Equal(expected, CodeKeys.Resolve(dx, dy));
+
+    [Fact]
+    public void CodeKeys_BarIsTenKeysWithEveryCSharpSymbolOneGestureAway()
+    {
+        Assert.Equal(10, CodeKeys.Bar.Count);
+        var reachable = CodeKeys.Bar.SelectMany(k => Enum.GetValues<SwipeDirection>().Select(k.For)).ToHashSet();
+        foreach (var s in new[] { "{", "}", "(", ")", "[", "]", "<", ">", ";", ":", ",", ".", "=", "+", "-", "!", "=>", "\"", "'", "&", "|", "?", "*", "/", "%", "_", CodeKeys.Tab, CodeKeys.Left, CodeKeys.Right, CodeKeys.Up, CodeKeys.Down })
+            Assert.Contains(s, reachable);
+    }
+
+    [Fact]
+    public void CodeKeys_OpeningBraceMakesAnIndentedBlockInOneEdit()
+    {
+        var text = "    if (x)\n    ";
+        var edit = CodeKeys.Apply(text, text.Length, text.Length, "{")!.Value;
+        var result = text[..edit.Start] + edit.Insert + text[edit.End..];
+        Assert.Equal("    if (x)\n    {\n        \n    }", result);
+        Assert.Equal("    if (x)\n    {\n        ".Length, edit.Caret);
+    }
+
+    [Fact]
+    public void CodeKeys_PairsWrapTheSelectionAndArrowsMove()
+    {
+        var edit = CodeKeys.Apply("a + b", 0, 5, "(")!.Value;
+        Assert.Equal("(a + b)", edit.Insert);
+        Assert.Equal(6, edit.Caret);
+        Assert.Null(CodeKeys.Apply("abc", 1, 1, CodeKeys.Left));
+        const string two = "abcd\nxy\nlonger";
+        Assert.Equal(7, CodeKeys.Move(two, 2, CodeKeys.Down));      // column 2 on "xy" → its end
+        Assert.Equal(2, CodeKeys.Move(two, 7, CodeKeys.Up));        // back to column 2 of "abcd"
+        Assert.Equal(0, CodeKeys.Move(two, 0, CodeKeys.Up));
+        Assert.Equal(two.Length, CodeKeys.Move(two, 9, CodeKeys.Down));
+    }
+
+    [Fact]
+    public void Shell_OnAPhoneTheCodeBarTypesIntoTheEditor_AndTheKeyboardMovesTheTabsAside()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var editor = shell.WorkspaceView.Code;
+                Assert.NotNull(editor.Keys);
+                editor.TextBox.Text = "x";
+                editor.TextBox.CaretIndex = 1;
+                Assert.True(editor.Keys!.Type("("));
+                Assert.Equal("x()", editor.TextBox.Text);
+                Assert.Equal(2, editor.TextBox.CaretIndex);
+
+                Assert.True(shell.WorkspaceView.TabBarVisible);
+                shell.SetKeyboard(true);
+                Assert.False(shell.WorkspaceView.TabBarVisible);
+                shell.SetKeyboard(false);
+                Assert.True(shell.WorkspaceView.TabBarVisible);
+
+                window.Width = 1280;
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Null(shell.WorkspaceView.Code.Keys); // a wide screen has a hardware keyboard and no code bar
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     private static int CountRed(Avalonia.Media.Imaging.Bitmap frame)
     {
         var w = frame.PixelSize.Width; var h = frame.PixelSize.Height;

@@ -35,6 +35,9 @@ public static class ShellScreens
                 Shot(window, output, size, "2-home", written);
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
+                shell.SetKeyboard(true);
+                Shot(window, output, size, "3b-digitando", written);
+                shell.SetKeyboard(false);
                 shell.RunGame();
                 for (int i = 0; i < 20; i++) shell.TickGame(1 / 60.0);
                 Shot(window, output, size, "4-jogo", written);

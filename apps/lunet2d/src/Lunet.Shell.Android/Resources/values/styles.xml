@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="lunet_bg">#0e0f11</color>
+  <color name="lunet_accent">#a594ff</color>
+  <style name="LunetTheme" parent="@style/Theme.AppCompat.NoActionBar">
+    <item name="android:windowBackground">@color/lunet_bg</item>
+    <item name="android:statusBarColor">@color/lunet_bg</item>
+    <item name="android:navigationBarColor">@color/lunet_bg</item>
+  </style>
+</resources>

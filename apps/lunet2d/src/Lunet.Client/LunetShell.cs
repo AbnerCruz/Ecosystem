@@ -114,19 +114,69 @@ public sealed class LunetShell : UserControl
         else if (Game.State is GameState.Faulted or GameState.Stopped) _timer.Stop();
     }
 
+    private TopLevel? _top;
+    private Avalonia.Controls.Platform.IInputPane? _inputPane;
+    private Avalonia.Controls.Platform.IInsetsManager? _insets;
+    private bool _keyboardShown;
+    private readonly DispatcherTimer _keyboardClosed = new() { Interval = KeyboardFit.CloseGrace };
+
+    /// <summary>True while the phone's keyboard is open (after the close grace).</summary>
+    public bool KeyboardOpen => _keyboardShown;
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        if (TopLevel.GetTopLevel(this) is { } top) top.BackRequested += OnBackRequested;
+        _top = TopLevel.GetTopLevel(this);
+        if (_top is null) return;
+        _top.BackRequested += OnBackRequested;
+        _inputPane = _top.InputPane;
+        _insets = _top.InsetsManager;
+        if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
+        if (_insets is not null) _insets.SafeAreaChanged += OnSafeArea;
+        _keyboardClosed.Tick += OnKeyboardClosed;
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        if (TopLevel.GetTopLevel(this) is { } top) top.BackRequested -= OnBackRequested;
+        if (_top is not null) _top.BackRequested -= OnBackRequested;
+        if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
+        if (_insets is not null) _insets.SafeAreaChanged -= OnSafeArea;
+        _keyboardClosed.Tick -= OnKeyboardClosed;
+        _keyboardClosed.Stop();
+        _top = null; _inputPane = null; _insets = null;
         base.OnDetachedFromVisualTree(e);
     }
 
+    private void OnInputPane(object? sender, Avalonia.Controls.Platform.InputPaneStateEventArgs e)
+    {
+        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open) { _keyboardClosed.Stop(); SetKeyboard(true); }
+        else if (!_keyboardClosed.IsEnabled) _keyboardClosed.Start();
+    }
+
+    private void OnKeyboardClosed(object? sender, EventArgs e) { _keyboardClosed.Stop(); SetKeyboard(false); }
+
+    private void OnSafeArea(object? sender, Avalonia.Controls.Platform.SafeAreaChangedArgs e) => FitKeyboard();
+
+    /// <summary>The keyboard opened or closed (the platform calls it through the input pane; tests call it directly).</summary>
+    public void SetKeyboard(bool open)
+    {
+        _keyboardShown = open;
+        _workspaceView.SetKeyboardOpen(open);
+        FitKeyboard();
+    }
+
+    private void FitKeyboard()
+    {
+        var height = _top?.ClientSize.Height ?? 0;
+        var top = _keyboardShown && _inputPane is { } pane && pane.OccludedRect.Height > 0 ? pane.OccludedRect.Top : double.NaN;
+        var covered = KeyboardFit.Cover(height, top, windowShrinks: _insets is { DisplaysEdgeToEdge: false });
+        if (Math.Abs(Margin.Bottom - covered) > .5) Margin = new Thickness(0, 0, 0, covered);
+    }
+
     /// <summary>Saves open documents and stops the game (the head calls it when the app goes away).</summary>
+    /// <summary>Saves the open documents now (the Android head calls it when the app leaves the screen).</summary>
+    public void SaveAll() => _workspaceView.SaveAll();
+
     public void Shutdown()
     {
         _workspaceView.SaveAll();

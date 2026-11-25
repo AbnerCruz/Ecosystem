@@ -30,6 +30,21 @@ public sealed class WorkspaceView : UserControl
     private readonly GameView _game;
     private readonly SupportPanelView _support;
     private readonly TextBlock _title = LunetUi.Title("");
+    private Control? _tabBar, _sheet;
+    private bool _keyboardOpen;
+
+    /// <summary>
+    /// While the phone's keyboard is open the tab bar and the bottom sheet step aside, so the code, the code bar and
+    /// the caret keep the space (changes visibility only: re-parenting the editor would close the keyboard).
+    /// </summary>
+    public void SetKeyboardOpen(bool open)
+    {
+        _keyboardOpen = open;
+        if (_tabBar is not null) _tabBar.IsVisible = !open;
+        if (_sheet is not null) _sheet.IsVisible = !open;
+    }
+
+    public bool TabBarVisible => _tabBar?.IsVisible ?? false;
 
     public WorkspaceView(LunetShell shell)
     {
@@ -68,6 +83,7 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Lays the workspace out for the current state (layout, tab, panel).</summary>
     public void Rebuild()
     {
+        _tabBar = _sheet = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
         _code.Relayout();
         _notes.Relayout();
@@ -104,6 +120,8 @@ public sealed class WorkspaceView : UserControl
             foreach (var (tab, icon, label) in Tabs) bar.Children.Add(LunetUi.Tab(icon, label, IsSelected(tab), () => state.SelectTab(tab)));
             var barHost = new Border { Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0) };
             DockPanel.SetDock(barHost, Dock.Bottom);
+            _tabBar = barHost;
+            barHost.IsVisible = !_keyboardOpen;
             root.Children.Add(barHost);
             if (state.Panel != SupportPanel.None)
             {
@@ -116,6 +134,8 @@ public sealed class WorkspaceView : UserControl
                     BoxShadow = LunetTokens.Low,
                 };
                 DockPanel.SetDock(sheet, Dock.Bottom);
+                _sheet = sheet;
+                sheet.IsVisible = !_keyboardOpen;
                 root.Children.Add(sheet);
             }
             root.Children.Add(Body(expanded));

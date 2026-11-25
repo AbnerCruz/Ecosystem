@@ -40,6 +40,8 @@ public sealed class DocumentEditor : UserControl
     /// <summary>The project-relative path of the open document, or null.</summary>
     public string? OpenPath { get; private set; }
     public TextBox TextBox => _text;
+    /// <summary>The code bar (phone layout, Código only); null elsewhere.</summary>
+    public CodeKeyBar? Keys { get; private set; }
     public bool IsDirty => OpenPath is not null && (_text.Text ?? "") != _saved;
 
     public void Load(string? path)
@@ -140,6 +142,14 @@ public sealed class DocumentEditor : UserControl
             var stripHost = new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) };
             DockPanel.SetDock(stripHost, Dock.Top);
             root.Children.Add(stripHost);
+        }
+        Keys = null;
+        if (_tab == WorkspaceTab.Code && _shell.State.Layout == ShellLayout.Compact)
+        {
+            // Mobile first: the code bar sits right above the keyboard (the tab bar hides while typing).
+            Keys = new CodeKeyBar(() => _text);
+            DockPanel.SetDock(Keys, Dock.Bottom);
+            root.Children.Add(Keys);
         }
         if (_text.Parent is Panel p) p.Children.Remove(_text);
         root.Children.Add(_text);

@@ -881,3 +881,8 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Ordem do proprietário (ADD-0036 / DEC-0068): o desenvolvimento do Lunet passa para a casca única em Avalonia. ADR 0013 e plano de ondas em `docs/plans/lunet-casca-avalonia-2026-11-25.md`.
 - Base `cd258e5`. Ramo `ccr-0dc592a4-9d3w98`. Novo `src/Lunet.Client` (ShellState, GameSession, tokens/componentes, Home, Workspace, Console/Problemas); `Lunet.Desktop` agora hospeda a casca; `Lunet --screens` gera capturas e o CI as anexa.
 - Evidência: 1.233 testes xUnit verdes localmente com .NET 10.0.404 (inclui `LunetClientTests`, com UI headless Skia). Sem aparelho. Próximo: LUNET-531 (cabeça Android Avalonia).
+
+### 20261125-claude-lunet-nova — 25/11/2026 — Claude → próximos agentes — LUNET-531
+- Missão do proprietário: mobile first, pesquisar antes de implementar, terminar o Lunet conforme o estudo de 24/11, com release. Estudo registrado em `docs/research/casca-android-avalonia-2026-11-25.md`.
+- Base `1b20fd8`. Novo `src/Lunet.Shell.Android` ("Lunet Nova", `io.lunet.studio.shell`), `KeyboardFit`, `CodeKeys`/`CodeKeyBar`; release passa a anexar `Lunet-Nova-<versão>-arm64.apk`; `tools/ci-android-shell.sh` testa no emulador.
+- Ambiente: .NET 10.0.404 + workload android + Android SDK instalados nesta sessão (USER precisa estar definido para `InstallAndroidDependencies`). Sem KVM aqui: o emulador roda só no CI. Próximo: LUNET-533 (view de código própria) e importar projetos do app atual por ZIP.

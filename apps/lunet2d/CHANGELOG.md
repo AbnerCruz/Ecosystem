@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000595 — Lunet Nova no celular
+
+- Novo app **Lunet Nova** (`Lunet-Nova-…-arm64.apk` nesta release): a interface nova em Avalonia, no Android. Instala **ao lado** do Lunet atual, sem substituí-lo; cada um tem seus próprios jogos.
+- Barra de código acima do teclado: dez teclas de 48 dp; toque dá o símbolo do meio, deslizar para cima, baixo, esquerda ou direita dá o símbolo do canto. `{` cria o bloco já indentado; `(`, `[` e aspas fecham o par e envolvem a seleção; setas e Tab.
+- Com o teclado aberto, as abas e a folha de Console/Problemas saem da frente para o código ficar visível.
+- O app atual (`Lunet-…-arm64.apk`) segue igual.
+
 ## 0.0.1-dev.1000594 — Casca nova em Avalonia (fatia 1)
 
 - Nova interface única do Lunet (`Lunet.Client`), usada hoje pelo app de computador: lista de jogos, e dentro de cada jogo as abas Código, Jogo, Arte, Mapa, Som e Notas.
