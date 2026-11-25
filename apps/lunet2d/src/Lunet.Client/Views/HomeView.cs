@@ -270,6 +270,7 @@ public sealed class HomeView : UserControl
             CloseSheet();
             ShowSnackbar($"Cópia criada: {copy}", null);
         }));
+        Item("Exportar ZIP", LunetIcons.Share, () => { CloseSheet(); _ = ExportZip(name); });
         Item("Apagar", LunetIcons.Trash, () => Delete(name), LunetTokens.Color.Danger);
         Open(name, list);
     }
@@ -391,9 +392,73 @@ public sealed class HomeView : UserControl
         body.Children.Add(orientations);
         var create = LunetUi.Button("Criar", ButtonKind.Primary, LunetIcons.Plus, Create);
         create.Name = "CreateGame";
-        body.Children.Add(Actions(create));
+        var import = LunetUi.Button("Importar ZIP", ButtonKind.Ghost, LunetIcons.Download, () => { CloseSheet(); _ = ImportZip(); });
+        import.Name = "ImportZip";
+        var row = new DockPanel { Margin = new Thickness(0, LunetTokens.Space.Xs, 0, 0) };
+        DockPanel.SetDock(create, Avalonia.Controls.Dock.Right);
+        row.Children.Add(create);
+        import.HorizontalAlignment = HorizontalAlignment.Left;
+        row.Children.Add(import);
+        body.Children.Add(row);
         Open("Novo jogo", body);
     }
+
+    /// <summary>
+    /// Saves a game as a ZIP where the person chooses (Android: the system's document picker, so Drive or Downloads;
+    /// desktop: the save dialog). The file is written off the UI thread.
+    /// </summary>
+    public async Task ExportZip(string name)
+    {
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage) { ShowSnackbar("Este aparelho não oferece onde salvar arquivos.", null); return; }
+        var file = await storage.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Exportar " + name, SuggestedFileName = name + ".zip", DefaultExtension = "zip",
+            FileTypeChoices = [ZipType],
+        });
+        if (file is null) return;
+        try
+        {
+            await using var stream = await file.OpenWriteAsync();
+            await Task.Run(() => _shell.ExportProjectZip(name, stream));
+            ShowSnackbar($"\"{name}\" exportado como ZIP", null);
+            Haptics.Confirm?.Invoke();
+        }
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+        {
+            ShowSnackbar("Não deu para exportar: " + ex.Message, null);
+        }
+    }
+
+    /// <summary>Brings a game in from a ZIP the person picks; nothing appears until every file was checked.</summary>
+    public async Task ImportZip()
+    {
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { CanOpen: true } storage) { ShowSnackbar("Este aparelho não oferece como abrir arquivos.", null); return; }
+        var files = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "Importar jogo (ZIP)", AllowMultiple = false,
+            // Some providers report ZIP as octet-stream; the core checks the content.
+            FileTypeFilter = [ZipType, Avalonia.Platform.Storage.FilePickerFileTypes.All],
+        });
+        if (files.Count == 0) return;
+        ShowSnackbar("Importando…", null);
+        try
+        {
+            await using var stream = await files[0].OpenReadAsync();
+            var name = await Task.Run(() => _shell.ImportProjectZip(stream));
+            Refresh();
+            ShowSnackbar($"Jogo importado: {name}", null);
+            Haptics.Confirm?.Invoke();
+        }
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            ShowSnackbar("Não deu para importar: " + ex.Message, null);
+        }
+    }
+
+    private static readonly Avalonia.Platform.Storage.FilePickerFileType ZipType = new("Jogo do Lunet (ZIP)")
+    {
+        Patterns = ["*.zip"], MimeTypes = ["application/zip", "application/x-zip-compressed"],
+    };
 
     /// <summary>The trash: restore a game, or erase it for good (asks once, inline: it cannot be undone).</summary>
     public void ShowTrash()

@@ -1,0 +1,64 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-zip-casca",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T16:34:51Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "fe56173",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectManageTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-zip-casca.json"
+  ],
+  "work_completed": [
+    "P1 (part): Export ZIP from a game's actions and Import ZIP from the Novo jogo sheet, through Avalonia's StorageProvider (Android: system document picker; desktop: native dialog); same format as LunetProject.ExportZip/ProjectZipImporter; I/O off the UI thread; the open game is saved before export."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1273 tests) incl. ZIP round trip through the shell",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/ProjectManageTests.cs"
+    }
+  ],
+  "known_issues": [
+    "The pickers themselves (SAF on Android) are not exercised headless; only the shell's stream round trip is tested.",
+    "Shared project folder and revisions stay routed (Ajustes).",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "P7 Ajustes and shared folder in the shell, M5 embedded GL preview, A1–A6 Studios"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

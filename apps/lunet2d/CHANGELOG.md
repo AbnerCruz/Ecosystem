@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.1-dev.1000601 — Exportar e importar jogos em ZIP
+
+- No **⋮** de cada jogo, **Exportar ZIP** salva o jogo onde você escolher: Drive, Downloads ou outro app de arquivos, pelo seletor do sistema. O jogo aberto é salvo antes.
+- Em **Novo jogo**, **Importar ZIP** traz um jogo exportado pelo Lunet. Se o nome já existir, a cópia ganha outro. Nada aparece antes de todos os arquivos serem conferidos, e um ZIP inválido é recusado com o motivo.
+
 ## 0.0.1-dev.1000600 — Seus jogos: criar, renomear, duplicar e lixeira
 
 - **Novo jogo** abre uma folha com o nome já preenchido, o ponto de partida (Vazio, Pegar moedas, Animação, Partículas ou Laboratório) e a tela (paisagem ou retrato). Um toque em **Criar**.

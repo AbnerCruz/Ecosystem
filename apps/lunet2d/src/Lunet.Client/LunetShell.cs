@@ -211,6 +211,21 @@ public sealed class LunetShell : UserControl
         return project.Name;
     }
 
+    /// <summary>Writes a game as a ZIP (the same format as the previous screens and the importer). The open game is saved first.</summary>
+    public void ExportProjectZip(string name, Stream destination)
+    {
+        if (State.Project == name) _workspaceView.SaveAll();
+        Workspace.Store.Open(name).ExportZip(destination);
+    }
+
+    /// <summary>Imports a game from a ZIP; a name already used gets a suffix. Returns the new game's name.</summary>
+    public string ImportProjectZip(Stream source)
+    {
+        var project = Workspace.Store.ImportZip(source);
+        Avalonia.Threading.Dispatcher.UIThread.Post(_home.Refresh);
+        return Path.GetFileName(project.Directory);
+    }
+
     /// <summary>Erases a game from the trash for good.</summary>
     public void PurgeProject(string trashId)
     {

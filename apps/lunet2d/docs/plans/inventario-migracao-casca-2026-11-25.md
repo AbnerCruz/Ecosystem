@@ -38,7 +38,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Recurso | Onde está hoje | Estado | Próximo passo |
 |---|---|---|---|
 | Criar, abrir, Home | `HomeView` + `ProjectStore.Manage` | **casca** | Feito: modelos e orientação ao criar, renomear, duplicar com identidade nova, lixeira com desfazer. Próximo: miniatura do jogo na capa, fixar no início. |
-| Pasta de projetos e cópia compartilhada (SAF), revisões ZIP | `MainActivity.ProjectFolder`, `AndroidProjectFolder` | rota (Ajustes) | **P1**: ajustes de pasta e exportar/importar ZIP na casca. |
+| Pasta de projetos e cópia compartilhada (SAF), revisões ZIP | `HomeView.ExportZip`/`ImportZip` (seletor do sistema); pasta compartilhada em `MainActivity.ProjectFolder` | exportar/importar ZIP **casca**; pasta compartilhada rota (Ajustes) | **P1**: a pasta compartilhada e as revisões, junto com Ajustes (P7). |
 | Notas, esboços e mapas mentais | `MainActivity.Notes`/`MindMap`/`Attachments` | Notas em texto na casca; mapas por rota | **P2**: mapas mentais e anexos na aba Notas. |
 | Aprender (trilhas, missões, manual offline) | `MainActivity.Learn`/`LearnPanel`, `DocumentationPanel`, `Lunet.Docs` | rota | **P3**: Aprender e Docs como painéis da casca. |
 | Jogar (Launcher, saves por jogo) | `MainActivity.GameLauncher`, `GameplayActivity` | rota | **P4**: grade Jogar na casca; o jogo continua no processo `:gameplay`. |
