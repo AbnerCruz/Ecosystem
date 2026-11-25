@@ -73,6 +73,17 @@ public abstract class ZoomCanvas : Control
 
     public void ResetView() => SetView(1, default);
 
+    /// <summary>Fills the height (cells big enough for a finger) with the content's left edge at the left: for wide content like a piano roll.</summary>
+    public void FitHeight()
+    {
+        SetView(1, default);
+        var a = Area;
+        if (a.Height <= 0 || a.Height >= Bounds.Height - 1) return;
+        var zoom = Math.Min(16, Bounds.Height / a.Height);
+        var width = a.Width * zoom;
+        SetView(zoom, new Vector(width > Bounds.Width ? -(Bounds.Width - width) / 2 : 0, 0));
+    }
+
     /// <summary>The rectangle the content occupies: fit (integer scale when it can), then the zoom and pan.</summary>
     public Rect Area
     {

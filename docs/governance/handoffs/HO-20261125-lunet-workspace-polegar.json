@@ -35,7 +35,8 @@
     "apps/lunet2d/src/Lunet.Client/Views/SoundStudioView.cs",
     "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
     "apps/lunet2d/src/Lunet.Client/Views/MindMapView.cs",
-    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs"
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/MusicStudioView.cs"
   ],
   "work_completed": [
     "Workspace for the thumb (owner 25/11, mobile first): Rodar/Parar as a floating button bottom-right on phones (top bar on wide screens), hidden while typing; game controls moved to a bottom bar with a single cycling speed chip; frame time in the stage corner; the bar has four tabs (Código, Jogo, Recursos, Notas), Recursos groups art, maps and sounds and opens the Studios.",
@@ -43,7 +44,8 @@
     "A1 common canvas (ZoomCanvas: fit, pinch zoom, two-finger pan, wheel, stroke cancel) shared by both Studios; Sprite Studio colour picker (HSV, alpha, hex).",
     "A2 Tile Studio in the shell (TileStudioView over TileStudioSession/TileMap): visible layers drawn from the tileset, collision tinted, layer chips (new, visibility, collision), tile palette from the tileset, brush/eraser, undo/redo per stroke, Tileset opens the Sprite Studio and returns; new maps get an editable four-tile tileset; Voltar saves the .tilemap.json.",
     "A4 sound effects Studio in the shell (SoundStudioView over SoundDesigner): categories, regenerate, vary, waveform view, main knobs applied on release, play through MediaPlayer on Android; Voltar saves .sfx.json and .wav together.",
-    "P2 mind maps in the shell (MindMapView over ProjectMindMap/MindMapHistory) as an outline: fold, edit in place, Enter for the next topic, + child, sibling, outdent, remove; every change written at once in Notes/, undo/redo."
+    "P2 mind maps in the shell (MindMapView over ProjectMindMap/MindMapHistory) as an outline: fold, edit in place, Enter for the next topic, + child, sibling, outdent, remove; every change written at once in Notes/, undo/redo.",
+    "A3 Music Studio in the shell, first slice (MusicStudioView over MusicSong/MusicRenderer): new songs from Starter, piano roll per pattern and track (scale lit, other tracks faint, drag keeps add/remove), starting fitted to the height on phones, tracks and patterns (new, duplicate), tempo, play pattern or song; Voltar saves .song.json and .wav together."
   ],
   "verification": [
     {
@@ -60,6 +62,7 @@
     }
   ],
   "known_issues": [
+    "Music Studio first slice: note length, instruments, mixer and the arrangement order are still in the previous Studio.",
     "Tile Studio first slice: autotile terrains and layer rename/reorder are still in the previous Studio.",
     "Sprite Studio first slice: no pinch zoom, layers, selection or HSV picker yet (the previous Studio keeps them).",
     "Not tested on a physical device."

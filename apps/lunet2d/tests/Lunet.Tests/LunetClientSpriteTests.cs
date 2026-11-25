@@ -226,3 +226,47 @@ public sealed class LunetClientMindMapTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>A3: the Music Studio in the shell.</summary>
+public sealed class LunetClientMusicTests
+{
+    [Fact]
+    public void MusicStudio_StartsWithASong_TogglesNotesPlaysAndSaves()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-music-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var played = new List<byte[]>();
+                var shell = new LunetShell(root) { PlaySound = played.Add };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var studio = shell.WorkspaceView.NewMusic();
+                Assert.Equal(4, studio.Song.Tracks.Count);                           // melody, chords, bass, drums
+                Assert.NotEmpty(studio.Song.Patterns[studio.Pattern].Notes);
+                studio.SelectTrack(0);
+                var before = studio.Song.Patterns[studio.Pattern].Notes.Count;
+                var pitch = studio.Roll.PitchOfRow(0);
+                studio.Toggle(1, 0, first: true);                                   // a note where there was none (or removes it)
+                var after = studio.Song.Patterns[studio.Pattern].Notes.Count;
+                Assert.NotEqual(before, after);
+                studio.Toggle(1, 0, first: true);                                   // the same cell again: back as it was
+                Assert.Equal(before, studio.Song.Patterns[studio.Pattern].Notes.Count);
+                studio.AddPattern(duplicate: true);
+                Assert.Equal(3, studio.Song.Patterns.Count);
+                studio.PlayPattern();
+                Assert.Equal((byte)'R', played[^1][0]);
+
+                Assert.True(shell.Back());
+                var dir = shell.Workspace.Project!.Directory;
+                Assert.True(File.Exists(Path.Combine(dir, "Content", "Audio", "musica-1.song.json")));
+                Assert.True(new FileInfo(Path.Combine(dir, "Content", "Audio", "musica-1.wav")).Length > 1000);
+                Assert.Equal(3, shell.WorkspaceView.OpenMusic("Content/Audio/musica-1.song.json").Song.Patterns.Count);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

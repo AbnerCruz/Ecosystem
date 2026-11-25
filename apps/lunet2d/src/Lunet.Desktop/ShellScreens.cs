@@ -148,6 +148,9 @@ public static class ShellScreens
                 mind.Rename(mind.Map.Topics[^1].Id, "Ideias soltas");
                 Shot(window, output, size, "7b-mapa-mental", written);
                 shell.Back();
+                shell.WorkspaceView.NewMusic();
+                Shot(window, output, size, "8f-musica", written);
+                shell.Back();
                 shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();
