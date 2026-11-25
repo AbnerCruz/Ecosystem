@@ -459,11 +459,20 @@ public sealed class LunetClientTests
                 var shell = new LunetShell(root);
                 var window = new Window { Width = 412, Height = 915, Content = shell };
                 window.Show();
-                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Route-studios"); // no routes on desktop
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Nav-Studios"); // no routes on desktop
+                Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Nav-Learn");      // Aprender is in the shell
                 shell.OpenRoute = (r, p) => routes.Add((r, p));
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                foreach (var (route, _, _) in LunetShell.HomeRoutes)
+                // The bottom bar: Jogar and Studios route; Mais lists Biblioteca, Explorar and Ajustes.
+                shell.Home.Go(HomeView.Destination.Play);
+                shell.Home.Go(HomeView.Destination.Studios);
+                Assert.Equal(["play", "studios"], routes.Select(r => r.Route));
+                shell.Home.Go(HomeView.Destination.More);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                foreach (var route in new[] { "library", "explore", "settings" })
                     Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Route-" + route);
+                shell.Home.CloseSheet();
+                routes.Clear();
 
                 shell.CreateProject();
                 var entry = shell.Workspace.Project!.Manifest.EntryPoint;

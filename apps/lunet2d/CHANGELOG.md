@@ -9,6 +9,11 @@
   - **Métodos:** o catálogo da API sobe no lugar do teclado. Tocar num membro insere no cursor e volta a digitar.
   - O **⌄** fecha o teclado.
 - As sugestões não fazem trabalho a cada tecla: aparecem logo depois de você parar.
+- **Tela inicial pensada para o polegar:**
+  - Uma barra embaixo com **Jogos**, **Aprender**, **Jogar**, **Studios** e **Mais** (Biblioteca, Explorar, Ajustes).
+  - **Novo jogo** flutua no canto de baixo.
+  - No celular, os jogos aparecem em lista, um por linha, com a inicial, a última edição e ⋮. No computador, em grade.
+  - Datas impossíveis (01/01/2000) de jogos vindos de ZIP ou da pasta compartilhada não aparecem mais.
 - **Voltar** fecha a barra e o teclado, depois o painel aberto, depois volta à aba anterior (por exemplo, de Jogo para Código) e só então sai do jogo.
 - **Aprender** (na tela inicial, também no computador) mostra sua trilha, o progresso e os 60 cursos. Os cinco primeiros estão disponíveis; os outros aparecem como "em breve".
 - Cada desafio mostra missão, objetivos, o que pesquisar, critérios de aceite e um desafio extra.
