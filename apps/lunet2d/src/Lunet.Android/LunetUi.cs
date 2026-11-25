@@ -18,7 +18,7 @@ internal static class LunetUi
 {
     internal static bool IsLight { get; private set; }
 
-    internal static bool ApplyTheme(Context context, WorkspaceTheme theme)
+    internal static bool ApplyTheme(global::Android.Content.Context context, WorkspaceTheme theme)
     {
         var light = UsesLightTheme(context, theme);
         bool changed = IsLight != light;
@@ -26,7 +26,7 @@ internal static class LunetUi
         return changed;
     }
 
-    internal static bool UsesLightTheme(Context context, WorkspaceTheme theme) =>
+    internal static bool UsesLightTheme(global::Android.Content.Context context, WorkspaceTheme theme) =>
         theme == WorkspaceTheme.Light ||
         (theme == WorkspaceTheme.System && (context.Resources!.Configuration!.UiMode & global::Android.Content.Res.UiMode.NightMask)
             != global::Android.Content.Res.UiMode.NightYes);
@@ -58,15 +58,15 @@ internal static class LunetUi
     public const int RadiusSmall = 8, Radius = 12, RadiusLarge = 18;
     public const float TextCaption = 11, TextBody = 14, TextLabel = 13, TextTitle = 17, TextHero = 26;
 
-    public static int Dp(Context context, float value) => (int)(value * context.Resources!.DisplayMetrics!.Density + 0.5f);
+    public static int Dp(global::Android.Content.Context context, float value) => (int)(value * context.Resources!.DisplayMetrics!.Density + 0.5f);
 
-    public static float WidthDp(Context context) =>
+    public static float WidthDp(global::Android.Content.Context context) =>
         context.Resources!.DisplayMetrics!.WidthPixels / context.Resources.DisplayMetrics.Density;
 
     /// <summary>Material window size class: expanded (≥ 840dp) gets side panels; compact/medium stack them.</summary>
-    public static bool IsExpanded(Context context) => WidthDp(context) >= 840;
+    public static bool IsExpanded(global::Android.Content.Context context) => WidthDp(context) >= 840;
 
-    public static GradientDrawable Shape(Context context, AColor fill, float radius = Radius, AColor? stroke = null)
+    public static GradientDrawable Shape(global::Android.Content.Context context, AColor fill, float radius = Radius, AColor? stroke = null)
     {
         var shape = new GradientDrawable();
         shape.SetColor(fill);
@@ -75,14 +75,14 @@ internal static class LunetUi
         return shape;
     }
 
-    public static Drawable Pressable(Context context, AColor fill, float radius = Radius, AColor? stroke = null)
+    public static Drawable Pressable(global::Android.Content.Context context, AColor fill, float radius = Radius, AColor? stroke = null)
     {
         var mask = Shape(context, AColor.White, radius);
         return new RippleDrawable(global::Android.Content.Res.ColorStateList.ValueOf(IsLight ? AColor.Argb(36, 0, 0, 0) : AColor.Argb(48, 255, 255, 255)),
             Shape(context, fill, radius, stroke), mask);
     }
 
-    public static TextView Label(Context context, string text, float size = TextBody, AColor? color = null, bool bold = false)
+    public static TextView Label(global::Android.Content.Context context, string text, float size = TextBody, AColor? color = null, bool bold = false)
     {
         var label = new TextView(context) { Text = text, TextSize = size };
         label.SetTextColor(color ?? Text);
@@ -109,7 +109,7 @@ internal static class LunetUi
     }
 
     /// <summary>Ícone vetorial solto (não clicável), pelo nome do catálogo.</summary>
-    public static ImageView IconImage(Context context, string icon, float sizeDp = 24, AColor? color = null)
+    public static ImageView IconImage(global::Android.Content.Context context, string icon, float sizeDp = 24, AColor? color = null)
     {
         var view = new ImageView(context);
         view.SetImageDrawable(new IconDrawable(context, LunetIcons.Get(icon), sizeDp, color ?? TextMuted));
@@ -118,7 +118,7 @@ internal static class LunetUi
     }
 
     /// <summary>Primary / secondary / quiet buttons. <paramref name="keepsKeyboard"/> prevents stealing the IME focus.</summary>
-    public static Button Button(Context context, string text, Action action, ButtonStyle style = ButtonStyle.Secondary,
+    public static Button Button(global::Android.Content.Context context, string text, Action action, ButtonStyle style = ButtonStyle.Secondary,
         bool keepsKeyboard = false, string? description = null)
     {
         var button = new IconButton(context) { TextSize = TextLabel };
@@ -136,7 +136,7 @@ internal static class LunetUi
         return button;
     }
 
-    public static void Style(Context context, Button button, ButtonStyle style)
+    public static void Style(global::Android.Content.Context context, Button button, ButtonStyle style)
     {
         var (fill, stroke, text) = style switch
         {
@@ -159,7 +159,7 @@ internal static class LunetUi
     }
 
     /// <summary>Square icon button (≥ 44dp touch target) with an accessible name.</summary>
-    public static Button Icon(Context context, string glyph, string description, Action action, bool keepsKeyboard = false,
+    public static Button Icon(global::Android.Content.Context context, string glyph, string description, Action action, bool keepsKeyboard = false,
         bool accent = false)
     {
         var button = Button(context, glyph, action, accent ? ButtonStyle.Primary : ButtonStyle.Quiet, keepsKeyboard, description);
@@ -169,7 +169,7 @@ internal static class LunetUi
     }
 
     /// <summary>Botão quadrado com ícone vetorial pelo nome do catálogo (sem depender de caracteres Unicode).</summary>
-    public static Button IconByName(Context context, string icon, string description, Action action, bool keepsKeyboard = false,
+    public static Button IconByName(global::Android.Content.Context context, string icon, string description, Action action, bool keepsKeyboard = false,
         bool accent = false, ButtonStyle? style = null)
     {
         var button = new IconButton(context) { TextSize = TextLabel };
@@ -187,7 +187,7 @@ internal static class LunetUi
         return button;
     }
 
-    public static TextView Chip(Context context, string text, Action action, bool selected = false)
+    public static TextView Chip(global::Android.Content.Context context, string text, Action action, bool selected = false)
     {
         var chip = Label(context, text, TextLabel, selected ? AccentText : Text);
         WithLeadingIcon(chip, TextLabel);
@@ -200,7 +200,7 @@ internal static class LunetUi
         return chip;
     }
 
-    public static EditText Input(Context context, string hint, string text = "", bool singleLine = true)
+    public static EditText Input(global::Android.Content.Context context, string hint, string text = "", bool singleLine = true)
     {
         var input = new EditText(context) { Hint = hint, Text = text, TextSize = TextBody };
         input.SetTextColor(Text);
@@ -211,7 +211,7 @@ internal static class LunetUi
         return input;
     }
 
-    public static LinearLayout Row(Context context, int spacingDp = 8)
+    public static LinearLayout Row(global::Android.Content.Context context, int spacingDp = 8)
     {
         var row = new LinearLayout(context) { Orientation = Orientation.Horizontal };
         row.SetGravity(GravityFlags.CenterVertical);
@@ -220,7 +220,7 @@ internal static class LunetUi
         return row;
     }
 
-    public static LinearLayout Column(Context context, int spacingDp = 8)
+    public static LinearLayout Column(global::Android.Content.Context context, int spacingDp = 8)
     {
         var column = new LinearLayout(context) { Orientation = Orientation.Vertical };
         column.ShowDividers = ShowDividers.Middle;
@@ -228,7 +228,7 @@ internal static class LunetUi
         return column;
     }
 
-    private static Drawable Spacer(Context context, int dp)
+    private static Drawable Spacer(global::Android.Content.Context context, int dp)
     {
         var spacer = new GradientDrawable();
         spacer.SetColor(AColor.Transparent);
@@ -236,7 +236,7 @@ internal static class LunetUi
         return spacer;
     }
 
-    public static View Divider(Context context)
+    public static View Divider(global::Android.Content.Context context)
     {
         var line = new View(context);
         line.SetBackgroundColor(Border);

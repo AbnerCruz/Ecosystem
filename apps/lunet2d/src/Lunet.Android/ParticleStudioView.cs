@@ -26,7 +26,7 @@ internal sealed class ParticleStudioView : LinearLayout
     private string _group = "Emissão";
     private readonly Texture2D _texture;
 
-    public ParticleStudioView(Context context, ParticleDraft draft, string name, Action<ParticleDraft> save, Action close) : base(context)
+    public ParticleStudioView(global::Android.Content.Context context, ParticleDraft draft, string name, Action<ParticleDraft> save, Action close) : base(context)
     {
         _draft = draft; _save = save; _close = close;
         Orientation = Orientation.Vertical;
@@ -209,7 +209,7 @@ internal sealed class ParticleStudioView : LinearLayout
 
         private readonly Java.Lang.Runnable _tick;
 
-        public Preview(Context context, ParticleStudioView owner) : base(context)
+        public Preview(global::Android.Content.Context context, ParticleStudioView owner) : base(context)
         {
             _owner = owner;
             _tick = new Java.Lang.Runnable(Tick);

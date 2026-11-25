@@ -14,6 +14,18 @@ Base consultada: `9b26d2988b54ff6f8d8ded03f054c28a6bcddb00`. O pré-requisito p�
 - [ ] Registrar baseline de testes Debug/Release, diagnóstico e alocação em main antes de modificar. Estudos relataram 1179/1179 Debug e 132/133 no recorte gráfico Release, com falha preexistente de alocação toque/gestos; reproduzir, distinguir de regressão e não maquiar números.
 - [ ] Marcar checkbox somente com evidência (teste/arquivo/commit; execução não realizada fica pendente ou bloqueada com motivo). Atualizar este documento em cada PR. Usar CI e testes específicos por fase; suíte completa no gate final. Não criar oito novas fases nem novos sistemas para problemas fora deste escopo.
 
+## Registro de execução candidata — PR #1037
+
+Base da branch de trabalho: F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996121a`, contendo F7 e a correção documental da main `720586aba966930c8edf8753009559c7d7306a97`. A integração F7/F8 ainda não estava confirmada quando a implementação candidata foi preparada; não autoriza merge antecipado.
+
+- [x] Código candidato E1: `2200cb64`, refinado em `1544136d`: fila de quads completos e descritores de ordem, desempate ordinal, guardas, duas sobrecargas com chave, cancelamento e limpeza.
+- [x] Código candidato E2: `46ae6c56`: fonte real, Explorer, presets, metadado SDK e workflow cloud. Essencial é provisório; Amplo continua experimental até a matriz de referências Android.
+- [x] Código candidato E3: `44407feb`, compatibilidade de tipos Android `66ef4e84` e `bafee571`: fachada ThreadStatic, geração da sessão, escopos síncronos e restrição gráfica de fases.
+- [x] Testes escritos: SortedBatchTests, ContextTests, ProjectImportsTests, FrameworkEvolutionSampleTests, atualização de jornadas/templates; exemplos em samples/framework-evolution-*.
+- [ ] Baseline real Debug/Release pós-F8, CI da revisão E1–E3, testes completos dos consumidores, desempenho, paridade de SDK e Android, screenshots de imports, referência gerada e release integrada.
+
+Os checkboxes acima distinguem código candidato de validação. Os checkboxes normativos E1–E3 e do gate final abaixo permanecem abertos onde o critério integral ainda não foi comprovado. O SDK .NET, adb e acesso Git direto não estão disponíveis no ambiente de trabalho. Não foram executados testes localmente. A restrição a Graphics/Content em Pause/Resume/UnloadContent é deliberadamente conservadora; nenhum teste em EGL físico foi feito. A referência pública foi descrita no guia; a regeneração mecânica da referência depende do SDK.
+
 ## E1 — Ordenação nativa de renderização (primeira prioridade)
 
 ### Contrato decidido
@@ -133,3 +145,7 @@ Escopo físico síncrono por thread (ThreadStatic com save/restore LIFO em try/f
 - Contexto: [Game](https://github.com/AbnerCruz/Ecosystem/blob/952659e8e7f08a3a8ebdd8d60186697aef6c7b5a/apps/lunet2d/src/Lunet.Framework/Game.cs), [GameHost](https://github.com/AbnerCruz/Ecosystem/blob/952659e8e7f08a3a8ebdd8d60186697aef6c7b5a/apps/lunet2d/src/Lunet.Framework/GameHost.cs), [GameServices](https://github.com/AbnerCruz/Ecosystem/blob/952659e8e7f08a3a8ebdd8d60186697aef6c7b5a/apps/lunet2d/src/Lunet.Framework/Utilities/GameServices.cs), [LibGDX Gdx](https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/Gdx.java), [ThreadStatic](https://learn.microsoft.com/dotnet/api/system.threadstaticattribute), [AsyncLocal](https://learn.microsoft.com/dotnet/api/system.threading.asynclocal-1), [ExecutionContext](https://learn.microsoft.com/dotnet/api/system.threading.executioncontext), [Compatibilidade .NET](https://learn.microsoft.com/dotnet/standard/library-guidance/breaking-changes).
 
 **Fora do ciclo:** API gráfica de baixo nível, buffers públicos, overhaul de recursos/DI, batch contextual, sort por textura/material e comparadores arbitrários, editor bidirecional de imports, mudança de linguagem, expansão iOS/web, reorganização de Studio. Não são tarefas pendentes obrigatórias deste plano. Prioridade: entregar três melhorias verificáveis e uma release, com menor alteração necessária.
+
+### Evidência intermediária de CI
+
+- Revisão `1544136d0038ed0b5accd426b5836a8e25caf60b`: [suíte Debug](https://github.com/AbnerCruz/Ecosystem/actions/runs/45462258155/job/138687886019) — 1211 aprovados e 7 falhas (fixtures antigos e referência de API). As falhas foram tratadas na revisão seguinte: fixtures usam as fontes completas, árvore inclui Imports.cs, Quick Fix considera import global e documentação de novos membros foi completada. Revalidação pendente. A compilação Android anterior também detectou colisões com Android.Content.Context; qualificações adicionais foram aplicadas em `1b5a7586`. Não considerar gate integral aprovado até novo CI.

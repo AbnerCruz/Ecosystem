@@ -37,7 +37,7 @@ internal sealed class InspectorPanel : LinearLayout
     private IReadOnlyList<IInspector> _customs = [];
     private bool _running;
 
-    public InspectorPanel(Context context, Func<Game?> game, Func<IReadOnlyList<string>> projectFiles) : base(context)
+    public InspectorPanel(global::Android.Content.Context context, Func<Game?> game, Func<IReadOnlyList<string>> projectFiles) : base(context)
     {
         _game = game;
         _projectFiles = projectFiles;
@@ -263,7 +263,7 @@ internal sealed class InspectorPanel : LinearLayout
             Commit();
             args.Handled = false;
             edit.ClearFocus();
-            (Context?.GetSystemService(Context.InputMethodService) as InputMethodManager)?.HideSoftInputFromWindow(edit.WindowToken, 0);
+            (Context?.GetSystemService(global::Android.Content.Context.InputMethodService) as InputMethodManager)?.HideSoftInputFromWindow(edit.WindowToken, 0);
         };
         edit.FocusChange += (_, args) =>
         {

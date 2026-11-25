@@ -19,7 +19,7 @@ internal sealed class AndroidBindingTrustPolicy
 
     AndroidBindingTrustPolicy(AndroidBindingTrustDocument document) => _document = document;
 
-    internal static AndroidBindingTrustPolicy? Load(Context context)
+    internal static AndroidBindingTrustPolicy? Load(global::Android.Content.Context context)
     {
         try
         {

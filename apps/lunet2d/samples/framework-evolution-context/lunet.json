@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "name": "ForestContext",
+  "gameId": "12cf4760-857f-44d4-abb7-3c66e47e2f09",
+  "packageId": "com.lunet.samples.forestcontext",
+  "version": "0.1.0",
+  "entryPoint": "Game.cs",
+  "orientation": "portrait",
+  "virtualWidth": 360,
+  "virtualHeight": 640,
+  "sdkImportsVersion": 1
+}

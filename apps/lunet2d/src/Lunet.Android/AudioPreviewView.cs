@@ -35,7 +35,7 @@ internal sealed class AudioPreviewView : LinearLayout, IDisposable
     /// <param name="peaks">Envelope da onda; nulo quando o formato não permite desenhá-la (MP3/OGG).</param>
     /// <param name="totalSeconds">Duração da fonte inteira, para rotular o tempo.</param>
     /// <param name="render">Gera o WAV a ouvir (recorte/volume atuais). Nulo quando <paramref name="file"/> toca direto.</param>
-    public AudioPreviewView(Context context, WavePeak[]? peaks, double totalSeconds, string cacheDirectory,
+    public AudioPreviewView(global::Android.Content.Context context, WavePeak[]? peaks, double totalSeconds, string cacheDirectory,
         Func<byte[]>? render = null, string? file = null, int waveHeightDp = 120) : base(context)
     {
         _render = render;
@@ -245,7 +245,7 @@ internal sealed class AudioPreviewView : LinearLayout, IDisposable
         private float _from, _to = 1, _loopFrom, _loopTo = 1, _head = -1;
         private bool _loop;
 
-        public WaveCanvas(Context context, WavePeak[]? peaks, Action<float> seek) : base(context)
+        public WaveCanvas(global::Android.Content.Context context, WavePeak[]? peaks, Action<float> seek) : base(context)
         {
             _peaks = peaks; _seek = seek;
             ContentDescription = "Forma de onda. Toque para ouvir a partir deste ponto.";

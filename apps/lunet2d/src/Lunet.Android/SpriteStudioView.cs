@@ -61,7 +61,7 @@ internal sealed class SpriteStudioView : LinearLayout
     private LinearLayout _selectionBar = null!;
     private Button _confirmButton = null!;
 
-    public SpriteStudioView(Context context, SpriteDocument document, Action<SpriteDocument> save,
+    public SpriteStudioView(global::Android.Content.Context context, SpriteDocument document, Action<SpriteDocument> save,
         Action<SpriteDocument> export, Action close, int tilesetTileSize = 0) : base(context)
     {
         _document = document; _save = save; _export = export; _close = close; _tileSize = tilesetTileSize;
@@ -554,7 +554,7 @@ internal sealed class SpriteStudioView : LinearLayout
         bitmap.SetPixels(buffer, 0, bitmap.Width, 0, 0, bitmap.Width, bitmap.Height);
     }
 
-    private sealed class FrameThumb(Context context, SpriteStudioView owner, int index) : View(context)
+    private sealed class FrameThumb(global::Android.Content.Context context, SpriteStudioView owner, int index) : View(context)
     {
         private Bitmap? _bitmap;
         private readonly Paint _paint = new() { FilterBitmap = false };
@@ -603,7 +603,7 @@ internal sealed class SpriteStudioView : LinearLayout
         private readonly Paint _ants = new() { StrokeWidth = 2 };
         private readonly Paint _handlePaint = new(PaintFlags.AntiAlias);
 
-        public PixelCanvas(Context context, SpriteStudioView owner) : base(context)
+        public PixelCanvas(global::Android.Content.Context context, SpriteStudioView owner) : base(context)
         {
             _owner = owner;
             _scale = new ScaleGestureDetector(context, new ScaleListener(this));

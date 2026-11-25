@@ -79,8 +79,10 @@ jobs:
       - name: Compile game C#
         run: |
           cd ecosystem/apps/lunet2d
+          imports=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("sdkImportsVersion", 0))' "$GITHUB_WORKSPACE/game/lunet.json")
+          case "$imports" in 0|1) ;; *) echo "Unsupported SDK imports policy"; exit 1;; esac
           dotnet build runtime-template/Lunet.GameCode.csproj -c Release \
-            -p:GameSourceRoot="$GITHUB_WORKSPACE/game"
+            -p:GameSourceRoot="$GITHUB_WORKSPACE/game" -p:LunetSdkImportsVersion="$imports"
       - name: Install Android workload
         run: dotnet workload install android
       - name: Generate game APK

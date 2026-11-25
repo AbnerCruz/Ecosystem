@@ -17,7 +17,7 @@ public class MeuJogo : Game
 
     protected override void Draw(GameTime time)
     {
-        Graphics.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(Color.CornflowerBlue);
     }
 }
 ```
@@ -30,3 +30,7 @@ public class MeuJogo : Game
 
 - Toque em uma linha do editor e use o menu para abrir a documentação do símbolo.
 - Erros em tempo de execução aparecem no console do jogo, sem fechar o app.
+
+## Importações
+
+Projetos novos têm o arquivo real `Project/Imports.cs`, acessível no grupo Projeto do Explorer. Por isso o Game.cs inicial não precisa repetir as diretivas já globais. Projetos antigos continuam válidos. Leia [importações, ordenação e Context](../manual/ordenacao-importacoes-contexto.md).

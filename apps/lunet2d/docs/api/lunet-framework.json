@@ -272,6 +272,139 @@
       "members": []
     },
     {
+      "id": "T:Lunet.Context",
+      "name": "Context",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public static class Context",
+      "summary": "Fachada contextual experimental, dispon\u00EDvel somente em callbacks s\u00EDncronos do host.",
+      "remarks": "N\u00E3o flui para workers ou continua\u00E7\u00F5es ass\u00EDncronas. Use as APIs expl\u00EDcitas para depend\u00EAncias retidas. Graphics e Content exigem autoriza\u00E7\u00E3o gr\u00E1fica na fase corrente.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar current = Context.Input;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Context.Audio",
+          "name": "Audio",
+          "kind": "property",
+          "signature": "public static AudioMixer Audio { get; }",
+          "summary": "Mixer real do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Content",
+          "name": "Content",
+          "kind": "property",
+          "signature": "public static ContentManager Content { get; }",
+          "summary": "Conte\u00FAdo do jogo corrente; exige autoriza\u00E7\u00E3o gr\u00E1fica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Dispatcher",
+          "name": "Dispatcher",
+          "kind": "property",
+          "signature": "public static Dispatcher Dispatcher { get; }",
+          "summary": "Dispatcher do jogo corrente; capture-o explicitamente antes de postar de um worker.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Graphics",
+          "name": "Graphics",
+          "kind": "property",
+          "signature": "public static GraphicsDevice Graphics { get; }",
+          "summary": "Dispositivo real do jogo corrente; exige autoriza\u00E7\u00E3o gr\u00E1fica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Input",
+          "name": "Input",
+          "kind": "property",
+          "signature": "public static InputState Input { get; }",
+          "summary": "Entrada real do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Log",
+          "name": "Log",
+          "kind": "property",
+          "signature": "public static GameLog Log { get; }",
+          "summary": "Registro do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Save",
+          "name": "Save",
+          "kind": "property",
+          "signature": "public static SaveData Save { get; }",
+          "summary": "Dados salvos do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Services",
+          "name": "Services",
+          "kind": "property",
+          "signature": "public static GameServices Services { get; }",
+          "summary": "Servi\u00E7os extens\u00EDveis do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Timers",
+          "name": "Timers",
+          "kind": "property",
+          "signature": "public static Timers Timers { get; }",
+          "summary": "Timers do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Dispatcher",
       "name": "Dispatcher",
       "namespace": "Lunet",
@@ -11830,6 +11963,253 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.SpriteBatch.BeginSorted(Lunet.Graphics.BlendState,Lunet.Graphics.SamplerState,Lunet.Graphics.Shader,System.Nullable{Lunet.RectangleF},Lunet.Graphics.SpriteSortDirection)",
+          "name": "BeginSorted",
+          "kind": "method",
+          "signature": "public void BeginSorted(BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)",
+          "summary": "Abre uma passagem ordenada por chave finita; empates preservam a submiss\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "blend",
+              "type": "BlendState",
+              "description": "Estado de mistura; nulo usa Alpha."
+            },
+            {
+              "name": "sampler",
+              "type": "SamplerState",
+              "description": "Estado de amostragem; nulo usa o da textura."
+            },
+            {
+              "name": "shader",
+              "type": "Shader",
+              "description": "Shader de fragmento; nulo usa o padr\u00E3o."
+            },
+            {
+              "name": "clip",
+              "type": "RectangleF?",
+              "description": "\u00C1rea de recorte em coordenadas virtuais."
+            },
+            {
+              "name": "direction",
+              "type": "SpriteSortDirection",
+              "description": "Sentido de ordena\u00E7\u00E3o da chave."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.BeginSorted(Lunet.Graphics.Camera2D,Lunet.Graphics.BlendState,Lunet.Graphics.SamplerState,Lunet.Graphics.Shader,System.Nullable{Lunet.RectangleF},Lunet.Graphics.SpriteSortDirection)",
+          "name": "BeginSorted",
+          "kind": "method",
+          "signature": "public void BeginSorted(Camera2D camera, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)",
+          "summary": "Abre passagem ordenada com snapshot da c\u00E2mera.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "camera",
+              "type": "Camera2D",
+              "description": "C\u00E2mera capturada no in\u00EDcio da passagem."
+            },
+            {
+              "name": "blend",
+              "type": "BlendState",
+              "description": "Estado de mistura; nulo usa Alpha."
+            },
+            {
+              "name": "sampler",
+              "type": "SamplerState",
+              "description": "Estado de amostragem; nulo usa o da textura."
+            },
+            {
+              "name": "shader",
+              "type": "Shader",
+              "description": "Shader de fragmento; nulo usa o padr\u00E3o."
+            },
+            {
+              "name": "clip",
+              "type": "RectangleF?",
+              "description": "\u00C1rea de recorte em coordenadas virtuais."
+            },
+            {
+              "name": "direction",
+              "type": "SpriteSortDirection",
+              "description": "Sentido de ordena\u00E7\u00E3o da chave."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.BeginSorted(Lunet.Graphics.Camera2D,Lunet.RectangleF,Lunet.Graphics.BlendState,Lunet.Graphics.SamplerState,Lunet.Graphics.Shader,Lunet.Graphics.SpriteSortDirection)",
+          "name": "BeginSorted",
+          "kind": "method",
+          "signature": "public void BeginSorted(Camera2D camera, RectangleF region, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)",
+          "summary": "Abre passagem ordenada em uma regi\u00E3o da tela dividida.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "camera",
+              "type": "Camera2D",
+              "description": "C\u00E2mera capturada no in\u00EDcio da passagem."
+            },
+            {
+              "name": "region",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o da vista em coordenadas virtuais."
+            },
+            {
+              "name": "blend",
+              "type": "BlendState",
+              "description": "Estado de mistura; nulo usa Alpha."
+            },
+            {
+              "name": "sampler",
+              "type": "SamplerState",
+              "description": "Estado de amostragem; nulo usa o da textura."
+            },
+            {
+              "name": "shader",
+              "type": "Shader",
+              "description": "Shader de fragmento; nulo usa o padr\u00E3o."
+            },
+            {
+              "name": "direction",
+              "type": "SpriteSortDirection",
+              "description": "Sentido de ordena\u00E7\u00E3o da chave."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.BeginSorted(Lunet.Graphics.Material,Lunet.Graphics.SpriteSortDirection)",
+          "name": "BeginSorted",
+          "kind": "method",
+          "signature": "public void BeginSorted(Material material, SpriteSortDirection direction = SpriteSortDirection.Ascending)",
+          "summary": "Abre passagem ordenada com o estado do material.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "material",
+              "type": "Material",
+              "description": "Material da passagem."
+            },
+            {
+              "name": "direction",
+              "type": "SpriteSortDirection",
+              "description": "Sentido de ordena\u00E7\u00E3o da chave."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.CancelSorted",
+          "name": "CancelSorted",
+          "kind": "method",
+          "signature": "public void CancelSorted()",
+          "summary": "Abandona a passagem ordenada sem emitir os quads pendentes.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.Graphics.Texture2D,System.Numerics.Vector2,Lunet.Graphics.Color,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(Texture2D texture, Vector2 position, Color color, float order)",
+          "summary": "Desenha com chave expl\u00EDcita sem alterar a chave corrente.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura a desenhar."
+            },
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Posi\u00E7\u00E3o em coordenadas virtuais."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor de multiplica\u00E7\u00E3o."
+            },
+            {
+              "name": "order",
+              "type": "float",
+              "description": "Chave de ordena\u00E7\u00E3o finita."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.Graphics.Texture2D,Lunet.RectangleF,System.Nullable{Lunet.RectangleF},Lunet.Graphics.Color,System.Single,System.Numerics.Vector2,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin, float order)",
+          "summary": "Desenha um recorte com chave expl\u00EDcita sem alterar a chave corrente.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura a desenhar."
+            },
+            {
+              "name": "destination",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo de destino."
+            },
+            {
+              "name": "source",
+              "type": "RectangleF?",
+              "description": "Recorte em pixels; nulo usa a textura inteira."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor de multiplica\u00E7\u00E3o."
+            },
+            {
+              "name": "rotation",
+              "type": "float",
+              "description": "Rota\u00E7\u00E3o em radianos."
+            },
+            {
+              "name": "origin",
+              "type": "Vector2",
+              "description": "Origem em pixels da textura."
+            },
+            {
+              "name": "order",
+              "type": "float",
+              "description": "Chave de ordena\u00E7\u00E3o finita."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.Graphics.Texture2D,System.Numerics.Vector2,Lunet.Graphics.Color)",
           "name": "Draw",
           "kind": "method",
@@ -12085,6 +12465,25 @@
           "summary": "Envia o que falta ao dispositivo e encerra o lote.",
           "remarks": "",
           "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.SetOrder(System.Single)",
+          "name": "SetOrder",
+          "kind": "method",
+          "signature": "public void SetOrder(float order)",
+          "summary": "Define a chave para as pr\u00F3ximas opera\u00E7\u00F5es do lote ordenado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "order",
+              "type": "float",
+              "description": "Chave de ordena\u00E7\u00E3o finita."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
@@ -12347,6 +12746,46 @@
             }
           ],
           "returns": "Ret\u00E2ngulo do quadro na textura.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteSortDirection",
+      "name": "SpriteSortDirection",
+      "namespace": "Lunet.Graphics",
+      "kind": "enum",
+      "signature": "public enum SpriteSortDirection",
+      "summary": "Ordem das chaves de uma passagem ordenada. Empates mant\u00EAm a submiss\u00E3o.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Graphics.SpriteSortDirection.Ascending",
+          "name": "Ascending",
+          "kind": "enum value",
+          "signature": "public const SpriteSortDirection Ascending = 0",
+          "summary": "Menor chave primeiro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.SpriteSortDirection.Descending",
+          "name": "Descending",
+          "kind": "enum value",
+          "signature": "public const SpriteSortDirection Descending = 1",
+          "summary": "Maior chave primeiro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"

@@ -17,7 +17,7 @@ internal sealed class IconDrawable : Drawable
     private readonly Paint _paint = new(PaintFlags.AntiAlias);
     private AColor _color;
 
-    public IconDrawable(Context context, VectorIcon icon, float sizeDp = 22, AColor? color = null)
+    public IconDrawable(global::Android.Content.Context context, VectorIcon icon, float sizeDp = 22, AColor? color = null)
     {
         _parts = Build(icon);
         _size = LunetUi.Dp(context, sizeDp);
@@ -90,7 +90,7 @@ internal sealed class IconButton : Button
     private IconDrawable? _icon;
     private IconSlot _slot;
 
-    public IconButton(Context context) : base(context) { }
+    public IconButton(global::Android.Content.Context context) : base(context) { }
 
     public void SetIcon(VectorIcon? icon, IconSlot slot, float sizeDp = 22)
     {

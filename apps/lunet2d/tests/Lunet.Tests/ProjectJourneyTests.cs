@@ -69,7 +69,8 @@ public sealed class ProjectJourneyTests
             // Modify the *created* Game.cs: the preview must use the edited
             // code and the imported asset, never a hard-coded sample assembly.
             string original = project.ReadText("Game.cs");
-            Assert.Equal(ProjectTemplates.BlankGameSource("JourneyPortrait"), original);
+            Assert.Equal(ProjectImports.RemoveCoveredFromGenerated(ProjectTemplates.BlankGameSource("JourneyPortrait")), original);
+            Assert.Equal(ProjectImports.ExplicitSdkVersion, project.Manifest.SdkImportsVersion);
             Assert.DoesNotContain("Texture2D", original);
             Assert.Contains("SpriteBatch batch", original);
             Assert.Contains("protected override void Update(GameTime time)", original);
@@ -131,7 +132,7 @@ public sealed class ProjectJourneyTests
             using var zip = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
             string prefix = reopened.Name + "/";
             foreach (var path in new[] {
-                "lunet.json", "Game.cs", "Content/Textures/hero.sprite.json",
+                "lunet.json", "Game.cs", "Project/Imports.cs", "Content/Textures/hero.sprite.json",
                 "Content/Textures/hero.png", "Content/Data/level.tilemap.json",
                 "Content/Audio/beep.wav" })
                 Assert.NotNull(zip.GetEntry(prefix + path));

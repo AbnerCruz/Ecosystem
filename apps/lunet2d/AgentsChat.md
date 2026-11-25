@@ -871,3 +871,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 - LUNET-524. Schema de mapa com hierarquia, ligações e referência local. Studios globais usam os mesmos componentes nativos do projeto.
 - Biblioteca resolve dependências e guarda a procedência de cada fork. Evidência em `docs/plans/f6-validacao.md`.
+
+
+## 24/11/2026 — evolução do Framework (E1–E3)
+
+PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996121a`. E1/E2/E3 possuem código candidato e testes escritos; não confundir com validação executada. Sem SDK local. Manter o PR fora da main até F8 integrada, baseline pós-F8 e checks completos. Plano: `docs/plans/lunet-plano-evolucao-framework-2026-11-24.md`. Próxima ação: executar CI, reproduzir baseline Release, completar lacunas de testes e evidências, integrar pelo gate oficial e verificar APK da main.

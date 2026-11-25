@@ -24,6 +24,21 @@ public sealed class SpriteBatch
     private Shader? _shader;
     private Matrix3x2 _view = Matrix3x2.Identity;
     private bool _hasView;
+    private bool _sorted;
+    private float _order;
+    private SpriteSortDirection _direction;
+    private List<SortedQuad>? _pending;
+    private List<OrderEntry>? _orders;
+
+    private readonly record struct SortedQuad(Texture2D Texture, SpriteVertex A, SpriteVertex B, SpriteVertex C, SpriteVertex D);
+    private readonly record struct OrderEntry(float Order, int Ordinal);
+    private static readonly Comparison<OrderEntry> Ascending = static (a, b) => Compare(a, b, false);
+    private static readonly Comparison<OrderEntry> Descending = static (a, b) => Compare(a, b, true);
+    private static int Compare(OrderEntry a, OrderEntry b, bool descending)
+    {
+        int key = descending ? b.Order.CompareTo(a.Order) : a.Order.CompareTo(b.Order);
+        return key != 0 ? key : a.Ordinal.CompareTo(b.Ordinal);
+    }
 
     /// <summary>Cria um lote de sprites.</summary>
     /// <param name="device">Dispositivo gráfico.</param>
@@ -41,6 +56,7 @@ public sealed class SpriteBatch
     {
         if (_begun) throw new InvalidOperationException("End() deve ser chamado antes de outro Begin().");
         if (shader is { IsDisposed: true }) throw new ObjectDisposedException(nameof(Shader));
+        _device.OpenBatch(false, shader);
         _begun = true;
         _shader = shader;
         _view = Matrix3x2.Identity;
@@ -97,6 +113,124 @@ public sealed class SpriteBatch
         Begin(material.Blend, material.Sampler, material.Shader);
     }
 
+    /// <summary>Abre uma passagem ordenada por chave finita; empates preservam a submissão.</summary>
+    /// <param name="blend">Estado de mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Estado de amostragem; nulo usa o da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="clip">Área de recorte em coordenadas virtuais.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
+    public void BeginSorted(BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)
+    {
+        if (_begun) throw new InvalidOperationException("End() deve ser chamado antes de outro Begin().");
+        if (direction is not (SpriteSortDirection.Ascending or SpriteSortDirection.Descending)) throw new ArgumentOutOfRangeException(nameof(direction));
+        if (shader is { IsDisposed: true }) throw new ObjectDisposedException(nameof(Shader));
+        if (shader is not null && !ReferenceEquals(shader.Device, _device)) throw new ArgumentException("Shader de outro dispositivo.", nameof(shader));
+        var target = _device.RenderTarget;
+        if (target is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
+        if (target is not null && !ReferenceEquals(target.Device, _device)) throw new InvalidOperationException("Alvo de outro dispositivo.");
+        var state = new DrawState((blend ?? BlendState.Alpha).Mode, sampler, clip is { } area ? _device.ToScissor(area) : null, shader?.Handle ?? 0, null);
+        _pending ??= new List<SortedQuad>();
+        _orders ??= new List<OrderEntry>();
+        _device.OpenBatch(true, shader);
+        _state = state;
+        _shader = shader;
+        _direction = direction;
+        _order = 0;
+        _view = Matrix3x2.Identity;
+        _hasView = false;
+        _sorted = _begun = true;
+    }
+
+    /// <summary>Abre passagem ordenada com snapshot da câmera.</summary>
+    /// <param name="camera">Câmera capturada no início da passagem.</param>
+    /// <param name="blend">Estado de mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Estado de amostragem; nulo usa o da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="clip">Área de recorte em coordenadas virtuais.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
+    public void BeginSorted(Camera2D camera, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        var view = camera.GetViewMatrix(_device.ViewSize);
+        BeginSorted(blend, sampler, shader, clip, direction);
+        _view = view;
+        _hasView = view != Matrix3x2.Identity;
+    }
+
+    /// <summary>Abre passagem ordenada em uma região da tela dividida.</summary>
+    /// <param name="camera">Câmera capturada no início da passagem.</param>
+    /// <param name="region">Região da vista em coordenadas virtuais.</param>
+    /// <param name="blend">Estado de mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Estado de amostragem; nulo usa o da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
+    public void BeginSorted(Camera2D camera, RectangleF region, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, SpriteSortDirection direction = SpriteSortDirection.Ascending)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        if (!(region.Width > 0 && region.Height > 0)) throw new ArgumentOutOfRangeException(nameof(region));
+        var view = camera.GetViewMatrix(new Vector2(region.Width, region.Height)) * Matrix3x2.CreateTranslation(region.X, region.Y);
+        BeginSorted(blend, sampler, shader, region, direction);
+        _view = view;
+        _hasView = view != Matrix3x2.Identity;
+    }
+
+    /// <summary>Abre passagem ordenada com o estado do material.</summary>
+    /// <param name="material">Material da passagem.</param>
+    /// <param name="direction">Sentido de ordenação da chave.</param>
+    public void BeginSorted(Material material, SpriteSortDirection direction = SpriteSortDirection.Ascending)
+    {
+        ArgumentNullException.ThrowIfNull(material);
+        BeginSorted(material.Blend, material.Sampler, material.Shader, direction: direction);
+    }
+
+    private void RequireSorted()
+    {
+        if (!_begun || !_sorted) throw new InvalidOperationException("Chame BeginSorted() antes desta operação.");
+    }
+
+    private static void ValidateOrder(float order)
+    {
+        if (!float.IsFinite(order)) throw new ArgumentOutOfRangeException(nameof(order), "A chave deve ser finita.");
+    }
+
+    /// <summary>Define a chave para as próximas operações do lote ordenado.</summary>
+    /// <param name="order">Chave de ordenação finita.</param>
+    public void SetOrder(float order)
+    {
+        RequireSorted();
+        ValidateOrder(order);
+        _order = order;
+    }
+
+    /// <summary>Desenha com chave explícita sem alterar a chave corrente.</summary>
+    /// <param name="texture">Textura a desenhar.</param>
+    /// <param name="position">Posição em coordenadas virtuais.</param>
+    /// <param name="color">Cor de multiplicação.</param>
+    /// <param name="order">Chave de ordenação finita.</param>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
+    public void Draw(Texture2D texture, Vector2 position, Color color, float order)
+    {
+        RequireSorted();
+        ValidateOrder(order);
+        ArgumentNullException.ThrowIfNull(texture);
+        Emit(texture, new RectangleF(position.X, position.Y, texture.Width, texture.Height), null, color, 0f, Vector2.Zero, order);
+    }
+
+    /// <summary>Desenha um recorte com chave explícita sem alterar a chave corrente.</summary>
+    /// <param name="texture">Textura a desenhar.</param>
+    /// <param name="destination">Retângulo de destino.</param>
+    /// <param name="source">Recorte em pixels; nulo usa a textura inteira.</param>
+    /// <param name="color">Cor de multiplicação.</param>
+    /// <param name="rotation">Rotação em radianos.</param>
+    /// <param name="origin">Origem em pixels da textura.</param>
+    /// <param name="order">Chave de ordenação finita.</param>
+    public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin, float order)
+    {
+        RequireSorted();
+        ValidateOrder(order);
+        Emit(texture, destination, source, color, rotation, origin, order);
+    }
+
     /// <summary>Desenha a textura inteira com o canto superior esquerdo na posição.</summary>
     /// <param name="texture">Textura.</param>
     /// <param name="position">Onde desenhar.</param>
@@ -119,14 +253,24 @@ public sealed class SpriteBatch
     /// <param name="source">Trecho da textura a desenhar, em pixels; nulo desenha a textura toda.</param>
     /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
     /// <param name="origin">Ponto de rotação, em pixels da textura.</param>
-    public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin)
+    public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin) =>
+        Emit(texture, destination, source, color, rotation, origin, _order);
+
+    private void Emit(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin, float order)
     {
         if (!_begun) throw new InvalidOperationException("Chame Begin() antes de Draw().");
         ArgumentNullException.ThrowIfNull(texture);
         if (texture.IsDisposed) throw new ObjectDisposedException(nameof(Texture2D));
-        if (_texture is not null && !ReferenceEquals(_texture, texture)) Flush();
-        if (_quads == MaxQuads) Flush();
-        _texture = texture;
+        if (_sorted)
+        {
+            if (!ReferenceEquals(texture.Device, _device)) throw new ArgumentException("Textura de outro dispositivo.", nameof(texture));
+        }
+        else
+        {
+            if (_texture is not null && !ReferenceEquals(_texture, texture)) Flush();
+            if (_quads == MaxQuads) Flush();
+            _texture = texture;
+        }
 
         var src = source ?? new RectangleF(0, 0, texture.Width, texture.Height);
         var u0 = src.X / texture.Width;
@@ -142,14 +286,22 @@ public sealed class SpriteBatch
         var sin = MathF.Sin(rotation);
         var packed = color.PackedRgba;
 
-        var i = _quads * 4;
+        var i = _sorted ? 0 : _quads * 4;
         // Explicit arguments eliminate captured local-function state from the hot path.
         // The JIT must not rely on escape analysis to keep per-quad work allocation-free.
         Corner(ref _vertices[i], 0, 0, u0, v0, destination, ox, oy, cos, sin, packed, _hasView, _view);
         Corner(ref _vertices[i + 1], destination.Width, 0, u1, v0, destination, ox, oy, cos, sin, packed, _hasView, _view);
         Corner(ref _vertices[i + 2], destination.Width, destination.Height, u1, v1, destination, ox, oy, cos, sin, packed, _hasView, _view);
         Corner(ref _vertices[i + 3], 0, destination.Height, u0, v1, destination, ox, oy, cos, sin, packed, _hasView, _view);
-        _quads++;
+        if (_sorted)
+        {
+            var pending = _pending!;
+            var ordinal = pending.Count;
+            pending.Add(new SortedQuad(texture, _vertices[0], _vertices[1], _vertices[2], _vertices[3]));
+            try { _orders!.Add(new OrderEntry(order, ordinal)); }
+            catch { pending.RemoveAt(ordinal); throw; }
+        }
+        else _quads++;
     }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -225,8 +377,57 @@ public sealed class SpriteBatch
     public void End()
     {
         if (!_begun) throw new InvalidOperationException("End() sem Begin().");
-        Flush();
-        _begun = false;
+        if (!_sorted)
+        {
+            Flush();
+            _begun = false;
+            _device.CloseBatch(false);
+            return;
+        }
+        try
+        {
+            var pending = _pending!;
+            // Validate every borrowed resource before the first upload.
+            if (_shader is { IsDisposed: true }) throw new ObjectDisposedException(nameof(Shader));
+            if (_device.RenderTarget is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
+            foreach (var quad in pending)
+                if (quad.Texture.IsDisposed) throw new ObjectDisposedException(nameof(Texture2D));
+            var orders = _orders!;
+            orders.Sort(_direction == SpriteSortDirection.Ascending ? Ascending : Descending);
+            foreach (var entry in orders)
+            {
+                var quad = pending[entry.Ordinal];
+                if (_texture is not null && !ReferenceEquals(_texture, quad.Texture)) Flush();
+                if (_quads == MaxQuads) Flush();
+                _texture = quad.Texture;
+                int i = _quads * 4;
+                _vertices[i] = quad.A;
+                _vertices[i + 1] = quad.B;
+                _vertices[i + 2] = quad.C;
+                _vertices[i + 3] = quad.D;
+                _quads++;
+            }
+            Flush();
+        }
+        finally { CloseSorted(); }
+    }
+
+    /// <summary>Abandona a passagem ordenada sem emitir os quads pendentes.</summary>
+    public void CancelSorted()
+    {
+        RequireSorted();
+        CloseSorted();
+    }
+
+    private void CloseSorted()
+    {
+        _pending!.Clear();
+        _orders!.Clear();
+        _quads = 0;
+        _texture = null;
+        _shader = null;
+        _sorted = _begun = false;
+        _device.CloseBatch(true);
     }
 
     private void Flush()

@@ -125,7 +125,7 @@ public class RecoveryAndExplorerTests : IDisposable
         project.WriteText(".lunet/cache/z.bin", "x");
         var tree = project.ListTree();
         Assert.DoesNotContain(tree, e => e.Path.StartsWith(".lunet"));
-        Assert.Equal(["Code", "Code/Ai", "Code/Ai/Brain.cs", "Code/Player.cs", "Content", "Game.cs", "lunet.json"], tree.Select(e => e.Path));
+        Assert.Equal(["Code", "Code/Ai", "Code/Ai/Brain.cs", "Code/Player.cs", "Content", "Project", "Project/Imports.cs", "Game.cs", "lunet.json"], tree.Select(e => e.Path));
         Assert.Equal(2, tree.Single(e => e.Path == "Code/Ai/Brain.cs").Depth);
         Assert.True(tree.Single(e => e.Path == "Code").IsDirectory);
     }

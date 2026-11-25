@@ -159,7 +159,7 @@ jobs:
         run: |
           project="$PWD/dist/journey/projects/JourneyPortrait"
           dotnet build runtime-template/Lunet.GameCode.csproj -c Release -t:Rebuild \
-            -p:GameSourceRoot="$project"
+            -p:GameSourceRoot="$project" -p:LunetSdkImportsVersion=1
           game="runtime-template/bin/Release/net10.0/CompiledGame.dll"
           test -s "$game"
           package=$(cat dist/journey/journey-package-id.txt)

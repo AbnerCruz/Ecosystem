@@ -22,7 +22,7 @@ internal sealed class DataStudioView : LinearLayout
     private readonly TextView _status;
     private IReadOnlyList<DataIssue> _issues = [];
 
-    public DataStudioView(Context context, DataTable table, string name, Action<DataTable> save, Action<DataTable> generateCode,
+    public DataStudioView(global::Android.Content.Context context, DataTable table, string name, Action<DataTable> save, Action<DataTable> generateCode,
         Func<IReadOnlyDictionary<string, HashSet<string>>> otherTables, Action close, string? exportLabel = null) : base(context)
     {
         _table = table; _save = save; _generateCode = generateCode; _otherTables = otherTables; _close = close;

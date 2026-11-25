@@ -22,13 +22,18 @@ public sealed class Dispatcher
     }
 
     /// <summary>Roda o que está pendente (o host chama uma vez por quadro). Devolve quantas ações rodaram.</summary>
-    internal int RunPending()
+    internal int RunPending(GameHost? host = null, Game? game = null)
     {
         var run = 0;
         var limit = _queue.Count; // ações postadas durante a execução ficam para o próximo quadro
         while (run < limit && _queue.TryDequeue(out var action))
         {
-            action();
+            if (host is not null && game is not null)
+            {
+                using var scope = Context.Enter(host, game, graphics: true);
+                action();
+            }
+            else action();
             run++;
         }
         return run;

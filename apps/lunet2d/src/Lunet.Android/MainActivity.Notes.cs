@@ -328,7 +328,7 @@ public sealed partial class MainActivity
         public float StrokeDp { get; set; } = 4;
         public bool Dirty { get; set; }
 
-        public SketchView(Context context, Bitmap? initial) : base(context)
+        public SketchView(global::Android.Content.Context context, Bitmap? initial) : base(context)
         {
             _base = initial;
             SetBackgroundColor(AColor.Rgb(17, 21, 29));

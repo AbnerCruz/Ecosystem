@@ -40,3 +40,7 @@ Durante uma partida, também pode alternar a configuração com `GraphicsDevice.
 Ao usar **Fill**, posicionar botões de HUD próximos às bordas virtuais pode deixá-los fora da área visível; use `GraphicsDevice.SafeArea` para layout e ancoragem. `SurfaceToVirtual` e `VirtualToSurface` continuam transformando toques corretamente. `PixelPerfect` escolhe escala inteira que não volta a criar barras quando Fill está ativo e a escala cabe em ao menos 1×.
 
 **Teste sem editar código:** no Laboratório 2.0, vá até **Gráficos** (página 2/12) e toque em **TELA: FIT/FILL**. Teste com aparelho em proporções diferentes, zoom, recorte e pixel-perfect. O padrão dos projetos antigos permanece Fit; o ajuste é explícito e reversível. A barra de controles do Preview pertence à IDE e é distinta das barras de letterbox do jogo.
+
+## Ordenação opt-in
+
+Use `BeginSorted`, `SetOrder` ou uma chave explícita em `Draw`, e `End` para ordenar toda a passagem, mantendo empates estáveis. Veja [o exemplo de árvore e personagem](../manual/ordenacao-importacoes-contexto.md). `Begin` permanece o modo convencional.

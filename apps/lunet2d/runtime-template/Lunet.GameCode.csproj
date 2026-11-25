@@ -4,12 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>CompiledGame</AssemblyName>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- The documented SDK command and cloud workflow pass the manifest policy, not file presence. -->
+    <ImplicitUsings Condition="'$(LunetSdkImportsVersion)' == '1'">disable</ImplicitUsings>
     <GameSourceRoot Condition="'$(GameSourceRoot)' == ''">$(MSBuildThisFileDirectory)../samples/apk-smoke</GameSourceRoot>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../src/Lunet.Framework/Lunet.Framework.csproj" />
     <ProjectReference Include="../src/Lunet.Networking/Lunet.Networking.csproj" />
     <Compile Include="$(GameSourceRoot)/**/*.cs"
-             Exclude="$(GameSourceRoot)/Tests/**/*.cs;$(GameSourceRoot)/bin/**/*.cs;$(GameSourceRoot)/obj/**/*.cs;$(GameSourceRoot)/.lunet/**/*.cs" />
+             Exclude="$(GameSourceRoot)/Tests/**/*.cs;$(GameSourceRoot)/**/bin/**/*.cs;$(GameSourceRoot)/**/obj/**/*.cs;$(GameSourceRoot)/**/.lunet/**/*.cs;$(GameSourceRoot)/**/.git/**/*.cs" />
   </ItemGroup>
 </Project>

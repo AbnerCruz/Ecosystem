@@ -372,6 +372,7 @@ public sealed partial class MainActivity : Activity
             return;
         }
         ResolveLearningWorkspaceContext();
+        _collapsed.Add("Project");
         _problems = [];
         _console.Clear();
         _lastProfilerReport = null;
@@ -555,6 +556,7 @@ public sealed partial class MainActivity : Activity
         [
             ("Novo arquivo", () => AskForNewEntry("", isDirectory: false)),
             ("Nova pasta", () => AskForNewEntry("", isDirectory: true)),
+            ("Importações · presets", ChooseImportsPreset),
         ]));
         newItem.ContentDescription = "Criar arquivo ou pasta";
         header.AddView(newItem, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
@@ -588,7 +590,9 @@ public sealed partial class MainActivity : Activity
         {
             if (HasCollapsedAncestor(entry.Path)) continue;
             var captured = entry;
-            var row = new TextView(this) { Text = entry.Name, TextSize = 14 };
+            var label = entry.Path == "Project" && entry.IsDirectory ? "Projeto"
+                : entry.Path == ProjectImports.Path ? "Importações · Imports.cs" : entry.Name;
+            var row = new TextView(this) { Text = label, TextSize = 14 };
             row.SetPadding(Dp(12 + entry.Depth * 14), Dp(12), Dp(8), Dp(12));
             row.SetMinHeight(Dp(46));
             row.SetSingleLine(true);
@@ -654,6 +658,8 @@ public sealed partial class MainActivity : Activity
         var items = entry.IsDirectory
             ? new[] { "Novo arquivo aqui", "Nova pasta aqui", "Renomear", "Excluir" }
             : IsTextFile(entry.Path) ? new[] { "Abrir em nova aba", "Renomear", "Excluir" } : new[] { "Renomear", "Excluir" };
+        items = [.. items, "Copiar caminho"];
+        if (entry.Path == ProjectImports.Path || entry.Path == "Project") items = [.. items, "Presets de importações"];
         new AlertDialog.Builder(this)!.SetTitle(entry.Path)!.SetItems(items, (_, args) =>
         {
             switch (items[args.Which])
@@ -663,6 +669,8 @@ public sealed partial class MainActivity : Activity
                 case "Nova pasta aqui": AskForNewEntry(entry.Path + "/", isDirectory: true); break;
                 case "Renomear": AskToRename(entry); break;
                 case "Excluir": AskToDelete(entry); break;
+                case "Copiar caminho": CopyToClipboard(entry.Path); break;
+                case "Presets de importações": ChooseImportsPreset(); break;
             }
         })!.Show();
     }
@@ -710,6 +718,72 @@ public sealed partial class MainActivity : Activity
                     Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
                 }
             })!.Show();
+    }
+
+    private void ChooseImportsPreset()
+    {
+        if (_project is null || !SaveCurrent()) return;
+        ShowActionMenu("Importações · Project/Imports.cs",
+        [
+            ("Essencial", () => PreviewImportsPreset(false)),
+            ("Amplo · experimental", () => PreviewImportsPreset(true))
+        ]);
+    }
+
+    private void PreviewImportsPreset(bool broad)
+    {
+        var project = _project;
+        if (project is null || !SaveCurrent()) return;
+        try
+        {
+            var observed = project.ListFiles().Contains(ProjectImports.Path, StringComparer.Ordinal)
+                ? project.ReadText(ProjectImports.Path) : null;
+            var proposed = ProjectImports.Source(broad);
+            string message = "A alteração é explícita. Nomes e extensões podem tornar-se ambíguos. "
+                + "O modo SDK explícito usa sdkImportsVersion=1 no lunet.json.\n\n"
+                + "ANTES:\n" + (observed ?? "(arquivo inexistente)") + "\nDEPOIS:\n" + proposed;
+            new AlertDialog.Builder(this)!.SetTitle(broad ? "Preset Amplo" : "Preset Essencial")!
+                .SetMessage(message)!.SetNegativeButton("Cancelar", (_, _) => { })!
+                .SetPositiveButton("Aplicar", (_, _) =>
+                {
+                    if (!ReferenceEquals(project, _project) || !SaveCurrent()) return;
+                    try
+                    {
+                        // Preserve the normal editor history for existing documents.
+                        if (observed is not null)
+                        {
+                            if (project.ReadText(ProjectImports.Path) != observed || !OpenFile(ProjectImports.Path))
+                                throw new ProjectException("As importações mudaram. Abra novamente a prévia.");
+                            if (_editor is not { } editor || editor.Text != observed)
+                                throw new ProjectException("As importações mudaram. Abra novamente a prévia.");
+                            editor.Replace(0, observed.Length, proposed);
+                            if (!SaveCurrent()) return;
+                        }
+                        else
+                        {
+                            if (!project.WriteTextIfUnchanged(ProjectImports.Path, null, proposed, out _))
+                                throw new ProjectException("As importações mudaram. Abra novamente a prévia.");
+                        }
+                        if (project.Manifest.SdkImportsVersion != ProjectImports.ExplicitSdkVersion)
+                        {
+                            string oldManifest = project.ReadText(ProjectStore.ManifestFileName);
+                            var manifest = ProjectManifest.Parse(oldManifest);
+                            manifest.SdkImportsVersion = ProjectImports.ExplicitSdkVersion;
+                            if (!project.WriteTextIfUnchanged(ProjectStore.ManifestFileName, oldManifest, manifest.ToJson(), out _))
+                                throw new ProjectException("lunet.json mudou; confira a política SDK antes de exportar.");
+                            project.Manifest.SdkImportsVersion = manifest.SdkImportsVersion;
+                        }
+                        _assistant?.SetFile(ProjectImports.Path, proposed);
+                        _collapsed.Remove("Project");
+                        RefreshExplorer();
+                        if (OpenFile(ProjectImports.Path) && _drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
+                    }
+                    catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+                    { Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show(); }
+                })!.Show();
+        }
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+        { Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show(); }
     }
 
     private void AskToRename(ExplorerEntry entry)

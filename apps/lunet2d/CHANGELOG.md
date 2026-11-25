@@ -1,5 +1,12 @@
 # Changelog
 
+## Próxima versão — evolução do Framework (candidata, não publicada)
+
+- SpriteBatch: passagem ordenada opt-in, chaves explícitas e estáveis, guarda de passagem e cancelamento; Begin convencional preservado.
+- Projetos novos: Project/Imports.cs visível, presets e política de compilação explícita. Essencial provisório até validação do Amplo.
+- Context experimental para callbacks síncronos, com acesso aos objetos reais do jogo e dependências explícitas preservadas.
+- Dois jogos de referência e testes de regressão. Estado de validação no plano de evolução de 24/11.
+
 ## 0.0.1-dev.1000591 — F6 · Mapas mentais e Studios
 
 - Mapas mentais em Notas, com ramos, ligações, arraste, zoom, histórico, referências e apresentação.

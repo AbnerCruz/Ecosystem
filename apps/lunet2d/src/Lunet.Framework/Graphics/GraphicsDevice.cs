@@ -24,6 +24,33 @@ public sealed class GraphicsDevice
     private ViewportScalingMode _viewportScaling;
     private RectI _insets;
     private Texture2D? _white;
+    private int _openBatches;
+    private bool _sortedOpen;
+    private Shader? _sortedShader;
+
+    internal void OpenBatch(bool sorted, Shader? shader)
+    {
+        if (_sortedOpen || (sorted && _openBatches != 0))
+            throw new InvalidOperationException("Uma passagem ordenada exige exclusividade do dispositivo.");
+        _openBatches++;
+        if (sorted) { _sortedOpen = true; _sortedShader = shader; }
+    }
+
+    internal void CloseBatch(bool sorted)
+    {
+        _openBatches--;
+        if (sorted) { _sortedOpen = false; _sortedShader = null; }
+    }
+
+    internal void GuardSortedState()
+    {
+        if (_sortedOpen) throw new InvalidOperationException("Encerre a passagem ordenada antes de alterar o estado gráfico.");
+    }
+
+    internal void GuardSortedShader(Shader shader)
+    {
+        if (_sortedOpen && ReferenceEquals(shader, _sortedShader)) GuardSortedState();
+    }
 
     /// <summary>Cria o dispositivo gráfico.</summary>
     /// <param name="backend">API gráfica.</param>
@@ -70,6 +97,7 @@ public sealed class GraphicsDevice
             if (value is not (ViewportScalingMode.Fit or ViewportScalingMode.Fill))
                 throw new ArgumentOutOfRangeException(nameof(value));
             if (_viewportScaling == value) return;
+            GuardSortedState();
             _viewportScaling = value;
             Recompute();
         }
@@ -84,6 +112,7 @@ public sealed class GraphicsDevice
         get => _pixelPerfect;
         set
         {
+            GuardSortedState();
             _pixelPerfect = value;
             Recompute();
         }
@@ -104,6 +133,7 @@ public sealed class GraphicsDevice
     public void SetVirtualResolution(int width, int height)
     {
         if (width < 1 || height < 1) throw new ArgumentOutOfRangeException(nameof(width), "A resolução virtual deve ser positiva.");
+        GuardSortedState();
         VirtualWidth = width;
         VirtualHeight = height;
         Recompute();
@@ -114,6 +144,7 @@ public sealed class GraphicsDevice
     /// <param name="surfaceHeight">Altura da superfície de desenho, em pixels.</param>
     public void Resize(int surfaceWidth, int surfaceHeight)
     {
+        GuardSortedState();
         _surfaceWidth = Math.Max(1, surfaceWidth);
         _surfaceHeight = Math.Max(1, surfaceHeight);
         Recompute();
@@ -127,6 +158,7 @@ public sealed class GraphicsDevice
     /// <param name="insetBottom">Recuo seguro embaixo, em pixels da superfície.</param>
     public void SetDisplay(float density, int insetLeft, int insetTop, int insetRight, int insetBottom)
     {
+        GuardSortedState();
         Density = density > 0 ? density : 1f;
         _insets = new RectI(Math.Max(0, insetLeft), Math.Max(0, insetTop), Math.Max(0, insetRight), Math.Max(0, insetBottom));
         Recompute();
@@ -174,6 +206,7 @@ public sealed class GraphicsDevice
     public void SetRenderTarget(RenderTarget2D? target)
     {
         if (target is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
+        GuardSortedState();
         RenderTarget = target;
         Backend.SetRenderTarget(target?.Handle ?? 0, target?.Width ?? _surfaceWidth, target?.Height ?? _surfaceHeight);
         if (target is null)
@@ -191,6 +224,7 @@ public sealed class GraphicsDevice
     /// <param name="color">Cor de preenchimento do alvo atual.</param>
     public void Clear(Color color)
     {
+        GuardSortedState();
         if (RenderTarget is { } rt)
         {
             Backend.SetViewport(0, 0, rt.Width, rt.Height);

@@ -47,6 +47,7 @@ public sealed partial class Shader : IDisposable
     }
 
     internal int Handle { get; }
+    internal GraphicsDevice Device => _device;
     internal IReadOnlyDictionary<string, float[]> Values => _values;
     /// <summary>Verdadeiro depois de liberado.</summary>
     public bool IsDisposed { get; private set; }
@@ -88,7 +89,8 @@ public sealed partial class Shader : IDisposable
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         if (!UniformName().IsMatch(name)) throw new ArgumentException("Nome de uniform inválido.", nameof(name));
-        _values[name] = value; // substitui o array: o SpriteBatch guarda uma cópia do dicionário a cada Begin
+        _device.GuardSortedShader(this);
+        _values[name] = value;
     }
 
     /// <summary>Libera o shader.</summary>

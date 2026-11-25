@@ -43,7 +43,7 @@ internal sealed class MusicStudioView : LinearLayout
     private int _noteLength = 1;
     private int _seed = System.Environment.TickCount;
 
-    public MusicStudioView(Context context, MusicSong song, string cacheDirectory, Action<MusicSong> save, Action<MusicSong> export, Action close) : base(context)
+    public MusicStudioView(global::Android.Content.Context context, MusicSong song, string cacheDirectory, Action<MusicSong> save, Action<MusicSong> export, Action close) : base(context)
     {
         _song = song; _save = save; _export = export; _close = close; _cache = cacheDirectory;
         Orientation = Orientation.Vertical;
@@ -98,7 +98,7 @@ internal sealed class MusicStudioView : LinearLayout
     private int Dp(int value) => LunetUi.Dp(Context!, value);
     private LayoutParams Square(int dp) => new(Dp(dp), Dp(dp));
 
-    private LinearLayout Strip(Context context, string label)
+    private LinearLayout Strip(global::Android.Content.Context context, string label)
     {
         var row = LunetUi.Row(context, 6);
         row.SetPadding(Dp(8), Dp(2), Dp(8), Dp(2));
@@ -617,7 +617,7 @@ internal sealed class MusicStudioView : LinearLayout
         private int _downStep = -1, _downPitch = -1;
         private bool _dragged;
 
-        public StepGrid(Context context, MusicStudioView owner) : base(context)
+        public StepGrid(global::Android.Content.Context context, MusicStudioView owner) : base(context)
         {
             _owner = owner;
             _cell = LunetUi.Dp(context, 30);

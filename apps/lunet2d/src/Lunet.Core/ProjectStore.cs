@@ -78,6 +78,7 @@ public sealed class ProjectStore
             UpdatesPerSecond = settings.UpdatesPerSecond,
             ViewportScaling = settings.ViewportScaling,
             Version = settings.Version,
+            SdkImportsVersion = ProjectImports.ExplicitSdkVersion,
         };
         // Cada novo projeto possui uma identidade única; não altere IDs existentes.
         manifest.PackageId = string.IsNullOrWhiteSpace(settings.PackageId)
@@ -94,8 +95,10 @@ public sealed class ProjectStore
         {
             AtomicFile.WriteAllText(Path.Combine(directory, ManifestFileName), manifest.ToJson());
             var className = ClassName(name);
+            Directory.CreateDirectory(Path.Combine(directory, "Project"));
+            AtomicFile.WriteAllText(Path.Combine(directory, ProjectImports.Path), ProjectImports.Source());
             AtomicFile.WriteAllText(Path.Combine(directory, manifest.EntryPoint),
-                template switch
+                ProjectImports.RemoveCoveredFromGenerated(template switch
                 {
                     ProjectTemplate.CoinCatcher => ProjectTemplates.CoinCatcherSource(className),
                     ProjectTemplate.Lab => ProjectTemplates.LabSource(className),
@@ -103,7 +106,7 @@ public sealed class ProjectStore
                     ProjectTemplate.Particles => ProjectTemplates.ParticlesSource(className),
                     _ => ProjectTemplates.BlankGameSource(className, manifest.VirtualWidth, manifest.VirtualHeight,
                         manifest.UpdatesPerSecond, manifest.ViewportScaling),
-                });
+                }));
             Directory.CreateDirectory(Path.Combine(directory, "Content"));
             if (template is ProjectTemplate.CoinCatcher or ProjectTemplate.Lab)
             {

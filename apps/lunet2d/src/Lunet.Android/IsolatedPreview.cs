@@ -16,20 +16,20 @@ internal static class IsolatedPreviewFiles
     public const string ExtraSaves = "saves";
     public const string ExtraAudioCache = "audioCache";
 
-    public static string Directory(Context context) => System.IO.Path.Combine(context.CacheDir!.AbsolutePath, "isolated");
+    public static string Directory(global::Android.Content.Context context) => System.IO.Path.Combine(context.CacheDir!.AbsolutePath, "isolated");
 
-    public static string Assembly(Context context) => System.IO.Path.Combine(Directory(context), "game.dll");
+    public static string Assembly(global::Android.Content.Context context) => System.IO.Path.Combine(Directory(context), "game.dll");
 
     /// <summary>Última captura textual do Profiler, auxiliar e descartável como o console.</summary>
-    public static string Profiler(Context context) => System.IO.Path.Combine(Directory(context), "profiler.txt");
+    public static string Profiler(global::Android.Content.Context context) => System.IO.Path.Combine(Directory(context), "profiler.txt");
 
-    public static string Symbols(Context context) => System.IO.Path.Combine(Directory(context), "game.pdb");
+    public static string Symbols(global::Android.Content.Context context) => System.IO.Path.Combine(Directory(context), "game.pdb");
 
     /// <summary>Existe enquanto o Preview isolado roda; se sobrar depois que ele fecha, o processo morreu.</summary>
-    public static string Marker(Context context) => System.IO.Path.Combine(Directory(context), "running");
+    public static string Marker(global::Android.Content.Context context) => System.IO.Path.Combine(Directory(context), "running");
 
     /// <summary>Linhas do console do jogo: "nível|mensagem" (quebras de linha viram \n).</summary>
-    public static string Log(Context context) => System.IO.Path.Combine(Directory(context), "log.txt");
+    public static string Log(global::Android.Content.Context context) => System.IO.Path.Combine(Directory(context), "log.txt");
 }
 
 /// <summary>

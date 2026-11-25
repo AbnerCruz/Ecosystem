@@ -32,7 +32,7 @@ internal sealed class TileStudioView : LinearLayout
     private bool _changed;
     private int _lastX = -1, _lastY = -1;
 
-    public TileStudioView(Context context, TileStudioSession edit, Bitmap tileset, Action<string> save, Action editTileset, Action close) : base(context)
+    public TileStudioView(global::Android.Content.Context context, TileStudioSession edit, Bitmap tileset, Action<string> save, Action editTileset, Action close) : base(context)
     {
         _edit = edit; _tileset = tileset; _save = save; _editTileset = editTileset; _close = close;
         Orientation = Orientation.Vertical;
@@ -266,7 +266,7 @@ internal sealed class TileStudioView : LinearLayout
         canvas.DrawBitmap(_tileset, src, dest, paint);
     }
 
-    private sealed class TileSwatch(Context context, TileStudioView owner, int id) : View(context)
+    private sealed class TileSwatch(global::Android.Content.Context context, TileStudioView owner, int id) : View(context)
     {
         private readonly Paint _paint = new() { FilterBitmap = false };
 
@@ -296,7 +296,7 @@ internal sealed class TileStudioView : LinearLayout
         private float _cell, _left, _top;
         public CanvasGestures Gestures { get; }
 
-        public MapCanvas(Context context, TileStudioView owner) : base(context)
+        public MapCanvas(global::Android.Content.Context context, TileStudioView owner) : base(context)
         {
             _owner = owner;
             Gestures = new CanvasGestures(context, this) { MinZoom = 0.5f, MaxZoom = 12f };
