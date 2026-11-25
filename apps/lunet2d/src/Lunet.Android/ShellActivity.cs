@@ -55,6 +55,10 @@ public sealed class ShellActivity : AvaloniaActivity
         _shell = new LunetShell(ProjectsRoot(this)) { OpenRoute = OpenRoute };
         Content = _shell;
         ApplyDevice(Resources?.Configuration);
+        // UX P7 (LUNET-537 D7): keys and confirmations are felt, with the system's own haptic constants.
+        Lunet.Client.Ui.Haptics.KeyTap = () => Window?.DecorView?.PerformHapticFeedback(FeedbackConstants.KeyboardTap);
+        Lunet.Client.Ui.Haptics.Confirm = () => Window?.DecorView?.PerformHapticFeedback(
+            OperatingSystem.IsAndroidVersionAtLeast(30) ? FeedbackConstants.Confirm : FeedbackConstants.ContextClick);
     }
 
     /// <summary>

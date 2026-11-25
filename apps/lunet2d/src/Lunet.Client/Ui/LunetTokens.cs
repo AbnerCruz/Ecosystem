@@ -37,6 +37,11 @@ public static class LunetTokens
         public const string Danger = "#ff7b86";
         /// <summary>The game surface letterbox.</summary>
         public const string Stage = "#000000";
+        /// <summary>Keyboard (LUNET-537 D2): the deck behind the keys, letter keys, modifier keys, pressed key.</summary>
+        public const string KeyboardDeck = "#111215";
+        public const string Key = "#2b2d34";
+        public const string KeyModifier = "#1d1f24";
+        public const string KeyPressed = "#3d4049";
         /// <summary>Code text (monospace).</summary>
         public const string Code = "#e6e1f5";
     }

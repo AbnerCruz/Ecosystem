@@ -532,6 +532,53 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void Suggestions_FollowTheWordBeingTyped_TypesAndMembers()
+    {
+        var catalog = new MethodCatalog();
+        Assert.Equal("Spri", MethodCatalog.WordBefore("x = Spri", 8));
+        Assert.Equal("", MethodCatalog.WordBefore("x = ", 4));
+        Assert.Contains(catalog.Suggest("Spri"), m => m.Name == "SpriteBatch" && m.Kind == "type");
+        var afterDot = catalog.Suggest("Dra");
+        Assert.Contains(afterDot, m => m.Name == "Draw");
+        Assert.All(catalog.Suggest("cle"), m => Assert.StartsWith("cle", m.Name, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(catalog.Suggest("Dra").Select(m => m.Name).Distinct().Count(), catalog.Suggest("Dra").Count); // one per name
+        Assert.DoesNotContain(catalog.Tree().SelectMany(n => n.Types).SelectMany(t => t.Members), m => m.Kind == "type");
+    }
+
+    [Fact]
+    public void Keyboard_SuggestionStripCompletesTheWordAndPreviewsKeys()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var editor = shell.WorkspaceView.Code;
+                editor.Surface.Text = "batch.";
+                editor.ShowKeyboard();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var kb = editor.Keyboard!;
+                editor.Surface.Caret = 6;
+                foreach (var c in "Dr") kb.Press(new KeyDef(c.ToString()));
+                Assert.Contains(kb.Suggestions, m => m.Name == "Draw");
+                kb.AcceptSuggestion(kb.Suggestions.First(m => m.Name == "Draw"));
+                Assert.Equal("batch.Draw()", editor.Surface.Text);
+                Assert.Equal("batch.Draw(".Length, editor.Surface.Caret);   // inside the parentheses
+                Assert.True(kb.Height <= LunetKeyboard.StripHeight + 5 * LunetKeyboard.RowHeight + 6);
+                Assert.True(LunetTokens.Contrast(LunetTokens.Color.TextPrimary, LunetTokens.Color.Key) >= 4.5);
+                Assert.True(LunetTokens.Contrast(LunetTokens.Color.TextPrimary, LunetTokens.Color.KeyModifier) >= 4.5);
+                Assert.True(LunetTokens.Contrast(LunetTokens.Color.OnPrimary, LunetTokens.Color.Primary) >= 4.5);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     private static int CountRed(Avalonia.Media.Imaging.Bitmap frame)
     {
         var w = frame.PixelSize.Width; var h = frame.PixelSize.Height;

@@ -14,6 +14,15 @@ public enum ButtonKind { Primary, Secondary, Ghost }
 /// (study item 6: "toda tela nova só usa componentes"). Each interactive component has a 48 dp target and an
 /// accessible name.
 /// </summary>
+/// <summary>Haptic feedback hooks (UX P7), set by the Android head; no-ops elsewhere.</summary>
+public static class Haptics
+{
+    /// <summary>A key went down (Android: KeyboardTap).</summary>
+    public static Action? KeyTap { get; set; }
+    /// <summary>Something was done (Android: Confirm).</summary>
+    public static Action? Confirm { get; set; }
+}
+
 public static class LunetUi
 {
     public static TextBlock Text(string text, double size = LunetTokens.Type.Body, string color = LunetTokens.Color.TextPrimary,

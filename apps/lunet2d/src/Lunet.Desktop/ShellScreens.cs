@@ -37,6 +37,11 @@ public static class ShellScreens
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
                 shell.WorkspaceView.Code.ShowKeyboard();
+                if (shell.WorkspaceView.Code.Keyboard is { } typing)
+                {
+                    shell.WorkspaceView.Code.Surface.Caret = 0;
+                    foreach (var c in "Spri") typing.Press(new Lunet.Client.Shell.KeyDef(c.ToString()));
+                }
                 Shot(window, output, size, "3b-teclas", written);
                 if (shell.WorkspaceView.Code.Keyboard is { } keyboard)
                 {

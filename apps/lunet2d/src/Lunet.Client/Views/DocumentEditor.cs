@@ -55,6 +55,7 @@ public sealed class DocumentEditor : UserControl
     {
         _keyboardWanted = true;
         UpdateKeyboard();
+        _keyboard?.RefreshSuggestions(); // the caret may have moved by a tap on the code
     }
 
     /// <summary>Hides the Lunet keyboard (Back, leaving the editor). Returns true when it was visible.</summary>
@@ -82,7 +83,7 @@ public sealed class DocumentEditor : UserControl
         if (_keyboard is not null)
         {
             _keyboard.IsVisible = on;
-            if (on) _keyboard.Height = Math.Clamp((_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800) * 0.4, 220, 320);
+            if (on) _keyboard.Height = LunetKeyboard.PreferredHeight(_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800);
         }
         // Only the code editor loses the system keyboard, and only while the Lunet keyboard is there.
         InputMethod.SetIsInputMethodEnabled(_surface.InputTarget, !(_tab == WorkspaceTab.Code && on));
