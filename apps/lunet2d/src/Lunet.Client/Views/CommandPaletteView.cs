@@ -166,9 +166,6 @@ public sealed class CommandPaletteView : UserControl
         yield return new("Documentação", "Manual, guias e referência da API", () => _shell.State.ShowPanel(SupportPanel.Docs));
         yield return new("Console", "O que o jogo escreveu", () => _shell.State.ShowPanel(SupportPanel.Console));
         yield return new("Problemas", "Erros e avisos do código", () => _shell.State.ShowPanel(SupportPanel.Problems));
-        yield return _shell.PreferSystemKeyboard
-            ? new("Usar o teclado Lunet", "Teclas, atalhos e métodos", () => { _shell.PreferSystemKeyboard = false; Close(); _shell.WorkspaceView.Code.ShowKeyboard(); })
-            : new("Usar o teclado do sistema", "Ditado e outros idiomas", () => { _shell.PreferSystemKeyboard = true; _shell.WorkspaceView.Code.Relayout(); Close(); });
     }
 
     private void EditWhole(string newText)

@@ -56,23 +56,13 @@ public sealed class LunetShell : UserControl
     /// <summary>The "Métodos" catalog of the Lunet keyboard (API + the game's members + usage history).</summary>
     public MethodCatalog Methods { get; }
 
-    private bool _hardwareKeyboard, _preferSystemKeyboard;
+    private bool _hardwareKeyboard;
 
-    /// <summary>A physical keyboard is attached: it types directly and the Lunet keyboard steps aside (the head sets it).</summary>
+    /// <summary>A physical keyboard is attached: it has its own symbols, so the code bar steps aside (the head sets it).</summary>
     public bool HardwareKeyboard
     {
         get => _hardwareKeyboard;
         set { if (_hardwareKeyboard == value) return; _hardwareKeyboard = value; if (Workspace.Project is not null) _workspaceView.Code.Relayout(); }
-    }
-
-    /// <summary>
-    /// The person chose the system keyboard (🌐), or a screen reader is on (TalkBack works best with the system
-    /// keyboard — study 25/11 §3); "Teclado Lunet" brings ours back.
-    /// </summary>
-    public bool PreferSystemKeyboard
-    {
-        get => _preferSystemKeyboard;
-        set => _preferSystemKeyboard = value;
     }
 
     /// <summary>The last message the shell had to tell you (a failed save, a failed open); also in the Console.</summary>
@@ -287,6 +277,9 @@ public sealed class LunetShell : UserControl
     private bool _keyboardShown;
     private readonly DispatcherTimer _keyboardClosed = new() { Interval = KeyboardFit.CloseGrace };
 
+    /// <summary>Shows (true) or hides (false) the system keyboard; set by the Android head, null elsewhere.</summary>
+    public Action<bool>? SystemKeyboard { get; set; }
+
     /// <summary>True while the phone's keyboard is open (after the close grace).</summary>
     public bool KeyboardOpen => _keyboardShown;
 
@@ -327,7 +320,9 @@ public sealed class LunetShell : UserControl
     /// <summary>The keyboard opened or closed (the platform calls it through the input pane; tests call it directly).</summary>
     public void SetKeyboard(bool open)
     {
+        var closed = _keyboardShown && !open;
         _keyboardShown = open;
+        if (closed) _workspaceView.Code.SystemKeyboardClosed(); // closed by its own Back/hide key: the code bar goes too
         _workspaceView.SetKeyboardOpen(open || _workspaceView.Code.KeyboardVisible);
         FitKeyboard();
     }

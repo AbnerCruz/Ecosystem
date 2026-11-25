@@ -16,7 +16,7 @@ public enum ShellLayout { Compact, Expanded }
 /// The navigation state of the Lunet shell, with no UI dependency so it is tested directly. Rules:
 /// <list type="bullet">
 /// <item>Leaving a game and coming back restores the tab you were on (per game), never resets to a default.</item>
-/// <item>Back closes the open support panel first, then returns from the workspace to the Home; on the Home it is not consumed.</item>
+/// <item>Back closes the open support panel first, then goes back through the tabs visited, then returns to the Home; on the Home it is not consumed.</item>
 /// <item>On an expanded screen, Code and Game are shown side by side, so selecting either keeps both visible.</item>
 /// </list>
 /// </summary>
@@ -26,6 +26,8 @@ public sealed class ShellState
     public const double ExpandedMinWidth = 840;
 
     private readonly Dictionary<string, WorkspaceTab> _lastTab = new(StringComparer.Ordinal);
+    // Tabs visited in this game, so Back returns to where the person was before (owner, 25/11: "voltar para o estado anterior").
+    private readonly Stack<WorkspaceTab> _tabHistory = new();
 
     public ShellLevel Level { get; private set; } = ShellLevel.Home;
     public string? Project { get; private set; }
@@ -46,6 +48,7 @@ public sealed class ShellState
         Level = ShellLevel.Workspace;
         Tab = _lastTab.GetValueOrDefault(name, WorkspaceTab.Code);
         Panel = SupportPanel.None;
+        _tabHistory.Clear();
         Changed?.Invoke();
     }
 
@@ -60,6 +63,7 @@ public sealed class ShellState
     public void SelectTab(WorkspaceTab tab)
     {
         if (Level != ShellLevel.Workspace || Project is null) return;
+        if (tab != Tab) _tabHistory.Push(Tab);
         Tab = tab;
         _lastTab[Project] = tab;
         Changed?.Invoke();
@@ -93,6 +97,13 @@ public sealed class ShellState
     public bool Back()
     {
         if (Panel != SupportPanel.None) { Panel = SupportPanel.None; Changed?.Invoke(); return true; }
+        if (Level == ShellLevel.Workspace && _tabHistory.TryPop(out var previous))
+        {
+            Tab = previous;
+            if (Project is not null) _lastTab[Project] = previous;
+            Changed?.Invoke();
+            return true;
+        }
         if (Level == ShellLevel.Workspace) { GoHome(); return true; }
         return false;
     }

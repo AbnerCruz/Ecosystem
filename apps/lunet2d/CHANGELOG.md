@@ -1,7 +1,15 @@
 # Changelog
 
-## 0.0.1-dev.1000603 — Aprender na interface nova
+## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta
 
+- **A digitação é do teclado do sistema.** O teclado próprio do Lunet saiu: a digitação estava lenta demais.
+- **Barra de código** logo acima do teclado, ao alcance do polegar, com três abas:
+  - **Teclas:** símbolos `{ } ( ) ; = " < >`, Tab e setas. Enquanto você digita uma palavra, as sugestões tomam o lugar dos símbolos.
+  - **Atalhos:** desfazer, refazer, início e fim da linha, comentar, duplicar, mover e apagar linha, e a paleta de comandos.
+  - **Métodos:** o catálogo da API sobe no lugar do teclado. Tocar num membro insere no cursor e volta a digitar.
+  - O **⌄** fecha o teclado.
+- As sugestões não fazem trabalho a cada tecla: aparecem logo depois de você parar.
+- **Voltar** fecha a barra e o teclado, depois o painel aberto, depois volta à aba anterior (por exemplo, de Jogo para Código) e só então sai do jogo.
 - **Aprender** (na tela inicial, também no computador) mostra sua trilha, o progresso e os 60 cursos. Os cinco primeiros estão disponíveis; os outros aparecem como "em breve".
 - Cada desafio mostra missão, objetivos, o que pesquisar, critérios de aceite e um desafio extra.
 - **Criar o jogo do desafio** cria um jogo seu, liga o jogo ao desafio e abre o código com a referência offline ao lado. Se o jogo já existe, aparece **Abrir**. **Ligar a um jogo que já existe** usa um jogo que você já tem.

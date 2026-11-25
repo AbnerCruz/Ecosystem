@@ -63,6 +63,17 @@ public sealed class ShellActivity : AvaloniaActivity
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
         };
         Content = _shell;
+        // In an embedded AvaloniaActivity the system Back arrives here, not on the shell's TopLevel: route it, so
+        // Back closes the keyboard, then the open panel or sheet, then the page, and only then leaves the app.
+        BackRequested += (_, e) => { if (_shell?.Back() == true) e.Handled = true; };
+        // The code bar shows and hides the system keyboard (Avalonia exposes no call for it).
+        _shell.SystemKeyboard = show =>
+        {
+            var view = Window?.DecorView?.FindFocus() ?? Window?.DecorView;
+            if (view is null || GetSystemService(InputMethodService) is not global::Android.Views.InputMethods.InputMethodManager ime) return;
+            if (show) ime.ShowSoftInput(view, global::Android.Views.InputMethods.ShowFlags.Implicit);
+            else ime.HideSoftInputFromWindow(view.WindowToken, global::Android.Views.InputMethods.HideSoftInputFlags.None);
+        };
         ApplyDevice(Resources?.Configuration);
         // UX P7 (LUNET-537 D7): keys and confirmations are felt, with the system's own haptic constants.
         Lunet.Client.Ui.Haptics.KeyTap = () => Window?.DecorView?.PerformHapticFeedback(FeedbackConstants.KeyboardTap);
@@ -115,20 +126,18 @@ public sealed class ShellActivity : AvaloniaActivity
         ApplyDevice(newConfig);
     }
 
-    /// <summary>A physical keyboard types directly; with a screen reader the system keyboard is the default.</summary>
+    /// <summary>A physical keyboard has its own symbols: the code bar steps aside.</summary>
     private void ApplyDevice(global::Android.Content.Res.Configuration? config)
     {
         if (_shell is null || config is null) return;
         _shell.HardwareKeyboard = config.Keyboard == global::Android.Content.Res.KeyboardType.Qwerty
             && config.HardKeyboardHidden == global::Android.Content.Res.HardKeyboardHidden.No;
-        if (GetSystemService(AccessibilityService) is global::Android.Views.Accessibility.AccessibilityManager { IsTouchExplorationEnabled: true })
-            _shell.PreferSystemKeyboard = true;
     }
 
 #if LUNET_EMULATOR
     /// <summary>
     /// CI emulator only (tools/ci-android-shell.sh): with the extra <c>lunet.e2e</c>, create a game, compile and run it
-    /// in the shell, then type with the Lunet keyboard — the journey a person makes with a few taps.
+    /// in the shell, then use the code bar over the system keyboard — the journey a person makes with a few taps.
     /// </summary>
     protected override void OnPostResume()
     {
@@ -150,15 +159,12 @@ public sealed class ShellActivity : AvaloniaActivity
                 var editor = shell.WorkspaceView.Code;
                 global::Android.Util.Log.Info("lunet-e2e", $"teclado-fisico-detectado={shell.HardwareKeyboard}");
                 shell.HardwareKeyboard = false;
-                shell.PreferSystemKeyboard = false;
                 editor.Surface.Focus();
                 editor.ShowKeyboard();
                 editor.Surface.Caret = 0;
-                foreach (var c in "// ola")
-                    editor.Keyboard?.Press(new Lunet.Client.Shell.KeyDef(c == ' ' ? "espaço" : c.ToString(),
-                        c == ' ' ? Lunet.Client.Shell.KeyAction.Space : Lunet.Client.Shell.KeyAction.Text));
+                editor.Keyboard?.Shortcut("{");
                 await Task.Delay(1500);
-                global::Android.Util.Log.Info("lunet-e2e", $"teclado={(editor.KeyboardVisible ? "visivel" : "oculto")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget) ? "on" : "off")} texto={(editor.Surface.Text).Split('\n')[0]}");
+                global::Android.Util.Log.Info("lunet-e2e", $"barra={(editor.KeyboardVisible ? "visivel" : "oculta")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget) ? "on" : "off")} texto={(editor.Surface.Text).Split('\n')[0]}");
             }
             catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
         }, Avalonia.Threading.DispatcherPriority.Background);

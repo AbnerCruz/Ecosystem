@@ -29,7 +29,7 @@ public static class ShellScreens
                 var window = new MainWindow(root) { Width = w, Height = h };
                 window.Show();
                 var shell = window.Shell;
-                shell.HardwareKeyboard = size != "celular"; // the phone captures show the Lunet keyboard
+                shell.HardwareKeyboard = size != "celular"; // the phone captures show the code bar
                 if (size == "celular") shell.OpenRoute = (_, _) => { }; // show the Android Home destinations
                 Shot(window, output, size, "1-home-vazia", written);
                 shell.CreateProject();
@@ -54,22 +54,18 @@ public static class ShellScreens
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
                 shell.WorkspaceView.Code.ShowKeyboard();
-                if (shell.WorkspaceView.Code.Keyboard is { } typing)
+                if (shell.WorkspaceView.Code.Keyboard is { } bar)
                 {
                     shell.WorkspaceView.Code.Surface.Caret = 0;
-                    foreach (var c in "Spri") typing.Press(new Lunet.Client.Shell.KeyDef(c.ToString()));
-                }
-                Shot(window, output, size, "3b-teclas", written);
-                if (shell.WorkspaceView.Code.Keyboard is { } keyboard)
-                {
-                    keyboard.Show(Lunet.Client.Views.KeyboardTab.Shortcuts);
+                    Shot(window, output, size, "3b-barra", written);
+                    bar.Show(Lunet.Client.Views.CodeBarTab.Shortcuts);
                     Shot(window, output, size, "3c-atalhos", written);
-                    keyboard.Catalog.RecordUse(keyboard.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "Draw"));
-                    keyboard.Show(Lunet.Client.Views.KeyboardTab.Methods);
-                    keyboard.ToggleNode("Lunet.Input");
-                    keyboard.ToggleNode("Lunet.Input", "InputState");
+                    bar.Catalog.RecordUse(bar.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "Draw"));
+                    bar.Show(Lunet.Client.Views.CodeBarTab.Methods);
+                    bar.ToggleNode("Lunet.Input");
+                    bar.ToggleNode("Lunet.Input", "InputState");
                     Shot(window, output, size, "3d-metodos", written);
-                    keyboard.Show(Lunet.Client.Views.KeyboardTab.Keys);
+                    bar.Show(Lunet.Client.Views.CodeBarTab.Keys);
                 }
                 shell.WorkspaceView.Code.HideKeyboard();
                 shell.RunGame();
