@@ -36,6 +36,9 @@ public static class LunetIcons
     public const string Inspector = "M4 6h9 M17 6h3 M15 4v4 M4 12h3 M11 12h9 M9 10v4 M4 18h11 M19 18h1 M17 16v4";
     /// <summary>A pulse: the Desempenho panel (M6).</summary>
     public const string Pulse = "M3 12h4l3-7 4 14 3-7h4";
+    public const string Trash = "M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3";
+    public const string Edit = "M4 20h4l10.5-10.5-4-4L4 16z M13.5 6.5l4 4";
+    public const string Copy = "M9 9h11v11H9z M5 15H4V4h11v1";
     public const string Speed = "M12 13l4-4 M4 17a8 8 0 1 1 16 0";
 
     /// <summary>An icon as a stroked path, sized for a toolbar (20 dp) unless told otherwise.</summary>

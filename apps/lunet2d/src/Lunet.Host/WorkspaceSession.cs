@@ -77,6 +77,7 @@ public sealed class WorkspaceSession
 
     public LunetProject Open(string name) => Project = Store.Open(name);
     public LunetProject Create(string name, string orientation = "landscape") => Project = Store.Create(name, ProjectTemplate.Blank, orientation);
+    public LunetProject Create(string name, ProjectTemplate template, string orientation) => Project = Store.Create(name, template, orientation);
 
     private LunetProject Require() => Project ?? throw new InvalidOperationException("Abra um projeto primeiro.");
 

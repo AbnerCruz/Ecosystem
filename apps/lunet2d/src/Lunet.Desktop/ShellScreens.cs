@@ -35,6 +35,17 @@ public static class ShellScreens
                 shell.CreateProject();
                 shell.GoHome();
                 Shot(window, output, size, "2-home", written);
+                shell.Home.ShowCreate();
+                Shot(window, output, size, "2b-novo-jogo", written);
+                shell.Home.CloseSheet();
+                shell.Home.ShowActions(shell.Workspace.Projects()[0]);
+                Shot(window, output, size, "2c-acoes", written);
+                shell.Home.CloseSheet();
+                shell.Home.Delete(shell.DuplicateProject(shell.Workspace.Projects()[0]));
+                Shot(window, output, size, "2d-desfazer", written);
+                shell.Home.ShowTrash();
+                Shot(window, output, size, "2e-lixeira", written);
+                shell.Home.CloseSheet();
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
                 shell.WorkspaceView.Code.ShowKeyboard();

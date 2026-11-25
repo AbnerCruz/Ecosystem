@@ -160,14 +160,62 @@ public sealed class LunetShell : UserControl
     }
 
     /// <summary>Creates "Jogo-N" (the first free number) from the blank template and opens it.</summary>
-    public void CreateProject()
+    public void CreateProject() => CreateProject(NextProjectName(), Lunet.Core.ProjectTemplate.Blank, "landscape");
+
+    /// <summary>The first free "Jogo-N", the name a new game gets unless the person types another.</summary>
+    public string NextProjectName()
     {
         var existing = Workspace.Projects().ToHashSet(StringComparer.CurrentCultureIgnoreCase);
         var n = existing.Count + 1;
         while (existing.Contains($"Jogo-{n}")) n++;
-        Workspace.Create($"Jogo-{n}");
+        return $"Jogo-{n}";
+    }
+
+    /// <summary>Creates a game with a name, a starting template and an orientation, and opens it.</summary>
+    public void CreateProject(string name, Lunet.Core.ProjectTemplate template, string orientation)
+    {
+        var project = Workspace.Create(name, template, orientation);
         _home.Refresh();
-        OpenProject($"Jogo-{n}");
+        OpenProject(project.Name);
+    }
+
+    /// <summary>Renames a game (its APK identity stays, so an installed copy keeps updating).</summary>
+    public string RenameProject(string name, string newName)
+    {
+        var project = Workspace.Store.Rename(name, newName);
+        _home.Refresh();
+        return project.Name;
+    }
+
+    /// <summary>Copies a game into a new one with its own identity; returns the copy's name.</summary>
+    public string DuplicateProject(string name)
+    {
+        var project = Workspace.Store.Duplicate(name);
+        _home.Refresh();
+        return project.Name;
+    }
+
+    /// <summary>Moves a game to the trash (undoable); returns the trash entry.</summary>
+    public Lunet.Core.TrashedProject DeleteProject(string name)
+    {
+        var trashed = Workspace.Store.MoveToTrash(name);
+        _home.Refresh();
+        return trashed;
+    }
+
+    /// <summary>Brings a game back from the trash; returns its name (a free variant when the name was taken meanwhile).</summary>
+    public string RestoreProject(string trashId)
+    {
+        var project = Workspace.Store.Restore(trashId);
+        _home.Refresh();
+        return project.Name;
+    }
+
+    /// <summary>Erases a game from the trash for good.</summary>
+    public void PurgeProject(string trashId)
+    {
+        Workspace.Store.Purge(trashId);
+        _home.Refresh();
     }
 
     /// <summary>Back to the Home. Saving and stopping happen in <see cref="Render"/>, so every way back (button, Back, Esc) does it.</summary>
@@ -302,7 +350,7 @@ public sealed class LunetShell : UserControl
     }
 
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
-    private bool BeforeBack() => _workspaceView.Code.HideKeyboard() || State.Back();
+    private bool BeforeBack() => (State.Level == ShellLevel.Home && _home.CloseSheet()) || _workspaceView.Code.HideKeyboard() || State.Back();
 
     /// <summary>The system Back, as the heads route it (public for tests).</summary>
     public bool Back() => BeforeBack();

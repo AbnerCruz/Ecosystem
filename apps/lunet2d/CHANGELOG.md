@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.1-dev.1000600 — Seus jogos: criar, renomear, duplicar e lixeira
+
+- **Novo jogo** abre uma folha com o nome já preenchido, o ponto de partida (Vazio, Pegar moedas, Animação, Partículas ou Laboratório) e a tela (paisagem ou retrato). Um toque em **Criar**.
+- Cada jogo tem um botão **⋮** (ou toque longo) com **Abrir**, **Renomear**, **Duplicar** e **Apagar**.
+  - **Renomear** mantém a identidade do APK: o jogo já instalado continua atualizando.
+  - **Duplicar** cria uma cópia com identidade própria, que se instala ao lado da original. Saves, histórico e Git ficam com a original.
+- **Apagar não perde nada:** o jogo vai para a **Lixeira** e aparece **Desfazer** por 8 segundos.
+  - Pela Lixeira você restaura o jogo. Se o nome tiver sido usado nesse meio-tempo, ele volta com outro nome livre.
+  - **Apagar de vez** pede um segundo toque.
+- Voltar fecha a folha aberta antes de sair da tela.
+
 ## 0.0.1-dev.1000599 — Inspector e Desempenho ao lado do jogo
 
 - **Inspector:** com o jogo rodando, o botão de controles deslizantes na barra do jogo (ou Painéis → Inspector) mostra os valores do jogo ao vivo.

@@ -1,0 +1,76 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-home-acoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T16:14:15Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "05e0b67",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/docs/research/home-acoes-projeto-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.Manage.cs",
+    "apps/lunet2d/src/Lunet.Host/WorkspaceSession.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectManageTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-home-acoes.json"
+  ],
+  "work_completed": [
+    "Core: ProjectStore.Rename (keeps GameId/PackageId), Duplicate (staged copy without .lunet/bin/obj/.git, new GameId and PackageId), MoveToTrash/Trash/Restore/Purge in .lixeira inside the projects folder, FreeName.",
+    "Shell Home: Novo jogo sheet (prefilled name, five core templates, landscape/portrait), per-game actions (⋮ or long press: Abrir, Renomear, Duplicar, Apagar), Apagar with Desfazer snackbar (8 s), Lixeira sheet with Restaurar and two-tap Apagar de vez; Back closes the open sheet first."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1272 tests) incl. ProjectManageTests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/ProjectManageTests.cs"
+    },
+    {
+      "check": "Headless captures celular/largo 2b-novo-jogo, 2c-acoes, 2d-desfazer, 2e-lixeira",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "Shared-folder revisions (ProjectFolderSnapshot) include .lixeira: trashed games travel with the copy until purged.",
+    "Export/import ZIP and the shared folder are still routed (P1).",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "P1 ZIP export/import and shared folder in the shell, M5 embedded GL preview, A1–A6 Studios"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
