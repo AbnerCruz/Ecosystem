@@ -88,3 +88,52 @@ public sealed class LunetClientPlayTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>P7: Ajustes in the shell, on the same settings.json.</summary>
+public sealed class LunetClientSettingsTests
+{
+    [Fact]
+    public void Settings_SaveAtOnce_KeepOtherFields_AndApplyToTheEditorAndRun()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-settings-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                Directory.CreateDirectory(root);
+                var file = Path.Combine(root, "settings.json");
+                var previous = new EditorSettings { ShowMinimap = false, IsolatedPreview = true, FontSize = 14 };
+                new SettingsStore(file).Save(previous);                       // written by the previous screens
+                var shell = new LunetShell(Path.Combine(root, "Projects")) { SettingsPath = file };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var code = Assert.IsType<Lunet.Client.Views.CodeSurface>(shell.WorkspaceView.Code.Surface);
+                Assert.Equal(14, code.Editor.FontSize);
+
+                var next = shell.Settings.Clone();
+                next.FontSize = 20; next.ShowLineNumbers = false; next.FormatOnRun = true;
+                shell.SaveSettings(next);
+                Assert.Equal(20, code.Editor.FontSize);
+                Assert.False(code.Editor.ShowLineNumbers);
+                var saved = new SettingsStore(file).Load();
+                Assert.Equal(20, saved.FontSize);
+                Assert.True(saved.IsolatedPreview);                          // what the shell does not show is kept
+                Assert.False(saved.ShowMinimap);
+
+                code.Text = "public sealed class G : Lunet.Game {\nprotected override void Draw(Lunet.GameTime t){\nGraphicsDevice.Clear(Lunet.Graphics.Color.Black);}}";
+                shell.RunGame();                                              // Formatar ao rodar
+                Assert.Contains("\n    protected override void Draw", code.Text);
+                shell.StopGame();
+
+                shell.GoHome();
+                var view = shell.Home.ShowSettings();
+                Assert.NotNull(view);
+                Assert.True(shell.Back());
+                Assert.Null(shell.Home.Sheet);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

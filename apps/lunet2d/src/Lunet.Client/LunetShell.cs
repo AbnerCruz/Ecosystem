@@ -27,6 +27,7 @@ public sealed class LunetShell : UserControl
         Workspace = new WorkspaceSession(projectsRoot);
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
+        _settingsPath = Path.Combine(projectsRoot, ".lunet", "settings.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
         _home = new HomeView(this);
@@ -49,6 +50,45 @@ public sealed class LunetShell : UserControl
     /// use (FilesDir/learning/progress.json), so progress carries over; elsewhere it lives beside the games.
     /// </summary>
     public string LearningProgressPath { get; set; }
+
+    /// <summary>The settings file (Ajustes); the Android head points it at the previous screens' settings.json.</summary>
+    public string SettingsPath
+    {
+        get => _settingsPath;
+        set { _settingsPath = value; _settings = null; ApplySettings(); }
+    }
+    private string _settingsPath;
+    private Lunet.Core.EditorSettings? _settings;
+
+    /// <summary>The current settings (read once from <see cref="SettingsPath"/>; defaults when the file is missing or broken).</summary>
+    public Lunet.Core.EditorSettings Settings
+    {
+        get
+        {
+            if (_settings is not null) return _settings;
+            try { _settings = new Lunet.Core.SettingsStore(_settingsPath).Load(); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException) { _settings = new Lunet.Core.EditorSettings(); }
+            return _settings;
+        }
+    }
+
+    /// <summary>Saves the settings (verified write) and applies them now. Throws when the file cannot be written.</summary>
+    public void SaveSettings(Lunet.Core.EditorSettings settings)
+    {
+        new Lunet.Core.SettingsStore(_settingsPath).Save(settings);
+        _settings = settings;
+        ApplySettings();
+    }
+
+    /// <summary>Keeps the screen on (true) or lets it sleep; set by the Android head, null elsewhere.</summary>
+    public Action<bool>? KeepScreenOn { get; set; }
+
+    /// <summary>Applies the settings to what is open: the code editor and the screen.</summary>
+    public void ApplySettings()
+    {
+        if (_workspaceView?.Code.Surface is CodeSurface code) code.Apply(Settings);
+        KeepScreenOn?.Invoke(Settings.KeepScreenOn);
+    }
 
     /// <summary>Plays a game full screen (P4); the Android head runs it in its own process. Null: it runs in the workspace.</summary>
     public Action<string>? PlayGame { get; set; }
@@ -103,6 +143,8 @@ public sealed class LunetShell : UserControl
     /// <summary>Back from a routed screen: re-read the games (and the open documents, when not edited here).</summary>
     public void ReturnedFromRoute()
     {
+        _settings = null; // the previous screens write the same settings.json
+        ApplySettings();
         _home.Refresh();
         if (State.Level == ShellLevel.Workspace && Workspace.Project is not null && State.Project is { } name)
         {
@@ -161,6 +203,7 @@ public sealed class LunetShell : UserControl
         State.OpenProject(name);
         _ = DocsLibrary.WarmUpAsync(); // after the game opens, never on the cold start path
         _workspaceView.Load();
+        ApplySettings();
         Render();
     }
 
@@ -245,6 +288,12 @@ public sealed class LunetShell : UserControl
     public void RunGame()
     {
         if (Workspace.Project is null) return;
+        // Ajustes: "Formatar o código ao rodar" (the same option as the previous screens).
+        if (Settings.FormatOnRun && _workspaceView.Code.Surface is CodeSurface code && _workspaceView.Code.OpenPath?.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var formatted = Lunet.Editor.CodeFormatter.Format(code.Text);
+            if (formatted != code.Text) code.Replace(0, code.Text.Length, formatted, Math.Min(code.Caret, formatted.Length));
+        }
         _workspaceView.SaveAll();
         var (w, h) = Workspace.Project.Manifest.Orientation == "landscape" ? (640, 360) : (360, 640);
         if (Game.Run(w, h))

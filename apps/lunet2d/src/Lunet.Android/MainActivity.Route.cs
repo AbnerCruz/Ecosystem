@@ -15,7 +15,7 @@ public sealed partial class MainActivity
 
     /// <summary>The routes the shell can open (the screens still served by this activity).</summary>
     public static readonly IReadOnlyList<string> Routes =
-        ["studios", "learn", "explore", "play", "play-game", "library", "settings", "ai", "git", "assets", "notes", "apk", "editor"];
+        ["studios", "learn", "explore", "play", "play-game", "library", "settings", "project-folder", "ai-settings", "ai", "git", "assets", "notes", "apk", "editor"];
 
     private bool _fromShell;
     // A route whose screen is a dialog (Biblioteca, Gerar APK, Ajustes): nothing of the previous Home shows behind it, and
@@ -57,7 +57,7 @@ public sealed partial class MainActivity
                 LoadProjectFolder();
                 OpenProject(project);
             }
-            _routeIsDialog = route is "library" or "apk" or "settings";
+            _routeIsDialog = route is "library" or "apk" or "settings" or "project-folder" or "ai-settings";
             _playFromShell = route == "play-game";
             if (_routeIsDialog || _playFromShell)
             {
@@ -78,6 +78,8 @@ public sealed partial class MainActivity
                     break;
                 case "library": ShowReusableAssetLibrary(); break;
                 case "settings": ShowSettings(); break;
+                case "project-folder": LoadProjectFolder(); ShowProjectFolder(); break;
+                case "ai-settings": ShowAiSettings(); break;
                 case "ai": if (_project is not null) ShowAiAssistant(); else ShowWorkspaceAi(); break;
                 case "git": if (_project is not null) ShowGit(); break;
                 case "assets": if (_project is not null) ShowAssets(); break;

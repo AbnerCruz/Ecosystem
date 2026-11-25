@@ -41,7 +41,7 @@ public sealed class HomeView : UserControl
     }
 
     /// <summary>The Home's destinations in the bottom navigation bar (Material 3: 3–5, in the thumb's reach).</summary>
-    public enum Destination { Games, Learn, Play, Studios, More, Library }
+    public enum Destination { Games, Learn, Play, Studios, More, Library, Settings }
 
     private readonly StackPanel _nav = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly Grid _navGrid = new();
@@ -105,7 +105,11 @@ public sealed class HomeView : UserControl
             items.Add((Destination.Studios, "Studios", LunetIcons.Art));
             items.Add((Destination.More, "Mais", LunetIcons.More));
         }
-        else items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
+        else
+        {
+            items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
+            items.Add((Destination.Settings, "Ajustes", LunetIcons.Speed));
+        }
         _navGrid.Children.Clear();
         _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
         for (var i = 0; i < items.Count; i++)
@@ -129,6 +133,7 @@ public sealed class HomeView : UserControl
             case Destination.Studios: _shell.OpenRoute?.Invoke("studios", null); break;
             case Destination.More: ShowMore(); break;
             case Destination.Library: ShowLibrary(); break;
+            case Destination.Settings: ShowSettings(); break;
         }
     }
 
@@ -167,8 +172,14 @@ public sealed class HomeView : UserControl
             };
             AutomationProperties.SetName(b, label);
             var r = route;
-            // The Biblioteca lives in the shell now (A6); Explorar and Ajustes still open the previous screens.
-            b.Click += (_, _) => { CloseOverlay(); if (r == "library") ShowLibrary(); else _shell.OpenRoute?.Invoke(r, null); };
+            // Biblioteca (A6) and Ajustes (P7) live in the shell now; Explorar still opens the previous screen.
+            b.Click += (_, _) =>
+            {
+                CloseOverlay();
+                if (r == "library") ShowLibrary();
+                else if (r == "settings") ShowSettings();
+                else _shell.OpenRoute?.Invoke(r, null);
+            };
             list.Children.Add(b);
         }
         Open("Mais", list);
@@ -337,7 +348,7 @@ public sealed class HomeView : UserControl
         if (Sheet is null) return false;
         if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
         if (Sheet is LibraryView library) return library.Back();
-        if (Sheet is PlayView) return CloseOverlay();
+        if (Sheet is PlayView or SettingsView) return CloseOverlay();
         return CloseOverlay();
     }
 
@@ -391,6 +402,17 @@ public sealed class HomeView : UserControl
         Sheet = learn;
         Select(Destination.Learn);
         return learn;
+    }
+
+    /// <summary>Ajustes, full screen over the Home (P7).</summary>
+    public SettingsView ShowSettings()
+    {
+        _overlay.Children.Clear();
+        var settings = new SettingsView(_shell);
+        _overlay.Children.Add(settings);
+        Sheet = settings;
+        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        return settings;
     }
 
     /// <summary>Jogar, full screen over the Home (P4).</summary>

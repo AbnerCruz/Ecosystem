@@ -59,6 +59,9 @@ public static class ShellScreens
                 library.ShowAsset(library.Listed[0].Id, library.Listed[0].Version);
                 Shot(window, output, size, "2i-recurso", written);
                 shell.Home.CloseSheet(); shell.Home.CloseSheet();
+                shell.Home.ShowSettings();
+                Shot(window, output, size, "2k-ajustes", written);
+                shell.Home.CloseSheet();
                 shell.Home.ShowPlay();
                 Shot(window, output, size, "2j-jogar", written);
                 shell.Home.CloseSheet();

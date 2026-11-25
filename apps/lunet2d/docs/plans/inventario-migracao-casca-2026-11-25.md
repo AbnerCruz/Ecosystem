@@ -45,7 +45,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Gerar APK offline e assinatura | `MainActivity.GameBuild`, `AndroidGameApkSigner` | rota | **P5**: Gerar APK na casca com ícone do jogo e compartilhar. |
 | Git (commit, histórico, remoto) | `GitPanel`, `Lunet.Git` | rota | **P6**. |
 | Explorar referências | `MainActivity.Inspiration*` | rota | Congelado até o portão da Onda 2 (estudo de 24/11). |
-| Aparência, primeiro uso, ajustes | `MainActivity.Appearance`/`Ide.ShowSettings` | rota | **P7**. |
+| Aparência, primeiro uso, ajustes | `SettingsView` (mesmo `settings.json`); pasta e IA por janela própria | **casca** (P7) | Próximo: tema claro nos tokens da casca. |
 | Conexão com o Ecosystem (IPC, capabilities) | `EcosystemHostClient`, `MainActivity.CapabilityHost`/`EcosystemIpc` | rota | **P8**, sem dependência obrigatória da plataforma de controle (NN-003). |
 | Benchmark e demonstrações | `MainActivity.Benchmark`/`Demo` | ferramentas internas | Ficam enquanto a tela anterior existir. |
 

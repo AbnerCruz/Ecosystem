@@ -38,7 +38,9 @@
     "docs/governance/handoffs/HO-20261125-lunet-barra-home-biblioteca.json",
     "apps/lunet2d/src/Lunet.Client/Views/PlayView.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.GameLauncher.cs",
-    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md"
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/Views/SettingsView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs"
   ],
   "work_completed": [
     "Owner feedback 25/11 (device): the Lunet keyboard is removed (typing latency); typing is the system IME's; CodeBar: one row above it with Teclas (symbols, Tab, arrows; suggestions after a 120 ms pause), Atalhos (undo/redo/line operations/palette) and Métodos (catalog in the keyboard's place), plus a hide key.",
@@ -46,7 +48,8 @@
     "Home for the thumb: bottom navigation bar (Jogos, Aprender, Jogar, Studios, Mais), Novo jogo as a floating button, games as 72 dp rows on phones and a grid when wide, implausible dates hidden.",
     "Routed previous screens no longer show their own launcher navigation; dialog routes (Biblioteca, Gerar APK, Ajustes) open over a plain background and closing the last dialog returns to the shell.",
     "A6 Biblioteca in the shell (LibraryView over ReusableAssetLibrary, same FilesDir/Library): live search with pictures, asset page with Usar num jogo first, Nova versão, Exportar ZIP, Verificar; publish in three steps; imports never overwrite.",
-    "P4 Jogar in the shell (PlayView): covers grid, one tap plays; Android runs the existing pipeline through the play-game route (no previous screen behind, back to the shell after), desktop runs it in the workspace."
+    "P4 Jogar in the shell (PlayView): covers grid, one tap plays; Android runs the existing pipeline through the play-game route (no previous screen behind, back to the shell after), desktop runs it in the workspace.",
+    "P7 Ajustes in the shell (SettingsView over the same settings.json): code size with live sample, line numbers, format on run, keep screen on; saved at once; project folder and AI settings open their own dialogs; the shell reopens over a new projects folder."
   ],
   "verification": [
     {
