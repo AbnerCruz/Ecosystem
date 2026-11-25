@@ -1,0 +1,7 @@
+{
+  "product": "lunet2d",
+  "version": "0.0.1-dev.1000596",
+  "head": "dc79d34cf7d503e72f97c8c4f171522abbf76f18",
+  "workflow": "lunet2d-release.yml",
+  "tag": "lunet2d-v0.0.1-dev.1000596"
+}

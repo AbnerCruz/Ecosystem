@@ -5,6 +5,7 @@ using Avalonia.VisualTree;
 using Lunet.Client;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
+using Lunet.Client.Views;
 using Lunet.Host;
 
 namespace Lunet.Tests;
@@ -263,7 +264,101 @@ public sealed class LunetClientTests
     }
 
     [Fact]
-    public void Shell_OnAPhoneTheCodeBarTypesIntoTheEditor_AndTheKeyboardMovesTheTabsAside()
+    public void KeyboardLayout_ShiftCapitalizesOnceOrLocksOnDoubleTap()
+    {
+        var q = KeyboardLayout.Letters[1][0];
+        Assert.Equal("q", KeyboardLayout.Typed(q, ShiftState.Off));
+        Assert.Equal("Q", KeyboardLayout.Typed(q, ShiftState.Once));
+        Assert.Equal(ShiftState.Once, KeyboardLayout.Toggle(ShiftState.Off, TimeSpan.FromSeconds(5)));
+        Assert.Equal(ShiftState.Locked, KeyboardLayout.Toggle(ShiftState.Once, TimeSpan.FromMilliseconds(200)));
+        Assert.Equal(ShiftState.Off, KeyboardLayout.Toggle(ShiftState.Once, TimeSpan.FromSeconds(1)));
+        Assert.Equal(ShiftState.Off, KeyboardLayout.AfterTyping(ShiftState.Once));
+        Assert.Equal(ShiftState.Locked, KeyboardLayout.AfterTyping(ShiftState.Locked));
+        Assert.Contains("ç", KeyboardLayout.Letters.SelectMany(r => r).Single(k => k.Label == "c").Variants!);
+        Assert.Contains("ã", KeyboardLayout.Letters.SelectMany(r => r).Single(k => k.Label == "a").Variants!);
+    }
+
+    [Fact]
+    public void KeyboardLayout_BackspaceDeletesSelectionCharOrWords_AndEnterKeepsIndentation()
+    {
+        Assert.Equal(new CodeEdit(1, 3, "", 1), KeyboardLayout.Backspace("abcd", 1, 3));
+        Assert.Equal(new CodeEdit(3, 4, "", 3), KeyboardLayout.Backspace("abcd", 4, 4));
+        Assert.Null(KeyboardLayout.Backspace("abcd", 0, 0));
+        const string line = "var speed = player.Speed";
+        var two = KeyboardLayout.Backspace(line, line.Length, line.Length, words: 2)!.Value;
+        Assert.Equal("var speed = player", line[..two.Start] + line[two.End..]);
+        Assert.Equal(1, KeyboardLayout.GlideWords(-30));
+        Assert.Equal(0, KeyboardLayout.GlideWords(5));
+
+        var enter = KeyboardLayout.Enter("    if (x) {", 12, 12);
+        Assert.Equal("\n        ", enter.Insert);
+        Assert.Equal("\n    ", KeyboardLayout.Enter("    x();", 8, 8).Insert);
+        Assert.Equal(5, KeyboardLayout.GlideCursor("abcdefgh", 2, 3 * KeyboardLayout.CursorStep + 1));
+        Assert.Equal(0, KeyboardLayout.GlideCursor("abc", 1, -100));
+    }
+
+    [Fact]
+    public void MethodCatalog_ReadsTheGeneratedApi_SortsAlphabetically_AndAddsTheGamesMembers()
+    {
+        var catalog = new MethodCatalog();
+        Assert.True(catalog.All.Count() > 500, "the generated docs/api/lunet-framework.json is embedded");
+        var draw = catalog.All.Single(m => m.Type == "SpriteBatch" && m.Name == "Draw");
+        Assert.True(draw.Signatures.Count > 1, "overloads are one entry");
+        var tree = catalog.Tree();
+        Assert.Equal(tree.Select(n => n.Name).Order(StringComparer.OrdinalIgnoreCase), tree.Select(n => n.Name));
+        foreach (var ns in tree)
+        {
+            Assert.Equal(ns.Types.Select(t => t.Name).Order(StringComparer.OrdinalIgnoreCase), ns.Types.Select(t => t.Name));
+            foreach (var t in ns.Types) Assert.Equal(t.Members.Select(m => m.Name).Order(StringComparer.OrdinalIgnoreCase), t.Members.Select(m => m.Name));
+        }
+
+        catalog.SetProjectSources([("Game.cs", "public sealed class Hero { public void Jump(float force) {} public int Lives { get; set; } protected override void Update(GameTime t) {} }")]);
+        var hero = catalog.Tree().Single(n => n.Name == MethodCatalog.ProjectNamespace).Types.Single(t => t.Name == "Hero");
+        Assert.Equal(["Jump", "Lives"], hero.Members.Select(m => m.Name));
+    }
+
+    [Fact]
+    public void MethodCatalog_RecentAndMostUsedFollowTheirMeaning_AndPersist()
+    {
+        var root = NewRoot();
+        try
+        {
+            var path = Path.Combine(root, "metodos.json");
+            var catalog = new MethodCatalog(path);
+            var all = catalog.All.ToArray();
+            CatalogMember M(string type, string name) => all.First(m => m.Type == type && m.Name == name);
+            var t0 = new DateTime(2026, 11, 25, 10, 0, 0, DateTimeKind.Utc);
+            catalog.RecordUse(M("SpriteBatch", "Draw"), t0);
+            catalog.RecordUse(M("SpriteBatch", "Draw"), t0.AddMinutes(1));
+            catalog.RecordUse(M("SpriteBatch", "Begin"), t0.AddMinutes(2));
+            catalog.RecordUse(M("SpriteBatch", "End"), t0.AddMinutes(2));
+            Assert.Equal(["Begin", "End", "Draw"], catalog.Recent().Select(m => m.Name));      // newest first, ties alphabetical
+            Assert.Equal(["Draw", "Begin", "End"], catalog.MostUsed().Select(m => m.Name));    // most used first, ties alphabetical
+            Assert.Equal(["Begin", "End", "Draw"], new MethodCatalog(path).Recent().Select(m => m.Name));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void MethodCatalog_InsertsCallsWithoutPlaceholders()
+    {
+        var all = new MethodCatalog().All.ToArray();
+        var draw = all.First(m => m.Type == "SpriteBatch" && m.Name == "Draw");
+        var edit = MethodCatalog.Insertion(draw, "batch.", 6, 6);
+        Assert.Equal("Draw()", edit.Insert);
+        Assert.Equal(6 + "Draw(".Length, edit.Caret);                       // caret inside: it takes parameters
+        var end = all.First(m => m.Type == "SpriteBatch" && m.Name == "End");
+        Assert.Equal(6 + "End()".Length, MethodCatalog.Insertion(end, "batch.", 6, 6).Caret); // no parameters: after ()
+        var staticMember = all.First(m => m.IsStatic && m.Kind == "method" && m.Namespace != MethodCatalog.ProjectNamespace);
+        Assert.StartsWith(staticMember.Type + "." + staticMember.Name + "(", MethodCatalog.Insertion(staticMember, "", 0, 0).Insert);
+        var ctor = all.First(m => m.Kind == "constructor" && m.Type == "SpriteBatch");
+        Assert.Equal("new SpriteBatch()", MethodCatalog.Insertion(ctor, "", 0, 0).Insert);
+        var prop = all.First(m => m.Kind == "property" && !m.IsStatic);
+        Assert.Equal(prop.Name, MethodCatalog.Insertion(prop, "x.", 2, 2).Insert);
+    }
+
+    [Fact]
+    public void Keyboard_ReplacesTheSystemKeyboard_AndSwitchingTabsKeepsCaretSelectionAndFocus()
     {
         var root = NewRoot();
         try
@@ -274,24 +369,86 @@ public sealed class LunetClientTests
                 var window = new Window { Width = 412, Height = 915, Content = shell };
                 window.Show();
                 shell.CreateProject();
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 var editor = shell.WorkspaceView.Code;
-                Assert.NotNull(editor.Keys);
                 editor.TextBox.Text = "x";
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                editor.TextBox.Focus();
                 editor.TextBox.CaretIndex = 1;
-                Assert.True(editor.Keys!.Type("("));
-                Assert.Equal("x()", editor.TextBox.Text);
-                Assert.Equal(2, editor.TextBox.CaretIndex);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-                Assert.True(shell.WorkspaceView.TabBarVisible);
-                shell.SetKeyboard(true);
+                Assert.True(editor.KeyboardVisible, $"focused={editor.TextBox.IsFocused} kb={editor.Keyboard is not null} layout={shell.State.Layout}");
+                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox)); // the system keyboard steps aside
                 Assert.False(shell.WorkspaceView.TabBarVisible);
-                shell.SetKeyboard(false);
-                Assert.True(shell.WorkspaceView.TabBarVisible);
+                var kb = editor.Keyboard!;
+                Assert.Equal(KeyboardTab.Keys, kb.Tab);
+
+                kb.Press(new KeyDef("⇧", KeyAction.Shift));
+                kb.Press(KeyboardLayout.Letters[2][0]);                 // "a" → "A" (one capital)
+                kb.Press(KeyboardLayout.Letters[2][0]);                 // "a"
+                kb.ShowVariants(KeyboardLayout.Letters.SelectMany(r => r).Single(k => k.Label == "c"));
+                kb.CommitVariant();                                      // long press c → ç
+                Assert.Equal("xAaç", editor.TextBox.Text);
+
+                editor.TextBox.SelectionStart = 1; editor.TextBox.SelectionEnd = 3;
+                foreach (var tab in new[] { KeyboardTab.Shortcuts, KeyboardTab.Methods, KeyboardTab.Keys, KeyboardTab.Shortcuts })
+                {
+                    kb.Show(tab);
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    Assert.Equal((1, 3), (editor.TextBox.SelectionStart, editor.TextBox.SelectionEnd));
+                    Assert.True(editor.TextBox.IsFocused);
+                }
+                kb.Shortcut("(");                                        // wraps the selection
+                Assert.Equal("x(Aa)ç", editor.TextBox.Text);
+
+                kb.Show(KeyboardTab.Methods);
+                var end = kb.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "End");
+                editor.TextBox.CaretIndex = editor.TextBox.Text!.Length;
+                kb.Insert(end);
+                Assert.EndsWith("çEnd()", editor.TextBox.Text); // instance member: no type prefix
+                Assert.Contains(kb.Catalog.Recent(), m => m.Name == "End");
+
+                Assert.True(shell.Back());                               // Back closes the keyboard first
+                Assert.False(editor.KeyboardVisible);
+                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox));
+                Assert.Equal(ShellLevel.Workspace, shell.State.Level);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void Keyboard_StepsAsideForAHardwareKeyboardAndTheSystemKey()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var editor = shell.WorkspaceView.Code;
+                editor.ShowKeyboard();
+                Assert.True(editor.KeyboardVisible);
+
+                editor.Keyboard!.Press(new KeyDef("🌐", KeyAction.System));  // the system keyboard (dictation, languages)
+                Assert.True(shell.PreferSystemKeyboard);
+                Assert.False(editor.KeyboardVisible);
+                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox));
+
+                shell.PreferSystemKeyboard = false;
+                shell.HardwareKeyboard = true;
+                editor.ShowKeyboard();
+                Assert.False(editor.KeyboardVisible);                         // a physical keyboard types directly
+                shell.HardwareKeyboard = false;
+                editor.ShowKeyboard();
+                Assert.True(editor.KeyboardVisible);
 
                 window.Width = 1280;
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                Assert.Null(shell.WorkspaceView.Code.Keys); // a wide screen has a hardware keyboard and no code bar
+                Assert.False(shell.WorkspaceView.Code.KeyboardVisible);       // wide layout: desktop/tablet keyboard
                 window.Close();
             });
         }

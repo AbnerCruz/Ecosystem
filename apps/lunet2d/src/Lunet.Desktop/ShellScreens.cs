@@ -29,15 +29,27 @@ public static class ShellScreens
                 var window = new MainWindow(root) { Width = w, Height = h };
                 window.Show();
                 var shell = window.Shell;
+                shell.HardwareKeyboard = size != "celular"; // the phone captures show the Lunet keyboard
                 Shot(window, output, size, "1-home-vazia", written);
                 shell.CreateProject();
                 shell.GoHome();
                 Shot(window, output, size, "2-home", written);
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
-                shell.SetKeyboard(true);
-                Shot(window, output, size, "3b-digitando", written);
-                shell.SetKeyboard(false);
+                shell.WorkspaceView.Code.ShowKeyboard();
+                Shot(window, output, size, "3b-teclas", written);
+                if (shell.WorkspaceView.Code.Keyboard is { } keyboard)
+                {
+                    keyboard.Show(Lunet.Client.Views.KeyboardTab.Shortcuts);
+                    Shot(window, output, size, "3c-atalhos", written);
+                    keyboard.Catalog.RecordUse(keyboard.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "Draw"));
+                    keyboard.Show(Lunet.Client.Views.KeyboardTab.Methods);
+                    keyboard.ToggleNode("Lunet.Input");
+                    keyboard.ToggleNode("Lunet.Input", "InputState");
+                    Shot(window, output, size, "3d-metodos", written);
+                    keyboard.Show(Lunet.Client.Views.KeyboardTab.Keys);
+                }
+                shell.WorkspaceView.Code.HideKeyboard();
                 shell.RunGame();
                 for (int i = 0; i < 20; i++) shell.TickGame(1 / 60.0);
                 Shot(window, output, size, "4-jogo", written);
