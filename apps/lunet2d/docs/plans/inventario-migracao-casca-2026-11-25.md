@@ -16,7 +16,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Preview isolado (processo separado) e GL | `IsolatedPreview`, `PreviewHost`, `Gles` | rota (Editor completo) | **M5**: preview GL embutido na aba Jogo (Android); rasterizador em CPU fica no desktop. |
 | Profiler e Inspector | `MainActivity.Profiler`, `InspectorPanel` | rota | **M6**: painéis Inspector e Desempenho. |
 | Console e Problemas | `SupportPanelView` | **casca** | — |
-| IA no jogo (chat, modos Estudo/Fazer, diff, desfazer, modelos, chave) | `MainActivity.Chat`/`Ai`/`AiCompact`, `AiRunCoordinator`, `Lunet.Ai` | rota | **M7**: painel de IA na casca sobre o `Lunet.Ai` existente, com revisão por trecho no AvaloniaEdit. |
+| IA no jogo (chat, modos Estudo/Fazer, diff, desfazer, chave) | `AiPanelView` sobre `Lunet.Ai` | **casca** (M7) | Próximos: anexos e imagens, pesquisa na web, catálogo de modelos, revisão trecho a trecho dentro do editor, execução em segundo plano com notificação (`AiRunCoordinator`). |
 | IA global | `MainActivity.GlobalAi` | rota (IA, sem jogo) | Junto com M7. |
 | Layouts da área de trabalho | `MainActivity.Layout`, `SplitterView` | rota | Substituído pelo layout adaptativo da casca (compacto/expandido); avaliar se ainda faz falta. |
 

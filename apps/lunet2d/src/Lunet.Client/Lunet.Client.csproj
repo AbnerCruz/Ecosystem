@@ -21,5 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="../Lunet.Host/Lunet.Host.csproj" />
     <ProjectReference Include="../Lunet.Editor/Lunet.Editor.csproj" />
+    <ProjectReference Include="../Lunet.Ai/Lunet.Ai.csproj" />
   </ItemGroup>
 </Project>

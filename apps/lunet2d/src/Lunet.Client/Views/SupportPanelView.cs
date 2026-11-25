@@ -25,10 +25,14 @@ public sealed class SupportPanelView : UserControl
     /// <summary>The command palette (M3), kept so its recents survive closing it.</summary>
     public CommandPaletteView Palette { get; }
 
+    /// <summary>The AI of the game (M7), kept so a running request survives closing the sheet.</summary>
+    public AiPanelView Ai { get; }
+
     public SupportPanelView(LunetShell shell)
     {
         _shell = shell;
         Palette = new CommandPaletteView(shell);
+        Ai = new AiPanelView(shell);
         _consoleScroll.Content = _consoleText;
         _consoleScroll.Padding = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.M);
     }
@@ -54,7 +58,7 @@ public sealed class SupportPanelView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", _ => "Problemas" });
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -69,6 +73,12 @@ public sealed class SupportPanelView : UserControl
             _consoleScroll.ScrollToEnd();
         }
         else if (panel == SupportPanel.More) root.Children.Add(More());
+        else if (panel == SupportPanel.Ai)
+        {
+            if (Ai.Parent is Panel oldAi) oldAi.Children.Remove(Ai);
+            Ai.Refresh();
+            root.Children.Add(Ai);
+        }
         else if (panel == SupportPanel.Commands)
         {
             if (Palette.Parent is Panel old) old.Children.Remove(Palette);
@@ -85,6 +95,7 @@ public sealed class SupportPanelView : UserControl
         var problems = _shell.Game.Problems.Count;
         foreach (var (panel, label, icon) in new[]
         {
+            (SupportPanel.Ai, "IA do jogo", LunetIcons.Function),
             (SupportPanel.Commands, "Comandos", LunetIcons.Search),
             (SupportPanel.Console, "Console", LunetIcons.Console),
             (SupportPanel.Problems, problems > 0 ? $"Problemas ({problems})" : "Problemas", LunetIcons.Problems),

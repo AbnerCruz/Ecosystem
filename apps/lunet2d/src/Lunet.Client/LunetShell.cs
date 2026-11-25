@@ -92,7 +92,7 @@ public sealed class LunetShell : UserControl
     /// <summary>What the "Mais" panel of a game opens through <see cref="OpenRoute"/> (route, label, icon).</summary>
     public static readonly IReadOnlyList<(string Route, string Label, string Icon)> GameRoutes =
     [
-        ("ai", "IA do jogo", Ui.LunetIcons.Code), ("assets", "Recursos e Studios", Ui.LunetIcons.Art), ("notes", "Notas e mapas mentais", Ui.LunetIcons.Notes),
+        ("assets", "Recursos e Studios", Ui.LunetIcons.Art), ("notes", "Notas e mapas mentais", Ui.LunetIcons.Notes),
         ("git", "Git", Ui.LunetIcons.Folder), ("apk", "Gerar APK", Ui.LunetIcons.Game), ("editor", "Editor completo", Ui.LunetIcons.File),
     ];
 
@@ -107,6 +107,9 @@ public sealed class LunetShell : UserControl
             _workspaceView.ReloadFromDisk();
         }
     }
+
+    /// <summary>The AI settings, key vault and history the head provides (M7); null hides the AI.</summary>
+    public AiHost? AiHost { get; set; }
 
     /// <summary>Opens the command palette (M3) with an optional prefix ("@", ":", "#", "/").</summary>
     public void OpenPalette(string query = "")

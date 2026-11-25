@@ -15,6 +15,11 @@
 - **Paleta de comandos:** a lupa na faixa do teclado (ou Ctrl+Shift+P no computador) abre a paleta.
   - Comandos: formatar, ir para a definição, ver referências, renomear em todos os arquivos, correções rápidas, comentar, duplicar, mover ou apagar linhas.
   - Atalhos de busca: `@` mostra a estrutura do arquivo, `:` vai a uma linha, `#` busca no jogo inteiro e `/` busca no arquivo.
+- **IA do jogo na interface nova** (Painéis → IA do jogo):
+  - **Estudar** é o padrão: a IA explica e não mexe em nada. **Fazer** é escolhido para uma mensagem só.
+  - Tudo é salvo antes de enviar. Quando ela altera o jogo, aparecem os arquivos mudados, o diff de cada um e o botão **Desfazer estas alterações**.
+  - Parar cancela de verdade.
+  - A chave é configurada uma vez e vale para o app inteiro.
 - O app separado "Lunet Nova" deixa de existir. Quem o instalou pode desinstalá-lo; os jogos criados nele ficam na pasta dele e não aparecem no Lunet.
 
 ## 0.0.1-dev.1000596 — Teclado próprio da IDE (Lunet Nova)

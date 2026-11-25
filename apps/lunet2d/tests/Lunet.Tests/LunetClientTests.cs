@@ -738,6 +738,112 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    private sealed class MemoryVault : Lunet.Ai.ISecretVault
+    {
+        private readonly Dictionary<string, string> _values = [];
+        public string? Get(string name) => _values.GetValueOrDefault(name);
+        public void Set(string name, string value) => _values[name] = value;
+        public void Delete(string name) => _values.Remove(name);
+    }
+
+    private sealed class ScriptedModel(params AgentRuntime.ModelResponse[] script) : AgentRuntime.IModelProvider
+    {
+        private int _next;
+        public string ProviderId => "chat-completions";
+        public ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken)
+        {
+            var response = script[Math.Min(_next++, script.Length - 1)];
+            var mapped = response.Content.Select(b => b is AgentRuntime.ToolUseBlock use
+                ? use with { Name = request.Tools.FirstOrDefault(t => t.Name == use.Name || t.Name == use.Name.Replace('.', '_'))?.Name ?? use.Name }
+                : b).ToArray();
+            return ValueTask.FromResult(response with { Content = mapped });
+        }
+    }
+
+    private static AgentRuntime.ModelResponse Says(string text) =>
+        new([new AgentRuntime.TextBlock(text)], AgentRuntime.StopReason.EndTurn, new AgentRuntime.Usage(1, 1, AgentRuntime.Money.Zero("USD")));
+
+    private static AgentRuntime.ModelResponse Calls(string name, object input) =>
+        new([new AgentRuntime.ToolUseBlock("call-" + Guid.NewGuid().ToString("N")[..6], name, System.Text.Json.JsonSerializer.SerializeToElement(input))],
+            AgentRuntime.StopReason.ToolUse, new AgentRuntime.Usage(1, 1, AgentRuntime.Money.Zero("USD")));
+
+    [Fact]
+    public void AiPanel_StudyIsTheDefault_DoShowsTheDiff_AndUndoRestores()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var aiDir = Path.Combine(root, ".ai");
+                var store = new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "settings.json"), new MemoryVault());
+                var model = new ScriptedModel(
+                    Says("O método Update roda a cada quadro."),
+                    Calls("lunet.files.write", new { path = "Enemy.cs", content = "class Enemy {}\n", expected_sha256 = "" }),
+                    Says("Criei o inimigo."));
+                var shell = new LunetShell(root) { AiHost = new AiHost(store, aiDir, model) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var ai = shell.WorkspaceView.Support.Ai;
+                Assert.Equal(Lunet.Ai.LunetAiMode.Teach, ai.Mode);              // Estudo by default
+
+                ai.Input.Text = "o que faz o Update?";
+                Wait(ai.SendAsync());
+                Assert.Contains(ai.Session!.History, t => t.Role != "user" && t.Text.Contains("cada quadro"));
+                Assert.False(File.Exists(Path.Combine(shell.Workspace.Project!.Directory, "Enemy.cs")));
+
+                // Fazer is chosen for one message; the change is shown and can be undone.
+                typeof(AiPanelView).GetProperty("Mode")!.SetValue(ai, Lunet.Ai.LunetAiMode.Do);
+                ai.Input.Text = "crie um inimigo";
+                Wait(ai.SendAsync());
+                Assert.Equal(Lunet.Ai.LunetAiMode.Teach, ai.Mode);              // back to Estudo after the message
+                var enemy = Path.Combine(shell.Workspace.Project.Directory, "Enemy.cs");
+                Assert.True(File.Exists(enemy));
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Alterou 1 arquivo(s)");
+                var undo = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Desfazer estas alterações");
+                undo.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.False(File.Exists(enemy));
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void AiPanel_IsConfiguredOnceForTheWholeApp()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var aiDir = Path.Combine(root, ".ai");
+                var vault = new MemoryVault();
+                var store = new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "settings.json"), vault);
+                var shell = new LunetShell(root) { AiHost = new AiHost(store, aiDir) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var key = window.GetVisualDescendants().OfType<TextBox>().First(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Chave da API");
+                key.Text = "sk-or-teste-1234567890";
+                var save = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Salvar e começar");
+                save.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                // Same store as the rest of Lunet: the key is in the vault and a new store (another screen) sees it.
+                Assert.True(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "settings.json"), vault).Load().IsConfigured);
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBox>(), t => Avalonia.Automation.AutomationProperties.GetName(t) == "Mensagem para a IA");
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     /// <summary>Runs the UI dispatcher until a task started on it completes (headless tests).</summary>
     private static void Wait(Task task)
     {

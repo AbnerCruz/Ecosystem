@@ -52,7 +52,14 @@ public sealed class ShellActivity : AvaloniaActivity
         }
 #endif
         base.OnCreate(savedInstanceState);
-        _shell = new LunetShell(ProjectsRoot(this)) { OpenRoute = OpenRoute };
+        // M7: the AI uses the same settings file, Keystore vault and conversations as the previous screens: one key for all of Lunet.
+        var ai = Path.Combine(FilesDir!.AbsolutePath, "ai");
+        _shell = new LunetShell(ProjectsRoot(this))
+        {
+            OpenRoute = OpenRoute,
+            AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
+                new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
+        };
         Content = _shell;
         ApplyDevice(Resources?.Configuration);
         // UX P7 (LUNET-537 D7): keys and confirmations are felt, with the system's own haptic constants.
