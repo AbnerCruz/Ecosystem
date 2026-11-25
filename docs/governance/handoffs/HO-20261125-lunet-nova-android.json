@@ -111,8 +111,12 @@
   "reuse_assessment": [
     {
       "subject": "keyboard-fit",
-      "status": "possible-candidate",
-      "rationale": "Same rule as Numa's MainView.KeyboardCover; a shared Ecosystem.Ui would hold it (LUNET-532 review)."
+      "status": "external-consumer-exists",
+      "consumers": [
+        "urbe"
+      ],
+      "extraction_review": "pending",
+      "rationale": "Numa already fits its view to the Android keyboard with the same rule; Lunet now needs it too. Kept local (re-implemented) until the Ecosystem.Ui Extraction Review (LUNET-532) decides."
     }
   ],
   "criticality": {
