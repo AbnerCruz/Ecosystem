@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-um-so-app",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T11:05:18Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-531",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "392c30b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/lunet2d-release.yml",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/Lunet.slnx",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Route.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/Resources/drawable/lunet_foreground.xml",
+    "apps/lunet2d/src/Lunet.Android/Resources/mipmap-anydpi-v26/icon.xml",
+    "apps/lunet2d/src/Lunet.Android/Resources/values/styles.xml",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Shell.Android/Lunet.Shell.Android.csproj",
+    "apps/lunet2d/src/Lunet.Shell.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PlatformPortabilityTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "apps/lunet2d/tools/make-release-files.sh",
+    "docs/governance/handoffs/HO-20261125-lunet-um-so-app.json"
+  ],
+  "work_completed": [
+    "Owner's order (25/11): no separate 'Lunet Nova'; Lunet is one app. io.lunet.studio now opens on the Avalonia shell (ShellActivity, an AvaloniaActivity that starts Avalonia on demand — Avalonia's AvaloniaAndroidApplication would start it in the :gameplay/:preview processes too, per its source).",
+    "Same games and key: the shell resolves the projects folder exactly like MainActivity (Files/Projects or the shared working copy in settings.json); the APK keeps package and signing, so it updates the installed app.",
+    "Nothing disappears: screens not yet moved open by route over the same game (MainActivity.Route): Home destinations and the game's 'Mais' panel; Back saves and returns; the shell reloads documents changed there without overwriting unsaved edits.",
+    "Removed Lunet.Shell.Android and the second APK from the release; emulator stage now installs and drives io.lunet.studio."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1254 tests, incl. routes and reload-from-disk)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Lunet APK builds locally: package io.lunet.studio, launchable ShellActivity, stable dev key",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Android/ShellActivity.cs"
+    },
+    {
+      "check": "Android 13 emulator: install, cold start, game in the shell, Lunet keyboard",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "apps/lunet2d/tools/ci-android-shell.sh"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a physical device, including updating over an installed Lunet.",
+    "Routed screens are the previous Android screens; moving each one into the shell is LUNET-536.",
+    "Games created in the removed 'Lunet Nova' app stay in that app's storage."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "LUNET-537 design study (keyboard and whole app)",
+    "LUNET-536 feature inventory and migration"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md",
+    "apps/lunet2d/docs/adr/0004-assinatura-de-desenvolvimento-estavel.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Lunet.Android references Lunet.Client only (Lunet libraries)."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Existing screens kept and routed; no rewrite of Framework/Compiler/Runtime."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulator results reported as automated only."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

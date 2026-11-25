@@ -1,0 +1,328 @@
+using System.Security.Cryptography;
+using System.Text;
+using IModelProvider = AgentRuntime.IModelProvider;
+using ProviderException = AgentRuntime.ProviderException;
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Lunet.Ai;
+using Lunet.Client.Shell;
+using Lunet.Client.Ui;
+using Lunet.Core;
+
+namespace Lunet.Client.Views;
+
+/// <summary>
+/// What a head gives the shell for the AI (LUNET-536 M7): where settings live, the secret vault for the key and
+/// where conversations are kept. On Android these are the same files and Keystore vault the previous screens use,
+/// so the key is configured once for the whole app. <paramref name="Provider"/> replaces the network model (tests).
+/// </summary>
+public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null);
+
+/// <summary>Compiles the open game for the AI's checks with the shell's own compiler (portable).</summary>
+internal sealed class ShellAiBuild(Lunet.Host.WorkspaceSession workspace) : ILunetAiBuild
+{
+    public IReadOnlyList<string> LastErrors { get; private set; } = [];
+
+    public Task<LunetAiBuildReport> CompileAsync(CancellationToken cancellationToken) => Task.Run(() =>
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var result = workspace.Compile();
+        var errors = result.Diagnostics.Where(d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Error).Select(d => d.ToString())
+            .Concat(LunetAiAssetValidation.Validate(workspace.Project!)).ToArray();
+        LastErrors = errors;
+        return new LunetAiBuildReport(result.Success && errors.Length == 0, errors);
+    }, cancellationToken);
+}
+
+/// <summary>
+/// The AI of the game, in the support sheet (M7). Answers to the owner's complaints of 14/11: Estudo is the default and
+/// Fazer is chosen per message ("pedi só para explicar e ela saiu fazendo"); everything is saved before sending and every
+/// reply that changed files shows them with their diff and an Undo backed by the on-disk checkpoint ("cancelei e não foi
+/// desfeito"); settings and key are the ones of the whole app ("configurar toda hora"); Stop cancels for real.
+/// </summary>
+public sealed class AiPanelView : UserControl
+{
+    private readonly LunetShell _shell;
+    private readonly StackPanel _messages = new() { Spacing = LunetTokens.Space.S };
+    private readonly ScrollViewer _scroll = new();
+    private readonly TextBox _input = new()
+    {
+        AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 140, MinHeight = LunetTokens.MinTouch,
+        PlaceholderText = "Pergunte ou peça algo sobre o jogo", FontFamily = LunetTokens.UiFont, FontSize = LunetTokens.Type.Body,
+        CornerRadius = new CornerRadius(LunetTokens.Radius.L), Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S),
+    };
+    private readonly StackPanel _composer = new() { Spacing = LunetTokens.Space.Xs };
+    private readonly HashSet<string> _openDiffs = new(StringComparer.Ordinal);
+    private LunetAiSession? _session;
+    private string? _sessionGame;
+    private CancellationTokenSource? _run;
+    private readonly List<LunetAiStep> _steps = [];
+    private string _partial = "";
+
+    public AiPanelView(LunetShell shell)
+    {
+        _shell = shell;
+        AutomationProperties.SetName(_input, "Mensagem para a IA");
+        _scroll.Content = _messages;
+        Content = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.S) };
+    }
+
+    /// <summary>The mode of the next message: Estudo unless the person picks Fazer for it.</summary>
+    public LunetAiMode Mode { get; private set; } = LunetAiMode.Teach;
+    public bool Running => _run is not null;
+    public LunetAiSession? Session => _session;
+    public TextBox Input => _input;
+
+    /// <summary>The last reply (tests).</summary>
+    public LunetAiReply? LastReply { get; private set; }
+
+    public void Refresh()
+    {
+        var root = (DockPanel)Content!;
+        root.Children.Clear();
+        if (_shell.AiHost is not { } host)
+        {
+            root.Children.Add(LunetUi.EmptyState(LunetIcons.Code, "IA indisponível aqui", "Esta versão do Lunet não tem onde guardar a chave com segurança."));
+            return;
+        }
+        var loaded = host.Store.Load();
+        if (!loaded.IsConfigured && host.Provider is null) { root.Children.Add(Setup(host, loaded)); return; }
+        EnsureSession(host);
+        BuildComposer();
+        DockPanel.SetDock(_composer, Dock.Bottom);
+        root.Children.Add(_composer);
+        if (_scroll.Parent is Panel p) p.Children.Remove(_scroll);
+        root.Children.Add(_scroll);
+        RenderMessages();
+    }
+
+    private void EnsureSession(AiHost host)
+    {
+        var project = _shell.Workspace.Project;
+        if (project is null) { _session = null; return; }
+        if (_session is not null && _sessionGame == project.Manifest.GameId) return;
+        // The same history file as the previous screens: one conversation per game, wherever it was started.
+        var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
+        _session = new LunetAiSession(project, Path.Combine(host.HistoryDirectory, id + ".json"));
+        _session.MarkInterruptedIfPending();
+        _sessionGame = project.Manifest.GameId;
+    }
+
+    // ---------------- setup (once for the whole app) ----------------
+
+    private Control Setup(AiHost host, LunetAiLoadedSettings loaded)
+    {
+        var provider = LunetAiProviders.Find(loaded.Settings.ProviderId);
+        var providers = new ComboBox { ItemsSource = LunetAiProviders.All.Select(p => p.Name).ToArray(), SelectedIndex = LunetAiProviders.All.ToList().IndexOf(provider), HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = LunetTokens.MinTouch };
+        var key = new TextBox { PasswordChar = '•', PlaceholderText = provider.KeyHint, MinHeight = LunetTokens.MinTouch };
+        var model = new TextBox { Text = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : provider.SuggestedModels.FirstOrDefault() ?? "", PlaceholderText = "modelo", MinHeight = LunetTokens.MinTouch };
+        var endpoint = new TextBox { Text = loaded.Settings.Endpoint, PlaceholderText = "https://…/chat/completions", MinHeight = LunetTokens.MinTouch, IsVisible = provider.Id == "custom" };
+        AutomationProperties.SetName(key, "Chave da API"); AutomationProperties.SetName(model, "Modelo"); AutomationProperties.SetName(providers, "Provedor");
+        providers.SelectionChanged += (_, _) =>
+        {
+            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
+            key.PlaceholderText = p.KeyHint;
+            model.Text = p.SuggestedModels.FirstOrDefault() ?? "";
+            endpoint.IsVisible = p.Id == "custom";
+            endpoint.Text = p.Endpoint;
+        };
+        var status = LunetUi.Text("", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary);
+        var save = LunetUi.Button("Salvar e começar", ButtonKind.Primary, null, () =>
+        {
+            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
+            var url = p.Id == "custom" ? endpoint.Text ?? "" : p.Endpoint;
+            if (string.IsNullOrWhiteSpace(key.Text) || string.IsNullOrWhiteSpace(model.Text) || string.IsNullOrWhiteSpace(url))
+            {
+                status.Text = "Preencha a chave, o modelo e o endereço.";
+                return;
+            }
+            host.Store.Save(loaded.Settings with { ProviderId = p.Id, Endpoint = url.Trim(), Model = model.Text!.Trim() }, key.Text!.Trim());
+            Refresh();
+        });
+        var form = new StackPanel { Spacing = LunetTokens.Space.S };
+        form.Children.Add(LunetUi.Secondary("Configure uma vez: a chave fica no cofre do aparelho e vale para todo o Lunet."));
+        form.Children.Add(providers);
+        form.Children.Add(key);
+        form.Children.Add(model);
+        form.Children.Add(endpoint);
+        form.Children.Add(save);
+        form.Children.Add(status);
+        return new ScrollViewer { Content = form };
+    }
+
+    // ---------------- conversation ----------------
+
+    private void BuildComposer()
+    {
+        _composer.Children.Clear();
+        var modes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+        foreach (var (mode, label, hint) in new[] { (LunetAiMode.Teach, "Estudar", "Explica e responde, não altera nada"), (LunetAiMode.Do, "Fazer", "Altera o jogo, mostra o que mudou e permite desfazer") })
+        {
+            var b = LunetUi.Button(label, Mode == mode ? ButtonKind.Primary : ButtonKind.Ghost, null, () => { Mode = mode; BuildComposer(); });
+            b.MinHeight = 40;
+            AutomationProperties.SetHelpText(b, hint);
+            modes.Children.Add(b);
+        }
+        _composer.Children.Add(modes);
+        var row = new DockPanel();
+        var send = Running
+            ? LunetUi.IconButton(LunetIcons.Stop, "Parar a IA", Stop, LunetTokens.Color.Danger)
+            : LunetUi.IconButton(LunetIcons.Play, "Enviar", () => _ = SendAsync(), LunetTokens.Color.Primary);
+        DockPanel.SetDock(send, Dock.Right);
+        row.Children.Add(send);
+        if (_input.Parent is Panel p) p.Children.Remove(_input);
+        row.Children.Add(_input);
+        _composer.Children.Add(row);
+    }
+
+    /// <summary>Sends the input in the chosen mode (then the mode goes back to Estudo). Saves everything first.</summary>
+    public async Task SendAsync()
+    {
+        var prompt = (_input.Text ?? "").Trim();
+        if (prompt.Length == 0 || Running || _shell.AiHost is not { } host || _shell.Workspace.Project is null) return;
+        EnsureSession(host);
+        var loaded = host.Store.Load();
+        if (!loaded.IsConfigured && host.Provider is null) { Refresh(); return; }
+        _shell.SaveAll(); // the AI reads from disk: what you see is what it gets
+        var mode = Mode;
+        var editor = _shell.WorkspaceView.Code;
+        var code = editor.Surface as CodeSurface;
+        var context = new LunetAiEditorContext(
+            editor.OpenPath,
+            code is null || code.SelectionEnd <= code.SelectionStart ? null : code.Text[code.SelectionStart..code.SelectionEnd],
+            code?.Editor.TextArea.Caret.Line ?? 0,
+            _shell.LiveProblems.Select(d => d.ToString()).ToArray(),
+            _shell.WorkspaceView.Support.ConsoleLines.TakeLast(20).ToArray());
+        var request = new LunetAiRequest(loaded.Settings with { Model = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : "teste" },
+            loaded.ApiKey ?? "chave-local-de-teste", context, new ShellAiBuild(_shell.Workspace), host.Provider,
+            Mode: mode,
+            Steps: new Progress<LunetAiStep>(step => { var i = _steps.FindIndex(s => s.Id == step.Id); if (i >= 0) _steps[i] = step; else _steps.Add(step); RenderMessages(); }),
+            PartialText: new Progress<string>(text => { _partial = text; RenderMessages(); }));
+        _input.Text = "";
+        Mode = LunetAiMode.Teach; // Fazer is a choice for one message, never sticky
+        _steps.Clear(); _partial = "";
+        _run = new CancellationTokenSource();
+        BuildComposer();
+        RenderMessages();
+        try
+        {
+            LastReply = await _session!.AskAsync(prompt, request, _run.Token);
+        }
+        catch (OperationCanceledException) { _shell.Report("IA interrompida. Nada pela metade ficou sem desfazer: veja a última resposta."); }
+        catch (Exception ex) when (ex is HttpRequestException or ProviderException or InvalidOperationException or IOException)
+        {
+            _shell.Report("A IA não respondeu: " + ex.Message);
+        }
+        finally
+        {
+            _run?.Dispose();
+            _run = null;
+            _steps.Clear(); _partial = "";
+            _shell.WorkspaceView.ReloadFromDisk(); // show what the AI changed (nothing unsaved here: we saved before)
+            BuildComposer();
+            RenderMessages();
+        }
+    }
+
+    public void Stop() => _run?.Cancel();
+
+    private void RenderMessages()
+    {
+        _messages.Children.Clear();
+        var history = _session?.History ?? [];
+        if (history.Count == 0 && !Running)
+            _messages.Children.Add(LunetUi.Text("Pergunte sobre o código aberto ou peça uma mudança. Em Estudar a IA só explica; em Fazer ela altera o jogo e você pode desfazer.",
+                LunetTokens.Type.Label, LunetTokens.Color.TextSecondary));
+        foreach (var turn in history)
+        {
+            if (turn.Pending) continue;
+            _messages.Children.Add(turn.Role == "user" ? UserBubble(turn) : AssistantMessage(turn));
+        }
+        if (Running)
+        {
+            var live = new StackPanel { Spacing = 2 };
+            foreach (var step in _steps.TakeLast(6))
+                live.Children.Add(LunetUi.Text((step.Status == LunetAiStepStatus.Done ? "✓ " : "… ") + step.Label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+            if (_partial.Length > 0) live.Children.Add(LunetUi.Text(_partial, LunetTokens.Type.Label));
+            if (live.Children.Count == 0) live.Children.Add(LunetUi.Text("Pensando…", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+            _messages.Children.Add(live);
+        }
+        _scroll.ScrollToEnd();
+    }
+
+    private static Control UserBubble(LunetAiTurn turn) => new Border
+    {
+        HorizontalAlignment = HorizontalAlignment.Right, MaxWidth = 520, Padding = new Thickness(LunetTokens.Space.S),
+        CornerRadius = new CornerRadius(LunetTokens.Radius.L), Background = LunetTokens.Brush(LunetTokens.Color.PrimarySoft),
+        Child = LunetUi.Text((turn.Mode == LunetAiMode.Do ? "Fazer · " : "") + turn.Text, LunetTokens.Type.Label),
+    };
+
+    private Control AssistantMessage(LunetAiTurn turn)
+    {
+        var stack = new StackPanel { Spacing = LunetTokens.Space.Xs };
+        foreach (var block in ChatMarkdown.Parse(turn.Text))
+        {
+            if (block.Kind == ChatBlockKind.Code)
+                stack.Children.Add(new Border
+                {
+                    Background = LunetTokens.Brush(LunetTokens.Color.Background), CornerRadius = new CornerRadius(LunetTokens.Radius.S), Padding = new Thickness(LunetTokens.Space.S),
+                    Child = new SelectableTextBlock { Text = block.Text, FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Label, Foreground = LunetTokens.Brush(LunetTokens.Color.Code), TextWrapping = TextWrapping.Wrap },
+                });
+            else
+            {
+                var prefix = block.Kind switch { ChatBlockKind.Bullet => "• ", ChatBlockKind.Numbered => "", ChatBlockKind.Quote => "│ ", _ => "" };
+                var text = LunetUi.Text(prefix + string.Concat(ChatMarkdown.Inline(block.Text).Select(s => s.Text)),
+                    block.Kind == ChatBlockKind.Heading ? LunetTokens.Type.Callout : LunetTokens.Type.Label,
+                    weight: block.Kind == ChatBlockKind.Heading ? FontWeight.SemiBold : FontWeight.Normal);
+                stack.Children.Add(text);
+            }
+        }
+        if (_session?.CheckpointFor(turn) is { IsEmpty: false } checkpoint) stack.Children.Add(Changes(checkpoint));
+        else if (_session?.CheckpointFor(turn) is { IsReverted: true }) stack.Children.Add(LunetUi.Text("Alterações desfeitas.", LunetTokens.Type.Caption, LunetTokens.Color.Success));
+        return stack;
+    }
+
+    /// <summary>What a reply changed: each file with its diff on a tap, and Undo for all of it (the on-disk checkpoint).</summary>
+    private Control Changes(LunetAiCheckpoint checkpoint)
+    {
+        var card = new StackPanel { Spacing = 2 };
+        var changes = checkpoint.Changes();
+        card.Children.Add(LunetUi.Text($"Alterou {changes.Count} arquivo(s)", LunetTokens.Type.Caption, LunetTokens.Color.Primary, FontWeight.SemiBold));
+        foreach (var change in changes)
+        {
+            var lines = LunetAiDiff.Lines(change.Before, change.After);
+            int added = lines.Count(l => l.Kind == DiffKind.Added), removed = lines.Count(l => l.Kind == DiffKind.Removed);
+            var open = _openDiffs.Contains(change.Path);
+            var row = LunetUi.Button($"{change.Path}  +{added} −{removed}", ButtonKind.Ghost, LunetIcons.File, () =>
+            {
+                if (!_openDiffs.Remove(change.Path)) _openDiffs.Add(change.Path);
+                RenderMessages();
+            });
+            row.HorizontalAlignment = HorizontalAlignment.Stretch; row.HorizontalContentAlignment = HorizontalAlignment.Left;
+            card.Children.Add(row);
+            if (open)
+                foreach (var line in lines.Where(l => l.Kind != DiffKind.Same).Take(80))
+                    card.Children.Add(new TextBlock
+                    {
+                        Text = (line.Kind == DiffKind.Added ? "+ " : "− ") + line.Text, FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Caption,
+                        Foreground = LunetTokens.Brush(line.Kind == DiffKind.Added ? LunetTokens.Color.Success : LunetTokens.Color.Danger), TextWrapping = TextWrapping.Wrap,
+                    });
+        }
+        var undo = LunetUi.Button("Desfazer estas alterações", ButtonKind.Secondary, LunetIcons.Back, () =>
+        {
+            checkpoint.Revert();
+            _shell.WorkspaceView.ReloadFromDisk();
+            _shell.Report("Alterações da IA desfeitas.");
+            RenderMessages();
+        });
+        card.Children.Add(undo);
+        return new Border
+        {
+            Child = card, Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.M),
+            Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(1),
+        };
+    }
+}

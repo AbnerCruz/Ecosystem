@@ -10,43 +10,65 @@ using Lunet.Client.Ui;
 namespace Lunet.Client.Views;
 
 /// <summary>
-/// The files of one tab (code, or notes) and the open document. The text surface is a plain Avalonia
-/// <see cref="TextBox"/> for now; the code view of its own over <c>Lunet.Editor.PieceTable</c> (virtualized lines,
-/// IME PT-BR, swipe keys) replaces it in Onda 2 (ADR 0013). Saving is verified: the text is read back after writing.
+/// The files of one tab (code, or notes) and the open document. Code is drawn by AvaloniaEdit (line numbers,
+/// highlighting — LUNET-537 D1) and typed with the Lunet keyboard; notes use a text field with the system keyboard.
+/// Saving is verified: the text is read back after writing.
 /// </summary>
 public sealed class DocumentEditor : UserControl
 {
     private readonly LunetShell _shell;
     private readonly WorkspaceTab _tab;
-    private readonly TextBox _text = new()
-    {
-        AcceptsReturn = true, AcceptsTab = true, TextWrapping = TextWrapping.NoWrap,
-        FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Code,
-        Foreground = LunetTokens.Brush(LunetTokens.Color.Code),
-        Background = LunetTokens.Brush(LunetTokens.Color.Background),
-        BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(0),
-        Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S),
-    };
+    private readonly ITextSurface _surface;
     private string? _saved;
 
     public DocumentEditor(LunetShell shell, WorkspaceTab tab)
     {
         _shell = shell;
         _tab = tab;
-        AutomationProperties.SetName(_text, tab == WorkspaceTab.Code ? "Editor de código" : "Editor de notas");
-        if (tab == WorkspaceTab.Notes) { _text.FontFamily = LunetTokens.UiFont; _text.FontSize = LunetTokens.Type.Body; _text.TextWrapping = TextWrapping.Wrap; _text.Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary); }
+        _surface = tab == WorkspaceTab.Code ? new CodeSurface() : new NotesSurface();
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
-        if (tab == WorkspaceTab.Code)
+        // Using the code (focus, or a tap with the keyboard hidden) brings the Lunet keyboard.
+        if (tab == WorkspaceTab.Code) _surface.Engaged += ShowKeyboard;
+        if (_surface is CodeSurface code)
         {
-            _text.GotFocus += (_, _) => ShowKeyboard();
-            // A tap on the text with the keyboard hidden brings it back (focus may not change).
-            _text.AddHandler(PointerReleasedEvent, (_, _) => ShowKeyboard(), Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+            // M1: analyse a moment after typing stops (Roslyn runs off the UI thread; stale results are dropped).
+            _analysisDelay.Tick += (_, _) => { _analysisDelay.Stop(); _ = AnalyzeNow(); };
+            code.TextChanged += () => { _analysisDelay.Stop(); _analysisDelay.Start(); };
         }
     }
 
     /// <summary>The project-relative path of the open document, or null.</summary>
     public string? OpenPath { get; private set; }
-    public TextBox TextBox => _text;
+    /// <summary>The text of the open document (code editor or notes field).</summary>
+    public ITextSurface Surface => _surface;
+    private readonly Avalonia.Threading.DispatcherTimer _analysisDelay = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    private CancellationTokenSource? _analysis;
+    private int _analysisVersion;
+    private long _analysisRevision;
+
+    /// <summary>
+    /// Analyses the open code now: errors and warnings under the code and in Problemas, completions and the call
+    /// signature in the keyboard strip. Returns when the result is applied (tests await it).
+    /// </summary>
+    public async Task AnalyzeNow()
+    {
+        if (_surface is not CodeSurface code || OpenPath is not { } path || _shell.Assistant is not { } assistant) return;
+        _analysis?.Cancel();
+        var cts = _analysis = new CancellationTokenSource();
+        var text = code.Text;
+        var caret = code.Caret;
+        var version = ++_analysisVersion;
+        try
+        {
+            var result = await assistant.AnalyzeAsync(path, text, caret, version, ++_analysisRevision, complete: KeyboardVisible, cts.Token);
+            if (version != _analysisVersion || path != OpenPath) return; // a newer edit or another file won
+            code.SetDiagnostics(result.Diagnostics);
+            _shell.SetLiveProblems(code.Diagnostics);
+            _keyboard?.SetAnalysis(text, caret, result.Completions, result.Signature);
+        }
+        catch (OperationCanceledException) { }
+    }
+
     private LunetKeyboard? _keyboard;
     private bool _keyboardWanted;
 
@@ -67,6 +89,7 @@ public sealed class DocumentEditor : UserControl
     {
         _keyboardWanted = true;
         UpdateKeyboard();
+        _keyboard?.RefreshSuggestions(); // the caret may have moved by a tap on the code
     }
 
     /// <summary>Hides the Lunet keyboard (Back, leaving the editor). Returns true when it was visible.</summary>
@@ -84,20 +107,20 @@ public sealed class DocumentEditor : UserControl
         var on = _keyboardWanted && KeyboardApplies;
         if (on && _keyboard is null)
         {
-            _keyboard = new LunetKeyboard(_text, _shell.Methods, ProjectSources, UseSystemKeyboard);
+            _keyboard = new LunetKeyboard(_surface, _shell.Methods, ProjectSources, UseSystemKeyboard, () => _shell.OpenPalette());
             DockPanel.SetDock(_keyboard, Dock.Bottom);
-            var hadFocus = _text.IsFocused;
+            var hadFocus = _surface.IsFocused;
             Rebuild(); // places it in the layout, then comes back here
-            if (hadFocus) _text.Focus(); // moving the editor into the new layout must not drop the caret or focus
+            if (hadFocus) _surface.Focus(); // moving the editor into the new layout must not drop the caret or focus
             return;
         }
         if (_keyboard is not null)
         {
             _keyboard.IsVisible = on;
-            if (on) _keyboard.Height = Math.Clamp((_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800) * 0.4, 220, 320);
+            if (on) _keyboard.Height = LunetKeyboard.PreferredHeight(_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800);
         }
         // Only the code editor loses the system keyboard, and only while the Lunet keyboard is there.
-        InputMethod.SetIsInputMethodEnabled(_text, !(_tab == WorkspaceTab.Code && on));
+        InputMethod.SetIsInputMethodEnabled(_surface.InputTarget, !(_tab == WorkspaceTab.Code && on));
         if (_tab == WorkspaceTab.Code) _shell.WorkspaceView.SetKeyboardOpen(on || _shell.KeyboardOpen);
     }
 
@@ -110,7 +133,7 @@ public sealed class DocumentEditor : UserControl
     {
         _shell.PreferSystemKeyboard = true;
         Rebuild();
-        _text.Focus();
+        _surface.Focus();
     }
 
     private void UseLunetKeyboard()
@@ -118,9 +141,9 @@ public sealed class DocumentEditor : UserControl
         _shell.PreferSystemKeyboard = false;
         _keyboardWanted = true;
         Rebuild();
-        _text.Focus();
+        _surface.Focus();
     }
-    public bool IsDirty => OpenPath is not null && (_text.Text ?? "") != _saved;
+    public bool IsDirty => OpenPath is not null && _surface.Text != _saved;
 
     public void Load(string? path)
     {
@@ -128,7 +151,8 @@ public sealed class DocumentEditor : UserControl
         if (path is null) path = ProjectFiles.For(_tab, _shell.Workspace.Files()).FirstOrDefault();
         OpenPath = path;
         _saved = path is null ? null : _shell.Workspace.Read(path);
-        _text.Text = _saved ?? "";
+        _surface.Text = _saved ?? "";
+        if (_surface is CodeSurface loaded) { loaded.SetDiagnostics([]); _analysisDelay.Stop(); _analysisDelay.Start(); }
         Rebuild();
     }
 
@@ -136,7 +160,7 @@ public sealed class DocumentEditor : UserControl
     public bool Save()
     {
         if (!IsDirty) return true;
-        var text = _text.Text ?? "";
+        var text = _surface.Text;
         try
         {
             _shell.Workspace.Write(OpenPath!, text);
@@ -232,8 +256,8 @@ public sealed class DocumentEditor : UserControl
         if (_keyboard?.Parent is Panel kp) kp.Children.Remove(_keyboard);
         if (_keyboard is not null) root.Children.Add(_keyboard);
         UpdateKeyboard();
-        if (_text.Parent is Panel p) p.Children.Remove(_text);
-        root.Children.Add(_text);
+        if (_surface.View.Parent is Panel p) p.Children.Remove(_surface.View);
+        root.Children.Add(_surface.View);
         Content = root;
     }
 

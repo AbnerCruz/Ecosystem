@@ -30,6 +30,7 @@ public static class ShellScreens
                 window.Show();
                 var shell = window.Shell;
                 shell.HardwareKeyboard = size != "celular"; // the phone captures show the Lunet keyboard
+                if (size == "celular") shell.OpenRoute = (_, _) => { }; // show the Android Home destinations
                 Shot(window, output, size, "1-home-vazia", written);
                 shell.CreateProject();
                 shell.GoHome();
@@ -37,6 +38,11 @@ public static class ShellScreens
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
                 shell.WorkspaceView.Code.ShowKeyboard();
+                if (shell.WorkspaceView.Code.Keyboard is { } typing)
+                {
+                    shell.WorkspaceView.Code.Surface.Caret = 0;
+                    foreach (var c in "Spri") typing.Press(new Lunet.Client.Shell.KeyDef(c.ToString()));
+                }
                 Shot(window, output, size, "3b-teclas", written);
                 if (shell.WorkspaceView.Code.Keyboard is { } keyboard)
                 {
@@ -57,7 +63,7 @@ public static class ShellScreens
                 shell.State.ShowPanel(SupportPanel.Console);
                 Shot(window, output, size, "5-console", written);
                 shell.StopGame();
-                shell.WorkspaceView.Code.TextBox.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
+                shell.WorkspaceView.Code.Surface.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
                 shell.RunGame();
                 Shot(window, output, size, "6-problemas", written);
                 shell.State.ShowPanel(SupportPanel.None);

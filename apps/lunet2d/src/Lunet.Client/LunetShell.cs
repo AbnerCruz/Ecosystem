@@ -71,16 +71,89 @@ public sealed class LunetShell : UserControl
     /// <summary>The last message the shell had to tell you (a failed save, a failed open); also in the Console.</summary>
     public string? LastReport { get; private set; }
 
+    /// <summary>
+    /// Opens a screen the shell does not serve yet (the Android head routes it to the current screens, over the same
+    /// projects). Null on heads that have no such screens: the shell then hides those destinations.
+    /// </summary>
+    public Action<string, string?>? OpenRoute
+    {
+        get => _openRoute;
+        set { _openRoute = value; _home.Build(); }
+    }
+    private Action<string, string?>? _openRoute;
+
+    /// <summary>Destinations of the Home served by <see cref="OpenRoute"/> (route, label, icon).</summary>
+    public static readonly IReadOnlyList<(string Route, string Label, string Icon)> HomeRoutes =
+    [
+        ("play", "Jogar", Ui.LunetIcons.Play), ("studios", "Studios", Ui.LunetIcons.Art), ("learn", "Aprender", Ui.LunetIcons.Notes),
+        ("library", "Biblioteca", Ui.LunetIcons.Folder), ("explore", "Explorar", Ui.LunetIcons.Map), ("settings", "Ajustes", Ui.LunetIcons.Speed),
+    ];
+
+    /// <summary>What the "Mais" panel of a game opens through <see cref="OpenRoute"/> (route, label, icon).</summary>
+    public static readonly IReadOnlyList<(string Route, string Label, string Icon)> GameRoutes =
+    [
+        ("assets", "Recursos e Studios", Ui.LunetIcons.Art), ("notes", "Notas e mapas mentais", Ui.LunetIcons.Notes),
+        ("git", "Git", Ui.LunetIcons.Folder), ("apk", "Gerar APK", Ui.LunetIcons.Game), ("editor", "Editor completo", Ui.LunetIcons.File),
+    ];
+
+    /// <summary>Back from a routed screen: re-read the games (and the open documents, when not edited here).</summary>
+    public void ReturnedFromRoute()
+    {
+        _home.Refresh();
+        if (State.Level == ShellLevel.Workspace && Workspace.Project is not null && State.Project is { } name)
+        {
+            if (!Workspace.Projects().Contains(name)) { State.GoHome(); return; }
+            Workspace.Open(name);
+            _workspaceView.ReloadFromDisk();
+        }
+    }
+
+    /// <summary>The AI settings, key vault and history the head provides (M7); null hides the AI.</summary>
+    public AiHost? AiHost { get; set; }
+
+    /// <summary>Opens the command palette (M3) with an optional prefix ("@", ":", "#", "/").</summary>
+    public void OpenPalette(string query = "")
+    {
+        if (State.Level != ShellLevel.Workspace) return;
+        State.ShowPanel(SupportPanel.Commands);
+        _workspaceView.Support.Palette.Open(query);
+    }
+
     public void Report(string message)
     {
         LastReport = message;
         _workspaceView.Support.Append(message);
     }
 
+    /// <summary>
+    /// The Roslyn analyzer of the open game (errors while typing, completions, signatures — LUNET-536 M1), loaded
+    /// with all its .cs files when the game opens. Runs off the UI thread.
+    /// </summary>
+    public Lunet.Editor.EditorAssistant? Assistant { get; private set; }
+
+    /// <summary>The analyzer's errors and warnings for the open code file (empty while none).</summary>
+    public IReadOnlyList<Lunet.Compiler.LunetDiagnostic> LiveProblems { get; private set; } = [];
+
+    /// <summary>Called by the code editor after each analysis; refreshes the top bar and an open Problemas panel.</summary>
+    public void SetLiveProblems(IReadOnlyList<Lunet.Compiler.LunetDiagnostic> problems)
+    {
+        var before = LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
+        LiveProblems = problems.Where(p => p.Severity != Lunet.Compiler.DiagnosticSeverity.Info).ToArray();
+        var after = LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
+        if (State.Panel == SupportPanel.Problems) _workspaceView.Support.Refresh();
+        if (before != after) _workspaceView.RefreshTopBar();
+    }
+
     public void OpenProject(string name)
     {
         StopGame();
         Workspace.Open(name);
+        Assistant = new Lunet.Editor.EditorAssistant(new Lunet.Compiler.LoadedAssembliesReferenceProvider(
+            typeof(Lunet.Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly));
+        LiveProblems = [];
+        var project = Workspace.Project!;
+        _ = Assistant.LoadProjectAsync(project.ListFiles().Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+            .Select(f => (f, project.ReadText(f))).ToArray());
         State.OpenProject(name);
         _workspaceView.Load();
         Render();
@@ -224,6 +297,8 @@ public sealed class LunetShell : UserControl
         if (e.Key == Key.Escape && BeforeBack()) e.Handled = true;
         else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { RunGame(); e.Handled = true; }
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
+        else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
+        else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
     }
 
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
@@ -244,6 +319,8 @@ public sealed class LunetShell : UserControl
             return;
         }
         if (!ReferenceEquals(Content, _workspaceView)) Content = _workspaceView;
+        // A panel the person opens takes the place of the keyboard (they are never stacked over the code).
+        if (State.Panel != SupportPanel.None) _workspaceView.Code.HideKeyboard();
         _workspaceView.Rebuild();
     }
 }

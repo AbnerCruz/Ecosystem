@@ -11,6 +11,8 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <!-- LUNET-537 D1: the code editor (line numbers, C# highlighting, current line, virtualization). MIT. -->
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- The "Métodos" tab reads the generated API catalog (kept current by DocsTests); never a hand-written list. -->
@@ -18,5 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Lunet.Host/Lunet.Host.csproj" />
+    <ProjectReference Include="../Lunet.Editor/Lunet.Editor.csproj" />
+    <ProjectReference Include="../Lunet.Ai/Lunet.Ai.csproj" />
   </ItemGroup>
 </Project>

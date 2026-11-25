@@ -22,21 +22,26 @@ public enum KeyboardTab { Keys, Shortcuts, Methods }
 /// </summary>
 public sealed class LunetKeyboard : UserControl
 {
-    private readonly TextBox _target;
+    private readonly ITextSurface _target;
     private readonly MethodCatalog _catalog;
     private readonly Func<IEnumerable<(string Path, string Text)>> _projectSources;
     private readonly Action _useSystemKeyboard;
+    private readonly Action? _openPalette;
     private readonly Border _body = new();
-    private readonly StackPanel _tabs = new() { Orientation = Orientation.Horizontal, Spacing = 2 };
-    private readonly StackPanel _variants = new() { Orientation = Orientation.Horizontal, Spacing = 2, IsVisible = false, HorizontalAlignment = HorizontalAlignment.Center };
+    private readonly StackPanel _tabs = new() { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+    private readonly StackPanel _suggestions = new() { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+    private readonly Canvas _overlay = new() { IsHitTestVisible = false, ClipToBounds = false };
+    private readonly StackPanel _variants = new() { Orientation = Orientation.Horizontal, Spacing = 2, IsVisible = false };
+    private readonly Border _bubble = new() { IsVisible = false, Width = 52, Height = 62, CornerRadius = new CornerRadius(10) };
     private readonly HashSet<string> _openNodes = new(StringComparer.Ordinal);
     private readonly DispatcherTimer _hold = new();
     private ShiftState _shift = ShiftState.Off;
     private DateTime _lastShiftTap = DateTime.MinValue;
     private bool _symbols;
 
-    public LunetKeyboard(TextBox target, MethodCatalog catalog, Func<IEnumerable<(string Path, string Text)>> projectSources, Action useSystemKeyboard)
+    public LunetKeyboard(ITextSurface target, MethodCatalog catalog, Func<IEnumerable<(string Path, string Text)>> projectSources, Action useSystemKeyboard, Action? openPalette = null)
     {
+        _openPalette = openPalette;
         _target = target;
         _catalog = catalog;
         _projectSources = projectSources;
@@ -44,21 +49,49 @@ public sealed class LunetKeyboard : UserControl
         Focusable = false;
         AutomationProperties.SetName(this, "Teclado Lunet");
 
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Height = 40 };
-        header.Children.Add(_tabs);
-        var top = new Panel { Children = { header, _variants } };
-        var root = new DockPanel();
-        DockPanel.SetDock(top, Dock.Top);
-        root.Children.Add(top);
-        root.Children.Add(_body);
+        // One strip on top (Gboard): the three tabs as icons, then suggestions for the word being typed.
+        var strip = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"), Height = StripHeight };
+        strip.Children.Add(_tabs);
+        var divider = new Border { Width = 1, Margin = new Thickness(6, 10), Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong) };
+        Grid.SetColumn(divider, 1);
+        strip.Children.Add(divider);
+        var suggestions = new ScrollViewer
+        {
+            Content = _suggestions, Focusable = false,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
+        Grid.SetColumn(suggestions, 2);
+        strip.Children.Add(suggestions);
+        var deck = new DockPanel();
+        DockPanel.SetDock(strip, Dock.Top);
+        deck.Children.Add(strip);
+        deck.Children.Add(_body);
+        // The key preview and the accents float over the keys (above the pressed key), never moving the layout.
+        _bubble.Background = LunetTokens.Brush(LunetTokens.Color.KeyPressed);
+        _bubble.BoxShadow = LunetTokens.Low;
+        _overlay.Children.Add(_bubble);
+        _overlay.Children.Add(_variants);
         Content = new Border
         {
-            Child = root, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(3, 0, 3, 3),
+            Child = new Panel { Children = { deck, _overlay } }, ClipToBounds = false,
+            Background = LunetTokens.Brush(LunetTokens.Color.KeyboardDeck),
+            Padding = new Thickness(4, 0, 4, 6),
         };
+        ClipToBounds = false;
         Show(KeyboardTab.Keys);
     }
+
+    /// <summary>Height of the top strip (tabs + suggestions), dp.</summary>
+    public const double StripHeight = 44;
+    /// <summary>Height of one row of keys including its gap, dp (AOSP 50 dip; Gboard "normal").</summary>
+    public const double RowHeight = 50;
+
+    /// <summary>The keyboard's height for a window: strip + 5 rows, never more than 45% of the window.</summary>
+    public static double PreferredHeight(double windowHeight) =>
+        Math.Min(StripHeight + 5 * RowHeight + 6, Math.Max(220, windowHeight * 0.45));
+
+    /// <summary>The members shown in the suggestion strip now.</summary>
+    public IReadOnlyList<CatalogMember> Suggestions { get; private set; } = [];
 
     public KeyboardTab Tab { get; private set; }
     public ShiftState Shift => _shift;
@@ -70,26 +103,34 @@ public sealed class LunetKeyboard : UserControl
     {
         Tab = tab;
         _tabs.Children.Clear();
-        foreach (var (t, label) in new[] { (KeyboardTab.Keys, "Teclas"), (KeyboardTab.Shortcuts, "Atalhos"), (KeyboardTab.Methods, "Métodos") })
+        foreach (var (t, label, icon) in new[] { (KeyboardTab.Keys, "Teclas", LunetIcons.Keyboard), (KeyboardTab.Shortcuts, "Atalhos", LunetIcons.Braces), (KeyboardTab.Methods, "Métodos", LunetIcons.Function) })
         {
             var selected = t == tab;
             var chip = new Border
             {
-                Padding = new Thickness(LunetTokens.Space.M, 0), MinWidth = 72, Margin = new Thickness(0, 4),
-                CornerRadius = new CornerRadius(LunetTokens.Radius.Pill),
+                Width = 44, Height = 36, CornerRadius = new CornerRadius(LunetTokens.Radius.M),
                 Background = LunetTokens.Brush(selected ? LunetTokens.Color.PrimarySoft : "#00000000"),
-                Child = new TextBlock
-                {
-                    Text = label, FontFamily = LunetTokens.UiFont, FontSize = LunetTokens.Type.Label,
-                    FontWeight = selected ? FontWeight.SemiBold : FontWeight.Medium, VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Foreground = LunetTokens.Brush(selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary),
-                },
+                Child = LunetIcons.Create(icon, selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary, 22),
             };
             AutomationProperties.SetName(chip, label);
+            ToolTip.SetTip(chip, label);
             OnTap(chip, () => Show(t));
             _tabs.Children.Add(chip);
         }
+        if (_openPalette is { } open)
+        {
+            // The command palette (M3): definition, references, rename, fixes, outline… one tap from the keys.
+            var palette = new Border
+            {
+                Width = 44, Height = 36, CornerRadius = new CornerRadius(LunetTokens.Radius.M), Background = LunetTokens.Brush("#00000000"),
+                Child = LunetIcons.Create(LunetIcons.Search, LunetTokens.Color.TextSecondary, 22),
+            };
+            AutomationProperties.SetName(palette, "Comandos");
+            ToolTip.SetTip(palette, "Comandos");
+            OnTap(palette, open);
+            _tabs.Children.Add(palette);
+        }
+        RefreshSuggestions();
         _body.Child = tab switch
         {
             KeyboardTab.Keys => KeysPage(),
@@ -103,25 +144,21 @@ public sealed class LunetKeyboard : UserControl
     /// <summary>Applies one edit to the editor as one undo step and puts the caret where the edit says.</summary>
     public void Apply(CodeEdit edit)
     {
-        _target.SelectionStart = edit.Start;
-        _target.SelectionEnd = edit.End;
-        _target.SelectedText = edit.Insert;
-        _target.SelectionStart = _target.SelectionEnd = edit.Caret;
-        _target.CaretIndex = edit.Caret;
+        _target.Replace(edit.Start, edit.End, edit.Insert, edit.Caret);
+        RefreshSuggestions();
     }
 
     /// <summary>Types text at the caret (replacing the selection).</summary>
     public void Type(string text)
     {
-        var start = Math.Min(_target.SelectionStart, _target.SelectionEnd);
-        var end = Math.Max(_target.SelectionStart, _target.SelectionEnd);
-        Apply(new CodeEdit(start, end, text, start + text.Length));
+        var start = _target.SelectionStart;
+        Apply(new CodeEdit(start, _target.SelectionEnd, text, start + text.Length));
     }
 
     /// <summary>A key of the Teclas tab, as a tap (variants/gestures are separate paths).</summary>
     public void Press(KeyDef key)
     {
-        var text = _target.Text ?? "";
+        var text = _target.Text;
         switch (key.Action)
         {
             case KeyAction.Text:
@@ -147,20 +184,131 @@ public sealed class LunetKeyboard : UserControl
     /// <summary>A code key of the Atalhos tab (symbols, pairs, blocks, Tab, arrows).</summary>
     public void Shortcut(string symbol)
     {
-        var text = _target.Text ?? "";
+        var text = _target.Text;
         if (CodeKeys.Apply(text, _target.SelectionStart, _target.SelectionEnd, symbol) is { } edit) Apply(edit);
         else
         {
-            var caret = CodeKeys.Move(text, _target.CaretIndex, symbol);
-            _target.SelectionStart = _target.SelectionEnd = caret;
-            _target.CaretIndex = caret;
+            var caret = CodeKeys.Move(text, _target.Caret, symbol);
+            _target.Caret = caret;
+            RefreshSuggestions();
+        }
+    }
+
+    private string? _analysisText;
+    private int _analysisCaret = -1;
+    private IReadOnlyList<Lunet.Editor.CompletionItem> _completions = [];
+    private Lunet.Editor.CallSignatureHelp? _signature;
+
+    /// <summary>The Roslyn completions shown now (empty when the strip shows the catalog or the signature).</summary>
+    public IReadOnlyList<Lunet.Editor.CompletionItem> Completions { get; private set; } = [];
+    /// <summary>The call signature shown in the strip, when the caret is inside a call.</summary>
+    public string? SignatureText { get; private set; }
+
+    /// <summary>The analyzer's answer for <paramref name="text"/> at <paramref name="caret"/> (M1/M2): used while it is current.</summary>
+    public void SetAnalysis(string text, int caret, IReadOnlyList<Lunet.Editor.CompletionItem> completions, Lunet.Editor.CallSignatureHelp? signature)
+    {
+        _analysisText = text;
+        _analysisCaret = caret;
+        _completions = completions;
+        _signature = signature;
+        RefreshSuggestions();
+    }
+
+    /// <summary>Applies a Roslyn completion: replaces what it covers; methods get parentheses with the caret inside.</summary>
+    public void AcceptCompletion(Lunet.Editor.CompletionItem item)
+    {
+        var method = item.Kind == Lunet.Editor.CompletionKind.Method;
+        var insert = item.InsertText + (method ? "()" : "");
+        var start = item.ReplaceStart;
+        Apply(new CodeEdit(start, start + item.ReplaceLength, insert, start + insert.Length - (method ? 1 : 0)));
+        Haptics.Confirm?.Invoke();
+    }
+
+    /// <summary>Replaces the word being typed by the suggestion (as a call when it is a method) and records the use.</summary>
+    public void AcceptSuggestion(CatalogMember member)
+    {
+        var caret = _target.Caret;
+        var prefix = MethodCatalog.WordBefore(_target.Text, caret);
+        var edit = MethodCatalog.Insertion(member, _target.Text, caret - prefix.Length, caret);
+        Apply(edit);
+        _catalog.RecordUse(member);
+        Haptics.Confirm?.Invoke();
+        RefreshSuggestions();
+    }
+
+    /// <summary>"Draw(Texture2D texture, [Vector2 position], …)": the active parameter in brackets (M2).</summary>
+    public static string SignatureLabel(Lunet.Editor.CallSignatureHelp help)
+    {
+        var s = help.Signatures[Math.Clamp(help.Selected, 0, help.Signatures.Count - 1)];
+        var name = s.Label.Contains('(') ? s.Label[..s.Label.IndexOf('(')] : s.Label;
+        var parameters = s.Parameters.Select((p, i) => i == s.ActiveParameter ? "[" + p.Display + "]" : p.Display);
+        var more = help.Signatures.Count > 1 ? $"  +{help.Signatures.Count - 1}" : "";
+        return $"{name}({string.Join(", ", parameters)}){more}";
+    }
+
+    private Border Chip(string text, string help)
+    {
+        var chip = new Border
+        {
+            Height = 34, Padding = new Thickness(LunetTokens.Space.S, 0), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+            Background = LunetTokens.Brush(LunetTokens.Color.KeyModifier),
+            Child = new TextBlock
+            {
+                Text = text, FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Callout,
+                Foreground = LunetTokens.Brush(LunetTokens.Color.Code), VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+        AutomationProperties.SetName(chip, "Sugestão " + text);
+        AutomationProperties.SetHelpText(chip, help);
+        return chip;
+    }
+
+    /// <summary>Recomputes the strip for the word before the caret (catalog + the game's members).</summary>
+    public void RefreshSuggestions()
+    {
+        var prefix = MethodCatalog.WordBefore(_target.Text, _target.Caret);
+        var fresh = _analysisText == _target.Text && _analysisCaret == _target.Caret;
+        Completions = fresh && prefix.Length > 0 ? _completions.Take(12).ToArray() : [];
+        Suggestions = Completions.Count > 0 || prefix.Length == 0 ? [] : _catalog.Suggest(prefix, 8);
+        SignatureText = fresh && prefix.Length == 0 && _signature is { Signatures.Count: > 0 } help ? SignatureLabel(help) : null;
+        _suggestions.Children.Clear();
+        foreach (var item in Completions)
+        {
+            var chip = Chip(item.Label + (item.Kind == Lunet.Editor.CompletionKind.Method ? "()" : ""), item.Detail);
+            var completion = item;
+            OnTap(chip, () => AcceptCompletion(completion));
+            _suggestions.Children.Add(chip);
+        }
+        if (SignatureText is { } signature)
+            _suggestions.Children.Add(new TextBlock
+            {
+                Text = signature, FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Label, VerticalAlignment = VerticalAlignment.Center,
+                Foreground = LunetTokens.Brush(LunetTokens.Color.TextSecondary), Margin = new Thickness(LunetTokens.Space.Xs, 0),
+            });
+        foreach (var m in Suggestions)
+        {
+            var chip = new Border
+            {
+                Height = 34, Padding = new Thickness(LunetTokens.Space.S, 0), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+                Background = LunetTokens.Brush(LunetTokens.Color.KeyModifier),
+                Child = new TextBlock
+                {
+                    Text = m.Name + (m.IsCallable ? "()" : ""), FontFamily = LunetTokens.MonoFont, FontSize = LunetTokens.Type.Callout,
+                    Foreground = LunetTokens.Brush(LunetTokens.Color.Code), VerticalAlignment = VerticalAlignment.Center,
+                },
+            };
+            AutomationProperties.SetName(chip, "Sugestão " + m.Name);
+            AutomationProperties.SetHelpText(chip, m.Summary);
+            var member = m;
+            OnTap(chip, () => AcceptSuggestion(member));
+            _suggestions.Children.Add(chip);
         }
     }
 
     /// <summary>Inserts a catalog member at the caret and records it in Recentes/Mais usados.</summary>
     public void Insert(CatalogMember member)
     {
-        Apply(MethodCatalog.Insertion(member, _target.Text ?? "", _target.SelectionStart, _target.SelectionEnd));
+        Apply(MethodCatalog.Insertion(member, _target.Text, _target.SelectionStart, _target.SelectionEnd));
         _catalog.RecordUse(member);
     }
 
@@ -196,30 +344,29 @@ public sealed class LunetKeyboard : UserControl
 
     private Control KeyFace(KeyDef key)
     {
-        var special = key.Action != KeyAction.Text;
-        var label = key.Action == KeyAction.Shift
-            ? _shift == ShiftState.Locked ? "⇪" : "⇧"
-            : KeyboardLayout.Typed(key, _shift);
-        var face = new Grid();
-        face.Children.Add(new TextBlock
+        var modifier = key.Action is not (KeyAction.Text or KeyAction.Space);
+        var enter = key.Action == KeyAction.Enter;
+        var label = key.Action switch
         {
-            Text = label, FontFamily = key.Action == KeyAction.Space ? LunetTokens.UiFont : LunetTokens.MonoFont,
-            FontSize = key.Action == KeyAction.Space ? LunetTokens.Type.Caption : 18,
-            Foreground = LunetTokens.Brush(key.Action == KeyAction.Shift && _shift != ShiftState.Off ? LunetTokens.Color.Primary
-                : key.Action == KeyAction.Space ? LunetTokens.Color.TextSecondary : LunetTokens.Color.TextPrimary),
+            KeyAction.Shift => _shift == ShiftState.Locked ? "⇪" : "⇧",
+            KeyAction.Space => "",
+            _ => KeyboardLayout.Typed(key, _shift),
+        };
+        bool letter = key.Action == KeyAction.Text && label.Length == 1 && char.IsLetter(label[0]);
+        var text = new TextBlock
+        {
+            Text = label, FontFamily = LunetTokens.UiFont,
+            FontSize = key.Action == KeyAction.Text ? (letter ? 22 : 20) : label.Length > 2 ? 15 : 20,
+            FontWeight = key.Action == KeyAction.Text ? FontWeight.Normal : FontWeight.Medium,
+            Foreground = LunetTokens.Brush(enter ? LunetTokens.Color.OnPrimary
+                : key.Action == KeyAction.Shift && _shift != ShiftState.Off ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-        });
-        if (key.Variants is { Count: > 0 } v)
-            face.Children.Add(new TextBlock
-            {
-                Text = v[0], FontSize = 9, Margin = new Thickness(0, 1, 4, 0), Foreground = LunetTokens.Brush(LunetTokens.Color.TextTertiary),
-                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top,
-            });
-        var restColor = special ? LunetTokens.Color.SurfaceOverlay : LunetTokens.Color.SurfaceRaised;
+        };
+        var restColor = enter ? LunetTokens.Color.Primary : modifier ? LunetTokens.Color.KeyModifier : LunetTokens.Color.Key;
         var border = new Border
         {
-            Child = face, Margin = new Thickness(2), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
-            Background = LunetTokens.Brush(key.Action == KeyAction.Enter ? LunetTokens.Color.PrimarySoft : restColor),
+            Child = text, Margin = new Thickness(3, 4), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+            Background = LunetTokens.Brush(restColor),
         };
         AutomationProperties.SetName(border, key.Action switch
         {
@@ -227,9 +374,27 @@ public sealed class LunetKeyboard : UserControl
             KeyAction.Shift => "Maiúsculas", KeyAction.Symbols => "Números e símbolos", KeyAction.Letters => "Letras",
             KeyAction.System => "Usar o teclado do sistema", _ => label,
         });
+        if (key.Variants is { Count: > 0 }) AutomationProperties.SetHelpText(border, "Segure para: " + string.Join(" ", key.Variants));
         WireKey(border, key, restColor);
         return border;
     }
+
+    /// <summary>The preview bubble above a pressed letter (Gboard), placed over the overlay; hidden on release.</summary>
+    private void ShowBubble(Control keyView, string label)
+    {
+        if (keyView.TranslatePoint(new Point(0, 0), _overlay) is not { } at) return;
+        _bubble.Child = new TextBlock
+        {
+            Text = label, FontFamily = LunetTokens.UiFont, FontSize = 30, Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+        };
+        Canvas.SetLeft(_bubble, at.X + keyView.Bounds.Width / 2 - _bubble.Width / 2);
+        Canvas.SetTop(_bubble, at.Y - _bubble.Height + 6);
+        _bubble.IsVisible = true;
+    }
+
+    /// <summary>True while the preview bubble is shown (tests).</summary>
+    public bool BubbleVisible => _bubble.IsVisible;
 
     /// <summary>Press: highlight now (latency); release: commit. Hold: repeat or variants; drag: glide cursor/delete.</summary>
     private void WireKey(Border border, KeyDef key, string restColor)
@@ -244,8 +409,10 @@ public sealed class LunetKeyboard : UserControl
             e.Pointer.Capture(border);
             pressed = true; consumed = false; repeats = 0;
             origin = e.GetPosition(this);
-            caretAtStart = _target.CaretIndex;
-            border.Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong);
+            caretAtStart = _target.Caret;
+            border.Background = LunetTokens.Brush(LunetTokens.Color.KeyPressed);
+            Haptics.KeyTap?.Invoke();
+            if (key.Action == KeyAction.Text) ShowBubble(border, KeyboardLayout.Typed(key, _shift));
             _hold.Stop();
             _hold.Interval = key.Repeats ? KeyboardLayout.RepeatStart : KeyboardLayout.LongPress;
             _hold.Tick -= OnHold;
@@ -260,7 +427,7 @@ public sealed class LunetKeyboard : UserControl
                     _hold.Interval = KeyboardLayout.RepeatInterval;
                     Press(key);
                 }
-                else { _hold.Stop(); consumed = true; ShowVariants(key); }
+                else { _hold.Stop(); consumed = true; _bubble.IsVisible = false; ShowVariants(key, border); }
             }
         };
         border.PointerMoved += (_, e) =>
@@ -271,9 +438,8 @@ public sealed class LunetKeyboard : UserControl
             if (key.Action == KeyAction.Space && Math.Abs(dx) >= KeyboardLayout.CursorStep)
             {
                 _hold.Stop(); consumed = true;
-                var caret = KeyboardLayout.GlideCursor(_target.Text ?? "", caretAtStart, dx);
-                _target.SelectionStart = _target.SelectionEnd = caret;
-                _target.CaretIndex = caret;
+                var caret = KeyboardLayout.GlideCursor(_target.Text, caretAtStart, dx);
+                _target.Caret = caret;
             }
             else if (key.Action == KeyAction.Backspace && KeyboardLayout.GlideWords(dx) > 0) { _hold.Stop(); consumed = true; }
         };
@@ -284,23 +450,25 @@ public sealed class LunetKeyboard : UserControl
             pressed = false;
             _hold.Stop();
             e.Pointer.Capture(null);
-            border.Background = LunetTokens.Brush(key.Action == KeyAction.Enter ? LunetTokens.Color.PrimarySoft : restColor);
+            _bubble.IsVisible = false;
+            border.Background = LunetTokens.Brush(restColor);
             var dx = e.GetPosition(this).X - origin.X;
             if (_variants.IsVisible) { CommitVariant(); return; }
             if (key.Action == KeyAction.Backspace && KeyboardLayout.GlideWords(dx) is > 0 and var words)
             {
-                if (KeyboardLayout.Backspace(_target.Text ?? "", _target.SelectionStart, _target.SelectionEnd, words) is { } edit) Apply(edit);
+                if (KeyboardLayout.Backspace(_target.Text, _target.SelectionStart, _target.SelectionEnd, words) is { } edit) Apply(edit);
                 return;
             }
             if (!consumed) Press(key);
         };
-        border.PointerCaptureLost += (_, _) => { pressed = false; _hold.Stop(); border.Background = LunetTokens.Brush(restColor); };
+        border.PointerCaptureLost += (_, _) => { pressed = false; _hold.Stop(); _bubble.IsVisible = false; border.Background = LunetTokens.Brush(restColor); };
     }
 
     private string? _variantChoice;
+    private const double VariantWidth = 44;
 
     /// <summary>The long-press popup: the key's variants above the keys; slide to choose, lift to type.</summary>
-    public void ShowVariants(KeyDef key)
+    public void ShowVariants(KeyDef key, Control? anchor = null)
     {
         _variants.Children.Clear();
         foreach (var v in key.Variants ?? [])
@@ -308,12 +476,19 @@ public sealed class LunetKeyboard : UserControl
             var text = _shift == ShiftState.Off ? v : v.ToUpperInvariant();
             _variants.Children.Add(new Border
             {
-                Width = 40, Height = 40, CornerRadius = new CornerRadius(LunetTokens.Radius.S), Tag = text,
-                Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay),
-                Child = new TextBlock { Text = text, FontSize = 18, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary) },
+                Width = VariantWidth - 2, Height = 52, CornerRadius = new CornerRadius(LunetTokens.Radius.S), Tag = text,
+                Background = LunetTokens.Brush(LunetTokens.Color.KeyPressed), BoxShadow = LunetTokens.Low,
+                Child = new TextBlock { Text = text, FontFamily = LunetTokens.UiFont, FontSize = 24, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary) },
             });
         }
         _variants.IsVisible = _variants.Children.Count > 0;
+        // Above the pressed key, kept inside the keyboard's width.
+        double width = _variants.Children.Count * VariantWidth;
+        var at = anchor?.TranslatePoint(new Point(0, 0), _overlay) ?? new Point(0, 0);
+        double left = at.X + (anchor?.Bounds.Width ?? 0) / 2 - width / 2;
+        Canvas.SetLeft(_variants, Math.Clamp(left, 0, Math.Max(0, Bounds.Width - width)));
+        Canvas.SetTop(_variants, at.Y - 58);
+        if (_variants.IsVisible) Haptics.KeyTap?.Invoke();
         HighlightVariant(0);
     }
 
@@ -323,8 +498,8 @@ public sealed class LunetKeyboard : UserControl
         for (int i = 0; i < _variants.Children.Count; i++)
         {
             var b = (Border)_variants.Children[i];
-            bool on = x >= i * 42 && x < (i + 1) * 42 || (x < 0 && i == 0) || (x >= _variants.Children.Count * 42 && i == _variants.Children.Count - 1);
-            b.Background = LunetTokens.Brush(on ? LunetTokens.Color.Primary : LunetTokens.Color.SurfaceOverlay);
+            bool on = x >= i * VariantWidth && x < (i + 1) * VariantWidth || (x < 0 && i == 0) || (x >= _variants.Children.Count * VariantWidth && i == _variants.Children.Count - 1);
+            b.Background = LunetTokens.Brush(on ? LunetTokens.Color.Primary : LunetTokens.Color.KeyPressed);
             ((TextBlock)b.Child!).Foreground = LunetTokens.Brush(on ? LunetTokens.Color.OnPrimary : LunetTokens.Color.TextPrimary);
             if (on) _variantChoice = (string)b.Tag!;
         }
@@ -371,11 +546,10 @@ public sealed class LunetKeyboard : UserControl
 
     private void MoveLineEdge(bool start)
     {
-        var text = _target.Text ?? "";
-        var caret = Math.Clamp(_target.CaretIndex, 0, text.Length);
+        var text = _target.Text;
+        var caret = Math.Clamp(_target.Caret, 0, text.Length);
         int pos = start ? (caret == 0 ? 0 : text.LastIndexOf('\n', caret - 1) + 1) : (text.IndexOf('\n', caret) is var n && n >= 0 ? n : text.Length);
-        _target.SelectionStart = _target.SelectionEnd = pos;
-        _target.CaretIndex = pos;
+        _target.Caret = pos;
     }
 
     private Control ShortcutKey(CodeKey key)
@@ -391,21 +565,21 @@ public sealed class LunetKeyboard : UserControl
         Hint(key.Down, HorizontalAlignment.Center, VerticalAlignment.Bottom);
         Hint(key.Left, HorizontalAlignment.Left, VerticalAlignment.Center);
         Hint(key.Right, HorizontalAlignment.Right, VerticalAlignment.Center);
-        var border = new Border { Child = face, Margin = new Thickness(2), CornerRadius = new CornerRadius(LunetTokens.Radius.S), Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised) };
+        var border = new Border { Child = face, Margin = new Thickness(3, 4), CornerRadius = new CornerRadius(LunetTokens.Radius.S), Background = LunetTokens.Brush(LunetTokens.Color.Key) };
         AutomationProperties.SetName(border, key.Tap);
         Point? origin = null;
-        border.PointerPressed += (_, e) => { e.Handled = true; origin = e.GetPosition(border); e.Pointer.Capture(border); border.Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong); };
+        border.PointerPressed += (_, e) => { e.Handled = true; origin = e.GetPosition(border); e.Pointer.Capture(border); border.Background = LunetTokens.Brush(LunetTokens.Color.KeyPressed); Haptics.KeyTap?.Invoke(); };
         border.PointerReleased += (_, e) =>
         {
             e.Handled = true;
-            border.Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised);
+            border.Background = LunetTokens.Brush(LunetTokens.Color.Key);
             if (origin is not { } o) return;
             var p = e.GetPosition(border);
             origin = null;
             e.Pointer.Capture(null);
             Shortcut(key.For(CodeKeys.Resolve(p.X - o.X, p.Y - o.Y)));
         };
-        border.PointerCaptureLost += (_, _) => { origin = null; border.Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised); };
+        border.PointerCaptureLost += (_, _) => { origin = null; border.Background = LunetTokens.Brush(LunetTokens.Color.Key); };
         return border;
     }
 
@@ -413,7 +587,7 @@ public sealed class LunetKeyboard : UserControl
     {
         var b = new Border
         {
-            Margin = new Thickness(2), CornerRadius = new CornerRadius(LunetTokens.Radius.S), Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay),
+            Margin = new Thickness(3, 4), CornerRadius = new CornerRadius(LunetTokens.Radius.S), Background = LunetTokens.Brush(LunetTokens.Color.KeyModifier),
             Child = new TextBlock { Text = label, FontSize = 17, Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
         };
         AutomationProperties.SetName(b, name);

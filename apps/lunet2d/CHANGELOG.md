@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.0.1-dev.1000597 — Um só Lunet, com a interface nova
+
+- O Lunet abre na interface nova, com seus jogos, abas e o teclado próprio da IDE. Ele atualiza por cima do app instalado e encontra os mesmos jogos.
+- Nada some: Jogar, Studios, Aprender, Biblioteca, Explorar e Ajustes ficam na tela inicial. Dentro de um jogo, o botão **Mais** abre IA, Recursos, Notas, Git, Gerar APK e o Editor completo. Essas telas ainda são as anteriores; voltar salva e retorna à interface nova, que já mostra o que mudou.
+- **Código com cores e números de linha:** o editor mostra o C# colorido, a numeração das linhas e a linha do cursor.
+- **Teclado redesenhado:**
+  - Uma faixa no topo com as abas (ícones) e sugestões do que você está digitando: tipos e métodos da API e do seu jogo. Tocar completa, como no Gboard.
+  - Letras maiores em teclas claras, modificadores em teclas escuras e Enter em destaque.
+  - Um balão mostra a tecla tocada; os acentos aparecem acima da tecla quando você segura.
+  - O toque nas teclas vibra levemente.
+- **Erros enquanto você digita:** o código com erro ganha um sublinhado ondulado (vermelho para erro, amarelo para aviso), a barra de topo diz quantos erros há e o painel Problemas lista cada um. Tocar num item leva à linha, sem precisar rodar o jogo.
+- **Sugestões inteligentes:** depois de `.` o teclado sugere os membros reais daquele objeto, e dentro de uma chamada mostra a assinatura com o parâmetro atual entre colchetes.
+- **Paleta de comandos:** a lupa na faixa do teclado (ou Ctrl+Shift+P no computador) abre a paleta.
+  - Comandos: formatar, ir para a definição, ver referências, renomear em todos os arquivos, correções rápidas, comentar, duplicar, mover ou apagar linhas.
+  - Atalhos de busca: `@` mostra a estrutura do arquivo, `:` vai a uma linha, `#` busca no jogo inteiro e `/` busca no arquivo.
+- **IA do jogo na interface nova** (Painéis → IA do jogo):
+  - **Estudar** é o padrão: a IA explica e não mexe em nada. **Fazer** é escolhido para uma mensagem só.
+  - Tudo é salvo antes de enviar. Quando ela altera o jogo, aparecem os arquivos mudados, o diff de cada um e o botão **Desfazer estas alterações**.
+  - Parar cancela de verdade.
+  - A chave é configurada uma vez e vale para o app inteiro.
+- O app separado "Lunet Nova" deixa de existir. Quem o instalou pode desinstalá-lo; os jogos criados nele ficam na pasta dele e não aparecem no Lunet.
+
 ## 0.0.1-dev.1000596 — Teclado próprio da IDE (Lunet Nova)
 
 - No editor de código do celular, o Lunet Nova usa o **teclado próprio da IDE** no lugar do teclado do sistema, com três abas na mesma superfície:

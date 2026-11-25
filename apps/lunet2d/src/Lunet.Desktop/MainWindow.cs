@@ -14,7 +14,13 @@ public sealed class MainWindow : Window
         Title = "Lunet";
         Width = 1280; Height = 800;
         MinWidth = 360; MinHeight = 480;
-        Shell = new LunetShell(projectsRoot) { HardwareKeyboard = true };
+        var ai = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lunet", "ai");
+        Shell = new LunetShell(projectsRoot)
+        {
+            HardwareKeyboard = true,
+            AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
+                new FileSecretVault(Path.Combine(ai, "secrets.json"))), ai),
+        };
         Content = Shell;
         Background = Shell.Background;
         Opened += (_, _) => Shell.Report($"Pronto em {Program.SinceLaunch.ElapsedMilliseconds} ms (partida a frio até a janela) · pasta: {projectsRoot}");

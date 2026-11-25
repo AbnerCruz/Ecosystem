@@ -57,6 +57,8 @@ public sealed class MethodCatalog
         {
             var root = CSharpSyntaxTree.ParseText(text).GetRoot();
             foreach (var type in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+            {
+            members.TryAdd(type.Identifier.Text + "|", new CatalogMember(ProjectNamespace, type.Identifier.Text, type.Identifier.Text, "type", true, [type.Keyword + " " + type.Identifier], ""));
             foreach (var member in type.Members)
             {
                 var (name, kind, signature, isStatic) = member switch
@@ -71,6 +73,7 @@ public sealed class MethodCatalog
                     ? existing with { Signatures = [.. existing.Signatures, signature] }
                     : new CatalogMember(ProjectNamespace, type.Identifier.Text, name, kind, isStatic, [signature], "");
             }
+            }
         }
         _project = members.Values.ToArray();
     }
@@ -82,7 +85,7 @@ public sealed class MethodCatalog
         .Select(ns => new CatalogNamespace(ns.Key, ns
             .GroupBy(m => m.Type)
             .OrderBy(t => t.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(t => new CatalogType(ns.Key, t.Key, t.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToArray()))
+            .Select(t => new CatalogType(ns.Key, t.Key, t.Where(m => m.Kind != "type").OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToArray()))
             .ToArray()))
         .ToArray();
 
@@ -108,6 +111,34 @@ public sealed class MethodCatalog
     }
 
     /// <summary>
+    /// The suggestion strip (Gboard-like, LUNET-537 D2): members whose name starts with <paramref name="prefix"/>
+    /// (ignoring case), one per name; used ones first (more uses, then more recent), then shorter names, then
+    /// alphabetical. Empty prefix: the most used.
+    /// </summary>
+    public IReadOnlyList<CatalogMember> Suggest(string prefix, int max = 8)
+    {
+        if (prefix.Length == 0) return MostUsed().Take(max).ToArray();
+        return All.Where(m => m.Kind != "constructor" && m.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                && !m.Name.Equals(prefix, StringComparison.Ordinal))
+            .GroupBy(m => m.Name, StringComparer.Ordinal)
+            .Select(g => g.OrderByDescending(m => _usage.TryGetValue(m.Key, out var u) ? u.Count : 0).First())
+            .OrderByDescending(m => _usage.TryGetValue(m.Key, out var u) ? u.Count : 0)
+            .ThenByDescending(m => _usage.TryGetValue(m.Key, out var u) ? u.Last : DateTime.MinValue)
+            .ThenBy(m => m.Name.Length)
+            .ThenBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+            .Take(max).ToArray();
+    }
+
+    /// <summary>The identifier being typed right before the caret ("" when none).</summary>
+    public static string WordBefore(string text, int caret)
+    {
+        int i = Math.Clamp(caret, 0, text.Length);
+        int start = i;
+        while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
+        return text[start..i];
+    }
+
+    /// <summary>
     /// The edit that inserts a member at the caret: after a dot only the member; a constructor is <c>new T()</c>;
     /// a static member is qualified by its type (unless declared in the game); methods get <c>()</c> with the caret
     /// inside when they take parameters. No placeholders to delete (study 25/11 §4).
@@ -117,7 +148,8 @@ public sealed class MethodCatalog
         int start = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
         int end = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
         bool afterDot = start > 0 && text[start - 1] == '.';
-        string head = member.Kind == "constructor" ? "new " + member.Type
+        string head = member.Kind == "type" ? member.Name
+            : member.Kind == "constructor" ? "new " + member.Type
             : !afterDot && (member.IsStatic || member.Kind == "enum value") && member.Namespace != ProjectNamespace ? member.Type + "." + member.Name
             : member.Name;
         if (!member.IsCallable) return new(start, end, head, start + head.Length);
@@ -135,6 +167,9 @@ public sealed class MethodCatalog
         {
             var ns = type.GetProperty("namespace").GetString() ?? "";
             var typeName = type.GetProperty("name").GetString() ?? "";
+            // The type itself, for the suggestion strip ("Spri" → SpriteBatch); the tree shows it as a node, not a member.
+            result.Add(new CatalogMember(ns, typeName, typeName, "type", true,
+                [type.GetProperty("signature").GetString() ?? typeName], type.GetProperty("summary").GetString() ?? ""));
             foreach (var group in type.GetProperty("members").EnumerateArray()
                 .Where(m => Kinds.Contains(m.GetProperty("kind").GetString() ?? ""))
                 .GroupBy(m => m.GetProperty("name").GetString() ?? ""))

@@ -17,6 +17,11 @@ public class LunetApp : Application
     {
         RequestedThemeVariant = ThemeVariant.Dark;
         Styles.Add(new FluentTheme());
+        // The code editor's control templates (AvaloniaEdit, LUNET-537 D1).
+        Styles.Add(new Avalonia.Markup.Xaml.Styling.StyleInclude(new Uri("avares://Lunet.Client/"))
+        {
+            Source = new Uri("avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml"),
+        });
         Apply(Resources);
         Styles.Add(PressedAndHover());
     }
