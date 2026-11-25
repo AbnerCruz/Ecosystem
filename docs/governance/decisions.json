@@ -2427,6 +2427,38 @@
       "decidedAt": "2026-11-21",
       "record": "docs/governance/responses/DEC-0067.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0068",
+      "status": "decided",
+      "component": "lunet2d",
+      "blocking": false,
+      "title": "Lunet: desenvolvimento passa para a casca única em Avalonia",
+      "context": "O proprietário enviou em 25/11/2026 o estudo 'Lunet — o que foi pedido, o que foi entregue e o caminho até o potencial real' (24/11): motor sério, experiência de protótipo; 20.783 linhas de Views Android à mão, 191 AlertDialog como navegação, MainActivity parcial em 37 arquivos, desktop como terceiro app Avalonia sem a casca. Recomenda migrar a casca para Avalonia (família com o Numa) com jogo e editor como controles embutidos, em ondas com portões.",
+      "question": "Em que tecnologia de interface o Lunet continua?",
+      "alternatives": [
+        {
+          "option": "A — Casca única em Avalonia (Lunet.Client) para desktop e Android",
+          "consequences": "Uma interface, família visual do Numa, desktop deixa de ser app à parte; casca Android de Views só recebe correções de dados/distribuição até ser substituída."
+        },
+        {
+          "option": "B — Manter Views Android e um desktop separado",
+          "consequences": "Duas interfaces do mesmo produto; mantém as causas apontadas pelo estudo."
+        }
+      ],
+      "consequences": "Trabalho novo de interface só em apps/lunet2d/src/Lunet.Client; Lunet.Desktop vira cabeça da casca; cabeça Android Avalonia é a próxima fatia; Explorar, novos cursos, mapas mentais e novas APIs isoladas congelados até o portão da Onda 2; capturas headless em todo PR de interface (não substituem aparelho).",
+      "manifestCompatibility": "NN-002/NN-003/NN-023: Lunet.Client depende só de bibliotecas do Lunet. NN-005: Framework/Compiler/Runtime/Editor preservados. NN-011: registrada por ADR 0013 do Lunet. NN-022: Ecosystem.Ui não é extraído agora.",
+      "raisedBy": "claude-code-lunet-avalonia",
+      "raisedAt": "2026-11-25",
+      "decision": "A, conforme ordem direta do proprietário nesta conversa ('assume o desenvolvimento em avalonia').",
+      "decidedAt": "2026-11-25",
+      "record": "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md",
+      "related": [
+        "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+        "apps/lunet2d/docs/plans/lunet-casca-avalonia-2026-11-25.md",
+        "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md"
+      ],
+      "consequencesApplied": true
     }
   ]
 }

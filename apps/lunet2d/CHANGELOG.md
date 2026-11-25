@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000594 — Casca nova em Avalonia (fatia 1)
+
+- Nova interface única do Lunet (`Lunet.Client`), usada hoje pelo app de computador: lista de jogos, e dentro de cada jogo as abas Código, Jogo, Arte, Mapa, Som e Notas.
+- O jogo roda dentro da área de trabalho, ao lado do código em telas largas, com pausar, avançar um quadro, parar e velocidade de 0,25× a 2×.
+- Console e Problemas abrem como folha inferior no celular e coluna lateral em tela larga, sem diálogos.
+- O app Android desta versão não muda: a cabeça Android da casca nova é a próxima etapa.
+
 ## Próxima versão — evolução do Framework (candidata, não publicada)
 
 - SpriteBatch: passagem ordenada opt-in, chaves explícitas e estáveis, guarda de passagem e cancelamento; Begin convencional preservado.

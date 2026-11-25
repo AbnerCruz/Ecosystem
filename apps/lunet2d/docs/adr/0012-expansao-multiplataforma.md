@@ -1,7 +1,7 @@
 # ADR 0012 — Expansão multiplataforma do Lunet2D (desktop, navegador, iOS)
 
 **Data:** 2026-11-14
-**Estado:** **Aceito** — o proprietário escolheu a alternativa A em **DEC-0062** (portal, Issue #942, 14/11/2026): spike Avalonia, desktop primeiro; o Android nativo continua a referência e não muda agora. Navegador e iOS seguem dependentes de decisão própria depois do spike.
+**Estado:** **Aceito, substituído em parte pelo [ADR 0013](0013-casca-unica-avalonia.md)** (ADD-0036 / DEC-0068, 25/11/2026: casca única em Avalonia para desktop e Android). Texto original: **Aceito** — o proprietário escolheu a alternativa A em **DEC-0062** (portal, Issue #942, 14/11/2026): spike Avalonia, desktop primeiro; o Android nativo continua a referência e não muda agora. Navegador e iOS seguem dependentes de decisão própria depois do spike.
 **Relacionados:** [ADR 0001](0001-fundacao-android.md), [ADR 0002](0002-modelo-de-compilacao-e-camadas.md), [ADR 0007](0007-framework-ide-studio-code-first.md), diagnóstico `docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md` (C1, C3), estudo [multiplataforma-viabilidade-2026-11-14.md](../architecture/multiplataforma-viabilidade-2026-11-14.md).
 
 ## Contexto

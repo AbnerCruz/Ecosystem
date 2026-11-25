@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    ADR 0013 / DEC-0068 (ADD-0036): the one Lunet shell, in Avalonia, shared by the desktop head and (next) the Android
+    head. Depends only on portable Lunet libraries (NN-002/NN-003).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Lunet.Client</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Lunet.Host/Lunet.Host.csproj" />
+  </ItemGroup>
+</Project>
