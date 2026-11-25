@@ -67,12 +67,14 @@ public class PlatformPortabilityTests
     }
 
     [Fact]
-    public void OnlyTheAndroidHostTargetsAPlatformFramework()
+    public void OnlyTheAndroidHeadsTargetAPlatformFramework()
     {
+        // The two Android heads (ADR 0013): the current Views app and the Avalonia shell head. Everything else is portable.
         var platformProjects = Directory.EnumerateFiles(Src, "*.csproj", SearchOption.AllDirectories)
             .Where(p => XDocument.Load(p).Descendants("TargetFramework").Any(e => Regex.IsMatch(e.Value, @"-(android|ios|windows|browser|macos|maccatalyst)")))
             .Select(Path.GetFileNameWithoutExtension)
+            .Order(StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(["Lunet.Android"], platformProjects);
+        Assert.Equal(["Lunet.Android", "Lunet.Shell.Android"], platformProjects);
     }
 }

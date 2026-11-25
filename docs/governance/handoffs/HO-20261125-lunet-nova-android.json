@@ -1,0 +1,121 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-nova-android",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T10:10:09Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-531",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "1b20fd8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/lunet2d-release.yml",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/Lunet.slnx",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/research/casca-android-avalonia-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/CodeKeys.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/KeyboardFit.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CodeKeyBar.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/src/Lunet.Shell.Android/Lunet.Shell.Android.csproj",
+    "apps/lunet2d/src/Lunet.Shell.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Shell.Android/Resources/drawable/lunet_foreground.xml",
+    "apps/lunet2d/src/Lunet.Shell.Android/Resources/mipmap-anydpi-v26/icon.xml",
+    "apps/lunet2d/src/Lunet.Shell.Android/Resources/values/styles.xml",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PlatformPortabilityTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "apps/lunet2d/tools/make-release-files.sh",
+    "docs/governance/handoffs/HO-20261125-lunet-nova-android.json"
+  ],
+  "work_completed": [
+    "Researched before implementing (owner's order): Avalonia Android insets/InputPane/IME issues, Numa's device-learned keyboard rule, Godot Android editor and mobile code editor feedback, Unexpected Keyboard swipe model; recorded in apps/lunet2d/docs/research/casca-android-avalonia-2026-11-25.md.",
+    "Added the Android head 'Lunet Nova' (src/Lunet.Shell.Android, io.lunet.studio.shell) hosting LunetShell, signed with the stable development key, installable next to io.lunet.studio.",
+    "Added KeyboardFit (cover only edge-to-edge windows, 220 ms close grace) wired to InputPane/InsetsManager; tabs and bottom sheet step aside while typing.",
+    "Added the swipe code bar (CodeKeys/CodeKeyBar): 10 keys of 48 dp, ~30 symbols, structural brace block, pairs, arrows and Tab as single edits.",
+    "Release pipeline builds, verifies and attaches Lunet-Nova-<version>-arm64.apk; the emulator stage installs it on Android 13, measures cold start and runs a game created and compiled inside the shell."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite Debug and Release (1247 tests)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Lunet Nova arm64 and x64 APKs build locally; signature equals the stable dev key",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Shell.Android/Lunet.Shell.Android.csproj"
+    },
+    {
+      "check": "Lunet Nova on the Android 13 emulator (install, cold start, game in the shell)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "apps/lunet2d/tools/ci-android-shell.sh"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a physical device: IME PT-BR accents, 60 FPS and cold start under 1.5 s on the moto g32 remain to be measured.",
+    "Lunet Nova keeps its own projects (app storage); projects of the current app are not visible there yet (next: ZIP import).",
+    "The code surface is still the provisional Avalonia TextBox (LUNET-533).",
+    "No AOT: Roslyn loads games by reflection, same as the current app; cold start may be slow."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "LUNET-533 own code view over PieceTable",
+    "Import projects exported (ZIP) by the current app into Lunet Nova",
+    "Measure cold start and frame time from the CI emulator run and on device"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Lunet.Shell.Android references only Lunet.Client; Numa's keyboard rule was re-implemented, not referenced."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Only Lunet's VERSION/VERSION_CODE changed (1000595)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulator and headless results are reported as automated; no device claim."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "The new APK installs standalone; no Hub dependency."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "keyboard-fit",
+      "status": "possible-candidate",
+      "rationale": "Same rule as Numa's MainView.KeyboardCover; a shared Ecosystem.Ui would hold it (LUNET-532 review)."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
