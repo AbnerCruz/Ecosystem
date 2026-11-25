@@ -50,6 +50,9 @@ public sealed class LunetShell : UserControl
     /// </summary>
     public string LearningProgressPath { get; set; }
 
+    /// <summary>Plays a game full screen (P4); the Android head runs it in its own process. Null: it runs in the workspace.</summary>
+    public Action<string>? PlayGame { get; set; }
+
     /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
     public string LibraryPath { get; set; }
     public ShellState State { get; } = new();

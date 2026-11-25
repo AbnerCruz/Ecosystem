@@ -61,6 +61,8 @@ public sealed class ShellActivity : AvaloniaActivity
             LearningProgressPath = Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"),
             // A6: the same Biblioteca as the previous screen (MainActivity.AssetLibrary).
             LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
+            // P4: the game runs full screen in the :gameplay process, prepared by the existing pipeline.
+            PlayGame = game => OpenRoute("play-game", game),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
         };

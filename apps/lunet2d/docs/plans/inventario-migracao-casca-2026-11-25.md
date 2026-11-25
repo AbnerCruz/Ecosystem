@@ -41,7 +41,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Pasta de projetos e cópia compartilhada (SAF), revisões ZIP | `HomeView.ExportZip`/`ImportZip` (seletor do sistema); pasta compartilhada em `MainActivity.ProjectFolder` | exportar/importar ZIP **casca**; pasta compartilhada rota (Ajustes) | **P1**: a pasta compartilhada e as revisões, junto com Ajustes (P7). |
 | Notas, esboços e mapas mentais | `MainActivity.Notes`/`MindMap`/`Attachments` | Notas em texto na casca; mapas por rota | **P2**: mapas mentais e anexos na aba Notas. |
 | Aprender (trilhas, missões, manual offline) | `DocsView` + `DocsLibrary`; `LearnView` sobre `LearningCatalog`/`LearningProgressStore` (mesmo `learning/progress.json`) | **casca** (P3) | Próximo: pista da IA por objetivo (modo Estudar) dentro do desafio. |
-| Jogar (Launcher, saves por jogo) | `MainActivity.GameLauncher`, `GameplayActivity` | rota | **P4**: grade Jogar na casca; o jogo continua no processo `:gameplay`. |
+| Jogar (Launcher, saves por jogo) | `PlayView` na casca; preparo e `GameplayActivity` pela rota `play-game` | **casca** (P4) | Próximo: "jogado em" e saves por jogo na grade. |
 | Gerar APK offline e assinatura | `MainActivity.GameBuild`, `AndroidGameApkSigner` | rota | **P5**: Gerar APK na casca com ícone do jogo e compartilhar. |
 | Git (commit, histórico, remoto) | `GitPanel`, `Lunet.Git` | rota | **P6**. |
 | Explorar referências | `MainActivity.Inspiration*` | rota | Congelado até o portão da Onda 2 (estudo de 24/11). |

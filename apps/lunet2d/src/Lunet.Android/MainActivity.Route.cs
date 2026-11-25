@@ -15,12 +15,14 @@ public sealed partial class MainActivity
 
     /// <summary>The routes the shell can open (the screens still served by this activity).</summary>
     public static readonly IReadOnlyList<string> Routes =
-        ["studios", "learn", "explore", "play", "library", "settings", "ai", "git", "assets", "notes", "apk", "editor"];
+        ["studios", "learn", "explore", "play", "play-game", "library", "settings", "ai", "git", "assets", "notes", "apk", "editor"];
 
     private bool _fromShell;
     // A route whose screen is a dialog (Biblioteca, Gerar APK, Ajustes): nothing of the previous Home shows behind it, and
     // closing the last dialog returns to the shell.
     private bool _routeIsDialog;
+    // P4: the shell's Jogar page asked to play one game: prepare it here, show it, then return to the shell.
+    private bool _playFromShell;
 
     /// <summary>Starts this activity on a route, reusing the running instance (no stack of copies).</summary>
     public static Intent RouteIntent(global::Android.Content.Context context, string route, string? project)
@@ -56,7 +58,8 @@ public sealed partial class MainActivity
                 OpenProject(project);
             }
             _routeIsDialog = route is "library" or "apk" or "settings";
-            if (_routeIsDialog)
+            _playFromShell = route == "play-game";
+            if (_routeIsDialog || _playFromShell)
             {
                 var plain = new global::Android.Views.View(this);
                 plain.SetBackgroundColor(LunetUi.Background);
@@ -68,6 +71,11 @@ public sealed partial class MainActivity
                 case "learn": ShowLearning(); break;
                 case "explore": OpenInspirationExplorer(); break;
                 case "play": ShowGameLauncher(); break;
+                case "play-game":
+                    LoadProjectFolder();
+                    RefreshLauncherCatalog();
+                    if (project is not null) PlayFromLauncher(project); else LeaveToShell();
+                    break;
                 case "library": ShowReusableAssetLibrary(); break;
                 case "settings": ShowSettings(); break;
                 case "ai": if (_project is not null) ShowAiAssistant(); else ShowWorkspaceAi(); break;

@@ -464,9 +464,8 @@ public sealed class LunetClientTests
                 shell.OpenRoute = (r, p) => routes.Add((r, p));
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 // The bottom bar: Jogar and Studios route; Mais lists Biblioteca, Explorar and Ajustes.
-                shell.Home.Go(HomeView.Destination.Play);
                 shell.Home.Go(HomeView.Destination.Studios);
-                Assert.Equal(["play", "studios"], routes.Select(r => r.Route));
+                Assert.Equal(["studios"], routes.Select(r => r.Route));
                 shell.Home.Go(HomeView.Destination.More);
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 foreach (var route in new[] { "library", "explore", "settings" })

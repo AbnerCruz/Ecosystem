@@ -20,6 +20,7 @@
   - **Publicar** em três passos: o jogo, o arquivo, e nome e licença.
   - Usar num jogo nunca sobrescreve: se o jogo já tem um arquivo com o mesmo nome, nada é copiado e a tela diz qual arquivo é.
   - É a mesma biblioteca da tela anterior; nada se perde.
+- **Jogar na interface nova:** seus jogos em grade, com o `Content/icon.png` de cada um ou a inicial. Um toque abre o jogo em tela cheia, como antes, e sair dele volta aqui. No computador, Jogar abre o jogo rodando no espaço de trabalho.
 - **Sem interface antiga por baixo:**
   - Jogar, Studios, Explorar e o Editor completo, abertos pela tela inicial, aparecem sozinhos, sem a barra de navegação antiga. Voltar retorna à tela nova.
   - Biblioteca, Gerar APK e Ajustes abrem sobre um fundo neutro, e fechar a janela volta à tela nova.

@@ -99,9 +99,9 @@ public sealed class HomeView : UserControl
     private void BuildNav()
     {
         var items = new List<(Destination Destination, string Label, string Icon)> { (Destination.Games, "Jogos", LunetIcons.Game), (Destination.Learn, "Aprender", LunetIcons.Book) };
+        items.Add((Destination.Play, "Jogar", LunetIcons.Play));
         if (_shell.OpenRoute is not null)
         {
-            items.Add((Destination.Play, "Jogar", LunetIcons.Play));
             items.Add((Destination.Studios, "Studios", LunetIcons.Art));
             items.Add((Destination.More, "Mais", LunetIcons.More));
         }
@@ -125,7 +125,7 @@ public sealed class HomeView : UserControl
         {
             case Destination.Games: CloseOverlay(); break;
             case Destination.Learn: ShowLearn(); break;
-            case Destination.Play: _shell.OpenRoute?.Invoke("play", null); break;
+            case Destination.Play: ShowPlay(); break;
             case Destination.Studios: _shell.OpenRoute?.Invoke("studios", null); break;
             case Destination.More: ShowMore(); break;
             case Destination.Library: ShowLibrary(); break;
@@ -337,6 +337,7 @@ public sealed class HomeView : UserControl
         if (Sheet is null) return false;
         if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
         if (Sheet is LibraryView library) return library.Back();
+        if (Sheet is PlayView) return CloseOverlay();
         return CloseOverlay();
     }
 
@@ -390,6 +391,17 @@ public sealed class HomeView : UserControl
         Sheet = learn;
         Select(Destination.Learn);
         return learn;
+    }
+
+    /// <summary>Jogar, full screen over the Home (P4).</summary>
+    public PlayView ShowPlay()
+    {
+        _overlay.Children.Clear();
+        var play = new PlayView(_shell, () => CloseOverlay());
+        _overlay.Children.Add(play);
+        Sheet = play;
+        Select(Destination.Play);
+        return play;
     }
 
     /// <summary>The Biblioteca, full screen over the Home (Back walks its pages, then closes it).</summary>

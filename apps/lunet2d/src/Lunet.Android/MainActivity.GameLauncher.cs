@@ -149,7 +149,7 @@ public sealed partial class MainActivity
         AlertDialog? dialog = null;
         try
         {
-            ShowGameLauncher();
+            if (!_playFromShell) ShowGameLauncher(); // from the shell, nothing of the previous Jogar shows behind
             var id = expectedId ?? LauncherId(folderName);
             var resolved = LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, id);
             if (id is null || resolved is null)
@@ -200,7 +200,7 @@ public sealed partial class MainActivity
             StartActivityForResult(intent, GameplayActivity.RequestCode);
             transferred = true;
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException) { if (_playFromShell) { _playFromShell = false; LeaveToShell(); } }
         catch (Exception ex)
         {
             global::Android.Util.Log.Error("Lunet.Gameplay", ex.ToString());
@@ -220,6 +220,14 @@ public sealed partial class MainActivity
 
     private void ShowGameplayError(string? folder, string message)
     {
+        if (_playFromShell)
+        {
+            // Closing the message returns to the shell (the dialog-route rule); the shell's game page can fix it.
+            _routeIsDialog = true;
+            new AlertDialog.Builder(this)!.SetTitle("Não foi possível jogar")!.SetMessage(message)!
+                .SetPositiveButton("Fechar", (_, _) => { })!.Show();
+            return;
+        }
         var dialog = new AlertDialog.Builder(this)!.SetTitle("Não foi possível jogar")!
             .SetMessage(message)!.SetNegativeButton("Fechar", (_, _) => { })!;
         if (folder is not null && _store.List().Contains(folder, StringComparer.Ordinal))
@@ -240,7 +248,8 @@ public sealed partial class MainActivity
             catch (IOException ex) { global::Android.Util.Log.Warn("Lunet.Gameplay", ex.Message); }
             catch (UnauthorizedAccessException ex) { global::Android.Util.Log.Warn("Lunet.Gameplay", ex.Message); }
         }
-        ShowGameLauncher();
+        if (_playFromShell && result == Result.Ok) { _playFromShell = false; LeaveToShell(); return; }
+        if (!_playFromShell) ShowGameLauncher();
         folder = gameId is not null ? LauncherProjectCatalog.UniqueNameForId(_launcherCatalog, gameId) : folder;
         if (result != Result.Ok)
             ShowGameplayError(folder, data?.GetStringExtra(GameplayActivity.ErrorExtra) ??

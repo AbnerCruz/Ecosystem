@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Lunet.Client;
+using Lunet.Client.Shell;
 using Lunet.Core;
 
 namespace Lunet.Tests;
@@ -46,6 +47,41 @@ public sealed class LunetClientLibraryTests
                 Assert.Equal("list", library.Showing);
                 Assert.True(shell.Back());                 // list → closes the Biblioteca
                 Assert.Null(shell.Home.Sheet);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}
+
+/// <summary>P4: Jogar in the shell.</summary>
+public sealed class LunetClientPlayTests
+{
+    [Fact]
+    public void Play_ListsTheGames_AndPlaysThroughTheHead_OrInTheWorkspace()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-play-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.Workspace.Store.Create("Nave");
+                var played = new List<string>();
+                shell.PlayGame = played.Add;
+                var play = shell.Home.ShowPlay();
+                Assert.Equal(["Nave"], play.Games);
+                play.Play("Nave");
+                Assert.Equal(["Nave"], played);                       // Android: full screen in its own process
+                Assert.Equal(ShellLevel.Home, shell.State.Level);
+
+                shell.PlayGame = null;                                 // desktop: runs in the workspace
+                play.Play("Nave");
+                Assert.Equal(ShellLevel.Workspace, shell.State.Level);
+                Assert.Null(shell.Home.Sheet);
+                shell.StopGame();
                 window.Close();
             });
         }
