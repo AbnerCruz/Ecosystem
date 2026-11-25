@@ -28,5 +28,6 @@
     <ProjectReference Include="../Lunet.Ai/Lunet.Ai.csproj" />
     <ProjectReference Include="../Lunet.Docs/Lunet.Docs.csproj" />
     <ProjectReference Include="../Lunet.Studio/Lunet.Studio.csproj" />
+    <ProjectReference Include="../Lunet.Git/Lunet.Git.csproj" />
   </ItemGroup>
 </Project>

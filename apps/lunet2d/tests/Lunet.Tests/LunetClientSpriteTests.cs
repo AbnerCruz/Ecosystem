@@ -270,3 +270,44 @@ public sealed class LunetClientMusicTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>P6: Versões (Git) in the shell.</summary>
+public sealed class LunetClientGitTests
+{
+    [Fact]
+    public void Versions_StartHistory_ShowChanges_SaveAVersion_AndListIt()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-git-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var git = shell.WorkspaceView.OpenGit();
+                Assert.False(git.IsRepository);
+                git.Start();
+                Assert.True(git.IsRepository);
+                var dir = shell.Workspace.Project!.Directory;
+                Assert.Contains(".lunet/", File.ReadAllText(Path.Combine(dir, ".gitignore")));
+
+                var first = git.SaveVersion("Primeira versão", "Pessoa", "pessoa@example.com");
+                Assert.NotNull(first);
+                var repo = Lunet.Git.GitRepository.Open(dir);
+                Assert.Equal("Primeira versão", repo.Log(5)[0].Summary);
+                Assert.DoesNotContain(repo.GetStatus(), s => s.Unstaged != Lunet.Git.FileChange.None);  // everything went in
+                Assert.Equal("Pessoa", repo.Config.Get("user", null, "name"));
+
+                File.AppendAllText(Path.Combine(dir, shell.Workspace.Project.Manifest.EntryPoint), "\n// mudança");
+                git.Refresh();
+                Assert.Contains(repo.GetStatus(), s => s.Unstaged == Lunet.Git.FileChange.Modified);
+                Assert.True(shell.Back());
+                Assert.Null(shell.WorkspaceView.Studio);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

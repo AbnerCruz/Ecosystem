@@ -136,6 +136,15 @@ public sealed class WorkspaceView : UserControl
 
     public MindMapView NewMindMap() => OpenMindMap(MindMapView.NewPath(_shell));
 
+    /// <summary>Opens Versões (Git) of the game (P6).</summary>
+    public GitView OpenGit()
+    {
+        var view = new GitView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
     /// <summary>Opens the Music Studio (A3).</summary>
     public MusicStudioView OpenMusic(string path)
     {
@@ -170,6 +179,7 @@ public sealed class WorkspaceView : UserControl
         SoundStudioView sound => sound.Close(),
         MindMapView mind => mind.Close(),
         MusicStudioView music => music.Close(),
+        GitView git => git.Close(),
         _ => false,
     };
 

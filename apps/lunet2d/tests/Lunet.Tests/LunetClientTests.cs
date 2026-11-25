@@ -477,9 +477,9 @@ public sealed class LunetClientTests
                 var entry = shell.Workspace.Project!.Manifest.EntryPoint;
                 shell.State.ShowPanel(SupportPanel.More);
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                var git = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Git");
-                git.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                Assert.Equal(("git", (string?)shell.State.Project), routes.Last());
+                var apk = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Gerar APK");
+                apk.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal(("apk", (string?)shell.State.Project), routes.Last());
 
                 // The routed screen (e.g. the AI) edits the game on disk; back in the shell the editor shows it.
                 File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// editado pela IA");

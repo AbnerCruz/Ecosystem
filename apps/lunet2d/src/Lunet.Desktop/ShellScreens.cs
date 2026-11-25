@@ -151,6 +151,13 @@ public static class ShellScreens
                 shell.WorkspaceView.NewMusic();
                 Shot(window, output, size, "8f-musica", written);
                 shell.Back();
+                var versions = shell.WorkspaceView.OpenGit();
+                versions.Start();
+                versions.SaveVersion("Primeira versão jogável", "Lunet", "lunet@example.com");
+                File.AppendAllText(Path.Combine(shell.Workspace.Project!.Directory, shell.Workspace.Project.Manifest.EntryPoint), "\n// próximo passo");
+                versions.Refresh();
+                Shot(window, output, size, "9-versoes", written);
+                shell.Back();
                 shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();

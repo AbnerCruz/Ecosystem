@@ -26,6 +26,12 @@
   - Piano roll do padrão e da faixa escolhidos: tocar cria ou tira uma nota, e arrastar pinta várias. As notas da escala ficam destacadas, e as das outras faixas aparecem clarinhas.
   - Embaixo ficam as faixas, os padrões (novo, duplicar), o andamento e os botões **Padrão** e **Música** para ouvir.
   - Voltar salva o `.song.json` e o `.wav` juntos.
+- **Versões (Git) na interface nova** (⋮ → Versões):
+  - **Começar o histórico** cria o repositório com a lista de pastas ignoradas.
+  - Mostra o que mudou desde a última versão; tocar num arquivo mostra a diferença.
+  - Uma frase e **Salvar versão** guardam tudo. O nome e o e-mail de quem assina são pedidos uma vez e ficam guardados no jogo.
+  - A lista de versões mostra, para cada uma, os arquivos que mudaram.
+  - Enviar e receber de um remoto (GitHub e outros) abre a tela própria, onde ficam os tokens.
 - **Mapas mentais nas Notas** (Notas → Novo mapa mental):
   - Os mapas aparecem como uma lista de tópicos recuados, fácil de ler e editar no celular.
   - Tocar no texto edita; Enter cria o próximo tópico. **+** cria um tópico dentro. A seta recolhe um ramo.

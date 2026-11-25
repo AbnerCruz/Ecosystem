@@ -127,7 +127,13 @@ public sealed class SupportPanelView : UserControl
             list.Children.Add(b);
         }
         if (_shell.OpenRoute is not null) list.Children.Add(LunetUi.Divider());
-        foreach (var (route, label, icon) in _shell.OpenRoute is null ? [] : LunetShell.GameRoutes)
+        // P6: Versões (Git) lives in the shell; the other tools still open the previous screens.
+        var versions = LunetUi.Button("Versões (Git)", ButtonKind.Ghost, LunetIcons.Folder, () => { _shell.State.ShowPanel(SupportPanel.None); _shell.WorkspaceView.OpenGit(); });
+        versions.HorizontalAlignment = HorizontalAlignment.Stretch;
+        versions.HorizontalContentAlignment = HorizontalAlignment.Left;
+        versions.Name = "OpenGit";
+        list.Children.Add(versions);
+        foreach (var (route, label, icon) in _shell.OpenRoute is null ? [] : LunetShell.GameRoutes.Where(r => r.Route != "git"))
         {
             var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => _shell.OpenRoute?.Invoke(route, _shell.State.Project));
             b.HorizontalAlignment = HorizontalAlignment.Stretch;
