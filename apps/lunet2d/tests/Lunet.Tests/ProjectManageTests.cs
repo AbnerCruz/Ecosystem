@@ -161,6 +161,37 @@ public sealed class ProjectManageTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void Shell_ExportsAZipThatImportsBackAsANewGame_SavingTheOpenOneFirst()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var name = shell.State.Project!;
+                shell.WorkspaceView.Code.Surface.Text = "// editado antes de exportar\n" + shell.WorkspaceView.Code.Surface.Text;
+                using var zip = new MemoryStream();
+                shell.ExportProjectZip(name, zip); // not saved yet: export saves the open game first
+                zip.Position = 0;
+                var imported = shell.ImportProjectZip(zip);
+                Assert.NotEqual(name, imported);
+                var copy = shell.Workspace.Store.Open(imported);
+                Assert.StartsWith("// editado antes de exportar", copy.ReadText(copy.Manifest.EntryPoint));
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                shell.GoHome();
+                Assert.Contains(imported, shell.Home.Shown);
+                Assert.Throws<Lunet.Core.ProjectException>(() => shell.ImportProjectZip(new MemoryStream([1, 2, 3])));
+                window.Close();
+            });
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private static T Find<T>(Control root, string name) where T : Control =>
         root.GetLogicalDescendants().OfType<T>().First(c => c.Name == name);
 
