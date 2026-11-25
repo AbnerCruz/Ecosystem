@@ -4,6 +4,12 @@
 
 - O Lunet abre na interface nova, com seus jogos, abas e o teclado próprio da IDE. Ele atualiza por cima do app instalado e encontra os mesmos jogos.
 - Nada some: Jogar, Studios, Aprender, Biblioteca, Explorar e Ajustes ficam na tela inicial. Dentro de um jogo, o botão **Mais** abre IA, Recursos, Notas, Git, Gerar APK e o Editor completo. Essas telas ainda são as anteriores; voltar salva e retorna à interface nova, que já mostra o que mudou.
+- **Código com cores e números de linha:** o editor mostra o C# colorido, a numeração das linhas e a linha do cursor.
+- **Teclado redesenhado:**
+  - Uma faixa no topo com as abas (ícones) e sugestões do que você está digitando: tipos e métodos da API e do seu jogo. Tocar completa, como no Gboard.
+  - Letras maiores em teclas claras, modificadores em teclas escuras e Enter em destaque.
+  - Um balão mostra a tecla tocada; os acentos aparecem acima da tecla quando você segura.
+  - O toque nas teclas vibra levemente.
 - O app separado "Lunet Nova" deixa de existir. Quem o instalou pode desinstalá-lo; os jogos criados nele ficam na pasta dele e não aparecem no Lunet.
 
 ## 0.0.1-dev.1000596 — Teclado próprio da IDE (Lunet Nova)

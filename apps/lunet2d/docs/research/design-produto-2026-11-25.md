@@ -23,7 +23,7 @@ Analisando as capturas do celular (412×915) e de tela larga, por ordem de impac
 
 ## 2. Referências e medidas
 
-- **Família visual (obrigatória):** princípios P1–P13 do Numa ([UX.md](../../../urbe/docs/csharp/UX.md)), que o estudo de 24/11 manda virar regra do Ecosystem.
+- **Família visual (obrigatória):** princípios P1–P13 do documento de UX do Numa, que o estudo de 24/11 manda virar regra do Ecosystem.
   - P1: resposta em menos de 100 ms.
   - P3: nada de modal no fluxo.
   - P4: o polegar manda, alvos ≥ 48 dp.

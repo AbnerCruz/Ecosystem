@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-design-d1-d2",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T11:23:13Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-537",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "392c30b",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1042",
+  "files_changed": [
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/research/design-produto-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/Lunet.Client.csproj",
+    "apps/lunet2d/src/Lunet.Client/LunetApp.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/MethodCatalog.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetTokens.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LunetKeyboard.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-design-d1-d2.json"
+  ],
+  "work_completed": [
+    "Design study (owner: 'design still amateur, study more'): critique of current captures, Material 3/Gboard/LatinIME/AOSP references and measurable decisions D1–D7 in apps/lunet2d/docs/research/design-produto-2026-11-25.md.",
+    "D1: code editor is AvaloniaEdit 12.0.0 (MIT) — line numbers, C# highlighting recoloured for the dark theme, caret line; IME off on the TextArea, the Lunet keyboard edits the Document (one undo step). Notes keep a TextBox with the system keyboard.",
+    "D2: keyboard redesigned — one 44 dp strip with icon tabs and suggestions for the word being typed (API + game types and members), letter keys vs modifier keys, accent Enter, preview bubble, accents above the key on hold, 50 dp rows.",
+    "D7: haptic hooks (KeyboardTap, Confirm) wired in ShellActivity."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1257 tests, incl. editor, suggestions, keyboard contrast)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Headless captures at phone width",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a physical device: key feel, bubble timing, haptics and AvaloniaEdit touch selection.",
+    "D3–D6 pending."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "D3 top bar, D4 M3 tab bar, D5 Home, D6 tonal surfaces",
+    "LUNET-536 feature inventory and migration"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Numa's UX principles cited, not referenced as code."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Headless captures reported as automated only."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
