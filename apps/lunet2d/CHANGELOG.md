@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000604 — Jogo e código ao alcance do polegar
+
+- **Rodar** flutua no canto de baixo do código e das notas, onde o polegar alcança. Some enquanto você digita. No computador continua no alto.
+- Os controles do jogo descem para baixo: pausar, avançar um quadro, parar, Inspector, Desempenho e a velocidade. A velocidade virou um botão só: cada toque passa para a próxima (0,25×, 0,5×, 1×, 2×).
+- O tempo por quadro aparece no canto do jogo, sem disputar espaço com os botões.
+- A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.
+
 ## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta
 
 - **A digitação é do teclado do sistema.** O teclado próprio do Lunet saiu: a digitação estava lenta demais.

@@ -1,0 +1,66 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-workspace-polegar",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T22:57:42Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "b443ba1",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/src/Lunet.Client/Views/GameView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-workspace-polegar.json"
+  ],
+  "work_completed": [
+    "Workspace for the thumb (owner 25/11, mobile first): Rodar/Parar as a floating button bottom-right on phones (top bar on wide screens), hidden while typing; game controls moved to a bottom bar with a single cycling speed chip; frame time in the stage corner; the bar has four tabs (Código, Jogo, Recursos, Notas), Recursos groups art, maps and sounds and opens the Studios."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1279 tests)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Headless captures celular 3-codigo, 4-jogo, 8-arte",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Studios A1–A5 in the shell, Gerar APK (P5), Git (P6), Notas e mapas mentais (P2), M5 GL preview"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

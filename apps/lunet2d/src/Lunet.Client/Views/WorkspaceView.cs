@@ -18,9 +18,8 @@ public sealed class WorkspaceView : UserControl
     [
         (WorkspaceTab.Code, LunetIcons.Code, "Código"),
         (WorkspaceTab.Game, LunetIcons.Game, "Jogo"),
-        (WorkspaceTab.Art, LunetIcons.Art, "Arte"),
-        (WorkspaceTab.Map, LunetIcons.Map, "Mapa"),
-        (WorkspaceTab.Sound, LunetIcons.Sound, "Som"),
+        // Arte, Mapa and Som are one tab on the bar (Material: at most five destinations); their views stay.
+        (WorkspaceTab.Art, LunetIcons.Art, "Recursos"),
         (WorkspaceTab.Notes, LunetIcons.Notes, "Notas"),
     ];
 
@@ -45,6 +44,7 @@ public sealed class WorkspaceView : UserControl
     {
         _keyboardOpen = open;
         if (_tabBar is not null) _tabBar.IsVisible = !open;
+        if (_runFab is not null) _runFab.IsVisible = !open;
         if (_sheet is not null) _sheet.IsVisible = !open;
     }
 
@@ -97,6 +97,7 @@ public sealed class WorkspaceView : UserControl
     public void Rebuild()
     {
         _tabBar = _sheet = null;
+        _runFab = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
         _code.Relayout();
         _notes.Relayout();
@@ -156,7 +157,7 @@ public sealed class WorkspaceView : UserControl
                 sheet.IsVisible = !_keyboardOpen;
                 root.Children.Add(sheet);
             }
-            root.Children.Add(Body(expanded));
+            root.Children.Add(WithRunButton(Body(expanded)));
         }
         _support.Refresh();
         Content = root;
@@ -164,7 +165,7 @@ public sealed class WorkspaceView : UserControl
 
     private bool IsSelected(WorkspaceTab tab) => _shell.State.CodeAndGameSideBySide
         ? tab is WorkspaceTab.Code or WorkspaceTab.Game
-        : _shell.State.Tab == tab;
+        : _shell.State.Tab == tab || (tab == WorkspaceTab.Art && _shell.State.Tab is WorkspaceTab.Map or WorkspaceTab.Sound);
 
     private Control Body(bool expanded)
     {
@@ -187,6 +188,30 @@ public sealed class WorkspaceView : UserControl
             _ => AssetsView(state.Tab),
         };
     }
+
+    /// <summary>
+    /// On a phone, Rodar (or Parar) floats bottom-right over the code, where the thumb rests (Material FAB); the game
+    /// tab has its own controls at the bottom. Hidden while typing: the code bar's Atalhos has the palette.
+    /// </summary>
+    private Control WithRunButton(Control body)
+    {
+        var state = _shell.State;
+        if (state.Tab is not (WorkspaceTab.Code or WorkspaceTab.Notes) || _keyboardOpen) return body;
+        var running = _shell.Game.State is GameState.Running or GameState.Paused;
+        var run = running
+            ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
+            : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
+        run.Name = "RunButton";
+        run.MinHeight = 56;
+        run.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
+        run.HorizontalAlignment = HorizontalAlignment.Right;
+        run.VerticalAlignment = VerticalAlignment.Bottom;
+        run.Margin = new Thickness(LunetTokens.Space.M);
+        _runFab = run;
+        return new Grid { Children = { body, run } };
+    }
+
+    private Button? _runFab;
 
     private Control TopBar()
     {
@@ -215,13 +240,17 @@ public sealed class WorkspaceView : UserControl
             actions.Children.Add(host);
         }
         else actions.Children.Add(panels);
-        var running = _shell.Game.State is GameState.Running or GameState.Paused;
-        var run = running
-            ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
-            : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
-        run.Name = "RunButton";
-        run.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
-        actions.Children.Add(run);
+        // Wide screens keep Rodar in the top bar (pointer, both hands); phones float it at the bottom.
+        if (_shell.State.Layout == ShellLayout.Expanded)
+        {
+            var running = _shell.Game.State is GameState.Running or GameState.Paused;
+            var run = running
+                ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
+                : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
+            run.Name = "RunButton";
+            run.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
+            actions.Children.Add(run);
+        }
         DockPanel.SetDock(actions, Dock.Right);
         bar.Children.Add(actions);
         _title.Margin = new Thickness(0);
@@ -246,6 +275,7 @@ public sealed class WorkspaceView : UserControl
 
     private Control AssetsView(WorkspaceTab tab)
     {
+        if (tab == WorkspaceTab.Art) return ResourcesView();
         var files = ProjectFiles.For(tab, _shell.Workspace.Files());
         var (icon, title, studio) = tab switch
         {
@@ -265,6 +295,38 @@ public sealed class WorkspaceView : UserControl
             var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
             row.Children.Add(name);
             list.Children.Add(row);
+        }
+        return new ScrollViewer { Content = list };
+    }
+
+    /// <summary>Recursos: the game's art, maps and sounds in one place, with the Studios one tap away.</summary>
+    private Control ResourcesView()
+    {
+        var all = _shell.Workspace.Files();
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.Xl) };
+        list.Children.Add(LunetUi.Title("Recursos"));
+        list.Children.Add(LunetUi.Secondary("Arte, mapas e sons deste jogo. Os Studios ainda abrem na tela anterior; os arquivos são os mesmos."));
+        if (_shell.OpenRoute is { } route)
+        {
+            var studios = LunetUi.Button("Abrir os Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
+            studios.HorizontalAlignment = HorizontalAlignment.Left;
+            list.Children.Add(studios);
+        }
+        foreach (var (group, icon, label) in new[] { (WorkspaceTab.Art, LunetIcons.Art, "Arte"), (WorkspaceTab.Map, LunetIcons.Map, "Mapas"), (WorkspaceTab.Sound, LunetIcons.Sound, "Sons") })
+        {
+            var files = ProjectFiles.For(group, all);
+            var heading = LunetUi.Text($"{label.ToUpperInvariant()} · {files.Count}", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+            heading.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
+            list.Children.Add(heading);
+            if (files.Count == 0) list.Children.Add(LunetUi.Text("Nada ainda.", LunetTokens.Type.Label, LunetTokens.Color.TextTertiary));
+            foreach (var f in files)
+            {
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, MinHeight = LunetTokens.MinTouch };
+                row.Children.Add(LunetIcons.Create(icon, LunetTokens.Color.TextSecondary));
+                var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
+                row.Children.Add(name);
+                list.Children.Add(row);
+            }
         }
         return new ScrollViewer { Content = list };
     }

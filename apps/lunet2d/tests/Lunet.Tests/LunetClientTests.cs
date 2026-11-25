@@ -603,7 +603,7 @@ public sealed class LunetClientTests
                 Assert.All(bar, b => Assert.True(b.Bounds.Height >= LunetTokens.MinTouch - 0.5));
                 // D4: M3 navigation items are 64 dp tall.
                 var tabs = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("lunet-tab")).ToArray();
-                Assert.Equal(6, tabs.Length);
+                Assert.Equal(4, tabs.Length); // Código, Jogo, Recursos, Notas (Material: at most five)
                 Assert.All(tabs, t => Assert.True(t.Bounds.Height >= 64));
                 shell.GoHome();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
