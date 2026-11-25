@@ -7,7 +7,7 @@ public enum ShellLevel { Home, Workspace }
 public enum WorkspaceTab { Code, Game, Art, Map, Sound, Notes }
 
 /// <summary>Support panels: a bottom sheet on a phone, a side column on a wide screen. Never a modal dialog.</summary>
-public enum SupportPanel { None, Console, Problems, More, Commands, Ai, Inspector, Performance }
+public enum SupportPanel { None, Console, Problems, More, Commands, Ai, Inspector, Performance, Docs }
 
 /// <summary>How the workspace is laid out for the current width (Material 3 canonical layouts: compact vs. expanded).</summary>
 public enum ShellLayout { Compact, Expanded }

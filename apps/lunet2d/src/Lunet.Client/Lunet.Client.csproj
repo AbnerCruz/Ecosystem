@@ -17,10 +17,15 @@
   <ItemGroup>
     <!-- The "Métodos" tab reads the generated API catalog (kept current by DocsTests); never a hand-written list. -->
     <EmbeddedResource Include="../../docs/api/lunet-framework.json" LogicalName="lunet/api.json" />
+    <!-- P3: the offline manual and guides, the same set the previous Android screens ship (internal guides excluded). -->
+    <EmbeddedResource Include="../../docs/guides/*.md" Exclude="../../docs/guides/primeiros-passos.md;../../docs/guides/loop-e-tempo.md;../../docs/guides/offline-game-apk.md;../../docs/guides/end-to-end-journey.md;../../docs/guides/game-apk-signing-regression.md;../../docs/guides/game-apk-smoke.md;../../docs/guides/gate-framework-advanced.md;../../docs/guides/validacao-studios-icones.md;../../docs/guides/f2-home-continuity-gameid.md;../../docs/guides/f2-workspace.md;../../docs/guides/f3-ai-workspace.md;../../docs/guides/f4-editor-keyboard.md;../../docs/guides/profiler-preview.md;../../docs/guides/networking-foundation.md" LogicalName="lunet/guides/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../docs/manual/*.md" LogicalName="lunet/guides/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../docs/manual/catalog.json" LogicalName="lunet/manual-catalog.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Lunet.Host/Lunet.Host.csproj" />
     <ProjectReference Include="../Lunet.Editor/Lunet.Editor.csproj" />
     <ProjectReference Include="../Lunet.Ai/Lunet.Ai.csproj" />
+    <ProjectReference Include="../Lunet.Docs/Lunet.Docs.csproj" />
   </ItemGroup>
 </Project>
