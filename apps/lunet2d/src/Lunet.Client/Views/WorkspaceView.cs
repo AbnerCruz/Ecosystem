@@ -145,6 +145,15 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens the game's palette (A5).</summary>
+    public PaletteView OpenPalette()
+    {
+        var view = new PaletteView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
     /// <summary>Opens the particles Studio (A5).</summary>
     public ParticleStudioView OpenParticles(string path)
     {
@@ -192,6 +201,7 @@ public sealed class WorkspaceView : UserControl
         MusicStudioView music => music.Close(),
         GitView git => git.Close(),
         ParticleStudioView particles => particles.Close(),
+        PaletteView palette => palette.Close(),
         _ => false,
     };
 
@@ -435,6 +445,10 @@ public sealed class WorkspaceView : UserControl
         newParticles.Name = "NewParticles";
         newParticles.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
         actions.Children.Add(newParticles);
+        var palette = LunetUi.Button("Paleta do jogo", ButtonKind.Secondary, LunetIcons.Art, () => OpenPalette());
+        palette.Name = "OpenPalette";
+        palette.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
+        actions.Children.Add(palette);
         if (_shell.OpenRoute is { } route)
         {
             var studios = LunetUi.Button("Outros Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));

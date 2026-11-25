@@ -115,6 +115,7 @@ public sealed class SpriteStudioView : UserControl
         Document = File.Exists(Path.Combine(shell.Workspace.Project.Directory, path))
             ? SpriteDocument.Parse(_storage.ReadText(path)) : SpriteDocument.Create(16);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        if (PaletteView.Load(shell) is { Colors.Count: > 0 } palette) GamePalette = palette.Argb;
         _canvas.Paint += Paint;
         _canvas.StrokeEnded += () => { Refresh(frames: true); };
         // Two fingers mean zoom: the dot the first finger left is taken back.
@@ -156,6 +157,9 @@ public sealed class SpriteStudioView : UserControl
     }
 
     public SpriteDocument Document { get; private set; }
+
+    /// <summary>The colours offered: the game's palette when it has one, else <see cref="Palette"/>.</summary>
+    public IReadOnlyList<uint> GamePalette { get; private set; } = Palette;
 
     /// <summary>The canvas (zoom and pan).</summary>
     public PixelCanvas Canvas => _canvas;
@@ -294,7 +298,8 @@ public sealed class SpriteStudioView : UserControl
         current.Click += (_, _) => TogglePicker();
         _colors.Children.Add(current);
         _colors.Children.Add(new Border { Width = 1, Height = 24, Margin = new Thickness(2, 0), Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong), VerticalAlignment = VerticalAlignment.Center });
-        foreach (var c in Palette)
+        // The game's palette (Assets/palette.json) when it has one; else the starter colours.
+        foreach (var c in GamePalette)
         {
             var selected = c == Color && Tool is SpriteTool.Pencil or SpriteTool.Fill;
             var swatch = new Button

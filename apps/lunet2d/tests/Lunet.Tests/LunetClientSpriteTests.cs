@@ -343,3 +343,45 @@ public sealed class LunetClientParticleTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>A5: the game's palette in the shell, used by the Sprite Studio.</summary>
+public sealed class LunetClientPaletteTests
+{
+    [Fact]
+    public void Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-palette-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var sprite = shell.WorkspaceView.NewSprite();
+                sprite.SelectColor(0xFF123456);
+                sprite.Paint(0, 0, first: true);
+                shell.Back();
+
+                var palette = shell.WorkspaceView.OpenPalette();
+                palette.UsePreset("neon");
+                Assert.Equal(8, palette.Palette.Colors.Count);
+                Assert.True(palette.AddColors(Lunet.Studio.ProjectPalette.Ramp(0xFFFF2E88, 5)) > 0);
+                Assert.True(palette.ExtractFromArt() >= 1);                       // the sprite's colour
+                Assert.Contains(palette.Palette.Colors, c => c.Argb == 0xFF123456);
+                var count = palette.Palette.Colors.Count;
+                palette.Remove(0);
+                Assert.Equal(count - 1, palette.Palette.Colors.Count);
+                var saved = Lunet.Studio.ProjectPalette.Parse(shell.Workspace.Project!.ReadText(Lunet.Studio.ProjectPalette.DefaultPath));
+                Assert.Equal(count - 1, saved.Colors.Count);
+                shell.Back();
+
+                var again = shell.WorkspaceView.OpenSprite("Content/Textures/sprite-1.sprite.json");
+                Assert.Equal(saved.Argb, again.GamePalette);                       // the Sprite Studio offers the game's colours
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

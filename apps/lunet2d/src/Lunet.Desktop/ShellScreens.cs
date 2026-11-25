@@ -162,6 +162,11 @@ public static class ShellScreens
                 for (var i = 0; i < 20; i++) fx.Step(0.033);
                 Shot(window, output, size, "8g-particulas", written);
                 shell.Back();
+                var pal = shell.WorkspaceView.OpenPalette();
+                pal.UsePreset("floresta");
+                pal.AddColors(Lunet.Studio.ProjectPalette.Ramp(0xFF8CC152, 5));
+                Shot(window, output, size, "8h-paleta", written);
+                shell.Back();
                 shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();

@@ -37,6 +37,10 @@
   - Comece de um modelo pronto e ajuste quantidade, explosão, velocidade, direção, abertura, gravidade, vida, tamanhos, cores do começo e do fim, e brilho somado.
   - Tocar na prévia solta uma explosão naquele ponto.
   - Voltar salva o `.particles.json`.
+- **Paleta do jogo na interface nova** (Recursos → Paleta do jogo):
+  - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
+  - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
+  - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
 - **Mapas mentais nas Notas** (Notas → Novo mapa mental):
   - Os mapas aparecem como uma lista de tópicos recuados, fácil de ler e editar no celular.
   - Tocar no texto edita; Enter cria o próximo tópico. **+** cria um tópico dentro. A seta recolhe um ramo.
