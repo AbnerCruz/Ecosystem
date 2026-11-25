@@ -145,6 +145,7 @@ public sealed class CommandPaletteView : UserControl
         {
             yield return new("Formatar documento", "Arruma indentação e espaços do arquivo", () => { EditWhole(CodeFormatter.Format(Code!.Text)); Close(); });
             yield return new("Ir para definição", "Onde o símbolo sob o cursor foi declarado", () => _ = GoToDefinition());
+            yield return new("Documentação do símbolo", "A página do que está sob o cursor, sem internet", () => _ = SymbolDocs());
             yield return new("Encontrar referências", "Todos os usos do símbolo sob o cursor", () => _ = References());
             yield return new("Renomear símbolo…", "Em todos os arquivos do jogo", AskRename);
             yield return new("Correções rápidas", "Sugestões para o erro sob o cursor", () => _ = QuickFixes());
@@ -162,6 +163,7 @@ public sealed class CommandPaletteView : UserControl
         }
         yield return new("Rodar o jogo", "F5", () => { Close(false); _shell.RunGame(); });
         yield return new("Parar o jogo", "", () => { Close(false); _shell.StopGame(); });
+        yield return new("Documentação", "Manual, guias e referência da API", () => _shell.State.ShowPanel(SupportPanel.Docs));
         yield return new("Console", "O que o jogo escreveu", () => _shell.State.ShowPanel(SupportPanel.Console));
         yield return new("Problemas", "Erros e avisos do código", () => _shell.State.ShowPanel(SupportPanel.Problems));
         yield return _shell.PreferSystemKeyboard
@@ -206,6 +208,20 @@ public sealed class CommandPaletteView : UserControl
         if (location is null) { ShowResults("Definição", []); return; }
         Close();
         OpenAt(location.FilePath, location.Line, location.Column);
+    }
+
+    /// <summary>Opens the documentation of the symbol under the caret (the API's own page, or a search by its name).</summary>
+    private async Task SymbolDocs()
+    {
+        if (_shell.Assistant is null || Code is not { } code) return;
+        var caret = code.Caret;
+        var path = Path!;
+        var hover = await Analyze(a => a.GetHover(path, caret) ?? (caret > 0 ? a.GetHover(path, caret - 1) : null));
+        if (hover is null) { ShowResults("Nenhum símbolo sob o cursor", []); return; }
+        var name = code.Text.Substring(hover.Start, hover.Length);
+        Close(false);
+        _shell.State.ShowPanel(SupportPanel.Docs);
+        _shell.WorkspaceView.Support.Docs.OpenSymbol(hover.DocumentationId, name);
     }
 
     private async Task References()

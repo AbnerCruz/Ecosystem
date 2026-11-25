@@ -1,0 +1,78 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-docs-casca",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T16:54:11Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "e20cece",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/Lunet.Client.csproj",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/DocsLibrary.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CommandPaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocsView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientDocsTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-docs-casca.json"
+  ],
+  "work_completed": [
+    "P3 (part): offline documentation panel in the shell (DocsView over the existing DocumentationBrowser): manual categories, guides, API reference, search, back/home, copyable code; the manual, guides and API JSON embedded in Lunet.Client with the same exclusions as the Android assets; loaded in the background after a game opens.",
+    "Palette: 'Documentação do símbolo' opens the API page of the symbol under the caret (Roslyn documentation id via GetHover), or a search by its name; 'Documentação' opens the panel."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1275 tests) incl. LunetClientDocsTests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientDocsTests.cs"
+    },
+    {
+      "check": "Headless captures celular/largo 5d-docs and 5e-docs-simbolo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "Learning tracks and missions (Aprender) are still routed.",
+    "The documentation is embedded twice in the APK (Android assets for the previous screens and client resources) until those screens are retired.",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "P3 learning tracks, P7 settings and shared folder, M5 embedded GL preview, A1–A6 Studios"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

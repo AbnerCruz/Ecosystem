@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000602 — Documentação ao lado do código
+
+- **Painéis → Documentação** abre o manual offline dentro do jogo: tutoriais, tarefas, conceitos e a referência de cada tipo e membro do Lunet, com busca e botão de voltar.
+- Na paleta de comandos, **Documentação do símbolo** abre a página do que está sob o cursor. Por exemplo, com o cursor em `SpriteBatch`, abre a página do `SpriteBatch`; se não houver página, faz uma busca pelo nome.
+- Os exemplos de código têm o botão **Copiar**.
+- O painel lembra a página aberta quando você o fecha e abre de novo.
+
 ## 0.0.1-dev.1000601 — Exportar e importar jogos em ZIP
 
 - No **⋮** de cada jogo, **Exportar ZIP** salva o jogo onde você escolher: Drive, Downloads ou outro app de arquivos, pelo seletor do sistema. O jogo aberto é salvo antes.

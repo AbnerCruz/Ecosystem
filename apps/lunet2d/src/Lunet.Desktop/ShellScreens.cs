@@ -82,6 +82,11 @@ public static class ShellScreens
                 Shot(window, output, size, "5b-inspector", written);
                 shell.State.ShowPanel(SupportPanel.Performance);
                 Shot(window, output, size, "5c-desempenho", written);
+                shell.State.ShowPanel(SupportPanel.Docs);
+                shell.WorkspaceView.Support.Docs.Navigate("home");
+                Shot(window, output, size, "5d-docs", written);
+                shell.WorkspaceView.Support.Docs.OpenSymbol("T:Lunet.Graphics.SpriteBatch", "SpriteBatch");
+                Shot(window, output, size, "5e-docs-simbolo", written);
                 shell.StopGame();
                 shell.WorkspaceView.Code.Surface.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
                 shell.RunGame();

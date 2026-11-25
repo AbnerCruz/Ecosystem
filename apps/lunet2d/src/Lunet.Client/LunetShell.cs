@@ -155,6 +155,7 @@ public sealed class LunetShell : UserControl
         _ = Assistant.LoadProjectAsync(project.ListFiles().Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
             .Select(f => (f, project.ReadText(f))).ToArray());
         State.OpenProject(name);
+        _ = DocsLibrary.WarmUpAsync(); // after the game opens, never on the cold start path
         _workspaceView.Load();
         Render();
     }
