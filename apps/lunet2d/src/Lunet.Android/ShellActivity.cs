@@ -36,6 +36,9 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        // AvaloniaActivity.OnCreate requires a running Avalonia app, even when this screen only forwards a request.
+        if (Avalonia.Application.Current is null)
+            AppBuilder.Configure<AndroidLunetApp>().UseAndroid().SetupWithoutStarting();
 #if LUNET_UI_DEMO
         // tools/ci-ui-screens.sh captures the screens still served by MainActivity: forward its demo requests there.
         if (Intent?.GetStringExtra("lunet.demo") is { Length: > 0 })
@@ -48,8 +51,6 @@ public sealed class ShellActivity : AvaloniaActivity
             return;
         }
 #endif
-        if (Avalonia.Application.Current is null)
-            AppBuilder.Configure<AndroidLunetApp>().UseAndroid().SetupWithoutStarting();
         base.OnCreate(savedInstanceState);
         _shell = new LunetShell(ProjectsRoot(this)) { OpenRoute = OpenRoute };
         Content = _shell;
