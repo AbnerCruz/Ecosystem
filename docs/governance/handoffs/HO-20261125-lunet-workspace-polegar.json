@@ -40,7 +40,8 @@
     "apps/lunet2d/src/Lunet.Client/Views/GitView.cs",
     "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
     "apps/lunet2d/src/Lunet.Client/Views/ParticleStudioView.cs",
-    "apps/lunet2d/src/Lunet.Client/Views/PaletteView.cs"
+    "apps/lunet2d/src/Lunet.Client/Views/PaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DataView.cs"
   ],
   "work_completed": [
     "Workspace for the thumb (owner 25/11, mobile first): Rodar/Parar as a floating button bottom-right on phones (top bar on wide screens), hidden while typing; game controls moved to a bottom bar with a single cycling speed chip; frame time in the stage corner; the bar has four tabs (Código, Jogo, Recursos, Notas), Recursos groups art, maps and sounds and opens the Studios.",
@@ -52,7 +53,8 @@
     "A3 Music Studio in the shell, first slice (MusicStudioView over MusicSong/MusicRenderer): new songs from Starter, piano roll per pattern and track (scale lit, other tracks faint, drag keeps add/remove), starting fitted to the height on phones, tracks and patterns (new, duplicate), tempo, play pattern or song; Voltar saves .song.json and .wav together.",
     "P6 Versões (Git) in the shell (GitView over Lunet.Git): start history with the ignore list, changes with diff, save a version (stage all + commit, signer kept in the repo config), versions list with changed files; remote send/receive still opens the previous Git screen (tokens in the device vault).",
     "A5 particles Studio in the shell (ParticleStudioView over ParticleDraft/ParticlePresets): live preview with the game's ParticleEmitter on a software GraphicsDevice, presets, main knobs, start/end colours, additive glow, tap-to-burst; Voltar saves the .particles.json the game loads.",
-    "A5 game palette in the shell (PaletteView over ProjectPalette, Assets/palette.json): presets, extract from the game's sprites, add by hex, ramp and harmonies from a selected colour, remove; saved at once; the Sprite Studio offers the game's palette."
+    "A5 game palette in the shell (PaletteView over ProjectPalette, Assets/palette.json): presets, extract from the game's sprites, add by hex, ramp and harmonies from a selected colour, remove; saved at once; the Sprite Studio offers the game's palette.",
+    "A5 Data Studio in the shell (DataView over DataTable, Content/Data): records as cards on the phone, a record as a form with a typed editor per column (text, numeric keyboard, switch, choice), rejected values show the reason and are not written; new record as a thumb FAB; duplicate/remove records; add/remove columns; table problems on top; .json and .schema.json written together; Back goes record → list → workspace."
   ],
   "verification": [
     {
@@ -76,7 +78,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Studios A1–A5 in the shell, Gerar APK (P5), Git (P6), Notas e mapas mentais (P2), M5 GL preview"
+    "Sprite layers and selection, Tile autotile/layer management, Music note length/instruments/mixer/arrangement in the shell; Git remote; Gerar APK inside the shell; M5 GL preview"
   ],
   "decisions_required": [],
   "normative_sources": [

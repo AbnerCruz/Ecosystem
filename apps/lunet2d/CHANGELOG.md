@@ -41,6 +41,12 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Tabelas de dados na interface nova** (Recursos → Nova tabela, ou uma tabela em `Content/Data`):
+  - No celular, cada registro vira um cartão. Tocar abre um formulário com um campo por coluna: texto, número com teclado numérico, sim/não com chave, escolha com lista.
+  - Valor inválido não é gravado, e o motivo aparece embaixo do campo.
+  - **Novo registro** fica ao alcance do polegar. O registro aberto tem Duplicar e Apagar.
+  - Dá para adicionar e remover colunas. Os problemas da tabela aparecem no topo.
+  - Cada mudança grava o `.json` e o `.schema.json` juntos. Voltar sai do registro para a lista.
 - **Mapas mentais nas Notas** (Notas → Novo mapa mental):
   - Os mapas aparecem como uma lista de tópicos recuados, fácil de ler e editar no celular.
   - Tocar no texto edita; Enter cria o próximo tópico. **+** cria um tópico dentro. A seta recolhe um ramo.

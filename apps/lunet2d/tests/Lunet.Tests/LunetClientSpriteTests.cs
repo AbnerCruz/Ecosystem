@@ -384,4 +384,53 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-data-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var data = shell.WorkspaceView.NewData("Inimigos");
+                Assert.Same(data, shell.WorkspaceView.Studio);
+                Assert.Single(data.Table.Rows);
+                Assert.Null(data.SetField(0, "id", "slime"));
+                Assert.Null(data.SetField(0, "nome", "Slime"));
+                data.AddColumn("vida", Lunet.Studio.Data.DataColumnType.Integer);
+                Assert.NotNull(data.SetField(0, "vida", "muito"));             // rejected, with the reason
+                Assert.Null(data.SetField(0, "vida", "12"));
+                var copy = data.DuplicateRecord(0);
+                Assert.Equal(1, copy);
+                Assert.Equal(1, data.Record);
+                Assert.Null(data.SetField(1, "id", "morcego"));
+                Assert.True(shell.Back());                                     // record → list
+                Assert.Null(data.Record);
+                Assert.Same(data, shell.WorkspaceView.Studio);
+
+                var path = "Content/Data/inimigos.json";
+                Assert.True(DataView.IsTable(path));
+                var project = shell.Workspace.Project!;
+                var saved = Lunet.Studio.Data.DataTable.Parse(project.ReadText(path), project.ReadText(DataView.SchemaPath(path)));
+                Assert.Equal(2, saved.Rows.Count);
+                Assert.Equal("12", saved.Display(0, "vida"));
+                Assert.Equal("morcego", saved.Display(1, "id"));
+                data.RemoveRecord(1);
+                data.RemoveColumn("vida");
+                shell.Back();
+                Assert.Null(shell.WorkspaceView.Studio);
+
+                var reopened = shell.WorkspaceView.OpenData(path);
+                Assert.Single(reopened.Table.Rows);
+                Assert.DoesNotContain(reopened.Table.Columns, c => c.Name == "vida");
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }
