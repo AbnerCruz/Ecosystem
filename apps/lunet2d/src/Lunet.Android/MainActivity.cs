@@ -21,7 +21,7 @@ using AndroidUri = Android.Net.Uri;
 
 namespace Lunet.Android;
 
-[Activity(Label = "Lunet", MainLauncher = true, Exported = true, Theme = "@android:style/Theme.DeviceDefault.NoActionBar",
+[Activity(Label = "Lunet", MainLauncher = false, Exported = true, Theme = "@android:style/Theme.DeviceDefault.NoActionBar",
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation | global::Android.Content.PM.ConfigChanges.ScreenSize |
                            global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout | global::Android.Content.PM.ConfigChanges.UiMode,
     WindowSoftInputMode = SoftInput.AdjustResize)]
@@ -91,7 +91,8 @@ public sealed partial class MainActivity : Activity
             _launcherPositions[section] = savedInstanceState?.GetInt("scroll-" + section) ?? 0;
         RestoreLauncherSection();
         _folderPickerFromSetup = savedInstanceState?.GetBoolean("folderPickerFromSetup") ?? false;
-        if (_settings.FirstUseStep < 3 && !_folderPickerFromSetup && !IsUiDemo()) ShowFirstUse();
+        if (IsRouted(Intent)) Route(Intent!);
+        else if (_settings.FirstUseStep < 3 && !_folderPickerFromSetup && !IsUiDemo()) ShowFirstUse();
 #if LUNET_UI_DEMO
         RunDemo(Intent);
 #endif
@@ -1572,6 +1573,7 @@ public sealed partial class MainActivity : Activity
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && DismissEditorHelp()) { }
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
+        else if (_fromShell) LeaveToShell(); // ADR 0013: routed from the shell, Back returns to it
         else if (_project is not null) ReturnToLauncherOrigin();
         else if (_backFromLauncherChild is { } back) back();
         else if (_globalChatVisible || _inspirationOpen || _launcherSection != "home") ShowHome();

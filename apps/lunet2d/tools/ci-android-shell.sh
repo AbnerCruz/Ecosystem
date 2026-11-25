@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# LUNET-531: the Avalonia shell ("Lunet Nova") on the CI emulator (Android 13, x86_64). Runs in ONE shell, since
+# ADR 0013: Lunet (entry = the Avalonia shell) on the CI emulator (Android 13, x86_64). Runs in ONE shell, since
 # android-emulator-runner runs each 'script:' line separately. Emulator evidence, not a device test (ADD-0035).
 set -euo pipefail
 
 out=apps/lunet2d/dist/shell
-apk="$out/lunet-nova-x64.apk"
-package=io.lunet.studio.shell
+apk="$out/lunet-x64.apk"
+package=io.lunet.studio
 test -s "$apk"
 aapt="$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)"
 activity="$("$aapt" dump badging "$apk" | sed -n "s/^launchable-activity: name='\([^']*\)'.*/\1/p" | head -n1)"
@@ -19,7 +19,7 @@ adb logcat -c
 adb shell am start -W -n "$package/$activity" | tee "$out/android-launch.txt"
 grep -q 'Status: ok' "$out/android-launch.txt"
 sleep 6
-adb shell pidof "$package" | grep -q '[0-9]' || { adb logcat -d | tail -n 150; echo 'Lunet Nova fechou ao abrir'; exit 1; }
+adb shell pidof "$package" | grep -q '[0-9]' || { adb logcat -d | tail -n 150; echo 'Lunet fechou ao abrir'; exit 1; }
 adb shell screencap -p /sdcard/shell-home.png
 adb pull /sdcard/shell-home.png "$out/android-shell-home.png"
 adb shell am force-stop "$package"
@@ -56,4 +56,4 @@ adb pull /sdcard/shell-keyboard.png "$out/android-shell-keyboard.png"
 adb shell dumpsys input_method | grep -E 'mInputShown|mIsInputViewShown' > "$out/android-ime.txt" || true
 grep -q 'lunet-e2e.*teclado=visivel ime=off texto=// ola' "$out/android-logcat.txt" || { echo 'Teclado Lunet: estado inesperado'; exit 1; }
 adb shell am force-stop "$package"
-echo "Lunet Nova: instalado, aberto ($(grep TotalTime "$out/android-launch.txt" | tr -d '\r')), jogo criado, compilado e rodando no Android 13 (emulador)."
+echo "Lunet: instalado, aberto ($(grep TotalTime "$out/android-launch.txt" | tr -d '\r')), jogo criado, compilado e rodando no Android 13 (emulador)."

@@ -73,6 +73,14 @@ public sealed class WorkspaceView : UserControl
         Rebuild();
     }
 
+    /// <summary>Reloads the open documents from disk (another screen may have changed them); unsaved edits here win.</summary>
+    public void ReloadFromDisk()
+    {
+        if (!_code.IsDirty) _code.Load(_code.OpenPath);
+        if (!_notes.IsDirty) _notes.Load(_notes.OpenPath);
+        Rebuild();
+    }
+
     /// <summary>Saves every open document (before running, leaving or closing). Verified write, never memory-only.</summary>
     public void SaveAll()
     {
@@ -184,6 +192,9 @@ public sealed class WorkspaceView : UserControl
         actions.Children.Add(LunetUi.IconButton(LunetIcons.Problems, problems > 0 ? $"Problemas ({problems})" : "Problemas",
             () => _shell.State.TogglePanel(SupportPanel.Problems),
             problems > 0 ? LunetTokens.Color.Danger : _shell.State.Panel == SupportPanel.Problems ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary));
+        if (_shell.OpenRoute is not null)
+            actions.Children.Add(LunetUi.IconButton(LunetIcons.Plus, "Mais", () => _shell.State.TogglePanel(SupportPanel.More),
+                _shell.State.Panel == SupportPanel.More ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary));
         var running = _shell.Game.State is GameState.Running or GameState.Paused;
         var run = running
             ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())

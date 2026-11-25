@@ -50,7 +50,7 @@ public sealed class SupportPanelView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel == SupportPanel.Console ? "Console" : "Problemas");
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Mais", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -64,8 +64,23 @@ public sealed class SupportPanelView : UserControl
             root.Children.Add(_consoleScroll);
             _consoleScroll.ScrollToEnd();
         }
+        else if (panel == SupportPanel.More) root.Children.Add(More());
         else root.Children.Add(Problems());
         Content = root;
+    }
+
+    /// <summary>The game's other tools, opened through the shell's route (same game, saved before leaving).</summary>
+    private Control More()
+    {
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.M) };
+        foreach (var (route, label, icon) in LunetShell.GameRoutes)
+        {
+            var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => _shell.OpenRoute?.Invoke(route, _shell.State.Project));
+            b.HorizontalAlignment = HorizontalAlignment.Stretch;
+            b.HorizontalContentAlignment = HorizontalAlignment.Left;
+            list.Children.Add(b);
+        }
+        return new ScrollViewer { Content = list };
     }
 
     private Control Problems()

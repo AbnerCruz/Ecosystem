@@ -455,6 +455,48 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void Shell_RoutesToTheScreensNotMovedYet_AndReloadsWhatTheyChanged()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var routes = new List<(string Route, string? Project)>();
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Route-studios"); // no routes on desktop
+                shell.OpenRoute = (r, p) => routes.Add((r, p));
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                foreach (var (route, _, _) in LunetShell.HomeRoutes)
+                    Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Route-" + route);
+
+                shell.CreateProject();
+                var entry = shell.Workspace.Project!.Manifest.EntryPoint;
+                shell.State.ShowPanel(SupportPanel.More);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var git = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Git");
+                git.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal(("git", (string?)shell.State.Project), routes.Last());
+
+                // The routed screen (e.g. the AI) edits the game on disk; back in the shell the editor shows it.
+                File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// editado pela IA");
+                shell.ReturnedFromRoute();
+                Assert.Equal("// editado pela IA", shell.WorkspaceView.Code.TextBox.Text);
+
+                // Unsaved edits made in the shell are never overwritten by a reload.
+                shell.WorkspaceView.Code.TextBox.Text = "// meu texto";
+                File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// outro");
+                shell.ReturnedFromRoute();
+                Assert.Equal("// meu texto", shell.WorkspaceView.Code.TextBox.Text);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     private static int CountRed(Avalonia.Media.Imaging.Bitmap frame)
     {
         var w = frame.PixelSize.Width; var h = frame.PixelSize.Height;

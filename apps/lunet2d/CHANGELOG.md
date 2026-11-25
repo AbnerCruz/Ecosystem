@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.1-dev.1000597 — Um só Lunet, com a interface nova
+
+- O Lunet abre na interface nova, com seus jogos, abas e o teclado próprio da IDE. Ele atualiza por cima do app instalado e encontra os mesmos jogos.
+- Nada some: Jogar, Studios, Aprender, Biblioteca, Explorar e Ajustes ficam na tela inicial. Dentro de um jogo, o botão **Mais** abre IA, Recursos, Notas, Git, Gerar APK e o Editor completo. Essas telas ainda são as anteriores; voltar salva e retorna à interface nova, que já mostra o que mudou.
+- O app separado "Lunet Nova" deixa de existir. Quem o instalou pode desinstalá-lo; os jogos criados nele ficam na pasta dele e não aparecem no Lunet.
+
 ## 0.0.1-dev.1000596 — Teclado próprio da IDE (Lunet Nova)
 
 - No editor de código do celular, o Lunet Nova usa o **teclado próprio da IDE** no lugar do teclado do sistema, com três abas na mesma superfície:

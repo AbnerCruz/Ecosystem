@@ -71,6 +71,43 @@ public sealed class LunetShell : UserControl
     /// <summary>The last message the shell had to tell you (a failed save, a failed open); also in the Console.</summary>
     public string? LastReport { get; private set; }
 
+    /// <summary>
+    /// Opens a screen the shell does not serve yet (the Android head routes it to the current screens, over the same
+    /// projects). Null on heads that have no such screens: the shell then hides those destinations.
+    /// </summary>
+    public Action<string, string?>? OpenRoute
+    {
+        get => _openRoute;
+        set { _openRoute = value; _home.Build(); }
+    }
+    private Action<string, string?>? _openRoute;
+
+    /// <summary>Destinations of the Home served by <see cref="OpenRoute"/> (route, label, icon).</summary>
+    public static readonly IReadOnlyList<(string Route, string Label, string Icon)> HomeRoutes =
+    [
+        ("play", "Jogar", Ui.LunetIcons.Play), ("studios", "Studios", Ui.LunetIcons.Art), ("learn", "Aprender", Ui.LunetIcons.Notes),
+        ("library", "Biblioteca", Ui.LunetIcons.Folder), ("explore", "Explorar", Ui.LunetIcons.Map), ("settings", "Ajustes", Ui.LunetIcons.Speed),
+    ];
+
+    /// <summary>What the "Mais" panel of a game opens through <see cref="OpenRoute"/> (route, label, icon).</summary>
+    public static readonly IReadOnlyList<(string Route, string Label, string Icon)> GameRoutes =
+    [
+        ("ai", "IA do jogo", Ui.LunetIcons.Code), ("assets", "Recursos e Studios", Ui.LunetIcons.Art), ("notes", "Notas e mapas mentais", Ui.LunetIcons.Notes),
+        ("git", "Git", Ui.LunetIcons.Folder), ("apk", "Gerar APK", Ui.LunetIcons.Game), ("editor", "Editor completo", Ui.LunetIcons.File),
+    ];
+
+    /// <summary>Back from a routed screen: re-read the games (and the open documents, when not edited here).</summary>
+    public void ReturnedFromRoute()
+    {
+        _home.Refresh();
+        if (State.Level == ShellLevel.Workspace && Workspace.Project is not null && State.Project is { } name)
+        {
+            if (!Workspace.Projects().Contains(name)) { State.GoHome(); return; }
+            Workspace.Open(name);
+            _workspaceView.ReloadFromDisk();
+        }
+    }
+
     public void Report(string message)
     {
         LastReport = message;

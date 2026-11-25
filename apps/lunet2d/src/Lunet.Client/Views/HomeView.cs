@@ -19,6 +19,15 @@ public sealed class HomeView : UserControl
     public HomeView(LunetShell shell)
     {
         _shell = shell;
+        Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        Build();
+    }
+
+    /// <summary>Lays the Home out (again when the head sets <see cref="LunetShell.OpenRoute"/>).</summary>
+    public void Build()
+    {
+        var shell = _shell;
+        if (_grid.Parent is Panel old) old.Children.Remove(_grid);
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, LunetTokens.Space.L) };
         var create = LunetUi.Button("Novo jogo", ButtonKind.Primary, LunetIcons.Plus, () => _shell.CreateProject());
         create.Name = "NewProject";
@@ -34,10 +43,28 @@ public sealed class HomeView : UserControl
 
         var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L) };
         content.Children.Add(header);
+        if (shell.OpenRoute is not null) content.Children.Add(Destinations());
         content.Children.Add(_grid);
         Content = new ScrollViewer { Content = content };
-        Background = LunetTokens.Brush(LunetTokens.Color.Background);
         Refresh();
+    }
+
+    /// <summary>Where else to go from the Home (Jogar, Studios, Aprender…), one row that scrolls sideways.</summary>
+    private Control Destinations()
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+        foreach (var (route, label, icon) in LunetShell.HomeRoutes)
+        {
+            var b = LunetUi.Button(label, ButtonKind.Secondary, icon, () => _shell.OpenRoute?.Invoke(route, null));
+            b.Name = "Route-" + route;
+            row.Children.Add(b);
+        }
+        return new ScrollViewer
+        {
+            Content = row, Margin = new Thickness(0, 0, 0, LunetTokens.Space.L),
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        };
     }
 
     /// <summary>The project names currently shown, in order (for tests and screen readers).</summary>

@@ -891,3 +891,8 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Ordem do proprietário no PR #1040: teclado próprio da IDE com três abas (Teclas · Atalhos · Métodos), substituindo o IME do sistema na edição de código. Confirmado no chat e no PR. Estudo antes do código: `docs/research/teclado-nativo-ide-2026-11-25.md`.
 - Chave técnica: `InputMethod.IsInputMethodEnabled = false` no editor (fonte do Avalonia: sem cliente, `HideSoftInputFromWindow`; teclas físicas seguem como `TextInput`).
 - Evidência do PR #1040 no emulador Android 13 do CI: Lunet Nova abriu em 4.674 ms (TotalTime) e rodou um jogo (143 quadros, 0 problemas). Próximo: LUNET-535 (partida) e LUNET-533 (view de código própria).
+
+### 20261125-claude-lunet-um-so — 25/11/2026 — Claude → próximos agentes — LUNET-531/536/537
+- Ordem do proprietário: "esquece esse lance de Lunet Novo, Lunet é Lunet"; design ainda amador (teclado e app); não parar até todas as features implementadas; tudo no GitHub; sempre estudar e pesquisar.
+- Feito: `Lunet.Android` abre pela casca (`ShellActivity`, AvaloniaActivity com init sob demanda; a fonte do Avalonia mostra que `AvaloniaAndroidApplication` iniciaria o Avalonia também nos processos `:gameplay`/`:preview`). Rotas para as telas atuais (`MainActivity.Route.cs`), mesmos jogos, Back volta salvando. `Lunet.Shell.Android` removido.
+- Próximo: estudo de design (LUNET-537) e migração recurso a recurso (LUNET-536), começando pelo inventário.
