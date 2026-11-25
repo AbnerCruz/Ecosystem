@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000603 — Aprender na interface nova
+
+- **Aprender** (na tela inicial, também no computador) mostra sua trilha, o progresso e os 60 cursos. Os cinco primeiros estão disponíveis; os outros aparecem como "em breve".
+- Cada desafio mostra missão, objetivos, o que pesquisar, critérios de aceite e um desafio extra.
+- **Criar o jogo do desafio** cria um jogo seu, liga o jogo ao desafio e abre o código com a referência offline ao lado. Se o jogo já existe, aparece **Abrir**. **Ligar a um jogo que já existe** usa um jogo que você já tem.
+- As marcas de objetivo são o mesmo progresso da tela anterior de Aprender: nada se perde. Se não der para salvar, a caixa volta e o motivo aparece.
+
 ## 0.0.1-dev.1000602 — Documentação ao lado do código
 
 - **Painéis → Documentação** abre o manual offline dentro do jogo: tutoriais, tarefas, conceitos e a referência de cada tipo e membro do Lunet, com busca e botão de voltar.

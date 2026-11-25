@@ -55,7 +55,7 @@ public sealed class HomeView : UserControl
 
         var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L) };
         content.Children.Add(header);
-        if (shell.OpenRoute is not null) content.Children.Add(Destinations());
+        content.Children.Add(Destinations());
         content.Children.Add(_grid);
         if (_trashRow.Parent is Panel oldTrash) oldTrash.Children.Remove(_trashRow);
         content.Children.Add(_trashRow);
@@ -70,7 +70,8 @@ public sealed class HomeView : UserControl
     private Control Destinations()
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
-        foreach (var (route, label, icon) in LunetShell.HomeRoutes)
+        // Without the previous screens (desktop), only what lives in the shell is offered.
+        foreach (var (route, label, icon) in LunetShell.HomeRoutes.Where(r => _shell.OpenRoute is not null || r.Route == "learn"))
         {
             // Icon tile with its label below (D5): six destinations read at a glance, one thumb-tap each.
             var tile = new StackPanel { Spacing = LunetTokens.Space.Xxs, Width = 72 };
@@ -89,7 +90,8 @@ public sealed class HomeView : UserControl
             };
             b.Classes.Add("lunet-card");
             AutomationProperties.SetName(b, label);
-            b.Click += (_, _) => _shell.OpenRoute?.Invoke(route, null);
+            // Aprender lives in the shell now (P3); the other destinations still open the previous screens.
+            b.Click += (_, _) => { if (route == "learn") ShowLearn(); else _shell.OpenRoute?.Invoke(route, null); };
             b.Name = "Route-" + route;
             row.Children.Add(b);
         }
@@ -212,6 +214,13 @@ public sealed class HomeView : UserControl
     public bool CloseSheet()
     {
         if (Sheet is null) return false;
+        if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
+        return CloseOverlay();
+    }
+
+    private bool CloseOverlay()
+    {
+        if (Sheet is null) return false;
         _overlay.Children.Clear();
         Sheet = null;
         return true;
@@ -248,6 +257,16 @@ public sealed class HomeView : UserControl
     }
 
     private static Control DockTop(Control c) { DockPanel.SetDock(c, Avalonia.Controls.Dock.Top); return c; }
+
+    /// <summary>Aprender, full screen over the Home (Back walks its pages, then closes it).</summary>
+    public LearnView ShowLearn()
+    {
+        _overlay.Children.Clear();
+        var learn = new LearnView(_shell, () => CloseOverlay());
+        _overlay.Children.Add(learn);
+        Sheet = learn;
+        return learn;
+    }
 
     /// <summary>A game's actions: Abrir, Renomear, Duplicar, Apagar.</summary>
     public void ShowActions(string name)

@@ -25,6 +25,7 @@ public sealed class LunetShell : UserControl
     public LunetShell(string projectsRoot)
     {
         Workspace = new WorkspaceSession(projectsRoot);
+        LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
         _home = new HomeView(this);
@@ -41,6 +42,12 @@ public sealed class LunetShell : UserControl
     }
 
     public WorkspaceSession Workspace { get; }
+
+    /// <summary>
+    /// Where Aprender keeps the student's declared progress. The Android head points it at the file the previous screens
+    /// use (FilesDir/learning/progress.json), so progress carries over; elsewhere it lives beside the games.
+    /// </summary>
+    public string LearningProgressPath { get; set; }
     public ShellState State { get; } = new();
     public GameSession Game { get; }
     public HomeView Home => _home;

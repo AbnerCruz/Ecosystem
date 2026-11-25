@@ -46,6 +46,11 @@ public static class ShellScreens
                 shell.Home.ShowTrash();
                 Shot(window, output, size, "2e-lixeira", written);
                 shell.Home.CloseSheet();
+                var learn = shell.Home.ShowLearn();
+                Shot(window, output, size, "2f-aprender", written);
+                learn.ShowProject("LRN-001-P1");
+                Shot(window, output, size, "2g-desafio", written);
+                shell.Home.CloseSheet();
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
                 shell.WorkspaceView.Code.ShowKeyboard();
