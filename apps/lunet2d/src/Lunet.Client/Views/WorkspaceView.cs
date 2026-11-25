@@ -125,6 +125,17 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens a mind map of the game as an outline (P2).</summary>
+    public MindMapView OpenMindMap(string path)
+    {
+        var view = new MindMapView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    public MindMapView NewMindMap() => OpenMindMap(MindMapView.NewPath(_shell));
+
     /// <summary>A new sound effect.</summary>
     public SoundStudioView NewSound() => OpenSound(SoundStudioView.NewPath(_shell));
 
@@ -146,6 +157,7 @@ public sealed class WorkspaceView : UserControl
         SpriteStudioView sprite => sprite.Close(),
         TileStudioView map => map.Close(),
         SoundStudioView sound => sound.Close(),
+        MindMapView mind => mind.Close(),
         _ => false,
     };
 

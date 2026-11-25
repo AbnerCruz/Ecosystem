@@ -265,13 +265,30 @@ public sealed class DocumentEditor : UserControl
             entries.Add(b);
         }
         if (_tab == WorkspaceTab.Notes)
+        {
+            // P2: the game's mind maps sit with its notes; they open as an outline.
+            foreach (var map in _shell.Workspace.Files().Where(f => f.StartsWith(Lunet.Core.ProjectNotes.Folder + "/", StringComparison.Ordinal)
+                && f.EndsWith(Lunet.Core.ProjectMindMap.Extension, StringComparison.OrdinalIgnoreCase)))
+            {
+                var path = map;
+                var b = LunetUi.Button(Path.GetFileName(map).Replace(Lunet.Core.ProjectMindMap.Extension, "", StringComparison.OrdinalIgnoreCase), ButtonKind.Ghost, LunetIcons.Map,
+                    () => _shell.WorkspaceView.OpenMindMap(path));
+                b.Name = "OpenMindMap-" + map;
+                entries.Add(b);
+            }
             entries.Add(LunetUi.Button("Nova nota", ButtonKind.Ghost, LunetIcons.Plus, NewNote));
+            var newMap = LunetUi.Button("Novo mapa mental", ButtonKind.Ghost, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap());
+            newMap.Name = "NewMindMap";
+            entries.Add(newMap);
+        }
 
         if (OpenPath is null && _tab == WorkspaceTab.Notes)
         {
+            var start = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+            start.Children.Add(LunetUi.Button("Nova nota", ButtonKind.Primary, LunetIcons.Plus, NewNote));
+            start.Children.Add(LunetUi.Button("Novo mapa mental", ButtonKind.Secondary, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap()));
             Content = LunetUi.EmptyState(LunetIcons.Notes, "Nenhuma nota neste jogo",
-                "Ideias, regras e roteiro ficam em Notes/ dentro do jogo, em Markdown, no seu disco.",
-                LunetUi.Button("Nova nota", ButtonKind.Primary, LunetIcons.Plus, NewNote));
+                "Ideias, regras e roteiro ficam em Notes/ dentro do jogo, em Markdown ou como mapa mental, no seu disco.", start);
             return;
         }
         var column = new StackPanel { Spacing = 2, Margin = new Thickness(LunetTokens.Space.Xs) };

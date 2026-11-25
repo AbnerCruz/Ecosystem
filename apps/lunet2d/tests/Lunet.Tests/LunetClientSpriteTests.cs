@@ -186,3 +186,43 @@ public sealed class LunetClientSoundTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>P2: mind maps as an outline in the shell.</summary>
+public sealed class LunetClientMindMapTests
+{
+    [Fact]
+    public void MindMap_AddsEditsFoldsOutdentsRemovesUndoes_AndWritesEachChange()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-mind-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var view = shell.WorkspaceView.NewMindMap();
+                var center = view.Map.Root;
+                var enemies = view.AddChild(center, "Inimigos");
+                var slime = view.AddChild(enemies, "Slime");
+                view.Rename(slime, "Slime verde");
+                view.Outdent(slime);                                     // up one level: beside Inimigos
+                Assert.Equal(center, view.Map.Topics.First(t => t.Id == slime).Parent);
+                view.Fold(center);
+                Assert.Single(view.Map.Walk(center));                    // folded: only the centre shows
+                view.Fold(center);
+                view.Remove(enemies);
+                Assert.DoesNotContain(view.Map.Topics, t => t.Id == enemies);
+                view.History.Undo(_ => { });                              // (persist is tested below)
+                var saved = Lunet.Core.ProjectMindMap.Parse(shell.Workspace.Project!.ReadText("Notes/mapa-1.mindmap.json"));
+                Assert.DoesNotContain(saved.Topics, t => t.Id == enemies);  // each change is written at once
+                Assert.Contains(saved.Topics, t => t.Text == "Slime verde");
+                Assert.True(shell.Back());
+                Assert.Null(shell.WorkspaceView.Studio);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

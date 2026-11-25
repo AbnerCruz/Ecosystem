@@ -138,6 +138,16 @@ public static class ShellScreens
                 shell.WorkspaceView.NewSound();
                 Shot(window, output, size, "8e-som", written);
                 shell.Back();
+                var mind = shell.WorkspaceView.NewMindMap();
+                var enemies = mind.AddChild(mind.Map.Root, "Inimigos");
+                mind.AddChild(enemies, "Slime: pula e divide");
+                mind.AddChild(enemies, "Morcego: voa em onda");
+                var levels = mind.AddChild(mind.Map.Root, "Fases");
+                mind.AddChild(levels, "1. Floresta");
+                mind.AddChild(mind.Map.Root, "Ideias soltas");
+                mind.Rename(mind.Map.Topics[^1].Id, "Ideias soltas");
+                Shot(window, output, size, "7b-mapa-mental", written);
+                shell.Back();
                 shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();

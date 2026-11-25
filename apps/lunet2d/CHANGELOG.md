@@ -21,6 +21,11 @@
   - Escolha o que o som é (moeda, tiro, explosão, power-up, dano, pulo, menu, magia, alarme). Depois use **Gerar de novo** e **Variar** até ficar bom; cada mudança toca na hora.
   - A forma da onda aparece na tela. A onda e o tom, o deslizar, a duração, o vibrato e o volume podem ser ajustados.
   - Voltar salva o `.sfx.json` e o `.wav` juntos.
+- **Mapas mentais nas Notas** (Notas → Novo mapa mental):
+  - Os mapas aparecem como uma lista de tópicos recuados, fácil de ler e editar no celular.
+  - Tocar no texto edita; Enter cria o próximo tópico. **+** cria um tópico dentro. A seta recolhe um ramo.
+  - **⋮** tem Tópico ao lado, Subir um nível e Apagar.
+  - Desfazer e refazer. Cada mudança é salva na hora, em `Notes/`.
 - A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.
 
 ## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta
