@@ -22,7 +22,7 @@ public enum KeyboardTab { Keys, Shortcuts, Methods }
 /// </summary>
 public sealed class LunetKeyboard : UserControl
 {
-    private readonly TextBox _target;
+    private readonly ITextSurface _target;
     private readonly MethodCatalog _catalog;
     private readonly Func<IEnumerable<(string Path, string Text)>> _projectSources;
     private readonly Action _useSystemKeyboard;
@@ -35,7 +35,7 @@ public sealed class LunetKeyboard : UserControl
     private DateTime _lastShiftTap = DateTime.MinValue;
     private bool _symbols;
 
-    public LunetKeyboard(TextBox target, MethodCatalog catalog, Func<IEnumerable<(string Path, string Text)>> projectSources, Action useSystemKeyboard)
+    public LunetKeyboard(ITextSurface target, MethodCatalog catalog, Func<IEnumerable<(string Path, string Text)>> projectSources, Action useSystemKeyboard)
     {
         _target = target;
         _catalog = catalog;
@@ -103,25 +103,20 @@ public sealed class LunetKeyboard : UserControl
     /// <summary>Applies one edit to the editor as one undo step and puts the caret where the edit says.</summary>
     public void Apply(CodeEdit edit)
     {
-        _target.SelectionStart = edit.Start;
-        _target.SelectionEnd = edit.End;
-        _target.SelectedText = edit.Insert;
-        _target.SelectionStart = _target.SelectionEnd = edit.Caret;
-        _target.CaretIndex = edit.Caret;
+        _target.Replace(edit.Start, edit.End, edit.Insert, edit.Caret);
     }
 
     /// <summary>Types text at the caret (replacing the selection).</summary>
     public void Type(string text)
     {
-        var start = Math.Min(_target.SelectionStart, _target.SelectionEnd);
-        var end = Math.Max(_target.SelectionStart, _target.SelectionEnd);
-        Apply(new CodeEdit(start, end, text, start + text.Length));
+        var start = _target.SelectionStart;
+        Apply(new CodeEdit(start, _target.SelectionEnd, text, start + text.Length));
     }
 
     /// <summary>A key of the Teclas tab, as a tap (variants/gestures are separate paths).</summary>
     public void Press(KeyDef key)
     {
-        var text = _target.Text ?? "";
+        var text = _target.Text;
         switch (key.Action)
         {
             case KeyAction.Text:
@@ -147,20 +142,19 @@ public sealed class LunetKeyboard : UserControl
     /// <summary>A code key of the Atalhos tab (symbols, pairs, blocks, Tab, arrows).</summary>
     public void Shortcut(string symbol)
     {
-        var text = _target.Text ?? "";
+        var text = _target.Text;
         if (CodeKeys.Apply(text, _target.SelectionStart, _target.SelectionEnd, symbol) is { } edit) Apply(edit);
         else
         {
-            var caret = CodeKeys.Move(text, _target.CaretIndex, symbol);
-            _target.SelectionStart = _target.SelectionEnd = caret;
-            _target.CaretIndex = caret;
+            var caret = CodeKeys.Move(text, _target.Caret, symbol);
+            _target.Caret = caret;
         }
     }
 
     /// <summary>Inserts a catalog member at the caret and records it in Recentes/Mais usados.</summary>
     public void Insert(CatalogMember member)
     {
-        Apply(MethodCatalog.Insertion(member, _target.Text ?? "", _target.SelectionStart, _target.SelectionEnd));
+        Apply(MethodCatalog.Insertion(member, _target.Text, _target.SelectionStart, _target.SelectionEnd));
         _catalog.RecordUse(member);
     }
 
@@ -244,7 +238,7 @@ public sealed class LunetKeyboard : UserControl
             e.Pointer.Capture(border);
             pressed = true; consumed = false; repeats = 0;
             origin = e.GetPosition(this);
-            caretAtStart = _target.CaretIndex;
+            caretAtStart = _target.Caret;
             border.Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong);
             _hold.Stop();
             _hold.Interval = key.Repeats ? KeyboardLayout.RepeatStart : KeyboardLayout.LongPress;
@@ -271,9 +265,8 @@ public sealed class LunetKeyboard : UserControl
             if (key.Action == KeyAction.Space && Math.Abs(dx) >= KeyboardLayout.CursorStep)
             {
                 _hold.Stop(); consumed = true;
-                var caret = KeyboardLayout.GlideCursor(_target.Text ?? "", caretAtStart, dx);
-                _target.SelectionStart = _target.SelectionEnd = caret;
-                _target.CaretIndex = caret;
+                var caret = KeyboardLayout.GlideCursor(_target.Text, caretAtStart, dx);
+                _target.Caret = caret;
             }
             else if (key.Action == KeyAction.Backspace && KeyboardLayout.GlideWords(dx) > 0) { _hold.Stop(); consumed = true; }
         };
@@ -289,7 +282,7 @@ public sealed class LunetKeyboard : UserControl
             if (_variants.IsVisible) { CommitVariant(); return; }
             if (key.Action == KeyAction.Backspace && KeyboardLayout.GlideWords(dx) is > 0 and var words)
             {
-                if (KeyboardLayout.Backspace(_target.Text ?? "", _target.SelectionStart, _target.SelectionEnd, words) is { } edit) Apply(edit);
+                if (KeyboardLayout.Backspace(_target.Text, _target.SelectionStart, _target.SelectionEnd, words) is { } edit) Apply(edit);
                 return;
             }
             if (!consumed) Press(key);
@@ -371,11 +364,10 @@ public sealed class LunetKeyboard : UserControl
 
     private void MoveLineEdge(bool start)
     {
-        var text = _target.Text ?? "";
-        var caret = Math.Clamp(_target.CaretIndex, 0, text.Length);
+        var text = _target.Text;
+        var caret = Math.Clamp(_target.Caret, 0, text.Length);
         int pos = start ? (caret == 0 ? 0 : text.LastIndexOf('\n', caret - 1) + 1) : (text.IndexOf('\n', caret) is var n && n >= 0 ? n : text.Length);
-        _target.SelectionStart = _target.SelectionEnd = pos;
-        _target.CaretIndex = pos;
+        _target.Caret = pos;
     }
 
     private Control ShortcutKey(CodeKey key)

@@ -157,7 +157,7 @@ public sealed class LunetClientTests
                 var entry = shell.Workspace.Project!.Manifest.EntryPoint;
                 Assert.Equal(entry, shell.WorkspaceView.Code.OpenPath);
 
-                shell.WorkspaceView.Code.TextBox.Text = RedGame;
+                shell.WorkspaceView.Code.Surface.Text = RedGame;
                 shell.RunGame();
                 Assert.Equal(GameState.Running, shell.Game.State);
                 Assert.Equal(WorkspaceTab.Game, shell.State.Tab);
@@ -194,14 +194,14 @@ public sealed class LunetClientTests
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.True(shell.State.CodeAndGameSideBySide);
 
-                shell.WorkspaceView.Code.TextBox.Text = RedGame;
+                shell.WorkspaceView.Code.Surface.Text = RedGame;
                 shell.RunGame();
                 shell.TickGame(1 / 60.0);
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
                 Assert.True(shell.WorkspaceView.Code.IsEffectivelyVisible && shell.WorkspaceView.Game.IsEffectivelyVisible);
 
-                shell.WorkspaceView.Code.TextBox.Text = "class X { void M() { int a = ; } }";
+                shell.WorkspaceView.Code.Surface.Text = "class X { void M() { int a = ; } }";
                 shell.RunGame();
                 Assert.Equal(GameState.CompileErrors, shell.Game.State);
                 Assert.Equal(SupportPanel.Problems, shell.State.Panel);
@@ -370,14 +370,14 @@ public sealed class LunetClientTests
                 window.Show();
                 shell.CreateProject();
                 var editor = shell.WorkspaceView.Code;
-                editor.TextBox.Text = "x";
+                editor.Surface.Text = "x";
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                editor.TextBox.Focus();
-                editor.TextBox.CaretIndex = 1;
+                editor.Surface.Focus();
+                editor.Surface.Caret = 1;
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-                Assert.True(editor.KeyboardVisible, $"focused={editor.TextBox.IsFocused} kb={editor.Keyboard is not null} layout={shell.State.Layout}");
-                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox)); // the system keyboard steps aside
+                Assert.True(editor.KeyboardVisible, $"focused={editor.Surface.IsFocused} kb={editor.Keyboard is not null} layout={shell.State.Layout}");
+                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget)); // the system keyboard steps aside
                 Assert.False(shell.WorkspaceView.TabBarVisible);
                 var kb = editor.Keyboard!;
                 Assert.Equal(KeyboardTab.Keys, kb.Tab);
@@ -387,29 +387,29 @@ public sealed class LunetClientTests
                 kb.Press(KeyboardLayout.Letters[2][0]);                 // "a"
                 kb.ShowVariants(KeyboardLayout.Letters.SelectMany(r => r).Single(k => k.Label == "c"));
                 kb.CommitVariant();                                      // long press c → ç
-                Assert.Equal("xAaç", editor.TextBox.Text);
+                Assert.Equal("xAaç", editor.Surface.Text);
 
-                editor.TextBox.SelectionStart = 1; editor.TextBox.SelectionEnd = 3;
+                editor.Surface.Select(1, 3);
                 foreach (var tab in new[] { KeyboardTab.Shortcuts, KeyboardTab.Methods, KeyboardTab.Keys, KeyboardTab.Shortcuts })
                 {
                     kb.Show(tab);
                     Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                    Assert.Equal((1, 3), (editor.TextBox.SelectionStart, editor.TextBox.SelectionEnd));
-                    Assert.True(editor.TextBox.IsFocused);
+                    Assert.Equal((1, 3), (editor.Surface.SelectionStart, editor.Surface.SelectionEnd));
+                    Assert.True(editor.Surface.IsFocused);
                 }
                 kb.Shortcut("(");                                        // wraps the selection
-                Assert.Equal("x(Aa)ç", editor.TextBox.Text);
+                Assert.Equal("x(Aa)ç", editor.Surface.Text);
 
                 kb.Show(KeyboardTab.Methods);
                 var end = kb.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "End");
-                editor.TextBox.CaretIndex = editor.TextBox.Text!.Length;
+                editor.Surface.Caret = editor.Surface.Text.Length;
                 kb.Insert(end);
-                Assert.EndsWith("çEnd()", editor.TextBox.Text); // instance member: no type prefix
+                Assert.EndsWith("çEnd()", editor.Surface.Text); // instance member: no type prefix
                 Assert.Contains(kb.Catalog.Recent(), m => m.Name == "End");
 
                 Assert.True(shell.Back());                               // Back closes the keyboard first
                 Assert.False(editor.KeyboardVisible);
-                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox));
+                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget));
                 Assert.Equal(ShellLevel.Workspace, shell.State.Level);
                 window.Close();
             });
@@ -436,7 +436,7 @@ public sealed class LunetClientTests
                 editor.Keyboard!.Press(new KeyDef("🌐", KeyAction.System));  // the system keyboard (dictation, languages)
                 Assert.True(shell.PreferSystemKeyboard);
                 Assert.False(editor.KeyboardVisible);
-                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox));
+                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget));
 
                 shell.PreferSystemKeyboard = false;
                 shell.HardwareKeyboard = true;
@@ -484,13 +484,48 @@ public sealed class LunetClientTests
                 // The routed screen (e.g. the AI) edits the game on disk; back in the shell the editor shows it.
                 File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// editado pela IA");
                 shell.ReturnedFromRoute();
-                Assert.Equal("// editado pela IA", shell.WorkspaceView.Code.TextBox.Text);
+                Assert.Equal("// editado pela IA", shell.WorkspaceView.Code.Surface.Text);
 
                 // Unsaved edits made in the shell are never overwritten by a reload.
-                shell.WorkspaceView.Code.TextBox.Text = "// meu texto";
+                shell.WorkspaceView.Code.Surface.Text = "// meu texto";
                 File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// outro");
                 shell.ReturnedFromRoute();
-                Assert.Equal("// meu texto", shell.WorkspaceView.Code.TextBox.Text);
+                Assert.Equal("// meu texto", shell.WorkspaceView.Code.Surface.Text);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void CodeEditor_HasLineNumbersHighlightingAndUndoesKeyboardEditsInOneStep()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var code = Assert.IsType<CodeSurface>(shell.WorkspaceView.Code.Surface);
+                Assert.True(code.Editor.ShowLineNumbers);
+                Assert.Equal("C#", code.Editor.SyntaxHighlighting?.Name);
+                Assert.True(code.Editor.Options.HighlightCurrentLine);
+                Assert.Contains(window.GetVisualDescendants(), v => v.GetType().Name == "LineNumberMargin");
+
+                shell.WorkspaceView.Code.ShowKeyboard();
+                var kb = shell.WorkspaceView.Code.Keyboard!;
+                var before = code.Text;
+                code.Caret = 0;
+                kb.Shortcut("{");                                   // a whole indented block…
+                Assert.StartsWith("{\n    \n}", code.Text);
+                code.Undo();                                        // …undoes in one step
+                Assert.Equal(before, code.Text);
+                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(code.InputTarget));
+                Assert.IsType<NotesSurface>(shell.WorkspaceView.Notes.Surface); // notes keep the system keyboard
                 window.Close();
             });
         }

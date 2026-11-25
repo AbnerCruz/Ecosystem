@@ -138,14 +138,14 @@ public sealed class ShellActivity : AvaloniaActivity
                 global::Android.Util.Log.Info("lunet-e2e", $"teclado-fisico-detectado={shell.HardwareKeyboard}");
                 shell.HardwareKeyboard = false;
                 shell.PreferSystemKeyboard = false;
-                editor.TextBox.Focus();
+                editor.Surface.Focus();
                 editor.ShowKeyboard();
-                editor.TextBox.CaretIndex = 0;
+                editor.Surface.Caret = 0;
                 foreach (var c in "// ola")
                     editor.Keyboard?.Press(new Lunet.Client.Shell.KeyDef(c == ' ' ? "espaço" : c.ToString(),
                         c == ' ' ? Lunet.Client.Shell.KeyAction.Space : Lunet.Client.Shell.KeyAction.Text));
                 await Task.Delay(1500);
-                global::Android.Util.Log.Info("lunet-e2e", $"teclado={(editor.KeyboardVisible ? "visivel" : "oculto")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.TextBox) ? "on" : "off")} texto={(editor.TextBox.Text ?? "").Split('\n')[0]}");
+                global::Android.Util.Log.Info("lunet-e2e", $"teclado={(editor.KeyboardVisible ? "visivel" : "oculto")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget) ? "on" : "off")} texto={(editor.Surface.Text).Split('\n')[0]}");
             }
             catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
         }, Avalonia.Threading.DispatcherPriority.Background);

@@ -57,7 +57,7 @@ public static class ShellScreens
                 shell.State.ShowPanel(SupportPanel.Console);
                 Shot(window, output, size, "5-console", written);
                 shell.StopGame();
-                shell.WorkspaceView.Code.TextBox.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
+                shell.WorkspaceView.Code.Surface.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
                 shell.RunGame();
                 Shot(window, output, size, "6-problemas", written);
                 shell.State.ShowPanel(SupportPanel.None);
