@@ -146,3 +146,43 @@ public sealed class LunetClientTileTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>A4: the sound effects Studio in the shell.</summary>
+public sealed class LunetClientSoundTests
+{
+    [Fact]
+    public void SoundStudio_GeneratesVariesPlaysAndSavesSourceAndWavTogether()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-sound-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var played = new List<byte[]>();
+                var shell = new LunetShell(root) { PlaySound = played.Add };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var studio = shell.WorkspaceView.NewSound();
+                var first = studio.Sound;
+                studio.Generate();
+                Assert.NotEqual(first, studio.Sound);
+                studio.Vary();
+                Assert.Equal(2, played.Count);                                  // every change is heard
+                Assert.Equal((byte)'R', played[0][0]);                          // a WAV ("RIFF")
+                studio.Play();
+                Assert.Equal(3, played.Count);
+
+                Assert.True(shell.Back());                                      // saves and leaves
+                Assert.Null(shell.WorkspaceView.Studio);
+                var dir = shell.Workspace.Project!.Directory;
+                Assert.True(File.Exists(Path.Combine(dir, "Content", "Audio", "efeito-1.sfx.json")));
+                Assert.True(new FileInfo(Path.Combine(dir, "Content", "Audio", "efeito-1.wav")).Length > 44);
+                var again = shell.WorkspaceView.OpenSound("Content/Audio/efeito-1.sfx.json");
+                Assert.Equal(studio.Sound, again.Sound);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

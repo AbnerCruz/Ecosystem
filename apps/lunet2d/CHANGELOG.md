@@ -17,6 +17,10 @@
   - O mapa ocupa a tela, com aproximar e arrastar com dois dedos, como no Sprite Studio.
   - Embaixo ficam as camadas (nova, mostrar ou esconder, colisão), os tiles do tileset, pincel, borracha, desfazer, refazer e **Tileset**, que abre o desenho do tileset no Sprite Studio e volta para o mapa.
   - Um mapa novo já vem com quatro tiles editáveis. Voltar salva o `.tilemap.json`.
+- **Efeitos sonoros na interface nova** (Recursos → Novo efeito, ou toque num `.sfx.json`):
+  - Escolha o que o som é (moeda, tiro, explosão, power-up, dano, pulo, menu, magia, alarme). Depois use **Gerar de novo** e **Variar** até ficar bom; cada mudança toca na hora.
+  - A forma da onda aparece na tela. A onda e o tom, o deslizar, a duração, o vibrato e o volume podem ser ajustados.
+  - Voltar salva o `.sfx.json` e o `.wav` juntos.
 - A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.
 
 ## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta

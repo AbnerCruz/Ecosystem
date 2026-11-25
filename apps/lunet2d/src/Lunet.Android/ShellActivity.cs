@@ -80,6 +80,8 @@ public sealed class ShellActivity : AvaloniaActivity
             LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
             // P4: the game runs full screen in the :gameplay process, prepared by the existing pipeline.
             PlayGame = game => OpenRoute("play-game", game),
+            // A4: the sound Studio plays its WAV through MediaPlayer (a temp file in the cache).
+            PlaySound = PlayWav,
             // P7: the same settings.json as the previous screens.
             SettingsPath = Path.Combine(FilesDir!.AbsolutePath, "settings.json"),
             KeepScreenOn = on => { if (on) Window?.AddFlags(WindowManagerFlags.KeepScreenOn); else Window?.ClearFlags(WindowManagerFlags.KeepScreenOn); },
@@ -95,6 +97,23 @@ public sealed class ShellActivity : AvaloniaActivity
             if (show) ime.ShowSoftInput(view, global::Android.Views.InputMethods.ShowFlags.Implicit);
             else ime.HideSoftInputFromWindow(view.WindowToken, global::Android.Views.InputMethods.HideSoftInputFlags.None);
         };
+    }
+
+    private global::Android.Media.MediaPlayer? _player;
+
+    private void PlayWav(byte[] wav)
+    {
+        try
+        {
+            var file = Path.Combine(CacheDir!.AbsolutePath, "studio-preview.wav");
+            File.WriteAllBytes(file, wav);
+            _player?.Release();
+            _player = new global::Android.Media.MediaPlayer();
+            _player.SetDataSource(file);
+            _player.Prepare();
+            _player.Start();
+        }
+        catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { global::Android.Util.Log.Warn("Lunet.Sound", ex.Message); }
     }
 
     /// <summary>

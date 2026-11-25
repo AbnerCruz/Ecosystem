@@ -116,6 +116,18 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens the sound effects Studio (A4).</summary>
+    public SoundStudioView OpenSound(string path)
+    {
+        var view = new SoundStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>A new sound effect.</summary>
+    public SoundStudioView NewSound() => OpenSound(SoundStudioView.NewPath(_shell));
+
     /// <summary>A new map with its editable tileset.</summary>
     public TileStudioView NewMap() => OpenMap(TileStudioView.Create(_shell));
 
@@ -133,6 +145,7 @@ public sealed class WorkspaceView : UserControl
     {
         SpriteStudioView sprite => sprite.Close(),
         TileStudioView map => map.Close(),
+        SoundStudioView sound => sound.Close(),
         _ => false,
     };
 
@@ -364,6 +377,10 @@ public sealed class WorkspaceView : UserControl
         newMap.Name = "NewMap";
         newMap.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
         actions.Children.Add(newMap);
+        var newSound = LunetUi.Button("Novo efeito", ButtonKind.Secondary, LunetIcons.Sound, () => NewSound());
+        newSound.Name = "NewSound";
+        newSound.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
+        actions.Children.Add(newSound);
         if (_shell.OpenRoute is { } route)
         {
             var studios = LunetUi.Button("Outros Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
@@ -381,7 +398,8 @@ public sealed class WorkspaceView : UserControl
             foreach (var f in files)
             {
                 var isMap = f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase);
-                var editable = isMap || f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
+                var isSound = f.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase);
+                var editable = isMap || isSound || f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
                 var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, VerticalAlignment = VerticalAlignment.Center };
                 row.Children.Add(LunetIcons.Create(icon, editable ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary));
                 var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
@@ -395,7 +413,7 @@ public sealed class WorkspaceView : UserControl
                     Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), Padding = new Thickness(0), Name = "OpenSprite-" + f,
                 };
                 Avalonia.Automation.AutomationProperties.SetName(open, "Editar " + f);
-                open.Click += (_, _) => { if (isMap) OpenMap(path); else OpenSprite(path); };
+                open.Click += (_, _) => { if (isMap) OpenMap(path); else if (isSound) OpenSound(path); else OpenSprite(path); };
                 list.Children.Add(open);
             }
         }

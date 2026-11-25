@@ -90,6 +90,9 @@ public sealed class LunetShell : UserControl
         KeepScreenOn?.Invoke(Settings.KeepScreenOn);
     }
 
+    /// <summary>Plays a WAV (the sound Studio); set by the Android head, null (silent) elsewhere.</summary>
+    public Action<byte[]>? PlaySound { get; set; }
+
     /// <summary>Plays a game full screen (P4); the Android head runs it in its own process. Null: it runs in the workspace.</summary>
     public Action<string>? PlayGame { get; set; }
 

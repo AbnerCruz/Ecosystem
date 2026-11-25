@@ -135,6 +135,10 @@ public static class ShellScreens
                 tiles.Session.EndStroke();
                 Shot(window, output, size, "8d-mapa", written);
                 shell.Back();
+                shell.WorkspaceView.NewSound();
+                Shot(window, output, size, "8e-som", written);
+                shell.Back();
+                shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();
             }
