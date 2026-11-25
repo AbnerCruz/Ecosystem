@@ -126,6 +126,15 @@ public static class ShellScreens
                 Shot(window, output, size, "8c-cor", written);
                 sprite.TogglePicker();
                 shell.Back();
+                var tiles = shell.WorkspaceView.NewMap();
+                tiles.SelectTile(1);
+                for (var x = 0; x < 16; x++) tiles.Paint(x, 12, first: x == 0);
+                tiles.Session.EndStroke();
+                tiles.SelectTile(3);
+                for (var y = 9; y < 12; y++) tiles.Paint(5, y, first: y == 9);
+                tiles.Session.EndStroke();
+                Shot(window, output, size, "8d-mapa", written);
+                shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();
             }

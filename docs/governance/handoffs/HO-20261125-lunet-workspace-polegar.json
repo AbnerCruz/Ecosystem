@@ -29,11 +29,15 @@
     "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
     "apps/lunet2d/src/Lunet.Client/Views/SpriteStudioView.cs",
     "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
-    "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs"
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ZoomCanvas.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TileStudioView.cs"
   ],
   "work_completed": [
     "Workspace for the thumb (owner 25/11, mobile first): Rodar/Parar as a floating button bottom-right on phones (top bar on wide screens), hidden while typing; game controls moved to a bottom bar with a single cycling speed chip; frame time in the stage corner; the bar has four tabs (Código, Jogo, Recursos, Notas), Recursos groups art, maps and sounds and opens the Studios.",
-    "A1 Sprite Studio in the shell (SpriteStudioView over Lunet.Studio SpriteDocument/SpriteHistory): full-screen pixel canvas with onion skin and grid, pencil/eraser/fill/picker, undo/redo per stroke, palette, frames (add/duplicate/delete), animation preview; Back saves the .sprite.json and its .png sheet together (StudioAssetWorkspace bundle) with a portable PNG encoder."
+    "A1 Sprite Studio in the shell (SpriteStudioView over Lunet.Studio SpriteDocument/SpriteHistory): full-screen pixel canvas with onion skin and grid, pencil/eraser/fill/picker, undo/redo per stroke, palette, frames (add/duplicate/delete), animation preview; Back saves the .sprite.json and its .png sheet together (StudioAssetWorkspace bundle) with a portable PNG encoder.",
+    "A1 common canvas (ZoomCanvas: fit, pinch zoom, two-finger pan, wheel, stroke cancel) shared by both Studios; Sprite Studio colour picker (HSV, alpha, hex).",
+    "A2 Tile Studio in the shell (TileStudioView over TileStudioSession/TileMap): visible layers drawn from the tileset, collision tinted, layer chips (new, visibility, collision), tile palette from the tileset, brush/eraser, undo/redo per stroke, Tileset opens the Sprite Studio and returns; new maps get an editable four-tile tileset; Voltar saves the .tilemap.json."
   ],
   "verification": [
     {
@@ -50,6 +54,7 @@
     }
   ],
   "known_issues": [
+    "Tile Studio first slice: autotile terrains and layer rename/reorder are still in the previous Studio.",
     "Sprite Studio first slice: no pinch zoom, layers, selection or HSV picker yet (the previous Studio keeps them).",
     "Not tested on a physical device."
   ],

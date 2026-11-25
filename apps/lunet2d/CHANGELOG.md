@@ -13,6 +13,10 @@
   - O primeiro quadradinho da paleta é a cor em uso. Tocar nele abre o seletor: matiz, saturação, brilho, opacidade e código hex.
   - Dois dedos aproximam e arrastam a tela; um dedo sempre pinta. Se o segundo dedo encosta no meio de um traço, o ponto deixado pelo primeiro é desfeito. No computador, a roda do mouse aproxima. Um botão volta a mostrar o sprite inteiro.
   - Voltar salva o `.sprite.json` e o `.png` juntos, no mesmo formato de antes.
+- **Tile Studio na interface nova** (Recursos → Novo mapa, ou toque num `.tilemap.json`):
+  - O mapa ocupa a tela, com aproximar e arrastar com dois dedos, como no Sprite Studio.
+  - Embaixo ficam as camadas (nova, mostrar ou esconder, colisão), os tiles do tileset, pincel, borracha, desfazer, refazer e **Tileset**, que abre o desenho do tileset no Sprite Studio e volta para o mapa.
+  - Um mapa novo já vem com quatro tiles editáveis. Voltar salva o `.tilemap.json`.
 - A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.
 
 ## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta

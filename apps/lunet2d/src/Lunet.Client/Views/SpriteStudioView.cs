@@ -20,122 +20,21 @@ public enum SpriteTool { Pencil, Eraser, Fill, Picker }
 
 /// <summary>
 /// The pixel canvas: the current frame scaled to fit (crisp pixels), a grid when zoomed in, the previous frame as a
-/// faint onion skin. One finger draws; it never scrolls the page.
+/// faint onion skin; pinch, pan and painting come from <see cref="ZoomCanvas"/>.
 /// </summary>
-public sealed class PixelCanvas : Control
+public sealed class PixelCanvas : ZoomCanvas
 {
     private WriteableBitmap? _bitmap, _onion;
     private SpriteDocument _doc = SpriteDocument.Create(16);
-    private int _frame;
-    private (int X, int Y)? _last;
 
-    public event Action<int, int, bool>? Paint; // x, y, first point of the stroke
-    public event Action? StrokeEnded;
-    /// <summary>A second finger came down mid-stroke: the stroke becomes a pinch, so it is undone.</summary>
-    public event Action? StrokeCancelled;
+    public PixelCanvas() => AutomationProperties.SetName(this, "Tela de pintura");
 
-    // Pinch to zoom and two-finger pan (one finger always draws, as in Procreate and Pixaki).
-    private readonly Dictionary<IPointer, Point> _pointers = new();
-    private bool _stroke, _gesture;
-    private double _startDistance, _startZoom;
-    private Point _startMid;
-    private Vector _startPan;
-
-    /// <summary>1 = fit; up to 16× closer.</summary>
-    public double Zoom { get; private set; } = 1;
-    public Vector Pan { get; private set; }
-
-    public void SetView(double zoom, Vector pan)
-    {
-        Zoom = Math.Clamp(zoom, 1, 16);
-        Pan = Zoom <= 1.001 ? default : pan;
-        InvalidateVisual();
-    }
-
-    public void ResetView() => SetView(1, default);
-
-    public PixelCanvas()
-    {
-        ClipToBounds = true;
-        Focusable = false;
-        AutomationProperties.SetName(this, "Tela de pintura");
-        PointerPressed += (_, e) =>
-        {
-            e.Handled = true;
-            _pointers[e.Pointer] = e.GetPosition(this);
-            e.Pointer.Capture(this);
-            if (_pointers.Count == 1) { _stroke = true; _gesture = false; _last = null; Hit(e.GetPosition(this), first: true); return; }
-            if (_stroke) { _stroke = false; StrokeCancelled?.Invoke(); }
-            BeginGesture();
-        };
-        PointerMoved += (_, e) =>
-        {
-            if (!_pointers.ContainsKey(e.Pointer)) return;
-            e.Handled = true;
-            _pointers[e.Pointer] = e.GetPosition(this);
-            if (_gesture && _pointers.Count >= 2) UpdateGesture();
-            else if (_stroke) Hit(e.GetPosition(this), first: false);
-        };
-        PointerReleased += (_, e) => End(e.Pointer);
-        PointerCaptureLost += (_, e) => End(e.Pointer);
-        PointerWheelChanged += (_, e) =>
-        {
-            // Desktop: the wheel zooms around the pointer.
-            var p = e.GetPosition(this);
-            ZoomAround(p, Zoom * (e.Delta.Y > 0 ? 1.25 : 0.8));
-            e.Handled = true;
-        };
-    }
-
-    private void End(IPointer pointer)
-    {
-        if (!_pointers.Remove(pointer)) return;
-        if (_stroke && _pointers.Count == 0) { _stroke = false; _last = null; StrokeEnded?.Invoke(); }
-        if (_gesture && _pointers.Count < 2) _gesture = _pointers.Count > 0; // the last finger lifting ends it
-        if (_pointers.Count == 0) _gesture = false;
-    }
-
-    private void BeginGesture()
-    {
-        var (a, b) = TwoPoints();
-        _gesture = true;
-        _startDistance = Math.Max(1, Distance(a, b));
-        _startZoom = Zoom;
-        _startMid = (a + b) / 2;
-        _startPan = Pan;
-    }
-
-    private void UpdateGesture()
-    {
-        var (a, b) = TwoPoints();
-        var mid = (a + b) / 2;
-        var zoom = Math.Clamp(_startZoom * Distance(a, b) / _startDistance, 1, 16);
-        // Keep the content under the starting midpoint under the fingers.
-        var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
-        var anchor = (_startMid - center - _startPan) / _startZoom;
-        SetView(zoom, mid - center - anchor * zoom);
-    }
-
-    private void ZoomAround(Point p, double zoom)
-    {
-        zoom = Math.Clamp(zoom, 1, 16);
-        var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
-        var anchor = (p - center - Pan) / Zoom;
-        SetView(zoom, p - center - anchor * zoom);
-    }
-
-    private (Point, Point) TwoPoints()
-    {
-        var points = _pointers.Values.Take(2).ToArray();
-        return (points[0], points.Length > 1 ? points[1] : points[0]);
-    }
-
-    private static double Distance(Point a, Point b) => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+    protected override (double Width, double Height) ContentSize => (_doc.Width, _doc.Height);
+    protected override (int X, int Y) Cells => (_doc.Width, _doc.Height);
 
     public void Show(SpriteDocument doc, int frame, bool onion)
     {
         _doc = doc;
-        _frame = frame;
         _bitmap = Bitmap(doc.Frames[frame], _bitmap);
         _onion = onion && frame > 0 ? Bitmap(doc.Frames[frame - 1], _onion) : null;
         InvalidateVisual();
@@ -154,44 +53,9 @@ public sealed class PixelCanvas : Control
         return bitmap;
     }
 
-    /// <summary>The rectangle the sprite occupies: fit (integer scale when it can), then the pinch zoom and pan.</summary>
-    public Rect Area
+    protected override void RenderContent(DrawingContext context, Rect a)
     {
-        get
-        {
-            var scale = Math.Min(Bounds.Width / _doc.Width, Bounds.Height / _doc.Height);
-            if (scale >= 2) scale = Math.Floor(scale);
-            scale *= Zoom;
-            var w = _doc.Width * scale; var h = _doc.Height * scale;
-            return new Rect((Bounds.Width - w) / 2 + Pan.X, (Bounds.Height - h) / 2 + Pan.Y, w, h);
-        }
-    }
-
-    /// <summary>The pixel under a point of the canvas, or null outside the sprite.</summary>
-    public (int X, int Y)? PixelAt(Point p)
-    {
-        var a = Area;
-        if (a.Width <= 0) return null;
-        var x = (int)Math.Floor((p.X - a.X) / a.Width * _doc.Width);
-        var y = (int)Math.Floor((p.Y - a.Y) / a.Height * _doc.Height);
-        return x < 0 || y < 0 || x >= _doc.Width || y >= _doc.Height ? null : (x, y);
-    }
-
-    private void Hit(Point p, bool first)
-    {
-        var a = Area;
         if (a.Width <= 0) return;
-        var x = (int)Math.Floor((p.X - a.X) / a.Width * _doc.Width);
-        var y = (int)Math.Floor((p.Y - a.Y) / a.Height * _doc.Height);
-        if (x < 0 || y < 0 || x >= _doc.Width || y >= _doc.Height) return;
-        if (_last == (x, y)) return;
-        _last = (x, y);
-        Paint?.Invoke(x, y, first);
-    }
-
-    public override void Render(DrawingContext context)
-    {
-        var a = Area;
         // Checkerboard: transparent pixels read as transparent.
         var cell = Math.Max(4, a.Width / _doc.Width / 2);
         using (context.PushClip(a))
@@ -205,17 +69,9 @@ public sealed class PixelCanvas : Control
             using (context.PushOpacity(0.25))
                 context.DrawImage(_onion, new Rect(0, 0, _doc.Width, _doc.Height), a);
         if (_bitmap is not null)
-        {
             using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
                 context.DrawImage(_bitmap, new Rect(0, 0, _doc.Width, _doc.Height), a);
-        }
-        var px = a.Width / _doc.Width;
-        if (px >= 8)
-        {
-            var pen = new Pen(LunetTokens.Brush("#22ffffff"), 1);
-            for (var i = 1; i < _doc.Width; i++) context.DrawLine(pen, new Point(Math.Round(a.X + i * px) + .5, a.Y), new Point(Math.Round(a.X + i * px) + .5, a.Bottom));
-            for (var i = 1; i < _doc.Height; i++) context.DrawLine(pen, new Point(a.X, Math.Round(a.Y + i * px) + .5), new Point(a.Right, Math.Round(a.Y + i * px) + .5));
-        }
+        DrawGrid(context, a);
         context.DrawRectangle(new Pen(LunetTokens.Brush(LunetTokens.Color.BorderStrong), 1), a);
     }
 }

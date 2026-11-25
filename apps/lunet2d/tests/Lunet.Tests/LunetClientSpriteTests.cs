@@ -97,3 +97,52 @@ public sealed class LunetClientSpriteTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>A2: the Tile Studio in the shell.</summary>
+public sealed class LunetClientTileTests
+{
+    [Fact]
+    public void TileStudio_CreatesAMapPaintsLayersUndoesAndSaves_AndEditsItsTileset()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-tile-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var studio = shell.WorkspaceView.NewMap();
+                Assert.Equal(16, studio.Session.MaxTileId);                      // a 64 px atlas of 16 px tiles: four painted, twelve to draw
+                Assert.NotNull(studio.TilesetSource);
+
+                studio.SelectTile(2);
+                studio.Paint(1, 1, first: true);
+                studio.Paint(2, 1, first: false);
+                studio.Canvas.GetType();                                       // stroke ends as the finger lifts:
+                Assert.True(studio.Session.EndStroke());
+                Assert.Equal(2, studio.Session.Map.GetTile(0, new Lunet.Pathfinding.GridPoint(2, 1)));
+                studio.SetErase(true);
+                studio.Paint(2, 1, first: true);
+                studio.Session.EndStroke();
+                Assert.Equal(0, studio.Session.Map.GetTile(0, new Lunet.Pathfinding.GridPoint(2, 1)));
+                studio.Undo();
+                Assert.Equal(2, studio.Session.Map.GetTile(0, new Lunet.Pathfinding.GridPoint(2, 1)));
+
+                Assert.True(shell.Back());                                       // saves and leaves
+                Assert.Null(shell.WorkspaceView.Studio);
+                var reopened = shell.WorkspaceView.OpenMap("Content/Data/mapa-1.tilemap.json");
+                Assert.Equal(2, reopened.Session.Map.GetTile(0, new Lunet.Pathfinding.GridPoint(1, 1)));
+
+                // Tileset → Sprite Studio → back to the map.
+                var sprite = shell.WorkspaceView.OpenSprite(reopened.TilesetSource!, reopen: () => shell.WorkspaceView.OpenMap("Content/Data/mapa-1.tilemap.json"));
+                Assert.IsType<SpriteStudioView>(shell.WorkspaceView.Studio);
+                Assert.True(shell.Back());
+                Assert.IsType<TileStudioView>(shell.WorkspaceView.Studio);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

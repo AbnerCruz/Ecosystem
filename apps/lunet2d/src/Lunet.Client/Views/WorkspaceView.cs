@@ -93,18 +93,31 @@ public sealed class WorkspaceView : UserControl
         _code.SaveSession();
     }
 
-    private SpriteStudioView? _studio;
+    private Control? _studio;
 
-    /// <summary>The Studio open over the workspace (A1), or null.</summary>
-    public SpriteStudioView? Studio => _studio;
+    /// <summary>The Studio open over the workspace (Sprite or Tile), or null.</summary>
+    public Control? Studio => _studio;
 
-    /// <summary>Opens the Sprite Studio on a sprite of the game, full screen; leaving saves and comes back here.</summary>
-    public SpriteStudioView OpenSprite(string path)
+    /// <summary>Opens the Sprite Studio on a sprite of the game, full screen; leaving saves and comes back here (or to <paramref name="reopen"/>).</summary>
+    public SpriteStudioView OpenSprite(string path, Action? reopen = null)
     {
-        _studio = new SpriteStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        var view = new SpriteStudioView(_shell, path, () => { _studio = null; if (reopen is not null) reopen(); else Rebuild(); });
+        _studio = view;
         Rebuild();
-        return _studio;
+        return view;
     }
+
+    /// <summary>Opens the Tile Studio on a map of the game (A2).</summary>
+    public TileStudioView OpenMap(string path)
+    {
+        var view = new TileStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>A new map with its editable tileset.</summary>
+    public TileStudioView NewMap() => OpenMap(TileStudioView.Create(_shell));
 
     /// <summary>A new sprite in Content/Textures (its PNG is where the game loads textures from).</summary>
     public SpriteStudioView NewSprite()
@@ -116,7 +129,12 @@ public sealed class WorkspaceView : UserControl
     }
 
     /// <summary>Back with a Studio open: save and leave it. False when none is open.</summary>
-    public bool CloseStudio() => _studio is { } studio && studio.Close();
+    public bool CloseStudio() => _studio switch
+    {
+        SpriteStudioView sprite => sprite.Close(),
+        TileStudioView map => map.Close(),
+        _ => false,
+    };
 
     /// <summary>Lays the workspace out for the current state (layout, tab, panel).</summary>
     public void Rebuild()
@@ -342,6 +360,10 @@ public sealed class WorkspaceView : UserControl
         newSprite.Name = "NewSprite";
         newSprite.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
         actions.Children.Add(newSprite);
+        var newMap = LunetUi.Button("Novo mapa", ButtonKind.Secondary, LunetIcons.Map, () => NewMap());
+        newMap.Name = "NewMap";
+        newMap.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
+        actions.Children.Add(newMap);
         if (_shell.OpenRoute is { } route)
         {
             var studios = LunetUi.Button("Outros Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
@@ -358,7 +380,8 @@ public sealed class WorkspaceView : UserControl
             if (files.Count == 0) list.Children.Add(LunetUi.Text("Nada ainda.", LunetTokens.Type.Label, LunetTokens.Color.TextTertiary));
             foreach (var f in files)
             {
-                var editable = f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
+                var isMap = f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase);
+                var editable = isMap || f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
                 var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, VerticalAlignment = VerticalAlignment.Center };
                 row.Children.Add(LunetIcons.Create(icon, editable ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary));
                 var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
@@ -372,7 +395,7 @@ public sealed class WorkspaceView : UserControl
                     Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), Padding = new Thickness(0), Name = "OpenSprite-" + f,
                 };
                 Avalonia.Automation.AutomationProperties.SetName(open, "Editar " + f);
-                open.Click += (_, _) => OpenSprite(path);
+                open.Click += (_, _) => { if (isMap) OpenMap(path); else OpenSprite(path); };
                 list.Children.Add(open);
             }
         }
