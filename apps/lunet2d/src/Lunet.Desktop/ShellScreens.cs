@@ -115,6 +115,14 @@ public static class ShellScreens
                 shell.State.SelectTab(WorkspaceTab.Notes);
                 Shot(window, output, size, "7-notas", written);
                 shell.State.SelectTab(WorkspaceTab.Art);
+                var sprite = shell.WorkspaceView.NewSprite();
+                sprite.SelectColor(0xFFFFA300);
+                for (var y = 4; y < 12; y++) { sprite.Paint(4, y, first: y == 4); sprite.Paint(11, y, first: false); }
+                sprite.SelectColor(0xFF29ADFF);
+                sprite.SelectTool(Lunet.Client.Views.SpriteTool.Fill);
+                sprite.Paint(7, 7, first: true);
+                Shot(window, output, size, "8b-sprite", written);
+                shell.Back();
                 Shot(window, output, size, "8-arte", written);
                 window.Close();
             }

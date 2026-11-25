@@ -93,9 +93,40 @@ public sealed class WorkspaceView : UserControl
         _code.SaveSession();
     }
 
+    private SpriteStudioView? _studio;
+
+    /// <summary>The Studio open over the workspace (A1), or null.</summary>
+    public SpriteStudioView? Studio => _studio;
+
+    /// <summary>Opens the Sprite Studio on a sprite of the game, full screen; leaving saves and comes back here.</summary>
+    public SpriteStudioView OpenSprite(string path)
+    {
+        _studio = new SpriteStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        Rebuild();
+        return _studio;
+    }
+
+    /// <summary>A new sprite in Content/Textures (its PNG is where the game loads textures from).</summary>
+    public SpriteStudioView NewSprite()
+    {
+        var files = _shell.Workspace.Files();
+        var n = 1;
+        while (files.Contains($"Content/Textures/sprite-{n}.sprite.json")) n++;
+        return OpenSprite($"Content/Textures/sprite-{n}.sprite.json");
+    }
+
+    /// <summary>Back with a Studio open: save and leave it. False when none is open.</summary>
+    public bool CloseStudio() => _studio is { } studio && studio.Close();
+
     /// <summary>Lays the workspace out for the current state (layout, tab, panel).</summary>
     public void Rebuild()
     {
+        if (_studio is not null)
+        {
+            foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
+            Content = _studio;
+            return;
+        }
         _tabBar = _sheet = null;
         _runFab = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
@@ -306,12 +337,18 @@ public sealed class WorkspaceView : UserControl
         var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.Xl) };
         list.Children.Add(LunetUi.Title("Recursos"));
         list.Children.Add(LunetUi.Secondary("Arte, mapas e sons deste jogo. Os Studios ainda abrem na tela anterior; os arquivos são os mesmos."));
+        var actions = new WrapPanel { Orientation = Orientation.Horizontal };
+        var newSprite = LunetUi.Button("Novo sprite", ButtonKind.Primary, LunetIcons.Plus, () => NewSprite());
+        newSprite.Name = "NewSprite";
+        newSprite.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
+        actions.Children.Add(newSprite);
         if (_shell.OpenRoute is { } route)
         {
-            var studios = LunetUi.Button("Abrir os Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
-            studios.HorizontalAlignment = HorizontalAlignment.Left;
-            list.Children.Add(studios);
+            var studios = LunetUi.Button("Outros Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
+            studios.Margin = new Thickness(0, 0, 0, LunetTokens.Space.Xs);
+            actions.Children.Add(studios);
         }
+        list.Children.Add(actions);
         foreach (var (group, icon, label) in new[] { (WorkspaceTab.Art, LunetIcons.Art, "Arte"), (WorkspaceTab.Map, LunetIcons.Map, "Mapas"), (WorkspaceTab.Sound, LunetIcons.Sound, "Sons") })
         {
             var files = ProjectFiles.For(group, all);
@@ -321,11 +358,22 @@ public sealed class WorkspaceView : UserControl
             if (files.Count == 0) list.Children.Add(LunetUi.Text("Nada ainda.", LunetTokens.Type.Label, LunetTokens.Color.TextTertiary));
             foreach (var f in files)
             {
-                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, MinHeight = LunetTokens.MinTouch };
-                row.Children.Add(LunetIcons.Create(icon, LunetTokens.Color.TextSecondary));
+                var editable = f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
+                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, VerticalAlignment = VerticalAlignment.Center };
+                row.Children.Add(LunetIcons.Create(icon, editable ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary));
                 var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
                 row.Children.Add(name);
-                list.Children.Add(row);
+                if (!editable) { list.Children.Add(new Border { Child = row, MinHeight = LunetTokens.MinTouch }); continue; }
+                // A sprite opens in the Sprite Studio of the shell.
+                var path = f;
+                var open = new Button
+                {
+                    Content = row, MinHeight = LunetTokens.MinTouch, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), Padding = new Thickness(0), Name = "OpenSprite-" + f,
+                };
+                Avalonia.Automation.AutomationProperties.SetName(open, "Editar " + f);
+                open.Click += (_, _) => OpenSprite(path);
+                list.Children.Add(open);
             }
         }
         return new ScrollViewer { Content = list };

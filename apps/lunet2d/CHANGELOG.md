@@ -5,6 +5,12 @@
 - **Rodar** flutua no canto de baixo do código e das notas, onde o polegar alcança. Some enquanto você digita. No computador continua no alto.
 - Os controles do jogo descem para baixo: pausar, avançar um quadro, parar, Inspector, Desempenho e a velocidade. A velocidade virou um botão só: cada toque passa para a próxima (0,25×, 0,5×, 1×, 2×).
 - O tempo por quadro aparece no canto do jogo, sem disputar espaço com os botões.
+- **Sprite Studio na interface nova** (Recursos → Novo sprite, ou toque num `.sprite.json`):
+  - Pintura em tela cheia com pixels nítidos e grade ao aproximar.
+  - O quadro anterior aparece clarinho por baixo, para animar.
+  - Lápis, borracha, balde, conta-gotas, desfazer e refazer embaixo, com a paleta e os quadros (novo, duplicar, apagar) logo acima.
+  - Prévia da animação.
+  - Voltar salva o `.sprite.json` e o `.png` juntos, no mesmo formato de antes.
 - A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.
 
 ## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta

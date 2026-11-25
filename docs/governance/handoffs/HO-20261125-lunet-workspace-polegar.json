@@ -22,10 +22,18 @@
     "apps/lunet2d/src/Lunet.Client/Views/GameView.cs",
     "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
     "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
-    "docs/governance/handoffs/HO-20261125-lunet-workspace-polegar.json"
+    "docs/governance/handoffs/HO-20261125-lunet-workspace-polegar.json",
+    "apps/lunet2d/src/Lunet.Client/Lunet.Client.csproj",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/PngEncoder.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs"
   ],
   "work_completed": [
-    "Workspace for the thumb (owner 25/11, mobile first): Rodar/Parar as a floating button bottom-right on phones (top bar on wide screens), hidden while typing; game controls moved to a bottom bar with a single cycling speed chip; frame time in the stage corner; the bar has four tabs (Código, Jogo, Recursos, Notas), Recursos groups art, maps and sounds and opens the Studios."
+    "Workspace for the thumb (owner 25/11, mobile first): Rodar/Parar as a floating button bottom-right on phones (top bar on wide screens), hidden while typing; game controls moved to a bottom bar with a single cycling speed chip; frame time in the stage corner; the bar has four tabs (Código, Jogo, Recursos, Notas), Recursos groups art, maps and sounds and opens the Studios.",
+    "A1 Sprite Studio in the shell (SpriteStudioView over Lunet.Studio SpriteDocument/SpriteHistory): full-screen pixel canvas with onion skin and grid, pencil/eraser/fill/picker, undo/redo per stroke, palette, frames (add/duplicate/delete), animation preview; Back saves the .sprite.json and its .png sheet together (StudioAssetWorkspace bundle) with a portable PNG encoder."
   ],
   "verification": [
     {
@@ -42,6 +50,7 @@
     }
   ],
   "known_issues": [
+    "Sprite Studio first slice: no pinch zoom, layers, selection or HSV picker yet (the previous Studio keeps them).",
     "Not tested on a physical device."
   ],
   "blockers": [],

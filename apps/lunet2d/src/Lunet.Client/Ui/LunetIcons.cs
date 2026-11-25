@@ -45,6 +45,9 @@ public static class LunetIcons
     public const string Book = "M5 4.5h9a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h9";
     public const string ChevronDown = "M6 9l6 6 6-6";
     public const string Check = "M5 12.5l4.5 4.5L19 7.5";
+    public const string Eraser = "M7 20h11 M5.5 15.5l8-8 5 5-5.5 5.5H9z M10.5 10.5l5 5";
+    public const string Bucket = "M5 11l7-7 7 7-7 7z M5 11h14 M20 15c0 1.5-1 2.5-1 3.5a1 1 0 0 0 2 0c0-1-1-2-1-3.5z";
+    public const string Dropper = "M15 4l5 5-2 2-5-5z M13 6l-8 8v3h3l8-8";
     public const string Speed = "M12 13l4-4 M4 17a8 8 0 1 1 16 0";
 
     /// <summary>An icon as a stroked path, sized for a toolbar (20 dp) unless told otherwise.</summary>
