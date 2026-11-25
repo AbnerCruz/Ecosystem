@@ -74,7 +74,7 @@ public sealed class LunetClientInspectionTests
                 Assert.Contains("Red", labels);
                 Assert.Contains("Green", labels);
                 Assert.Contains("Title", labels);
-                Assert.Contains("Mode", labels);
+                Assert.True(labels.Contains("Mode"), string.Join(",", labels));
                 var frames = inspector.Rows.Single(r => r.Label == "Frames");
                 Assert.False(frames.IsEditable); // private setter: shown, not editable
 

@@ -41,7 +41,9 @@ public sealed class InspectorView : UserControl
     };
     private readonly List<Row> _rows = [];
     private readonly DockPanel _root = new();
+    private readonly ScrollViewer _scroll = new();
     private string _signature = "";
+    private int _skipped; // rows of the model not shown (the class-name header)
 
     public InspectorView(LunetShell shell)
     {
@@ -54,6 +56,7 @@ public sealed class InspectorView : UserControl
         AttachedToVisualTree += (_, _) => { Refresh(); _timer.Start(); };
         DetachedFromVisualTree += (_, _) => _timer.Stop();
         _shell.Game.StateChanged += () => { if (IsAttachedToVisualTree()) Refresh(); };
+        _scroll.Content = new Border { Child = _list, Padding = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.M) };
         Content = _root;
     }
 
@@ -86,7 +89,7 @@ public sealed class InspectorView : UserControl
             Rebuild(items);
             return;
         }
-        for (var i = 0; i < _rows.Count && i < items.Count; i++) _rows[i].Item = items[i];
+        for (var i = 0; i < _rows.Count && i + _skipped < items.Count; i++) _rows[i].Item = items[i + _skipped];
         RefreshValues();
     }
 
@@ -101,7 +104,8 @@ public sealed class InspectorView : UserControl
         _list.Children.Clear();
         // The first row names the game's class; it goes in the note above, not as a section that repeats a group name.
         var gameName = items.Count > 0 && items[0].Kind == InspectorItemKind.Header && items[0].Depth == 0 ? items[0].Label : null;
-        foreach (var item in gameName is null ? items : items.Skip(1))
+        _skipped = gameName is null ? 0 : 1;
+        foreach (var item in items.Skip(_skipped))
         {
             var row = new Row(item, new Panel());
             row.View = Build(row);
@@ -119,10 +123,7 @@ public sealed class InspectorView : UserControl
         if (items.Count(i => i.Kind == InspectorItemKind.Field) > 12) top.Children.Add(_filter.Parent is null ? _filter : Detach(_filter));
         DockPanel.SetDock(top, Dock.Top);
         _root.Children.Add(top);
-        _root.Children.Add(new ScrollViewer
-        {
-            Content = new Border { Child = _list, Padding = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.M) },
-        });
+        _root.Children.Add(_scroll);
         ApplyFilter();
     }
 
