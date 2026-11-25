@@ -31,16 +31,106 @@ public sealed class PixelCanvas : Control
 
     public event Action<int, int, bool>? Paint; // x, y, first point of the stroke
     public event Action? StrokeEnded;
+    /// <summary>A second finger came down mid-stroke: the stroke becomes a pinch, so it is undone.</summary>
+    public event Action? StrokeCancelled;
+
+    // Pinch to zoom and two-finger pan (one finger always draws, as in Procreate and Pixaki).
+    private readonly Dictionary<IPointer, Point> _pointers = new();
+    private bool _stroke, _gesture;
+    private double _startDistance, _startZoom;
+    private Point _startMid;
+    private Vector _startPan;
+
+    /// <summary>1 = fit; up to 16× closer.</summary>
+    public double Zoom { get; private set; } = 1;
+    public Vector Pan { get; private set; }
+
+    public void SetView(double zoom, Vector pan)
+    {
+        Zoom = Math.Clamp(zoom, 1, 16);
+        Pan = Zoom <= 1.001 ? default : pan;
+        InvalidateVisual();
+    }
+
+    public void ResetView() => SetView(1, default);
 
     public PixelCanvas()
     {
         ClipToBounds = true;
         Focusable = false;
         AutomationProperties.SetName(this, "Tela de pintura");
-        PointerPressed += (_, e) => { e.Pointer.Capture(this); _last = null; Hit(e, first: true); e.Handled = true; };
-        PointerMoved += (_, e) => { if (e.Pointer.Captured == this) { Hit(e, first: false); e.Handled = true; } };
-        PointerReleased += (_, e) => { if (e.Pointer.Captured == this) { e.Pointer.Capture(null); _last = null; StrokeEnded?.Invoke(); } };
+        PointerPressed += (_, e) =>
+        {
+            e.Handled = true;
+            _pointers[e.Pointer] = e.GetPosition(this);
+            e.Pointer.Capture(this);
+            if (_pointers.Count == 1) { _stroke = true; _gesture = false; _last = null; Hit(e.GetPosition(this), first: true); return; }
+            if (_stroke) { _stroke = false; StrokeCancelled?.Invoke(); }
+            BeginGesture();
+        };
+        PointerMoved += (_, e) =>
+        {
+            if (!_pointers.ContainsKey(e.Pointer)) return;
+            e.Handled = true;
+            _pointers[e.Pointer] = e.GetPosition(this);
+            if (_gesture && _pointers.Count >= 2) UpdateGesture();
+            else if (_stroke) Hit(e.GetPosition(this), first: false);
+        };
+        PointerReleased += (_, e) => End(e.Pointer);
+        PointerCaptureLost += (_, e) => End(e.Pointer);
+        PointerWheelChanged += (_, e) =>
+        {
+            // Desktop: the wheel zooms around the pointer.
+            var p = e.GetPosition(this);
+            ZoomAround(p, Zoom * (e.Delta.Y > 0 ? 1.25 : 0.8));
+            e.Handled = true;
+        };
     }
+
+    private void End(IPointer pointer)
+    {
+        if (!_pointers.Remove(pointer)) return;
+        if (_stroke && _pointers.Count == 0) { _stroke = false; _last = null; StrokeEnded?.Invoke(); }
+        if (_gesture && _pointers.Count < 2) _gesture = _pointers.Count > 0; // the last finger lifting ends it
+        if (_pointers.Count == 0) _gesture = false;
+    }
+
+    private void BeginGesture()
+    {
+        var (a, b) = TwoPoints();
+        _gesture = true;
+        _startDistance = Math.Max(1, Distance(a, b));
+        _startZoom = Zoom;
+        _startMid = (a + b) / 2;
+        _startPan = Pan;
+    }
+
+    private void UpdateGesture()
+    {
+        var (a, b) = TwoPoints();
+        var mid = (a + b) / 2;
+        var zoom = Math.Clamp(_startZoom * Distance(a, b) / _startDistance, 1, 16);
+        // Keep the content under the starting midpoint under the fingers.
+        var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        var anchor = (_startMid - center - _startPan) / _startZoom;
+        SetView(zoom, mid - center - anchor * zoom);
+    }
+
+    private void ZoomAround(Point p, double zoom)
+    {
+        zoom = Math.Clamp(zoom, 1, 16);
+        var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        var anchor = (p - center - Pan) / Zoom;
+        SetView(zoom, p - center - anchor * zoom);
+    }
+
+    private (Point, Point) TwoPoints()
+    {
+        var points = _pointers.Values.Take(2).ToArray();
+        return (points[0], points.Length > 1 ? points[1] : points[0]);
+    }
+
+    private static double Distance(Point a, Point b) => Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
 
     public void Show(SpriteDocument doc, int frame, bool onion)
     {
@@ -64,23 +154,33 @@ public sealed class PixelCanvas : Control
         return bitmap;
     }
 
-    /// <summary>The rectangle the sprite occupies (fit, integer scale when it can, centred).</summary>
+    /// <summary>The rectangle the sprite occupies: fit (integer scale when it can), then the pinch zoom and pan.</summary>
     public Rect Area
     {
         get
         {
             var scale = Math.Min(Bounds.Width / _doc.Width, Bounds.Height / _doc.Height);
             if (scale >= 2) scale = Math.Floor(scale);
+            scale *= Zoom;
             var w = _doc.Width * scale; var h = _doc.Height * scale;
-            return new Rect((Bounds.Width - w) / 2, (Bounds.Height - h) / 2, w, h);
+            return new Rect((Bounds.Width - w) / 2 + Pan.X, (Bounds.Height - h) / 2 + Pan.Y, w, h);
         }
     }
 
-    private void Hit(PointerEventArgs e, bool first)
+    /// <summary>The pixel under a point of the canvas, or null outside the sprite.</summary>
+    public (int X, int Y)? PixelAt(Point p)
+    {
+        var a = Area;
+        if (a.Width <= 0) return null;
+        var x = (int)Math.Floor((p.X - a.X) / a.Width * _doc.Width);
+        var y = (int)Math.Floor((p.Y - a.Y) / a.Height * _doc.Height);
+        return x < 0 || y < 0 || x >= _doc.Width || y >= _doc.Height ? null : (x, y);
+    }
+
+    private void Hit(Point p, bool first)
     {
         var a = Area;
         if (a.Width <= 0) return;
-        var p = e.GetPosition(this);
         var x = (int)Math.Floor((p.X - a.X) / a.Width * _doc.Width);
         var y = (int)Math.Floor((p.Y - a.Y) / a.Height * _doc.Height);
         if (x < 0 || y < 0 || x >= _doc.Width || y >= _doc.Height) return;
@@ -160,6 +260,8 @@ public sealed class SpriteStudioView : UserControl
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         _canvas.Paint += Paint;
         _canvas.StrokeEnded += () => { Refresh(frames: true); };
+        // Two fingers mean zoom: the dot the first finger left is taken back.
+        _canvas.StrokeCancelled += () => { Document = _history.Rollback(Document); ShowCanvas(); };
         _playTimer.Tick += (_, _) => { Frame = (Frame + 1) % Document.Frames.Count; ShowCanvas(); };
 
         var back = LunetUi.IconButton(LunetIcons.Back, "Salvar e voltar", () => Close());
@@ -167,11 +269,15 @@ public sealed class SpriteStudioView : UserControl
         var titles = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _title, _info } };
         var play = LunetUi.IconButton(LunetIcons.Play, "Prévia da animação", TogglePlay);
         play.Name = "PlayAnimation";
+        var fit = LunetUi.IconButton(LunetIcons.Fit, "Ver o sprite inteiro (dois dedos aproximam)", () => _canvas.ResetView());
+        fit.Name = "FitView";
+        DockPanel.SetDock(fit, Dock.Right);
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.Xs, 0) };
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(play, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(play);
+        bar.Children.Add(fit);
         bar.Children.Add(titles);
 
         var framesRow = new ScrollViewer { Content = _frames, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs) };
@@ -193,6 +299,9 @@ public sealed class SpriteStudioView : UserControl
     }
 
     public SpriteDocument Document { get; private set; }
+
+    /// <summary>The canvas (zoom and pan).</summary>
+    public PixelCanvas Canvas => _canvas;
     public int Frame { get; private set; }
     public SpriteTool Tool { get; private set; } = SpriteTool.Pencil;
     public uint Color { get; private set; } = 0xFF000000;

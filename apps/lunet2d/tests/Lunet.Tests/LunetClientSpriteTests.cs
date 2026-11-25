@@ -62,6 +62,13 @@ public sealed class LunetClientSpriteTests
                 Assert.Equal(1, studio.Frame);
                 Assert.Equal(0xFFFF004Du, studio.Document.Frames[1][0]);
 
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();         // lay the canvas out
+                studio.Canvas.SetView(4, new Avalonia.Vector(10, 0));     // pinch zoom: pixels under a point follow the view
+                var area = studio.Canvas.Area;
+                Assert.Equal((0, 0), studio.Canvas.PixelAt(new Avalonia.Point(area.X + 1, area.Y + 1)));
+                studio.Canvas.ResetView();
+                Assert.Equal(1, studio.Canvas.Zoom);
+
                 Assert.True(shell.Back());                               // Back saves and leaves the Studio
                 Assert.Null(shell.WorkspaceView.Studio);
                 var dir = shell.Workspace.Project!.Directory;
