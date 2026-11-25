@@ -14,6 +14,12 @@
   - **Novo jogo** flutua no canto de baixo.
   - No celular, os jogos aparecem em lista, um por linha, com a inicial, a última edição e ⋮. No computador, em grade.
   - Datas impossíveis (01/01/2000) de jogos vindos de ZIP ou da pasta compartilhada não aparecem mais.
+- **Biblioteca na interface nova** (Mais → Biblioteca; no computador, direto na barra):
+  - Uma lista que busca enquanto você digita, com a imagem de cada recurso.
+  - Cada recurso tem uma página com a imagem, o autor, a licença e as versões. A ação principal é **Usar num jogo**; Nova versão, Exportar ZIP e Verificar ficam logo abaixo.
+  - **Publicar** em três passos: o jogo, o arquivo, e nome e licença.
+  - Usar num jogo nunca sobrescreve: se o jogo já tem um arquivo com o mesmo nome, nada é copiado e a tela diz qual arquivo é.
+  - É a mesma biblioteca da tela anterior; nada se perde.
 - **Sem interface antiga por baixo:**
   - Jogar, Studios, Explorar e o Editor completo, abertos pela tela inicial, aparecem sozinhos, sem a barra de navegação antiga. Voltar retorna à tela nova.
   - Biblioteca, Gerar APK e Ajustes abrem sobre um fundo neutro, e fechar a janela volta à tela nova.

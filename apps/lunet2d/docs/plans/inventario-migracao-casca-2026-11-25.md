@@ -7,7 +7,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Recurso | Onde está hoje | Estado | Próximo passo |
 |---|---|---|---|
 | Editor de código com cores e números de linha | `CodeSurface` (AvaloniaEdit) | **casca** | — |
-| Teclado da IDE (Teclas, Atalhos, Métodos, sugestões do Roslyn) | `LunetKeyboard` | **casca** | — |
+| Barra de código sobre o teclado do sistema (Teclas, Atalhos, Métodos, sugestões do Roslyn) | `CodeBar` (o teclado próprio saiu em 25/11 por latência) | **casca** | — |
 | Diagnósticos no código (sublinhado e lista) | `EditorAssistant` (agora em `Lunet.Editor`), `CodeAnalyzer` | **casca** (M1) | — |
 | Assinatura ao digitar `(` `,` | `EditorAssistant` | **casca** (M2) | — |
 | Ir para definição, referências, renomear, formatar, quick fixes, estrutura, símbolos, buscar, operações de linha | `CommandPaletteView` | **casca** (M3) | — |
@@ -29,7 +29,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Música (faixas, padrões, sintetizador, WAV) | `MusicStudioView`, `MainActivity.Music` | rota | **A3**: grade de padrões e piano roll no canvas comum. |
 | Efeitos sonoros e áudio WAV | `MainActivity.AudioStudio`, `WaveAudioStudioView`, `AudioPreviewView` | rota | **A4**. |
 | Partículas, Paleta, Dados | `ParticleStudioView`, `MainActivity.Palette`, `DataStudioView` | rota | **A5**. |
-| Recursos do jogo e Biblioteca entre jogos | `MainActivity.Assets`, `AssetLibrary` | rota | **A6**: grade de miniaturas "usar neste jogo" em cada Studio. |
+| Recursos do jogo e Biblioteca entre jogos | Biblioteca: `LibraryView` (mesma `FilesDir/Library`); Recursos do jogo: `MainActivity.Assets` | Biblioteca **casca**; Recursos do jogo rota | **A6**: Recursos do jogo na casca e "usar neste jogo" dentro de cada Studio. |
 | Studios sem projeto (rascunhos globais) | `MainActivity.GlobalStudio` | rota (Studios) | Junto com A1–A5. |
 | Abas Arte, Mapa e Som da casca | `WorkspaceView.AssetsView` | lista de arquivos | Abrem os Studios da casca quando A1–A3 existirem. |
 

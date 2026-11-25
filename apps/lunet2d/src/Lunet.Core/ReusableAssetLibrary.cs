@@ -73,6 +73,18 @@ public sealed class ReusableAssetLibrary
         return result.ToString().Normalize(NormalizationForm.FormC);
     }
 
+    /// <summary>The stored PNG of a version to show as its picture (the primary file when it is one, else the first PNG), or null.</summary>
+    public string? PreviewFile(LibraryAssetVersion asset)
+    {
+        ArgumentNullException.ThrowIfNull(asset);
+        ValidateId(asset.Id);
+        var png = asset.PrimaryPath is { } primary && primary.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? primary
+            : asset.Files.Select(f => f.Path).FirstOrDefault(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
+        if (png is null) return null;
+        var file = FilePath(Path.Combine(VersionDirectory(asset.Id, asset.Version), "files"), png);
+        return File.Exists(file) ? file : null;
+    }
+
     public LibraryAssetVersion Find(string id, int version)
     {
         ValidateId(id);

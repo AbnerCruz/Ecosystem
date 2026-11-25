@@ -59,6 +59,8 @@ public sealed class ShellActivity : AvaloniaActivity
             OpenRoute = OpenRoute,
             // P3: the same declared progress as the previous Aprender screen (MainActivity.Learn).
             LearningProgressPath = Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"),
+            // A6: the same Biblioteca as the previous screen (MainActivity.AssetLibrary).
+            LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
         };

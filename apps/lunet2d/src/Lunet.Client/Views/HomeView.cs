@@ -41,7 +41,7 @@ public sealed class HomeView : UserControl
     }
 
     /// <summary>The Home's destinations in the bottom navigation bar (Material 3: 3–5, in the thumb's reach).</summary>
-    public enum Destination { Games, Learn, Play, Studios, More }
+    public enum Destination { Games, Learn, Play, Studios, More, Library }
 
     private readonly StackPanel _nav = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly Grid _navGrid = new();
@@ -105,6 +105,7 @@ public sealed class HomeView : UserControl
             items.Add((Destination.Studios, "Studios", LunetIcons.Art));
             items.Add((Destination.More, "Mais", LunetIcons.More));
         }
+        else items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
         _navGrid.Children.Clear();
         _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
         for (var i = 0; i < items.Count; i++)
@@ -127,6 +128,7 @@ public sealed class HomeView : UserControl
             case Destination.Play: _shell.OpenRoute?.Invoke("play", null); break;
             case Destination.Studios: _shell.OpenRoute?.Invoke("studios", null); break;
             case Destination.More: ShowMore(); break;
+            case Destination.Library: ShowLibrary(); break;
         }
     }
 
@@ -165,7 +167,8 @@ public sealed class HomeView : UserControl
             };
             AutomationProperties.SetName(b, label);
             var r = route;
-            b.Click += (_, _) => { CloseOverlay(); _shell.OpenRoute?.Invoke(r, null); };
+            // The Biblioteca lives in the shell now (A6); Explorar and Ajustes still open the previous screens.
+            b.Click += (_, _) => { CloseOverlay(); if (r == "library") ShowLibrary(); else _shell.OpenRoute?.Invoke(r, null); };
             list.Children.Add(b);
         }
         Open("Mais", list);
@@ -333,6 +336,7 @@ public sealed class HomeView : UserControl
     {
         if (Sheet is null) return false;
         if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
+        if (Sheet is LibraryView library) return library.Back();
         return CloseOverlay();
     }
 
@@ -386,6 +390,17 @@ public sealed class HomeView : UserControl
         Sheet = learn;
         Select(Destination.Learn);
         return learn;
+    }
+
+    /// <summary>The Biblioteca, full screen over the Home (Back walks its pages, then closes it).</summary>
+    public LibraryView ShowLibrary()
+    {
+        _overlay.Children.Clear();
+        var library = new LibraryView(_shell, () => CloseOverlay());
+        _overlay.Children.Add(library);
+        Sheet = library;
+        Select(_shell.OpenRoute is null ? Destination.Library : Destination.More);
+        return library;
     }
 
     /// <summary>A game's actions: Abrir, Renomear, Duplicar, Apagar.</summary>

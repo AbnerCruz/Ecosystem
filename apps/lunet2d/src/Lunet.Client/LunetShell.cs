@@ -26,6 +26,7 @@ public sealed class LunetShell : UserControl
     {
         Workspace = new WorkspaceSession(projectsRoot);
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
+        LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
         _home = new HomeView(this);
@@ -48,6 +49,9 @@ public sealed class LunetShell : UserControl
     /// use (FilesDir/learning/progress.json), so progress carries over; elsewhere it lives beside the games.
     /// </summary>
     public string LearningProgressPath { get; set; }
+
+    /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
+    public string LibraryPath { get; set; }
     public ShellState State { get; } = new();
     public GameSession Game { get; }
     public HomeView Home => _home;

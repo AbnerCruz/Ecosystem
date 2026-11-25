@@ -19,6 +19,7 @@ public sealed class MainWindow : Window
         {
             HardwareKeyboard = true,
             LearningProgressPath = Path.Combine(Path.GetDirectoryName(ai)!, "learning", "progress.json"),
+            LibraryPath = Path.Combine(Path.GetDirectoryName(ai)!, "Library"),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new FileSecretVault(Path.Combine(ai, "secrets.json"))), ai),
         };

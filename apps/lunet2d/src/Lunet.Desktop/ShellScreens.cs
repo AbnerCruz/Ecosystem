@@ -46,6 +46,19 @@ public static class ShellScreens
                 shell.Home.ShowTrash();
                 Shot(window, output, size, "2e-lixeira", written);
                 shell.Home.CloseSheet();
+                // A6: the Biblioteca with a pixel-art sprite and a data file published from the game.
+                var game = shell.Workspace.Store.Open(shell.Workspace.Projects()[0]);
+                Directory.CreateDirectory(Path.Combine(game.Directory, "Content"));
+                SamplePng(Path.Combine(game.Directory, "Content", "heroi.png"));
+                game.WriteText("Content/fases.json", "{}");
+                var lib = new Lunet.Core.ReusableAssetLibrary(shell.LibraryPath);
+                lib.Publish(game, "Content/heroi.png", "Herói", "Lunet", "CC0", tags: ["personagem", "pixel art"]);
+                lib.Publish(game, "Content/fases.json", "Fases da campanha", "Lunet", "Uso próprio");
+                var library = shell.Home.ShowLibrary();
+                Shot(window, output, size, "2h-biblioteca", written);
+                library.ShowAsset(library.Listed[0].Id, library.Listed[0].Version);
+                Shot(window, output, size, "2i-recurso", written);
+                shell.Home.CloseSheet(); shell.Home.CloseSheet();
                 var learn = shell.Home.ShowLearn();
                 Shot(window, output, size, "2f-aprender", written);
                 learn.ShowProject("LRN-001-P1");
@@ -144,6 +157,29 @@ public static class ShellScreens
             }
         }
         """;
+
+    /// <summary>A 16×16 pixel-art face, so the captures show a real picture.</summary>
+    private static void SamplePng(string file)
+    {
+        using var bitmap = new Avalonia.Media.Imaging.WriteableBitmap(new PixelSize(16, 16), new Vector(96, 96), Avalonia.Platform.PixelFormat.Rgba8888, Avalonia.Platform.AlphaFormat.Unpremul);
+        using (var buffer = bitmap.Lock())
+        {
+            var pixels = new byte[16 * 16 * 4];
+            for (var y = 0; y < 16; y++)
+                for (var x = 0; x < 16; x++)
+                {
+                    var i = (y * 16 + x) * 4;
+                    var inside = (x - 7.5) * (x - 7.5) + (y - 7.5) * (y - 7.5) < 49;
+                    var eye = (y == 6 && (x == 5 || x == 10)) || (y == 10 && x > 4 && x < 11);
+                    (pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]) = !inside ? ((byte)0, (byte)0, (byte)0, (byte)0)
+                        : eye ? ((byte)20, (byte)12, (byte)51, (byte)255) : ((byte)165, (byte)148, (byte)255, (byte)255);
+                }
+            System.Runtime.InteropServices.Marshal.Copy(pixels, 0, buffer.Address, pixels.Length);
+        }
+#pragma warning disable CS0618 // plain PNG, as the captures
+        bitmap.Save(file);
+#pragma warning restore CS0618
+    }
 
     private sealed class ScreensApp : LunetApp;
 }
