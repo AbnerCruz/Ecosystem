@@ -101,8 +101,5 @@ public static class SpikeMeasurement
         }
         """;
 
-    private sealed class MeasuredApp : Application
-    {
-        public override void Initialize() => Styles.Add(new Avalonia.Themes.Fluent.FluentTheme());
-    }
+    private sealed class MeasuredApp : Lunet.Client.LunetApp;
 }

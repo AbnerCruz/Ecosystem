@@ -51,3 +51,11 @@ jobs:
         run: dotnet test --project tests/Lunet.Tests
       - name: Test Release (framework, compiler, runtime, projects, architecture)
         run: dotnet test --project tests/Lunet.Tests -c Release
+      # ADR 0013: every change of the Avalonia shell ships headless captures (phone and wide widths). Not a device test.
+      - name: Capture the Lunet.Client shell (headless Skia)
+        run: dotnet run --project src/Lunet.Desktop -- --screens "$RUNNER_TEMP/lunet-shell-screens"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lunet-shell-screens
+          path: ${{ runner.temp }}/lunet-shell-screens/*.png
+          if-no-files-found: error

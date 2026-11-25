@@ -1,0 +1,135 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-casca-avalonia",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T02:55:50Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-530",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "cd258e5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/lunet2d-ci.yml",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/Directory.Build.props",
+    "apps/lunet2d/Lunet.slnx",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "apps/lunet2d/docs/plans/lunet-casca-avalonia-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/Lunet.Client.csproj",
+    "apps/lunet2d/src/Lunet.Client/LunetApp.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/GameSession.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetTokens.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/GameView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/Lunet.Desktop.csproj",
+    "apps/lunet2d/src/Lunet.Desktop/MainWindow.cs",
+    "apps/lunet2d/src/Lunet.Desktop/Program.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/src/Lunet.Desktop/SpikeMeasurement.cs",
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261125-lunet-casca-avalonia.json"
+  ],
+  "work_completed": [
+    "Registered the owner's order to move Lunet development to a single Avalonia shell (ADD-0036, DEC-0068, Lunet ADR 0013) and the wave plan from the owner's 24/11 study.",
+    "Created src/Lunet.Client: UI-independent ShellState (Home/Workspace/panels, per-game tab memory, compact/expanded at 840 dp, Back order) and GameSession (run, pause, one-frame step, 0.25x-2x speed, compile problems).",
+    "Built the shell from shared tokens/components (family values of Numa, Lunet violet accent at AA): Home, Workspace tabs Code/Game/Art/Map/Sound/Notes, Console/Problems as bottom sheet or side column, embedded game beside the code on wide screens, verified saves, no modal dialogs.",
+    "Lunet.Desktop now hosts LunetShell; added 'Lunet --screens' headless captures (412x915 and 1280x800) and a CI step that uploads them."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1233 tests, incl. LunetClientTests with headless Skia UI)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Headless shell captures at phone and wide widths",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    },
+    {
+      "check": "Governed combined checks on GitHub",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "Not tested on any device: the Android app of this version is unchanged; the Android Avalonia head is LUNET-531.",
+    "The code surface is a provisional Avalonia TextBox; the PieceTable code view is LUNET-533 (wave 2).",
+    "Art/Map/Sound tabs list the project's files and say honestly that their Studios arrive in wave 3.",
+    "VERSION set to 1000594 to stay above PR #1038 (1000593); if #1038 integrates after this, it must re-bump above 1000594."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "LUNET-531: Android Avalonia head hosting LunetShell, with IME PT-BR, 60 FPS and cold-start proofs.",
+    "LUNET-532: NN-022 Extraction Review for Ecosystem.Ui with Numa and Lunet."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0035-lunet-sem-espelho.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+    "docs/governance/decisions.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Lunet.Client references only Lunet.Host (Lunet libraries); tokens are copied from Urbe, not referenced."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "No Hub reference in Lunet.Client or Lunet.Desktop."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Framework, Compiler, Runtime and Editor untouched; the shell consumes WorkspaceSession."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Owner's chat order persisted as ADD-0036 / DEC-0068 / ADR 0013."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Headless captures and CI are reported as automated only; no device claim."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "native-ui-design-system",
+      "status": "possible-candidate",
+      "rationale": "Lunet.Client copies Numa's (Urbe.Client) token values and component style; a shared Ecosystem.Ui needs the NN-022 Extraction Review (LUNET-532) before any extraction."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

@@ -1,3 +1,12 @@
+## LUNET-530 · Casca única em Avalonia (ADD-0036 / DEC-0068 / ADR 0013, 25/11/2026)
+
+Ordem do proprietário: "assume o desenvolvimento em avalonia". Plano e ondas: [`docs/plans/lunet-casca-avalonia-2026-11-25.md`](docs/plans/lunet-casca-avalonia-2026-11-25.md). Trabalho novo de interface só em `src/Lunet.Client`; a casca de Views Android recebe apenas correções de dados/distribuição. Explorar, novos cursos, mapas mentais e novas APIs isoladas ficam congelados até o portão da Onda 2.
+
+- [ ] **LUNET-530 · Casca `Lunet.Client` — fatia 1 (feito, sem validação em aparelho):** Home de jogos, Workspace com abas Código · Jogo · Arte · Mapa · Som · Notas, Console/Problemas como folha inferior (celular) ou coluna (≥ 840 dp), jogo embutido com pausar/passo/velocidade, Back/Esc, gravação verificada, tokens AA da família Numa com acento violeta. Desktop usa a casca; `Lunet --screens` gera capturas no CI. Testes: `LunetClientTests`. Editor ainda é `TextBox` provisório; Arte/Mapa/Som listam arquivos e dizem que o Studio chega na Onda 3.
+- [ ] **LUNET-531 · Cabeça Android Avalonia:** hospedar `LunetShell` em `net10.0-android`, pasta de projetos do app, Back do sistema; provas de IME PT-BR, 60 FPS e partida a frio < 1,5 s; publicar por cima de `io.lunet.studio` quando cobrir o fluxo principal.
+- [ ] **LUNET-532 · Extraction Review `Ecosystem.Ui`:** NN-022 com Numa e Lunet como consumidores; extrair só com saldo positivo.
+- [ ] **LUNET-533 · View de código própria sobre `PieceTable`** (Onda 2), substituindo o `TextBox` provisório.
+
 ## LUNET-512 · F8 — Explorar referências e experimentos (Issue #1034)
 
 - [ ] Preservar 131 fichas, filtros de seleção múltipla, comparação, experimentos autorais e artigos offline; vínculo por GameId com recuperação, autoria/licença e referências arquivadas; persistência da vista. Código e testes propostos na branch F8, evidências e limites em `docs/plans/f8-validacao.md`. CI integrado, emulador e distribuição ainda por confirmar.

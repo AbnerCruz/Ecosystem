@@ -876,3 +876,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ## 24/11/2026 — evolução do Framework (E1–E3)
 
 PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996121a`. E1/E2/E3 possuem código candidato e testes escritos; não confundir com validação executada. Sem SDK local. Manter o PR fora da main até F8 integrada, baseline pós-F8 e checks completos. Plano: `docs/plans/lunet-plano-evolucao-framework-2026-11-24.md`. Próxima ação: executar CI, reproduzir baseline Release, completar lacunas de testes e evidências, integrar pelo gate oficial e verificar APK da main.
+
+### 20261125-claude-lunet-avalonia — 25/11/2026 — Claude → próximos agentes — LUNET-530
+- Ordem do proprietário (ADD-0036 / DEC-0068): o desenvolvimento do Lunet passa para a casca única em Avalonia. ADR 0013 e plano de ondas em `docs/plans/lunet-casca-avalonia-2026-11-25.md`.
+- Base `cd258e5`. Ramo `ccr-0dc592a4-9d3w98`. Novo `src/Lunet.Client` (ShellState, GameSession, tokens/componentes, Home, Workspace, Console/Problemas); `Lunet.Desktop` agora hospeda a casca; `Lunet --screens` gera capturas e o CI as anexa.
+- Evidência: 1.233 testes xUnit verdes localmente com .NET 10.0.404 (inclui `LunetClientTests`, com UI headless Skia). Sem aparelho. Próximo: LUNET-531 (cabeça Android Avalonia).

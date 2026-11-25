@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Themes.Fluent;
+using Lunet.Client;
 
 namespace Lunet.Desktop;
 
-/// <summary>Desktop host of the LUNET-482 spike (DEC-0062 A): Windows, Linux and macOS with one Avalonia shell.</summary>
+/// <summary>Desktop head of the Lunet shell (ADR 0013, DEC-0068): Windows, Linux and macOS.</summary>
 public static class Program
 {
     /// <summary>Started before Avalonia initializes, to report cold start to first frame.</summary>
@@ -16,13 +16,14 @@ public static class Program
     {
         if (args.Length > 0 && args[0] == "--measure")
             return SpikeMeasurement.Run(args.Length > 1 ? args[1] : Path.Combine(Path.GetTempPath(), "lunet-measure"));
+        if (args.Length > 0 && args[0] == "--screens")
+            return ShellScreens.Run(args.Length > 1 ? args[1] : Path.Combine(Path.GetTempPath(), "lunet-screens"));
         return AppBuilder.Configure<DesktopApp>().UsePlatformDetect().LogToTrace().StartWithClassicDesktopLifetime(args);
     }
 }
 
-public sealed class DesktopApp : Application
+public sealed class DesktopApp : LunetApp
 {
-    public override void Initialize() => Styles.Add(new FluentTheme());
 
     public override void OnFrameworkInitializationCompleted()
     {
