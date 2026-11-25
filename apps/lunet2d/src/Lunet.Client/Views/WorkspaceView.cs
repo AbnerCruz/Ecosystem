@@ -72,7 +72,7 @@ public sealed class WorkspaceView : UserControl
     public void Load()
     {
         _title.Text = _shell.State.Project ?? "";
-        _code.Load(_shell.Workspace.Project!.Manifest.EntryPoint);
+        _code.OpenSession(_shell.Workspace.Project!.Manifest.EntryPoint);
         _notes.Load(null);
         Rebuild();
     }
@@ -90,6 +90,7 @@ public sealed class WorkspaceView : UserControl
     {
         _code.Save();
         _notes.Save();
+        _code.SaveSession();
     }
 
     /// <summary>Lays the workspace out for the current state (layout, tab, panel).</summary>

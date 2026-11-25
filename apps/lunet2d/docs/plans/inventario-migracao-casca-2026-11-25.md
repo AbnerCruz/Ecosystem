@@ -11,7 +11,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Diagnósticos no código (sublinhado e lista) | `EditorAssistant` (agora em `Lunet.Editor`), `CodeAnalyzer` | **casca** (M1) | — |
 | Assinatura ao digitar `(` `,` | `EditorAssistant` | **casca** (M2) | — |
 | Ir para definição, referências, renomear, formatar, quick fixes, estrutura, símbolos, buscar, operações de linha | `CommandPaletteView` | **casca** (M3) | — |
-| Vários documentos abertos, histórico de posição | `MainActivity.EditorDocuments` | parcial (lista de arquivos) | **M4**: abas de documentos e retomada da posição. |
+| Vários documentos abertos, histórico de posição | `DocumentEditor` + `EditorDocuments` (sessão em `.lunet/editor-session.json`) | **casca** (M4) | — |
 | Rodar, pausar, passo, velocidade | `GameSession`/`GameView` | **casca** | — |
 | Preview isolado (processo separado) e GL | `IsolatedPreview`, `PreviewHost`, `Gles` | rota (Editor completo) | **M5**: preview GL embutido na aba Jogo (Android); rasterizador em CPU fica no desktop. |
 | Profiler e Inspector | `MainActivity.Profiler`, `InspectorPanel` | rota | **M6**: painéis Inspector e Desempenho. |
