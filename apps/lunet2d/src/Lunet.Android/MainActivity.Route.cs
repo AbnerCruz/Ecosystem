@@ -18,6 +18,9 @@ public sealed partial class MainActivity
         ["studios", "learn", "explore", "play", "library", "settings", "ai", "git", "assets", "notes", "apk", "editor"];
 
     private bool _fromShell;
+    // A route whose screen is a dialog (Biblioteca, Gerar APK, Ajustes): nothing of the previous Home shows behind it, and
+    // closing the last dialog returns to the shell.
+    private bool _routeIsDialog;
 
     /// <summary>Starts this activity on a route, reusing the running instance (no stack of copies).</summary>
     public static Intent RouteIntent(global::Android.Content.Context context, string route, string? project)
@@ -52,6 +55,13 @@ public sealed partial class MainActivity
                 LoadProjectFolder();
                 OpenProject(project);
             }
+            _routeIsDialog = route is "library" or "apk" or "settings";
+            if (_routeIsDialog)
+            {
+                var plain = new global::Android.Views.View(this);
+                plain.SetBackgroundColor(LunetUi.Background);
+                SetContentView(plain);
+            }
             switch (route)
             {
                 case "studios": ShowLauncherStudios(); break;
@@ -74,6 +84,18 @@ public sealed partial class MainActivity
             Toast.MakeText(this, "Não foi possível abrir: " + ex.Message, ToastLength.Long)?.Show();
             LeaveToShell();
         }
+    }
+
+    /// <summary>The window got focus back: when the routed screen was a dialog, its last dialog closed — back to the shell.</summary>
+    public override void OnWindowFocusChanged(bool hasFocus)
+    {
+        base.OnWindowFocusChanged(hasFocus);
+        if (!hasFocus || !_routeIsDialog || !_fromShell) return;
+        // Give a dialog that opens another one (search, "Usar em…") the moment to take the focus first.
+        Window?.DecorView?.PostDelayed(() =>
+        {
+            if (_routeIsDialog && HasWindowFocus && !IsFinishing) { _routeIsDialog = false; LeaveToShell(); }
+        }, 250);
     }
 
     /// <summary>Saves what is open here (verified writes) and goes back to the shell.</summary>
