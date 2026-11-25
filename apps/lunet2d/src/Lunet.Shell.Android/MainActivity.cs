@@ -71,6 +71,11 @@ public sealed class MainActivity : AvaloniaMainActivity
                 shell.StopGame();
                 shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
                 var editor = shell.WorkspaceView.Code;
+                // The CI emulator announces a hardware keyboard (the Lunet keyboard rightly steps aside for it):
+                // report what was detected, then act as a phone without one, the case the keyboard is for.
+                Android.Util.Log.Info("lunet-e2e", $"teclado-fisico-detectado={shell.HardwareKeyboard}");
+                shell.HardwareKeyboard = false;
+                shell.PreferSystemKeyboard = false;
                 editor.TextBox.Focus();
                 editor.ShowKeyboard();
                 editor.TextBox.CaretIndex = 0;
