@@ -25,6 +25,8 @@ public sealed class RunningGame : IDisposable
     public Game Game => _loaded.Game;
     /// <summary>Average CPU time of the last 60 frames (update + draw + rasterization), in milliseconds.</summary>
     public double AverageFrameMilliseconds => _frameTimes.Count == 0 ? 0 : _frameTimes.Average();
+    /// <summary>CPU time of the last frame (update + draw + rasterization), in milliseconds.</summary>
+    public double LastFrameMilliseconds { get; private set; }
 
     /// <summary>Advances by the real time since the last call (or by <paramref name="seconds"/>) and renders; false when the game faulted.</summary>
     public bool Frame(double? seconds = null)
@@ -33,7 +35,8 @@ public sealed class RunningGame : IDisposable
         var started = Stopwatch.GetTimestamp();
         Host.Tick(seconds ?? Math.Min(0.1, now - _last));
         _last = now;
-        _frameTimes.Enqueue(Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+        LastFrameMilliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+        _frameTimes.Enqueue(LastFrameMilliseconds);
         if (_frameTimes.Count > 60) _frameTimes.Dequeue();
         return !Host.IsFaulted;
     }

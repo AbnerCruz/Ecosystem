@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.1-dev.1000599 — Inspector e Desempenho ao lado do jogo
+
+- **Inspector:** com o jogo rodando, o botão de controles deslizantes na barra do jogo (ou Painéis → Inspector) mostra os valores do jogo ao vivo.
+  - Mude um número, uma cor, um texto, liga/desliga ou uma opção, e o jogo reage na hora. Com o jogo pausado, o quadro é redesenhado na mesma hora.
+  - Campos com `[Range]` ganham um controle deslizante. Valores inválidos são recusados com uma mensagem, sem mexer no jogo.
+  - A mudança vale até o jogo parar; o código não muda. Com mais de 12 campos aparece um filtro.
+- **Desempenho:** o botão de pulso mostra o tempo de cada quadro num gráfico, com as linhas de 60 e 30 quadros por segundo.
+  - Mostra média, o tempo abaixo do qual ficam 95% dos quadros, o pior quadro e quantos passaram de 16,7 ms.
+  - Tocar numa barra mostra aquele quadro: Update, Draw e passos.
+  - Os quadros são guardados mesmo com o painel fechado. **Copiar relatório** copia os números em texto.
+- No celular, Inspector, Desempenho e IA abrem numa gaveta de meia tela, com o jogo visível acima.
+
 ## 0.0.1-dev.1000598 — Volta onde você parou
 
 - Ao abrir um jogo, o editor volta ao último arquivo, ao cursor e à linha em que você estava. Isso vale também depois de fechar o app.

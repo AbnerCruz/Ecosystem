@@ -143,7 +143,10 @@ public sealed class WorkspaceView : UserControl
                 // Bottom sheet: the content stays visible above it (no scrim, no modal).
                 var sheet = new Border
                 {
-                    Height = 280, Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
+                    // Inspector, Desempenho and the AI need room: half the screen, the game still above it.
+                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai && Bounds.Height > 0
+                        ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
+                    Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
                     CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),
                     BorderBrush = LunetTokens.Brush(LunetTokens.Color.BorderStrong), BorderThickness = new Thickness(0, 1, 0, 0),
                     BoxShadow = LunetTokens.Low,

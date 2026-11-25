@@ -90,6 +90,9 @@ public sealed class GameView : UserControl
                 : LunetUi.IconButton(LunetIcons.Play, "Continuar", () => game.TogglePause(), LunetTokens.Color.Primary));
             _bar.Children.Add(LunetUi.IconButton(LunetIcons.Step, "Avançar um quadro", () => { if (game.Step()) Blit(); }));
             _bar.Children.Add(LunetUi.IconButton(LunetIcons.Stop, "Parar", () => _shell.StopGame()));
+            // M6: inspect and measure next to the game, one tap away (Godot's Remote tree and Monitors while running).
+            _bar.Children.Add(PanelButton(SupportPanel.Inspector, LunetIcons.Inspector, "Inspector"));
+            _bar.Children.Add(PanelButton(SupportPanel.Performance, LunetIcons.Pulse, "Desempenho"));
         }
         else _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _shell.RunGame(), LunetTokens.Color.Primary));
         foreach (var speed in GameSession.Speeds)
@@ -111,6 +114,9 @@ public sealed class GameView : UserControl
         else if (_stage.Children.Count > 1) _stage.Children.RemoveAt(1);
         UpdateStatus();
     }
+
+    private Button PanelButton(SupportPanel panel, string icon, string label) => LunetUi.IconButton(icon, label,
+        () => _shell.State.TogglePanel(panel), _shell.State.Panel == panel ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
 
     private void UpdateStatus()
     {

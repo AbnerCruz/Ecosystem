@@ -28,11 +28,19 @@ public sealed class SupportPanelView : UserControl
     /// <summary>The AI of the game (M7), kept so a running request survives closing the sheet.</summary>
     public AiPanelView Ai { get; }
 
+    /// <summary>The Inspector of the running game (M6).</summary>
+    public InspectorView Inspector { get; }
+
+    /// <summary>The frame graph of the running game (M6).</summary>
+    public PerformanceView Performance { get; }
+
     public SupportPanelView(LunetShell shell)
     {
         _shell = shell;
         Palette = new CommandPaletteView(shell);
         Ai = new AiPanelView(shell);
+        Inspector = new InspectorView(shell);
+        Performance = new PerformanceView(shell);
         _consoleScroll.Content = _consoleText;
         _consoleScroll.Padding = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.M);
     }
@@ -58,7 +66,7 @@ public sealed class SupportPanelView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", _ => "Problemas" });
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -79,6 +87,12 @@ public sealed class SupportPanelView : UserControl
             Ai.Refresh();
             root.Children.Add(Ai);
         }
+        else if (panel is SupportPanel.Inspector or SupportPanel.Performance)
+        {
+            Control view = panel == SupportPanel.Inspector ? Inspector : Performance;
+            if (view.Parent is Panel oldView) oldView.Children.Remove(view);
+            root.Children.Add(view);
+        }
         else if (panel == SupportPanel.Commands)
         {
             if (Palette.Parent is Panel old) old.Children.Remove(Palette);
@@ -97,6 +111,8 @@ public sealed class SupportPanelView : UserControl
         {
             (SupportPanel.Ai, "IA do jogo", LunetIcons.Function),
             (SupportPanel.Commands, "Comandos", LunetIcons.Search),
+            (SupportPanel.Inspector, "Inspector", LunetIcons.Inspector),
+            (SupportPanel.Performance, "Desempenho", LunetIcons.Pulse),
             (SupportPanel.Console, "Console", LunetIcons.Console),
             (SupportPanel.Problems, problems > 0 ? $"Problemas ({problems})" : "Problemas", LunetIcons.Problems),
         })

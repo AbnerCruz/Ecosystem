@@ -14,7 +14,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Vários documentos abertos, histórico de posição | `DocumentEditor` + `EditorDocuments` (sessão em `.lunet/editor-session.json`) | **casca** (M4) | — |
 | Rodar, pausar, passo, velocidade | `GameSession`/`GameView` | **casca** | — |
 | Preview isolado (processo separado) e GL | `IsolatedPreview`, `PreviewHost`, `Gles` | rota (Editor completo) | **M5**: preview GL embutido na aba Jogo (Android); rasterizador em CPU fica no desktop. |
-| Profiler e Inspector | `MainActivity.Profiler`, `InspectorPanel` | rota | **M6**: painéis Inspector e Desempenho. |
+| Profiler e Inspector | `InspectorView` + `GameInspection`, `PerformanceView` + `FrameStats` | **casca** (M6) | Próximo: medir também a GPU quando a prévia GL embutida (M5) existir. |
 | Console e Problemas | `SupportPanelView` | **casca** | — |
 | IA no jogo (chat, modos Estudo/Fazer, diff, desfazer, chave) | `AiPanelView` sobre `Lunet.Ai` | **casca** (M7) | Próximos: anexos e imagens, pesquisa na web, catálogo de modelos, revisão trecho a trecho dentro do editor, execução em segundo plano com notificação (`AiRunCoordinator`). |
 | IA global | `MainActivity.GlobalAi` | rota (IA, sem jogo) | Junto com M7. |
