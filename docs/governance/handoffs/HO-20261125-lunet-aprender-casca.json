@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-aprender-casca",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T17:12:24Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "d5d57ec",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LearnView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/MainWindow.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientLearnTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-aprender-casca.json"
+  ],
+  "work_completed": [
+    "P3: Aprender in the shell (LearnView over LearningCatalog and LearningProgressStore): track summary and Continuar, the 60-course catalog by track, course and challenge pages, declared objectives saved with rollback on failure, create/open/link the challenge's game by GameId, offline reference beside the code (Docs panel) or inside Aprender; Back walks its pages.",
+    "Android uses FilesDir/learning/progress.json, the same file as the previous Aprender screen; desktop uses the user's AppData; Aprender is offered on the desktop Home too."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1276 tests) incl. LunetClientLearnTests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientLearnTests.cs"
+    },
+    {
+      "check": "Headless captures celular/largo 2f-aprender and 2g-desafio",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "The AI hint per objective (previous screen) is not in the shell yet.",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "AI hint in a challenge, P7 settings and shared folder, M5 embedded GL preview, A1–A6 Studios"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

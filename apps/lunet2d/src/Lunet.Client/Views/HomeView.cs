@@ -19,6 +19,9 @@ public sealed class HomeView : UserControl
 {
     private readonly LunetShell _shell;
     private readonly WrapPanel _grid = new() { Orientation = Orientation.Horizontal };
+
+    /// <summary>A phone: one game per row (list); wider, cards in a grid.</summary>
+    private bool Compact => Bounds.Width is > 0 and < 600 || Bounds.Width <= 0;
     private readonly TextBlock _count = LunetUi.Secondary("");
     private readonly StackPanel _trashRow = new() { Margin = new Thickness(0, LunetTokens.Space.S, 0, 0) };
     // Sheets and the undo bar float over the Home; the Home stays in place under them (no navigation).
@@ -37,68 +40,149 @@ public sealed class HomeView : UserControl
         Build();
     }
 
+    /// <summary>The Home's destinations in the bottom navigation bar (Material 3: 3–5, in the thumb's reach).</summary>
+    public enum Destination { Games, Learn, Play, Studios, More, Library, Settings }
+
+    private readonly StackPanel _nav = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly Grid _navGrid = new();
+
+    /// <summary>The destination selected in the bottom bar.</summary>
+    public Destination Selected { get; private set; } = Destination.Games;
+
     /// <summary>Lays the Home out (again when the head sets <see cref="LunetShell.OpenRoute"/>).</summary>
     public void Build()
     {
-        var shell = _shell;
         if (_grid.Parent is Panel old) old.Children.Remove(_grid);
-        var header = new DockPanel { Margin = new Thickness(0, 0, 0, LunetTokens.Space.L) };
-        var create = LunetUi.Button("Novo jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate);
-        create.Name = "NewProject";
-        DockPanel.SetDock(create, Avalonia.Controls.Dock.Right);
-        header.Children.Add(create);
-        var titles = new StackPanel { Spacing = LunetTokens.Space.Xxs, VerticalAlignment = VerticalAlignment.Center };
-        titles.Children.Add(LunetUi.Headline("Seus jogos"));
         if (_count.Parent is Panel oldParent) oldParent.Children.Remove(_count);
+        var titles = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(0, LunetTokens.Space.S, 0, LunetTokens.Space.M) };
+        titles.Children.Add(LunetUi.Headline("Seus jogos"));
         titles.Children.Add(_count);
-        header.Children.Add(titles);
 
-        var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L) };
-        content.Children.Add(header);
-        if (shell.OpenRoute is not null) content.Children.Add(Destinations());
+        var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L, LunetTokens.Space.M, 96) };
+        content.Children.Add(titles);
         content.Children.Add(_grid);
         if (_trashRow.Parent is Panel oldTrash) oldTrash.Children.Remove(_trashRow);
         content.Children.Add(_trashRow);
         if (_overlay.Parent is Panel oldOverlay) oldOverlay.Children.Remove(_overlay);
         if (_snackbar.Parent is Panel oldBar) oldBar.Children.Remove(_snackbar);
         _snackbar.VerticalAlignment = VerticalAlignment.Bottom;
-        Content = new Grid { Children = { new ScrollViewer { Content = content }, _snackbar, _overlay } };
+
+        // "Novo jogo" floats bottom-right, where the thumb rests (Material extended FAB).
+        var create = LunetUi.Button("Novo jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate);
+        create.Name = "NewProject";
+        create.MinHeight = 56;
+        create.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
+        create.HorizontalAlignment = HorizontalAlignment.Right;
+        create.VerticalAlignment = VerticalAlignment.Bottom;
+        create.Margin = new Thickness(LunetTokens.Space.M);
+
+        var page = new Grid { Children = { new ScrollViewer { Content = content }, create, _snackbar, _overlay } };
+        BuildNav();
+        if (_navGrid.Parent is Border oldNav) oldNav.Child = null;
+        var nav = new Border
+        {
+            Child = _navGrid, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
+        };
+        var root = new DockPanel();
+        DockPanel.SetDock(nav, Avalonia.Controls.Dock.Bottom);
+        root.Children.Add(nav);
+        root.Children.Add(page);
+        Content = root;
         Refresh();
     }
 
-    /// <summary>Where else to go from the Home (Jogar, Studios, Aprender…), one row that scrolls sideways.</summary>
-    private Control Destinations()
+    /// <summary>
+    /// The bottom bar: Jogos, Aprender (in the shell), Jogar and Studios (still the previous screens) and Mais
+    /// (Biblioteca, Explorar, Ajustes). Without the previous screens (desktop) only what lives in the shell appears.
+    /// </summary>
+    private void BuildNav()
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
-        foreach (var (route, label, icon) in LunetShell.HomeRoutes)
+        var items = new List<(Destination Destination, string Label, string Icon)> { (Destination.Games, "Jogos", LunetIcons.Game), (Destination.Learn, "Aprender", LunetIcons.Book) };
+        items.Add((Destination.Play, "Jogar", LunetIcons.Play));
+        if (_shell.OpenRoute is not null)
         {
-            // Icon tile with its label below (D5): six destinations read at a glance, one thumb-tap each.
-            var tile = new StackPanel { Spacing = LunetTokens.Space.Xxs, Width = 72 };
-            tile.Children.Add(new Border
-            {
-                Width = 56, Height = 56, CornerRadius = new CornerRadius(LunetTokens.Radius.L), HorizontalAlignment = HorizontalAlignment.Center,
-                Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
-                Child = LunetIcons.Create(icon, LunetTokens.Color.Primary, 24),
-            });
-            var text = LunetUi.Text(label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
-            text.TextAlignment = TextAlignment.Center; text.TextWrapping = TextWrapping.NoWrap;
-            tile.Children.Add(text);
+            items.Add((Destination.Studios, "Studios", LunetIcons.Art));
+            items.Add((Destination.More, "Mais", LunetIcons.More));
+        }
+        else
+        {
+            items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
+            items.Add((Destination.Settings, "Ajustes", LunetIcons.Speed));
+        }
+        _navGrid.Children.Clear();
+        _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
+        for (var i = 0; i < items.Count; i++)
+        {
+            var (destination, label, icon) = items[i];
+            var tab = LunetUi.Tab(icon, label, destination == Selected, () => Go(destination));
+            tab.Name = "Nav-" + destination;
+            Grid.SetColumn(tab, i);
+            _navGrid.Children.Add(tab);
+        }
+    }
+
+    /// <summary>Goes to a destination of the bottom bar (the same path as a tap).</summary>
+    public void Go(Destination destination)
+    {
+        switch (destination)
+        {
+            case Destination.Games: CloseOverlay(); break;
+            case Destination.Learn: ShowLearn(); break;
+            case Destination.Play: ShowPlay(); break;
+            case Destination.Studios: _shell.OpenRoute?.Invoke("studios", null); break;
+            case Destination.More: ShowMore(); break;
+            case Destination.Library: ShowLibrary(); break;
+            case Destination.Settings: ShowSettings(); break;
+        }
+    }
+
+    private void Select(Destination destination)
+    {
+        if (Selected == destination) return;
+        Selected = destination;
+        BuildNav();
+    }
+
+    /// <summary>Mais: the destinations that still live in the previous screens.</summary>
+    private void ShowMore()
+    {
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs };
+        foreach (var (route, label, icon, detail) in new[]
+        {
+            ("library", "Biblioteca", LunetIcons.Folder, "Recursos seus para usar em qualquer jogo"),
+            ("explore", "Explorar", LunetIcons.Map, "Referências e inspiração"),
+            ("settings", "Ajustes", LunetIcons.Speed, "Aparência, pasta de projetos, IA"),
+        })
+        {
+            var stack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            stack.Children.Add(LunetUi.Text(label, LunetTokens.Type.Callout, weight: FontWeight.SemiBold));
+            stack.Children.Add(LunetUi.Text(detail, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+            var row = new DockPanel();
+            var ic = LunetIcons.Create(icon, LunetTokens.Color.Primary, 22);
+            ic.Margin = new Thickness(0, 0, LunetTokens.Space.M, 0);
+            DockPanel.SetDock(ic, Avalonia.Controls.Dock.Left);
+            row.Children.Add(ic);
+            row.Children.Add(stack);
             var b = new Button
             {
-                Content = tile, Padding = new Thickness(0), Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0),
+                Content = row, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                MinHeight = 56, Padding = new Thickness(LunetTokens.Space.S), Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(LunetTokens.Radius.M), Name = "Route-" + route,
             };
-            b.Classes.Add("lunet-card");
             AutomationProperties.SetName(b, label);
-            b.Click += (_, _) => _shell.OpenRoute?.Invoke(route, null);
-            b.Name = "Route-" + route;
-            row.Children.Add(b);
+            var r = route;
+            // Biblioteca (A6) and Ajustes (P7) live in the shell now; Explorar still opens the previous screen.
+            b.Click += (_, _) =>
+            {
+                CloseOverlay();
+                if (r == "library") ShowLibrary();
+                else if (r == "settings") ShowSettings();
+                else _shell.OpenRoute?.Invoke(r, null);
+            };
+            list.Children.Add(b);
         }
-        return new ScrollViewer
-        {
-            Content = row, Margin = new Thickness(0, 0, 0, LunetTokens.Space.L),
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-        };
+        Open("Mais", list);
     }
 
     /// <summary>The project names currently shown, in order (for tests and screen readers).</summary>
@@ -121,7 +205,7 @@ public sealed class HomeView : UserControl
                 "Crie um jogo: o código, a arte, o som e o jogo rodando ficam juntos, a um toque de distância.",
                 LunetUi.Button("Criar o primeiro jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate)));
         }
-        else foreach (var name in Shown) _grid.Children.Add(ProjectCard(name));
+        else foreach (var name in Shown) _grid.Children.Add(Compact ? ProjectRow(name) : ProjectCard(name));
         _trashRow.Children.Clear();
         var trash = _shell.Workspace.Store.Trash();
         if (trash.Count > 0)
@@ -145,6 +229,8 @@ public sealed class HomeView : UserControl
     /// <summary>"editado agora", "há 5 min", "há 3 h", "ontem", "há 4 dias" or the date (D5).</summary>
     public static string Edited(DateTime utc, DateTime nowUtc)
     {
+        // ZIP imports and shared-folder copies stamp files with a fixed old date: say nothing rather than a false date.
+        if (utc.Year < 2010 || utc > nowUtc.AddDays(1)) return "";
         var d = nowUtc - utc;
         if (d < TimeSpan.FromMinutes(1)) return "editado agora";
         if (d < TimeSpan.FromHours(1)) return $"editado há {(int)d.TotalMinutes} min";
@@ -154,50 +240,98 @@ public sealed class HomeView : UserControl
         return "editado em " + utc.ToLocalTime().ToString("dd/MM/yyyy");
     }
 
-    private Control ProjectCard(string name)
+    private DateTime LastEdited(string name)
     {
         var folder = Path.Combine(_shell.Workspace.Root, name);
-        var edited = Directory.Exists(folder)
-            ? Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories).Where(f => !f.Contains(Path.DirectorySeparatorChar + ".lunet" + Path.DirectorySeparatorChar))
-                .Select(File.GetLastWriteTimeUtc).DefaultIfEmpty(Directory.GetLastWriteTimeUtc(folder)).Max()
-            : DateTime.UtcNow;
-        var stack = new StackPanel { Spacing = 2 };
-        stack.Children.Add(new Border
+        if (!Directory.Exists(folder)) return DateTime.MinValue;
+        try
         {
-            Height = 92, CornerRadius = new CornerRadius(LunetTokens.Radius.M), Margin = new Thickness(0, 0, 0, LunetTokens.Space.Xs),
-            Background = LunetTokens.Brush(CardColor(name)),
-            Child = new Viewbox { Width = 36, Height = 36, Child = LunetIcons.Create(LunetIcons.Game, LunetTokens.Color.TextPrimary, 36) },
-        });
+            return Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories)
+                .Where(f => !f.Contains(Path.DirectorySeparatorChar + ".lunet" + Path.DirectorySeparatorChar))
+                .Select(File.GetLastWriteTimeUtc).DefaultIfEmpty(Directory.GetLastWriteTimeUtc(folder)).Max();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return DateTime.MinValue; }
+    }
+
+    private static Control Cover(string name, double size, double radius) => new Border
+    {
+        Width = size, Height = size, CornerRadius = new CornerRadius(radius), Background = LunetTokens.Brush(CardColor(name)),
+        Child = new TextBlock
+        {
+            Text = name.Length > 0 ? char.ToUpperInvariant(name[0]).ToString() : "?", FontFamily = LunetTokens.UiFont,
+            FontSize = size * 0.42, FontWeight = FontWeight.Bold, Foreground = LunetTokens.Brush(LunetTokens.Color.TextPrimary),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+        },
+    };
+
+    private Button MoreButton(string name)
+    {
+        var more = LunetUi.IconButton(LunetIcons.More, "Ações de " + name, () => ShowActions(name), LunetTokens.Color.TextSecondary);
+        more.Name = "Actions-" + name;
+        return more;
+    }
+
+    /// <summary>A phone row (72 dp): cover, name, last edit, and ⋮ in the thumb's reach on the right.</summary>
+    private Control ProjectRow(string name)
+    {
+        var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(LunetTokens.Space.M, 0, 0, 0) };
+        var title = LunetUi.Text(name, LunetTokens.Type.Body, weight: FontWeight.SemiBold);
+        title.TextWrapping = TextWrapping.NoWrap; title.TextTrimming = TextTrimming.CharacterEllipsis;
+        text.Children.Add(title);
+        var edited = Edited(LastEdited(name), DateTime.UtcNow);
+        if (edited.Length > 0) text.Children.Add(LunetUi.Text(edited, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        var body = new DockPanel();
+        var cover = Cover(name, 48, LunetTokens.Radius.M);
+        DockPanel.SetDock(cover, Avalonia.Controls.Dock.Left);
+        body.Children.Add(cover);
+        body.Children.Add(text);
+        var open = new Button
+        {
+            Content = body, MinHeight = 72, Padding = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs, 56, LunetTokens.Space.Xs),
+            HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(LunetTokens.Radius.L),
+        };
+        AutomationProperties.SetName(open, "Abrir " + name);
+        open.Click += (_, _) => _shell.OpenProject(name);
+        open.ContextRequested += (_, e) => { ShowActions(name); e.Handled = true; };
+        var more = MoreButton(name);
+        more.HorizontalAlignment = HorizontalAlignment.Right;
+        more.VerticalAlignment = VerticalAlignment.Center;
+        more.Margin = new Thickness(0, 0, LunetTokens.Space.Xxs, 0);
+        // The row fills the width (WrapPanel would size it to its content).
+        var width = Bounds.Width > 0 ? Bounds.Width - 2 * LunetTokens.Space.M : double.NaN;
+        return new Panel { Width = width, Children = { open, more } };
+    }
+
+    /// <summary>A card of the grid on wide screens.</summary>
+    private Control ProjectCard(string name)
+    {
+        var stack = new StackPanel { Spacing = 2 };
+        var cover = Cover(name, 96, LunetTokens.Radius.M);
+        ((Border)cover).Width = double.NaN; ((Border)cover).Height = 112;
+        ((TextBlock)((Border)cover).Child!).FontSize = 40;
+        cover.Margin = new Thickness(0, 0, 0, LunetTokens.Space.S);
+        stack.Children.Add(cover);
         var title = LunetUi.Text(name, LunetTokens.Type.Body, weight: FontWeight.SemiBold);
         title.TextWrapping = TextWrapping.NoWrap; title.TextTrimming = TextTrimming.CharacterEllipsis;
         stack.Children.Add(title);
-        stack.Children.Add(LunetUi.Text(Edited(edited, DateTime.UtcNow), LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
-        var button = new Button
+        var edited = Edited(LastEdited(name), DateTime.UtcNow);
+        stack.Children.Add(LunetUi.Text(edited.Length > 0 ? edited : " ", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        var open = new Button
         {
-            Content = LunetUi.Card(stack, LunetTokens.Space.S),
-            Margin = new Thickness(0, 0, LunetTokens.Space.S, LunetTokens.Space.S),
+            Content = LunetUi.Card(stack, LunetTokens.Space.S), Width = 220,
             Padding = new Thickness(0), Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
         };
-        // Two columns on a phone, as many 200 dp columns as fit on a wide screen.
-        button.Width = Bounds.Width is > 0 and < 600 ? (Bounds.Width - 2 * LunetTokens.Space.M - LunetTokens.Space.S) / 2 - 1 : 200;
-        button.Classes.Add("lunet-card");
-        AutomationProperties.SetName(button, "Abrir " + name);
-        button.Click += (_, _) => _shell.OpenProject(name);
-        // Touch and hold (or right click) opens the same actions as the ⋮ button.
-        button.ContextRequested += (_, e) => { ShowActions(name); e.Handled = true; };
-        var more = LunetUi.IconButton(LunetIcons.More, "Ações de " + name, () => ShowActions(name));
+        open.Classes.Add("lunet-card");
+        AutomationProperties.SetName(open, "Abrir " + name);
+        open.Click += (_, _) => _shell.OpenProject(name);
+        open.ContextRequested += (_, e) => { ShowActions(name); e.Handled = true; };
+        var more = MoreButton(name);
         more.HorizontalAlignment = HorizontalAlignment.Right;
-        more.VerticalAlignment = VerticalAlignment.Top;
-        more.Margin = new Thickness(0, LunetTokens.Space.Xxs, LunetTokens.Space.S + LunetTokens.Space.Xxs, 0);
-        // A dark disc behind the dots: readable on every cover colour.
-        more.Content = new Border
-        {
-            Width = 32, Height = 32, CornerRadius = new CornerRadius(LunetTokens.Radius.Pill), Background = LunetTokens.Brush("#66000000"),
-            Child = LunetIcons.Create(LunetIcons.More, LunetTokens.Color.TextPrimary, 20),
-        };
-        more.Name = "Actions-" + name;
-        return new Panel { Width = button.Width + button.Margin.Right, Children = { button, more } };
+        more.VerticalAlignment = VerticalAlignment.Bottom;
+        more.Margin = new Thickness(0, 0, LunetTokens.Space.Xxs, LunetTokens.Space.Xxs);
+        return new Panel { Margin = new Thickness(0, 0, LunetTokens.Space.S, LunetTokens.Space.S), Children = { open, more } };
     }
 
     // ---- Sheets: creating, renaming, the actions of a game and the trash ----
@@ -212,8 +346,18 @@ public sealed class HomeView : UserControl
     public bool CloseSheet()
     {
         if (Sheet is null) return false;
+        if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
+        if (Sheet is LibraryView library) return library.Back();
+        if (Sheet is PlayView or SettingsView) return CloseOverlay();
+        return CloseOverlay();
+    }
+
+    private bool CloseOverlay()
+    {
+        if (Sheet is null) return false;
         _overlay.Children.Clear();
         Sheet = null;
+        Select(Destination.Games);
         return true;
     }
 
@@ -248,6 +392,50 @@ public sealed class HomeView : UserControl
     }
 
     private static Control DockTop(Control c) { DockPanel.SetDock(c, Avalonia.Controls.Dock.Top); return c; }
+
+    /// <summary>Aprender, full screen over the Home (Back walks its pages, then closes it).</summary>
+    public LearnView ShowLearn()
+    {
+        _overlay.Children.Clear();
+        var learn = new LearnView(_shell, () => CloseOverlay());
+        _overlay.Children.Add(learn);
+        Sheet = learn;
+        Select(Destination.Learn);
+        return learn;
+    }
+
+    /// <summary>Ajustes, full screen over the Home (P7).</summary>
+    public SettingsView ShowSettings()
+    {
+        _overlay.Children.Clear();
+        var settings = new SettingsView(_shell);
+        _overlay.Children.Add(settings);
+        Sheet = settings;
+        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        return settings;
+    }
+
+    /// <summary>Jogar, full screen over the Home (P4).</summary>
+    public PlayView ShowPlay()
+    {
+        _overlay.Children.Clear();
+        var play = new PlayView(_shell, () => CloseOverlay());
+        _overlay.Children.Add(play);
+        Sheet = play;
+        Select(Destination.Play);
+        return play;
+    }
+
+    /// <summary>The Biblioteca, full screen over the Home (Back walks its pages, then closes it).</summary>
+    public LibraryView ShowLibrary()
+    {
+        _overlay.Children.Clear();
+        var library = new LibraryView(_shell, () => CloseOverlay());
+        _overlay.Children.Add(library);
+        Sheet = library;
+        Select(_shell.OpenRoute is null ? Destination.Library : Destination.More);
+        return library;
+    }
 
     /// <summary>A game's actions: Abrir, Renomear, Duplicar, Apagar.</summary>
     public void ShowActions(string name)

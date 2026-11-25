@@ -68,7 +68,12 @@ public sealed partial class MainActivity
                 ? new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent)
                 : new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1);
         }
-        if (wide)
+        if (_fromShell)
+        {
+            // Opened from the shell (ADR 0013): the shell owns the navigation; this screen shows alone, Back returns.
+            _launcherShell.AddView(_launcherBody, Fill(1));
+        }
+        else if (wide)
         {
             _launcherShell.AddView(_launcherNav, new LinearLayout.LayoutParams(Dp(132), ViewGroup.LayoutParams.MatchParent));
             _launcherShell.AddView(_launcherBody, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MatchParent, 1));

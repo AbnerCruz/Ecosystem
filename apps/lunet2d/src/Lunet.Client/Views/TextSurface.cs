@@ -45,6 +45,13 @@ public sealed class CodeSurface : ITextSurface
 {
     private readonly TextEditor _editor;
 
+    /// <summary>Applies the person's editor settings (Ajustes): font size and line numbers.</summary>
+    public void Apply(Lunet.Core.EditorSettings settings)
+    {
+        _editor.FontSize = Math.Clamp(settings.FontSize, Lunet.Core.EditorSettings.MinFontSize, Lunet.Core.EditorSettings.MaxFontSize);
+        _editor.ShowLineNumbers = settings.ShowLineNumbers;
+    }
+
     public CodeSurface()
     {
         _editor = new TextEditor

@@ -169,6 +169,9 @@ public sealed class LunetClientTests
                 Assert.True(CountRed(frame) > 1000, "the running game is visible in the Jogo tab");
 
                 Assert.Empty(window.GetVisualDescendants().OfType<Window>());
+                Assert.True(shell.State.Back()); // Back first returns to the tab before Rodar (Código)
+                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                Assert.Equal(ShellLevel.Workspace, shell.State.Level);
                 Assert.True(shell.State.Back());
                 Assert.Equal(ShellLevel.Home, shell.State.Level);
                 Assert.Equal(GameState.Stopped, shell.Game.State);
@@ -358,7 +361,7 @@ public sealed class LunetClientTests
     }
 
     [Fact]
-    public void Keyboard_ReplacesTheSystemKeyboard_AndSwitchingTabsKeepsCaretSelectionAndFocus()
+    public void CodeBar_KeepsTheSystemKeyboard_AndSwitchingTabsKeepsCaretSelectionAndFocus()
     {
         var root = NewRoot();
         try
@@ -370,46 +373,41 @@ public sealed class LunetClientTests
                 window.Show();
                 shell.CreateProject();
                 var editor = shell.WorkspaceView.Code;
-                editor.Surface.Text = "x";
+                editor.Surface.Text = "xAaç";
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 editor.Surface.Focus();
                 editor.Surface.Caret = 1;
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
 
-                Assert.True(editor.KeyboardVisible, $"focused={editor.Surface.IsFocused} kb={editor.Keyboard is not null} layout={shell.State.Layout}");
-                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget)); // the system keyboard steps aside
+                Assert.True(editor.KeyboardVisible, $"focused={editor.Surface.IsFocused} bar={editor.Keyboard is not null}");
+                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget)); // typing is the system keyboard's
                 Assert.False(shell.WorkspaceView.TabBarVisible);
-                var kb = editor.Keyboard!;
-                Assert.Equal(KeyboardTab.Keys, kb.Tab);
-
-                kb.Press(new KeyDef("⇧", KeyAction.Shift));
-                kb.Press(KeyboardLayout.Letters[2][0]);                 // "a" → "A" (one capital)
-                kb.Press(KeyboardLayout.Letters[2][0]);                 // "a"
-                kb.ShowVariants(KeyboardLayout.Letters.SelectMany(r => r).Single(k => k.Label == "c"));
-                kb.CommitVariant();                                      // long press c → ç
-                Assert.Equal("xAaç", editor.Surface.Text);
+                var bar = editor.Keyboard!;
+                Assert.Equal(CodeBarTab.Keys, bar.Tab);
 
                 editor.Surface.Select(1, 3);
-                foreach (var tab in new[] { KeyboardTab.Shortcuts, KeyboardTab.Methods, KeyboardTab.Keys, KeyboardTab.Shortcuts })
+                foreach (var tab in new[] { CodeBarTab.Shortcuts, CodeBarTab.Keys, CodeBarTab.Shortcuts })
                 {
-                    kb.Show(tab);
+                    bar.Show(tab);
                     Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                     Assert.Equal((1, 3), (editor.Surface.SelectionStart, editor.Surface.SelectionEnd));
                     Assert.True(editor.Surface.IsFocused);
                 }
-                kb.Shortcut("(");                                        // wraps the selection
+                bar.Shortcut("(");                                        // wraps the selection
                 Assert.Equal("x(Aa)ç", editor.Surface.Text);
 
-                kb.Show(KeyboardTab.Methods);
-                var end = kb.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "End");
+                bar.Show(CodeBarTab.Methods);                              // the catalog takes the keyboard's place
+                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget));
+                var end = bar.Catalog.All.First(m => m.Type == "SpriteBatch" && m.Name == "End");
                 editor.Surface.Caret = editor.Surface.Text.Length;
-                kb.Insert(end);
-                Assert.EndsWith("çEnd()", editor.Surface.Text); // instance member: no type prefix
-                Assert.Contains(kb.Catalog.Recent(), m => m.Name == "End");
-
-                Assert.True(shell.Back());                               // Back closes the keyboard first
-                Assert.False(editor.KeyboardVisible);
+                bar.Insert(end);
+                Assert.EndsWith("çEnd()", editor.Surface.Text);           // instance member: no type prefix
+                Assert.Contains(bar.Catalog.Recent(), m => m.Name == "End");
+                Assert.Equal(CodeBarTab.Keys, bar.Tab);                    // back to typing
                 Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget));
+
+                Assert.True(shell.Back());                               // Back closes the bar (and the keyboard) first
+                Assert.False(editor.KeyboardVisible);
                 Assert.Equal(ShellLevel.Workspace, shell.State.Level);
                 window.Close();
             });
@@ -418,7 +416,7 @@ public sealed class LunetClientTests
     }
 
     [Fact]
-    public void Keyboard_StepsAsideForAHardwareKeyboardAndTheSystemKey()
+    public void CodeBar_StepsAsideForAHardwareKeyboard_AndLeavesWithTheSystemKeyboard()
     {
         var root = NewRoot();
         try
@@ -433,22 +431,16 @@ public sealed class LunetClientTests
                 editor.ShowKeyboard();
                 Assert.True(editor.KeyboardVisible);
 
-                editor.Keyboard!.Press(new KeyDef("🌐", KeyAction.System));  // the system keyboard (dictation, languages)
-                Assert.True(shell.PreferSystemKeyboard);
+                shell.SetKeyboard(true);
+                shell.SetKeyboard(false);                                     // closed by its own Back/hide key
                 Assert.False(editor.KeyboardVisible);
-                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget));
 
-                shell.PreferSystemKeyboard = false;
                 shell.HardwareKeyboard = true;
                 editor.ShowKeyboard();
-                Assert.False(editor.KeyboardVisible);                         // a physical keyboard types directly
+                Assert.False(editor.KeyboardVisible);                         // a physical keyboard has its own symbols
                 shell.HardwareKeyboard = false;
                 editor.ShowKeyboard();
                 Assert.True(editor.KeyboardVisible);
-
-                window.Width = 1280;
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                Assert.False(shell.WorkspaceView.Code.KeyboardVisible);       // wide layout: desktop/tablet keyboard
                 window.Close();
             });
         }
@@ -467,11 +459,19 @@ public sealed class LunetClientTests
                 var shell = new LunetShell(root);
                 var window = new Window { Width = 412, Height = 915, Content = shell };
                 window.Show();
-                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Route-studios"); // no routes on desktop
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Nav-Studios"); // no routes on desktop
+                Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Nav-Learn");      // Aprender is in the shell
                 shell.OpenRoute = (r, p) => routes.Add((r, p));
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                foreach (var (route, _, _) in LunetShell.HomeRoutes)
+                // The bottom bar: Jogar and Studios route; Mais lists Biblioteca, Explorar and Ajustes.
+                shell.Home.Go(HomeView.Destination.Studios);
+                Assert.Equal(["studios"], routes.Select(r => r.Route));
+                shell.Home.Go(HomeView.Destination.More);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                foreach (var route in new[] { "library", "explore", "settings" })
                     Assert.Contains(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "Route-" + route);
+                shell.Home.CloseSheet();
+                routes.Clear();
 
                 shell.CreateProject();
                 var entry = shell.Workspace.Project!.Manifest.EntryPoint;
@@ -524,8 +524,8 @@ public sealed class LunetClientTests
                 Assert.StartsWith("{\n    \n}", code.Text);
                 code.Undo();                                        // …undoes in one step
                 Assert.Equal(before, code.Text);
-                Assert.False(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(code.InputTarget));
-                Assert.IsType<NotesSurface>(shell.WorkspaceView.Notes.Surface); // notes keep the system keyboard
+                Assert.True(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(code.InputTarget)); // typing is the system keyboard's
+                Assert.IsType<NotesSurface>(shell.WorkspaceView.Notes.Surface);
                 window.Close();
             });
         }
@@ -547,7 +547,7 @@ public sealed class LunetClientTests
     }
 
     [Fact]
-    public void Keyboard_SuggestionStripCompletesTheWordAndPreviewsKeys()
+    public void CodeBar_SuggestsAfterAPause_AndCompletesTheWord()
     {
         var root = NewRoot();
         try
@@ -562,16 +562,17 @@ public sealed class LunetClientTests
                 editor.Surface.Text = "batch.";
                 editor.ShowKeyboard();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                var kb = editor.Keyboard!;
-                editor.Surface.Caret = 6;
-                foreach (var c in "Dr") kb.Press(new KeyDef(c.ToString()));
-                Assert.Contains(kb.Suggestions, m => m.Name == "Draw");
-                kb.AcceptSuggestion(kb.Suggestions.First(m => m.Name == "Draw"));
+                var bar = editor.Keyboard!;
+                editor.Surface.Replace(6, 6, "Dr", 8);                      // what the system keyboard types
+                Assert.Empty(bar.Suggestions);                              // nothing runs on the key itself
+                bar.RefreshRow();                                           // what the pause timer does
+                Assert.Contains(bar.Suggestions, m => m.Name == "Draw");
+                bar.AcceptSuggestion(bar.Suggestions.First(m => m.Name == "Draw"));
                 Assert.Equal("batch.Draw()", editor.Surface.Text);
                 Assert.Equal("batch.Draw(".Length, editor.Surface.Caret);   // inside the parentheses
-                Assert.True(kb.Height <= LunetKeyboard.StripHeight + 5 * LunetKeyboard.RowHeight + 6);
-                Assert.True(LunetTokens.Contrast(LunetTokens.Color.TextPrimary, LunetTokens.Color.Key) >= 4.5);
-                Assert.True(LunetTokens.Contrast(LunetTokens.Color.TextPrimary, LunetTokens.Color.KeyModifier) >= 4.5);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(bar.Bounds.Height <= CodeBar.RowHeight + 2);    // one row: the system keyboard keeps its room
+                Assert.True(LunetTokens.Contrast(LunetTokens.Color.TextPrimary, LunetTokens.Color.Surface) >= 4.5);
                 Assert.True(LunetTokens.Contrast(LunetTokens.Color.OnPrimary, LunetTokens.Color.Primary) >= 4.5);
                 window.Close();
             });

@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta
+
+- **A digitação é do teclado do sistema.** O teclado próprio do Lunet saiu: a digitação estava lenta demais.
+- **Barra de código** logo acima do teclado, ao alcance do polegar, com três abas:
+  - **Teclas:** símbolos `{ } ( ) ; = " < >`, Tab e setas. Enquanto você digita uma palavra, as sugestões tomam o lugar dos símbolos.
+  - **Atalhos:** desfazer, refazer, início e fim da linha, comentar, duplicar, mover e apagar linha, e a paleta de comandos.
+  - **Métodos:** o catálogo da API sobe no lugar do teclado. Tocar num membro insere no cursor e volta a digitar.
+  - O **⌄** fecha o teclado.
+- As sugestões não fazem trabalho a cada tecla: aparecem logo depois de você parar.
+- **Tela inicial pensada para o polegar:**
+  - Uma barra embaixo com **Jogos**, **Aprender**, **Jogar**, **Studios** e **Mais** (Biblioteca, Explorar, Ajustes).
+  - **Novo jogo** flutua no canto de baixo.
+  - No celular, os jogos aparecem em lista, um por linha, com a inicial, a última edição e ⋮. No computador, em grade.
+  - Datas impossíveis (01/01/2000) de jogos vindos de ZIP ou da pasta compartilhada não aparecem mais.
+- **Biblioteca na interface nova** (Mais → Biblioteca; no computador, direto na barra):
+  - Uma lista que busca enquanto você digita, com a imagem de cada recurso.
+  - Cada recurso tem uma página com a imagem, o autor, a licença e as versões. A ação principal é **Usar num jogo**; Nova versão, Exportar ZIP e Verificar ficam logo abaixo.
+  - **Publicar** em três passos: o jogo, o arquivo, e nome e licença.
+  - Usar num jogo nunca sobrescreve: se o jogo já tem um arquivo com o mesmo nome, nada é copiado e a tela diz qual arquivo é.
+  - É a mesma biblioteca da tela anterior; nada se perde.
+- **Jogar na interface nova:** seus jogos em grade, com o `Content/icon.png` de cada um ou a inicial. Um toque abre o jogo em tela cheia, como antes, e sair dele volta aqui. No computador, Jogar abre o jogo rodando no espaço de trabalho.
+- **Ajustes na interface nova** (Mais → Ajustes; no computador, direto na barra):
+  - Tamanho do código com prévia ao vivo, números de linha, formatar ao rodar e manter a tela ligada.
+  - Cada mudança é salva na hora, no mesmo arquivo de ajustes de antes.
+  - Pasta de projetos e Configurar IA abrem as janelas próprias. Ao trocar a pasta de projetos, a tela inicial já mostra os jogos da pasta nova.
+- **Sem interface antiga por baixo:**
+  - Jogar, Studios, Explorar e o Editor completo, abertos pela tela inicial, aparecem sozinhos, sem a barra de navegação antiga. Voltar retorna à tela nova.
+  - Biblioteca, Gerar APK e Ajustes abrem sobre um fundo neutro, e fechar a janela volta à tela nova.
+- **Voltar** fecha a barra e o teclado, depois o painel aberto, depois volta à aba anterior (por exemplo, de Jogo para Código) e só então sai do jogo.
+- **Aprender** (na tela inicial, também no computador) mostra sua trilha, o progresso e os 60 cursos. Os cinco primeiros estão disponíveis; os outros aparecem como "em breve".
+- Cada desafio mostra missão, objetivos, o que pesquisar, critérios de aceite e um desafio extra.
+- **Criar o jogo do desafio** cria um jogo seu, liga o jogo ao desafio e abre o código com a referência offline ao lado. Se o jogo já existe, aparece **Abrir**. **Ligar a um jogo que já existe** usa um jogo que você já tem.
+- As marcas de objetivo são o mesmo progresso da tela anterior de Aprender: nada se perde. Se não der para salvar, a caixa volta e o motivo aparece.
+
 ## 0.0.1-dev.1000602 — Documentação ao lado do código
 
 - **Painéis → Documentação** abre o manual offline dentro do jogo: tutoriais, tarefas, conceitos e a referência de cada tipo e membro do Lunet, com busca e botão de voltar.

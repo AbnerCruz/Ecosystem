@@ -15,9 +15,14 @@ public sealed partial class MainActivity
 
     /// <summary>The routes the shell can open (the screens still served by this activity).</summary>
     public static readonly IReadOnlyList<string> Routes =
-        ["studios", "learn", "explore", "play", "library", "settings", "ai", "git", "assets", "notes", "apk", "editor"];
+        ["studios", "learn", "explore", "play", "play-game", "library", "settings", "project-folder", "ai-settings", "ai", "git", "assets", "notes", "apk", "editor"];
 
     private bool _fromShell;
+    // A route whose screen is a dialog (Biblioteca, Gerar APK, Ajustes): nothing of the previous Home shows behind it, and
+    // closing the last dialog returns to the shell.
+    private bool _routeIsDialog;
+    // P4: the shell's Jogar page asked to play one game: prepare it here, show it, then return to the shell.
+    private bool _playFromShell;
 
     /// <summary>Starts this activity on a route, reusing the running instance (no stack of copies).</summary>
     public static Intent RouteIntent(global::Android.Content.Context context, string route, string? project)
@@ -52,14 +57,29 @@ public sealed partial class MainActivity
                 LoadProjectFolder();
                 OpenProject(project);
             }
+            _routeIsDialog = route is "library" or "apk" or "settings" or "project-folder" or "ai-settings";
+            _playFromShell = route == "play-game";
+            if (_routeIsDialog || _playFromShell)
+            {
+                var plain = new global::Android.Views.View(this);
+                plain.SetBackgroundColor(LunetUi.Background);
+                SetContentView(plain);
+            }
             switch (route)
             {
                 case "studios": ShowLauncherStudios(); break;
                 case "learn": ShowLearning(); break;
                 case "explore": OpenInspirationExplorer(); break;
                 case "play": ShowGameLauncher(); break;
+                case "play-game":
+                    LoadProjectFolder();
+                    RefreshLauncherCatalog();
+                    if (project is not null) PlayFromLauncher(project); else LeaveToShell();
+                    break;
                 case "library": ShowReusableAssetLibrary(); break;
                 case "settings": ShowSettings(); break;
+                case "project-folder": LoadProjectFolder(); ShowProjectFolder(); break;
+                case "ai-settings": ShowAiSettings(); break;
                 case "ai": if (_project is not null) ShowAiAssistant(); else ShowWorkspaceAi(); break;
                 case "git": if (_project is not null) ShowGit(); break;
                 case "assets": if (_project is not null) ShowAssets(); break;
@@ -74,6 +94,18 @@ public sealed partial class MainActivity
             Toast.MakeText(this, "Não foi possível abrir: " + ex.Message, ToastLength.Long)?.Show();
             LeaveToShell();
         }
+    }
+
+    /// <summary>The window got focus back: when the routed screen was a dialog, its last dialog closed — back to the shell.</summary>
+    public override void OnWindowFocusChanged(bool hasFocus)
+    {
+        base.OnWindowFocusChanged(hasFocus);
+        if (!hasFocus || !_routeIsDialog || !_fromShell) return;
+        // Give a dialog that opens another one (search, "Usar em…") the moment to take the focus first.
+        Window?.DecorView?.PostDelayed(() =>
+        {
+            if (_routeIsDialog && HasWindowFocus && !IsFinishing) { _routeIsDialog = false; LeaveToShell(); }
+        }, 250);
     }
 
     /// <summary>Saves what is open here (verified writes) and goes back to the shell.</summary>

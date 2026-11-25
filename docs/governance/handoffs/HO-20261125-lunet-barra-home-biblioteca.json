@@ -1,0 +1,92 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-barra-home-biblioteca",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T18:16:01Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "d5d57ec",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Home.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Route.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CodeBar.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CommandPaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LibraryView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LunetKeyboard.cs",
+    "apps/lunet2d/src/Lunet.Core/ReusableAssetLibrary.cs",
+    "apps/lunet2d/src/Lunet.Desktop/MainWindow.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientLibraryTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "docs/governance/handoffs/HO-20261125-lunet-barra-home-biblioteca.json",
+    "apps/lunet2d/src/Lunet.Client/Views/PlayView.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GameLauncher.cs",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Client/Views/SettingsView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs"
+  ],
+  "work_completed": [
+    "Owner feedback 25/11 (device): the Lunet keyboard is removed (typing latency); typing is the system IME's; CodeBar: one row above it with Teclas (symbols, Tab, arrows; suggestions after a 120 ms pause), Atalhos (undo/redo/line operations/palette) and Métodos (catalog in the keyboard's place), plus a hide key.",
+    "Android Back: routed from AvaloniaActivity.BackRequested (it never reached the shell's TopLevel); Back closes bar/keyboard, panel/sheet, then the previous tab (tab history), then the game.",
+    "Home for the thumb: bottom navigation bar (Jogos, Aprender, Jogar, Studios, Mais), Novo jogo as a floating button, games as 72 dp rows on phones and a grid when wide, implausible dates hidden.",
+    "Routed previous screens no longer show their own launcher navigation; dialog routes (Biblioteca, Gerar APK, Ajustes) open over a plain background and closing the last dialog returns to the shell.",
+    "A6 Biblioteca in the shell (LibraryView over ReusableAssetLibrary, same FilesDir/Library): live search with pictures, asset page with Usar num jogo first, Nova versão, Exportar ZIP, Verificar; publish in three steps; imports never overwrite.",
+    "P4 Jogar in the shell (PlayView): covers grid, one tap plays; Android runs the existing pipeline through the play-game route (no previous screen behind, back to the shell after), desktop runs it in the workspace.",
+    "P7 Ajustes in the shell (SettingsView over the same settings.json): code size with live sample, line numbers, format on run, keep screen on; saved at once; project folder and AI settings open their own dialogs; the shell reopens over a new projects folder."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1277 tests) incl. CodeBar, Back/tab history, bottom bar routes, LunetClientLibraryTests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientLibraryTests.cs"
+    },
+    {
+      "check": "Headless captures (3b-barra, 3c-atalhos, 3d-metodos, 2-home, 2h-biblioteca, 2i-recurso)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "Showing/hiding the system keyboard on Android uses InputMethodManager (Avalonia 12 has no call); not tested on a physical device.",
+    "Studio sources that need a render (.sprite.json, .song.json, .sfx.json) are published from the Studio (previous screens) for now.",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Studios A1–A5 in the shell, Ajustes/pasta compartilhada (P7/P1), Jogar (P4), Gerar APK (P5), Git (P6), M5 GL preview"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

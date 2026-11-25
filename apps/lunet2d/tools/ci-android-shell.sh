@@ -44,16 +44,16 @@ if [[ "$ok" != true ]]; then
 fi
 grep -q 'quadros=[1-9]' "$out/android-logcat.txt" || { echo 'Nenhum quadro renderizado'; exit 1; }
 
-# The IDE keyboard (owner's order, PR #1040): visible, the system IME off on the editor, keys typed into the code.
+# The code bar over the system keyboard (owner, 25/11): visible, the system IME on for typing, a bar key edits the code.
 for attempt in $(seq 1 15); do
     adb logcat -d > "$out/android-logcat.txt"
-    grep -q 'lunet-e2e.*teclado=' "$out/android-logcat.txt" && break
+    grep -q 'lunet-e2e.*barra=' "$out/android-logcat.txt" && break
     sleep 2
 done
-grep 'lunet-e2e.*teclado=' "$out/android-logcat.txt" || { echo 'O teclado Lunet não respondeu'; exit 1; }
+grep 'lunet-e2e.*barra=' "$out/android-logcat.txt" || { echo 'A barra de código não respondeu'; exit 1; }
 adb shell screencap -p /sdcard/shell-keyboard.png
 adb pull /sdcard/shell-keyboard.png "$out/android-shell-keyboard.png"
 adb shell dumpsys input_method | grep -E 'mInputShown|mIsInputViewShown' > "$out/android-ime.txt" || true
-grep -q 'lunet-e2e.*teclado=visivel ime=off texto=// ola' "$out/android-logcat.txt" || { echo 'Teclado Lunet: estado inesperado'; exit 1; }
+grep -q 'lunet-e2e.*barra=visivel ime=on texto={' "$out/android-logcat.txt" || { echo 'Barra de código: estado inesperado'; exit 1; }
 adb shell am force-stop "$package"
 echo "Lunet: instalado, aberto ($(grep TotalTime "$out/android-launch.txt" | tr -d '\r')), jogo criado, compilado e rodando no Android 13 (emulador)."

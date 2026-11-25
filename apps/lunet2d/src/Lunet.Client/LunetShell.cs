@@ -25,6 +25,9 @@ public sealed class LunetShell : UserControl
     public LunetShell(string projectsRoot)
     {
         Workspace = new WorkspaceSession(projectsRoot);
+        LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
+        LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
+        _settingsPath = Path.Combine(projectsRoot, ".lunet", "settings.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
         _home = new HomeView(this);
@@ -41,6 +44,57 @@ public sealed class LunetShell : UserControl
     }
 
     public WorkspaceSession Workspace { get; }
+
+    /// <summary>
+    /// Where Aprender keeps the student's declared progress. The Android head points it at the file the previous screens
+    /// use (FilesDir/learning/progress.json), so progress carries over; elsewhere it lives beside the games.
+    /// </summary>
+    public string LearningProgressPath { get; set; }
+
+    /// <summary>The settings file (Ajustes); the Android head points it at the previous screens' settings.json.</summary>
+    public string SettingsPath
+    {
+        get => _settingsPath;
+        set { _settingsPath = value; _settings = null; ApplySettings(); }
+    }
+    private string _settingsPath;
+    private Lunet.Core.EditorSettings? _settings;
+
+    /// <summary>The current settings (read once from <see cref="SettingsPath"/>; defaults when the file is missing or broken).</summary>
+    public Lunet.Core.EditorSettings Settings
+    {
+        get
+        {
+            if (_settings is not null) return _settings;
+            try { _settings = new Lunet.Core.SettingsStore(_settingsPath).Load(); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException) { _settings = new Lunet.Core.EditorSettings(); }
+            return _settings;
+        }
+    }
+
+    /// <summary>Saves the settings (verified write) and applies them now. Throws when the file cannot be written.</summary>
+    public void SaveSettings(Lunet.Core.EditorSettings settings)
+    {
+        new Lunet.Core.SettingsStore(_settingsPath).Save(settings);
+        _settings = settings;
+        ApplySettings();
+    }
+
+    /// <summary>Keeps the screen on (true) or lets it sleep; set by the Android head, null elsewhere.</summary>
+    public Action<bool>? KeepScreenOn { get; set; }
+
+    /// <summary>Applies the settings to what is open: the code editor and the screen.</summary>
+    public void ApplySettings()
+    {
+        if (_workspaceView?.Code.Surface is CodeSurface code) code.Apply(Settings);
+        KeepScreenOn?.Invoke(Settings.KeepScreenOn);
+    }
+
+    /// <summary>Plays a game full screen (P4); the Android head runs it in its own process. Null: it runs in the workspace.</summary>
+    public Action<string>? PlayGame { get; set; }
+
+    /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
+    public string LibraryPath { get; set; }
     public ShellState State { get; } = new();
     public GameSession Game { get; }
     public HomeView Home => _home;
@@ -49,23 +103,13 @@ public sealed class LunetShell : UserControl
     /// <summary>The "Métodos" catalog of the Lunet keyboard (API + the game's members + usage history).</summary>
     public MethodCatalog Methods { get; }
 
-    private bool _hardwareKeyboard, _preferSystemKeyboard;
+    private bool _hardwareKeyboard;
 
-    /// <summary>A physical keyboard is attached: it types directly and the Lunet keyboard steps aside (the head sets it).</summary>
+    /// <summary>A physical keyboard is attached: it has its own symbols, so the code bar steps aside (the head sets it).</summary>
     public bool HardwareKeyboard
     {
         get => _hardwareKeyboard;
         set { if (_hardwareKeyboard == value) return; _hardwareKeyboard = value; if (Workspace.Project is not null) _workspaceView.Code.Relayout(); }
-    }
-
-    /// <summary>
-    /// The person chose the system keyboard (🌐), or a screen reader is on (TalkBack works best with the system
-    /// keyboard — study 25/11 §3); "Teclado Lunet" brings ours back.
-    /// </summary>
-    public bool PreferSystemKeyboard
-    {
-        get => _preferSystemKeyboard;
-        set => _preferSystemKeyboard = value;
     }
 
     /// <summary>The last message the shell had to tell you (a failed save, a failed open); also in the Console.</summary>
@@ -99,6 +143,8 @@ public sealed class LunetShell : UserControl
     /// <summary>Back from a routed screen: re-read the games (and the open documents, when not edited here).</summary>
     public void ReturnedFromRoute()
     {
+        _settings = null; // the previous screens write the same settings.json
+        ApplySettings();
         _home.Refresh();
         if (State.Level == ShellLevel.Workspace && Workspace.Project is not null && State.Project is { } name)
         {
@@ -157,6 +203,7 @@ public sealed class LunetShell : UserControl
         State.OpenProject(name);
         _ = DocsLibrary.WarmUpAsync(); // after the game opens, never on the cold start path
         _workspaceView.Load();
+        ApplySettings();
         Render();
     }
 
@@ -241,6 +288,12 @@ public sealed class LunetShell : UserControl
     public void RunGame()
     {
         if (Workspace.Project is null) return;
+        // Ajustes: "Formatar o código ao rodar" (the same option as the previous screens).
+        if (Settings.FormatOnRun && _workspaceView.Code.Surface is CodeSurface code && _workspaceView.Code.OpenPath?.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var formatted = Lunet.Editor.CodeFormatter.Format(code.Text);
+            if (formatted != code.Text) code.Replace(0, code.Text.Length, formatted, Math.Min(code.Caret, formatted.Length));
+        }
         _workspaceView.SaveAll();
         var (w, h) = Workspace.Project.Manifest.Orientation == "landscape" ? (640, 360) : (360, 640);
         if (Game.Run(w, h))
@@ -279,6 +332,9 @@ public sealed class LunetShell : UserControl
     private Avalonia.Controls.Platform.IInsetsManager? _insets;
     private bool _keyboardShown;
     private readonly DispatcherTimer _keyboardClosed = new() { Interval = KeyboardFit.CloseGrace };
+
+    /// <summary>Shows (true) or hides (false) the system keyboard; set by the Android head, null elsewhere.</summary>
+    public Action<bool>? SystemKeyboard { get; set; }
 
     /// <summary>True while the phone's keyboard is open (after the close grace).</summary>
     public bool KeyboardOpen => _keyboardShown;
@@ -320,7 +376,9 @@ public sealed class LunetShell : UserControl
     /// <summary>The keyboard opened or closed (the platform calls it through the input pane; tests call it directly).</summary>
     public void SetKeyboard(bool open)
     {
+        var closed = _keyboardShown && !open;
         _keyboardShown = open;
+        if (closed) _workspaceView.Code.SystemKeyboardClosed(); // closed by its own Back/hide key: the code bar goes too
         _workspaceView.SetKeyboardOpen(open || _workspaceView.Code.KeyboardVisible);
         FitKeyboard();
     }
