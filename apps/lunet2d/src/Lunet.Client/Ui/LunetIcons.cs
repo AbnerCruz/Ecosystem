@@ -32,6 +32,13 @@ public static class LunetIcons
     public const string Function = "M15.5 4.5c-2.5-.8-4 .4-4.5 3l-2 9.5c-.5 2.6-2 3.8-4.5 3 M7.5 10h8";
     public const string Search = "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14z M20 20l-4-4";
     public const string More = "M12 5.5h.01 M12 12h.01 M12 18.5h.01";
+    /// <summary>Sliders: the Inspector of the running game (M6).</summary>
+    public const string Inspector = "M4 6h9 M17 6h3 M15 4v4 M4 12h3 M11 12h9 M9 10v4 M4 18h11 M19 18h1 M17 16v4";
+    /// <summary>A pulse: the Desempenho panel (M6).</summary>
+    public const string Pulse = "M3 12h4l3-7 4 14 3-7h4";
+    public const string Trash = "M4 7h16 M10 11v6 M14 11v6 M6 7l1 13h10l1-13 M9 7V4h6v3";
+    public const string Edit = "M4 20h4l10.5-10.5-4-4L4 16z M13.5 6.5l4 4";
+    public const string Copy = "M9 9h11v11H9z M5 15H4V4h11v1";
     public const string Speed = "M12 13l4-4 M4 17a8 8 0 1 1 16 0";
 
     /// <summary>An icon as a stroked path, sized for a toolbar (20 dp) unless told otherwise.</summary>

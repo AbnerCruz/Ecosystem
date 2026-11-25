@@ -29,6 +29,8 @@ public sealed class GameSession : IDisposable
     /// <summary>Compile diagnostics of the last run, or the fault message; empty when everything is fine.</summary>
     public IReadOnlyList<string> Problems { get; private set; } = [];
     public long FramesRendered { get; private set; }
+    /// <summary>The last frames, kept while the game runs so the Desempenho panel can open at any time (M6).</summary>
+    public FrameStats Frames { get; } = new();
 
     /// <summary>Lines the game or the session wrote (game log, compile result, faults), for the Console panel.</summary>
     public event Action<string>? Log;
@@ -56,6 +58,8 @@ public sealed class GameSession : IDisposable
             return false;
         }
         _game = game;
+        _game.Host.ProfileFrameTimings = true; // a few Stopwatch reads per frame, for the Desempenho panel
+        Frames.Clear();
         _game.Game.Log.Written += (level, message) => Log?.Invoke($"[{level}] {message}");
         FramesRendered = 0;
         Log?.Invoke("Jogo iniciado.");
@@ -115,7 +119,24 @@ public sealed class GameSession : IDisposable
             return false;
         }
         FramesRendered++;
+        var host = _game.Host;
+        Frames.Add(new FrameSample(_game.LastFrameMilliseconds, host.LastUpdateCpuMilliseconds, host.LastDrawCpuMilliseconds, host.LastUpdateSteps));
         return true;
+    }
+
+    /// <summary>
+    /// Draws the current state again without advancing time, so a value changed in the Inspector shows while paused.
+    /// Returns true when a frame was rendered. The frame is not counted in <see cref="Frames"/>: it measures nothing.
+    /// </summary>
+    public bool Redraw()
+    {
+        if (_game is null || State != GameState.Paused) return false;
+        if (_game.Frame(0)) return true;
+        Problems = [_game.Host.Fault?.ToString() ?? "O jogo parou com erro."];
+        Log?.Invoke("O jogo parou com erro: " + _game.Host.Fault?.Message);
+        StopInternal();
+        Set(GameState.Faulted);
+        return false;
     }
 
     private void StopInternal()

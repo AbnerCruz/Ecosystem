@@ -13,7 +13,7 @@ public sealed record ProjectCreationSettings(
 
 
 /// <summary>Pasta que contém os projetos do usuário (uma subpasta por projeto).</summary>
-public sealed class ProjectStore
+public sealed partial class ProjectStore
 {
     public const string ManifestFileName = "lunet.json";
 

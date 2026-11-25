@@ -35,6 +35,17 @@ public static class ShellScreens
                 shell.CreateProject();
                 shell.GoHome();
                 Shot(window, output, size, "2-home", written);
+                shell.Home.ShowCreate();
+                Shot(window, output, size, "2b-novo-jogo", written);
+                shell.Home.CloseSheet();
+                shell.Home.ShowActions(shell.Workspace.Projects()[0]);
+                Shot(window, output, size, "2c-acoes", written);
+                shell.Home.CloseSheet();
+                shell.Home.Delete(shell.DuplicateProject(shell.Workspace.Projects()[0]));
+                Shot(window, output, size, "2d-desfazer", written);
+                shell.Home.ShowTrash();
+                Shot(window, output, size, "2e-lixeira", written);
+                shell.Home.CloseSheet();
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
                 shell.WorkspaceView.Code.ShowKeyboard();
@@ -63,6 +74,15 @@ public static class ShellScreens
                 shell.State.ShowPanel(SupportPanel.Console);
                 Shot(window, output, size, "5-console", written);
                 shell.StopGame();
+                // M6: a game with a few tunable values, as the Inspector and Desempenho panels show it.
+                shell.WorkspaceView.Code.Surface.Text = TunableGame;
+                shell.RunGame();
+                for (int i = 0; i < 90; i++) shell.TickGame(1 / 60.0);
+                shell.State.ShowPanel(SupportPanel.Inspector);
+                Shot(window, output, size, "5b-inspector", written);
+                shell.State.ShowPanel(SupportPanel.Performance);
+                Shot(window, output, size, "5c-desempenho", written);
+                shell.StopGame();
                 shell.WorkspaceView.Code.Surface.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
                 shell.RunGame();
                 Shot(window, output, size, "6-problemas", written);
@@ -88,6 +108,36 @@ public static class ShellScreens
 #pragma warning restore CS0618
         written.Add(file);
     }
+
+    private const string TunableGame = """
+        using Lunet; using Lunet.Graphics;
+        public enum Humor { Calmo, Agitado }
+        public sealed class Bola : Game
+        {
+            [Group("Bola")] [Range(4, 120)] public int Raio = 36;
+            [Range(0, 600)] public float Velocidade = 240;
+            public Color Cor = new(165, 148, 255);
+            [Group("Cena")] public bool Rastro = true;
+            public Humor Humor;
+            public string Titulo = "Bola quicando";
+            public float X { get; private set; } = 80;
+            private float _dx = 1;
+            private SpriteBatch _batch = null!;
+            protected override void LoadContent() => _batch = new SpriteBatch(GraphicsDevice);
+            protected override void Update(GameTime time)
+            {
+                X += _dx * Velocidade * time.DeltaSeconds;
+                if (X > Configuration.VirtualWidth - Raio || X < Raio) _dx = -_dx;
+            }
+            protected override void Draw(GameTime time)
+            {
+                GraphicsDevice.Clear(new Color(18, 20, 28));
+                _batch.Begin();
+                _batch.Circle(new System.Numerics.Vector2(X, Configuration.VirtualHeight / 2f), Raio / 2f, Cor, Raio, 40);
+                _batch.End();
+            }
+        }
+        """;
 
     private sealed class ScreensApp : LunetApp;
 }

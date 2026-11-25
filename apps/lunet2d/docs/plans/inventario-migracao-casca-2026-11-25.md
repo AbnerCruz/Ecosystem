@@ -14,7 +14,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Vários documentos abertos, histórico de posição | `DocumentEditor` + `EditorDocuments` (sessão em `.lunet/editor-session.json`) | **casca** (M4) | — |
 | Rodar, pausar, passo, velocidade | `GameSession`/`GameView` | **casca** | — |
 | Preview isolado (processo separado) e GL | `IsolatedPreview`, `PreviewHost`, `Gles` | rota (Editor completo) | **M5**: preview GL embutido na aba Jogo (Android); rasterizador em CPU fica no desktop. |
-| Profiler e Inspector | `MainActivity.Profiler`, `InspectorPanel` | rota | **M6**: painéis Inspector e Desempenho. |
+| Profiler e Inspector | `InspectorView` + `GameInspection`, `PerformanceView` + `FrameStats` | **casca** (M6) | Próximo: medir também a GPU quando a prévia GL embutida (M5) existir. |
 | Console e Problemas | `SupportPanelView` | **casca** | — |
 | IA no jogo (chat, modos Estudo/Fazer, diff, desfazer, chave) | `AiPanelView` sobre `Lunet.Ai` | **casca** (M7) | Próximos: anexos e imagens, pesquisa na web, catálogo de modelos, revisão trecho a trecho dentro do editor, execução em segundo plano com notificação (`AiRunCoordinator`). |
 | IA global | `MainActivity.GlobalAi` | rota (IA, sem jogo) | Junto com M7. |
@@ -37,7 +37,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 
 | Recurso | Onde está hoje | Estado | Próximo passo |
 |---|---|---|---|
-| Criar, abrir, Home | `HomeView` | **casca** | Renomear, duplicar, apagar com lixeira, modelos de projeto. |
+| Criar, abrir, Home | `HomeView` + `ProjectStore.Manage` | **casca** | Feito: modelos e orientação ao criar, renomear, duplicar com identidade nova, lixeira com desfazer. Próximo: miniatura do jogo na capa, fixar no início. |
 | Pasta de projetos e cópia compartilhada (SAF), revisões ZIP | `MainActivity.ProjectFolder`, `AndroidProjectFolder` | rota (Ajustes) | **P1**: ajustes de pasta e exportar/importar ZIP na casca. |
 | Notas, esboços e mapas mentais | `MainActivity.Notes`/`MindMap`/`Attachments` | Notas em texto na casca; mapas por rota | **P2**: mapas mentais e anexos na aba Notas. |
 | Aprender (trilhas, missões, manual offline) | `MainActivity.Learn`/`LearnPanel`, `DocumentationPanel`, `Lunet.Docs` | rota | **P3**: Aprender e Docs como painéis da casca. |

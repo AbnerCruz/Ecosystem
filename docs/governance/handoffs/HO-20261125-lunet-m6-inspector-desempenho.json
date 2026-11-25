@@ -1,0 +1,82 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261125-lunet-m6-inspector-desempenho",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-25T16:02:00Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "d7960d4",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/docs/research/inspector-desempenho-2026-11-25.md",
+    "apps/lunet2d/src/Lunet.Host/WorkspaceSession.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/FrameStats.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/GameInspection.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/GameSession.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/InspectorView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/PerformanceView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/GameView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientInspectionTests.cs",
+    "docs/governance/handoffs/HO-20261125-lunet-m6-inspector-desempenho.json"
+  ],
+  "work_completed": [
+    "M6 Inspector: live rows of the running Game (ObjectInspector, custom Inspector<T>), edited in place (toggle, choice, text, number with Range slider, colour swatch), written on Game.Dispatcher; while paused the frame is drawn again at once (GameSession.Redraw). Invalid input is refused inline.",
+    "M6 Desempenho: FrameStats keeps 300 frames (CPU total, update, draw, steps) while the game runs, panel open or not; FrameGraph draws one bar per frame against the 60 and 30 fps lines; touching a bar shows that frame; average, 95th percentile, worst and hitch count; copyable report.",
+    "Compact layout: Inspector, Desempenho and AI open in a half-screen sheet; both panels are one tap away in the game bar. Study note with references in docs/research/inspector-desempenho-2026-11-25.md."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (1268 tests) incl. LunetClientInspectionTests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientInspectionTests.cs"
+    },
+    {
+      "check": "Headless captures celular/largo 5b-inspector and 5c-desempenho",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    }
+  ],
+  "known_issues": [
+    "Timings are CPU of the shell's software-rendered frame; GPU timings arrive with M5 (embedded GL preview).",
+    "[File]/[Asset] fields are typed paths for now (no picker).",
+    "Not tested on a physical device."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "M5 embedded GL preview, A1–A6 Studios, P1–P8"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

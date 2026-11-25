@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.0.1-dev.1000600 — Seus jogos: criar, renomear, duplicar e lixeira
+
+- **Novo jogo** abre uma folha com o nome já preenchido, o ponto de partida (Vazio, Pegar moedas, Animação, Partículas ou Laboratório) e a tela (paisagem ou retrato). Um toque em **Criar**.
+- Cada jogo tem um botão **⋮** (ou toque longo) com **Abrir**, **Renomear**, **Duplicar** e **Apagar**.
+  - **Renomear** mantém a identidade do APK: o jogo já instalado continua atualizando.
+  - **Duplicar** cria uma cópia com identidade própria, que se instala ao lado da original. Saves, histórico e Git ficam com a original.
+- **Apagar não perde nada:** o jogo vai para a **Lixeira** e aparece **Desfazer** por 8 segundos.
+  - Pela Lixeira você restaura o jogo. Se o nome tiver sido usado nesse meio-tempo, ele volta com outro nome livre.
+  - **Apagar de vez** pede um segundo toque.
+- Voltar fecha a folha aberta antes de sair da tela.
+
+## 0.0.1-dev.1000599 — Inspector e Desempenho ao lado do jogo
+
+- **Inspector:** com o jogo rodando, o botão de controles deslizantes na barra do jogo (ou Painéis → Inspector) mostra os valores do jogo ao vivo.
+  - Mude um número, uma cor, um texto, liga/desliga ou uma opção, e o jogo reage na hora. Com o jogo pausado, o quadro é redesenhado na mesma hora.
+  - Campos com `[Range]` ganham um controle deslizante. Valores inválidos são recusados com uma mensagem, sem mexer no jogo.
+  - A mudança vale até o jogo parar; o código não muda. Com mais de 12 campos aparece um filtro.
+- **Desempenho:** o botão de pulso mostra o tempo de cada quadro num gráfico, com as linhas de 60 e 30 quadros por segundo.
+  - Mostra média, o tempo abaixo do qual ficam 95% dos quadros, o pior quadro e quantos passaram de 16,7 ms.
+  - Tocar numa barra mostra aquele quadro: Update, Draw e passos.
+  - Os quadros são guardados mesmo com o painel fechado. **Copiar relatório** copia os números em texto.
+- No celular, Inspector, Desempenho e IA abrem numa gaveta de meia tela, com o jogo visível acima.
+
 ## 0.0.1-dev.1000598 — Volta onde você parou
 
 - Ao abrir um jogo, o editor volta ao último arquivo, ao cursor e à linha em que você estava. Isso vale também depois de fechar o app.
