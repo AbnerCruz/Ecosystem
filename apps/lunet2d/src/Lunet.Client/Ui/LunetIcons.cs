@@ -30,6 +30,7 @@ public static class LunetIcons
     public const string Keyboard = "M3.5 6.5h17a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-17a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z M6.5 10h.01 M10 10h.01 M14 10h.01 M17.5 10h.01 M8 14h8";
     public const string Braces = "M8 4H7a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h1 M16 4h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-1";
     public const string Function = "M15.5 4.5c-2.5-.8-4 .4-4.5 3l-2 9.5c-.5 2.6-2 3.8-4.5 3 M7.5 10h8";
+    public const string More = "M12 5.5h.01 M12 12h.01 M12 18.5h.01";
     public const string Speed = "M12 13l4-4 M4 17a8 8 0 1 1 16 0";
 
     /// <summary>An icon as a stroked path, sized for a toolbar (20 dp) unless told otherwise.</summary>

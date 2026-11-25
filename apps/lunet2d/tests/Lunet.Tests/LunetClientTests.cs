@@ -579,6 +579,40 @@ public sealed class LunetClientTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public void Chrome_FollowsTheDesignStudy()
+    {
+        Assert.Equal("editado agora", HomeView.Edited(DateTime.UtcNow, DateTime.UtcNow));
+        Assert.Equal("editado há 5 min", HomeView.Edited(DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow));
+        Assert.Equal("editado ontem", HomeView.Edited(DateTime.UtcNow.AddHours(-30), DateTime.UtcNow));
+        Assert.Equal(HomeView.CardColor("Plataforma"), HomeView.CardColor("Plataforma"));  // stable per game
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                // D3: the top bar holds at most back + panels + the primary action (UX P5).
+                var bar = window.GetVisualDescendants().OfType<Button>().Where(b => b.Bounds.Height > 0 && b.TranslatePoint(default, window)?.Y < 56).ToArray();
+                Assert.True(bar.Length <= 3, string.Join(", ", bar.Select(b => Avalonia.Automation.AutomationProperties.GetName(b))));
+                Assert.All(bar, b => Assert.True(b.Bounds.Height >= LunetTokens.MinTouch - 0.5));
+                // D4: M3 navigation items are 64 dp tall.
+                var tabs = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("lunet-tab")).ToArray();
+                Assert.Equal(6, tabs.Length);
+                Assert.All(tabs, t => Assert.True(t.Bounds.Height >= 64));
+                shell.GoHome();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "1 jogo");
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
     private static int CountRed(Avalonia.Media.Imaging.Bitmap frame)
     {
         var w = frame.PixelSize.Width; var h = frame.PixelSize.Height;

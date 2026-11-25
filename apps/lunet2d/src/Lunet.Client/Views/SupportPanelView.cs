@@ -50,7 +50,7 @@ public sealed class SupportPanelView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Mais", _ => "Problemas" });
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -73,7 +73,20 @@ public sealed class SupportPanelView : UserControl
     private Control More()
     {
         var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.M) };
-        foreach (var (route, label, icon) in LunetShell.GameRoutes)
+        var problems = _shell.Game.Problems.Count;
+        foreach (var (panel, label, icon) in new[]
+        {
+            (SupportPanel.Console, "Console", LunetIcons.Console),
+            (SupportPanel.Problems, problems > 0 ? $"Problemas ({problems})" : "Problemas", LunetIcons.Problems),
+        })
+        {
+            var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => _shell.State.ShowPanel(panel));
+            b.HorizontalAlignment = HorizontalAlignment.Stretch;
+            b.HorizontalContentAlignment = HorizontalAlignment.Left;
+            list.Children.Add(b);
+        }
+        if (_shell.OpenRoute is not null) list.Children.Add(LunetUi.Divider());
+        foreach (var (route, label, icon) in _shell.OpenRoute is null ? [] : LunetShell.GameRoutes)
         {
             var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => _shell.OpenRoute?.Invoke(route, _shell.State.Project));
             b.HorizontalAlignment = HorizontalAlignment.Stretch;

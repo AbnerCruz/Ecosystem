@@ -99,14 +99,15 @@ public static class LunetUi
     public static Button Tab(string icon, string label, bool selected, Action onClick)
     {
         var fg = selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary;
-        var stack = new StackPanel { Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center };
+        // M3 navigation item (LUNET-537 D4): 56×28 pill indicator behind a 22 dp icon, label below.
+        var stack = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center };
         stack.Children.Add(new Border
         {
+            Width = 56, Height = 28,
             Background = LunetTokens.Brush(selected ? LunetTokens.Color.PrimarySoft : "#00000000"),
             CornerRadius = new CornerRadius(LunetTokens.Radius.Pill),
-            Padding = new Thickness(14, 3),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Child = LunetIcons.Create(icon, fg, 20),
+            Child = LunetIcons.Create(icon, fg, 22),
         });
         stack.Children.Add(new TextBlock
         {
@@ -116,7 +117,7 @@ public static class LunetUi
         });
         var button = new Button
         {
-            Content = stack, MinHeight = 56, MinWidth = 64, Padding = new Thickness(4),
+            Content = stack, MinHeight = 64, MinWidth = 64, Padding = new Thickness(4, 8, 4, 6),
             Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center,
             Tag = selected,

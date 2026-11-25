@@ -30,6 +30,7 @@ public static class ShellScreens
                 window.Show();
                 var shell = window.Shell;
                 shell.HardwareKeyboard = size != "celular"; // the phone captures show the Lunet keyboard
+                if (size == "celular") shell.OpenRoute = (_, _) => { }; // show the Android Home destinations
                 Shot(window, output, size, "1-home-vazia", written);
                 shell.CreateProject();
                 shell.GoHome();
