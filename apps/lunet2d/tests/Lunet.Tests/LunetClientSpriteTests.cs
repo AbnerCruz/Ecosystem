@@ -908,4 +908,37 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void MindMap_PresentsOneBranchPerSlide_AndBackLeavesThePresentation()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-present-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var map = shell.WorkspaceView.NewMindMap();
+                var a = map.AddChild(map.Map.Root, "Mecânicas");
+                map.AddChild(a, "Pulo duplo");
+                map.AddChild(map.Map.Root, "Fases");
+                map.Present();
+                Assert.Equal(0, map.Slide);
+                Assert.Equal(2, map.SlideCount);
+                window.UpdateLayout();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Pulo duplo") == true);
+                map.Present(1);
+                window.UpdateLayout();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Fases");
+                Assert.True(shell.Back());                                             // Back ends the presentation…
+                Assert.Null(map.Slide);
+                Assert.Same(map, shell.WorkspaceView.Studio);                          // …and stays in the map
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

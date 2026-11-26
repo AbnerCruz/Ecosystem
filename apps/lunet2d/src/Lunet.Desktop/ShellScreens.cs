@@ -170,6 +170,9 @@ public static class ShellScreens
                 mind.AddChild(mind.Map.Root, "Ideias soltas");
                 mind.Rename(mind.Map.Topics[^1].Id, "Ideias soltas");
                 Shot(window, output, size, "7b-mapa-mental", written);
+                mind.Present();
+                Shot(window, output, size, "7c-apresentar", written);
+                mind.EndPresentation();
                 shell.Back();
                 var music = shell.WorkspaceView.NewMusic();
                 Shot(window, output, size, "8f-musica", written);

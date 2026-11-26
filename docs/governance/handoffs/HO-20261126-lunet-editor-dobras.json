@@ -25,11 +25,14 @@
     "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
     "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
     "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs",
-    "docs/governance/handoffs/HO-20261126-lunet-editor-dobras.json"
+    "docs/governance/handoffs/HO-20261126-lunet-editor-dobras.json",
+    "apps/lunet2d/src/Lunet.Client/Views/MindMapView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
   ],
   "work_completed": [
     "Audit of the previous 'Editor completo' commands against the shell editor; gaps closed: code folding (AvaloniaEdit FoldingManager fed by the analyzer's FoldRegion list, toggle at caret, fold/unfold all), position history (DocumentEditor.JumpTo used by palette, outline, go to line and Problemas; BackToPosition, Alt+Left), select next occurrence, edit all occurrences (find/replace prefilled, whole word, match case), Inserir bloco (IndentationService.InsertBlock, Ctrl+Shift+B), Salvar cópia in the file menu.",
-    "Multi-cursor editing is not available in AvaloniaEdit; 'Editar todas as ocorrências' covers the same use through replace-all."
+    "Multi-cursor editing is not available in AvaloniaEdit; 'Editar todas as ocorrências' covers the same use through replace-all.",
+    "Mind map Apresentar in the shell (the previous screen's PresentMindMap): one slide per branch of the root with its topics as a list, Anterior/Próximo at the bottom, Back/✕ ends the presentation. Publicar of assets already lives in the shell's Biblioteca."
   ],
   "verification": [
     {
@@ -47,7 +50,7 @@
   ],
   "known_issues": [
     "Not exercised on a physical device (fold margin touch targets, Alt+Left needs a hardware keyboard).",
-    "The 'Editor completo' route still opens the previous screen: its Publicar/Apresentar entries still need an audit before removing the route."
+    "The 'Editor completo' route still opens the previous screen; its explorer (folders, Nova pasta) has no shell equivalent yet."
   ],
   "blockers": [],
   "next_actions": [
