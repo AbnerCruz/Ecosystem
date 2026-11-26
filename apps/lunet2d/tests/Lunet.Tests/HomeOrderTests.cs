@@ -20,6 +20,14 @@ public sealed class HomeOrderTests
     }
 
     [Fact]
+    public void Continue_PrefersTheGameOpenedLast()
+    {
+        var games = new[] { new HomeGame("Velho", "v", T.AddDays(-3)), new HomeGame("Novo", "n", T) };
+        Assert.Equal("Velho", HomeOrder.Arrange(games, [], null, lastOpenedId: "V").Continue!.Name); // ids compare ignoring case
+        Assert.Equal("Novo", HomeOrder.Arrange(games, [], null, lastOpenedId: "apagado").Continue!.Name);
+    }
+
+    [Fact]
     public void Search_IgnoresCaseAndAccents_AndHidesContinue()
     {
         var games = new[] { new HomeGame("Fase Água", "a", T), new HomeGame("Nave", "n", T.AddHours(-1)) };
@@ -30,11 +38,9 @@ public sealed class HomeOrderTests
     }
 
     [Fact]
-    public void ASingleGame_HasNoContinueCard_AndPinToggles()
+    public void ASingleGame_HasNoContinueCard()
     {
         Assert.Null(HomeOrder.Arrange([new HomeGame("Só", "s", T)], [], null).Continue);
-        Assert.Equal(["x", "y"], HomeOrder.Toggle(["x"], "y"));
-        Assert.Equal(["x"], HomeOrder.Toggle(["x", "y"], "y"));
     }
 
     [Fact]
@@ -53,7 +59,7 @@ public sealed class HomeOrderTests
                 home.Refresh();
                 home.TogglePin("Moedas");
                 Assert.Equal(["Moedas"], home.Arranged.Pinned.Select(g => g.Name));
-                Assert.Single(new Lunet.Core.SettingsStore(shell.SettingsPath).Load().PinnedGameIds);        // saved
+                Assert.Single(new Lunet.Core.LauncherPreferences(shell.LauncherPreferencesPath).PinnedProjectIds); // the previous screens' file
                 shell.Workspace.Store.Rename("Moedas", "Moedas2");
                 home.Refresh();
                 Assert.Equal(["Moedas2"], home.Arranged.Pinned.Select(g => g.Name));                        // same GameId

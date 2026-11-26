@@ -76,6 +76,7 @@ public sealed class ShellActivity : AvaloniaActivity
             OpenRoute = OpenRoute,
             // P3: the same declared progress as the previous Aprender screen (MainActivity.Learn).
             LearningProgressPath = Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"),
+            LauncherPreferencesPath = Path.Combine(FilesDir!.AbsolutePath, "launcher-preferences.json"), // same file as the previous Home
             // A6: the same Biblioteca as the previous screen (MainActivity.AssetLibrary).
             LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
             GitAccountPath = Path.Combine(FilesDir!.AbsolutePath, "git-account.json"),

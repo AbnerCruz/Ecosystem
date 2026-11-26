@@ -215,7 +215,9 @@ public sealed class HomeView : UserControl
         _count.Text = names.Count switch { 0 => "Comece criando um jogo", 1 => "1 jogo", _ => $"{names.Count} jogos" };
         _search.IsVisible = names.Count > 1;
         var games = names.Select(n => new HomeGame(n, GameIdOf(n), LastEdited(n))).ToList();
-        Arranged = HomeOrder.Arrange(games, _shell.Settings.PinnedGameIds, _search.IsVisible ? _search.Text : null);
+        var prefs = _shell.LauncherPreferences();
+        var pins = prefs?.PinnedProjectIds.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+        Arranged = HomeOrder.Arrange(games, pins, _search.IsVisible ? _search.Text : null, prefs?.LastProjectId);
         Shown = [.. Arranged.Pinned.Concat(Arranged.Others).Select(g => g.Name).OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)];
         if (names.Count == 0)
         {
@@ -282,14 +284,13 @@ public sealed class HomeView : UserControl
     public void TogglePin(string name)
     {
         if (GameIdOf(name) is not { } id) return;
-        var next = _shell.Settings.Clone();
-        next.PinnedGameIds = HomeOrder.Toggle(next.PinnedGameIds, id);
-        try { _shell.SaveSettings(next); }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { _shell.Report("Não foi possível salvar: " + e.Message); return; }
+        if (_shell.LauncherPreferences() is not { } prefs) { _shell.Report("As preferências de início estão danificadas; o arquivo foi preservado e nada foi alterado."); return; }
+        try { prefs.SetPinnedProject(name, id, !prefs.IsPinnedProject(id)); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { _shell.Report("Não foi possível salvar: " + e.Message); return; }
         Refresh();
     }
 
-    public bool IsPinned(string name) => GameIdOf(name) is { } id && _shell.Settings.PinnedGameIds.Contains(id);
+    public bool IsPinned(string name) => GameIdOf(name) is { } id && _shell.LauncherPreferences()?.IsPinnedProject(id) == true;
 
     /// <summary>A stable colour per game (its name hashed onto the accent family), so cards are told apart at a glance.</summary>
     public static string CardColor(string name)

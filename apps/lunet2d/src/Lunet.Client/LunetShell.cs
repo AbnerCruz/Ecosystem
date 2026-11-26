@@ -27,6 +27,7 @@ public sealed class LunetShell : UserControl
     {
         Workspace = new WorkspaceSession(projectsRoot);
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
+        LauncherPreferencesPath = Path.Combine(projectsRoot, ".lunet", "launcher-preferences.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
         GitAccountPath = Path.Combine(projectsRoot, ".lunet", "git-account.json");
         StudioWorkspacePath = Path.Combine(projectsRoot, ".lunet", "studio");
@@ -73,6 +74,19 @@ public sealed class LunetShell : UserControl
     public int KeyboardRequests { get; private set; }
 
     public WorkspaceSession Workspace { get; }
+
+    /// <summary>
+    /// Pinned and recent games (by GameId) — the single authority shared with the previous screens
+    /// (<see cref="Lunet.Core.LauncherPreferences"/>); the Android head points it at FilesDir/launcher-preferences.json.
+    /// </summary>
+    public string LauncherPreferencesPath { get; set; }
+
+    /// <summary>The launcher preferences, or null when the file is damaged (it is never overwritten then).</summary>
+    public Lunet.Core.LauncherPreferences? LauncherPreferences()
+    {
+        try { return new Lunet.Core.LauncherPreferences(LauncherPreferencesPath); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException) { return null; }
+    }
 
     /// <summary>
     /// Where Aprender keeps the student's declared progress. The Android head points it at the file the previous screens
@@ -244,6 +258,8 @@ public sealed class LunetShell : UserControl
     {
         StopGame();
         Workspace.Open(name);
+        try { LauncherPreferences()?.MarkOpenedProject(name, Workspace.Project!.Manifest.GameId); } // recents, as the previous screens
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { }
         Assistant = new Lunet.Editor.EditorAssistant(new Lunet.Compiler.LoadedAssembliesReferenceProvider(
             typeof(Lunet.Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly));
         LiveProblems = [];
