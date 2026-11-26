@@ -41,6 +41,11 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Seleção no Sprite Studio da interface nova** (ferramenta Selecionar):
+  - Retângulo, Laço, Mesma cor ou Tudo, escolhidos logo acima das ferramentas.
+  - Arrastar dentro da seleção move os pixels.
+  - Com algo selecionado aparecem Aplicar, Desfazer, Girar, Espelhar ↔ e ↕, Duplicar (carimba uma cópia) e Apagar.
+  - Desfazer volta o movimento inteiro. Trocar de ferramenta, de quadro ou sair aplica o que estiver flutuando.
 - **Tabelas de dados na interface nova** (Recursos → Nova tabela, ou uma tabela em `Content/Data`):
   - No celular, cada registro vira um cartão. Tocar abre um formulário com um campo por coluna: texto, número com teclado numérico, sim/não com chave, escolha com lista.
   - Valor inválido não é gravado, e o motivo aparece embaixo do campo.

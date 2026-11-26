@@ -433,4 +433,71 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void SpriteStudio_SelectsMovesFlipsDuplicatesAndErasesPixels()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-select-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var studio = shell.WorkspaceView.NewSprite();
+                var doc = studio.Document;
+                const uint red = 0xFFFF0000, blue = 0xFF0000FF;
+                studio.SelectColor(red);
+                studio.Paint(1, 1, first: true);
+                studio.SelectColor(blue);
+                studio.Paint(2, 1, first: true);
+                uint At(int x, int y) => studio.Document.Frames[0][y * doc.Width + x];
+
+                studio.SelectTool(SpriteTool.Select);
+                studio.DragSelect(1, 1, 2, 1);                                   // a 2×1 rectangle
+                Assert.Equal(2, studio.Selection!.Count);
+                studio.DragSelect(1, 1, 5, 6);                                   // dragging inside moves it by (4,5)
+                Assert.NotNull(studio.Floating);
+                studio.FlipSelection(horizontal: true);
+                studio.CommitFloating();
+                Assert.Null(studio.Floating);
+                Assert.Equal(0u, At(1, 1));
+                Assert.Equal(blue, At(5, 6));                                    // flipped: blue first
+                Assert.Equal(red, At(6, 6));
+
+                studio.Undo();                                                   // one step back: the move
+                Assert.Equal(red, At(1, 1));
+                Assert.Equal(0u, At(5, 6));
+
+                studio.SetSelectionMode(SpriteSelectMode.Wand);
+                studio.Paint(1, 1, first: true);                                 // same colour: only the red pixel
+                Assert.Equal(1, studio.Selection!.Count);
+                studio.DuplicateSelection();                                     // a copy floats 2 px away
+                studio.CommitFloating();
+                Assert.Equal(red, At(1, 1));
+                Assert.Equal(red, At(3, 3));
+
+                studio.SelectAll();
+                Assert.Equal(doc.Width * doc.Height, studio.Selection!.Count);
+                studio.DeleteSelection();
+                Assert.All(studio.Document.Frames[0], p => Assert.Equal(0u, p));
+                studio.Undo();
+                Assert.Equal(red, At(3, 3));
+
+                studio.SetSelectionMode(SpriteSelectMode.Rectangle);
+                studio.DragSelect(1, 1, 2, 1);
+                studio.MoveSelection(0, 2);
+                studio.SelectTool(SpriteTool.Pencil);                           // leaving Select applies the move
+                Assert.Null(studio.Floating);
+                Assert.Equal(red, At(1, 3));
+                Assert.True(shell.Back());                                       // saves
+                var saved = Lunet.Studio.SpriteDocument.Parse(shell.Workspace.Project!.ReadText("Content/Textures/sprite-1.sprite.json"));
+                Assert.Equal(red, saved.Frames[0][3 * doc.Width + 1]);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

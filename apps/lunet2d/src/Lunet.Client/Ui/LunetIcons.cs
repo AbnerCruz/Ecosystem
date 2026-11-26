@@ -51,6 +51,12 @@ public static class LunetIcons
     public const string Fit = "M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5";
     public const string ChevronRight = "M9 6l6 6-6 6";
     public const string Undo = "M9 14L4 9l5-5 M4 9h10a6 6 0 0 1 0 12h-3";
+    public const string Select = "M4 7V4h3 M10 4h4 M17 4h3v3 M20 10v4 M20 17v3h-3 M14 20h-4 M7 20H4v-3 M4 14v-4";
+    public const string Lasso = "M12 4c5 0 8 2.2 8 5s-3.6 5-8 5-8-2.2-8-5 3.6-5 8-5z M7 13.5c-1.5 2-.5 4.2 1.5 4.5 M8.5 18v3";
+    public const string Wand = "M4 20L15 9 M17 3v3 M20.5 7.5h-3 M19.5 4.5l-2 2 M13 5h.01 M20 12h.01";
+    public const string Rotate = "M20 12a8 8 0 1 1-2.3-5.7 M20 4v5h-5";
+    public const string FlipH = "M12 3v18 M9 7L3 17h6z M15 7l6 10h-6z";
+    public const string FlipV = "M3 12h18 M7 9L17 3v6z M7 15l10 6v-6z";
     public const string Redo = "M15 14l5-5-5-5 M20 9H10a6 6 0 0 0 0 12h3";
     public const string Speed = "M12 13l4-4 M4 17a8 8 0 1 1 16 0";
 

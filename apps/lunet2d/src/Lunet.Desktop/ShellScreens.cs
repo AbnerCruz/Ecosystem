@@ -125,6 +125,12 @@ public static class ShellScreens
                 sprite.TogglePicker();
                 Shot(window, output, size, "8c-cor", written);
                 sprite.TogglePicker();
+                sprite.SelectTool(Lunet.Client.Views.SpriteTool.Select);
+                Shot(window, output, size, "8c2-selecionar", written);
+                sprite.DragSelect(3, 3, 8, 12);
+                sprite.MoveSelection(4, 1);
+                Shot(window, output, size, "8c3-selecao-movida", written);
+                sprite.CommitFloating();
                 shell.Back();
                 var tiles = shell.WorkspaceView.NewMap();
                 tiles.SelectTile(1);

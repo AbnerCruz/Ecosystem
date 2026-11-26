@@ -12,11 +12,16 @@ using Lunet.Core;
 using SpriteDocument = Lunet.Studio.SpriteDocument;
 using SpriteHistory = Lunet.Studio.SpriteHistory;
 using SpriteColor = Lunet.Studio.SpriteColor;
+using SpriteFloating = Lunet.Studio.SpriteFloating;
+using SpriteSelection = Lunet.Studio.SpriteSelection;
 
 namespace Lunet.Client.Views;
 
 /// <summary>The drawing tools of the Sprite Studio.</summary>
-public enum SpriteTool { Pencil, Eraser, Fill, Picker }
+public enum SpriteTool { Pencil, Eraser, Fill, Picker, Select }
+
+/// <summary>How the Select tool picks pixels.</summary>
+public enum SpriteSelectMode { Rectangle, Lasso, Wand }
 
 /// <summary>
 /// The pixel canvas: the current frame scaled to fit (crisp pixels), a grid when zoomed in, the previous frame as a
@@ -32,10 +37,16 @@ public sealed class PixelCanvas : ZoomCanvas
     protected override (double Width, double Height) ContentSize => (_doc.Width, _doc.Height);
     protected override (int X, int Y) Cells => (_doc.Width, _doc.Height);
 
-    public void Show(SpriteDocument doc, int frame, bool onion)
+    /// <summary>Selection outline (cell edges), the marquee or lasso being drawn, and the floating pixels' corners.</summary>
+    public IReadOnlyList<(int X0, int Y0, int X1, int Y1)> Outline { get; set; } = [];
+    public (int X0, int Y0, int X1, int Y1)? Marquee { get; set; }
+    public IReadOnlyList<(int X, int Y)> LassoPath { get; set; } = [];
+    public (float X, float Y)[]? FloatingCorners { get; set; }
+
+    public void Show(SpriteDocument doc, int frame, bool onion, uint[]? pixels = null)
     {
         _doc = doc;
-        _bitmap = Bitmap(doc.Frames[frame], _bitmap);
+        _bitmap = Bitmap(pixels ?? doc.Frames[frame], _bitmap);
         _onion = onion && frame > 0 ? Bitmap(doc.Frames[frame - 1], _onion) : null;
         InvalidateVisual();
     }
@@ -73,6 +84,30 @@ public sealed class PixelCanvas : ZoomCanvas
                 context.DrawImage(_bitmap, new Rect(0, 0, _doc.Width, _doc.Height), a);
         DrawGrid(context, a);
         context.DrawRectangle(new Pen(LunetTokens.Brush(LunetTokens.Color.BorderStrong), 1), a);
+        DrawSelection(context, a);
+    }
+
+    private void DrawSelection(DrawingContext context, Rect a)
+    {
+        double cw = a.Width / _doc.Width, ch = a.Height / _doc.Height;
+        Point P(double x, double y) => new(a.X + x * cw, a.Y + y * ch);
+        // Marching-ants look without animation: a dark line under a light dashed one reads on any colour.
+        var under = new Pen(LunetTokens.Brush("#000000"), 2);
+        var over = new Pen(LunetTokens.Brush("#ffffff"), 1, new DashStyle([3, 3], 0));
+        void Line(Point p, Point q) { context.DrawLine(under, p, q); context.DrawLine(over, p, q); }
+        foreach (var (x0, y0, x1, y1) in Outline) Line(P(x0, y0), P(x1, y1));
+        if (Marquee is { } m)
+        {
+            double l = Math.Min(m.X0, m.X1), t = Math.Min(m.Y0, m.Y1), r = Math.Max(m.X0, m.X1) + 1, b = Math.Max(m.Y0, m.Y1) + 1;
+            Line(P(l, t), P(r, t)); Line(P(r, t), P(r, b)); Line(P(r, b), P(l, b)); Line(P(l, b), P(l, t));
+        }
+        for (var i = 1; i < LassoPath.Count; i++)
+            Line(P(LassoPath[i - 1].X + .5, LassoPath[i - 1].Y + .5), P(LassoPath[i].X + .5, LassoPath[i].Y + .5));
+        if (FloatingCorners is { } c)
+        {
+            var accent = new Pen(LunetTokens.Brush(LunetTokens.Color.Primary), 2);
+            for (var i = 0; i < 4; i++) context.DrawLine(accent, P(c[i].X, c[i].Y), P(c[(i + 1) % 4].X, c[(i + 1) % 4].Y));
+        }
     }
 }
 
@@ -103,8 +138,16 @@ public sealed class SpriteStudioView : UserControl
     private readonly TextBlock _info = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
     private readonly Avalonia.Threading.DispatcherTimer _playTimer = new();
     private readonly Border _picker = new() { IsVisible = false, Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S) };
+    private readonly StackPanel _selectionBar = new() { Orientation = Orientation.Horizontal, Spacing = 2 };
+    private readonly ScrollViewer _selectionRow;
     private bool _dirty;
     private bool _playing;
+    private SpriteSelection? _selection;
+    private SpriteFloating? _floating;
+    private SpriteSelection? _lifted;
+    private bool _liftedCopy, _selecting, _moving;
+    private (int X, int Y) _selStart, _selEnd, _moveLast;
+    private readonly List<(int X, int Y)> _lasso = [];
 
     public SpriteStudioView(LunetShell shell, string path, Action close)
     {
@@ -117,9 +160,13 @@ public sealed class SpriteStudioView : UserControl
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         if (PaletteView.Load(shell) is { Colors.Count: > 0 } palette) GamePalette = palette.Argb;
         _canvas.Paint += Paint;
-        _canvas.StrokeEnded += () => { Refresh(frames: true); };
-        // Two fingers mean zoom: the dot the first finger left is taken back.
-        _canvas.StrokeCancelled += () => { Document = _history.Rollback(Document); ShowCanvas(); };
+        _canvas.StrokeEnded += () => { if (Tool == SpriteTool.Select) EndSelectStroke(); else Refresh(frames: true); };
+        // Two fingers mean zoom: the dot the first finger left is taken back (a selection being drawn is dropped).
+        _canvas.StrokeCancelled += () =>
+        {
+            if (Tool == SpriteTool.Select) { _selecting = false; _moving = false; ShowCanvas(); return; }
+            Document = _history.Rollback(Document); ShowCanvas();
+        };
         _playTimer.Tick += (_, _) => { Frame = (Frame + 1) % Document.Frames.Count; ShowCanvas(); };
 
         var back = LunetUi.IconButton(LunetIcons.Back, "Salvar e voltar", () => Close());
@@ -139,12 +186,13 @@ public sealed class SpriteStudioView : UserControl
         bar.Children.Add(titles);
 
         var framesRow = new ScrollViewer { Content = _frames, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs) };
+        _selectionRow = new ScrollViewer { Content = _selectionBar, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Margin = new Thickness(LunetTokens.Space.S, 0), IsVisible = false };
         var colorsRow = new ScrollViewer { Content = _colors, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs) };
         // Everything the thumb needs is at the bottom: frames, colours, then tools.
         var bottom = new StackPanel
         {
             Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            Children = { _picker, framesRow, colorsRow, new Border { Child = _tools, Padding = new Thickness(0, 0, 0, LunetTokens.Space.Xs) } },
+            Children = { _picker, framesRow, colorsRow, _selectionRow, new Border { Child = _tools, Padding = new Thickness(0, 0, 0, LunetTokens.Space.Xs) } },
         };
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
@@ -167,12 +215,178 @@ public sealed class SpriteStudioView : UserControl
     public SpriteTool Tool { get; private set; } = SpriteTool.Pencil;
     public uint Color { get; private set; } = 0xFF000000;
 
-    public void SelectTool(SpriteTool tool) { Tool = tool; Refresh(frames: false); }
-    public void SelectColor(uint color) { Color = color; Tool = Tool is SpriteTool.Eraser or SpriteTool.Picker ? SpriteTool.Pencil : Tool; Refresh(frames: false); }
+    public void SelectTool(SpriteTool tool)
+    {
+        if (tool != SpriteTool.Select) { CommitFloating(); _selection = null; }
+        Tool = tool;
+        Refresh(frames: false);
+    }
+
+    public void SelectColor(uint color) { Color = color; Tool = Tool is SpriteTool.Eraser or SpriteTool.Picker or SpriteTool.Select ? SpriteTool.Pencil : Tool; CommitFloating(); _selection = null; Refresh(frames: false); }
+
+    // ---------- Selection ----------
+
+    public SpriteSelectMode SelectionMode { get; private set; } = SpriteSelectMode.Rectangle;
+    public SpriteSelection? Selection => _selection;
+    public SpriteFloating? Floating => _floating;
+
+    public void SetSelectionMode(SpriteSelectMode mode) { SelectionMode = mode; Tool = SpriteTool.Select; Refresh(frames: false); }
+
+    public void SelectAll()
+    {
+        CommitFloating();
+        Tool = SpriteTool.Select;
+        SetSelection(SpriteSelection.All(Document.Width, Document.Height));
+    }
+
+    public void SetSelection(SpriteSelection? selection)
+    {
+        _selection = selection is { IsEmpty: false } ? selection : null;
+        Refresh(frames: false);
+    }
+
+    /// <summary>Lifts the selected pixels so they can move (one undo step per lift).</summary>
+    private void EnsureFloating(bool copy = false)
+    {
+        if (_floating is not null || _selection is null) return;
+        _history.CheckpointFrame(Document, Frame);
+        _floating = SpriteFloating.Lift(Document, Frame, _selection, copy);
+        _lifted = _selection;
+        _liftedCopy = copy;
+        _selection = null;
+    }
+
+    /// <summary>Writes the floating pixels where they are now.</summary>
+    public void CommitFloating()
+    {
+        if (_floating is not { } floating) return;
+        _floating = null;
+        floating.Commit(Document, Frame);
+        _dirty = true;
+        Refresh(frames: true);
+    }
+
+    /// <summary>Puts the pixels back (undoes the move) or, with nothing lifted, clears the selection.</summary>
+    public void CancelSelection()
+    {
+        if (_floating is not null) { _floating = null; Document = _history.Rollback(Document); }
+        _selection = null;
+        Refresh(frames: true);
+    }
+
+    public void RotateSelection() => OnFloating(f => f.Rotate90(true));
+    public void FlipSelection(bool horizontal) => OnFloating(f => { if (horizontal) f.FlipHorizontal(); else f.FlipVertical(); });
+
+    /// <summary>Moves the selection by whole pixels (lifting it first).</summary>
+    public void MoveSelection(int dx, int dy) => OnFloating(f => f.MoveBy(dx, dy));
+
+    private void OnFloating(Action<SpriteFloating> change)
+    {
+        EnsureFloating();
+        if (_floating is null) return;
+        change(_floating);
+        Refresh(frames: false);
+    }
+
+    /// <summary>Stamps a copy: the lifted pixels stay floating, a copy is written where they are.</summary>
+    public void DuplicateSelection()
+    {
+        if (_floating is { } floating) { floating.Stamp(Document, Frame); _dirty = true; Refresh(frames: true); return; }
+        EnsureFloating(copy: true);
+        _floating?.MoveBy(2, 2);
+        Refresh(frames: false);
+    }
+
+    /// <summary>Erases the selected pixels (or drops the lifted ones).</summary>
+    public void DeleteSelection()
+    {
+        if (_floating is not null)
+        {
+            _floating = null;
+            Document = _history.Rollback(Document);
+            if (!_liftedCopy && _lifted is { } lifted) { _history.CheckpointFrame(Document, Frame); lifted.Erase(Document, Frame); _dirty = true; }
+        }
+        else if (_selection is { } selection)
+        {
+            _history.CheckpointFrame(Document, Frame);
+            selection.Erase(Document, Frame);
+            _dirty = true;
+        }
+        _selection = null;
+        Refresh(frames: true);
+    }
+
+    private bool InsideFloating(int x, int y)
+    {
+        var c = _floating!.Corners();
+        return x + .5 >= c.Min(p => p.X) && x + .5 <= c.Max(p => p.X) && y + .5 >= c.Min(p => p.Y) && y + .5 <= c.Max(p => p.Y);
+    }
+
+    private void SelectTouch(int x, int y, bool first)
+    {
+        if (first)
+        {
+            _selecting = _moving = false;
+            if (_floating is not null)
+            {
+                if (InsideFloating(x, y)) { _moving = true; _moveLast = (x, y); return; }
+                CommitFloating();
+            }
+            if (_selection is { } selection && selection.Contains(x, y))
+            {
+                EnsureFloating();
+                _moving = true; _moveLast = (x, y);
+                Refresh(frames: false);
+                return;
+            }
+            _selection = null;
+            if (SelectionMode == SpriteSelectMode.Wand) { SetSelection(SpriteSelection.FromColor(Document, Frame, x, y)); return; }
+            _selecting = true;
+            _selStart = _selEnd = (x, y);
+            _lasso.Clear();
+            _lasso.Add((x, y));
+            ShowCanvas();
+            return;
+        }
+        if (_moving && _floating is { } floating)
+        {
+            floating.MoveBy(x - _moveLast.X, y - _moveLast.Y);
+            _moveLast = (x, y);
+            ShowCanvas();
+        }
+        else if (_selecting)
+        {
+            _selEnd = (x, y);
+            if (SelectionMode == SpriteSelectMode.Lasso) _lasso.Add((x, y));
+            ShowCanvas();
+        }
+    }
+
+    private void EndSelectStroke()
+    {
+        var wasSelecting = _selecting;
+        _selecting = _moving = false;
+        if (!wasSelecting) { Refresh(frames: false); return; }
+        SetSelection(SelectionMode switch
+        {
+            SpriteSelectMode.Rectangle when _selStart == _selEnd => null, // a plain tap clears
+            SpriteSelectMode.Rectangle => SpriteSelection.FromRectangle(Document.Width, Document.Height, _selStart.X, _selStart.Y, _selEnd.X, _selEnd.Y),
+            _ => SpriteSelection.FromPolygon(Document.Width, Document.Height, _lasso),
+        });
+    }
+
+    /// <summary>The selection drag as the canvas would send it (tests use the same path as a finger).</summary>
+    public void DragSelect(int x0, int y0, int x1, int y1)
+    {
+        Paint(x0, y0, first: true);
+        if ((x1, y1) != (x0, y0)) Paint(x1, y1, first: false);
+        if (Tool == SpriteTool.Select) EndSelectStroke();
+    }
 
     /// <summary>One touch of a tool at a pixel (the canvas calls it; tests too). <paramref name="first"/> starts an undo step.</summary>
     public void Paint(int x, int y, bool first)
     {
+        if (Tool == SpriteTool.Select) { SelectTouch(x, y, first); return; }
         if (Tool == SpriteTool.Picker)
         {
             var picked = Document.Frames[Frame][y * Document.Width + x];
@@ -196,11 +410,12 @@ public sealed class SpriteStudioView : UserControl
 
     private (int X, int Y)? _lastPaint;
 
-    public void Undo() { if (_history.CanUndo) { Document = _history.Undo(Document); Frame = Math.Min(Frame, Document.Frames.Count - 1); _dirty = true; Refresh(frames: true); } }
-    public void Redo() { if (_history.CanRedo) { Document = _history.Redo(Document); Frame = Math.Min(Frame, Document.Frames.Count - 1); _dirty = true; Refresh(frames: true); } }
+    public void Undo() { if (_floating is not null) { CancelSelection(); return; } if (_history.CanUndo) { Document = _history.Undo(Document); Frame = Math.Min(Frame, Document.Frames.Count - 1); _dirty = true; Refresh(frames: true); } }
+    public void Redo() { if (_floating is not null) return; if (_history.CanRedo) { Document = _history.Redo(Document); Frame = Math.Min(Frame, Document.Frames.Count - 1); _dirty = true; Refresh(frames: true); } }
 
     public void AddFrame(bool duplicate)
     {
+        CommitFloating(); _selection = null;
         _history.Checkpoint(Document);
         Document.AddFrame(duplicate ? Frame : -1);
         Frame = Document.Frames.Count - 1;
@@ -211,6 +426,7 @@ public sealed class SpriteStudioView : UserControl
     public void RemoveFrame()
     {
         if (Document.Frames.Count <= 1) return;
+        CommitFloating(); _selection = null;
         _history.Checkpoint(Document);
         Document.RemoveFrame(Frame);
         Frame = Math.Min(Frame, Document.Frames.Count - 1);
@@ -218,11 +434,12 @@ public sealed class SpriteStudioView : UserControl
         Refresh(frames: true);
     }
 
-    public void SelectFrame(int frame) { Frame = Math.Clamp(frame, 0, Document.Frames.Count - 1); Refresh(frames: true); }
+    public void SelectFrame(int frame) { CommitFloating(); _selection = null; Frame = Math.Clamp(frame, 0, Document.Frames.Count - 1); Refresh(frames: true); }
 
     /// <summary>Writes the source and its sprite sheet together (or neither). No-op when nothing changed.</summary>
     public void Save()
     {
+        CommitFloating();
         if (!_dirty) return;
         var sheetPath = _path[..^".sprite.json".Length] + ".png";
         var png = PngEncoder.Rgba(Document.Width * Document.Frames.Count, Document.Height, Document.SheetRgba());
@@ -252,7 +469,14 @@ public sealed class SpriteStudioView : UserControl
         if (_playing) _playTimer.Start(); else { _playTimer.Stop(); Refresh(frames: true); }
     }
 
-    private void ShowCanvas() => _canvas.Show(Document, Frame, onion: !_playing);
+    private void ShowCanvas()
+    {
+        _canvas.Outline = _selection?.OutlineSegments() ?? [];
+        _canvas.Marquee = _selecting && SelectionMode == SpriteSelectMode.Rectangle ? (_selStart.X, _selStart.Y, _selEnd.X, _selEnd.Y) : null;
+        _canvas.LassoPath = _selecting && SelectionMode == SpriteSelectMode.Lasso ? _lasso.ToArray() : [];
+        _canvas.FloatingCorners = _floating?.Corners();
+        _canvas.Show(Document, Frame, onion: !_playing, _floating?.Compose());
+    }
 
     private void Refresh(bool frames)
     {
@@ -280,9 +504,12 @@ public sealed class SpriteStudioView : UserControl
         ToolKey(SpriteTool.Eraser, LunetIcons.Eraser, "Borracha");
         ToolKey(SpriteTool.Fill, LunetIcons.Bucket, "Balde");
         ToolKey(SpriteTool.Picker, LunetIcons.Dropper, "Conta-gotas");
+        ToolKey(SpriteTool.Select, LunetIcons.Select, "Selecionar");
         _tools.Children.Add(new Border { Width = 1, Height = 28, Margin = new Thickness(6, 0), Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong), VerticalAlignment = VerticalAlignment.Center });
-        _tools.Children.Add(Action("↶", "Desfazer", Undo, _history.CanUndo));
+        _tools.Children.Add(Action("↶", "Desfazer", Undo, _history.CanUndo || _floating is not null));
         _tools.Children.Add(Action("↷", "Refazer", Redo, _history.CanRedo));
+
+        BuildSelectionBar();
 
         _colors.Children.Clear();
         // The first swatch is the colour in use: a tap opens the picker (hue, saturation, brightness, alpha, hex).
@@ -396,6 +623,49 @@ public sealed class SpriteStudioView : UserControl
         top.Children.Add(hex);
         _picker.Child = new StackPanel { Spacing = 2, Children = { top, Row("Matiz", hue), Row("Saturação", saturation), Row("Brilho", value), Row("Opacidade", alpha) } };
         _picker.Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised);
+    }
+
+    /// <summary>Above the tools while Select is chosen: how to pick, then what to do with what is picked.</summary>
+    private void BuildSelectionBar()
+    {
+        _selectionBar.Children.Clear();
+        _selectionRow.IsVisible = Tool == SpriteTool.Select;
+        if (!_selectionRow.IsVisible) return;
+        Button Key(string icon, string label, Action act, string name, bool on = false, bool iconOnly = false)
+        {
+            var b = new Button
+            {
+                Height = 44, MinWidth = 44, Padding = new Thickness(LunetTokens.Space.S, 0), CornerRadius = new CornerRadius(LunetTokens.Radius.M),
+                Background = LunetTokens.Brush(on ? LunetTokens.Color.PrimarySoft : "#00000000"), BorderThickness = new Thickness(0), Name = name,
+                Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 6,
+                    Children = { LunetIcons.Create(icon, on ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary, 20) },
+                },
+                VerticalContentAlignment = VerticalAlignment.Center,
+            };
+            if (!iconOnly) ((StackPanel)b.Content!).Children.Add(LunetUi.Text(label, LunetTokens.Type.Label, on ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary));
+            AutomationProperties.SetName(b, label);
+            ToolTip.SetTip(b, label);
+            b.Click += (_, _) => act();
+            _selectionBar.Children.Add(b);
+            return b;
+        }
+        if (_selection is null && _floating is null)
+        {
+            Key(LunetIcons.Select, "Retângulo", () => SetSelectionMode(SpriteSelectMode.Rectangle), "Mode-Rectangle", SelectionMode == SpriteSelectMode.Rectangle);
+            Key(LunetIcons.Lasso, "Laço", () => SetSelectionMode(SpriteSelectMode.Lasso), "Mode-Lasso", SelectionMode == SpriteSelectMode.Lasso);
+            Key(LunetIcons.Wand, "Mesma cor", () => SetSelectionMode(SpriteSelectMode.Wand), "Mode-Wand", SelectionMode == SpriteSelectMode.Wand);
+            Key(LunetIcons.Fit, "Tudo", SelectAll, "SelectAll");
+            return;
+        }
+        if (_floating is not null) Key(LunetIcons.Check, "Aplicar", CommitFloating, "CommitSelection", on: true);
+        Key(LunetIcons.Close, _floating is not null ? "Desfazer" : "Limpar", CancelSelection, "CancelSelection");
+        Key(LunetIcons.Rotate, "Girar", RotateSelection, "RotateSelection");
+        Key(LunetIcons.FlipH, "Espelhar na horizontal", () => FlipSelection(horizontal: true), "FlipH", iconOnly: true);
+        Key(LunetIcons.FlipV, "Espelhar na vertical", () => FlipSelection(horizontal: false), "FlipV", iconOnly: true);
+        Key(LunetIcons.Copy, "Duplicar", DuplicateSelection, "DuplicateSelection");
+        Key(LunetIcons.Trash, "Apagar", DeleteSelection, "DeleteSelection");
     }
 
     private static Button Action(string face, string label, Action act, bool enabled)
