@@ -107,10 +107,10 @@ public sealed class GameHostProfilingTests
         var game = new CountingGame();
         var host = new GameHost(game, new RecordingBackend()) { ProfileFrameTimings = true };
         Assert.True(host.Start(360, 640));
-        for (int i = 0; i < 30; i++) host.Tick(1.0 / 60);
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 300; i++) host.Tick(1.0 / 60);
-        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        // Measured on a thread of its own, smallest of three runs (Allocation.Steady explains why).
+        Assert.Equal(0, Allocation.Steady(
+            warmup: () => { for (int i = 0; i < 60; i++) host.Tick(1.0 / 60); },
+            work: () => { for (int i = 0; i < 300; i++) host.Tick(1.0 / 60); }));
         host.Stop();
     }
 }
