@@ -51,9 +51,17 @@ public sealed class WorkspaceView : UserControl
         if (_tabBar is not null) _tabBar.IsVisible = !open;
         if (_runFab is not null) _runFab.IsVisible = !open;
         if (_sheet is not null) _sheet.IsVisible = !open || _typingInSheet;
+        PlaceRunButton();
     }
 
     private bool _typingInSheet;
+
+    /// <summary>
+    /// True when the code editor is on screen (Código, or code and game side by side). Only then does the code bar
+    /// count as "keyboard open": in Jogo, Recursos or Notas it used to hide the workspace tabs, leaving no way back to
+    /// the code but Back (capture 4-jogo, 26/11).
+    /// </summary>
+    public bool CodeVisible => _shell.State.Tab == WorkspaceTab.Code || _shell.State.CodeAndGameSideBySide;
     private (WorkspaceTab, SupportPanel) _place;
 
     /// <summary>The text field of this workspace that has the focus (code, notes, a field of a panel), or null.</summary>
@@ -288,6 +296,7 @@ public sealed class WorkspaceView : UserControl
         // panel is the person going elsewhere, and the keyboard rightly goes.
         var place = (_shell.State.Tab, _shell.State.Panel);
         var focused = place == _place ? FocusedField() : null;
+        _keyboardOpen = _shell.KeyboardOpen || (CodeVisible && _code.KeyboardVisible); // per tab, recomputed on each switch
         _place = place;
         _tabBar = _sheet = null;
         _runFab = null;
@@ -338,7 +347,7 @@ public sealed class WorkspaceView : UserControl
                 var sheet = new Border
                 {
                     // Inspector, Desempenho and the AI need room: half the screen, the game still above it.
-                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs && Bounds.Height > 0
+                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs or SupportPanel.Objectives && Bounds.Height > 0
                         ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
                     Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
                     CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),
@@ -400,10 +409,28 @@ public sealed class WorkspaceView : UserControl
         run.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
         run.HorizontalAlignment = HorizontalAlignment.Right;
         run.VerticalAlignment = VerticalAlignment.Bottom;
-        run.Margin = new Thickness(LunetTokens.Space.M);
         _runFab = run;
+        PlaceRunButton();
         return new Grid { Children = { body, run } };
     }
+
+    /// <summary>
+    /// Keeps Rodar above the code bar: in Código the bar sits at the bottom of the editor and the button covered its
+    /// keys (capture 9a-objetivos, 26/11). The button moves up by the bar's height and follows it when it resizes.
+    /// </summary>
+    public void PlaceRunButton()
+    {
+        if (_runFab is null) return;
+        var bar = _shell.State.Tab == WorkspaceTab.Code && _code.KeyboardVisible ? _code.Keyboard : null;
+        if (bar is not null && !_watchedBar) { _watchedBar = true; bar.SizeChanged += (_, _) => PlaceRunButton(); }
+        var lift = bar is null ? 0 : (bar.Bounds.Height > 0 ? bar.Bounds.Height : CodeBar.RowHeight);
+        _runFab.Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M + lift);
+    }
+
+    private bool _watchedBar;
+
+    /// <summary>The Rodar/Parar button over the editor (tests).</summary>
+    public Button? RunButton => _runFab;
 
     private Button? _runFab;
 

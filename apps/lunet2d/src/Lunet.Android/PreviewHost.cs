@@ -121,7 +121,7 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
         _inspector.Visibility = _inspector.Visibility == ViewStates.Visible ? ViewStates.Gone : ViewStates.Visible;
     }
 
-    private void ToggleProfiler()
+    public void ToggleProfiler()
     {
         if (_profilerVisible)
         {

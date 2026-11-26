@@ -171,34 +171,48 @@ public sealed class StudiosView : UserControl
 
     private Control Tiles()
     {
-        var tiles = new WrapPanel { Orientation = Orientation.Horizontal };
-        void Tile(string icon, string label, Action act, string name, bool primary = false)
+        // Grouped by task (anexo A §6.5): Arte, Áudio, Outros — orientation, not new modules. All tonal: "Novo" is not
+        // the screen's one primary action, so no tile is solid violet.
+        var page = new StackPanel { Spacing = LunetTokens.Space.Xs };
+        WrapPanel Group(string title)
+        {
+            var label = LunetUi.Text(title, LunetTokens.Type.Label, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+            label.Margin = new Thickness(0, LunetTokens.Space.Xs, 0, 0);
+            page.Children.Add(label);
+            var tiles = new WrapPanel { Orientation = Orientation.Horizontal };
+            page.Children.Add(tiles);
+            return tiles;
+        }
+        void Tile(WrapPanel tiles, string icon, string label, Action act, string name)
         {
             var content = new StackPanel
             {
                 Spacing = LunetTokens.Space.Xs,
-                Children = { LunetIcons.Create(icon, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
+                Children = { LunetIcons.Create(icon, LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
             };
             var b = new Button
             {
                 Content = content, Width = 116, Height = 76, Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs),
                 Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.L), BorderThickness = new Thickness(0),
-                Background = LunetTokens.Brush(primary ? LunetTokens.Color.Accent : LunetTokens.Color.Surface),
+                Background = LunetTokens.Brush(LunetTokens.Color.Surface),
                 HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Top, Name = name,
             };
             AutomationProperties.SetName(b, "Novo " + label);
             b.Click += (_, _) => act();
             tiles.Children.Add(b);
         }
-        Tile(LunetIcons.Edit, "Sprite", () => NewSprite(), "StudioNewSprite", primary: true);
-        Tile(LunetIcons.Map, "Mapa", () => NewMap(), "StudioNewMap");
-        Tile(LunetIcons.Sound, "Efeito", () => NewSound(), "StudioNewSound");
-        Tile(LunetIcons.Sound, "Música", () => NewMusic(), "StudioNewMusic");
-        Tile(LunetIcons.Pulse, "Partículas", () => NewParticles(), "StudioNewParticles");
-        Tile(LunetIcons.File, "Tabela", () => NewData(), "StudioNewData");
-        Tile(LunetIcons.Art, "Paleta", () => NewPalette(), "StudioNewPalette");
-        Tile(LunetIcons.Pulse, "Tom (WAV)", () => NewTone(), "StudioNewTone");
-        return tiles;
+        var art = Group("Arte");
+        Tile(art, LunetIcons.Edit, "Sprite", () => NewSprite(), "StudioNewSprite");
+        Tile(art, LunetIcons.Map, "Mapa", () => NewMap(), "StudioNewMap");
+        Tile(art, LunetIcons.Art, "Paleta", () => NewPalette(), "StudioNewPalette");
+        var audio = Group("Áudio");
+        Tile(audio, LunetIcons.Music, "Música", () => NewMusic(), "StudioNewMusic");
+        Tile(audio, LunetIcons.Speaker, "Efeito", () => NewSound(), "StudioNewSound");
+        Tile(audio, LunetIcons.Pulse, "Tom (WAV)", () => NewTone(), "StudioNewTone");
+        var other = Group("Outros");
+        Tile(other, LunetIcons.Sparkle, "Partículas", () => NewParticles(), "StudioNewParticles");
+        Tile(other, LunetIcons.File, "Tabela", () => NewData(), "StudioNewData");
+        return page;
     }
 
     private void Fill()

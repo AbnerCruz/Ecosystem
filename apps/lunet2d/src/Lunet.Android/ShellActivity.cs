@@ -76,6 +76,7 @@ public sealed class ShellActivity : AvaloniaActivity
             OpenRoute = OpenRoute,
             // P3: the same declared progress as the previous Aprender screen (MainActivity.Learn).
             LearningProgressPath = Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"),
+            LauncherPreferencesPath = Path.Combine(FilesDir!.AbsolutePath, "launcher-preferences.json"), // same file as the previous Home
             // A6: the same Biblioteca as the previous screen (MainActivity.AssetLibrary).
             LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
             GitAccountPath = Path.Combine(FilesDir!.AbsolutePath, "git-account.json"),
@@ -108,6 +109,11 @@ public sealed class ShellActivity : AvaloniaActivity
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
         catch (Java.Lang.Exception) { }
         Content = _shell;
+        // M5: the game runs on the GPU inside the Jogo tab (the GLES Preview, hosted by the shell).
+        // With Ajustes → Preview isolado, it runs in the separate-process Preview instead (the IDE survives a crash).
+        _shell.Game.GpuFactory = (compiled, project, fault) => _shell.Settings.IsolatedPreview
+            ? new IsolatedGpuPreview(this, compiled, project)
+            : new AndroidGpuPreview(this, compiled, project, _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.StopGame());
         // Shows and hides the system keyboard (Avalonia exposes no call for it). Showing is an explicit request, as a
         // tap on Android's own EditText makes it: Avalonia only asks with SHOW_IMPLICIT, which Android ignores after
         // the person closed the keyboard with Back — the "teclado que não abre" of the editor and the AI (estudo do
@@ -315,6 +321,13 @@ public sealed class ShellActivity : AvaloniaActivity
         }
         // Back from a routed screen: those screens may have changed the games (AI edits, Git, Studios).
         _shell?.ReturnedFromRoute();
+        _shell?.Game.Gpu?.SetAppVisible(true);
+        // Back from the isolated Preview: its console comes in; a process that died is reported, else the run ends.
+        if (_shell?.Game.Gpu is IsolatedGpuPreview isolated)
+        {
+            var died = isolated.Collect(_shell.Game.Write);
+            if (died is not null) _shell.Game.ReportFault(died); else _shell.StopGame();
+        }
     }
 
     protected override void OnDestroy()
@@ -327,6 +340,7 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnPause()
     {
+        _shell?.Game.Gpu?.SetAppVisible(false);
         _paused = true;
         if (_shell is { } shell) shell.CancelStudioAudio();
         else StopWav();

@@ -32,7 +32,7 @@ public sealed class DocumentEditor : UserControl
         if (_surface is CodeSurface code)
         {
             // M1: analyse a moment after typing stops (Roslyn runs off the UI thread; stale results are dropped).
-            _analysisDelay.Tick += (_, _) => { _analysisDelay.Stop(); _ = AnalyzeNow(); };
+            _analysisDelay.Tick += (_, _) => { _analysisDelay.Stop(); UpdateDirtyMark(); _ = AnalyzeNow(); };
             code.TextChanged += () => { _analysisDelay.Stop(); _analysisDelay.Start(); _keyboard?.TextChanged(); };
         }
     }
@@ -128,7 +128,7 @@ public sealed class DocumentEditor : UserControl
             _keyboard.IsVisible = on;
             _keyboard.MethodsHeight = Math.Max(240, (_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800) * 0.42);
         }
-        if (_tab == WorkspaceTab.Code) _shell.WorkspaceView.SetKeyboardOpen(on || _shell.KeyboardOpen);
+        if (_tab == WorkspaceTab.Code) _shell.WorkspaceView.SetKeyboardOpen((on && _shell.WorkspaceView.CodeVisible) || _shell.KeyboardOpen);
     }
 
     /// <summary>Métodos takes the system keyboard's place: off while it is open, back on (and shown) after.</summary>
@@ -145,6 +145,21 @@ public sealed class DocumentEditor : UserControl
             .Select(f => (f, _shell.Workspace.Read(f)));
 
     public bool IsDirty => OpenPath is not null && _surface.Text != _saved;
+
+    private TextBlock? _openLabel;
+
+    /// <summary>
+    /// "•" after the open file's name while it has unsaved changes (anexo A §6.2). Updated when typing pauses and after
+    /// saving — comparing the whole text on every key would cost as much as the file.
+    /// </summary>
+    public void UpdateDirtyMark()
+    {
+        if (_openLabel is null || OpenPath is null) return;
+        _openLabel.Text = IsDirty ? OpenPath + " •" : OpenPath;
+    }
+
+    /// <summary>The open file's tab label as shown (tests).</summary>
+    public string? OpenTabLabel => _openLabel?.Text;
 
     private Lunet.Core.EditorDocuments? _session;
     private string? _sessionFile;
@@ -223,6 +238,7 @@ public sealed class DocumentEditor : UserControl
             _shell.Workspace.Write(OpenPath!, text);
             if (_shell.Workspace.Read(OpenPath!) != text) throw new IOException("O arquivo gravado não confere com o texto.");
             _saved = text;
+            UpdateDirtyMark();
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -532,8 +548,9 @@ public sealed class DocumentEditor : UserControl
         foreach (var file in listed.OrderBy(f => f == OpenPath && !ProjectFiles.For(_tab, [f]).Any() ? -1 : open.IndexOf(f) is var i && i >= 0 ? i : int.MaxValue))
         {
             var selected = file == OpenPath;
-            var label = LunetUi.Text(file, LunetTokens.Type.Label, selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary,
+            var label = LunetUi.Text(selected && IsDirty ? file + " •" : file, LunetTokens.Type.Label, selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary,
                 selected ? FontWeight.SemiBold : FontWeight.Normal);
+            if (selected) _openLabel = label;
             label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
             label.VerticalAlignment = VerticalAlignment.Center;
             var b = new Button

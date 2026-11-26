@@ -17,6 +17,8 @@ public sealed unsafe class LoadedAssembliesReferenceProvider : IReferenceProvide
         "System.Numerics.Vectors", "System.Runtime.Numerics", "System.Memory", "System.Console",
         "System.Text.Json", "System.Threading", "System.Diagnostics.Debug", "System.Runtime.Extensions",
         "System.Collections.Concurrent", "System.Text.RegularExpressions", "System.Runtime.InteropServices",
+        // System.Drawing.Size/Point for the Framework's grouped dimensions (anexo B); never System.Drawing.Common.
+        "System.Drawing.Primitives",
         "netstandard", "Lunet.Networking",
     ];
 

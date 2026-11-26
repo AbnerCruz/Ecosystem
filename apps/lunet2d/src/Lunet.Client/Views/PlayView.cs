@@ -46,17 +46,16 @@ public sealed class PlayView : UserControl
             return;
         }
         // Two covers per row on a phone, 180 dp covers on wider screens.
-        var width = Bounds.Width is > 0 and < 600 ? (Bounds.Width - 2 * LunetTokens.Space.M - LunetTokens.Space.S) / 2 : 180;
+        // Each cover keeps a right margin of S: two need 2·(w + S) of the row (the old sum forgot one S and wrapped).
+        var width = Bounds.Width is > 0 and < 600 ? Math.Floor((Bounds.Width - 2 * LunetTokens.Space.M) / 2 - LunetTokens.Space.S) : 180;
         foreach (var name in Games) _grid.Children.Add(Cover(name, Math.Max(120, width)));
     }
 
     /// <summary>Plays a game (the same path as a tap).</summary>
     public void Play(string name)
     {
-        if (_shell.PlayGame is { } play) { play(name); return; }
-        _close();
-        _shell.OpenProject(name);
-        _shell.RunGame();
+        if (_shell.PlayGame is null) _close(); // the game opens in the workspace: Jogar steps aside
+        _shell.Play(name);
     }
 
     private Control Cover(string name, double width)

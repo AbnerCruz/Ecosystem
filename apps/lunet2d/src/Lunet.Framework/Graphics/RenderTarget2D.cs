@@ -19,6 +19,13 @@ public sealed class RenderTarget2D : IDisposable
 {
     private readonly GraphicsDevice _device;
 
+    /// <summary>Cria um alvo de desenho com as dimensões agrupadas.</summary>
+    /// <param name="device">Dispositivo gráfico.</param>
+    /// <param name="size">Largura e altura em pixels (1 a 4096).</param>
+    /// <param name="filter">Filtro da textura resultante.</param>
+    public RenderTarget2D(GraphicsDevice device, System.Drawing.Size size, TextureFilter filter = TextureFilter.Linear)
+        : this(device, size.Width, size.Height, filter) { }
+
     /// <summary>Cria um alvo de desenho.</summary>
     /// <param name="device">Dispositivo gráfico.</param>
     /// <param name="width">Largura em pixels (1 a 4096).</param>
