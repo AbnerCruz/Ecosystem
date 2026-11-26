@@ -37,6 +37,7 @@ O código de Lunet2D e Urbe vive em `apps/lunet2d/` e `apps/urbe/` deste reposit
 | [`docs/adr/`](docs/adr/) | Decisões arquiteturais. |
 | [`docs/governance/`](docs/governance/) | Comunicação humano↔máquina e máquina↔máquina, Definition of Done, matriz de enforcement, decisões pendentes, handoffs. |
 | [`docs/contracts/`](docs/contracts/) | Contratos e schemas. |
+| [`docs/design/`](docs/design/) | Linguagem visual do Ecosystem (DEC-0069): regras, tokens e o estudo que as fundamenta. |
 | [`docs/migration/`](docs/migration/) | Estratégia de migração de Lunet2D e Urbe. |
 | [`docs/architecture/portal.md`](docs/architecture/portal.md) | Portal web (GitHub Pages): papel, projeção, publicação. |
 | [`docs/architecture/product-model.md`](docs/architecture/product-model.md) · [`distribution.md`](docs/architecture/distribution.md) · [`product-vision.md`](docs/architecture/product-vision.md) · [`faq.md`](docs/architecture/faq.md) | Product Shell, Context, distribuição independente, plataforma first-party, visão de Lunet2D/Urbe e perguntas-chave (ADD-0002). |
