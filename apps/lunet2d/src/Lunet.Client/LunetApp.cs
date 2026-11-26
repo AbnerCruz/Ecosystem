@@ -33,6 +33,7 @@ public class LunetApp : Application
         });
         Apply(Resources);
         Styles.Add(ControlStyles());
+        Styles.Add(Ui.CodeInput.MultilineTextBoxes()); // Enter = line break in every multi-line field (estudo do editor)
     }
 
     private static Color C(string hex) => Color.Parse(hex);
