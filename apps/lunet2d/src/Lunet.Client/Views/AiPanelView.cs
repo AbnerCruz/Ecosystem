@@ -73,6 +73,17 @@ public sealed class AiPanelView : UserControl
     /// <summary>The mode of the next message: Estudo unless the person picks Fazer for it.</summary>
     public LunetAiMode Mode { get; private set; } = LunetAiMode.Teach;
     public bool Running => _run is not null;
+    public bool Expanded { get; private set; }
+    public event Action? ExpansionChanged;
+    private int _historyLimit = 40;
+
+    public void ToggleExpanded()
+    {
+        Expanded = !Expanded;
+        BuildComposer();
+        RenderMessages();
+        ExpansionChanged?.Invoke();
+    }
     public LunetAiSession? Session => _session;
     public TextBox Input => _input;
 
@@ -89,7 +100,7 @@ public sealed class AiPanelView : UserControl
             return;
         }
         var loaded = host.Store.Load();
-        if (!loaded.IsConfigured && host.Provider is null) { root.Children.Clear(); root.Children.Add(Setup(host, loaded)); return; }
+        if (!loaded.IsConfigured && host.Provider is null) { root.Children.Clear(); root.Children.Add(Setup()); return; }
         EnsureSession(host);
         BuildComposer();
         // Already in place: nothing moves (the message being written keeps its focus and the keyboard).
@@ -114,49 +125,25 @@ public sealed class AiPanelView : UserControl
         _session = new LunetAiSession(project, Path.Combine(host.HistoryDirectory, id + ".json"));
         _session.MarkInterruptedIfPending();
         _sessionGame = project.Manifest.GameId;
+        Expanded = false;
+        _historyLimit = 40;
     }
 
     // ---------------- setup (once for the whole app) ----------------
 
-    private Control Setup(AiHost host, LunetAiLoadedSettings loaded)
+    private Control Setup() => new StackPanel
     {
-        var provider = LunetAiProviders.Find(loaded.Settings.ProviderId);
-        var providers = new ComboBox { ItemsSource = LunetAiProviders.All.Select(p => p.Name).ToArray(), SelectedIndex = LunetAiProviders.All.ToList().IndexOf(provider), HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = LunetTokens.MinTouch };
-        var key = new TextBox { PasswordChar = '•', PlaceholderText = provider.KeyHint, MinHeight = LunetTokens.MinTouch };
-        var model = new TextBox { Text = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : provider.SuggestedModels.FirstOrDefault() ?? "", PlaceholderText = "modelo", MinHeight = LunetTokens.MinTouch };
-        var endpoint = new TextBox { Text = loaded.Settings.Endpoint, PlaceholderText = "https://…/chat/completions", MinHeight = LunetTokens.MinTouch, IsVisible = provider.Id == "custom" };
-        AutomationProperties.SetName(key, "Chave da API"); AutomationProperties.SetName(model, "Modelo"); AutomationProperties.SetName(providers, "Provedor");
-        providers.SelectionChanged += (_, _) =>
+        Spacing = LunetTokens.Space.S,
+        Children =
         {
-            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
-            key.PlaceholderText = p.KeyHint;
-            model.Text = p.SuggestedModels.FirstOrDefault() ?? "";
-            endpoint.IsVisible = p.Id == "custom";
-            endpoint.Text = p.Endpoint;
-        };
-        var status = LunetUi.Text("", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary);
-        var save = LunetUi.Button("Salvar e começar", ButtonKind.Primary, null, () =>
-        {
-            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
-            var url = p.Id == "custom" ? endpoint.Text ?? "" : p.Endpoint;
-            if (string.IsNullOrWhiteSpace(key.Text) || string.IsNullOrWhiteSpace(model.Text) || string.IsNullOrWhiteSpace(url))
+            LunetUi.Secondary("Configure o provedor da IA nos ajustes do Lunet."),
+            LunetUi.Button("Configurar IA", ButtonKind.Secondary, LunetIcons.Speed, () =>
             {
-                status.Text = "Preencha a chave, o modelo e o endereço.";
-                return;
-            }
-            host.Store.Save(loaded.Settings with { ProviderId = p.Id, Endpoint = url.Trim(), Model = model.Text!.Trim() }, key.Text!.Trim());
-            Refresh();
-        });
-        var form = new StackPanel { Spacing = LunetTokens.Space.S };
-        form.Children.Add(LunetUi.Secondary("Configure uma vez: a chave fica no cofre do aparelho e vale para todo o Lunet."));
-        form.Children.Add(providers);
-        form.Children.Add(key);
-        form.Children.Add(model);
-        form.Children.Add(endpoint);
-        form.Children.Add(save);
-        form.Children.Add(status);
-        return new ScrollViewer { Content = form };
-    }
+                _shell.GoHome();
+                _shell.Home.ShowGlobalAi(settings: true);
+            }),
+        },
+    };
 
     // ---------------- conversation ----------------
 
@@ -189,6 +176,10 @@ public sealed class AiPanelView : UserControl
             AutomationProperties.SetHelpText(b, hint);
             _modes.Children.Add(b);
         }
+        var expand = LunetUi.Button(Expanded ? "Recolher" : "Expandir", ButtonKind.Ghost, null, ToggleExpanded);
+        expand.Name = "ExpandProjectAi";
+        expand.Focusable = false;
+        _modes.Children.Add(expand);
         var send = Running
             ? LunetUi.IconButton(LunetIcons.Stop, "Parar a IA", Stop, LunetTokens.Color.Danger)
             : LunetUi.IconButton(LunetIcons.Play, "Enviar", () => _ = SendAsync(), LunetTokens.Color.Primary);
@@ -254,11 +245,17 @@ public sealed class AiPanelView : UserControl
         if (history.Count == 0 && !Running)
             _messages.Children.Add(LunetUi.Text("Pergunte sobre o código aberto ou peça uma mudança. Em Estudar a IA só explica; em Fazer ela altera o jogo e você pode desfazer.",
                 LunetTokens.Type.Label, LunetTokens.Color.TextSecondary));
-        foreach (var turn in history)
-        {
-            if (turn.Pending) continue;
+        var visible = history.Where(turn => !turn.Pending).ToArray();
+        var count = Expanded ? _historyLimit : 2;
+        if (Expanded && visible.Length > count)
+            _messages.Children.Add(LunetUi.Button("Mensagens anteriores", ButtonKind.Ghost, null, () =>
+            {
+                _historyLimit += 40;
+                RenderMessages();
+                _scroll.Offset = default;
+            }));
+        foreach (var turn in visible.TakeLast(count))
             _messages.Children.Add(turn.Role == "user" ? UserBubble(turn) : AssistantMessage(turn));
-        }
         if (Running)
         {
             var live = new StackPanel { Spacing = 2 };

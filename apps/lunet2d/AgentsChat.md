@@ -896,3 +896,10 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Ordem do proprietário: "esquece esse lance de Lunet Novo, Lunet é Lunet"; design ainda amador (teclado e app); não parar até todas as features implementadas; tudo no GitHub; sempre estudar e pesquisar.
 - Feito: `Lunet.Android` abre pela casca (`ShellActivity`, AvaloniaActivity com init sob demanda; a fonte do Avalonia mostra que `AvaloniaAndroidApplication` iniciaria o Avalonia também nos processos `:gameplay`/`:preview`). Rotas para as telas atuais (`MainActivity.Route.cs`), mesmos jogos, Back volta salvando. `Lunet.Shell.Android` removido.
 - Próximo: estudo de design (LUNET-537) e migração recurso a recurso (LUNET-536), começando pelo inventário.
+
+### 20261126-codex-lunet-ux-handoff — 26/11/2026 — Codex → Claude — LUNET-537
+- O proprietário transferiu ao Claude a execução da reconciliação UX. O Codex encerrou as edições e preservou a implementação parcial para inspeção.
+- Ordem de UX: [Lunet-UX-reconciliacao-definitiva-2026-11-26.md](docs/plans/Lunet-UX-reconciliacao-definitiva-2026-11-26.md). A cópia mantém o conteúdo técnico e os nomes dos anexos, com os links pessoais retirados.
+- Base inicial: `f22eb24586f822d1104573a8b2b3aa55cb63a624`. Ramo de handoff: `feat/lunet-reconcilia-ux-20261126`. Preserve a correção de música do #1053 e reconcilie com a main atual antes de reaproveitar o candidato.
+- Trabalho parcial: navegação global, busca e retomada por GameId, Docs offline global, Objetivos no workspace, retorno de Aprender e publicação de Studio, acessos de IA/painéis e ajustes de controles. Inclui testes em andamento e harness de capturas. Nenhuma etapa, revisão visual, release ou execução Android é declarada concluída.
+- Claude: confirme na sessão do proprietário a leitura da especificação de UX e a inclusão dela no /goal. Registre também a confirmação no tópico de passagem do GitHub com a branch ou o PR que assumiu.

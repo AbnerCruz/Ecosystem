@@ -7,7 +7,7 @@ public enum ShellLevel { Home, Workspace }
 public enum WorkspaceTab { Code, Game, Art, Map, Sound, Notes }
 
 /// <summary>Support panels: a bottom sheet on a phone, a side column on a wide screen. Never a modal dialog.</summary>
-public enum SupportPanel { None, Console, Problems, More, Commands, Ai, Inspector, Performance, Docs }
+public enum SupportPanel { None, Console, Problems, More, Commands, Ai, Inspector, Performance, Docs, Objectives }
 
 /// <summary>How the workspace is laid out for the current width (Material 3 canonical layouts: compact vs. expanded).</summary>
 public enum ShellLayout { Compact, Expanded }
@@ -30,9 +30,11 @@ public sealed class ShellState
     private readonly Stack<WorkspaceTab> _tabHistory = new();
 
     public ShellLevel Level { get; private set; } = ShellLevel.Home;
+    private string? _projectKey;
     public string? Project { get; private set; }
     public WorkspaceTab Tab { get; private set; } = WorkspaceTab.Code;
     public SupportPanel Panel { get; private set; } = SupportPanel.None;
+    private SupportPanel _returnPanel;
     public ShellLayout Layout { get; private set; } = ShellLayout.Compact;
 
     /// <summary>Raised after any change, so a view re-renders only what it shows.</summary>
@@ -41,13 +43,14 @@ public sealed class ShellState
     /// <summary>True when the code and the running game are both on screen.</summary>
     public bool CodeAndGameSideBySide => Layout == ShellLayout.Expanded && Tab is WorkspaceTab.Code or WorkspaceTab.Game;
 
-    public void OpenProject(string name)
+    public void OpenProject(string name, string? gameId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         Project = name;
+        _projectKey = gameId ?? name;
         Level = ShellLevel.Workspace;
-        Tab = _lastTab.GetValueOrDefault(name, WorkspaceTab.Code);
-        Panel = SupportPanel.None;
+        Tab = _lastTab.GetValueOrDefault(_projectKey, WorkspaceTab.Code);
+        Panel = _returnPanel = SupportPanel.None;
         _tabHistory.Clear();
         Changed?.Invoke();
     }
@@ -56,7 +59,7 @@ public sealed class ShellState
     {
         if (Level == ShellLevel.Home) return;
         Level = ShellLevel.Home;
-        Panel = SupportPanel.None;
+        Panel = _returnPanel = SupportPanel.None;
         Changed?.Invoke();
     }
 
@@ -65,20 +68,21 @@ public sealed class ShellState
         if (Level != ShellLevel.Workspace || Project is null) return;
         if (tab != Tab) _tabHistory.Push(Tab);
         Tab = tab;
-        _lastTab[Project] = tab;
+        _lastTab[_projectKey!] = tab;
         Changed?.Invoke();
     }
 
     /// <summary>Opens a support panel, or closes it when it is already the open one.</summary>
     public void TogglePanel(SupportPanel panel)
     {
-        Panel = Panel == panel ? SupportPanel.None : panel;
-        Changed?.Invoke();
+        if (Panel == panel && panel != SupportPanel.None) { Back(); return; }
+        ShowPanel(panel);
     }
 
-    public void ShowPanel(SupportPanel panel)
+    public void ShowPanel(SupportPanel panel, SupportPanel returnTo = SupportPanel.None)
     {
         if (Panel == panel) return;
+        _returnPanel = returnTo;
         Panel = panel;
         Changed?.Invoke();
     }
@@ -96,11 +100,11 @@ public sealed class ShellState
     /// <summary>The system Back gesture/key. Returns false when the shell has nothing to close (the app may exit).</summary>
     public bool Back()
     {
-        if (Panel != SupportPanel.None) { Panel = SupportPanel.None; Changed?.Invoke(); return true; }
+        if (Panel != SupportPanel.None) { ShowPanel(_returnPanel); return true; }
         if (Level == ShellLevel.Workspace && _tabHistory.TryPop(out var previous))
         {
             Tab = previous;
-            if (Project is not null) _lastTab[Project] = previous;
+            if (_projectKey is not null) _lastTab[_projectKey] = previous;
             Changed?.Invoke();
             return true;
         }

@@ -40,20 +40,32 @@ public sealed class LunetClientLearnTests
                 Click(Find<Button>(learn, "CreateChallenge")!);
                 Assert.Equal(ShellLevel.Workspace, shell.State.Level);
                 Assert.Equal("AprenderLRN001P1", shell.State.Project);
-                Assert.Equal(SupportPanel.Docs, shell.State.Panel); // the challenge's reference beside the code
-                Assert.StartsWith("guide:responder-ao-toque", shell.WorkspaceView.Support.Docs.Page!.Target);
-                Assert.Null(shell.Home.Sheet);
-
+                Assert.Equal(SupportPanel.Objectives, shell.State.Panel);
+                Assert.Equal("LRN-001-P1", shell.ActiveChallenge!.Id);
+                var support = shell.WorkspaceView.Support;
+                var second = shell.ActiveChallenge.Steps[1];
+                Find<CheckBox>(support, "Step-" + second.Id)!.IsChecked = true;
                 var progress = new LearningProgressStore(shell.LearningProgressPath);
                 Assert.Equal(shell.Workspace.Project!.Manifest.GameId, progress.ProjectGameIdFor("LRN-001-P1"));
+                Assert.True(progress.Completed("LRN-001-P1", second.Id));
 
-                shell.GoHome();
-                learn = shell.Home.ShowLearn();
-                Click(Find<Button>(learn, "Resume")!);
-                Assert.Equal("LRN-001-P1", learn.Showing);
-                Assert.NotNull(Find<Button>(learn, "OpenChallenge")); // linked: open, not create again
+                var reference = support.GetLogicalDescendants().OfType<Button>()
+                    .Single(button => button.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Referência"));
+                Click(reference);
+                Assert.Equal(SupportPanel.Docs, shell.State.Panel);
+                Assert.StartsWith("guide:responder-ao-toque", support.Docs.Page!.Target);
                 Assert.True(shell.Back());
-                Assert.True(shell.Back()); // catalog → closes Aprender
+                Assert.Equal(SupportPanel.Objectives, shell.State.Panel);
+                shell.GoHome();
+                Assert.Same(learn, shell.Home.Sheet);
+                Assert.Equal("LRN-001-P1", learn.Showing);
+                Assert.True(Find<CheckBox>(learn, "Step-" + second.Id)!.IsChecked);
+                Assert.NotNull(Find<Button>(learn, "OpenChallenge"));
+                Assert.True(shell.Back());
+                Assert.Equal("LRN-001", learn.Showing);
+                Assert.True(shell.Back());
+                Assert.Equal("catalog", learn.Showing);
+                Assert.True(shell.Back());
                 Assert.Null(shell.Home.Sheet);
                 window.Close();
             });

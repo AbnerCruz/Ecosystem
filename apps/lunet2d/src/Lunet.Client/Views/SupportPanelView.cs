@@ -69,7 +69,7 @@ public sealed class SupportPanelView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", SupportPanel.Docs => "Documentação", _ => "Problemas" });
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", SupportPanel.Docs => "Documentação", SupportPanel.Objectives => "Objetivos", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -84,6 +84,7 @@ public sealed class SupportPanelView : UserControl
             _consoleScroll.ScrollToEnd();
         }
         else if (panel == SupportPanel.More) root.Children.Add(More());
+        else if (panel == SupportPanel.Objectives) root.Children.Add(Objectives());
         else if (panel == SupportPanel.Ai)
         {
             if (Ai.Parent is Panel oldAi) oldAi.Children.Remove(Ai);
@@ -103,6 +104,27 @@ public sealed class SupportPanelView : UserControl
         }
         else root.Children.Add(Problems());
         Content = root;
+    }
+
+    private Control Objectives()
+    {
+        var list = new StackPanel { Spacing = LunetTokens.Space.S, Margin = new Thickness(LunetTokens.Space.M) };
+        if (_shell.ActiveChallenge is { } challenge)
+        {
+            list.Children.Add(LunetUi.Title(challenge.Title));
+            list.Children.Add(LearnView.ObjectiveChecklist(challenge, _shell.LearningProgress));
+            var acceptance = LunetUi.Secondary(challenge.Acceptance);
+            acceptance.TextWrapping = Avalonia.Media.TextWrapping.Wrap;
+            list.Children.Add(acceptance);
+            list.Children.Add(LunetUi.Button("Referência", ButtonKind.Secondary, LunetIcons.Book, () => _shell.OpenChallengeReference(challenge)));
+        }
+        else
+        {
+            foreach (var linked in _shell.LinkedChallenges)
+                list.Children.Add(LunetUi.Button(linked.Title, ButtonKind.Secondary, LunetIcons.Book, () => _shell.SelectChallenge(linked)));
+            if (_shell.LinkedChallenges.Count == 0) list.Children.Add(LunetUi.Secondary("Abra uma missão em Aprender para ver os objetivos aqui."));
+        }
+        return new ScrollViewer { Content = list };
     }
 
     /// <summary>The game's other tools, opened through the shell's route (same game, saved before leaving).</summary>

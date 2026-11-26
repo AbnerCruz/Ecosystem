@@ -18,6 +18,7 @@ public sealed class MainWindow : Window
         Shell = new LunetShell(projectsRoot)
         {
             HardwareKeyboard = true,
+            LauncherPreferencesPath = Path.Combine(Path.GetDirectoryName(ai)!, "launcher-preferences.json"),
             LearningProgressPath = Path.Combine(Path.GetDirectoryName(ai)!, "learning", "progress.json"),
             LibraryPath = Path.Combine(Path.GetDirectoryName(ai)!, "Library"),
             GitAccountPath = Path.Combine(Path.GetDirectoryName(ai)!, "git-account.json"),
@@ -26,6 +27,7 @@ public sealed class MainWindow : Window
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new FileSecretVault(Path.Combine(ai, "secrets.json"))), ai),
         };
+        Shell.Home.RestoreDestination();
         Content = Shell;
         Background = Shell.Background;
         Opened += (_, _) => Shell.Report($"Pronto em {Program.SinceLaunch.ElapsedMilliseconds} ms (partida a frio até a janela) · pasta: {projectsRoot}");

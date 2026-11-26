@@ -75,6 +75,7 @@ public sealed class ShellActivity : AvaloniaActivity
         {
             OpenRoute = OpenRoute,
             // P3: the same declared progress as the previous Aprender screen (MainActivity.Learn).
+            LauncherPreferencesPath = Path.Combine(FilesDir!.AbsolutePath, "launcher-preferences.json"),
             LearningProgressPath = Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"),
             // A6: the same Biblioteca as the previous screen (MainActivity.AssetLibrary).
             LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
@@ -105,6 +106,7 @@ public sealed class ShellActivity : AvaloniaActivity
         // §8 of the visual language: the system's "remove animations" turns the entries into an instant appearance.
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
         catch (Java.Lang.Exception) { }
+        _shell.Home.RestoreDestination();
         Content = _shell;
         // Shows and hides the system keyboard (Avalonia exposes no call for it). Showing is an explicit request, as a
         // tap on Android's own EditText makes it: Avalonia only asks with SHOW_IMPLICIT, which Android ignores after

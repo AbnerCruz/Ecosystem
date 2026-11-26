@@ -373,13 +373,13 @@ public sealed class LibraryView : UserControl
     public void ShowPublishStudio(string workspaceRoot, string path)
     {
         _history.Clear();
-        _history.Push(ShowList);
+        _history.Push(_close);
         ShowPublishForm("Studios", path, null, (title, author, license, attribution, tags, existing) =>
-            _library.PublishWorkspace(workspaceRoot, path, title, author, license, attribution, tags, existing));
+            _library.PublishWorkspace(workspaceRoot, path, title, author, license, attribution, tags, existing), _close);
     }
 
     private void ShowPublishForm(string game, string path, string? existingId,
-        Func<string, string, string, string, string[], string?, LibraryAssetVersion> publishWith)
+        Func<string, string, string, string, string[], string?, LibraryAssetVersion> publishWith, Action? returnToOrigin = null)
     {
         Begin(existingId is null ? "Publicar" : "Nova versão", "publish-form");
         _page.Children.Add(LunetUi.Text(game + " · " + path, LunetTokens.Type.Caption, LunetTokens.Color.Primary));
@@ -410,7 +410,7 @@ public sealed class LibraryView : UserControl
                 var published = publishWith(title.Text ?? "", author.Text ?? "", license.Text ?? "", attribution.Text ?? "",
                     (tags.Text ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), existingId);
                 _history.Clear();
-                _history.Push(ShowList);
+                _history.Push(returnToOrigin ?? ShowList);
                 _current = () => ShowAsset(published.Id, published.Version);
                 _current();
                 _page.Children.Insert(2, Done("Publicado na biblioteca."));

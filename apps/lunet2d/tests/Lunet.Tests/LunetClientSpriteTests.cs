@@ -1012,6 +1012,14 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal(16, Assert.IsType<SpriteStudioView>(studios.Studio).Document.Width);
                 shell.Back();
 
+                window.UpdateLayout();
+                var publishSprite = studios.GetVisualDescendants().OfType<Button>()
+                    .Single(button => button.Name == "Publish-Content/Textures/sprite-1.sprite.json");
+                publishSprite.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal("publish-form", Assert.IsType<LibraryView>(shell.Home.Sheet).Showing);
+                Assert.True(shell.Back());
+                Assert.Same(studios, shell.Home.Sheet);
+
                 // Publicar goes to the Biblioteca with the creation; it then lives there for any game.
                 var library = new Lunet.Core.ReusableAssetLibrary(shell.LibraryPath);
                 var published = library.PublishWorkspace(shell.StudioWorkspacePath, "Content/Textures/sprite-1.sprite.json", "Herói", "Ana", "CC0");

@@ -82,6 +82,10 @@ public sealed class WorkspaceView : UserControl
         _notes = new DocumentEditor(shell, WorkspaceTab.Notes);
         _game = new GameView(shell);
         _support = new SupportPanelView(shell);
+        _support.Ai.ExpansionChanged += () =>
+        {
+            if (_sheet is Border sheet && _shell.State.Panel == SupportPanel.Ai) sheet.Height = SupportHeight();
+        };
         _title.TextWrapping = TextWrapping.NoWrap;
         _title.TextTrimming = TextTrimming.CharacterEllipsis;
         _title.VerticalAlignment = VerticalAlignment.Center;
@@ -97,6 +101,7 @@ public sealed class WorkspaceView : UserControl
     public void Load()
     {
         _title.Text = _shell.State.Project ?? "";
+        _resources = null;
         _code.OpenSession(_shell.Workspace.Project!.Manifest.EntryPoint);
         _notes.Load(null);
         Rebuild();
@@ -296,6 +301,7 @@ public sealed class WorkspaceView : UserControl
         _notes.Relayout();
         var state = _shell.State;
         var expanded = state.Layout == ShellLayout.Expanded;
+        _game.SetTransportVisibility(!expanded);
 
         var root = new DockPanel();
         if (_topHost.Parent is Panel oldTop) oldTop.Children.Remove(_topHost);
@@ -338,8 +344,7 @@ public sealed class WorkspaceView : UserControl
                 var sheet = new Border
                 {
                     // Inspector, Desempenho and the AI need room: half the screen, the game still above it.
-                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs && Bounds.Height > 0
-                        ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
+                    Height = SupportHeight(),
                     Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
                     CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),
                     BorderBrush = LunetTokens.Brush(LunetTokens.Color.BorderStrong), BorderThickness = new Thickness(0, 1, 0, 0),
@@ -355,6 +360,16 @@ public sealed class WorkspaceView : UserControl
         _support.Refresh();
         Content = root;
         Refocus(focused);
+    }
+
+    private double SupportHeight()
+    {
+        var compactAi = _shell.State.Panel == SupportPanel.Ai && !_support.Ai.Expanded;
+        var fullAi = _shell.State.Panel == SupportPanel.Ai && _support.Ai.Expanded;
+        var height = Bounds.Height > 0 ? Bounds.Height : 560;
+        return compactAi ? Math.Min(240, Math.Round(height * 0.55))
+            : fullAi ? Math.Min(640, Math.Round(height * 0.74))
+            : Math.Min(340, Math.Round(height * 0.55));
     }
 
     private bool IsSelected(WorkspaceTab tab) => _shell.State.CodeAndGameSideBySide
@@ -418,22 +433,30 @@ public sealed class WorkspaceView : UserControl
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, VerticalAlignment = VerticalAlignment.Center };
         var liveErrors = _shell.LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
         var problems = _shell.Game.Problems.Count > 0 ? _shell.Game.Problems.Count : liveErrors;
-        var panels = LunetUi.IconButton(LunetIcons.More, problems > 0 ? $"Painéis — {problems} problema(s)" : "Painéis",
-            () => _shell.State.TogglePanel(SupportPanel.More),
-            _shell.State.Panel != SupportPanel.None ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
-        panels.Name = "PanelsButton";
+        if (_shell.LinkedChallenges.Count > 0)
+        {
+            var objectives = LunetUi.IconButton(LunetIcons.Book, "Objetivos da missão",
+                () => _shell.State.TogglePanel(SupportPanel.Objectives));
+            objectives.Name = "ObjectivesButton";
+            actions.Children.Add(objectives);
+        }
+        else if (_shell.AiHost is not null)
+        {
+            var ai = LunetUi.IconButton(LunetIcons.Function, "IA do jogo", () => _shell.State.TogglePanel(SupportPanel.Ai));
+            ai.Name = "ProjectAiButton";
+            actions.Children.Add(ai);
+        }
         if (problems > 0)
         {
-            // A small red dot, like a notification badge, instead of a second icon.
-            var host = new Panel { Children = { panels, new Border
-            {
-                Width = 10, Height = 10, CornerRadius = new CornerRadius(5), Background = LunetTokens.Brush(LunetTokens.Color.Danger),
-                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 10, 10, 0),
-                IsHitTestVisible = false,
-            } } };
-            actions.Children.Add(host);
+            var issues = LunetUi.IconButton(LunetIcons.Problems, $"Abrir {problems} problema(s)",
+                () => _shell.State.TogglePanel(SupportPanel.Problems), LunetTokens.Color.Danger);
+            issues.Name = "ProblemsButton";
+            actions.Children.Add(issues);
         }
-        else actions.Children.Add(panels);
+        var panels = LunetUi.IconButton(LunetIcons.More, "Painéis", () => _shell.State.TogglePanel(SupportPanel.More),
+            _shell.State.Panel != SupportPanel.None ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
+        panels.Name = "PanelsButton";
+        actions.Children.Add(panels);
         // Wide screens keep Rodar in the top bar (pointer, both hands); phones float it at the bottom.
         if (_shell.State.Layout == ShellLayout.Expanded)
         {
@@ -475,9 +498,10 @@ public sealed class WorkspaceView : UserControl
 
     private Control AssetsView(WorkspaceTab tab)
     {
-        // Rebuilt from disk each time the tab is shown (a Studio may have added files).
-        _resources = new ResourcesPage(_shell, this);
-        return _resources;
+        var resources = ResourcesTab;
+        Detach(resources);
+        resources.Refresh();
+        return resources;
     }
 
     private static void Detach(Control c)

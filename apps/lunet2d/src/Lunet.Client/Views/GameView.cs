@@ -84,8 +84,16 @@ public sealed class GameView : UserControl
             GameState.CompileErrors => "Abra Problemas para ver cada erro e a linha onde está.",
             GameState.Faulted => "Veja Problemas e o Console; corrija e rode de novo.",
             _ => "Toque em Rodar: o jogo compila e aparece aqui, sem sair do código.",
-        },
-        LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame()));
+        });
+
+    private bool _showTransport = true;
+
+    public void SetTransportVisibility(bool visible)
+    {
+        if (_showTransport == visible) return;
+        _showTransport = visible;
+        Refresh();
+    }
 
     public void Refresh()
     {
@@ -98,12 +106,12 @@ public sealed class GameView : UserControl
                 ? LunetUi.IconButton(LunetIcons.Pause, "Pausar", () => game.TogglePause())
                 : LunetUi.IconButton(LunetIcons.Play, "Continuar", () => game.TogglePause(), LunetTokens.Color.Primary));
             _bar.Children.Add(LunetUi.IconButton(LunetIcons.Step, "Avançar um quadro", () => { if (game.Step()) Blit(); }));
-            _bar.Children.Add(LunetUi.IconButton(LunetIcons.Stop, "Parar", () => _shell.StopGame()));
+            if (_showTransport) _bar.Children.Add(LunetUi.IconButton(LunetIcons.Stop, "Parar", () => _shell.StopGame()));
             // M6: inspect and measure next to the game, one tap away (Godot's Remote tree and Monitors while running).
             _bar.Children.Add(PanelButton(SupportPanel.Inspector, LunetIcons.Inspector, "Inspector"));
             _bar.Children.Add(PanelButton(SupportPanel.Performance, LunetIcons.Pulse, "Desempenho"));
         }
-        else _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _shell.RunGame(), LunetTokens.Color.Primary));
+        else if (_showTransport) _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _shell.RunGame(), LunetTokens.Color.Primary));
         // One chip for the speed: a tap goes to the next one (0.25× → 0.5× → 1× → 2×), instead of four buttons off screen.
         var speedLabel = game.Speed + "×";
         var speedChip = LunetUi.Button(speedLabel, game.Speed == 1 ? ButtonKind.Ghost : ButtonKind.Primary, LunetIcons.Speed, () =>

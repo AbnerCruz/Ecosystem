@@ -26,6 +26,44 @@ public sealed class LunetClientTests
     private static string NewRoot() => Path.Combine(Path.GetTempPath(), "lunet-client-" + Guid.NewGuid().ToString("N"));
 
     [Fact]
+    public void HomeKeepsItsQueryAndRecentGameAcrossWorkspaceAndOfflineDocs()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-home-ux-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 360, Height = 780, Content = shell };
+                window.Show();
+                shell.CreateProject("Árvore", Lunet.Core.ProjectTemplate.Blank, "portrait");
+                shell.GoHome();
+                shell.CreateProject("Mina", Lunet.Core.ProjectTemplate.Blank, "landscape");
+                shell.GoHome();
+                shell.Home.FilterProjects("arvore");
+                Assert.Equal(new[] { "Árvore" }, shell.Home.Shown);
+                shell.OpenProject("Árvore");
+                shell.GoHome();
+                Assert.Equal("arvore", shell.Home.ProjectQuery);
+                Assert.Equal("Árvore", shell.Home.ContinueProject);
+                shell.RenameProject("Árvore", "Bosque");
+                Assert.Equal("Bosque", shell.Home.ContinueProject);
+                shell.Home.Go(HomeView.Destination.More);
+                var docs = shell.Home.ShowDocs();
+                docs.Navigate("home");
+                docs.Navigate("search:Game");
+                Assert.True(shell.Back());
+                Assert.True(shell.Back());
+                Assert.Equal(HomeView.Destination.More, shell.Home.Selected);
+                Assert.True(shell.Back());
+                Assert.Equal("arvore", shell.Home.ProjectQuery);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void ShellState_BackClosesPanelThenLeavesWorkspaceThenIsNotConsumed()
     {
         var s = new ShellState();

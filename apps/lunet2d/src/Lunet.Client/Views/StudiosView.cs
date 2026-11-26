@@ -21,9 +21,11 @@ public sealed class StudiosView : UserControl
     private readonly Action<string, string> _publish;
     private readonly StackPanel _list = new() { Spacing = LunetTokens.Space.Xxs };
     private readonly Control _home;
+    private readonly ScrollViewer _galleryScroll;
+    private Vector _galleryOffset;
     private Control? _studio;
 
-    public StudiosView(LunetShell shell, Action close, Action<string, string> publish)
+    public StudiosView(LunetShell shell, Action close, Action<string, string> publish, Action? openLibrary = null)
     {
         _shell = shell;
         _close = close;
@@ -39,13 +41,16 @@ public sealed class StudiosView : UserControl
         title.VerticalAlignment = VerticalAlignment.Center;
         bar.Children.Add(title);
         var page = new StackPanel { Spacing = LunetTokens.Space.S, Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.Xl) };
-        page.Children.Add(LunetUi.Secondary("Crie sem abrir um jogo. Publique na Biblioteca para usar em qualquer jogo."));
+        page.Children.Add(LunetUi.Secondary("Rascunhos pessoais"));
+        if (openLibrary is not null)
+            page.Children.Add(LunetUi.Button("Biblioteca", ButtonKind.Secondary, LunetIcons.Folder, openLibrary));
         page.Children.Add(Tiles());
         page.Children.Add(_list);
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
         root.Children.Add(bar);
-        root.Children.Add(new ScrollViewer { Content = new Border { Child = page, MaxWidth = 900 } });
+        _galleryScroll = new ScrollViewer { Content = new Border { Child = page, MaxWidth = 900 } };
+        root.Children.Add(_galleryScroll);
         _home = root;
         Content = root;
         Fill();
@@ -85,8 +90,20 @@ public sealed class StudiosView : UserControl
         return true;
     }
 
-    private void Show(Control studio) { _studio = studio; Content = LunetUi.Enter(studio); }
-    private void Home() { _studio = null; Content = _home; Fill(); }
+    private void Show(Control studio)
+    {
+        if (_studio is null) _galleryOffset = _galleryScroll.Offset;
+        _studio = studio;
+        Content = LunetUi.Enter(studio);
+    }
+
+    private void Home()
+    {
+        _studio = null;
+        Content = _home;
+        Fill();
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _galleryScroll.Offset = _galleryOffset, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
 
     private string Unique(string folder, string stem, string ext)
     {
@@ -154,34 +171,44 @@ public sealed class StudiosView : UserControl
 
     private Control Tiles()
     {
-        var tiles = new WrapPanel { Orientation = Orientation.Horizontal };
-        void Tile(string icon, string label, Action act, string name, bool primary = false)
+        var sections = new StackPanel { Spacing = LunetTokens.Space.S };
+        WrapPanel Group(string title)
+        {
+            sections.Children.Add(LunetUi.Section(title));
+            var group = new WrapPanel { Orientation = Orientation.Horizontal };
+            sections.Children.Add(group);
+            return group;
+        }
+        void Tile(WrapPanel tiles, string icon, string label, Action act, string name)
         {
             var content = new StackPanel
             {
                 Spacing = LunetTokens.Space.Xs,
-                Children = { LunetIcons.Create(icon, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
+                Children = { LunetIcons.Create(icon, LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
             };
             var b = new Button
             {
                 Content = content, Width = 116, Height = 76, Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs),
                 Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.L), BorderThickness = new Thickness(0),
-                Background = LunetTokens.Brush(primary ? LunetTokens.Color.Accent : LunetTokens.Color.Surface),
+                Background = LunetTokens.Brush(LunetTokens.Color.Surface),
                 HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Top, Name = name,
             };
             AutomationProperties.SetName(b, "Novo " + label);
             b.Click += (_, _) => act();
             tiles.Children.Add(b);
         }
-        Tile(LunetIcons.Edit, "Sprite", () => NewSprite(), "StudioNewSprite", primary: true);
-        Tile(LunetIcons.Map, "Mapa", () => NewMap(), "StudioNewMap");
-        Tile(LunetIcons.Sound, "Efeito", () => NewSound(), "StudioNewSound");
-        Tile(LunetIcons.Sound, "Música", () => NewMusic(), "StudioNewMusic");
-        Tile(LunetIcons.Pulse, "Partículas", () => NewParticles(), "StudioNewParticles");
-        Tile(LunetIcons.File, "Tabela", () => NewData(), "StudioNewData");
-        Tile(LunetIcons.Art, "Paleta", () => NewPalette(), "StudioNewPalette");
-        Tile(LunetIcons.Pulse, "Tom (WAV)", () => NewTone(), "StudioNewTone");
-        return tiles;
+        var art = Group("Arte");
+        Tile(art, LunetIcons.Edit, "Sprite", () => NewSprite(), "StudioNewSprite");
+        Tile(art, LunetIcons.Map, "Mapa", () => NewMap(), "StudioNewMap");
+        Tile(art, LunetIcons.Art, "Paleta", () => NewPalette(), "StudioNewPalette");
+        var audio = Group("Áudio");
+        Tile(audio, LunetIcons.Sound, "Música", () => NewMusic(), "StudioNewMusic");
+        Tile(audio, LunetIcons.Sound, "Efeito", () => NewSound(), "StudioNewSound");
+        Tile(audio, LunetIcons.Pulse, "Tom (WAV)", () => NewTone(), "StudioNewTone");
+        var other = Group("Partículas e dados");
+        Tile(other, LunetIcons.Pulse, "Partículas", () => NewParticles(), "StudioNewParticles");
+        Tile(other, LunetIcons.File, "Tabela", () => NewData(), "StudioNewData");
+        return sections;
     }
 
     private void Fill()

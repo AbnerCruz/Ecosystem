@@ -16,13 +16,11 @@ namespace Lunet.Client.Views;
 public sealed class PlayView : UserControl
 {
     private readonly LunetShell _shell;
-    private readonly Action _close;
     private readonly WrapPanel _grid = new() { Orientation = Orientation.Horizontal };
 
-    public PlayView(LunetShell shell, Action close)
+    public PlayView(LunetShell shell)
     {
         _shell = shell;
-        _close = close;
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         var page = new StackPanel { Spacing = LunetTokens.Space.S, Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L, LunetTokens.Space.M, LunetTokens.Space.L) };
         page.Children.Add(LunetUi.Headline("Jogar"));
@@ -54,7 +52,6 @@ public sealed class PlayView : UserControl
     public void Play(string name)
     {
         if (_shell.PlayGame is { } play) { play(name); return; }
-        _close();
         _shell.OpenProject(name);
         _shell.RunGame();
     }
@@ -97,6 +94,10 @@ public sealed class PlayView : UserControl
         };
         AutomationProperties.SetName(b, "Jogar " + name);
         b.Click += (_, _) => Play(name);
-        return b;
+        var edit = LunetUi.Button("Editar", ButtonKind.Ghost, LunetIcons.Edit, () => _shell.OpenProject(name));
+        edit.Name = "Edit-" + name;
+        AutomationProperties.SetName(edit, "Editar " + name);
+        edit.HorizontalAlignment = HorizontalAlignment.Left;
+        return new StackPanel { Children = { b, edit } };
     }
 }

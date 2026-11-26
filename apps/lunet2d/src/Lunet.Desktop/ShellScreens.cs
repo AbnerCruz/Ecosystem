@@ -15,7 +15,7 @@ namespace Lunet.Desktop;
 /// </summary>
 public static class ShellScreens
 {
-    public static readonly (string Name, int Width, int Height)[] Sizes = [("celular", 412, 915), ("largo", 1280, 800)];
+    public static readonly (string Name, int Width, int Height)[] Sizes = [("compacto320", 320, 700), ("compacto360", 360, 800), ("celular", 412, 915), ("paisagem", 780, 412), ("largo", 1280, 800)];
 
     public static int Run(string output)
     {
@@ -32,12 +32,22 @@ public static class ShellScreens
                 var window = new MainWindow(root) { Width = w, Height = h };
                 window.Show();
                 var shell = window.Shell;
-                shell.HardwareKeyboard = size != "celular"; // the phone captures show the code bar
+                shell.HardwareKeyboard = w >= Lunet.Client.Shell.ShellState.ExpandedMinWidth; // the phone captures show the code bar
                 if (size == "celular") shell.OpenRoute = (_, _) => { }; // show the Android Home destinations
                 Shot(window, output, size, "1-home-vazia", written);
                 shell.CreateProject();
                 shell.GoHome();
                 Shot(window, output, size, "2-home", written);
+                shell.Home.FilterProjects("jogo");
+                Shot(window, output, size, "2a-busca", written);
+                shell.Home.FilterProjects("");
+                shell.Home.Go(Lunet.Client.Views.HomeView.Destination.More);
+                Shot(window, output, size, "2n-mais", written);
+                var globalDocs = shell.Home.ShowDocs();
+                globalDocs.Navigate("home");
+                Shot(window, output, size, "2o-docs", written);
+                shell.Home.CloseSheet();
+                shell.Home.CloseSheet();
                 shell.Home.ShowCreate();
                 Shot(window, output, size, "2b-novo-jogo", written);
                 shell.Home.CloseSheet();

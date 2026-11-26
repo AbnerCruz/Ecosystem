@@ -71,9 +71,13 @@ public sealed class DocsView : UserControl
         Navigate(_browser.TargetForSymbol(documentationId, name));
     }
 
-    public void GoBack()
+    public void GoBack() => TryGoBack();
+
+    public bool TryGoBack()
     {
-        if (_browser?.Back() is { } page) Show(page);
+        if (_browser?.Back() is not { } page) return false;
+        Show(page);
+        return true;
     }
 
     private void Show(DocPage page)

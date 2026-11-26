@@ -26,6 +26,7 @@ public sealed class LunetShell : UserControl
     public LunetShell(string projectsRoot)
     {
         Workspace = new WorkspaceSession(projectsRoot);
+        LauncherPreferencesPath = Path.Combine(projectsRoot, ".lunet", "launcher-preferences.json");
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
         GitAccountPath = Path.Combine(projectsRoot, ".lunet", "git-account.json");
@@ -78,7 +79,32 @@ public sealed class LunetShell : UserControl
     /// Where Aprender keeps the student's declared progress. The Android head points it at the file the previous screens
     /// use (FilesDir/learning/progress.json), so progress carries over; elsewhere it lives beside the games.
     /// </summary>
-    public string LearningProgressPath { get; set; }
+    public string LearningProgressPath
+    {
+        get => _learningProgressPath;
+        set { _learningProgressPath = value; _learningProgress = null; }
+    }
+    private string _learningProgressPath = "";
+    private Lunet.Core.LearningProgressStore? _learningProgress;
+    internal Lunet.Core.LearningProgressStore LearningProgress => _learningProgress ??= new(LearningProgressPath);
+    internal void ReloadLearningProgress() => _learningProgress = null;
+    public Lunet.Core.LearningProject? ActiveChallenge { get; private set; }
+    public IReadOnlyList<Lunet.Core.LearningProject> LinkedChallenges { get; private set; } = [];
+
+    internal void SelectChallenge(Lunet.Core.LearningProject challenge)
+    {
+        if (!LinkedChallenges.Contains(challenge)) return;
+        ActiveChallenge = challenge;
+        _workspaceView.Support.Refresh();
+    }
+
+    internal void OpenChallengeReference(Lunet.Core.LearningProject challenge)
+    {
+        State.ShowPanel(SupportPanel.Docs, SupportPanel.Objectives);
+        _workspaceView.Support.Docs.Navigate(challenge.ReferenceTarget);
+    }
+
+    public string LauncherPreferencesPath { get; set; }
 
     /// <summary>The settings file (Ajustes); the Android head points it at the previous screens' settings.json.</summary>
     public string SettingsPath
@@ -238,7 +264,9 @@ public sealed class LunetShell : UserControl
         if (before != after) _workspaceView.RefreshTopBar();
     }
 
-    public void OpenProject(string name)
+    public void OpenProject(string name) => OpenProject(name, null);
+
+    internal void OpenProject(string name, Lunet.Core.LearningProject? challenge)
     {
         StopGame();
         Workspace.Open(name);
@@ -246,11 +274,27 @@ public sealed class LunetShell : UserControl
             typeof(Lunet.Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly));
         LiveProblems = [];
         var project = Workspace.Project!;
+        ActiveChallenge = null;
+        LinkedChallenges = [];
+        try
+        {
+            LinkedChallenges = LearningProgress.LinkedProjectIdsForGameId(project.Manifest.GameId)
+                .Select(Lunet.Core.LearningCatalog.FindProject).OfType<Lunet.Core.LearningProject>().ToArray();
+            if (challenge is not null && LinkedChallenges.Contains(challenge)) ActiveChallenge = challenge;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        { _home.ShowSnackbar("Não foi possível ler os objetivos deste jogo. " + e.Message, null); }
         _ = Assistant.LoadProjectAsync(project.ListFiles().Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
             .Select(f => (f, project.ReadText(f))).ToArray());
-        State.OpenProject(name);
+        State.OpenProject(name, project.Manifest.GameId);
+        _home.RememberOpened(name, project.Manifest.GameId);
         _ = DocsLibrary.WarmUpAsync(); // after the game opens, never on the cold start path
         _workspaceView.Load();
+        if (ActiveChallenge is not null)
+        {
+            State.SelectTab(WorkspaceTab.Code);
+            State.ShowPanel(SupportPanel.Objectives);
+        }
         ApplySettings();
         Render();
     }
@@ -467,6 +511,7 @@ public sealed class LunetShell : UserControl
         if (e.Key == Key.Escape && BeforeBack()) e.Handled = true;
         else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { RunGame(); e.Handled = true; }
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
+        else if (e.Key == Key.F1 && State.Level == ShellLevel.Home) { _home.ShowDocs(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
         else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
@@ -489,9 +534,14 @@ public sealed class LunetShell : UserControl
     }
 
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
-    private bool BeforeBack() => (State.Level == ShellLevel.Home && _home.CloseSheet())
-        || (State.Level == ShellLevel.Workspace && _workspaceView.CloseStudio())
-        || _workspaceView.Code.HideKeyboard() || State.Back();
+    private bool BeforeBack()
+    {
+        if (State.Level == ShellLevel.Workspace && _workspaceView.Code.HideKeyboard()) return true;
+        if (_keyboardShown && SystemKeyboard is { } keyboard) { keyboard(false); SetKeyboard(false); return true; }
+        return (State.Level == ShellLevel.Home && _home.CloseSheet())
+            || (State.Level == ShellLevel.Workspace && _workspaceView.CloseStudio())
+            || State.Back();
+    }
 
     /// <summary>The system Back, as the heads route it (public for tests).</summary>
     public bool Back() => BeforeBack();
@@ -504,6 +554,7 @@ public sealed class LunetShell : UserControl
             _workspaceView.SaveAll();
             StopGame();
             _home.Refresh();
+            if (_home.Sheet is LearnView learn) learn.RefreshAfterWorkspace();
             Content = _home;
             return;
         }

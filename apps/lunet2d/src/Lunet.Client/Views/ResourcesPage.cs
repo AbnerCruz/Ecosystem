@@ -166,6 +166,8 @@ public sealed class ResourcesPage : UserControl
         ];
     }
 
+    internal void Refresh() => Fill();
+
     private void Fill()
     {
         _list.Children.Clear();

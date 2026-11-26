@@ -23,7 +23,6 @@ public sealed class LearnView : UserControl
     private readonly TextBlock _title = LunetUi.Title("Aprender");
     private readonly Button _back;
     private readonly Stack<Action> _history = new();
-    private LearningProgressStore? _progress;
     private string? _progressError;
     private Action _current;
 
@@ -51,6 +50,14 @@ public sealed class LearnView : UserControl
     /// <summary>What is on screen: "catalog", a course id or a project id (tests and screen readers).</summary>
     public string Showing { get; private set; } = "catalog";
 
+    internal void RefreshAfterWorkspace()
+    {
+        if (LearningCatalog.FindProject(Showing) is not { } challenge) return;
+        var offset = _scroll.Offset;
+        ShowProject(challenge.Id);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _scroll.Offset = offset, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
+
     /// <summary>Back inside Aprender; at the catalog it closes Aprender. Always consumed.</summary>
     public bool Back()
     {
@@ -69,13 +76,12 @@ public sealed class LearnView : UserControl
 
     private LearningProgressStore? Progress()
     {
-        if (_progress is not null) return _progress;
-        try { _progress = new LearningProgressStore(_shell.LearningProgressPath); _progressError = null; }
+        try { _progressError = null; return _shell.LearningProgress; }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             _progressError = "O progresso não pôde ser lido. O arquivo foi preservado: " + e.Message;
+            return null;
         }
-        return _progress;
     }
 
     private void Begin(string title, string showing)
@@ -168,7 +174,7 @@ public sealed class LearnView : UserControl
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
         if (linked is not null)
         {
-            var open = LunetUi.Button("Abrir " + linked, ButtonKind.Primary, LunetIcons.Play, () => OpenChallengeGame(linked, null));
+            var open = LunetUi.Button("Abrir " + linked, ButtonKind.Primary, LunetIcons.Play, () => OpenChallengeGame(linked, challenge));
             open.Name = "OpenChallenge";
             actions.Children.Add(open);
         }
@@ -180,8 +186,7 @@ public sealed class LearnView : UserControl
         }
         var reference = LunetUi.Button("Referência", ButtonKind.Secondary, LunetIcons.Book, () =>
         {
-            if (linked is not null) OpenChallengeGame(linked, challenge.ReferenceTarget);
-            else Go(() => ShowReference(challenge));
+            Go(() => ShowReference(challenge));
         });
         reference.Name = "Reference";
         actions.Children.Add(reference);
@@ -196,44 +201,7 @@ public sealed class LearnView : UserControl
 
         _page.Children.Add(Section("Objetivos"));
         if (progress is null) ProgressProblem();
-        else
-        {
-            var summary = LunetUi.Text("", LunetTokens.Type.Callout, weight: FontWeight.SemiBold);
-            var bar = Bar(0, challenge.Steps.Count);
-            void Update()
-            {
-                var count = progress.CompletedCountFor(challenge.Id);
-                summary.Text = $"{count} de {challenge.Steps.Count} objetivos";
-                bar.Value = count;
-            }
-            Update();
-            _page.Children.Add(summary);
-            _page.Children.Add(bar);
-            foreach (var step in challenge.Steps)
-            {
-                var check = new CheckBox
-                {
-                    Content = LunetUi.Text(step.Objective, LunetTokens.Type.Body), MinHeight = LunetTokens.MinTouch,
-                    IsChecked = progress.Completed(challenge.Id, step.Id), Name = "Step-" + step.Id, VerticalContentAlignment = VerticalAlignment.Center,
-                };
-                AutomationProperties.SetName(check, "Declarar feito: " + step.Objective);
-                var restoring = false;
-                check.IsCheckedChanged += (_, _) =>
-                {
-                    if (restoring) return;
-                    try { progress.SetCompleted(challenge.Id, step.Id, check.IsChecked == true); Update(); Haptics.Confirm?.Invoke(); }
-                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                    {
-                        // Never pretend it was saved: the box goes back and the reason is shown.
-                        restoring = true; check.IsChecked = progress.Completed(challenge.Id, step.Id); restoring = false;
-                        _page.Children.Insert(_page.Children.IndexOf(check) + 1, LunetUi.Text("Não foi possível salvar: " + e.Message, LunetTokens.Type.Caption, LunetTokens.Color.Danger));
-                    }
-                };
-                _page.Children.Add(check);
-            }
-            _page.Children.Add(LunetUi.Text("Marque depois de testar no jogo rodando. A marca é sua declaração, não um teste automático.",
-                LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary));
-        }
+        else _page.Children.Add(ObjectiveChecklist(challenge, progress));
         _page.Children.Add(Section("Pesquisar"));
         _page.Children.Add(Body(challenge.Investigate));
         _page.Children.Add(Section("Critérios de aceite"));
@@ -246,6 +214,47 @@ public sealed class LearnView : UserControl
             associate.HorizontalAlignment = HorizontalAlignment.Left;
             _page.Children.Add(associate);
         }
+    }
+
+    internal static Control ObjectiveChecklist(LearningProject challenge, LearningProgressStore progress)
+    {
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xs };
+        var summary = LunetUi.Text("", LunetTokens.Type.Callout, weight: FontWeight.SemiBold);
+        var bar = Bar(0, challenge.Steps.Count);
+        void Update()
+        {
+            var count = progress.CompletedCountFor(challenge.Id);
+            summary.Text = $"{count} de {challenge.Steps.Count} objetivos";
+            bar.Value = count;
+        }
+        Update();
+        list.Children.Add(summary);
+        list.Children.Add(bar);
+        foreach (var step in challenge.Steps)
+        {
+            var check = new CheckBox
+            {
+                Content = Body(step.Objective), MinHeight = LunetTokens.MinTouch,
+                IsChecked = progress.Completed(challenge.Id, step.Id), Name = "Step-" + step.Id, VerticalContentAlignment = VerticalAlignment.Center,
+            };
+            AutomationProperties.SetName(check, "Declarar feito: " + step.Objective);
+            var restoring = false;
+            check.IsCheckedChanged += (_, _) =>
+            {
+                if (restoring) return;
+                try { progress.SetCompleted(challenge.Id, step.Id, check.IsChecked == true); Update(); Haptics.Confirm?.Invoke(); }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    // Never pretend it was saved: the box goes back and the reason is shown.
+                    restoring = true; check.IsChecked = progress.Completed(challenge.Id, step.Id); restoring = false;
+                    list.Children.Insert(list.Children.IndexOf(check) + 1, LunetUi.Text("Não foi possível salvar: " + e.Message, LunetTokens.Type.Caption, LunetTokens.Color.Danger));
+                }
+            };
+            list.Children.Add(check);
+        }
+        list.Children.Add(LunetUi.Text("Marque depois de testar no jogo rodando. A marca é sua declaração, não um teste automático.",
+            LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary));
+        return list;
     }
 
     /// <summary>The offline reference of a challenge, inside Aprender (no game open yet).</summary>
@@ -307,7 +316,7 @@ public sealed class LearnView : UserControl
             var name = _shell.Workspace.Store.FreeName("Aprender" + challenge.Id.Replace("-", "", StringComparison.Ordinal));
             var project = _shell.Workspace.Store.Create(name, ProjectTemplate.Blank, challenge.Orientation);
             Progress()!.LinkProject(challenge.Id, name, project.Manifest.GameId);
-            OpenChallengeGame(name, challenge.ReferenceTarget);
+            OpenChallengeGame(name, challenge);
         }
         catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -315,14 +324,13 @@ public sealed class LearnView : UserControl
         }
     }
 
-    /// <summary>Opens the challenge's game; with a reference, the Documentação panel opens on it beside the code.</summary>
-    private void OpenChallengeGame(string name, string? reference)
+    private void OpenChallengeGame(string name, LearningProject challenge)
     {
-        _close();
-        _shell.OpenProject(name);
-        if (reference is null) return;
-        _shell.State.ShowPanel(Shell.SupportPanel.Docs);
-        _shell.WorkspaceView.Support.Docs.Navigate(reference);
+        try { _shell.OpenProject(name, challenge); }
+        catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException)
+        {
+            _page.Children.Insert(1, LunetUi.Text(e.Message, LunetTokens.Type.Caption, LunetTokens.Color.Danger));
+        }
     }
 
     private void ProgressProblem()
@@ -331,7 +339,7 @@ public sealed class LearnView : UserControl
         if (!LearningProgressStore.HasRecovery(_shell.LearningProgressPath)) return;
         var restore = LunetUi.Button("Restaurar a cópia do progresso", ButtonKind.Secondary, null, () =>
         {
-            try { LearningProgressStore.RestoreBackup(_shell.LearningProgressPath); _progress = null; _current(); }
+            try { LearningProgressStore.RestoreBackup(_shell.LearningProgressPath); _shell.ReloadLearningProgress(); _current(); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException) { _progressError = e.Message; _current(); }
         });
         restore.HorizontalAlignment = HorizontalAlignment.Left;

@@ -18,11 +18,30 @@ namespace Lunet.Client.Views;
 public sealed class HomeView : UserControl
 {
     private readonly LunetShell _shell;
-    private readonly WrapPanel _grid = new() { Orientation = Orientation.Horizontal };
 
     /// <summary>A phone: one game per row (list); wider, cards in a grid.</summary>
     private bool Compact => Bounds.Width is > 0 and < 600 || Bounds.Width <= 0;
-    private readonly TextBlock _count = LunetUi.Secondary("");
+    private readonly TextBox _search = new() { Name = "ProjectSearch", MinHeight = LunetTokens.MinTouch, PlaceholderText = "Nome do jogo" };
+    private readonly StackPanel _projects = new() { Spacing = LunetTokens.Space.M };
+    private readonly ContentControl _pageHost = new();
+    private readonly ScrollViewer _homeScroll = new();
+    private readonly Stack<(Control Page, Destination Destination)> _origins = new();
+    private readonly Dictionary<string, DateTime> _editTimes = new(StringComparer.Ordinal);
+    private IReadOnlyList<LauncherProjectEntry> _catalog = [];
+    private IReadOnlyList<string> _names = [];
+    private LauncherPreferences? _preferences;
+    private string? _loadedPreferencesPath;
+    private Control? _modal;
+    private Control? _page;
+    private LearnView? _learn;
+    private PlayView? _play;
+    private StudiosView? _studios;
+    private LibraryView? _library;
+    private DocsView? _docs;
+    private GlobalAiView? _ai;
+    private DockPanel? _shellLayout;
+    private Border? _navFrame;
+    private Button? _create;
     private readonly StackPanel _trashRow = new() { Margin = new Thickness(0, LunetTokens.Space.S, 0, 0) };
     // Sheets and the undo bar float over the Home; the Home stays in place under them (no navigation).
     private readonly Panel _overlay = new();
@@ -37,13 +56,14 @@ public sealed class HomeView : UserControl
         _shell = shell;
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         _snackbarTimer.Tick += (_, _) => HideSnackbar();
+        AutomationProperties.SetName(_search, "Buscar projetos");
+        _search.TextChanged += (_, _) => ShowProjects();
         Build();
     }
 
     /// <summary>The Home's destinations in the bottom navigation bar (Material 3: 3–5, in the thumb's reach).</summary>
-    public enum Destination { Games, Learn, Play, Studios, More, Library, Settings }
+    public enum Destination { Games, Learn, Play, Studios, More, Library, Settings, Docs }
 
-    private readonly StackPanel _nav = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly Grid _navGrid = new();
 
     /// <summary>The destination selected in the bottom bar.</summary>
@@ -52,72 +72,58 @@ public sealed class HomeView : UserControl
     /// <summary>Lays the Home out (again when the head sets <see cref="LunetShell.OpenRoute"/>).</summary>
     public void Build()
     {
-        if (_grid.Parent is Panel old) old.Children.Remove(_grid);
-        if (_count.Parent is Panel oldParent) oldParent.Children.Remove(_count);
-        var titles = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(0, LunetTokens.Space.S, 0, LunetTokens.Space.M) };
-        titles.Children.Add(LunetUi.Headline("Seus jogos"));
-        titles.Children.Add(_count);
-
-        var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L, LunetTokens.Space.M, 96) };
-        content.Children.Add(titles);
-        content.Children.Add(_grid);
-        if (_trashRow.Parent is Panel oldTrash) oldTrash.Children.Remove(_trashRow);
+        if (_shellLayout is not null) { BuildNav(); return; }
+        var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L, LunetTokens.Space.M, 96), Spacing = LunetTokens.Space.M };
+        content.Children.Add(LunetUi.Headline("Área de trabalho"));
+        content.Children.Add(new StackPanel { Children = { Label("Buscar projetos"), _search } });
+        content.Children.Add(_projects);
         content.Children.Add(_trashRow);
-        if (_overlay.Parent is Panel oldOverlay) oldOverlay.Children.Remove(_overlay);
-        if (_snackbar.Parent is Panel oldBar) oldBar.Children.Remove(_snackbar);
+        _homeScroll.Content = content;
+        _pageHost.Content = _homeScroll;
         _snackbar.VerticalAlignment = VerticalAlignment.Bottom;
-
-        // "Novo jogo" floats bottom-right, where the thumb rests (Material extended FAB).
-        var create = LunetUi.Button("Novo jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate);
-        create.Name = "NewProject";
-        create.MinHeight = 56;
-        create.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
-        create.HorizontalAlignment = HorizontalAlignment.Right;
-        create.VerticalAlignment = VerticalAlignment.Bottom;
-        create.Margin = new Thickness(LunetTokens.Space.M);
-
-        var page = new Grid { Children = { new ScrollViewer { Content = content }, create, _snackbar, _overlay } };
+        _create = LunetUi.Button("Novo jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate);
+        _create.Name = "NewProject";
+        _create.MinHeight = 56;
+        _create.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
+        _create.HorizontalAlignment = HorizontalAlignment.Right;
+        _create.VerticalAlignment = VerticalAlignment.Bottom;
+        _create.Margin = new Thickness(LunetTokens.Space.M);
+        var page = new Grid { Children = { _pageHost, _create, _snackbar, _overlay } };
+        _navFrame = new Border { Child = _navGrid, Background = LunetTokens.Brush(LunetTokens.Ink.I2) };
+        _shellLayout = new DockPanel { Children = { _navFrame, page } };
         BuildNav();
-        if (_navGrid.Parent is Border oldNav) oldNav.Child = null;
-        var nav = new Border
-        {
-            Child = _navGrid, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
-        };
-        var root = new DockPanel();
-        DockPanel.SetDock(nav, Avalonia.Controls.Dock.Bottom);
-        root.Children.Add(nav);
-        root.Children.Add(page);
-        Content = root;
+        Content = _shellLayout;
         Refresh();
     }
 
-    /// <summary>
-    /// The bottom bar: Jogos, Aprender, Jogar and Studios (all in the shell) and Mais
-    /// (Biblioteca, Explorar, Ajustes). Without the previous screens (desktop) only what lives in the shell appears.
-    /// </summary>
     private void BuildNav()
     {
-        var items = new List<(Destination Destination, string Label, string Icon)> { (Destination.Games, "Jogos", LunetIcons.Game), (Destination.Learn, "Aprender", LunetIcons.Book) };
-        items.Add((Destination.Play, "Jogar", LunetIcons.Play));
-        items.Add((Destination.Studios, "Studios", LunetIcons.Art));
-        if (_shell.OpenRoute is not null)
+        var items = new (Destination Destination, string Label, string Icon)[]
         {
-            items.Add((Destination.More, "Mais", LunetIcons.More));
-        }
-        else
+            (Destination.Games, "Projetos", LunetIcons.Home),
+            (Destination.Play, "Jogar", LunetIcons.Play),
+            (Destination.Learn, "Aprender", LunetIcons.Book),
+            (Destination.Studios, "Studios", LunetIcons.Art),
+            (Destination.More, "Mais", LunetIcons.More),
+        };
+        var wide = Bounds.Width >= Shell.ShellState.ExpandedMinWidth;
+        if (_navFrame is { } nav)
         {
-            items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
-            items.Add((Destination.Settings, "Ajustes", LunetIcons.Speed));
+            DockPanel.SetDock(nav, wide ? Dock.Left : Dock.Bottom);
+            nav.Width = wide ? 104 : double.NaN;
+            nav.BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border);
+            nav.BorderThickness = wide ? new Thickness(0, 0, 1, 0) : new Thickness(0, 1, 0, 0);
         }
         _navGrid.Children.Clear();
-        _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
-        for (var i = 0; i < items.Count; i++)
+        _navGrid.ColumnDefinitions = new ColumnDefinitions(wide ? "*" : "*,*,*,*,*");
+        _navGrid.RowDefinitions = new RowDefinitions(wide ? "Auto,Auto,Auto,Auto,Auto,*" : "Auto");
+        for (var i = 0; i < items.Length; i++)
         {
             var (destination, label, icon) = items[i];
             var tab = LunetUi.Tab(icon, label, destination == Selected, () => Go(destination));
             tab.Name = "Nav-" + destination;
-            Grid.SetColumn(tab, i);
+            Grid.SetColumn(tab, wide ? 0 : i);
+            Grid.SetRow(tab, wide ? i : 0);
             _navGrid.Children.Add(tab);
         }
     }
@@ -125,15 +131,24 @@ public sealed class HomeView : UserControl
     /// <summary>Goes to a destination of the bottom bar (the same path as a tap).</summary>
     public void Go(Destination destination)
     {
+        if (_modal is not null) CloseModal();
+        if (Sheet is SettingsView settings && settings.Back()) return;
+        if (Sheet is StudiosView { Studio: not null } studios)
+        {
+            studios.Back();
+            if (studios.Studio is not null) return;
+        }
+        _origins.Clear();
         switch (destination)
         {
-            case Destination.Games: CloseOverlay(); break;
+            case Destination.Games: ShowPage(null, Destination.Games); break;
             case Destination.Learn: ShowLearn(); break;
             case Destination.Play: ShowPlay(); break;
             case Destination.Studios: ShowStudios(); break;
             case Destination.More: ShowMore(); break;
             case Destination.Library: ShowLibrary(); break;
             case Destination.Settings: ShowSettings(); break;
+            case Destination.Docs: ShowDocs(); break;
         }
     }
 
@@ -147,14 +162,16 @@ public sealed class HomeView : UserControl
     /// <summary>Mais: the destinations that still live in the previous screens.</summary>
     private void ShowMore()
     {
-        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs };
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L) };
+        list.Children.Add(LunetUi.Headline("Mais"));
         foreach (var (route, label, icon, detail) in new[]
         {
             ("ai", "Lunet IA", LunetIcons.Code, "Conversa sem jogo aberto: dúvidas de C# e ideias"),
             ("library", "Biblioteca", LunetIcons.Folder, "Recursos seus para usar em qualquer jogo"),
+            ("docs", "Documentação", LunetIcons.Book, "Guias e referência da API"),
             ("explore", "Explorar", LunetIcons.Map, "Referências e inspiração"),
             ("settings", "Ajustes", LunetIcons.Speed, "Aparência, pasta de projetos, IA"),
-        }.Where(d => d.Item1 != "ai" || _shell.AiHost is not null))
+        })
         {
             var stack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             stack.Children.Add(LunetUi.Text(label, LunetTokens.Type.Callout, weight: FontWeight.SemiBold));
@@ -176,48 +193,138 @@ public sealed class HomeView : UserControl
             // Biblioteca (A6) and Ajustes (P7) live in the shell now; Explorar still opens the previous screen.
             b.Click += (_, _) =>
             {
-                CloseOverlay();
-                if (r == "ai") ShowGlobalAi();
+                if (r == "ai" && ShowGlobalAi() is null) ShowSnackbar("A IA precisa de um cofre de credenciais neste aplicativo.", null);
                 else if (r == "library") ShowLibrary();
                 else if (r == "settings") ShowSettings();
-                else _shell.OpenRoute?.Invoke(r, null);
+                else if (r == "docs") ShowDocs();
+                else if (r == "explore")
+                {
+                    if (_shell.OpenRoute is { } open) open(r, null);
+                    else ShowSnackbar("Explorar está disponível no Lunet para Android.", null);
+                }
             };
             list.Children.Add(b);
         }
-        Open("Mais", list);
+        ShowPage(new ScrollViewer { Content = new Border { Child = list, MaxWidth = 760 } }, Destination.More);
     }
 
     /// <summary>The project names currently shown, in order (for tests and screen readers).</summary>
     public IReadOnlyList<string> Shown { get; private set; } = [];
 
+    public string ProjectQuery => _search.Text ?? "";
+    public string? ContinueProject => LauncherProjectCatalog.UniqueNameForId(_catalog, _preferences?.LastProjectId);
+    public void FilterProjects(string query) { _search.Text = query; ShowProjects(); }
+
     protected override void OnSizeChanged(SizeChangedEventArgs e)
     {
         base.OnSizeChanged(e);
-        if (Math.Abs(e.NewSize.Width - e.PreviousSize.Width) > 1) Refresh(); // card columns follow the width
+        if ((e.PreviousSize.Width >= Shell.ShellState.ExpandedMinWidth) != (e.NewSize.Width >= Shell.ShellState.ExpandedMinWidth))
+            BuildNav();
+        if (Math.Abs(e.NewSize.Width - e.PreviousSize.Width) > 1) ShowProjects();
     }
 
     public void Refresh()
     {
-        _grid.Children.Clear();
-        Shown = _shell.Workspace.Projects();
-        _count.Text = Shown.Count switch { 0 => "Comece criando um jogo", 1 => "1 jogo", _ => $"{Shown.Count} jogos" };
-        if (Shown.Count == 0)
+        try
         {
-            _grid.Children.Add(LunetUi.EmptyState(LunetIcons.Game, "Nenhum jogo ainda",
-                "Crie um jogo: o código, a arte, o som e o jogo rodando ficam juntos, a um toque de distância.",
-                LunetUi.Button("Criar o primeiro jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate)));
+            _names = _shell.Workspace.Projects();
+            _catalog = LauncherProjectCatalog.Scan(_shell.Workspace.Store);
+            ReadPreferences();
+            _preferences?.UpgradeProjectReferences(_catalog);
         }
-        else foreach (var name in Shown) _grid.Children.Add(Compact ? ProjectRow(name) : ProjectCard(name));
-        _trashRow.Children.Clear();
-        var trash = _shell.Workspace.Store.Trash();
-        if (trash.Count > 0)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
         {
+            ShowSnackbar("Não foi possível ler os atalhos de jogos. " + e.Message, null);
+        }
+        _editTimes.Clear();
+        ShowProjects();
+        _trashRow.Children.Clear();
+        try
+        {
+            var trash = _shell.Workspace.Store.Trash();
+            if (trash.Count == 0) return;
             var b = LunetUi.Button($"Lixeira ({trash.Count})", ButtonKind.Ghost, LunetIcons.Trash, ShowTrash);
             b.Name = "Trash";
             b.HorizontalAlignment = HorizontalAlignment.Left;
             _trashRow.Children.Add(b);
         }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { ShowSnackbar(e.Message, null); }
     }
+
+    private void ReadPreferences()
+    {
+        if (_loadedPreferencesPath == _shell.LauncherPreferencesPath) return;
+        _preferences = null;
+        _preferences = new LauncherPreferences(_shell.LauncherPreferencesPath);
+        _loadedPreferencesPath = _shell.LauncherPreferencesPath;
+    }
+
+    public void RestoreDestination()
+    {
+        Refresh();
+        switch (_preferences?.Section)
+        {
+            case "learn": ShowLearn(); break;
+            case "play": ShowPlay(); break;
+            case "studios": ShowStudios(); break;
+        }
+    }
+
+    internal void RememberOpened(string name, string gameId) => Persist(p => p.MarkOpenedProject(name, gameId));
+
+    private void Persist(Action<LauncherPreferences> change)
+    {
+        try
+        {
+            ReadPreferences();
+            if (_preferences is { } preferences) change(preferences);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException)
+        { ShowSnackbar("Não foi possível salvar os atalhos de jogos. " + e.Message, null); }
+    }
+
+    private void ShowProjects()
+    {
+        var query = ProjectQuery.Trim();
+        _projects.Children.Clear();
+        var candidates = _names.Where(name => System.Globalization.CultureInfo.CurrentCulture.CompareInfo.IndexOf(
+            name, query, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) >= 0)
+            .ToHashSet(StringComparer.Ordinal);
+        string? ById(string id) => LauncherProjectCatalog.UniqueNameForId(_catalog, id);
+        var pinned = (_preferences?.PinnedProjectIds ?? []).Select(ById).OfType<string>()
+            .Where(candidates.Remove).ToArray();
+        var recent = (_preferences?.RecentProjectIds ?? []).Select(ById).OfType<string>()
+            .Where(candidates.Remove).ToArray();
+        var rest = _names.Where(candidates.Contains).ToArray();
+        Shown = [.. pinned, .. recent, .. rest];
+        if (query.Length == 0 && ContinueProject is { } last)
+        {
+            var resume = LunetUi.Button("Continuar · " + last, ButtonKind.Secondary, LunetIcons.Edit, () => OpenForEditing(last));
+            resume.Name = "ContinueProject";
+            _projects.Children.Add(resume);
+        }
+        else if (query.Length == 0 && _preferences?.LastProjectId is not null)
+            _projects.Children.Add(LunetUi.Secondary("O último jogo não está disponível na pasta atual."));
+        if (Shown.Count == 0)
+        {
+            _projects.Children.Add(LunetUi.Secondary(query.Length == 0 ? "Crie um jogo ou importe um ZIP em Novo jogo." : "Nenhum projeto encontrado."));
+            return;
+        }
+        AddGroup("Fixados", pinned);
+        AddGroup("Recentes", recent);
+        AddGroup("Todos os projetos", rest);
+    }
+
+    private void AddGroup(string title, IReadOnlyList<string> names)
+    {
+        if (names.Count == 0) return;
+        _projects.Children.Add(LunetUi.Section(title));
+        var rows = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var name in names) rows.Children.Add(Compact ? ProjectRow(name) : ProjectCard(name));
+        _projects.Children.Add(rows);
+    }
+
+    private void OpenForEditing(string name) => Run(() => _shell.OpenProject(name));
 
     /// <summary>A stable colour per game (its name hashed onto the accent family), so cards are told apart at a glance.</summary>
     public static string CardColor(string name)
@@ -243,6 +350,16 @@ public sealed class HomeView : UserControl
     }
 
     private DateTime LastEdited(string name)
+    {
+        if (!_editTimes.TryGetValue(name, out var edited))
+        {
+            edited = ReadLastEdited(name);
+            _editTimes[name] = edited;
+        }
+        return edited;
+    }
+
+    private DateTime ReadLastEdited(string name)
     {
         var folder = Path.Combine(_shell.Workspace.Root, name);
         if (!Directory.Exists(folder)) return DateTime.MinValue;
@@ -294,7 +411,7 @@ public sealed class HomeView : UserControl
             Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(LunetTokens.Radius.L),
         };
         AutomationProperties.SetName(open, "Abrir " + name);
-        open.Click += (_, _) => _shell.OpenProject(name);
+        open.Click += (_, _) => OpenForEditing(name);
         open.ContextRequested += (_, e) => { ShowActions(name); e.Handled = true; };
         var more = MoreButton(name);
         more.HorizontalAlignment = HorizontalAlignment.Right;
@@ -327,7 +444,7 @@ public sealed class HomeView : UserControl
         };
         open.Classes.Add("lunet-card");
         AutomationProperties.SetName(open, "Abrir " + name);
-        open.Click += (_, _) => _shell.OpenProject(name);
+        open.Click += (_, _) => OpenForEditing(name);
         open.ContextRequested += (_, e) => { ShowActions(name); e.Handled = true; };
         var more = MoreButton(name);
         more.HorizontalAlignment = HorizontalAlignment.Right;
@@ -339,7 +456,7 @@ public sealed class HomeView : UserControl
     // ---- Sheets: creating, renaming, the actions of a game and the trash ----
 
     /// <summary>The sheet open over the Home, or null.</summary>
-    public Control? Sheet { get; private set; }
+    public Control? Sheet => _modal ?? _page;
 
     /// <summary>The last message of the undo bar (tests and screen readers).</summary>
     public string? SnackbarText { get; private set; }
@@ -347,23 +464,50 @@ public sealed class HomeView : UserControl
     /// <summary>Closes the open sheet; false when none was open (Back then leaves the Home as before).</summary>
     public bool CloseSheet()
     {
-        if (Sheet is null) return false;
-        if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
-        if (Sheet is LibraryView library) return library.Back();
-        if (Sheet is StudiosView studios) return studios.Back();
-        if (Sheet is GlobalAiView ai) return ai.Back();
-        if (Sheet is SettingsView settings && settings.Back()) return true;
-        if (Sheet is PlayView or SettingsView) return CloseOverlay();
-        return CloseOverlay();
+        if (_modal is not null) return CloseModal();
+        return _page switch
+        {
+            LearnView learn => learn.Back(),
+            LibraryView library => library.Back(),
+            StudiosView studios => studios.Back(),
+            GlobalAiView ai => ai.Back(),
+            SettingsView settings when settings.Back() => true,
+            _ when ReferenceEquals(_page, _docsPage) && _docs is not null && _docs.TryGoBack() => true,
+            _ => ClosePage(),
+        };
     }
 
-    private bool CloseOverlay()
+    private bool CloseModal()
     {
-        if (Sheet is null) return false;
+        if (_modal is null) return false;
         _overlay.Children.Clear();
-        Sheet = null;
-        Select(Destination.Games);
+        _modal = null;
         return true;
+    }
+
+    private bool ClosePage()
+    {
+        if (_page is null) return false;
+        if (_origins.TryPop(out var origin)) ShowPage(origin.Page, origin.Destination);
+        else ShowPage(null, Destination.Games);
+        return true;
+    }
+
+    private void ShowPage(Control? page, Destination destination, bool nested = false)
+    {
+        CloseModal();
+        if (ReferenceEquals(_page, page)) return;
+        if (nested && _page is not null) _origins.Push((_page, Selected));
+        _page = page;
+        _pageHost.Content = page is null ? _homeScroll : LunetUi.Enter(page);
+        if (_create is not null) _create.IsVisible = page is null;
+        Select(destination);
+        var section = destination switch
+        {
+            Destination.Games => "home", Destination.Play => "play", Destination.Learn => "learn",
+            Destination.Studios => "studios", _ => null,
+        };
+        if (section is not null) Persist(p => p.SelectSection(section));
     }
 
     private void Open(string title, Control body)
@@ -394,7 +538,7 @@ public sealed class HomeView : UserControl
         scrim.PointerPressed += (_, _) => CloseSheet();
         _overlay.Children.Add(LunetUi.Enter(scrim, 0, LunetTokens.Motion.Fast));
         _overlay.Children.Add(LunetUi.Enter(card, 24, LunetTokens.Motion.Slow));
-        Sheet = card;
+        _modal = card;
     }
 
     private static Control DockTop(Control c) { DockPanel.SetDock(c, Avalonia.Controls.Dock.Top); return c; }
@@ -402,70 +546,76 @@ public sealed class HomeView : UserControl
     /// <summary>Aprender, full screen over the Home (Back walks its pages, then closes it).</summary>
     public LearnView ShowLearn()
     {
-        _overlay.Children.Clear();
-        var learn = new LearnView(_shell, () => CloseOverlay());
-        _overlay.Children.Add(LunetUi.Enter(learn));
-        Sheet = learn;
-        Select(Destination.Learn);
-        return learn;
+        _learn ??= new LearnView(_shell, () => ClosePage());
+        ShowPage(_learn, Destination.Learn);
+        return _learn;
     }
 
-    /// <summary>The AI without a game (LUNET-521), full screen over the Home; null when the head has no key vault.</summary>
     public GlobalAiView? ShowGlobalAi(bool settings = false)
     {
         if (_shell.AiHost is not { } host) return null;
-        _overlay.Children.Clear();
-        var ai = new GlobalAiView(_shell, host, () => CloseOverlay());
-        if (settings) ai.OpenSettings();
-        _overlay.Children.Add(LunetUi.Enter(ai));
-        Sheet = ai;
-        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
-        return ai;
+        _ai ??= new GlobalAiView(_shell, host, () => ClosePage());
+        if (settings) _ai.OpenSettings();
+        ShowPage(_ai, Destination.More, nested: true);
+        return _ai;
     }
 
-    /// <summary>Ajustes, full screen over the Home (P7).</summary>
     public SettingsView ShowSettings()
     {
-        _overlay.Children.Clear();
         var settings = new SettingsView(_shell);
-        _overlay.Children.Add(LunetUi.Enter(settings));
-        Sheet = settings;
-        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        ShowPage(settings, Destination.More, nested: true);
         return settings;
     }
 
-    /// <summary>Jogar, full screen over the Home (P4).</summary>
     public PlayView ShowPlay()
     {
-        _overlay.Children.Clear();
-        var play = new PlayView(_shell, () => CloseOverlay());
-        _overlay.Children.Add(LunetUi.Enter(play));
-        Sheet = play;
-        Select(Destination.Play);
-        return play;
+        _play ??= new PlayView(_shell);
+        _play.Refresh();
+        ShowPage(_play, Destination.Play);
+        return _play;
     }
 
-    /// <summary>Studios without a game, full screen over the Home (Back closes the open Studio, then the page).</summary>
     public StudiosView ShowStudios()
     {
-        _overlay.Children.Clear();
-        var studios = new StudiosView(_shell, () => CloseOverlay(), (root, path) => ShowLibrary().ShowPublishStudio(root, path));
-        _overlay.Children.Add(LunetUi.Enter(studios));
-        Sheet = studios;
-        Select(Destination.Studios);
-        return studios;
+        _studios ??= new StudiosView(_shell, () => ClosePage(), (root, path) =>
+        {
+            var publication = new LibraryView(_shell, () => ClosePage());
+            ShowPage(publication, Destination.Studios, nested: true);
+            publication.ShowPublishStudio(root, path);
+        }, () => ShowLibrary());
+        ShowPage(_studios, Destination.Studios);
+        return _studios;
     }
 
-    /// <summary>The Biblioteca, full screen over the Home (Back walks its pages, then closes it).</summary>
     public LibraryView ShowLibrary()
     {
-        _overlay.Children.Clear();
-        var library = new LibraryView(_shell, () => CloseOverlay());
-        _overlay.Children.Add(LunetUi.Enter(library));
-        Sheet = library;
-        Select(_shell.OpenRoute is null ? Destination.Library : Destination.More);
-        return library;
+        _library ??= new LibraryView(_shell, () => ClosePage());
+        if (_library.Showing == "list") _library.FillResults();
+        ShowPage(_library, Selected == Destination.Studios ? Destination.Studios : Destination.More, nested: true);
+        return _library;
     }
+
+    public DocsView ShowDocs()
+    {
+        if (_docs is null)
+        {
+            _docs = new DocsView();
+            var header = new DockPanel { Height = 56 };
+            var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => ClosePage());
+            DockPanel.SetDock(back, Dock.Left);
+            header.Children.Add(back);
+            var title = LunetUi.Title("Documentação");
+            title.VerticalAlignment = VerticalAlignment.Center;
+            header.Children.Add(title);
+            var page = new DockPanel { Children = { header, _docs } };
+            DockPanel.SetDock(header, Dock.Top);
+            _docsPage = page;
+        }
+        ShowPage(_docsPage, Destination.More, nested: true);
+        return _docs;
+    }
+
+    private Control? _docsPage;
 
     /// <summary>A game's actions: Abrir, Renomear, Duplicar, Apagar.</summary>
     public void ShowActions(string name)
@@ -480,7 +630,23 @@ public sealed class HomeView : UserControl
             b.Name = "Action-" + label;
             list.Children.Add(b);
         }
-        Item("Abrir", LunetIcons.Play, () => { CloseSheet(); _shell.OpenProject(name); });
+        Item("Editar", LunetIcons.Edit, () => { CloseSheet(); OpenForEditing(name); });
+        Item("Jogar", LunetIcons.Play, () =>
+        {
+            CloseSheet();
+            if (_shell.PlayGame is { } play) play(name);
+            else Run(() => { _shell.OpenProject(name); _shell.RunGame(); });
+        });
+        if (LauncherProjectCatalog.UniqueIdForName(_catalog, name) is { } id && LauncherProjectCatalog.UniqueNameForId(_catalog, id) == name)
+        {
+            var pinned = _preferences?.IsPinnedProject(id) == true;
+            Item(pinned ? "Desafixar" : "Fixar", LunetIcons.Folder, () =>
+            {
+                Persist(p => p.SetPinnedProject(name, id, !pinned));
+                CloseSheet();
+                ShowProjects();
+            });
+        }
         Item("Renomear", LunetIcons.Edit, () => ShowRename(name));
         Item("Duplicar", LunetIcons.Copy, () => Run(() =>
         {
