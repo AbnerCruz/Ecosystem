@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.1-dev.1000605 — Editor com dobras, saltos e cópia
+## 0.0.1-dev.1000606 — Visual novo: linguagem visual do Ecosystem
 
 - **Visual novo: o Lunet passa a seguir a linguagem visual do Ecosystem v1.0** (`docs/design/linguagem-visual.md`).
   - **Fundo e superfícies:** quase preto frio, em degraus de tom no lugar de bordas.
@@ -14,6 +14,8 @@
     - Folhas sobem com fade (300 ms). Páginas e Studios entram com fade e um leve deslocamento (220 ms).
     - Com "remover animações" ligado no Android, tudo aparece na hora.
   - **Código:** comentários, chamadas e pontuação seguem as cores da linguagem.
+
+## 0.0.1-dev.1000605 — Editor com dobras, saltos e cópia
 
 - **Dobrar código:** setas na margem dobram classes, métodos, blocos, `#region` e comentários. Pela paleta (lupa): **Dobrar ou desdobrar região**, **Dobrar tudo** e **Desdobrar tudo**.
 - **Voltar à posição anterior** (paleta ou Alt+←): depois de ir para uma definição, linha, problema ou símbolo, volta para onde você estava, inclusive em outro arquivo.
