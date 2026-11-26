@@ -41,6 +41,11 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Arquivos e busca no editor da interface nova** (o **⋮** ao lado das abas de arquivo):
+  - **Novo arquivo** cria `Scripts/Nome.cs` com a classe pronta.
+  - **Renomear** mantém a pasta e a extensão. **Apagar** pede confirmação. O arquivo base do jogo e o `lunet.json` ficam protegidos.
+  - **Buscar e substituir** (também Ctrl+F) mostra a contagem e tem próximo, maiúsculas, trocar um e trocar todos. Trocar todos é um único desfazer.
+  - Funciona também nas Notas.
 - **Recursos redesenhados:**
   - Blocos para criar Sprite, Mapa, Efeito, Música, Partículas, Tabela e Paleta, e para **Importar** arquivos do aparelho (cada tipo vai para a sua pasta em `Content/`, sem sobrescrever nada).
   - Busca, grupos (Arte, Mapas, Sons, Partículas, Dados, Fontes) e miniaturas das imagens.

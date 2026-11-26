@@ -798,4 +798,53 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void CodeEditor_CreatesRenamesDeletesFiles_AndFindsAndReplaces()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-files-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var code = shell.WorkspaceView.Code;
+                var entry = shell.Workspace.Project!.Manifest.EntryPoint;
+
+                code.ToggleFileMenu();
+                Assert.True(code.FileMenuOpen);
+                var path = code.NewCodeFile("inimigo");
+                Assert.Equal("Scripts/Inimigo.cs", path);
+                Assert.Equal(path, code.OpenPath);
+                Assert.Contains("class Inimigo", shell.Workspace.Read(path));
+                Assert.True(shell.Workspace.Compile().Success);                       // the new file compiles
+
+                code.Surface.Text = "int vida = 3; vida = vida - 1; // Vida";
+                Assert.Equal("Scripts/Chefe.cs", code.RenameOpen("Chefe"));            // the extension is kept
+                Assert.DoesNotContain(path, shell.Workspace.Files());
+                Assert.Contains("vida = vida", shell.Workspace.Read("Scripts/Chefe.cs"));  // unsaved text went with it
+
+                code.ShowFind();
+                Assert.True(code.FindOpen);
+                Assert.Equal(4, code.Find("vida"));                                     // case-insensitive by default
+                Assert.Equal(8, code.Surface.SelectionEnd);
+                Assert.True(code.ReplaceCurrent("hp"));
+                Assert.StartsWith("int hp = 3;", code.Surface.Text);
+                Assert.Equal(3, code.ReplaceAll("hp"));
+                Assert.Equal("int hp = 3; hp = hp - 1; // hp", code.Surface.Text);
+
+                code.DeleteOpen();
+                Assert.DoesNotContain("Scripts/Chefe.cs", shell.Workspace.Files());
+                Assert.NotNull(code.OpenPath);
+                code.Load(entry);
+                Assert.Throws<Lunet.Core.ProjectException>(() => code.DeleteOpen());   // the game's entry stays
+                Assert.Contains(entry, shell.Workspace.Files());
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

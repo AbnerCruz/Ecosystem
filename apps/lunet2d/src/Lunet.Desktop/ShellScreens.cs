@@ -97,6 +97,15 @@ public static class ShellScreens
                 shell.StopGame();
                 // M6: a game with a few tunable values, as the Inspector and Desempenho panels show it.
                 shell.WorkspaceView.Code.Surface.Text = TunableGame;
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.None);
+                shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
+                shell.WorkspaceView.Code.ShowFind();
+                shell.WorkspaceView.Code.Find("Raio");
+                Shot(window, output, size, "2l-buscar", written);
+                shell.WorkspaceView.Code.HideFind();
+                shell.WorkspaceView.Code.ToggleFileMenu();
+                Shot(window, output, size, "2m-arquivo", written);
+                shell.WorkspaceView.Code.ToggleFileMenu();
                 shell.RunGame();
                 for (int i = 0; i < 90; i++) shell.TickGame(1 / 60.0);
                 shell.State.ShowPanel(SupportPanel.Inspector);
