@@ -41,6 +41,11 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Enviar e receber versões dentro de Versões** (GitHub e outros servidores https):
+  - Cole o endereço do repositório; **Receber** busca e junta as versões do servidor, e **Enviar** manda as suas.
+  - A conta (nome, e-mail, usuário e token) fica no armazenamento privado do app, a mesma das telas anteriores, e nunca vai para a pasta do jogo.
+  - Sem token, dá para receber de repositórios públicos.
+  - Erros aparecem na tela com o motivo.
 - **Music Studio da interface nova com Notas, Faixa e Arranjo** (abas na parte de baixo):
   - **Notas:** duração da nota de 1 a 16 passos; uma nota perto do fim é cortada para caber.
   - **Faixa:** instrumento entre os 12 prontos, com prévia ao trocar; volume, esquerda/direita, mudo e solo; nova faixa.

@@ -174,6 +174,10 @@ public static class ShellScreens
                 File.AppendAllText(Path.Combine(shell.Workspace.Project!.Directory, shell.Workspace.Project.Manifest.EntryPoint), "\n// próximo passo");
                 versions.Refresh();
                 Shot(window, output, size, "9-versoes", written);
+                versions.SetRemoteUrl("https://github.com/voce/meu-jogo.git");
+                versions.OpenAccount();
+                if (versions.Content is DockPanel dp && dp.Children.OfType<ScrollViewer>().FirstOrDefault() is { } sv) { sv.UpdateLayout(); sv.Offset = new Avalonia.Vector(0, 100000); }
+                Shot(window, output, size, "9b-enviar-receber", written);
                 shell.Back();
                 var fx = shell.WorkspaceView.NewParticles();
                 for (var i = 0; i < 20; i++) fx.Step(0.033);

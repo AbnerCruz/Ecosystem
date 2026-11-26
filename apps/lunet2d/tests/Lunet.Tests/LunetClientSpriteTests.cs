@@ -274,6 +274,87 @@ public sealed class LunetClientMusicTests
 /// <summary>P6: Versões (Git) in the shell.</summary>
 public sealed class LunetClientGitTests
 {
+    private static string Git(string dir, params string[] arguments)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo("git") { WorkingDirectory = dir, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        start.Environment["GIT_CONFIG_GLOBAL"] = "/dev/null";
+        start.Environment["GIT_CONFIG_SYSTEM"] = "/dev/null";
+        foreach (var k in new[] { "GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME" }) start.Environment[k] = "Bia";
+        foreach (var k in new[] { "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL" }) start.Environment[k] = "bia@example.com";
+        using var process = System.Diagnostics.Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEnd();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        if (process.ExitCode != 0) throw new InvalidOperationException($"git {string.Join(' ', arguments)}: {error}");
+        return output;
+    }
+
+    private static T Wait<T>(Task<T> task)
+    {
+        while (!task.IsCompleted) Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        return task.GetAwaiter().GetResult();
+    }
+
+    [Fact]
+    public void Versions_SendToAndReceiveFromARemote_WithTheAccountSaved()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-gitremote-ui-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(root);
+            var bare = Path.Combine(root, "servidor.git");
+            Directory.CreateDirectory(bare);
+            Git(bare, "init", "--bare", "-q");
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(Path.Combine(root, "jogos")) { GitTransport = (_, _) => new ProcessGitTransport(bare) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var git = shell.WorkspaceView.OpenGit();
+                git.Start();
+                git.SaveVersion("Primeira versão", "Ana", "ana@example.com");
+
+                Assert.Contains("endereço", Wait(git.SendAsync()));                    // no address yet: says so
+                const string address = "https://example.com/ana/jogo.git";
+                git.SetRemoteUrl(address);
+                Assert.Equal(address, git.RemoteUrl);
+                git.OpenAccount();
+                git.SaveAccount(new Lunet.Core.GitAccount { Name = "Ana", Email = "ana@example.com", Token = "segredo" });
+                Assert.Equal("segredo", new Lunet.Core.GitAccountStore(shell.GitAccountPath).Load().Token);
+                Assert.DoesNotContain("segredo", File.ReadAllText(Path.Combine(shell.Workspace.Project!.Directory, ".git", "config")));
+
+                var sent = Wait(git.SendAsync());
+                Assert.StartsWith("Enviado", sent);
+                Assert.Contains("Primeira versão", Git(bare, "log", "--oneline", "--all"));
+
+                // Someone else changes the game on the server.
+                var other = Path.Combine(root, "outra");
+                var line = Lunet.Git.GitRepository.Open(shell.Workspace.Project.Directory).CurrentBranch!;
+                Git(root, "clone", "-q", "-b", line, bare, other);
+                var entry = shell.Workspace.Project.Manifest.EntryPoint;
+                File.AppendAllText(Path.Combine(other, entry), "\n// da Bia");
+                Git(other, "commit", "-qam", "Mudança da Bia");
+                Git(other, "push", "-q", "origin", line);
+
+                var received = Wait(git.ReceiveAsync());
+                Assert.DoesNotContain("Não foi possível", received);
+                Assert.Contains("// da Bia", File.ReadAllText(Path.Combine(shell.Workspace.Project.Directory, entry)));
+                Assert.Equal("Mudança da Bia", Lunet.Git.GitRepository.Open(shell.Workspace.Project.Directory).Log(1)[0].Summary);
+                window.Close();
+            });
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                foreach (var f in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal);
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
     [Fact]
     public void Versions_StartHistory_ShowChanges_SaveAVersion_AndListIt()
     {

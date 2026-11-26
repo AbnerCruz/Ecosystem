@@ -27,6 +27,7 @@ public sealed class LunetShell : UserControl
         Workspace = new WorkspaceSession(projectsRoot);
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
+        GitAccountPath = Path.Combine(projectsRoot, ".lunet", "git-account.json");
         _settingsPath = Path.Combine(projectsRoot, ".lunet", "settings.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
@@ -98,6 +99,14 @@ public sealed class LunetShell : UserControl
 
     /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
     public string LibraryPath { get; set; }
+
+    /// <summary>Who signs versions and the token for sending/receiving (the app's private storage; the Android head
+    /// points it at the previous screens' FilesDir/git-account.json, so the account carries over).</summary>
+    public string GitAccountPath { get; set; } = "";
+
+    /// <summary>How Versões talks to a remote (HTTP by default; tests use a local git).</summary>
+    public Func<string, Lunet.Core.GitAccount, Lunet.Git.IGitTransport> GitTransport { get; set; } =
+        (url, account) => new Lunet.Git.HttpGitTransport(url, account.Username.Length > 0 ? account.Username : null, account.Token.Length > 0 ? account.Token : null);
     public ShellState State { get; } = new();
     public GameSession Game { get; }
     public HomeView Home => _home;

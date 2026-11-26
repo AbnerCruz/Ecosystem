@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Lunet.Client.Ui;
+using Lunet.Core;
 using Lunet.Git;
 
 namespace Lunet.Client.Views;
@@ -11,7 +12,8 @@ namespace Lunet.Client.Views;
 /// <summary>
 /// Versões (Git) of the game in the shell (P6), in plain words: what changed since the last version, save a version
 /// with a sentence, and the list of versions with what each one changed. Built on Lunet.Git (no external git). Sending
-/// to and receiving from a remote keeps its screen (tokens live in the device vault) and opens from here.
+/// to and receiving from a remote (GitHub and others) is here too: the address, the account (token in the app's private
+/// storage) and Receber/Enviar.
 /// </summary>
 public sealed class GitView : UserControl
 {
@@ -151,19 +153,136 @@ public sealed class GitView : UserControl
                 () => SafeDiff(() => string.Join("\n", repo.CommitChanges(id).Select(f => $"{Badge(f.Change)}  {f.Path}")))));
         }
 
-        if (_shell.OpenRoute is { } route)
+        RemoteSection(repo);
+    }
+
+    // ---------- Sending and receiving (remote) ----------
+
+    private bool _accountOpen;
+    private string? _remoteStatus;
+    private bool _remoteBusy;
+
+    public string? RemoteUrl => GitRepository.IsRepository(_directory) ? GitRepository.Open(_directory).Remotes().FirstOrDefault(r => r.Name == "origin")?.Url : null;
+    public GitAccount Account => new GitAccountStore(_shell.GitAccountPath).Load();
+    public string? RemoteStatus => _remoteStatus;
+
+    public void SetRemoteUrl(string url)
+    {
+        url = url.Trim();
+        if (url.Length == 0) throw new ArgumentException("Cole o endereço do repositório (https://…).");
+        GitRepository.Open(_directory).SetRemote("origin", url);
+        _remoteStatus = "Endereço salvo.";
+        Refresh();
+    }
+
+    public void OpenAccount() { _accountOpen = true; Refresh(); }
+
+    public void SaveAccount(GitAccount account)
+    {
+        new GitAccountStore(_shell.GitAccountPath).Save(account);
+        _accountOpen = false;
+        _remoteStatus = "Conta salva.";
+        Refresh();
+    }
+
+    /// <summary>Receives the server's versions and merges them into this line (pull).</summary>
+    public Task<string> ReceiveAsync() => Remote("Recebendo…", async (repo, transport, progress) =>
+    {
+        var account = Account;
+        var name = account.Name.Length > 0 ? account.Name : repo.Config.Get("user", null, "name") ?? "";
+        var email = account.Email.Length > 0 ? account.Email : repo.Config.Get("user", null, "email") ?? "";
+        if (name.Length == 0 || email.Length == 0) throw new ArgumentException("Informe nome e e-mail na conta para receber versões.");
+        var outcome = await repo.PullAsync("origin", transport, new GitSignature(name, email, DateTimeOffset.Now), progress);
+        _shell.WorkspaceView.ReloadFromDisk();
+        return outcome switch { MergeOutcome.UpToDate => "Já estava atualizado.", MergeOutcome.FastForward => "Recebido: o jogo está igual ao do servidor.", _ => "Recebido e juntado com as suas versões." };
+    });
+
+    /// <summary>Sends this line's versions to the server (push).</summary>
+    public Task<string> SendAsync() => Remote("Enviando…", async (repo, transport, progress) =>
+    {
+        var branch = repo.CurrentBranch ?? throw new ArgumentException("Volte para uma linha antes de enviar.");
+        if (repo.Head is null) throw new ArgumentException("Salve uma versão antes de enviar.");
+        var result = await repo.PushAsync("origin", branch, transport, progress: progress);
+        return result.UpToDate ? "O servidor já tinha estas versões." : $"Enviado para {branch}.";
+    });
+
+    private async Task<string> Remote(string busy, Func<GitRepository, IGitTransport, IProgress<string>, Task<string>> operation)
+    {
+        if (_remoteBusy) return _remoteStatus ?? "";
+        var url = RemoteUrl;
+        if (url is null) { _remoteStatus = "Informe o endereço do repositório primeiro."; Refresh(); return _remoteStatus; }
+        _remoteBusy = true;
+        _remoteStatus = busy;
+        Refresh();
+        try
         {
-            _page.Children.Add(Section("Remoto"));
-            var remote = LunetUi.Button("Enviar e receber (GitHub e outros)", ButtonKind.Secondary, LunetIcons.Share, () => route("git", _shell.State.Project));
-            remote.HorizontalAlignment = HorizontalAlignment.Left;
-            _page.Children.Add(remote);
+            _shell.SaveAll();
+            var repo = GitRepository.Open(_directory);
+            var progress = new Progress<string>(p => { if (_remoteBusy) { _remoteStatus = p; Refresh(); } });
+            _remoteStatus = await operation(repo, _shell.GitTransport(url, Account), progress);
         }
+        catch (Exception e) when (e is GitException or IOException or HttpRequestException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or TaskCanceledException)
+        {
+            _remoteStatus = "Não foi possível: " + e.Message;
+        }
+        finally { _remoteBusy = false; }
+        Refresh();
+        return _remoteStatus!;
+    }
+
+    private void RemoteSection(GitRepository repo)
+    {
+        _page.Children.Add(Section("Enviar e receber (GitHub e outros)"));
+        var url = repo.Remotes().FirstOrDefault(r => r.Name == "origin")?.Url ?? "";
+        var account = Account;
+        if (_remoteStatus is { } status)
+            _page.Children.Add(Notice(status, status.StartsWith("Não foi possível", StringComparison.Ordinal) ? LunetTokens.Color.Danger : LunetTokens.Color.Success));
+        var address = Box("https://github.com/voce/jogo.git", url, "RemoteUrl");
+        Avalonia.Input.TextInput.TextInputOptions.SetContentType(address, Avalonia.Input.TextInput.TextInputContentType.Url);
+        var saveUrl = Named(LunetUi.Button("Salvar", ButtonKind.Secondary, null, () => Run(() => SetRemoteUrl(address.Text ?? ""))), "SaveRemote");
+        var urlRow = new DockPanel();
+        DockPanel.SetDock(saveUrl, Dock.Right);
+        saveUrl.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
+        urlRow.Children.Add(saveUrl);
+        urlRow.Children.Add(address);
+        _page.Children.Add(urlRow);
+        if (url.Length > 0)
+        {
+            var actions = new Avalonia.Controls.Primitives.UniformGrid { Columns = 2 };
+            var receive = Named(LunetUi.Button("Receber", ButtonKind.Secondary, LunetIcons.Download, () => _ = ReceiveAsync()), "Receive");
+            var send = Named(LunetUi.Button("Enviar", ButtonKind.Primary, LunetIcons.Share, () => _ = SendAsync()), "Send");
+            foreach (var b in new[] { receive, send }) { b.MinHeight = 52; b.HorizontalAlignment = HorizontalAlignment.Stretch; b.Margin = new Thickness(LunetTokens.Space.Xxs); b.Opacity = _remoteBusy ? 0.5 : 1; actions.Children.Add(b); }
+            _page.Children.Add(actions);
+        }
+        var who = account.CanCommit ? $"Conta · {account.Name} <{account.Email}>" : "Conta ainda não configurada";
+        var token = account.Token.Length > 0 ? "token configurado" : "sem token: só recebe de repositórios públicos";
+        var header = new Button
+        {
+            Content = LunetUi.Text($"{who}\n{token}", LunetTokens.Type.Callout), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+            MinHeight = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.S), Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(LunetTokens.Radius.M), Name = "AccountHeader",
+        };
+        AutomationProperties.SetName(header, who);
+        header.Click += (_, _) => { _accountOpen = !_accountOpen; Refresh(); };
+        _page.Children.Add(header);
+        if (!_accountOpen) return;
+        var name = Box("Seu nome", account.Name, "AccountName");
+        var email = Box("Seu e-mail", account.Email, "AccountEmail");
+        var user = Box("Usuário do servidor (pode ficar vazio no GitHub)", account.Username, "AccountUser");
+        var secret = Box("Token de acesso (fica só neste aparelho)", account.Token, "AccountToken");
+        secret.PasswordChar = '•';
+        var save = Named(LunetUi.Button("Salvar conta", ButtonKind.Primary, LunetIcons.Check, () => Run(() => SaveAccount(new GitAccount
+        {
+            Name = (name.Text ?? "").Trim(), Email = (email.Text ?? "").Trim(), Username = (user.Text ?? "").Trim(), Token = (secret.Text ?? "").Trim(),
+        }))), "SaveAccount");
+        save.HorizontalAlignment = HorizontalAlignment.Left;
+        foreach (var c in new Control[] { name, email, user, secret, save }) _page.Children.Add(c);
     }
 
     private void Run(Action action)
     {
         try { action(); }
-        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        catch (Exception e) when (e is GitException or IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
         {
             _message = null;
             Refresh();
