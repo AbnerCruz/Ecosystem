@@ -51,6 +51,9 @@
 
 | Linguagem visual §5 | As bordas decorativas saíram dos cartões de cursos em Aprender, do cartão de alterações da IA e das miniaturas da Biblioteca; a profundidade agora vem do tom. Ajustes ganhou botão de voltar visível e o mesmo cabeçalho de subpágina de Aprender e Studios. | Capturas `2f-aprender` e `2k-ajustes` |
 
+| UX §6.3 — decisão do teclado | **Divergência resolvida com a fonte.** O pedido original (PR #1040, 25/11) era um teclado próprio da IDE. Depois, o proprietário escreveu na sessão de 25/11: "A digitação do editor, ms extremamente alto, não da pra digitar, vamos abortar a ideia de ter um teclado nativo mas não abortar a ideia de ter varias abas". O PR #1047 aplicou isso: o teclado do sistema digita, e uma barra única tem as abas Teclas, Atalhos e Métodos. **Decisão vigente:** IME do sistema mais a barra de três abas. Nenhum caminho com dois teclados. A ponte de teclado e o Enter foram corrigidos no #1051. | Ordem citada; `CodeBar` e `EditorKeyboardTests` |
+| UX §6.6 | O painel da IA do jogo usava uma cópia do formulário de configuração. Agora reaproveita o formulário único (`AiSettingsView`). | Teste `AiPanel_IsConfiguredOnceForTheWholeApp` atualizado |
+
 ## Pendências conhecidas
 
 - **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)
