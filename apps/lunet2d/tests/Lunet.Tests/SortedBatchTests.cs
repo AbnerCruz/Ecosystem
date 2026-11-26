@@ -213,6 +213,10 @@ public sealed class SortedBatchConsumerTests
         var atlas = new TextureAtlas(tex, [new AtlasRegion("a", new RectangleF(0, 0, 8, 8))]);
         var slice = new NineSlice(tex, new RectangleF(0, 0, 16, 16), 4, 4, 4, 4);
         var sprite = new Sprite(tex, new RectangleF(4, 4, 8, 8));
+        var particles = new ParticleEmitter(tex, new ParticleSettings(2, 50, 50), capacity: 16, seed: 7);
+        particles.Burst(5, new Vector2(100, 100));
+        particles.Update(0.1);
+        var map = TileMap.Create("Textures/t.png", 3, 2, 8, 8).WithTile(0, new Lunet.Pathfinding.GridPoint(1, 1), 1).WithTile(0, new Lunet.Pathfinding.GridPoint(2, 0), 2);
         var batch = new SpriteBatch(device);
         if (sorted) batch.BeginSorted(); else batch.Begin();
         batch.Draw(tex, new Vector2(1, 2), new RectangleF(0, 0, 4, 4), Color.White); // cropped texture
@@ -222,6 +226,8 @@ public sealed class SortedBatchConsumerTests
         batch.Draw(slice, new RectangleF(80, 80, 40, 30), Color.White);
         batch.FillRect(new RectangleF(5, 150, 30, 10), Color.Red);
         batch.Rect(new RectangleF(50, 150, 30, 10), Color.Green, 2);
+        particles.Draw(batch);
+        map.Draw(batch, tex, new RectangleF(0, 0, 200, 200), new Vector2(120, 150), Color.White);
         batch.End();
         return backend.Batches.Select(b => b.Vertices).ToList();
     }
