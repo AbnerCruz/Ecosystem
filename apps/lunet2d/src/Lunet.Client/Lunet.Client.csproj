@@ -11,11 +11,15 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <!-- Linguagem visual do Ecosystem v1.0 (DEC-0069): Inter (OFL) embutida como fonte da interface. -->
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
     <!-- LUNET-537 D1: the code editor (line numbers, C# highlighting, current line, virtualization). MIT. -->
     <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- The "Métodos" tab reads the generated API catalog (kept current by DocsTests); never a hand-written list. -->
+    <!-- JetBrains Mono (OFL 1.1, Assets/Fonts/JetBrainsMono-OFL.txt): the code font of the visual language. -->
+    <AvaloniaResource Include="Assets/Fonts/*.ttf" />
     <EmbeddedResource Include="../../docs/api/lunet-framework.json" LogicalName="lunet/api.json" />
     <!-- P3: the offline manual and guides, the same set the previous Android screens ship (internal guides excluded). -->
     <EmbeddedResource Include="../../docs/guides/*.md" Exclude="../../docs/guides/primeiros-passos.md;../../docs/guides/loop-e-tempo.md;../../docs/guides/offline-game-apk.md;../../docs/guides/end-to-end-journey.md;../../docs/guides/game-apk-signing-regression.md;../../docs/guides/game-apk-smoke.md;../../docs/guides/gate-framework-advanced.md;../../docs/guides/validacao-studios-icones.md;../../docs/guides/f2-home-continuity-gameid.md;../../docs/guides/f2-workspace.md;../../docs/guides/f3-ai-workspace.md;../../docs/guides/f4-editor-keyboard.md;../../docs/guides/profiler-preview.md;../../docs/guides/networking-foundation.md" LogicalName="lunet/guides/%(Filename)%(Extension)" />

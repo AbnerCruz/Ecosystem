@@ -19,6 +19,8 @@ public static class ShellScreens
 
     public static int Run(string output)
     {
+        // Captures show the settled screen, not a frame of an entry (the same switch as "reduzir movimento").
+        Lunet.Client.Ui.LunetUi.ReduceMotion = true;
         AppBuilder.Configure<ScreensApp>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         Directory.CreateDirectory(output);
         var written = new List<string>();

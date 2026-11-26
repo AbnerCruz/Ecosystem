@@ -98,12 +98,18 @@ jobs:
           rm -rf _site
           mkdir -p _site
           rsync -a --exclude generator/ site/ _site/
+          # Vitrine da linguagem visual: lê os valores da fonte única (docs/design/tokens.json), copiada aqui.
+          cp docs/design/tokens.json _site/design/tokens.json
 
           test -s _site/index.html
           test -s _site/app.js
           test -s _site/style.css
           test -s _site/data/ecosystem-status.json
           test -s _site/testing/index.html
+          test -s _site/design/index.html
+          test -s _site/design/design.js
+          test -s _site/design/design.css
+          test -s _site/design/tokens.json
           test ! -e _site/README.md
 
           # O artefato é estático e deve chegar ao Pages sem processamento Jekyll.

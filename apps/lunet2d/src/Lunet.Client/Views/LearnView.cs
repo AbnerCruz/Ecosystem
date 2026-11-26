@@ -346,12 +346,7 @@ public sealed class LearnView : UserControl
         Foreground = LunetTokens.Brush(LunetTokens.Color.Primary), Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay),
     };
 
-    private static TextBlock Section(string text)
-    {
-        var t = LunetUi.Text(text.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
-        t.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
-        return t;
-    }
+    private static TextBlock Section(string text) => LunetUi.Section(text);
 
     private static TextBlock Body(string text)
     {

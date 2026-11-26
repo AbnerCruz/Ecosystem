@@ -245,6 +245,7 @@ public sealed class WorkspaceView : UserControl
         if (_studio is not null)
         {
             foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
+            if (!ReferenceEquals(_studio, _entered)) { LunetUi.Enter(_studio); _entered = _studio; } // §8: a Studio enters once
             Content = _studio;
             return;
         }
@@ -426,6 +427,7 @@ public sealed class WorkspaceView : UserControl
     }
 
     private ResourcesPage? _resources;
+    private Control? _entered;
 
     /// <summary>Recursos: the game's art, maps, sounds, effects, data and fonts in one place (see <see cref="ResourcesPage"/>).</summary>
     public ResourcesPage ResourcesTab => _resources ??= new ResourcesPage(_shell, this);

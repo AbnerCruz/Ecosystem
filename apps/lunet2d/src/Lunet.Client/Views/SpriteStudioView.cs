@@ -71,10 +71,10 @@ public sealed class PixelCanvas : ZoomCanvas
         var cell = Math.Max(4, a.Width / _doc.Width / 2);
         using (context.PushClip(a))
         {
-            context.FillRectangle(LunetTokens.Brush("#2a2c33"), a);
+            context.FillRectangle(LunetTokens.Brush(LunetTokens.Ink.I4), a);
             for (var y = a.Y; y < a.Bottom; y += cell)
                 for (var x = a.X + (((int)((y - a.Y) / cell)) % 2) * cell; x < a.Right; x += cell * 2)
-                    context.FillRectangle(LunetTokens.Brush("#353841"), new Rect(x, y, cell, cell));
+                    context.FillRectangle(LunetTokens.Brush(LunetTokens.Ink.I5), new Rect(x, y, cell, cell));
         }
         if (_onion is not null)
             using (context.PushOpacity(0.25))

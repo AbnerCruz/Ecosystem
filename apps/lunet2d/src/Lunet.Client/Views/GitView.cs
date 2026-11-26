@@ -116,16 +116,15 @@ public sealed class GitView : UserControl
         {
             var name = repo.Config.Get("user", null, "name") ?? "";
             var email = repo.Config.Get("user", null, "email") ?? "";
-            var message = Box("O que mudou nesta versão?", "", "VersionMessage");
-            _page.Children.Add(message);
+            var message = Box("Ex.: inimigos mais rápidos na fase 2", "", "VersionMessage");
+            _page.Children.Add(LunetUi.Field("O que mudou nesta versão?", message));
             TextBox? nameBox = null, emailBox = null;
             if (name.Length == 0 || email.Length == 0)
             {
-                _page.Children.Add(LunetUi.Text("Quem assina as versões (fica neste jogo):", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
-                nameBox = Box("Seu nome", name, "AuthorName");
-                emailBox = Box("Seu e-mail", email, "AuthorEmail");
-                _page.Children.Add(nameBox);
-                _page.Children.Add(emailBox);
+                nameBox = Box("Ex.: Ana Souza", name, "AuthorName");
+                emailBox = Box("voce@exemplo.com", email, "AuthorEmail");
+                _page.Children.Add(LunetUi.Field("Seu nome", nameBox, "Quem assina as versões (fica neste jogo)."));
+                _page.Children.Add(LunetUi.Field("Seu e-mail", emailBox));
             }
             var save = LunetUi.Button("Salvar versão", ButtonKind.Primary, LunetIcons.Check, () => Run(() =>
             {
@@ -245,12 +244,12 @@ public sealed class GitView : UserControl
         saveUrl.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
         urlRow.Children.Add(saveUrl);
         urlRow.Children.Add(address);
-        _page.Children.Add(urlRow);
+        _page.Children.Add(LunetUi.Field("Endereço do repositório", urlRow, "https:// do GitHub, GitLab ou outro servidor Git."));
         if (url.Length > 0)
         {
             var actions = new Avalonia.Controls.Primitives.UniformGrid { Columns = 2 };
             var receive = Named(LunetUi.Button("Receber", ButtonKind.Secondary, LunetIcons.Download, () => _ = ReceiveAsync()), "Receive");
-            var send = Named(LunetUi.Button("Enviar", ButtonKind.Primary, LunetIcons.Share, () => _ = SendAsync()), "Send");
+            var send = Named(LunetUi.Button("Enviar", ButtonKind.Secondary, LunetIcons.Share, () => _ = SendAsync()), "Send");
             foreach (var b in new[] { receive, send }) { b.MinHeight = 52; b.HorizontalAlignment = HorizontalAlignment.Stretch; b.Margin = new Thickness(LunetTokens.Space.Xxs); b.Opacity = _remoteBusy ? 0.5 : 1; actions.Children.Add(b); }
             _page.Children.Add(actions);
         }
@@ -266,17 +265,21 @@ public sealed class GitView : UserControl
         header.Click += (_, _) => { _accountOpen = !_accountOpen; Refresh(); };
         _page.Children.Add(header);
         if (!_accountOpen) return;
-        var name = Box("Seu nome", account.Name, "AccountName");
-        var email = Box("Seu e-mail", account.Email, "AccountEmail");
-        var user = Box("Usuário do servidor (pode ficar vazio no GitHub)", account.Username, "AccountUser");
-        var secret = Box("Token de acesso (fica só neste aparelho)", account.Token, "AccountToken");
+        var name = Box("Ex.: Ana Souza", account.Name, "AccountName");
+        var email = Box("voce@exemplo.com", account.Email, "AccountEmail");
+        var user = Box("Opcional no GitHub", account.Username, "AccountUser");
+        var secret = Box("ghp_…", account.Token, "AccountToken");
         secret.PasswordChar = '•';
-        var save = Named(LunetUi.Button("Salvar conta", ButtonKind.Primary, LunetIcons.Check, () => Run(() => SaveAccount(new GitAccount
+        var save = Named(LunetUi.Button("Salvar conta", ButtonKind.Secondary, LunetIcons.Check, () => Run(() => SaveAccount(new GitAccount
         {
             Name = (name.Text ?? "").Trim(), Email = (email.Text ?? "").Trim(), Username = (user.Text ?? "").Trim(), Token = (secret.Text ?? "").Trim(),
         }))), "SaveAccount");
         save.HorizontalAlignment = HorizontalAlignment.Left;
-        foreach (var c in new Control[] { name, email, user, secret, save }) _page.Children.Add(c);
+        foreach (var c in new Control[]
+        {
+            LunetUi.Field("Seu nome", name), LunetUi.Field("Seu e-mail", email), LunetUi.Field("Usuário do servidor", user),
+            LunetUi.Field("Token de acesso", secret, "Fica só neste aparelho; nunca vai para a pasta do jogo."), save,
+        }) _page.Children.Add(c);
     }
 
     private void Run(Action action)
@@ -334,24 +337,13 @@ public sealed class GitView : UserControl
 
     private static TextBox Box(string hint, string text, string name)
     {
-        var box = new TextBox { PlaceholderText = hint, Text = text, MinHeight = LunetTokens.MinTouch, FontFamily = LunetTokens.UiFont, VerticalContentAlignment = VerticalAlignment.Center, Name = name };
-        AutomationProperties.SetName(box, hint);
-        return box;
+        // The accessible name comes from the label around it (LunetUi.Field); the placeholder is only an example.
+        return new TextBox { PlaceholderText = hint, Text = text, MinHeight = LunetTokens.MinTouch, VerticalContentAlignment = VerticalAlignment.Center, Name = name };
     }
 
-    private static TextBlock Section(string text)
-    {
-        var t = LunetUi.Text(text.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
-        t.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
-        return t;
-    }
+    private static TextBlock Section(string text) => LunetUi.Section(text);
 
-    private static Control Notice(string text, string color) => new Border
-    {
-        Child = LunetUi.Text(text, LunetTokens.Type.Label), Padding = new Thickness(LunetTokens.Space.S),
-        Background = LunetTokens.Brush(LunetTokens.Color.Surface), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
-        BorderBrush = LunetTokens.Brush(color), BorderThickness = new Thickness(3, 0, 0, 0),
-    };
+    private static Control Notice(string text, string color) => LunetUi.Notice(text, color);
 
     private static Button Named(Button b, string name) { b.Name = name; return b; }
 }

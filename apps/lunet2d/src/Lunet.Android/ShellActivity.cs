@@ -92,6 +92,9 @@ public sealed class ShellActivity : AvaloniaActivity
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
         };
+        // §8 of the visual language: the system's "remove animations" turns the entries into an instant appearance.
+        try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
+        catch (Java.Lang.Exception) { }
         Content = _shell;
         // The code bar shows and hides the system keyboard (Avalonia exposes no call for it).
         _shell.SystemKeyboard = show =>

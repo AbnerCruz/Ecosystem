@@ -39,7 +39,7 @@ public sealed class TileCanvas : ZoomCanvas
     protected override void RenderContent(DrawingContext context, Rect a)
     {
         if (_map is not { } map || a.Width <= 0) return;
-        context.FillRectangle(LunetTokens.Brush("#1b1d22"), a);
+        context.FillRectangle(LunetTokens.Brush(LunetTokens.Ink.I3), a);
         var cw = a.Width / map.Width; var ch = a.Height / map.Height;
         var columns = _tileset is null ? 1 : Math.Max(1, (int)(_tileset.PixelSize.Width / map.TileWidth));
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
@@ -55,7 +55,7 @@ public sealed class TileCanvas : ZoomCanvas
                             var tile = map.GetTile(layer, new GridPoint(x, y));
                             if (tile <= 0) continue;
                             var dest = new Rect(a.X + x * cw, a.Y + y * ch, cw, ch);
-                            if (collision) { context.FillRectangle(LunetTokens.Brush("#66ff7b86"), dest); continue; }
+                            if (collision) { context.FillRectangle(LunetTokens.Brush("#66FF6B7A"), dest); continue; }
                             if (_tileset is null) { context.FillRectangle(LunetTokens.Brush(LunetTokens.Color.Primary), dest); continue; }
                             var i = tile - 1;
                             var src = new Rect(i % columns * map.TileWidth, i / columns * map.TileHeight, map.TileWidth, map.TileHeight);
@@ -305,7 +305,7 @@ public sealed class TileStudioView : UserControl
             var index = i;
             var selected = i == Session.Layer;
             var label = (map.IsLayerVisible(i) ? "" : "◌ ") + map.GetLayerName(i) + (map.IsCollisionLayer(i) ? " · colisão" : "");
-            var chip = LunetUi.Button(label, selected ? ButtonKind.Primary : ButtonKind.Secondary, null, () => { Session.SelectLayer(index); Refresh(); });
+            var chip = LunetUi.Button(label, selected ? ButtonKind.Selected : ButtonKind.Secondary, null, () => { Session.SelectLayer(index); Refresh(); });
             chip.MinHeight = 40;
             chip.Name = "Layer-" + i;
             _layers.Children.Add(chip);
@@ -385,7 +385,7 @@ public sealed class TileStudioView : UserControl
         _context.Children.Clear();
         Button Chip(string label, Action act, string name, bool on = false)
         {
-            var b = LunetUi.Button(label, on ? ButtonKind.Primary : ButtonKind.Secondary, null, act);
+            var b = LunetUi.Button(label, on ? ButtonKind.Selected : ButtonKind.Secondary, null, act);
             b.MinHeight = 40;
             b.Name = name;
             _context.Children.Add(b);
