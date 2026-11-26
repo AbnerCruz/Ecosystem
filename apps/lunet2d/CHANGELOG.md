@@ -27,6 +27,9 @@
   - **Ajustes → Jogo:**
     - **Preview isolado:** o jogo roda num processo separado, e um travamento não derruba o Lunet. Na volta, o console do jogo aparece, e um processo que morreu é avisado.
     - **Taxa de atualização alta.**
+- **IA do jogo mais leve ao responder:**
+  - enquanto a resposta chega, só o trecho ao vivo é atualizado, no máximo 10 vezes por segundo; antes, a conversa inteira era redesenhada a cada pedaço de texto;
+  - se você subir para ler, a tela não é puxada de volta para o fim.
 - **Correção:** o botão Rodar não cobre mais as teclas da barra de código.
 - **Validação:** testado no computador. Não testado num celular.
 

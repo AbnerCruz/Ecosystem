@@ -124,3 +124,60 @@ public sealed class ConnectionsTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>H4: streaming updates only the live block, never the whole conversation.</summary>
+public sealed class AiStreamingRenderTests
+{
+    private sealed class Blocking : AgentRuntime.IModelProvider
+    {
+        public readonly TaskCompletionSource Release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public string ProviderId => "chat-completions";
+        public async ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken)
+        {
+            await Release.Task.WaitAsync(cancellationToken);
+            return new([new AgentRuntime.TextBlock("pronto")], AgentRuntime.StopReason.EndTurn, new AgentRuntime.Usage(1, 1, AgentRuntime.Money.Zero("USD")));
+        }
+    }
+
+    private sealed class NoVault : Lunet.Ai.ISecretVault
+    {
+        public string? Get(string name) => null;
+        public void Set(string name, string value) { }
+        public void Delete(string name) { }
+    }
+
+    [Fact]
+    public void LiveUpdatesDuringARun_DoNotRebuildTheConversation()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-ai-live-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var model = new Blocking();
+                var aiDir = Path.Combine(root, ".ai");
+                var shell = new LunetShell(root) { AiHost = new AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "s.json"), new NoVault()), aiDir, model) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var ai = shell.WorkspaceView.Support.Ai;
+                ai.Input.Text = "explique o Update";
+                var run = ai.SendAsync();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(ai.Running);
+                var before = ai.FullRenders;
+                for (var i = 0; i < 200; i++) ai.RenderLive();          // what 200 streamed chunks do
+                Assert.Equal(before, ai.FullRenders);
+                model.Release.SetResult();
+                var until = DateTime.UtcNow.AddSeconds(20);
+                while (!run.IsCompleted && DateTime.UtcNow < until) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(5); }
+                Assert.True(run.IsCompleted);
+                Assert.False(ai.Running);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

@@ -33,6 +33,8 @@
 
 | H3 — M5 | A aba Jogo no Android roda o jogo na GPU: o `PreviewHost` e o `PreviewRenderer` GLES das telas antigas, sem mudança, hospedados num `NativeControlHost`. A `GameSession` dirige a prévia: compilar, pausar, passo, reiniciar, teclas e parar. Uma falha atrasada de uma execução já parada é ignorada. O app pausa e retoma a superfície GL junto com a Activity. Inspector e Desempenho medem o próprio jogo na GPU. Não há chip de velocidade. | `GpuPreviewTests`, com uma prévia falsa; build do APK. A superfície GL real só roda no Android. |
 
+| H4 — streaming | O painel de IA redesenhava toda a conversa (Markdown, código e diffs) a cada pedaço de texto ou passo recebido. Agora atualiza só o bloco ao vivo, no máximo a cada 100 ms. Quem subiu a rolagem para ler não é puxado de volta. | `AiStreamingRenderTests`: 200 atualizações ao vivo e zero reconstruções |
+
 ## Pendências conhecidas (não declaradas como feitas)
 
 - **M5, isolamento:** resolvido. Ajustes → Jogo → "Preview isolado" abre o jogo na Activity de processo separado (`IsolatedGpuPreview`). Na volta, a aba recolhe o console e acusa se o processo morreu (o arquivo marcador). Taxa de atualização alta também voltou a Ajustes.

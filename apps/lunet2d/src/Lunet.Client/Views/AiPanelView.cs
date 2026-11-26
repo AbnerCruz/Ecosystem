@@ -67,6 +67,7 @@ public sealed class AiPanelView : UserControl
         _shell = shell;
         AutomationProperties.SetName(_input, "Mensagem para a IA");
         _scroll.Content = _messages;
+        _scroll.ScrollChanged += (_, _) => _followTail = _scroll.Offset.Y >= _scroll.Extent.Height - _scroll.Viewport.Height - 48;
         Content = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.S) };
     }
 
@@ -229,8 +230,8 @@ public sealed class AiPanelView : UserControl
         var request = new LunetAiRequest(loaded.Settings with { Model = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : "teste" },
             loaded.ApiKey ?? "chave-local-de-teste", context, new ShellAiBuild(_shell.Workspace), host.Provider,
             Mode: mode,
-            Steps: new Progress<LunetAiStep>(step => { var i = _steps.FindIndex(s => s.Id == step.Id); if (i >= 0) _steps[i] = step; else _steps.Add(step); RenderMessages(); }),
-            PartialText: new Progress<string>(text => { _partial = text; RenderMessages(); }));
+            Steps: new Progress<LunetAiStep>(step => { var i = _steps.FindIndex(s => s.Id == step.Id); if (i >= 0) _steps[i] = step; else _steps.Add(step); ScheduleLive(); }),
+            PartialText: new Progress<string>(text => { _partial = text; ScheduleLive(); }));
         _input.Text = "";
         Mode = LunetAiMode.Teach; // Fazer is a choice for one message, never sticky
         _steps.Clear(); _partial = "";
@@ -259,8 +260,46 @@ public sealed class AiPanelView : UserControl
 
     public void Stop() => _run?.Cancel();
 
+    // ---- the live part of a run (steps and streamed text) ----
+    // Every token and step used to rebuild the whole conversation (Markdown, code blocks, diffs): a long history made
+    // the streaming stutter (GOAL H4: "evitar rebuild por token"). Now the history is built at the start and end of a
+    // run only; while it runs, one live block is updated in place, at most ten times a second.
+    private readonly StackPanel _live = new() { Spacing = 2 };
+    private readonly TextBlock _livePartial = LunetUi.Text("", LunetTokens.Type.Label);
+    private readonly Avalonia.Threading.DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
+    private bool _liveTimerHooked;
+
+    /// <summary>How many times the whole conversation was rebuilt (tests: streaming must not rebuild it).</summary>
+    public int FullRenders { get; private set; }
+
+    private void ScheduleLive()
+    {
+        if (!_liveTimerHooked) { _liveTimerHooked = true; _liveTimer.Tick += (_, _) => { _liveTimer.Stop(); RenderLive(); }; }
+        if (!_liveTimer.IsEnabled) _liveTimer.Start();
+    }
+
+    /// <summary>Updates only the live block (steps and the text so far); the rest of the conversation stays as built.</summary>
+    public void RenderLive()
+    {
+        if (!Running) return;
+        if (!_messages.Children.Contains(_live)) { RenderMessages(); return; }
+        _live.Children.Clear();
+        _livePartial.TextWrapping = TextWrapping.Wrap;
+        foreach (var step in _steps.TakeLast(6))
+            _live.Children.Add(LunetUi.Text((step.Status == LunetAiStepStatus.Done ? "✓ " : "… ") + step.Label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        _livePartial.Text = _partial;
+        if (_partial.Length > 0) _live.Children.Add(_livePartial);
+        if (_live.Children.Count == 0) _live.Children.Add(LunetUi.Text("Pensando…", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        if (_followTail) _scroll.ScrollToEnd();
+    }
+
+    // The reader scrolled up to read: streaming does not pull the view back down until they return to the end.
+    private bool _followTail = true;
+
     private void RenderMessages()
     {
+        FullRenders++;
+        _liveTimer.Stop();
         _messages.Children.Clear();
         var history = _session?.History ?? [];
         if (history.Count == 0 && !Running)
@@ -273,13 +312,10 @@ public sealed class AiPanelView : UserControl
         }
         if (Running)
         {
-            var live = new StackPanel { Spacing = 2 };
-            foreach (var step in _steps.TakeLast(6))
-                live.Children.Add(LunetUi.Text((step.Status == LunetAiStepStatus.Done ? "✓ " : "… ") + step.Label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
-            if (_partial.Length > 0) live.Children.Add(LunetUi.Text(_partial, LunetTokens.Type.Label));
-            if (live.Children.Count == 0) live.Children.Add(LunetUi.Text("Pensando…", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
-            _messages.Children.Add(live);
+            _messages.Children.Add(_live);
+            RenderLive();
         }
+        _followTail = true;
         _scroll.ScrollToEnd();
     }
 
