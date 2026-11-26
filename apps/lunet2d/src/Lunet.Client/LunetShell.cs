@@ -438,6 +438,18 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
+        else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
+        {
+            e.Handled = _workspaceView.Code.BackToPosition();
+        }
+        else if (e.Key == Key.B && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code
+            && _workspaceView.Code.Surface is Views.CodeSurface block
+            && Lunet.Editor.IndentationService.InsertBlock(block.Text, block.SelectionStart, block.SelectionEnd) is var r)
+        {
+            block.Replace(r.Start, r.Start + r.DeleteLength, r.Insert, r.SelectionEnd);
+            block.Select(r.SelectionStart, r.SelectionEnd);
+            e.Handled = true;
+        }
         else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Notes)
         {
             (State.Tab == WorkspaceTab.Code ? _workspaceView.Code : _workspaceView.Notes).ShowFind();

@@ -102,6 +102,64 @@ public sealed class CodeSurface : ITextSurface
         _editor.TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
     }
 
+    // ---------- Folding (the analyzer's regions: types, methods, blocks, #region, comments, usings) ----------
+
+    private AvaloniaEdit.Folding.FoldingManager? _folding;
+
+    /// <summary>The foldable regions, kept from the analyzer; folded ones stay folded while the text changes.</summary>
+    public void SetFolds(IReadOnlyList<Lunet.Editor.FoldRegion> regions)
+    {
+        _folding ??= AvaloniaEdit.Folding.FoldingManager.Install(_editor.TextArea);
+        var doc = _editor.Document;
+        var folds = regions.Where(r => r.StartLine >= 1 && r.EndLine <= doc.LineCount && r.EndLine > r.StartLine)
+            .Select(r => new AvaloniaEdit.Folding.NewFolding(doc.GetLineByNumber(r.StartLine).EndOffset, doc.GetLineByNumber(r.EndLine).EndOffset) { Name = " " + r.Placeholder })
+            .OrderBy(f => f.StartOffset).ToList();
+        _folding.UpdateFoldings(folds, -1);
+    }
+
+    public int FoldCount => _folding?.AllFoldings.Count() ?? 0;
+    public int FoldedCount => _folding?.AllFoldings.Count(f => f.IsFolded) ?? 0;
+
+    /// <summary>Folds or unfolds the innermost region that holds the caret's line. False when there is none.</summary>
+    public bool ToggleFoldAtCaret()
+    {
+        if (_folding is null) return false;
+        var line = _editor.Document.GetLineByOffset(_editor.CaretOffset);
+        var fold = _folding.AllFoldings.Where(f => f.StartOffset <= line.EndOffset && f.EndOffset >= line.Offset)
+            .OrderBy(f => f.EndOffset - f.StartOffset).FirstOrDefault();
+        if (fold is null) return false;
+        fold.IsFolded = !fold.IsFolded;
+        return true;
+    }
+
+    public void SetAllFolded(bool folded)
+    {
+        if (_folding is null) return;
+        foreach (var f in _folding.AllFoldings) f.IsFolded = folded;
+    }
+
+    /// <summary>Selects the next occurrence of the selection (or of the word at the caret), wrapping around.</summary>
+    public bool SelectNextOccurrence()
+    {
+        var text = Text;
+        var (start, end) = (SelectionStart, SelectionEnd);
+        if (end == start)
+        {
+            while (start > 0 && (char.IsLetterOrDigit(text[start - 1]) || text[start - 1] == '_')) start--;
+            while (end < text.Length && (char.IsLetterOrDigit(text[end]) || text[end] == '_')) end++;
+            if (end == start) return false;
+            Select(start, end); // first press: the word itself, as VS Code
+            return true;
+        }
+        var word = text[start..end];
+        var next = text.IndexOf(word, end, StringComparison.Ordinal);
+        if (next < 0) next = text.IndexOf(word, StringComparison.Ordinal);
+        if (next < 0) return false;
+        Select(next, next + word.Length);
+        _editor.ScrollTo(_editor.Document.GetLineByOffset(next).LineNumber, 1);
+        return true;
+    }
+
     /// <summary>Puts the caret on a 1-based line and column and brings it into view (Problemas → código).</summary>
     public void GoTo(int line, int column)
     {

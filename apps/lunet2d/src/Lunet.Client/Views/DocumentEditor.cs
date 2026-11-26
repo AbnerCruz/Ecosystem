@@ -63,6 +63,7 @@ public sealed class DocumentEditor : UserControl
             var result = await assistant.AnalyzeAsync(path, text, caret, version, ++_analysisRevision, complete: KeyboardVisible, cts.Token);
             if (version != _analysisVersion || path != OpenPath) return; // a newer edit or another file won
             code.SetDiagnostics(result.Diagnostics);
+            code.SetFolds(result.Folds);
             _shell.SetLiveProblems(code.Diagnostics);
             _keyboard?.SetAnalysis(text, caret, result.Completions, result.Signature);
         }
@@ -231,6 +232,38 @@ public sealed class DocumentEditor : UserControl
         }
     }
 
+    // ---------- Jumps and the way back ----------
+
+    private readonly Stack<(string Path, int Caret)> _positions = new();
+    public int PositionsBack => _positions.Count;
+
+    /// <summary>Goes to a line (in this file or another), remembering where you were for <see cref="BackToPosition"/>.</summary>
+    public void JumpTo(string? file, int line, int column)
+    {
+        if (OpenPath is { } here)
+        {
+            _positions.Push((here, _surface.Caret));
+            if (_positions.Count > 50)
+            {
+                var kept = _positions.Take(50).Reverse().ToArray(); // newest 50, oldest first
+                _positions.Clear();
+                foreach (var p in kept) _positions.Push(p);
+            }
+        }
+        if (file is not null && file != OpenPath && _shell.Workspace.Files().Contains(file)) Load(file);
+        if (_surface is CodeSurface code) { code.GoTo(line, column); code.Focus(); }
+    }
+
+    /// <summary>Back to where you were before the last jump (definition, line, problem, symbol).</summary>
+    public bool BackToPosition()
+    {
+        if (!_positions.TryPop(out var position)) return false;
+        if (position.Path != OpenPath && _shell.Workspace.Files().Contains(position.Path)) Load(position.Path);
+        _surface.Caret = Math.Min(position.Caret, _surface.Text.Length);
+        if (_surface is CodeSurface code) code.Focus();
+        return true;
+    }
+
     // ---------- File actions (new, rename, delete) ----------
 
     private bool _fileMenu, _confirmDelete;
@@ -272,6 +305,43 @@ public sealed class DocumentEditor : UserControl
         _fileMenu = false;
         Load(to);
         return to;
+    }
+
+    /// <summary>Writes a copy of the open file under a new name (same folder and extension) and opens the copy.</summary>
+    public string? SaveCopyAs(string newName)
+    {
+        if (OpenPath is not { } from) return null;
+        newName = newName.Trim();
+        if (newName.Length == 0 || newName.IndexOfAny(['/', '\\']) >= 0) throw new ArgumentException("Use só o nome do arquivo, sem pastas.");
+        var ext = Path.GetExtension(from);
+        if (!newName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) newName += ext;
+        var folder = Path.GetDirectoryName(from)?.Replace('\\', '/');
+        var to = string.IsNullOrEmpty(folder) ? newName : folder + "/" + newName;
+        if (_shell.Workspace.Files().Contains(to, StringComparer.OrdinalIgnoreCase)) throw new ArgumentException("Já existe um arquivo com esse nome.");
+        Save();
+        _shell.Workspace.Write(to, _surface.Text);
+        _fileMenu = false;
+        Load(to);
+        return to;
+    }
+
+    /// <summary>Opens find and replace with the word under the caret: change every occurrence at once.</summary>
+    public void EditAllOccurrences()
+    {
+        var text = _surface.Text;
+        int a = _surface.SelectionStart, b = _surface.SelectionEnd;
+        if (a == b)
+        {
+            while (a > 0 && (char.IsLetterOrDigit(text[a - 1]) || text[a - 1] == '_')) a--;
+            while (b < text.Length && (char.IsLetterOrDigit(text[b]) || text[b] == '_')) b++;
+        }
+        _findOpen = true;
+        _matchCase = true;
+        _wholeWord = true; // the symbol, not the same letters inside other words
+        _findQuery = text[a..b];
+        _replaceText = _findQuery;
+        Rebuild();
+        Find(_findQuery);
     }
 
     /// <summary>Deletes the open file (the game's entry and lunet.json are kept by the project).</summary>
@@ -319,6 +389,9 @@ public sealed class DocumentEditor : UserControl
             var rename = LunetUi.Button("Renomear", ButtonKind.Ghost, LunetIcons.Edit, () => FileAction(() => RenameOpen(name.Text ?? "")));
             rename.Name = "RenameOpen";
             Add(rename);
+            var copy = LunetUi.Button("Salvar cópia", ButtonKind.Ghost, LunetIcons.Copy, () => FileAction(() => SaveCopyAs(name.Text ?? "")));
+            copy.Name = "SaveCopyAs";
+            Add(copy);
             var delete = LunetUi.Button(_confirmDelete ? "Apagar mesmo?" : "Apagar", ButtonKind.Ghost, LunetIcons.Trash, () =>
             {
                 if (!_confirmDelete) { _confirmDelete = true; Rebuild(); }
@@ -341,13 +414,13 @@ public sealed class DocumentEditor : UserControl
 
     private bool _findOpen;
     private string _findQuery = "", _replaceText = "";
-    private bool _matchCase;
+    private bool _matchCase, _wholeWord;
     private readonly TextBlock _findCount = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
 
     public bool FindOpen => _findOpen;
-    private Lunet.Editor.FindOptions FindOptions => new(MatchCase: _matchCase);
+    private Lunet.Editor.FindOptions FindOptions => new(MatchCase: _matchCase, WholeWord: _wholeWord);
 
-    public void ShowFind() { _findOpen = true; Rebuild(); }
+    public void ShowFind() { _findOpen = true; _wholeWord = false; Rebuild(); }
     public void HideFind() { _findOpen = false; Rebuild(); }
 
     /// <summary>Sets what to look for; selects the first match from the caret. Returns how many there are.</summary>

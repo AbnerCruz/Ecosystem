@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.1-dev.1000605 — Editor com dobras, saltos e cópia
+
+- **Dobrar código:** setas na margem dobram classes, métodos, blocos, `#region` e comentários. Pela paleta (lupa): **Dobrar ou desdobrar região**, **Dobrar tudo** e **Desdobrar tudo**.
+- **Voltar à posição anterior** (paleta ou Alt+←): depois de ir para uma definição, linha, problema ou símbolo, volta para onde você estava, inclusive em outro arquivo.
+- **Selecionar próxima ocorrência:** o primeiro toque seleciona a palavra sob o cursor, e os seguintes vão para a próxima igual.
+- **Editar todas as ocorrências** abre buscar e substituir com a palavra sob o cursor, só palavras inteiras: `x` não mexe em `max`.
+- **Inserir bloco** (paleta ou Ctrl+Shift+B) cria `{ }` com a linha recuada dentro.
+- **Salvar cópia** no menu ⋮ do arquivo grava o arquivo com outro nome e abre a cópia.
+
 ## 0.0.1-dev.1000604 — Jogo e código ao alcance do polegar
 
 - **Rodar** flutua no canto de baixo do código e das notas, onde o polegar alcança. Some enquanto você digita. No computador continua no alto.

@@ -171,7 +171,7 @@ public sealed class SupportPanelView : UserControl
             {
                 _shell.State.ShowPanel(SupportPanel.None);
                 _shell.State.SelectTab(WorkspaceTab.Code);
-                if (_shell.WorkspaceView.Code.Surface is CodeSurface code) { code.GoTo(diagnostic.Line, diagnostic.Column); code.Focus(); }
+                _shell.WorkspaceView.Code.JumpTo(null, diagnostic.Line, diagnostic.Column);
             };
             list.Children.Add(row);
         }

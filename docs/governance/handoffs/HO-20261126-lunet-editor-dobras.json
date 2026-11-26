@@ -1,0 +1,71 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-lunet-editor-dobras",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T06:09:10Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "320d33b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CommandPaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs",
+    "docs/governance/handoffs/HO-20261126-lunet-editor-dobras.json"
+  ],
+  "work_completed": [
+    "Audit of the previous 'Editor completo' commands against the shell editor; gaps closed: code folding (AvaloniaEdit FoldingManager fed by the analyzer's FoldRegion list, toggle at caret, fold/unfold all), position history (DocumentEditor.JumpTo used by palette, outline, go to line and Problemas; BackToPosition, Alt+Left), select next occurrence, edit all occurrences (find/replace prefilled, whole word, match case), Inserir bloco (IndentationService.InsertBlock, Ctrl+Shift+B), Salvar cópia in the file menu.",
+    "Multi-cursor editing is not available in AvaloniaEdit; 'Editar todas as ocorrências' covers the same use through replace-all."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite (incl. CodeEditor_FoldsRegions_SelectsOccurrences_InsertsBlocks_AndGoesBack)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs"
+    },
+    {
+      "check": "Foundation consistency (22 checks)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "tests/consistency/Check.cs"
+    }
+  ],
+  "known_issues": [
+    "Not exercised on a physical device (fold margin touch targets, Alt+Left needs a hardware keyboard).",
+    "The 'Editor completo' route still opens the previous screen: its Publicar/Apresentar entries still need an audit before removing the route."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Audit Publicar/Apresentar and the previous editor explorer (folders) before removing the 'Editor completo' route; M5 GL preview; AI hint in Aprender"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

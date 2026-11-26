@@ -847,4 +847,65 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void CodeEditor_FoldsRegions_SelectsOccurrences_InsertsBlocks_AndGoesBack()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-fold-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var editor = shell.WorkspaceView.Code;
+                var code = (CodeSurface)editor.Surface;
+                code.Text = "public sealed class A\n{\n    void M()\n    {\n        int x = 1;\n        x = x + 1;\n        int max = 2;\n    }\n}\n";
+                var analysis = editor.AnalyzeNow();
+                while (!analysis.IsCompleted) Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(code.FoldCount >= 2);                                   // the class and the method
+                code.GoTo(3, 5);
+                Assert.True(code.ToggleFoldAtCaret());
+                Assert.Equal(1, code.FoldedCount);
+                code.SetAllFolded(false);
+                Assert.Equal(0, code.FoldedCount);
+
+                code.GoTo(5, 13);                                                    // inside "x"
+                Assert.True(code.SelectNextOccurrence());
+                Assert.Equal("x", code.Text[code.SelectionStart..code.SelectionEnd]);
+                var first = code.SelectionStart;
+                Assert.True(code.SelectNextOccurrence());
+                Assert.True(code.SelectionStart > first);
+
+                editor.JumpTo(null, 1, 1);
+                Assert.Equal(1, editor.PositionsBack);
+                Assert.True(editor.BackToPosition());
+                Assert.True(code.Caret > 0);
+                Assert.False(editor.BackToPosition());
+
+                code.GoTo(5, 13);
+                editor.EditAllOccurrences();
+                Assert.True(editor.FindOpen);
+                Assert.Equal(3, editor.ReplaceAll("valor"));                          // x, x, x — "max"-like words untouched
+                Assert.Contains("int valor = 1;", code.Text);
+                Assert.Contains("int max = 2;", code.Text);
+                editor.HideFind();
+
+                var copy = editor.SaveCopyAs("Copia");
+                Assert.Equal("Copia.cs", copy);
+                Assert.Contains("int valor = 1;", shell.Workspace.Read(copy!));
+                Assert.Equal(copy, editor.OpenPath);
+                Assert.Throws<ArgumentException>(() => editor.SaveCopyAs("Copia"));
+
+                code.GoTo(5, 9);
+                var r = Lunet.Editor.IndentationService.InsertBlock(code.Text, code.SelectionStart, code.SelectionEnd);
+                code.Replace(r.Start, r.Start + r.DeleteLength, r.Insert, r.SelectionEnd);
+                Assert.Contains("{", code.Text.Split('\n')[4] + code.Text.Split('\n')[5]);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }
