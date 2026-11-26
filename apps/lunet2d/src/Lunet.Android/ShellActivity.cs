@@ -83,7 +83,9 @@ public sealed class ShellActivity : AvaloniaActivity
             // P4: the game runs full screen in the :gameplay process, prepared by the existing pipeline.
             PlayGame = game => OpenRoute("play-game", game),
             // A4: the sound Studio plays its WAV through MediaPlayer (a temp file in the cache).
-            PlaySound = PlayWav,
+            PlaySound = wav => _ = PlayWav(wav),
+            StopSound = StopWav,
+            IsSoundPlaying = () => _player is not null || _wavWrite is not null,
             // P7: the same settings.json as the previous screens.
             SettingsPath = Path.Combine(FilesDir!.AbsolutePath, "settings.json"),
             // P5: Gerar APK packs with the same runtime template and per-game Keystore key as the previous screen.
@@ -173,6 +175,9 @@ public sealed class ShellActivity : AvaloniaActivity
     }
 
     private global::Android.Media.MediaPlayer? _player;
+    private CancellationTokenSource? _wavWrite;
+    private string? _wavFile;
+    private bool _paused;
 
     /// <summary>The previous screen's packing (MainActivity.GameBuild): runtime template from the app's assets, the
     /// game's own signing key from the Android Keystore, so a new APK installs over the previous one.</summary>
@@ -191,19 +196,82 @@ public sealed class ShellActivity : AvaloniaActivity
         catch (Java.Lang.Exception e) { throw new InvalidOperationException("Assinatura no aparelho falhou: " + e.Message, e); }
     }
 
-    private void PlayWav(byte[] wav)
+    private async Task PlayWav(byte[] wav)
     {
+        if (_paused) return;
+        StopWav();
+        var write = new CancellationTokenSource();
+        _wavWrite = write;
+        var file = Path.Combine(CacheDir!.AbsolutePath, "lunet-preview-" + Guid.NewGuid().ToString("N") + ".wav");
         try
         {
-            var file = Path.Combine(CacheDir!.AbsolutePath, "studio-preview.wav");
-            File.WriteAllBytes(file, wav);
-            _player?.Release();
-            _player = new global::Android.Media.MediaPlayer();
-            _player.SetDataSource(file);
-            _player.Prepare();
-            _player.Start();
+            await File.WriteAllBytesAsync(file, wav, write.Token);
+            if (write.IsCancellationRequested) return;
+            _wavFile = file;
+            var player = new global::Android.Media.MediaPlayer();
+            _player = player;
+            player.Prepared += (_, _) =>
+            {
+                if (!ReferenceEquals(_player, player)) return;
+                try { player.Start(); }
+                catch (Java.Lang.Exception e) { WavFailed(e.Message ?? "Falha ao iniciar o áudio."); }
+            };
+            player.Completion += (_, _) => { if (ReferenceEquals(_player, player)) StopWav(); };
+            player.Error += (_, e) =>
+            {
+                e.Handled = true;
+                if (ReferenceEquals(_player, player)) WavFailed($"{e.What}/{e.Extra}");
+            };
+            player.SetDataSource(file);
+            player.PrepareAsync();
         }
-        catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { global::Android.Util.Log.Warn("Lunet.Sound", ex.Message); }
+        catch (OperationCanceledException) when (write.IsCancellationRequested) { }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or Java.Lang.Exception)
+        {
+            if (!write.IsCancellationRequested) WavFailed(e.Message);
+        }
+        finally
+        {
+            if (ReferenceEquals(_wavWrite, write)) _wavWrite = null;
+            if (_wavFile != file) DeleteWav(file);
+            write.Dispose();
+        }
+    }
+
+    private void WavFailed(string message)
+    {
+        StopWav();
+        global::Android.Util.Log.Warn("Lunet.Sound", message);
+        global::Android.Widget.Toast.MakeText(this, "Não foi possível tocar o áudio.", global::Android.Widget.ToastLength.Short)?.Show();
+    }
+
+    private void StopWav()
+    {
+        _wavWrite?.Cancel();
+        _wavWrite = null;
+        var player = _player;
+        _player = null;
+        if (player is not null)
+        {
+            try { player.Release(); }
+            catch (Java.Lang.Exception e) { global::Android.Util.Log.Warn("Lunet.Sound", e.Message); }
+            finally { player.Dispose(); }
+        }
+
+        if (_wavFile is { } file)
+        {
+            _wavFile = null;
+            DeleteWav(file);
+        }
+    }
+
+    private static void DeleteWav(string file)
+    {
+        try { File.Delete(file); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            global::Android.Util.Log.Warn("Lunet.Sound", e.Message);
+        }
     }
 
     /// <summary>
@@ -235,6 +303,7 @@ public sealed class ShellActivity : AvaloniaActivity
     protected override void OnResume()
     {
         base.OnResume();
+        _paused = false;
         // Ajustes → Pasta de projetos may have switched the folder: the shell reopens over the new one.
         if (_shell is not null && ProjectsRoot(this) != _projectsRoot)
         {
@@ -250,6 +319,7 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnDestroy()
     {
+        StopWav();
         _ecosystem?.Dispose();
         _ecosystem = null;
         base.OnDestroy();
@@ -257,6 +327,9 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnPause()
     {
+        _paused = true;
+        if (_shell is { } shell) shell.CancelStudioAudio();
+        else StopWav();
         _shell?.SaveAll(); // Android may kill the process after this
         base.OnPause();
     }

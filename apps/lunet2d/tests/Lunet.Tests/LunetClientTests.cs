@@ -1016,6 +1016,10 @@ internal static class UiSession
     public static void Run(Action action) =>
         Session.Value.Dispatch(action, TestContext.Current.CancellationToken).GetAwaiter().GetResult();
 
+    public static void RunAsync(Func<Task> action) =>
+        Session.Value.Dispatch<bool>(async () => { await action(); return true; }, TestContext.Current.CancellationToken)
+            .GetAwaiter().GetResult();
+
     public sealed class TestApp : LunetApp
     {
         public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<TestApp>().UseSkia()

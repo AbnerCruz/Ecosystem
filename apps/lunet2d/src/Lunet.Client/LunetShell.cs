@@ -121,6 +121,8 @@ public sealed class LunetShell : UserControl
 
     /// <summary>Plays a WAV (the sound Studio); set by the Android head, null (silent) elsewhere.</summary>
     public Action<byte[]>? PlaySound { get; set; }
+    public Action? StopSound { get; set; }
+    public Func<bool>? IsSoundPlaying { get; set; }
 
     /// <summary>Plays a game full screen (P4); the Android head runs it in its own process. Null: it runs in the workspace.</summary>
     public Action<string>? PlayGame { get; set; }
@@ -442,6 +444,13 @@ public sealed class LunetShell : UserControl
     /// <summary>Saves open documents and stops the game (the head calls it when the app goes away).</summary>
     /// <summary>Saves the open documents now (the Android head calls it when the app leaves the screen).</summary>
     public void SaveAll() => _workspaceView.SaveAll();
+
+    public void CancelStudioAudio()
+    {
+        var studio = (_home.Sheet as StudiosView)?.Studio ?? _workspaceView.Studio;
+        if (studio is MusicStudioView music) music.StopPreview();
+        else StopSound?.Invoke();
+    }
 
     public void Shutdown()
     {

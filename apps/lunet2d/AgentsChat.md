@@ -896,3 +896,8 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Ordem do proprietário: "esquece esse lance de Lunet Novo, Lunet é Lunet"; design ainda amador (teclado e app); não parar até todas as features implementadas; tudo no GitHub; sempre estudar e pesquisar.
 - Feito: `Lunet.Android` abre pela casca (`ShellActivity`, AvaloniaActivity com init sob demanda; a fonte do Avalonia mostra que `AvaloniaAndroidApplication` iniciaria o Avalonia também nos processos `:gameplay`/`:preview`). Rotas para as telas atuais (`MainActivity.Route.cs`), mesmos jogos, Back volta salvando. `Lunet.Shell.Android` removido.
 - Próximo: estudo de design (LUNET-537) e migração recurso a recurso (LUNET-536), começando pelo inventário.
+
+### 20261126-codex-lunet-studio-audio — 26/11/2026 — Codex → integrador — LUNET-500/511/536
+- Base `f22eb24586f822d1104573a8b2b3aa55cb63a624`. Ramo `fix/lunet-studio-audio-20261126`.
+- Corrigidas as rotas do Music Studio para abertura, renderização, transporte e gravação, com proteção do par fonte/WAV, acompanhamento de oitava e continuidade de cópias WAV sem jogo.
+- [Relatório com inventário, referência externa e evidência](docs/audits/studios-audio-2026-11-26.md). O relato do Android não veio com log ou projeto e a ocorrência física segue sem confirmação. O código mantém os demais itens da Fase 5 em aberto.

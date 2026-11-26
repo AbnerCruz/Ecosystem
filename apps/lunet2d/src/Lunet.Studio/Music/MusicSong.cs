@@ -140,14 +140,18 @@ public sealed class MusicSong
         Tracks ??= []; Patterns ??= []; Order ??= [];
         if (Tracks.Count is 0 or > MaxTracks) throw new InvalidDataException($"De 1 a {MaxTracks} faixas.");
         if (Patterns.Count is 0 or > MaxPatterns) throw new InvalidDataException($"De 1 a {MaxPatterns} padrões.");
+        if (Root is < 0 or > 127) throw new InvalidDataException("Tônica MIDI entre 0 e 127.");
+        if (Tracks.Any(track => track is null || track.Instrument is null))
+            throw new InvalidDataException("A música contém uma faixa ou instrumento vazio.");
         if (Order.Count > MaxOrder) throw new InvalidDataException($"No máximo {MaxOrder} padrões no arranjo.");
         if (Order.Any(i => i < 0 || i >= Patterns.Count)) throw new InvalidDataException("O arranjo cita um padrão que não existe.");
         foreach (var pattern in Patterns)
         {
+            if (pattern is null) throw new InvalidDataException("A música contém um padrão vazio.");
             pattern.Notes ??= [];
             if (pattern.Steps is < 1 or > MaxSteps) throw new InvalidDataException($"Padrão {pattern.Name}: de 1 a {MaxSteps} passos.");
             foreach (var n in pattern.Notes)
-                if (n.Track < 0 || n.Track >= Tracks.Count || n.Step < 0 || n.Step >= pattern.Steps || n.Pitch is < 0 or > 127 ||
+                if (n is null || n.Track < 0 || n.Track >= Tracks.Count || n.Step < 0 || n.Step >= pattern.Steps || n.Pitch is < 0 or > 127 ||
                     n.Length < 1 || n.Length > MaxSteps || !float.IsFinite(n.Velocity) || n.Velocity is < 0 or > 1)
                     throw new InvalidDataException($"Nota inválida no padrão {pattern.Name}.");
         }

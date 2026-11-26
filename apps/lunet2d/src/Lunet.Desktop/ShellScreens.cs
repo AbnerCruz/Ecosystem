@@ -64,7 +64,8 @@ public static class ShellScreens
                 shell.Home.CloseSheet(); shell.Home.CloseSheet();
                 var studios = shell.Home.ShowStudios();
                 studios.NewSprite().Paint(3, 3, first: true); studios.Back();
-                studios.NewMusic(); studios.Back();
+                SampleSong(studios.Storage);
+                studios.OpenMusic(SampleSongPath); studios.Back();
                 Shot(window, output, size, "2l-studios", written);
                 var tone = studios.NewTone(330, 1.2, Lunet.Studio.WaveShape.Triangle);
                 tone.SetCut(0.15, 0.95); tone.SetLoop(true, 0.3, 0.8);
@@ -185,7 +186,8 @@ public static class ShellScreens
                 Shot(window, output, size, "7c-apresentar", written);
                 mind.EndPresentation();
                 shell.Back();
-                var music = shell.WorkspaceView.NewMusic();
+                SampleSong(new Lunet.Core.StudioAssetWorkspace(game.Directory));
+                var music = shell.WorkspaceView.OpenMusic(SampleSongPath);
                 Shot(window, output, size, "8f-musica", written);
                 music.ShowPanel(Lunet.Client.Views.MusicPanel.Track);
                 Shot(window, output, size, "8f2-faixa", written);
@@ -284,6 +286,11 @@ public static class ShellScreens
             }
         }
         """;
+
+    private const string SampleSongPath = "Content/Audio/exemplo.song.json";
+
+    private static void SampleSong(Lunet.Core.StudioAssetWorkspace storage) =>
+        storage.WriteText(SampleSongPath, Lunet.Studio.Music.MusicSong.Starter("Exemplo").ToJson());
 
     /// <summary>A 16×16 pixel-art face, so the captures show a real picture.</summary>
     private static void SamplePng(string file)

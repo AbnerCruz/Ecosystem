@@ -48,6 +48,16 @@ public sealed class StudioAssetWorkspace
 
     public byte[] ReadBytes(string relativePath) => File.ReadAllBytes(Resolve(relativePath));
 
+    public byte[] ReadBytes(string relativePath, int maxBytes)
+    {
+        using var file = File.OpenRead(Resolve(relativePath));
+        if (file.Length > maxBytes)
+            throw new InvalidDataException($"O arquivo ultrapassa o tamanho máximo de {maxBytes / (1024 * 1024)} MiB.");
+        var bytes = new byte[(int)file.Length];
+        file.ReadExactly(bytes);
+        return bytes;
+    }
+
     public void WriteText(string relativePath, string value) =>
         WriteBytes(relativePath, System.Text.Encoding.UTF8.GetBytes(value));
 

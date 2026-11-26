@@ -15,7 +15,7 @@ public readonly record struct WavePeak(float Minimum, float Maximum);
 /// </summary>
 public sealed class WaveAudioDocument
 {
-    private const int MaxSourceBytes = 24 * 1024 * 1024;
+    public const int MaxSourceBytes = 24 * 1024 * 1024;
     private const int MaxSamples = 8_000_000;
     private readonly short[] _samples;
 

@@ -232,12 +232,38 @@ public sealed class LunetClientMindMapTests
 public sealed class LunetClientMusicTests
 {
     [Fact]
+    public void MusicStudio_InvalidDraftRemainsIntactAndCanBeClosed()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-invalid-song-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var studios = shell.Home.ShowStudios();
+                const string path = "Content/Audio/quebrada.song.json";
+                const string broken = "{ invalid";
+                studios.Storage.WriteBundle((path, System.Text.Encoding.UTF8.GetBytes(broken)));
+
+                Assert.True(studios.Activate(path));
+                var view = Assert.IsType<MusicStudioView>(studios.Studio);
+                Assert.Contains("Não foi possível abrir", Assert.IsType<TextBlock>(
+                    Assert.IsType<StackPanel>(view.Content).Children[1]).Text);
+                Assert.True(studios.Back());
+                Assert.Null(studios.Studio);
+                Assert.Equal(broken, studios.Storage.ReadText(path));
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void MusicStudio_StartsWithASong_TogglesNotesPlaysAndSaves()
     {
         var root = Path.Combine(Path.GetTempPath(), "lunet-music-" + Guid.NewGuid().ToString("N"));
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var played = new List<byte[]>();
                 var shell = new LunetShell(root) { PlaySound = played.Add };
@@ -247,6 +273,8 @@ public sealed class LunetClientMusicTests
                 var studio = shell.WorkspaceView.NewMusic();
                 Assert.Equal(4, studio.Song.Tracks.Count);                           // melody, chords, bass, drums
                 Assert.NotEmpty(studio.Song.Patterns[studio.Pattern].Notes);
+                studio.SelectTrack(3);
+                Assert.InRange(36, studio.Roll.PitchOfRow(studio.Roll.Rows - 1), studio.Roll.PitchOfRow(0));
                 studio.SelectTrack(0);
                 var before = studio.Song.Patterns[studio.Pattern].Notes.Count;
                 var pitch = studio.Roll.PitchOfRow(0);
@@ -257,10 +285,15 @@ public sealed class LunetClientMusicTests
                 Assert.Equal(before, studio.Song.Patterns[studio.Pattern].Notes.Count);
                 studio.AddPattern(duplicate: true);
                 Assert.Equal(3, studio.Song.Patterns.Count);
-                studio.PlayPattern();
+                var previewsBeforeStop = played.Count;
+                var cancelled = studio.PlaySong();
+                studio.StopPreview();
+                await cancelled;
+                Assert.Equal(previewsBeforeStop, played.Count);
+                await studio.PlayPattern();
                 Assert.Equal((byte)'R', played[^1][0]);
 
-                Assert.True(shell.Back());
+                Assert.True(await studio.CloseAsync());
                 var dir = shell.Workspace.Project!.Directory;
                 Assert.True(File.Exists(Path.Combine(dir, "Content", "Audio", "musica-1.song.json")));
                 Assert.True(new FileInfo(Path.Combine(dir, "Content", "Audio", "musica-1.wav")).Length > 1000);
@@ -697,7 +730,7 @@ public sealed class LunetClientPaletteTests
         var root = Path.Combine(Path.GetTempPath(), "lunet-music2-" + Guid.NewGuid().ToString("N"));
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var played = new List<byte[]>();
                 var shell = new LunetShell(root) { PlaySound = played.Add };
@@ -738,7 +771,7 @@ public sealed class LunetClientPaletteTests
                 studio.RemoveOrder(studio.Song.Order.Count - 2);
                 Assert.Equal(order, studio.Song.Order);
 
-                Assert.True(shell.Back());
+                Assert.True(await studio.CloseAsync());
                 var saved = Lunet.Studio.Music.MusicSong.Parse(shell.Workspace.Project!.ReadText("Content/Audio/musica-1.song.json"));
                 Assert.Equal("Sino FM", saved.Tracks[0].Instrument.Name);
                 Assert.Equal(5, saved.Tracks.Count);
@@ -973,7 +1006,7 @@ public sealed class LunetClientPaletteTests
         var root = Path.Combine(Path.GetTempPath(), "lunet-studios-" + Guid.NewGuid().ToString("N"));
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var shell = new LunetShell(root);
                 var window = new Window { Width = 412, Height = 915, Content = shell };
@@ -996,7 +1029,7 @@ public sealed class LunetClientPaletteTests
                 Assert.IsType<TileStudioView>(studios.Studio);                         // back to the map
                 shell.Back();
 
-                studios.NewMusic(); shell.Back();
+                await studios.NewMusic().CloseAsync();
                 studios.NewSound(); shell.Back();
                 studios.NewParticles(); shell.Back();
                 var data = studios.NewData("itens");
@@ -1084,6 +1117,12 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal("Content/Audio/tom-editado-2.wav", tone.SaveCopy());        // never over the first
                 Assert.True(shell.Back());
                 Assert.Null(studios.Studio);
+                var savedWave = "Content/Audio/tom-editado.wav";
+                window.UpdateLayout();
+                Assert.Contains(studios.GetVisualDescendants().OfType<Button>(), b => b.Name == "Creation-" + savedWave);
+                Assert.True(studios.Activate(savedWave));
+                Assert.InRange(Assert.IsType<WaveEditorView>(studios.Studio).Audio.DurationSeconds, 0.49, 0.51);
+                Assert.True(shell.Back());
 
                 // In a game: a .wav from Recursos opens in the same editor; the original stays as it was.
                 studios.Back();

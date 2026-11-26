@@ -3,6 +3,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using System.Text.Json;
 using Lunet.Client.Ui;
 using Lunet.Core;
 using MusicNote = Lunet.Studio.Music.MusicNote;
@@ -37,7 +38,8 @@ public sealed class PianoRoll : ZoomCanvas
     public int Steps => _song.Patterns.Count == 0 ? 16 : _song.Patterns[_pattern].Steps;
 
     /// <summary>The pitch of a row (row 0 is the highest note).</summary>
-    public int PitchOfRow(int row) => _song.Root + Rows - 1 - row;
+    public int LowestPitch { get; internal set; } = 60;
+    public int PitchOfRow(int row) => LowestPitch + Rows - 1 - row;
 
     public void Show(MusicSong song, int pattern, int track)
     {
@@ -68,7 +70,7 @@ public sealed class PianoRoll : ZoomCanvas
         }
         foreach (var note in pattern.Notes)
         {
-            var row = Rows - 1 - (note.Pitch - _song.Root);
+            var row = Rows - 1 - (note.Pitch - LowestPitch);
             if (row < 0 || row >= Rows) continue;
             var mine = note.Track == _track;
             var rect = new Rect(a.X + note.Step * cw + 1, a.Y + row * rh + 1, Math.Max(2, note.Length * cw - 2), Math.Max(2, rh - 2));
@@ -94,10 +96,15 @@ public sealed class MusicStudioView : UserControl
     private readonly StackPanel _tracks = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
     private readonly StackPanel _patterns = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
     private readonly TextBlock _info = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
-    private readonly Slider _bpm = new() { Minimum = 60, Maximum = 200, MinHeight = 40, Name = "Bpm" };
+    private readonly Slider _bpm = new() { Minimum = 30, Maximum = 300, MinHeight = 40, Name = "Bpm" };
     private readonly StackPanel _panelTabs = new() { Orientation = Orientation.Horizontal, Spacing = 4 };
     private readonly StackPanel _panel = new() { Spacing = 0 };
-    private readonly DockPanel _bpmRow;
+    private readonly DockPanel _bpmRow = new() { Margin = new Thickness(LunetTokens.Space.M, 0) };
+    private readonly TextBlock _status = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+    private readonly ScrollViewer _tracksRow, _patternsRow;
+    private CancellationTokenSource? _previewCancellation;
+    private Task _preview = Task.CompletedTask;
+    private bool _saving;
     private bool _dirty;
     private bool? _adding;
     private int? _orderSelected;
@@ -109,10 +116,36 @@ public sealed class MusicStudioView : UserControl
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
         _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
-        if (File.Exists(Path.Combine(_storage.RootDirectory, path))) Song = MusicSong.Parse(_storage.ReadText(path));
-        else { Song = MusicSong.Starter(Path.GetFileName(path).Replace(".song.json", "", StringComparison.OrdinalIgnoreCase)); _dirty = true; }
-        Pattern = Song.Patterns.Count > 1 ? 1 : 0; // the Tema of a starter song has every track
+        _tracksRow = Scroll(_tracks);
+        _patternsRow = Scroll(_patterns);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        var name = Path.GetFileName(path).Replace(".song.json", "", StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            Song = MusicSong.Parse(_storage.ReadText(path));
+        }
+        catch (Exception e) when (e is FileNotFoundException or DirectoryNotFoundException)
+        {
+            Song = MusicSong.Starter(name);
+            _dirty = true;
+        }
+        catch (Exception e) when (IsAudioError(e))
+        {
+            Song = MusicSong.Empty(name);
+            Content = new StackPanel
+            {
+                Margin = new Thickness(LunetTokens.Space.M),
+                Spacing = LunetTokens.Space.S,
+                Children =
+                {
+                    LunetUi.IconButton(LunetIcons.Back, "Voltar", () => Close()),
+                    LunetUi.Secondary("Não foi possível abrir " + Path.GetFileName(path) + ": " + e.Message),
+                },
+            };
+            return;
+        }
+        Pattern = Song.Patterns.Count > 1 ? 1 : 0; // the Tema of a starter song has every track
+        FitTrackPitch();
         _roll.Paint += (step, row, first) => Toggle(step, row, first);
         _roll.StrokeEnded += () => { _adding = null; Refresh(); };
         _roll.StrokeCancelled += () => _adding = null;
@@ -129,35 +162,44 @@ public sealed class MusicStudioView : UserControl
 
         AutomationProperties.SetName(_bpm, "Andamento (BPM)");
         _bpm.Value = Song.Bpm;
-        _bpm.AddHandler(PointerReleasedEvent, (_, _) => { Song.Bpm = (float)Math.Round(_bpm.Value); _dirty = true; Refresh(); },
-            Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        _bpm.ValueChanged += (_, e) =>
+        {
+            Song.Bpm = (float)Math.Round(e.NewValue);
+            _dirty = true;
+            UpdateInfo();
+        };
         var bpmLabel = LunetUi.Text("Andamento", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
         bpmLabel.Width = 84; bpmLabel.VerticalAlignment = VerticalAlignment.Center;
-        _bpmRow = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0) };
         DockPanel.SetDock(bpmLabel, Dock.Left);
         _bpmRow.Children.Add(bpmLabel);
         _bpmRow.Children.Add(_bpm);
 
-        var playPattern = LunetUi.Button("Padrão", ButtonKind.Secondary, LunetIcons.Play, () => PlayPattern());
+        var playPattern = LunetUi.Button("Padrão", ButtonKind.Secondary, LunetIcons.Play, () => _ = PlayPattern());
         playPattern.Name = "PlayPattern";
-        var playSong = LunetUi.Button("Música", ButtonKind.Primary, LunetIcons.Play, () => PlaySong());
+        var playSong = LunetUi.Button("Música", ButtonKind.Primary, LunetIcons.Play, () => _ = PlaySong());
         playSong.Name = "PlaySong";
-        var plays = new Avalonia.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.S), Children = { playPattern, playSong } };
-        foreach (var b in plays.Children.OfType<Button>()) { b.Margin = new Thickness(LunetTokens.Space.Xxs); b.HorizontalAlignment = HorizontalAlignment.Stretch; b.MinHeight = 52; }
-
-        ScrollViewer Row(Control content) => new()
+        var stop = LunetUi.Button("Parar", ButtonKind.Secondary, null, StopPreview);
+        stop.Name = "StopMusic";
+        var plays = new Avalonia.Controls.Primitives.UniformGrid
         {
-            Content = content, Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs),
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            Columns = 3, Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.S),
+            Children = { playPattern, playSong, stop },
         };
-        _tracksRow = Row(_tracks);
-        _patternsRow = Row(_patterns);
-        var bottom = new StackPanel
+        foreach (var b in plays.Children.OfType<Button>()) { b.Margin = new Thickness(LunetTokens.Space.Xxs); b.HorizontalAlignment = HorizontalAlignment.Stretch; b.MinHeight = 52; }
+        _status.Margin = new Thickness(LunetTokens.Space.M, 0);
+        _status.TextWrapping = TextWrapping.Wrap;
+        _status.IsVisible = false;
+
+        var tabs = new Border { Child = _panelTabs, Padding = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs, LunetTokens.Space.S, 0) };
+        var transport = new StackPanel { Children = { _status, plays } };
+        DockPanel.SetDock(tabs, Dock.Top);
+        DockPanel.SetDock(transport, Dock.Bottom);
+        var bottom = new DockPanel
         {
             Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            Children = { new Border { Child = _panelTabs, Padding = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs, LunetTokens.Space.S, 0) }, _panel, plays },
+            Children = { tabs, transport, new ScrollViewer { Content = _panel } },
         };
+        SizeChanged += (_, e) => bottom.MaxHeight = e.NewSize.Height * 0.6;
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
         DockPanel.SetDock(bottom, Dock.Bottom);
@@ -170,8 +212,6 @@ public sealed class MusicStudioView : UserControl
         Refresh();
     }
 
-    private readonly ScrollViewer _tracksRow, _patternsRow;
-
     public MusicSong Song { get; }
     public MusicPanel Panel { get; private set; } = MusicPanel.Notes;
     /// <summary>Length in steps of the notes a tap adds (1 = a sixteenth in 4/4).</summary>
@@ -183,6 +223,7 @@ public sealed class MusicStudioView : UserControl
     /// <summary>Adds or removes the note at a step and row of the piano roll (one-step notes); a drag keeps the first choice.</summary>
     public void Toggle(int step, int row, bool first)
     {
+        if (_saving) return;
         var pitch = _roll.PitchOfRow(row);
         var notes = Song.Patterns[Pattern].Notes;
         var existing = notes.FindIndex(n => n.Track == Track && n.Pitch == pitch && step >= n.Step && step < n.Step + n.Length);
@@ -190,7 +231,7 @@ public sealed class MusicStudioView : UserControl
         if (_adding == true && existing < 0)
         {
             notes.Add(new MusicNote(Track, step, pitch, Math.Max(1, Math.Min(NoteLength, Song.Patterns[Pattern].Steps - step))));
-            _shell.PlaySound?.Invoke(NotePreview(pitch));
+            if (first) PreviewNote(pitch);
         }
         else if (_adding == false && existing >= 0) notes.RemoveAt(existing);
         else return;
@@ -198,20 +239,48 @@ public sealed class MusicStudioView : UserControl
         _roll.Show(Song, Pattern, Track);
     }
 
-    private byte[] NotePreview(int pitch)
+    private void PreviewNote(int pitch)
     {
+        if (_shell.PlaySound is not { } play || _previewCancellation is not null || _shell.IsSoundPlaying?.Invoke() == true) return;
         var probe = new MusicSong
         {
-            Name = "nota", Bpm = Song.Bpm, Root = Song.Root, Scale = Song.Scale,
+            Name = "nota", Bpm = Song.Bpm, StepsPerBeat = Song.StepsPerBeat, Root = Song.Root, Scale = Song.Scale,
             Tracks = [Song.Tracks[Track] with { Muted = false, Solo = false, Echo = 0, Reverb = 0 }],
             Patterns = [new MusicPattern { Name = "n", Steps = 2, Notes = [new MusicNote(0, 0, pitch, 1)] }],
             Order = [0], Loop = false,
         };
-        return new MusicRenderer().RenderWav(probe);
+        try { play(new MusicRenderer(22_050).RenderWav(probe)); }
+        catch (Exception e) when (IsAudioError(e)) { Say("Não foi possível ouvir a nota: " + e.Message, error: true); }
     }
 
-    public void SelectTrack(int track) { Track = Math.Clamp(track, 0, Song.Tracks.Count - 1); Refresh(); }
-    public void SelectPattern(int pattern) { Pattern = Math.Clamp(pattern, 0, Song.Patterns.Count - 1); Refresh(); _roll.FitHeight(); }
+    public void SelectTrack(int track)
+    {
+        Track = Math.Clamp(track, 0, Song.Tracks.Count - 1);
+        FitTrackPitch();
+        Refresh();
+    }
+
+    public void SelectPattern(int pattern)
+    {
+        Pattern = Math.Clamp(pattern, 0, Song.Patterns.Count - 1);
+        FitTrackPitch();
+        Refresh();
+        _roll.FitHeight();
+    }
+
+    private void FitTrackPitch()
+    {
+        var track = Song.Tracks[Track];
+        int lowest = Song.Patterns[Pattern].Notes.Where(n => n.Track == Track)
+            .Select(n => n.Pitch).DefaultIfEmpty(track.Instrument.Drums ? 36 : Song.Root).Min();
+        _roll.LowestPitch = Math.Clamp(lowest, 0, 128 - _roll.Rows);
+    }
+
+    private void ShiftOctave(int change)
+    {
+        _roll.LowestPitch = Math.Clamp(_roll.LowestPitch + change, 0, 128 - _roll.Rows);
+        Refresh();
+    }
 
     public void AddPattern(bool duplicate)
     {
@@ -220,7 +289,7 @@ public sealed class MusicStudioView : UserControl
         var name = ((char)('A' + Song.Patterns.Count % 26)).ToString();
         var pattern = new MusicPattern { Name = name, Steps = source.Steps, Notes = duplicate ? source.Notes.ToList() : [] };
         Song.Patterns.Add(pattern);
-        Song.Order.Add(Song.Patterns.Count - 1);
+        if (Song.Order.Count < MusicSong.MaxOrder) Song.Order.Add(Song.Patterns.Count - 1);
         Pattern = Song.Patterns.Count - 1;
         _dirty = true;
         Refresh();
@@ -249,6 +318,7 @@ public sealed class MusicStudioView : UserControl
         if (Song.Tracks.Count >= MusicSong.MaxTracks) return false;
         Song.Tracks.Add(new MusicTrack { Name = "Faixa " + (Song.Tracks.Count + 1), Instrument = Instrument.Presets[0] });
         Track = Song.Tracks.Count - 1;
+        FitTrackPitch();
         _dirty = true;
         Panel = MusicPanel.Track;
         Refresh();
@@ -285,29 +355,112 @@ public sealed class MusicStudioView : UserControl
         Refresh();
     }
 
-    public void PlayPattern() => _shell.PlaySound?.Invoke(new MusicRenderer().RenderWav(Song, Pattern));
-    public void PlaySong() => _shell.PlaySound?.Invoke(Song.Order.Count == 0 ? new MusicRenderer().RenderWav(Song, Pattern) : new MusicRenderer().RenderWav(Song));
+    public Task PlayPattern() => PlayPreview(Pattern);
+    public Task PlaySong() => PlayPreview(Song.Order.Count == 0 ? Pattern : null);
 
-    public void Save()
+    private Task PlayPreview(int? pattern)
     {
-        if (!_dirty) return;
-        Song.Validate();
-        var wav = _path[..^".song.json".Length] + ".wav";
-        _storage.WriteBundle((_path, System.Text.Encoding.UTF8.GetBytes(Song.ToJson())), (wav, new MusicRenderer().RenderWav(Song)));
-        _dirty = false;
+        if (_saving) return Task.CompletedTask;
+        if (_shell.PlaySound is not { } play)
+        {
+            Say("A prévia de áudio não está disponível nesta plataforma.", error: true);
+            return Task.CompletedTask;
+        }
+        var previous = _preview;
+        StopPreview();
+        var cancellation = new CancellationTokenSource();
+        _previewCancellation = cancellation;
+        Say("Preparando o som…");
+        return _preview = RenderPreview(previous, play, Song.ToJson(), pattern, cancellation);
+    }
+
+    private async Task RenderPreview(Task previous, Action<byte[]> play, string snapshot, int? pattern, CancellationTokenSource cancellation)
+    {
+        var token = cancellation.Token;
+        try
+        {
+            await previous;
+            var wav = await Task.Run(() => new MusicRenderer(32_000).RenderWav(MusicSong.Parse(snapshot), pattern, token), token);
+            if (!token.IsCancellationRequested)
+            {
+                play(wav);
+                Say("");
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception e) when (IsAudioError(e))
+        {
+            if (!token.IsCancellationRequested) Say("Não foi possível tocar: " + e.Message, error: true);
+        }
+        finally
+        {
+            if (ReferenceEquals(_previewCancellation, cancellation)) _previewCancellation = null;
+            cancellation.Dispose();
+        }
+    }
+
+    public void StopPreview()
+    {
+        _previewCancellation?.Cancel();
+        _shell.StopSound?.Invoke();
+        if (!_saving) Say("");
     }
 
     public bool Close()
     {
-        try { Save(); }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or InvalidOperationException)
+        _ = CloseAsync();
+        return true;
+    }
+
+    public async Task<bool> CloseAsync()
+    {
+        if (_saving) return true;
+        StopPreview();
+        if (!_dirty)
         {
-            _info.Text = "Não foi possível salvar: " + e.Message;
-            _info.Foreground = LunetTokens.Brush(LunetTokens.Color.Danger);
+            _close();
             return true;
+        }
+
+        _saving = true;
+        IsEnabled = false;
+        Say("Salvando música…");
+        try
+        {
+            await _preview;
+            var source = Song.ToJson();
+            var wav = _path[..^".song.json".Length] + ".wav";
+            int? fallbackPattern = Song.Order.Count == 0 ? Pattern : null;
+            await Task.Run(() =>
+            {
+                var song = MusicSong.Parse(source);
+                var audio = new MusicRenderer().RenderWav(song, fallbackPattern);
+                _storage.WriteBundle((_path, System.Text.Encoding.UTF8.GetBytes(source)), (wav, audio));
+            });
+            _dirty = false;
+        }
+        catch (Exception e) when (IsAudioError(e))
+        {
+            Say("Não foi possível salvar: " + e.Message, error: true);
+            return true;
+        }
+        finally
+        {
+            _saving = false;
+            IsEnabled = true;
         }
         _close();
         return true;
+    }
+
+    private static bool IsAudioError(Exception e) =>
+        e is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException or InvalidOperationException or JsonException;
+
+    private void Say(string message, bool error = false)
+    {
+        _status.Text = message;
+        _status.IsVisible = message.Length != 0;
+        _status.Foreground = LunetTokens.Brush(error ? LunetTokens.Color.Danger : LunetTokens.Color.TextSecondary);
     }
 
     public static string NewPath(LunetShell shell)
@@ -318,12 +471,16 @@ public sealed class MusicStudioView : UserControl
         return $"Content/Audio/musica-{n}.song.json";
     }
 
+    private void UpdateInfo()
+    {
+        var pattern = Song.Patterns[Pattern];
+        _info.Text = $"{Song.Tracks[Track].Name} · padrão {pattern.Name} ({pattern.Steps} passos) · {Song.Bpm:0} BPM · {Song.DurationSeconds:0} s";
+    }
+
     private void Refresh()
     {
         _roll.Show(Song, Pattern, Track);
-        var pattern = Song.Patterns[Pattern];
-        _info.Text = $"{Song.Tracks[Track].Name} · padrão {pattern.Name} ({pattern.Steps} passos) · {Song.Bpm:0} BPM · {Song.DurationSeconds:0} s";
-        _info.Foreground = LunetTokens.Brush(LunetTokens.Color.TextSecondary);
+        UpdateInfo();
         _tracks.Children.Clear();
         for (var i = 0; i < Song.Tracks.Count; i++)
         {
@@ -403,7 +560,18 @@ public sealed class MusicStudioView : UserControl
             AutomationProperties.SetName(chip, $"Notas de {n} passo{(n > 1 ? "s" : "")}");
             lengths.Children.Add(chip);
         }
+        var down = LunetUi.Button("−8ª", ButtonKind.Ghost, null, () => ShiftOctave(-12));
+        var up = LunetUi.Button("+8ª", ButtonKind.Ghost, null, () => ShiftOctave(12));
+        AutomationProperties.SetName(down, "Oitava abaixo");
+        AutomationProperties.SetName(up, "Oitava acima");
         _panel.Children.Add(Scroll(lengths));
+        var pitches = Chips();
+        var range = LunetUi.Secondary($"{MusicTheory.Name(_roll.LowestPitch)}–{MusicTheory.Name(_roll.PitchOfRow(0))}");
+        range.VerticalAlignment = VerticalAlignment.Center;
+        pitches.Children.Add(down);
+        pitches.Children.Add(range);
+        pitches.Children.Add(up);
+        _panel.Children.Add(Scroll(pitches));
     }
 
     private void TrackPanel()
@@ -417,7 +585,7 @@ public sealed class MusicStudioView : UserControl
             var chip = LunetUi.Button(name, name == track.Instrument.Name ? ButtonKind.Selected : ButtonKind.Secondary, null, () =>
             {
                 SetInstrument(name);
-                _shell.PlaySound?.Invoke(NotePreview(Song.Root + 12));
+                PreviewNote(Math.Min(127, Song.Root + 12));
             });
             chip.MinHeight = 40;
             chip.Name = "Instrument-" + name;
