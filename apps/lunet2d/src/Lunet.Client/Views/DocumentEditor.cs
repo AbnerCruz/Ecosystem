@@ -120,10 +120,8 @@ public sealed class DocumentEditor : UserControl
         {
             _keyboard = new CodeBar(_surface, _shell.Methods, ProjectSources, () => _shell.OpenPalette(), () => HideKeyboard(), SetSystemKeyboard);
             DockPanel.SetDock(_keyboard, Dock.Bottom);
-            var hadFocus = _surface.IsFocused;
-            Rebuild(); // places it in the layout, then comes back here
-            if (hadFocus) _surface.Focus(); // moving the editor into the new layout must not drop the caret or focus
-            return;
+            // Into the fixed frame, before the text: the editor itself does not move (its focus and the keyboard stay).
+            if (_frame is not null) _frame.Children.Insert(_frame.Children.Count - 1, _keyboard);
         }
         if (_keyboard is not null)
         {
@@ -571,29 +569,35 @@ public sealed class DocumentEditor : UserControl
         more.Name = "FileMenu";
         entries.Add(more);
 
+        // The editor (and the code bar) never leave their place in the tree: moving a focused text field clears its
+        // focus, and Android then closes the keyboard (estudo do editor, 26/11/2026 — "teclado fechando sozinho").
+        // Only the file list, the find bar and the file menu around it are rebuilt.
+        EnsureFrame();
+        _side.Content = null; _chrome.Children.Clear();
         if (OpenPath is null && _tab == WorkspaceTab.Notes)
         {
             var start = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
             start.Children.Add(LunetUi.Button("Nova nota", ButtonKind.Primary, LunetIcons.Plus, NewNote));
             start.Children.Add(LunetUi.Button("Novo mapa mental", ButtonKind.Secondary, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap()));
-            Content = LunetUi.EmptyState(LunetIcons.Notes, "Nenhuma nota neste jogo",
+            _empty.Content = LunetUi.EmptyState(LunetIcons.Notes, "Nenhuma nota neste jogo",
                 "Ideias, regras e roteiro ficam em Notes/ dentro do jogo, em Markdown ou como mapa mental, no seu disco.", start);
+            _empty.IsVisible = true;
+            _surface.View.IsVisible = false;
+            UpdateKeyboard();
             return;
         }
-        var column = new StackPanel { Spacing = 2, Margin = new Thickness(LunetTokens.Space.Xs) };
-        var list = new ScrollViewer { Content = column };
-        var listHost = new Border
-        {
-            Child = list, Width = 220, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 1, 0),
-        };
-        var root = new DockPanel();
+        _empty.Content = null; _empty.IsVisible = false;
+        _surface.View.IsVisible = true;
         // On a phone the file list collapses: the text gets the width; files are one tap away in the header.
         if (_shell.State.Layout == ShellLayout.Expanded && !_shell.State.CodeAndGameSideBySide)
         {
+            var column = new StackPanel { Spacing = 2, Margin = new Thickness(LunetTokens.Space.Xs) };
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Stretch; column.Children.Add(e); }
-            DockPanel.SetDock(listHost, Dock.Left);
-            root.Children.Add(listHost);
+            _side.Content = new Border
+            {
+                Child = new ScrollViewer { Content = column }, Width = 220, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+                BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 1, 0),
+            };
         }
         else
         {
@@ -605,28 +609,31 @@ public sealed class DocumentEditor : UserControl
             };
             var row = (StackPanel)strip.Content!;
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Left; row.Children.Add(e); }
-            var stripHost = new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) };
-            DockPanel.SetDock(stripHost, Dock.Top);
-            root.Children.Add(stripHost);
+            _chrome.Children.Add(new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) });
         }
-        if (_findOpen && OpenPath is not null)
-        {
-            var bar = FindBar();
-            DockPanel.SetDock(bar, Dock.Top);
-            root.Children.Add(bar);
-        }
-        if (_fileMenu)
-        {
-            var menu = FileMenu();
-            DockPanel.SetDock(menu, Dock.Top);
-            root.Children.Add(menu);
-        }
-        if (_keyboard?.Parent is Panel kp) kp.Children.Remove(_keyboard);
-        if (_keyboard is not null) root.Children.Add(_keyboard);
+        if (_findOpen && OpenPath is not null) _chrome.Children.Add(FindBar());
+        if (_fileMenu) _chrome.Children.Add(FileMenu());
+        if (_keyboard is not null && _keyboard.Parent is null) _frame!.Children.Insert(_frame.Children.Count - 1, _keyboard);
         UpdateKeyboard();
-        if (_surface.View.Parent is Panel p) p.Children.Remove(_surface.View);
-        root.Children.Add(_surface.View);
-        Content = root;
+    }
+
+    private DockPanel? _frame;
+    private readonly ContentControl _side = new();
+    private readonly StackPanel _chrome = new();
+    private readonly ContentControl _empty = new() { IsVisible = false };
+
+    /// <summary>The fixed frame: list (left), file strip, find bar and menu (top), code bar (bottom), the text.</summary>
+    private void EnsureFrame()
+    {
+        if (_frame is not null) return;
+        _frame = new DockPanel();
+        DockPanel.SetDock(_side, Dock.Left);
+        DockPanel.SetDock(_chrome, Dock.Top);
+        _frame.Children.Add(_side);
+        _frame.Children.Add(_chrome);
+        if (_surface.View.Parent is Panel old) old.Children.Remove(_surface.View);
+        _frame.Children.Add(new Panel { Children = { _surface.View, _empty } });
+        Content = _frame;
     }
 
     /// <summary>Re-lays out the file list for the current shell layout.</summary>

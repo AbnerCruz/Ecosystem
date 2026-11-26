@@ -82,7 +82,19 @@ public sealed class CodeSurface : ITextSurface
         _editor.TextArea.GotFocus += (_, _) => Engaged?.Invoke();
         _editor.TextArea.AddHandler(InputElement.PointerReleasedEvent, (_, _) => Engaged?.Invoke(),
             Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        // The system keyboard (estudo do editor, 26/11/2026): a multi-line field whose Enter is a line break (without
+        // it Avalonia declares "Done" and Enter closes the keyboard), no suggestions or autocorrect (code; it also keeps
+        // the keyboard from composing words over the code) and Lunet's own IME bridge instead of AvaloniaEdit's.
+        CodeInput.Configure(_editor.TextArea, suggestions: false);
+        _ime = new CodeInputClient(_editor.TextArea);
+        _editor.TextArea.AddHandler(InputElement.TextInputMethodClientRequestedEvent, (_, e) => { if (!_editor.IsReadOnly) e.Client = _ime; },
+            Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
     }
+
+    private readonly CodeInputClient _ime;
+
+    /// <summary>The bridge the system keyboard edits the code through.</summary>
+    public CodeInputClient InputClient => _ime;
 
     private readonly DiagnosticsRenderer _diagnostics = new();
 
@@ -181,6 +193,7 @@ public sealed class CodeSurface : ITextSurface
             _editor.Document.Text = value;
             _editor.Document.UndoStack.ClearAll();
             _editor.CaretOffset = 0;
+            _ime.Reset(); // another text: the keyboard forgets what it was composing
         }
     }
 

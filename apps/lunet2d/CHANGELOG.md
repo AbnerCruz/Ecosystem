@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.0.1-dev.1000607 — Editor e teclado: Enter, cursor, teclado que abre e não fecha sozinho
+
+Corrige os problemas de teclado no editor e na IA. O estudo com as causas está em `docs/architecture/editor-de-texto-avalonia.md`.
+
+- **Enter quebra a linha** no código, nas notas, na mensagem da IA e em todo campo de várias linhas. Antes, o Avalonia declarava esses campos como de uma linha só, e o Enter fechava o teclado.
+- **Cursor e digitação certos com o teclado do celular.**
+  - O editor de código ganhou a própria ponte com o teclado do Android. A do AvaloniaEdit mostrava o cursor uma letra adiante e ignorava a troca de palavra. Por isso letras se repetiam ou sumiam: digitar "ye" antes de `x` em `var x = 1;` resultava em `var yye = 1;`.
+  - Arrastar o cursor pela barra de espaço do Gboard funciona.
+  - Recortar, copiar e colar pela barra do teclado funcionam.
+  - No código, o teclado não sugere nem autocorrige palavras. Os acentos continuam no toque longo.
+- **O teclado abre ao tocar** no código e na IA, inclusive depois de ser fechado com Voltar.
+- **O teclado não fecha sozinho:**
+  - ao aparecer a barra de código no primeiro toque;
+  - ao abrir a busca ou o menu de arquivo;
+  - ao abrir a IA (antes, a folha da IA se escondia quando o teclado abria);
+  - ao trocar entre Estudar e Fazer ou ao enviar;
+  - quando o jogo roda, para ou falha enquanto você escreve.
+- **Validação:** testado no computador, inclusive repetindo os comandos que o Android manda ao editor. Não testado num celular.
+
 ## 0.0.1-dev.1000606 — Visual novo: linguagem visual do Ecosystem
 
 - **Visual novo: o Lunet passa a seguir a linguagem visual do Ecosystem v1.0** (`docs/design/linguagem-visual.md`).

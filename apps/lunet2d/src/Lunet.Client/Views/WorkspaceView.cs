@@ -1,7 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
 
@@ -43,9 +45,32 @@ public sealed class WorkspaceView : UserControl
     public void SetKeyboardOpen(bool open)
     {
         _keyboardOpen = open;
+        // A field inside the sheet (the AI's message, the Inspector) is what the keyboard opened for: hiding the sheet
+        // would take the focus from it and Android would close the keyboard at once ("teclado não abre na IA").
+        _typingInSheet = open && _sheet is not null && FocusedField() is Visual f && _sheet.IsVisualAncestorOf(f);
         if (_tabBar is not null) _tabBar.IsVisible = !open;
         if (_runFab is not null) _runFab.IsVisible = !open;
-        if (_sheet is not null) _sheet.IsVisible = !open;
+        if (_sheet is not null) _sheet.IsVisible = !open || _typingInSheet;
+    }
+
+    private bool _typingInSheet;
+    private (WorkspaceTab, SupportPanel) _place;
+
+    /// <summary>The text field of this workspace that has the focus (code, notes, a field of a panel), or null.</summary>
+    private InputElement? FocusedField() =>
+        TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is InputElement e
+        && (e is TextBox || e is AvaloniaEdit.Editing.TextArea) && e is Visual v && this.IsVisualAncestorOf(v) ? e : null;
+
+    /// <summary>
+    /// Gives the focus back to the field that had it before a rebuild moved it (moving clears the focus). Tries now and
+    /// once more after layout, when the new tree is attached.
+    /// </summary>
+    private static void Refocus(InputElement? field)
+    {
+        if (field is null || field.IsFocused) return;
+        if (((Visual)field).IsAttachedToVisualTree() && field.IsEffectivelyVisible && field.Focus()) return;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (((Visual)field).IsAttachedToVisualTree() && field.IsEffectivelyVisible) field.Focus(); },
+            Avalonia.Threading.DispatcherPriority.Loaded);
     }
 
     public bool TabBarVisible => _tabBar?.IsVisible ?? false;
@@ -249,6 +274,11 @@ public sealed class WorkspaceView : UserControl
             Content = _studio;
             return;
         }
+        // Same tab and panel (a game state change, turning the phone): the field being written keeps the focus. A new tab or
+        // panel is the person going elsewhere, and the keyboard rightly goes.
+        var place = (_shell.State.Tab, _shell.State.Panel);
+        var focused = place == _place ? FocusedField() : null;
+        _place = place;
         _tabBar = _sheet = null;
         _runFab = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
@@ -307,13 +337,14 @@ public sealed class WorkspaceView : UserControl
                 };
                 DockPanel.SetDock(sheet, Dock.Bottom);
                 _sheet = sheet;
-                sheet.IsVisible = !_keyboardOpen;
+                sheet.IsVisible = !_keyboardOpen || _typingInSheet;
                 root.Children.Add(sheet);
             }
             root.Children.Add(WithRunButton(Body(expanded)));
         }
         _support.Refresh();
         Content = root;
+        Refocus(focused);
     }
 
     private bool IsSelected(WorkspaceTab tab) => _shell.State.CodeAndGameSideBySide

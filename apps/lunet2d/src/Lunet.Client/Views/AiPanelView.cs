@@ -82,20 +82,25 @@ public sealed class AiPanelView : UserControl
     public void Refresh()
     {
         var root = (DockPanel)Content!;
-        root.Children.Clear();
         if (_shell.AiHost is not { } host)
         {
+            root.Children.Clear();
             root.Children.Add(LunetUi.EmptyState(LunetIcons.Code, "IA indisponível aqui", "Esta versão do Lunet não tem onde guardar a chave com segurança."));
             return;
         }
         var loaded = host.Store.Load();
-        if (!loaded.IsConfigured && host.Provider is null) { root.Children.Add(Setup(host, loaded)); return; }
+        if (!loaded.IsConfigured && host.Provider is null) { root.Children.Clear(); root.Children.Add(Setup(host, loaded)); return; }
         EnsureSession(host);
         BuildComposer();
-        DockPanel.SetDock(_composer, Dock.Bottom);
-        root.Children.Add(_composer);
-        if (_scroll.Parent is Panel p) p.Children.Remove(_scroll);
-        root.Children.Add(_scroll);
+        // Already in place: nothing moves (the message being written keeps its focus and the keyboard).
+        if (root.Children.Count != 2 || !ReferenceEquals(root.Children[0], _composer) || !ReferenceEquals(root.Children[1], _scroll))
+        {
+            root.Children.Clear();
+            DockPanel.SetDock(_composer, Dock.Bottom);
+            root.Children.Add(_composer);
+            if (_scroll.Parent is Panel p) p.Children.Remove(_scroll);
+            root.Children.Add(_scroll);
+        }
         RenderMessages();
     }
 
@@ -155,27 +160,40 @@ public sealed class AiPanelView : UserControl
 
     // ---------------- conversation ----------------
 
+    private readonly StackPanel _modes = new() { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+    private readonly Border _sendHost = new();
+
+    /// <summary>
+    /// Refreshes the mode buttons and Enviar/Parar. The message field is built once and never moves (moving a focused
+    /// field clears its focus and Android closes the keyboard), and the buttons do not take the focus from it: the
+    /// keyboard stays open while you pick Fazer or send (estudo do editor, 26/11/2026).
+    /// </summary>
     private void BuildComposer()
     {
-        _composer.Children.Clear();
-        var modes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+        if (_composer.Children.Count == 0)
+        {
+            var row = new DockPanel();
+            DockPanel.SetDock(_sendHost, Dock.Right);
+            row.Children.Add(_sendHost);
+            if (_input.Parent is Panel p) p.Children.Remove(_input);
+            row.Children.Add(_input);
+            _composer.Children.Add(_modes);
+            _composer.Children.Add(row);
+        }
+        _modes.Children.Clear();
         foreach (var (mode, label, hint) in new[] { (LunetAiMode.Teach, "Estudar", "Explica e responde, não altera nada"), (LunetAiMode.Do, "Fazer", "Altera o jogo, mostra o que mudou e permite desfazer") })
         {
             var b = LunetUi.Button(label, Mode == mode ? ButtonKind.Selected : ButtonKind.Ghost, null, () => { Mode = mode; BuildComposer(); });
             b.MinHeight = 40;
+            b.Focusable = false;
             AutomationProperties.SetHelpText(b, hint);
-            modes.Children.Add(b);
+            _modes.Children.Add(b);
         }
-        _composer.Children.Add(modes);
-        var row = new DockPanel();
         var send = Running
             ? LunetUi.IconButton(LunetIcons.Stop, "Parar a IA", Stop, LunetTokens.Color.Danger)
             : LunetUi.IconButton(LunetIcons.Play, "Enviar", () => _ = SendAsync(), LunetTokens.Color.Primary);
-        DockPanel.SetDock(send, Dock.Right);
-        row.Children.Add(send);
-        if (_input.Parent is Panel p) p.Children.Remove(_input);
-        row.Children.Add(_input);
-        _composer.Children.Add(row);
+        send.Focusable = false;
+        _sendHost.Child = send;
     }
 
     /// <summary>Sends the input in the chosen mode (then the mode goes back to Estudo). Saves everything first.</summary>

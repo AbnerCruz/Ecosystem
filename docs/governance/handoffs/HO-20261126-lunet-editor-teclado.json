@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-lunet-editor-teclado",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T12:06:00Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "e73c4b6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/architecture/editor-de-texto-avalonia.md",
+    "README.md",
+    "docs/governance/handoffs/HO-20261126-lunet-editor-teclado.json",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/src/Lunet.Client/Views/CodeInputClient.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/CodeInput.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetApp.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AndroidImeSimulator.cs",
+    "apps/lunet2d/tests/Lunet.Tests/EditorKeyboardTests.cs"
+  ],
+  "work_completed": [
+    "Study of text editing with Avalonia on Android (docs/architecture/editor-de-texto-avalonia.md): Avalonia 12.1.3 Android input path read in source (AndroidInputMethod, AvaloniaInputConnection, TextEditBuffer, EditCommand, InputMethodManager, TextInputOptions, TextBoxTextInputMethodClient, FocusManager), AvaloniaEdit's TextAreaTextInputMethodClient, community reports, Lunet and Numa code and the owner's reports; rules R1-R8 for any Avalonia text field.",
+    "Confirmed causes: multi-line fields are declared Done (Enter hides the keyboard) because neither TextBox nor AvaloniaEdit sets TextInputOptions.Multiline; AvaloniaEdit's IME client reports a 1-based column as the selection index and ignores selection sets without a selection (composition doubles/deletes letters: 'var yye = 1;'), never asks for the keyboard on tap; Avalonia only asks with SHOW_IMPLICIT; Lunet re-parented the editor (first tap / find / menu), hid the AI sheet when the keyboard opened, re-parented the AI input and let its buttons take focus, and dropped focus on workspace rebuilds.",
+    "Fixes in Lunet: CodeInputClient replaces AvaloniaEdit's client (0-based window of whole lines anchored around the caret, working selection set, tap request, context menu actions, reset on load); code editor multi-line, Return, no suggestions; global style declares every AcceptsReturn TextBox multi-line; explicit keyboard request on a tap on the focused field (ShowSoftInput flags 0, posted); DocumentEditor keeps a fixed frame (editor and code bar never re-parented); the support sheet stays when its field has focus; AI composer built once with non-focusable buttons; WorkspaceView.Rebuild gives focus back within the same tab and panel.",
+    "AndroidImeSimulator: line-by-line port of Avalonia 12.1.3's Android TextEditBuffer/EditCommand driven through the headless window; also proves AvaloniaEdit's own bridge still has the bugs (the test fails when a future AvaloniaEdit fixes them)."
+  ],
+  "verification": [
+    {
+      "check": "EditorKeyboardTests (15 tests: Enter, caret, composition, accents, delete, keyboard selection, long-file window, tap request, reset, code bar without re-parenting, rebuild keeps focus, AI sheet focus and keyboard, multi-line fields)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/EditorKeyboardTests.cs"
+    },
+    {
+      "check": "Lunet xUnit suite (1320 tests)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests"
+    },
+    {
+      "check": "Lunet.Android build",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Android"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a phone: Gboard and Samsung keyboard behaviour (when they compose or commit) is not modelled by the simulator; the device checklist is section 7 of the study.",
+    "Numa (Urbe C#) still has multi-line fields without TextInputOptions.Multiline (OCR, agent questions, agent prompts and instructions); recorded as a recommendation in the study, not changed here."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Release 0.0.1-dev.1000607 after integration; then continue the shell migration."
+  ],
+  "decisions_required": [],
+  "reuse_assessment": [
+    {
+      "subject": "avalonia-android-text-input",
+      "status": "possible-candidate",
+      "rationale": "Lunet and Numa both hit the same framework defects; the IME bridge only has one consumer (Numa does not use AvaloniaEdit), so the rules are shared as docs/architecture/editor-de-texto-avalonia.md and nothing is extracted."
+    }
+  ],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and a framework simulator only; no device claim; device checklist in the study."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nothing extracted: the IME bridge has one consumer (Numa does not use AvaloniaEdit); the rules are shared as a document."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
