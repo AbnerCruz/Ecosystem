@@ -14,6 +14,9 @@ public static class LunetIcons
     public const string Plus = "M12 5v14 M5 12h14";
     public const string Play = "M7 4.5v15l12-7.5z";
     public const string Pause = "M8 5v14 M16 5v14";
+    public const string Music = "M9 18V5l11-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z";
+    public const string Sparkle = "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z M19 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z";
+    public const string Speaker = "M4 9.5h3.5L12 5.5v13l-4.5-4H4z M15.5 9a4 4 0 0 1 0 6 M18 6.5a7.5 7.5 0 0 1 0 11";
     public const string Star = "M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z";
     public const string Stop = "M6.5 6.5h11v11h-11z";
     public const string Step = "M6 5v14l9-7z M18 5v14";

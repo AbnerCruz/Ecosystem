@@ -9,12 +9,15 @@ namespace Lunet.Desktop;
 /// </summary>
 public sealed class MainWindow : Window
 {
-    public MainWindow(string projectsRoot)
+    /// <param name="projectsRoot">Where the games are.</param>
+    /// <param name="dataRoot">Where progress, Biblioteca, Studio drafts, settings and AI live; defaults to the user's
+    /// AppData/Lunet. The --screens captures pass a temporary folder, so they never write into a person's data.</param>
+    public MainWindow(string projectsRoot, string? dataRoot = null)
     {
         Title = "Lunet";
         Width = 1280; Height = 800;
         MinWidth = 360; MinHeight = 480;
-        var ai = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lunet", "ai");
+        var ai = Path.Combine(dataRoot ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lunet"), "ai");
         Shell = new LunetShell(projectsRoot)
         {
             HardwareKeyboard = true,

@@ -29,6 +29,9 @@
 
 | E-06 | Na aba **Jogo** (também em Recursos e Notas), a barra de abas do workspace sumia, e o único caminho de volta ao código era o Voltar | O estado "teclado aberto" usava a barra de código mesmo quando a aba Código não estava visível. A barra, aberta uma vez em Código, escondia as abas em todas as outras. | A barra de código só conta quando o Código está na tela (`CodeVisible`), e o `Rebuild` recalcula o estado a cada troca de aba | Captura `celular-4-jogo` (antes e depois) e `WorkspaceTabsTests` |
 
+| E-07 | `--screens`, o gerador de capturas, gravava progresso, Biblioteca, rascunhos dos Studios e ajustes no AppData **real** de quem o rodava. A contagem de "Minhas criações" subia a cada execução: 29, 31, 33. | A `MainWindow` sempre apontava para `AppData/Lunet`, e o gerador de capturas a reaproveitava | `MainWindow(projectsRoot, dataRoot)`: o gerador de capturas passa uma pasta temporária, e o app normal continua no AppData | Capturas `2l-studios` antes (33 itens) e depois (só os 2 do cenário) |
+| E-08 | Em Jogar, no celular, aparecia uma capa por linha, embora o código previsse duas | A conta da largura descontava a margem de uma capa só, e a segunda quebrava a linha | A largura passa a considerar a margem das duas capas | Captura `2j-jogar` antes e depois |
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
@@ -43,6 +46,8 @@
 | H4 — streaming | O painel de IA redesenhava toda a conversa (Markdown, código e diffs) a cada pedaço de texto ou passo recebido. Agora atualiza só o bloco ao vivo, no máximo a cada 100 ms. Quem subiu a rolagem para ler não é puxado de volta. | `AiStreamingRenderTests`: 200 atualizações ao vivo e zero reconstruções |
 
 | UX §4.1 / §6.1 | A barra global agora é Início, Jogar, Aprender, Studios e Mais, nessa ordem, no celular e no desktop (antes eram seis destinos no desktop, e Biblioteca e Ajustes ficavam soltos). Mais reúne Lunet IA, **Documentação** (agora global, com o mesmo leitor offline), Biblioteca, Explorar (só onde existe a tela, sem link morto) e Ajustes. O título é "Área de trabalho". | `GlobalNavigationTests` (desktop e Android); capturas |
+
+| UX §6.5 / §6.1 / §6.4 | Studios agrupados em Arte (Sprite, Mapa, Paleta), Áudio (Música, Efeito, Tom WAV) e Outros (Partículas, Tabela), todos tonais e com ícones distintos. O menu do jogo na Home tem Editar e Jogar, por um só caminho (`LunetShell.Play`). Abrir ou criar a missão em Aprender abre o jogo com os **Objetivos** ao lado do código. | Capturas `2l-studios` e `2j-jogar`; `LunetClientLearnTests` atualizado |
 
 ## Pendências conhecidas
 

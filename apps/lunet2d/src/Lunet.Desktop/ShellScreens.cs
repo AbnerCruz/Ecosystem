@@ -29,7 +29,7 @@ public static class ShellScreens
             var root = Path.Combine(Path.GetTempPath(), "lunet-screens-" + Guid.NewGuid().ToString("N"));
             try
             {
-                var window = new MainWindow(root) { Width = w, Height = h };
+                var window = new MainWindow(root, Path.Combine(root, ".data")) { Width = w, Height = h }; // never the user's AppData
                 window.Show();
                 var shell = window.Shell;
                 shell.HardwareKeyboard = size != "celular"; // the phone captures show the code bar
