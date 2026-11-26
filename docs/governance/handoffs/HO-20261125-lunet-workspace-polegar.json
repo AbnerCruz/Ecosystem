@@ -56,7 +56,8 @@
     "A5 game palette in the shell (PaletteView over ProjectPalette, Assets/palette.json): presets, extract from the game's sprites, add by hex, ramp and harmonies from a selected colour, remove; saved at once; the Sprite Studio offers the game's palette.",
     "A5 Data Studio in the shell (DataView over DataTable, Content/Data): records as cards on the phone, a record as a form with a typed editor per column (text, numeric keyboard, switch, choice), rejected values show the reason and are not written; new record as a thumb FAB; duplicate/remove records; add/remove columns; table problems on top; .json and .schema.json written together; Back goes record → list → workspace.",
     "A1 selection in the shell's Sprite Studio: Select tool with rectangle, lasso, same colour (wand) and all; drag inside moves (SpriteFloating), apply/undo/rotate/flip/duplicate (stamp)/erase in a contextual row above the tools; one undo step per lift; changing tool/frame or leaving applies the floating pixels. The sprite format has no layers (SpriteDocument), so there is no layer gap in the Sprite Studio.",
-    "A2 Tile Studio terrain and layers in the shell: Terrain tool (AutotileSet Sides16/Blob47 from the chosen tile, paint/erase, the reason when the tileset lacks tiles); layer ⋮ row with rename, reorder, show/hide, collision and remove (confirmed, at least one layer)."
+    "A2 Tile Studio terrain and layers in the shell: Terrain tool (AutotileSet Sides16/Blob47 from the chosen tile, paint/erase, the reason when the tileset lacks tiles); layer ⋮ row with rename, reorder, show/hide, collision and remove (confirmed, at least one layer).",
+    "A3 Music Studio in the shell: bottom tabs Notas/Faixa/Arranjo; note length 1–16 steps (clipped to the pattern); per-track instrument presets with preview, volume, pan, mute, solo, new track; arrangement order chips with earlier/later/remove and append current pattern; tempo in Arranjo; empty order plays the current pattern."
   ],
   "verification": [
     {
@@ -80,7 +81,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Sprite layers and selection, Tile autotile/layer management, Music note length/instruments/mixer/arrangement in the shell; Git remote; Gerar APK inside the shell; M5 GL preview"
+    "Git remote (push/pull) in the shell; Gerar APK inside the shell; M5 GL preview; AI hint in Aprender challenges"
   ],
   "decisions_required": [],
   "normative_sources": [

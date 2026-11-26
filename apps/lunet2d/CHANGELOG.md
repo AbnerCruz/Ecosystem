@@ -41,6 +41,11 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Music Studio da interface nova com Notas, Faixa e Arranjo** (abas na parte de baixo):
+  - **Notas:** duração da nota de 1 a 16 passos; uma nota perto do fim é cortada para caber.
+  - **Faixa:** instrumento entre os 12 prontos, com prévia ao trocar; volume, esquerda/direita, mudo e solo; nova faixa.
+  - **Arranjo:** a ordem dos padrões em chips. Toque num chip para movê-lo para antes ou depois, ou para tirá-lo; **+** põe o padrão atual no fim. O andamento fica aqui.
+  - Com o arranjo vazio, Música toca o padrão atual.
 - **Terreno (autotile) e camadas no Tile Studio da interface nova:**
   - A ferramenta Terreno pinta caminhos, paredes e chãos escolhendo sozinha a borda e o canto certos pelos vizinhos.
   - O terreno pode ser Simples (16 tiles) ou Suave (47), a partir do tile escolhido. Também dá para apagar terreno.

@@ -10,8 +10,13 @@ using MusicPattern = Lunet.Studio.Music.MusicPattern;
 using MusicRenderer = Lunet.Studio.Music.MusicRenderer;
 using MusicSong = Lunet.Studio.Music.MusicSong;
 using MusicTheory = Lunet.Studio.Music.MusicTheory;
+using MusicTrack = Lunet.Studio.Music.MusicTrack;
+using Instrument = Lunet.Studio.Music.Instrument;
 
 namespace Lunet.Client.Views;
+
+/// <summary>What the bottom of the Music Studio shows: the notes, the selected track's sound, or the song's order.</summary>
+public enum MusicPanel { Notes, Track, Arrangement }
 
 /// <summary>
 /// The piano roll: rows are the notes of two octaves from the song's root (scale notes lit, the root marked), columns
@@ -90,8 +95,12 @@ public sealed class MusicStudioView : UserControl
     private readonly StackPanel _patterns = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
     private readonly TextBlock _info = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
     private readonly Slider _bpm = new() { Minimum = 60, Maximum = 200, MinHeight = 40, Name = "Bpm" };
+    private readonly StackPanel _panelTabs = new() { Orientation = Orientation.Horizontal, Spacing = 4 };
+    private readonly StackPanel _panel = new() { Spacing = 0 };
+    private readonly DockPanel _bpmRow;
     private bool _dirty;
     private bool? _adding;
+    private int? _orderSelected;
 
     public MusicStudioView(LunetShell shell, string path, Action close)
     {
@@ -123,10 +132,10 @@ public sealed class MusicStudioView : UserControl
             Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         var bpmLabel = LunetUi.Text("Andamento", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
         bpmLabel.Width = 84; bpmLabel.VerticalAlignment = VerticalAlignment.Center;
-        var bpmRow = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0) };
+        _bpmRow = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0) };
         DockPanel.SetDock(bpmLabel, Dock.Left);
-        bpmRow.Children.Add(bpmLabel);
-        bpmRow.Children.Add(_bpm);
+        _bpmRow.Children.Add(bpmLabel);
+        _bpmRow.Children.Add(_bpm);
 
         var playPattern = LunetUi.Button("Padrão", ButtonKind.Secondary, LunetIcons.Play, () => PlayPattern());
         playPattern.Name = "PlayPattern";
@@ -141,7 +150,13 @@ public sealed class MusicStudioView : UserControl
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         };
-        var bottom = new StackPanel { Background = LunetTokens.Brush(LunetTokens.Color.Surface), Children = { Row(_tracks), Row(_patterns), bpmRow, plays } };
+        _tracksRow = Row(_tracks);
+        _patternsRow = Row(_patterns);
+        var bottom = new StackPanel
+        {
+            Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            Children = { new Border { Child = _panelTabs, Padding = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs, LunetTokens.Space.S, 0) }, _panel, plays },
+        };
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
         DockPanel.SetDock(bottom, Dock.Bottom);
@@ -154,7 +169,12 @@ public sealed class MusicStudioView : UserControl
         Refresh();
     }
 
+    private readonly ScrollViewer _tracksRow, _patternsRow;
+
     public MusicSong Song { get; }
+    public MusicPanel Panel { get; private set; } = MusicPanel.Notes;
+    /// <summary>Length in steps of the notes a tap adds (1 = a sixteenth in 4/4).</summary>
+    public int NoteLength { get; private set; } = 1;
     public int Pattern { get; private set; }
     public int Track { get; private set; }
     public PianoRoll Roll => _roll;
@@ -168,7 +188,7 @@ public sealed class MusicStudioView : UserControl
         if (first) _adding = existing < 0;
         if (_adding == true && existing < 0)
         {
-            notes.Add(new MusicNote(Track, step, pitch, 1));
+            notes.Add(new MusicNote(Track, step, pitch, Math.Max(1, Math.Min(NoteLength, Song.Patterns[Pattern].Steps - step))));
             _shell.PlaySound?.Invoke(NotePreview(pitch));
         }
         else if (_adding == false && existing >= 0) notes.RemoveAt(existing);
@@ -205,8 +225,67 @@ public sealed class MusicStudioView : UserControl
         Refresh();
     }
 
+    public void ShowPanel(MusicPanel panel) { Panel = panel; Refresh(); }
+    public void SetNoteLength(int steps) { NoteLength = Math.Clamp(steps, 1, 16); Refresh(); }
+
+    // ---------- Track (instrument and mixer) ----------
+
+    private void ChangeTrack(Func<MusicTrack, MusicTrack> change, bool refresh = true)
+    {
+        Song.Tracks[Track] = change(Song.Tracks[Track]);
+        _dirty = true;
+        if (refresh) Refresh();
+    }
+
+    public void SetInstrument(string preset) => ChangeTrack(t => t with { Instrument = Instrument.Preset(preset) });
+    public void SetVolume(float volume) => ChangeTrack(t => t with { Volume = Math.Clamp(volume, 0, 1) }, refresh: false);
+    public void SetPan(float pan) => ChangeTrack(t => t with { Pan = Math.Clamp(pan, -1, 1) }, refresh: false);
+    public void ToggleMute() => ChangeTrack(t => t with { Muted = !t.Muted });
+    public void ToggleSolo() => ChangeTrack(t => t with { Solo = !t.Solo });
+
+    public bool AddTrack()
+    {
+        if (Song.Tracks.Count >= MusicSong.MaxTracks) return false;
+        Song.Tracks.Add(new MusicTrack { Name = "Faixa " + (Song.Tracks.Count + 1), Instrument = Instrument.Presets[0] });
+        Track = Song.Tracks.Count - 1;
+        _dirty = true;
+        Panel = MusicPanel.Track;
+        Refresh();
+        return true;
+    }
+
+    // ---------- Arrangement (the order the patterns play in) ----------
+
+    public void AppendToOrder(int pattern)
+    {
+        if (Song.Order.Count >= MusicSong.MaxOrder || pattern < 0 || pattern >= Song.Patterns.Count) return;
+        Song.Order.Add(pattern);
+        _orderSelected = Song.Order.Count - 1;
+        _dirty = true;
+        Refresh();
+    }
+
+    public void MoveOrder(int index, int direction)
+    {
+        var target = index + direction;
+        if (index < 0 || index >= Song.Order.Count || target < 0 || target >= Song.Order.Count) return;
+        (Song.Order[index], Song.Order[target]) = (Song.Order[target], Song.Order[index]);
+        _orderSelected = target;
+        _dirty = true;
+        Refresh();
+    }
+
+    public void RemoveOrder(int index)
+    {
+        if (index < 0 || index >= Song.Order.Count) return;
+        Song.Order.RemoveAt(index);
+        _orderSelected = null;
+        _dirty = true;
+        Refresh();
+    }
+
     public void PlayPattern() => _shell.PlaySound?.Invoke(new MusicRenderer().RenderWav(Song, Pattern));
-    public void PlaySong() => _shell.PlaySound?.Invoke(new MusicRenderer().RenderWav(Song));
+    public void PlaySong() => _shell.PlaySound?.Invoke(Song.Order.Count == 0 ? new MusicRenderer().RenderWav(Song, Pattern) : new MusicRenderer().RenderWav(Song));
 
     public void Save()
     {
@@ -268,5 +347,135 @@ public sealed class MusicStudioView : UserControl
         var dup = LunetUi.Button("Duplicar", ButtonKind.Ghost, LunetIcons.Copy, () => AddPattern(duplicate: true));
         dup.MinHeight = 40;
         _patterns.Children.Add(dup);
+        if (Song.Tracks.Count < MusicSong.MaxTracks)
+        {
+            var addTrack = LunetUi.Button("Faixa", ButtonKind.Ghost, LunetIcons.Plus, () => AddTrack());
+            addTrack.MinHeight = 40;
+            addTrack.Name = "AddTrack";
+            _tracks.Children.Add(addTrack);
+        }
+
+        _panelTabs.Children.Clear();
+        foreach (var (panel, label) in new[] { (MusicPanel.Notes, "Notas"), (MusicPanel.Track, "Faixa"), (MusicPanel.Arrangement, "Arranjo") })
+        {
+            var p = panel;
+            var tab = LunetUi.Button(label, panel == Panel ? ButtonKind.Secondary : ButtonKind.Ghost, null, () => ShowPanel(p));
+            tab.MinHeight = 40;
+            tab.Name = "Panel-" + panel;
+            if (panel == Panel) tab.Foreground = LunetTokens.Brush(LunetTokens.Color.Primary);
+            _panelTabs.Children.Add(tab);
+        }
+
+        _panel.Children.Clear();
+        switch (Panel)
+        {
+            case MusicPanel.Notes: NotesPanel(); break;
+            case MusicPanel.Track: TrackPanel(); break;
+            default: ArrangementPanel(); break;
+        }
+    }
+
+    private StackPanel Chips() => new() { Orientation = Orientation.Horizontal, Spacing = 6 };
+
+    private ScrollViewer Scroll(Control content) => new()
+    {
+        Content = content, Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs),
+        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+        VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+    };
+
+    private void NotesPanel()
+    {
+        _panel.Children.Add(_tracksRow);
+        _panel.Children.Add(_patternsRow);
+        var lengths = Chips();
+        var caption = LunetUi.Text("Duração", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+        caption.VerticalAlignment = VerticalAlignment.Center;
+        caption.Margin = new Thickness(LunetTokens.Space.Xs, 0);
+        lengths.Children.Add(caption);
+        foreach (var (steps, label) in new[] { (1, "1"), (2, "2"), (4, "4"), (8, "8"), (16, "16") })
+        {
+            var n = steps;
+            var chip = LunetUi.Button(label, n == NoteLength ? ButtonKind.Primary : ButtonKind.Ghost, null, () => SetNoteLength(n));
+            chip.MinHeight = 40; chip.MinWidth = 44;
+            chip.Name = "Length-" + n;
+            AutomationProperties.SetName(chip, $"Notas de {n} passo{(n > 1 ? "s" : "")}");
+            lengths.Children.Add(chip);
+        }
+        _panel.Children.Add(Scroll(lengths));
+    }
+
+    private void TrackPanel()
+    {
+        var track = Song.Tracks[Track];
+        _panel.Children.Add(_tracksRow);
+        var instruments = Chips();
+        foreach (var preset in Instrument.Presets)
+        {
+            var name = preset.Name;
+            var chip = LunetUi.Button(name, name == track.Instrument.Name ? ButtonKind.Primary : ButtonKind.Secondary, null, () =>
+            {
+                SetInstrument(name);
+                _shell.PlaySound?.Invoke(NotePreview(Song.Root + 12));
+            });
+            chip.MinHeight = 40;
+            chip.Name = "Instrument-" + name;
+            instruments.Children.Add(chip);
+        }
+        _panel.Children.Add(Scroll(instruments));
+        Control SliderRow(string label, double min, double max, double value, Action<double> changed, string name)
+        {
+            var slider = new Slider { Minimum = min, Maximum = max, Value = value, MinHeight = 40, Name = name };
+            AutomationProperties.SetName(slider, label);
+            slider.ValueChanged += (_, e) => changed(e.NewValue);
+            var t = LunetUi.Text(label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+            t.Width = 84; t.VerticalAlignment = VerticalAlignment.Center;
+            var row = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0) };
+            DockPanel.SetDock(t, Dock.Left);
+            row.Children.Add(t);
+            row.Children.Add(slider);
+            return row;
+        }
+        _panel.Children.Add(SliderRow("Volume", 0, 1, track.Volume, v => SetVolume((float)v), "TrackVolume"));
+        _panel.Children.Add(SliderRow("Esq · Dir", -1, 1, track.Pan, v => SetPan((float)v), "TrackPan"));
+        var toggles = Chips();
+        var mute = LunetUi.Button(track.Muted ? "Mudo" : "Som ligado", track.Muted ? ButtonKind.Primary : ButtonKind.Secondary, null, ToggleMute);
+        mute.MinHeight = 40; mute.Name = "TrackMute";
+        var solo = LunetUi.Button("Solo", track.Solo ? ButtonKind.Primary : ButtonKind.Secondary, null, ToggleSolo);
+        solo.MinHeight = 40; solo.Name = "TrackSolo";
+        toggles.Children.Add(mute);
+        toggles.Children.Add(solo);
+        _panel.Children.Add(Scroll(toggles));
+    }
+
+    private void ArrangementPanel()
+    {
+        var order = Chips();
+        for (var i = 0; i < Song.Order.Count; i++)
+        {
+            var index = i;
+            var selected = _orderSelected == i;
+            var chip = LunetUi.Button(Song.Patterns[Song.Order[i]].Name, selected ? ButtonKind.Primary : ButtonKind.Secondary, null, () => { _orderSelected = _orderSelected == index ? null : index; Refresh(); });
+            chip.MinHeight = 40; chip.MinWidth = 44;
+            chip.Name = "Order-" + i;
+            AutomationProperties.SetName(chip, $"Posição {i + 1}: padrão {Song.Patterns[Song.Order[i]].Name}");
+            order.Children.Add(chip);
+        }
+        var append = LunetUi.Button("+ " + Song.Patterns[Pattern].Name, ButtonKind.Ghost, null, () => AppendToOrder(Pattern));
+        append.MinHeight = 40; append.Name = "AppendOrder";
+        AutomationProperties.SetName(append, "Pôr o padrão " + Song.Patterns[Pattern].Name + " no fim");
+        order.Children.Add(append);
+        _panel.Children.Add(Scroll(order));
+        if (_orderSelected is { } sel && sel < Song.Order.Count)
+        {
+            var actions = Chips();
+            void Act(string label, Action act, string name) { var b = LunetUi.Button(label, ButtonKind.Ghost, null, act); b.MinHeight = 40; b.Name = name; actions.Children.Add(b); }
+            Act("← Antes", () => MoveOrder(sel, -1), "OrderEarlier");
+            Act("Depois →", () => MoveOrder(sel, 1), "OrderLater");
+            Act("Tirar", () => RemoveOrder(sel), "OrderRemove");
+            _panel.Children.Add(Scroll(actions));
+        }
+        else _panel.Children.Add(new Border { Padding = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.Xs), Child = LunetUi.Text(Song.Order.Count == 0 ? "O arranjo está vazio: Música toca o padrão atual." : "Toque num padrão do arranjo para mudar a ordem.", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary) });
+        _panel.Children.Add(_bpmRow);
     }
 }

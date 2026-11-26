@@ -554,4 +554,62 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void MusicStudio_SetsNoteLengthInstrumentMixerAndArrangement()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-music2-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var played = new List<byte[]>();
+                var shell = new LunetShell(root) { PlaySound = played.Add };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var studio = shell.WorkspaceView.NewMusic();
+                studio.SelectTrack(0);
+                var notes = studio.Song.Patterns[studio.Pattern].Notes;
+                notes.RemoveAll(n => n.Track == 0);
+                studio.SetNoteLength(4);
+                studio.Toggle(2, 3, first: true);
+                Assert.Equal(4, notes.Single(n => n.Track == 0).Length);
+                var steps = studio.Song.Patterns[studio.Pattern].Steps;
+                studio.Toggle(steps - 1, 5, first: true);                          // near the end: cut to fit
+                Assert.Equal(1, notes.Single(n => n.Track == 0 && n.Step == steps - 1).Length);
+
+                studio.ShowPanel(MusicPanel.Track);
+                studio.SetInstrument("Sino FM");
+                Assert.Equal("Sino FM", studio.Song.Tracks[0].Instrument.Name);
+                Assert.Equal((byte)'R', played[^1][0]);                            // a preview of the new sound
+                studio.SetVolume(0.3f);
+                studio.SetPan(-0.5f);
+                studio.ToggleMute();
+                studio.ToggleSolo();
+                Assert.Equal(0.3f, studio.Song.Tracks[0].Volume);
+                Assert.True(studio.Song.Tracks[0].Muted && studio.Song.Tracks[0].Solo);
+                Assert.True(studio.AddTrack());
+                Assert.Equal(5, studio.Song.Tracks.Count);
+                Assert.Equal(4, studio.Track);
+
+                studio.ShowPanel(MusicPanel.Arrangement);
+                var order = studio.Song.Order.ToList();
+                studio.AppendToOrder(0);
+                Assert.Equal(order.Count + 1, studio.Song.Order.Count);
+                studio.MoveOrder(studio.Song.Order.Count - 1, -1);
+                Assert.Equal(0, studio.Song.Order[^2]);
+                studio.RemoveOrder(studio.Song.Order.Count - 2);
+                Assert.Equal(order, studio.Song.Order);
+
+                Assert.True(shell.Back());
+                var saved = Lunet.Studio.Music.MusicSong.Parse(shell.Workspace.Project!.ReadText("Content/Audio/musica-1.song.json"));
+                Assert.Equal("Sino FM", saved.Tracks[0].Instrument.Name);
+                Assert.Equal(5, saved.Tracks.Count);
+                Assert.Contains(saved.Patterns.SelectMany(p => p.Notes), n => n.Track == 0 && n.Length == 4);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

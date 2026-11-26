@@ -161,8 +161,12 @@ public static class ShellScreens
                 mind.Rename(mind.Map.Topics[^1].Id, "Ideias soltas");
                 Shot(window, output, size, "7b-mapa-mental", written);
                 shell.Back();
-                shell.WorkspaceView.NewMusic();
+                var music = shell.WorkspaceView.NewMusic();
                 Shot(window, output, size, "8f-musica", written);
+                music.ShowPanel(Lunet.Client.Views.MusicPanel.Track);
+                Shot(window, output, size, "8f2-faixa", written);
+                music.ShowPanel(Lunet.Client.Views.MusicPanel.Arrangement);
+                Shot(window, output, size, "8f3-arranjo", written);
                 shell.Back();
                 var versions = shell.WorkspaceView.OpenGit();
                 versions.Start();
