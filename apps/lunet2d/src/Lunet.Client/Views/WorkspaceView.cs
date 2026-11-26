@@ -51,6 +51,7 @@ public sealed class WorkspaceView : UserControl
         if (_tabBar is not null) _tabBar.IsVisible = !open;
         if (_runFab is not null) _runFab.IsVisible = !open;
         if (_sheet is not null) _sheet.IsVisible = !open || _typingInSheet;
+        PlaceRunButton();
     }
 
     private bool _typingInSheet;
@@ -400,10 +401,28 @@ public sealed class WorkspaceView : UserControl
         run.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
         run.HorizontalAlignment = HorizontalAlignment.Right;
         run.VerticalAlignment = VerticalAlignment.Bottom;
-        run.Margin = new Thickness(LunetTokens.Space.M);
         _runFab = run;
+        PlaceRunButton();
         return new Grid { Children = { body, run } };
     }
+
+    /// <summary>
+    /// Keeps Rodar above the code bar: in Código the bar sits at the bottom of the editor and the button covered its
+    /// keys (capture 9a-objetivos, 26/11). The button moves up by the bar's height and follows it when it resizes.
+    /// </summary>
+    public void PlaceRunButton()
+    {
+        if (_runFab is null) return;
+        var bar = _shell.State.Tab == WorkspaceTab.Code && _code.KeyboardVisible ? _code.Keyboard : null;
+        if (bar is not null && !_watchedBar) { _watchedBar = true; bar.SizeChanged += (_, _) => PlaceRunButton(); }
+        var lift = bar is null ? 0 : (bar.Bounds.Height > 0 ? bar.Bounds.Height : CodeBar.RowHeight);
+        _runFab.Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M + lift);
+    }
+
+    private bool _watchedBar;
+
+    /// <summary>The Rodar/Parar button over the editor (tests).</summary>
+    public Button? RunButton => _runFab;
 
     private Button? _runFab;
 

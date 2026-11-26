@@ -239,6 +239,16 @@ public static class ShellScreens
                     Shot(window, output, size, "8-arte-detalhe", written);
                     resources.CloseSheet();
                 }
+                // H6: Objetivos beside the code (the game linked to the first Aprender challenge).
+                var challenge = Lunet.Core.LearningCatalog.FindProject(Lunet.Core.LearningCatalog.FirstProjectId)!;
+                new Lunet.Core.LearningProgressStore(shell.LearningProgressPath).LinkProject(challenge.Id, shell.Workspace.Project!.Name, shell.Workspace.Project.Manifest.GameId);
+                shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Objectives);
+                Shot(window, output, size, "9a-objetivos", written);
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.None);
+                shell.WorkspaceView.OpenConnections();
+                Shot(window, output, size, "9b-conexoes", written);
+                shell.Back();
                 window.Close();
             }
             finally { if (Directory.Exists(root)) Directory.Delete(root, true); }

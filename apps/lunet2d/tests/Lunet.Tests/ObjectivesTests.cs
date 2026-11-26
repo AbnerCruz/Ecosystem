@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.VisualTree;
 using Lunet.Client;
@@ -61,5 +62,36 @@ public sealed class ObjectivesTests
     {
         public string ProviderId => "chat-completions";
         public ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken) => throw new InvalidOperationException("not used");
+    }
+}
+
+public sealed class RunButtonLayoutTests
+{
+    [Fact]
+    public void Rodar_NeverCoversTheCodeBar()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-runfab-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.WorkspaceView.Code.ShowKeyboard();
+                shell.State.ShowPanel(SupportPanel.Objectives); // the state of capture 9a: a panel open…
+                shell.WorkspaceView.Code.ShowKeyboard();         // …and the editor taking focus again brings the bar back
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var run = shell.WorkspaceView.RunButton!; var bar = shell.WorkspaceView.Code.Keyboard!;
+                Console.WriteLine($"bar visible={bar.IsVisible} attached={TopLevel.GetTopLevel(run) is not null} keyboardOpen={shell.KeyboardOpen}");
+                Assert.True(bar.IsEffectivelyVisible && TopLevel.GetTopLevel(run) is not null, $"bar={bar.IsEffectivelyVisible} fab={TopLevel.GetTopLevel(run) is not null} kb={shell.KeyboardOpen}");
+                var runBox = new Avalonia.Rect(run.TranslatePoint(new(0, 0), window)!.Value, run.Bounds.Size);
+                var barBox = new Avalonia.Rect(bar.TranslatePoint(new(0, 0), window)!.Value, bar.Bounds.Size);
+                Assert.False(runBox.Intersects(barBox), $"Rodar {runBox} cobre a barra {barBox}");
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
