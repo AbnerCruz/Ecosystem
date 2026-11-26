@@ -62,6 +62,9 @@ public static class LunetUi
                 control.Opacity = 1;
                 control.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("translateY(0px)");
             }, Avalonia.Threading.DispatcherPriority.Render);
+            // Never leave a screen invisible: if the render clock does not run the transition (a paused renderer),
+            // the transitions are dropped after their time and the control snaps to its final, visible state.
+            Avalonia.Threading.DispatcherTimer.RunOnce(() => control.Transitions = null, time + TimeSpan.FromMilliseconds(120));
         }
         control.AttachedToVisualTree += Start;
         return control;

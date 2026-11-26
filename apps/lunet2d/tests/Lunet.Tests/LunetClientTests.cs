@@ -174,8 +174,14 @@ public sealed class LunetClientTests
             Assert.Equal(0, page.Opacity);                                       // starts hidden, below its place
             var window = new Window { Width = 100, Height = 100, Content = page };
             window.Show();
-            for (var i = 0; i < 20 && page.Opacity < 1; i++) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(5); }
-            Assert.Equal(1, page.Opacity, 2);                                    // and settles visible
+            // Settles visible: with the render clock (a frame), or by the safety that drops the transition after its time.
+            for (var i = 0; i < 100 && page.Opacity < 1; i++)
+            {
+                Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            Assert.Equal(1, page.Opacity, 2);
             Lunet.Client.Ui.LunetUi.ReduceMotion = true;
             try { Assert.Equal(1, Lunet.Client.Ui.LunetUi.Enter(new Border()).Opacity); }
             finally { Lunet.Client.Ui.LunetUi.ReduceMotion = false; }
