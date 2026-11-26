@@ -2459,6 +2459,38 @@
         "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md"
       ],
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0069",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Linguagem visual única do Ecosystem (v1.0), aplicada primeiro no Lunet",
+      "context": "Em 26/11/2026 o proprietário avaliou como feios os painéis e inputs da casca do Lunet e mandou estudar UX, design, cor, tipografia, inputs, painéis, bordas, animações e efeitos (referências contemporâneas, comunidades, artigos e wikis), estabelecer os padrões do Ecosystem, registrá-los no Ecosystem e implementá-los no Lunet. Preferência declarada: preto, azul, branco e roxo, sem se limitar a eles.",
+      "question": "Qual linguagem visual o Ecosystem adota e onde ela vive?",
+      "alternatives": [
+        {
+          "option": "A — Linguagem única do Ecosystem em docs/design (documento normativo + tokens.json como autoridade), copiada por cada Product",
+          "consequences": "Uma fonte de valores; Products sem dependência entre si; Lunet adota agora, os demais ao tocar a fundação visual."
+        },
+        {
+          "option": "B — Cada Product mantém o próprio visual",
+          "consequences": "Mantém a divergência e o visual criticado."
+        }
+      ],
+      "consequences": "docs/design/linguagem-visual.md (v1.0) e docs/design/tokens.json passam a ser a referência de interface do Ecosystem; Lunet.Client adota tokens, estilos globais de controles, Inter embutida e componentes; Urbe, Hub e portal adotam ao revisar a fundação visual; mudanças exigem registro e versão.",
+      "manifestCompatibility": "NN-001: tokens.json é a autoridade única dos valores. NN-002: Products copiam os valores, sem dependência entre si. NN-022: nenhum pacote de UI compartilhado é extraído agora. NN-017/ADD-0035: capturas headless não são teste no aparelho.",
+      "raisedBy": "claude-code-lunet-avalonia",
+      "raisedAt": "2026-11-26",
+      "decision": "A, conforme ordem direta do proprietário nesta conversa ('estabeleça os padrões que vamos utilizar no ecosystem então registra direto no ecosystem […] implemente no Lunet').",
+      "decidedAt": "2026-11-26",
+      "record": "docs/governance/addenda/ADD-0037-linguagem-visual.md",
+      "related": [
+        "docs/design/linguagem-visual.md",
+        "docs/design/tokens.json",
+        "docs/design/estudo-visual-2026-11-26.md"
+      ],
+      "consequencesApplied": true
     }
   ]
 }

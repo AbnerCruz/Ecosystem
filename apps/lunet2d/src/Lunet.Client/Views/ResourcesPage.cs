@@ -107,13 +107,13 @@ public sealed class ResourcesPage : UserControl
             var content = new StackPanel
             {
                 Spacing = LunetTokens.Space.Xs,
-                Children = { LunetIcons.Create(icon, primary ? LunetTokens.Color.OnPrimary : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, primary ? LunetTokens.Color.OnPrimary : LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
+                Children = { LunetIcons.Create(icon, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
             };
             var b = new Button
             {
                 Content = content, Width = 116, Height = 76, Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs),
                 Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.L), BorderThickness = new Thickness(0),
-                Background = LunetTokens.Brush(primary ? LunetTokens.Color.Primary : LunetTokens.Color.Surface),
+                Background = LunetTokens.Brush(primary ? LunetTokens.Color.Accent : LunetTokens.Color.Surface),
                 HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Top, Name = name,
             };
             AutomationProperties.SetName(b, label);
@@ -318,11 +318,12 @@ public sealed class ResourcesPage : UserControl
         var sheet = new Border
         {
             Child = body, VerticalAlignment = VerticalAlignment.Bottom, MaxWidth = 640, Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S, LunetTokens.Space.M, LunetTokens.Space.L),
-            Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), CornerRadius = new CornerRadius(LunetTokens.Radius.L, LunetTokens.Radius.L, 0, 0), Name = "ResourceSheet",
+            Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay), CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0), Name = "ResourceSheet",
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Hairline), BorderThickness = new Thickness(0, 1, 0, 0), BoxShadow = LunetTokens.Low,
         };
-        var scrim = new Border { Background = LunetTokens.Brush("#99000000") };
+        var scrim = new Border { Background = LunetTokens.Brush(LunetTokens.Color.Scrim) };
         scrim.PointerPressed += (_, e) => { CloseSheet(); e.Handled = true; };
-        _sheet = new Grid { Children = { scrim, sheet } };
+        _sheet = new Grid { Children = { LunetUi.Enter(scrim, 0, LunetTokens.Motion.Fast), LunetUi.Enter(sheet, 24, LunetTokens.Motion.Slow) } };
         _root.Children.Add(_sheet);
     }
 

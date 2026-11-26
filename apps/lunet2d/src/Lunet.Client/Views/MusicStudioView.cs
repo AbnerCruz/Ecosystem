@@ -55,7 +55,7 @@ public sealed class PianoRoll : ZoomCanvas
         {
             var pitch = PitchOfRow(row);
             var degree = ((pitch - _song.Root) % 12 + 12) % 12;
-            var color = degree == 0 ? "#2b2840" : scale.Contains(degree) ? "#1f2127" : "#15161a";
+            var color = degree == 0 ? "#2A2448" : scale.Contains(degree) ? LunetTokens.Ink.I3 : LunetTokens.Ink.I2;
             context.FillRectangle(LunetTokens.Brush(color), new Rect(a.X, a.Y + row * rh, a.Width, rh));
         }
         var beat = Math.Max(1, _song.StepsPerBeat);
@@ -72,7 +72,7 @@ public sealed class PianoRoll : ZoomCanvas
             if (row < 0 || row >= Rows) continue;
             var mine = note.Track == _track;
             var rect = new Rect(a.X + note.Step * cw + 1, a.Y + row * rh + 1, Math.Max(2, note.Length * cw - 2), Math.Max(2, rh - 2));
-            context.FillRectangle(LunetTokens.Brush(mine ? LunetTokens.Color.Primary : "#40a594ff"), rect, 3);
+            context.FillRectangle(LunetTokens.Brush(mine ? LunetTokens.Color.Primary : "#59A594FF"), rect, 3);
         }
         context.DrawRectangle(new Pen(LunetTokens.Brush(LunetTokens.Color.BorderStrong), 1), a);
     }
@@ -328,7 +328,7 @@ public sealed class MusicStudioView : UserControl
         for (var i = 0; i < Song.Tracks.Count; i++)
         {
             var index = i;
-            var chip = LunetUi.Button(Song.Tracks[i].Name, i == Track ? ButtonKind.Primary : ButtonKind.Secondary, null, () => SelectTrack(index));
+            var chip = LunetUi.Button(Song.Tracks[i].Name, i == Track ? ButtonKind.Selected : ButtonKind.Secondary, null, () => SelectTrack(index));
             chip.MinHeight = 40;
             chip.Name = "Track-" + i;
             _tracks.Children.Add(chip);
@@ -337,7 +337,7 @@ public sealed class MusicStudioView : UserControl
         for (var i = 0; i < Song.Patterns.Count; i++)
         {
             var index = i;
-            var chip = LunetUi.Button(Song.Patterns[i].Name, i == Pattern ? ButtonKind.Primary : ButtonKind.Ghost, null, () => SelectPattern(index));
+            var chip = LunetUi.Button(Song.Patterns[i].Name, i == Pattern ? ButtonKind.Selected : ButtonKind.Ghost, null, () => SelectPattern(index));
             chip.MinHeight = 40;
             chip.Name = "Pattern-" + i;
             _patterns.Children.Add(chip);
@@ -397,7 +397,7 @@ public sealed class MusicStudioView : UserControl
         foreach (var (steps, label) in new[] { (1, "1"), (2, "2"), (4, "4"), (8, "8"), (16, "16") })
         {
             var n = steps;
-            var chip = LunetUi.Button(label, n == NoteLength ? ButtonKind.Primary : ButtonKind.Ghost, null, () => SetNoteLength(n));
+            var chip = LunetUi.Button(label, n == NoteLength ? ButtonKind.Selected : ButtonKind.Ghost, null, () => SetNoteLength(n));
             chip.MinHeight = 40; chip.MinWidth = 44;
             chip.Name = "Length-" + n;
             AutomationProperties.SetName(chip, $"Notas de {n} passo{(n > 1 ? "s" : "")}");
@@ -414,7 +414,7 @@ public sealed class MusicStudioView : UserControl
         foreach (var preset in Instrument.Presets)
         {
             var name = preset.Name;
-            var chip = LunetUi.Button(name, name == track.Instrument.Name ? ButtonKind.Primary : ButtonKind.Secondary, null, () =>
+            var chip = LunetUi.Button(name, name == track.Instrument.Name ? ButtonKind.Selected : ButtonKind.Secondary, null, () =>
             {
                 SetInstrument(name);
                 _shell.PlaySound?.Invoke(NotePreview(Song.Root + 12));
@@ -440,9 +440,9 @@ public sealed class MusicStudioView : UserControl
         _panel.Children.Add(SliderRow("Volume", 0, 1, track.Volume, v => SetVolume((float)v), "TrackVolume"));
         _panel.Children.Add(SliderRow("Esq · Dir", -1, 1, track.Pan, v => SetPan((float)v), "TrackPan"));
         var toggles = Chips();
-        var mute = LunetUi.Button(track.Muted ? "Mudo" : "Som ligado", track.Muted ? ButtonKind.Primary : ButtonKind.Secondary, null, ToggleMute);
+        var mute = LunetUi.Button(track.Muted ? "Mudo" : "Som ligado", track.Muted ? ButtonKind.Selected : ButtonKind.Secondary, null, ToggleMute);
         mute.MinHeight = 40; mute.Name = "TrackMute";
-        var solo = LunetUi.Button("Solo", track.Solo ? ButtonKind.Primary : ButtonKind.Secondary, null, ToggleSolo);
+        var solo = LunetUi.Button("Solo", track.Solo ? ButtonKind.Selected : ButtonKind.Secondary, null, ToggleSolo);
         solo.MinHeight = 40; solo.Name = "TrackSolo";
         toggles.Children.Add(mute);
         toggles.Children.Add(solo);
@@ -456,7 +456,7 @@ public sealed class MusicStudioView : UserControl
         {
             var index = i;
             var selected = _orderSelected == i;
-            var chip = LunetUi.Button(Song.Patterns[Song.Order[i]].Name, selected ? ButtonKind.Primary : ButtonKind.Secondary, null, () => { _orderSelected = _orderSelected == index ? null : index; Refresh(); });
+            var chip = LunetUi.Button(Song.Patterns[Song.Order[i]].Name, selected ? ButtonKind.Selected : ButtonKind.Secondary, null, () => { _orderSelected = _orderSelected == index ? null : index; Refresh(); });
             chip.MinHeight = 40; chip.MinWidth = 44;
             chip.Name = "Order-" + i;
             AutomationProperties.SetName(chip, $"Posição {i + 1}: padrão {Song.Patterns[Song.Order[i]].Name}");

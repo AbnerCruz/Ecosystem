@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-linguagem-visual",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T10:46:20Z",
+  "agent": {
+    "id": "claude-code-lunet-avalonia",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "c80ba9d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/design/linguagem-visual.md",
+    "docs/design/tokens.json",
+    "docs/design/estudo-visual-2026-11-26.md",
+    "docs/governance/addenda/ADD-0037-linguagem-visual.md",
+    "docs/governance/decisions.json",
+    "AGENTS.md",
+    "README.md",
+    "apps/lunet2d/src/Lunet.Client/LunetApp.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetTokens.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Lunet.Client.csproj",
+    "apps/lunet2d/src/Lunet.Client/Assets/Fonts/JetBrainsMono-Regular.ttf",
+    "apps/lunet2d/src/Lunet.Client/Views/GitView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/CHANGELOG.md",
+    "docs/governance/handoffs/HO-20261126-linguagem-visual.json",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "site/design/index.html",
+    "site/design/design.css",
+    "site/design/design.js",
+    "site/index.html",
+    ".github/workflows/pages.yml",
+    "apps/lunet2d/tests/Lunet.Tests/Allocation.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GameHostProfilingTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DebugShapeTests.cs"
+  ],
+  "work_completed": [
+    "Owner order (26/11/2026) recorded as ADD-0037 / DEC-0069: study of UX, colour, typography, inputs, panels, borders, motion and effects with contemporary references and community discussions (docs/design/estudo-visual-2026-11-26.md, sources linked).",
+    "Ecosystem visual language v1.0 (docs/design/linguagem-visual.md) with docs/design/tokens.json as the single authority of values: cool ink scale of 12 steps, violet (action/brand) and blue (information/selection), Inter + JetBrains Mono, 4-pt spacing, radii, elevation by tone, components (buttons, fields, selection, lists, sheets), motion tokens, effects budget, contrast WCAG AA + APCA floors, anti-patterns and review checklist; AGENTS.md §1.4 points every agent to it.",
+    "Lunet adopts v1.0: LunetTokens copied from tokens.json (version declared, test compares), Fluent palette and resource keys re-tinted for every stock control (fields without border and a 2 px violet focus ring, combo, switch, slider, checks, menus, tool tips, scroll bars), Inter embedded (Avalonia.Fonts.Inter) and JetBrains Mono embedded (OFL), buttons with press scale and colour transitions, primary = violet solid + white, secondary tonal without border, Selected kind for chosen options, cards and sheets without borders, shared Notice/Section/Field/Row components, labels outside fields in Versões, one primary per screen there.",
+    "Entry motion (§8): LunetUi.Enter (fade + rise with the enter curve; sheets 24 dp/300 ms, pages and Studios 16 dp/220 ms, scrims fade 150 ms), LunetUi.ReduceMotion honoured from Android's animator duration scale and used by the headless captures; test Motion_EntriesSettleVisible_AndReduceMotionSkipsThem.",
+    "PR #1049 merged before the visual-language commits; main was merged into the branch and they ship as 0.0.1-dev.1000606 in a new PR.",
+    "Showcase page in the portal (site/design/: index.html, design.css, design.js), requested by the owner: every token and component of the visual language demonstrated live — colour scales with WCAG and APCA computed in the page, type scale, spacing, radii, elevation, buttons (all kinds, sizes, loading), fields (label, hint, error, focus, search, select, number, textarea, disabled), switch, segmented, chips, slider, checks, list rows, tiles, card, phone mock with top bar and bottom nav, sheet, dialog, menu, toast, tooltip, states, empty and skeleton, notices, icon set, motion tokens, effects, anti-patterns and an interactive checklist; it reads tokens.json at runtime (copied by pages.yml), so the page never diverges; reduce-motion toggle and prefers-reduced-motion. Verified in Chromium (Playwright): no console errors, no horizontal scroll at 390 px.",
+    "CI fix: GameHostProfilingTests.RecordingPhaseTimesDoesNotAllocateAfterWarmup failed on PR #1050 (7280 B) for the same reason as the earlier DebugShape test (GetAllocatedBytesForCurrentThread counting other work on the runner's shared thread). New test helper Allocation.Steady (warm-up and measurement on a dedicated thread, minimum of three runs) used by both tests; AllocationTests proves it still sees a real allocation."
+  ],
+  "verification": [
+    {
+      "check": "Lunet xUnit suite incl. Tokens_TextPairsMeetAA, Tokens_MeetTheApcaFloorsOfTheVisualLanguage, Tokens_MatchTheEcosystemVisualLanguage",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs"
+    },
+    {
+      "check": "Headless captures (celular and largo) of every screen reviewed",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs"
+    },
+    {
+      "check": "Foundation consistency (22 checks)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "tests/consistency/Check.cs"
+    }
+  ],
+  "known_issues": [
+    "Not tested on a physical device: font rendering on Android, touch feel of the press scale and the focus ring. Headless captures are not device testing (ADD-0035).",
+    "Urbe, Hub and the portal adopt the language when their visual foundation is touched (ADD-0037 §5); not changed here."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Apply the review checklist (§13) screen by screen in Lunet (Studios bottom panels, Learn, AI panel) and the page/sheet motion tokens (enter/exit transitions)"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md",
+    "docs/design/linguagem-visual.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Headless tests and captures only; no device claim."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

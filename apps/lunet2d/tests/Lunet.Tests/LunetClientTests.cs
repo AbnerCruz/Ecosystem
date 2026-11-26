@@ -132,9 +132,87 @@ public sealed class LunetClientTests
     public void Tokens_TextPairsMeetAA()
     {
         foreach (var bg in new[] { LunetTokens.Color.Background, LunetTokens.Color.Surface, LunetTokens.Color.SurfaceRaised })
-        foreach (var fg in new[] { LunetTokens.Color.TextPrimary, LunetTokens.Color.TextSecondary, LunetTokens.Color.TextTertiary, LunetTokens.Color.Primary, LunetTokens.Color.Danger, LunetTokens.Color.Code })
+        foreach (var fg in new[] { LunetTokens.Color.TextPrimary, LunetTokens.Color.TextSecondary, LunetTokens.Color.TextTertiary, LunetTokens.Color.Primary, LunetTokens.Color.Info, LunetTokens.Color.Danger, LunetTokens.Color.Success, LunetTokens.Color.Warning, LunetTokens.Color.Code })
             Assert.True(LunetTokens.Contrast(fg, bg) >= 4.5, $"{fg} sobre {bg}: {LunetTokens.Contrast(fg, bg):0.00}");
-        Assert.True(LunetTokens.Contrast(LunetTokens.Color.OnPrimary, LunetTokens.Color.Primary) >= 4.5);
+        // White on the solid of the main action, and on the blue solid (§1.1).
+        Assert.True(LunetTokens.Contrast(LunetTokens.Color.OnAccent, LunetTokens.Color.Accent) >= 4.5);
+        Assert.True(LunetTokens.Contrast("#FFFFFF", LunetTokens.Color.InfoSolid) >= 4.5);
+    }
+
+    /// <summary>APCA (SAPC 0.0.98G) for light text on dark, as the visual language requires (§11).</summary>
+    private static double Apca(string text, string background)
+    {
+        static double Y(string hex)
+        {
+            var c = Avalonia.Media.Color.Parse(hex);
+            return 0.2126729 * Math.Pow(c.R / 255.0, 2.4) + 0.7151522 * Math.Pow(c.G / 255.0, 2.4) + 0.0721750 * Math.Pow(c.B / 255.0, 2.4);
+        }
+        double t = Y(text), b = Y(background);
+        t = t > 0.022 ? t : t + Math.Pow(0.022 - t, 1.414);
+        b = b > 0.022 ? b : b + Math.Pow(0.022 - b, 1.414);
+        var s = (Math.Pow(b, 0.65) - Math.Pow(t, 0.62)) * 1.14;
+        return s > -0.1 ? 0 : -(s + 0.027) * 100;
+    }
+
+    [Fact]
+    public void Tokens_MeetTheApcaFloorsOfTheVisualLanguage()
+    {
+        foreach (var bg in new[] { LunetTokens.Color.Background, LunetTokens.Color.Surface })
+        {
+            Assert.True(Apca(LunetTokens.Color.TextPrimary, bg) >= 75, $"texto principal Lc {Apca(LunetTokens.Color.TextPrimary, bg):0}");
+            Assert.True(Apca(LunetTokens.Color.TextSecondary, bg) >= 60, $"texto secundário Lc {Apca(LunetTokens.Color.TextSecondary, bg):0}");
+            Assert.True(Apca(LunetTokens.Color.TextTertiary, bg) >= 43, $"texto terciário Lc {Apca(LunetTokens.Color.TextTertiary, bg):0}");
+        }
+    }
+
+    [Fact]
+    public void Motion_EntriesSettleVisible_AndReduceMotionSkipsThem()
+    {
+        UiSession.Run(() =>
+        {
+            var page = Lunet.Client.Ui.LunetUi.Enter(new Border { Width = 10, Height = 10 }, 24, TimeSpan.FromMilliseconds(1));
+            Assert.Equal(0, page.Opacity);                                       // starts hidden, below its place
+            var window = new Window { Width = 100, Height = 100, Content = page };
+            window.Show();
+            // Settles visible: with the render clock (a frame), or by the safety that drops the transition after its time.
+            for (var i = 0; i < 100 && page.Opacity < 1; i++)
+            {
+                Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            Assert.Equal(1, page.Opacity, 2);
+            Lunet.Client.Ui.LunetUi.ReduceMotion = true;
+            try { Assert.Equal(1, Lunet.Client.Ui.LunetUi.Enter(new Border()).Opacity); }
+            finally { Lunet.Client.Ui.LunetUi.ReduceMotion = false; }
+            window.Close();
+        });
+    }
+
+    /// <summary>The Lunet copy of the tokens matches docs/design/tokens.json, the single authority (NN-001, DEC-0069).</summary>
+    [Fact]
+    public void Tokens_MatchTheEcosystemVisualLanguage()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "docs", "design", "tokens.json"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(dir!.FullName, "docs", "design", "tokens.json")));
+        var root = json.RootElement;
+        Assert.Equal(LunetTokens.LanguageVersion, root.GetProperty("version").GetString());
+        var ink = root.GetProperty("color").GetProperty("ink");
+        var lunet = new[] { LunetTokens.Ink.I1, LunetTokens.Ink.I2, LunetTokens.Ink.I3, LunetTokens.Ink.I4, LunetTokens.Ink.I5, LunetTokens.Ink.I6,
+            LunetTokens.Ink.I7, LunetTokens.Ink.I8, LunetTokens.Ink.I9, LunetTokens.Ink.I10, LunetTokens.Ink.I11, LunetTokens.Ink.I12 };
+        for (var i = 0; i < 12; i++) Assert.Equal(ink.GetProperty((i + 1).ToString()).GetString(), lunet[i], ignoreCase: true);
+        var violet = root.GetProperty("color").GetProperty("violet");
+        Assert.Equal(LunetTokens.Color.Accent, violet.GetProperty("9").GetString(), ignoreCase: true);
+        Assert.Equal(LunetTokens.Color.Primary, violet.GetProperty("11").GetString(), ignoreCase: true);
+        Assert.Equal(LunetTokens.Color.Info, root.GetProperty("color").GetProperty("blue").GetProperty("11").GetString(), ignoreCase: true);
+        var radius = root.GetProperty("radius");
+        Assert.Equal(LunetTokens.Radius.M, radius.GetProperty("m").GetDouble());
+        Assert.Equal(LunetTokens.Radius.L, radius.GetProperty("l").GetDouble());
+        Assert.Equal(LunetTokens.Radius.Xl, radius.GetProperty("xl").GetDouble());
+        Assert.Equal(LunetTokens.MinTouch, root.GetProperty("size").GetProperty("touch").GetDouble());
+        Assert.Equal("violet", root.GetProperty("productAccent").GetProperty("lunet2d").GetString());
     }
 
     [Fact]
@@ -585,7 +663,7 @@ public sealed class LunetClientTests
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.True(bar.Bounds.Height <= CodeBar.RowHeight + 2);    // one row: the system keyboard keeps its room
                 Assert.True(LunetTokens.Contrast(LunetTokens.Color.TextPrimary, LunetTokens.Color.Surface) >= 4.5);
-                Assert.True(LunetTokens.Contrast(LunetTokens.Color.OnPrimary, LunetTokens.Color.Primary) >= 4.5);
+                Assert.True(LunetTokens.Contrast(LunetTokens.Color.OnAccent, LunetTokens.Color.Accent) >= 4.5);
                 window.Close();
             });
         }
