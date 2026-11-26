@@ -29,6 +29,9 @@ public sealed class EditorSettings
     public bool KeepScreenOn { get; set; }
     public bool HighRefreshRate { get; set; } = true;
 
+    /// <summary>Jogos fixados no início da Home, por GameId (renomear não perde a marca).</summary>
+    public List<string> PinnedGameIds { get; set; } = [];
+
     /// <summary>Roda o Preview num processo separado: um jogo que trava ou estoura a memória não derruba o IDE.</summary>
     public bool IsolatedPreview { get; set; }
 
@@ -47,10 +50,16 @@ public sealed class EditorSettings
         if (!Guid.TryParseExact(PreviousProjectWorkingCopy, "N", out _))
             (PreviousProjectWorkingCopy, PreviousProjectRevision) = (null, null);
         FontSize = Math.Clamp(FontSize, MinFontSize, MaxFontSize);
+        PinnedGameIds = (PinnedGameIds ?? []).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.Ordinal).Take(64).ToList();
         return this;
     }
 
-    public EditorSettings Clone() => (EditorSettings)MemberwiseClone();
+    public EditorSettings Clone()
+    {
+        var copy = (EditorSettings)MemberwiseClone();
+        copy.PinnedGameIds = [.. PinnedGameIds]; // a draft never edits the saved list in place
+        return copy;
+    }
 }
 
 /// <summary>Leitura e gravação atômica das preferências. Arquivo ausente ou corrompido vira as preferências padrão.</summary>

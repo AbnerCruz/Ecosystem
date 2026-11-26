@@ -14,6 +14,7 @@ public static class LunetIcons
     public const string Plus = "M12 5v14 M5 12h14";
     public const string Play = "M7 4.5v15l12-7.5z";
     public const string Pause = "M8 5v14 M16 5v14";
+    public const string Star = "M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z";
     public const string Stop = "M6.5 6.5h11v11h-11z";
     public const string Step = "M6 5v14l9-7z M18 5v14";
     public const string Code = "M9 7l-5 5 5 5 M15 7l5 5-5 5";
