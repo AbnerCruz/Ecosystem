@@ -35,7 +35,7 @@
 
 ## Pendências conhecidas (não declaradas como feitas)
 
-- **M5, isolamento:** a opção "Preview isolado" (processo separado) ainda não tem equivalente na aba Jogo. A prévia GPU embutida roda no processo do app. A Activity isolada das telas antigas continua existindo e não foi removida. Isso precisa ser religado como opção da aba Jogo.
+- **M5, isolamento:** resolvido. Ajustes → Jogo → "Preview isolado" abre o jogo na Activity de processo separado (`IsolatedGpuPreview`). Na volta, a aba recolhe o console e acusa se o processo morreu (o arquivo marcador). Taxa de atualização alta também voltou a Ajustes.
 - **M5, aparelho:** falta conferir no celular a superfície GL dentro da casca (toque, rotação, troca de aba, minimizar e voltar).
 
 - **Anexo B, parte A:** falta conferir no Preview do Android e no APK exportado, com trimming, que o `System.Drawing.Primitives` carrega no aparelho. Isso depende do CI de APK e do celular.

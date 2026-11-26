@@ -99,6 +99,13 @@ public sealed class SettingsView : UserControl
         Toggle("Números de linha", "Ao lado do código", settings.ShowLineNumbers, v => Change(s => s.ShowLineNumbers = v), "LineNumbers");
         Toggle("Formatar ao rodar", "Arruma a indentação do arquivo aberto antes de rodar o jogo", settings.FormatOnRun, v => Change(s => s.FormatOnRun = v), "FormatOnRun");
 
+        if (_shell.Game.GpuFactory is not null)
+        {
+            Section("Jogo");
+            Toggle("Preview isolado", "Roda o jogo num processo separado: se ele travar ou faltar memória, o Lunet continua de pé", settings.IsolatedPreview, v => Change(s => s.IsolatedPreview = v), "IsolatedPreview");
+            Toggle("Taxa de atualização alta", "Pede 90/120 Hz ao rodar o jogo, onde a tela tiver", settings.HighRefreshRate, v => Change(s => s.HighRefreshRate = v), "HighRefreshRate");
+        }
+
         if (_shell.KeepScreenOn is not null)
         {
             Section("Aparelho");

@@ -109,8 +109,10 @@ public sealed class ShellActivity : AvaloniaActivity
         catch (Java.Lang.Exception) { }
         Content = _shell;
         // M5: the game runs on the GPU inside the Jogo tab (the GLES Preview, hosted by the shell).
-        _shell.Game.GpuFactory = (compiled, project, fault) => new AndroidGpuPreview(this, compiled, project,
-            _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.StopGame());
+        // With Ajustes → Preview isolado, it runs in the separate-process Preview instead (the IDE survives a crash).
+        _shell.Game.GpuFactory = (compiled, project, fault) => _shell.Settings.IsolatedPreview
+            ? new IsolatedGpuPreview(this, compiled, project)
+            : new AndroidGpuPreview(this, compiled, project, _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.StopGame());
         // Shows and hides the system keyboard (Avalonia exposes no call for it). Showing is an explicit request, as a
         // tap on Android's own EditText makes it: Avalonia only asks with SHOW_IMPLICIT, which Android ignores after
         // the person closed the keyboard with Back — the "teclado que não abre" of the editor and the AI (estudo do
@@ -319,6 +321,12 @@ public sealed class ShellActivity : AvaloniaActivity
         // Back from a routed screen: those screens may have changed the games (AI edits, Git, Studios).
         _shell?.ReturnedFromRoute();
         _shell?.Game.Gpu?.SetAppVisible(true);
+        // Back from the isolated Preview: its console comes in; a process that died is reported, else the run ends.
+        if (_shell?.Game.Gpu is IsolatedGpuPreview isolated)
+        {
+            var died = isolated.Collect(_shell.Game.Write);
+            if (died is not null) _shell.Game.ReportFault(died); else _shell.StopGame();
+        }
     }
 
     protected override void OnDestroy()

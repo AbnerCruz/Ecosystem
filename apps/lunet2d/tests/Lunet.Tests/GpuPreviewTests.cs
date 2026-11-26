@@ -99,4 +99,29 @@ public sealed class GpuPreviewTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void Ajustes_OfferTheGpuOptions_OnlyWhereThereIsAGpuPreview()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-gpu-settings-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.Home.ShowSettings();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "IsolatedPreview");
+                shell.Home.CloseSheet();
+                shell.Game.GpuFactory = (_, _, _) => new FakeGpu();
+                shell.Home.ShowSettings();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Contains(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "IsolatedPreview");
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

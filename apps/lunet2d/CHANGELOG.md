@@ -24,6 +24,9 @@
   - Inspector e Desempenho medem o próprio jogo na GPU.
   - Não há chip de velocidade na GPU, porque essa prévia roda no ritmo da tela; mostrar o chip seria fingir uma função que não existe.
   - No computador continua a prévia em CPU.
+  - **Ajustes → Jogo:**
+    - **Preview isolado:** o jogo roda num processo separado, e um travamento não derruba o Lunet. Na volta, o console do jogo aparece, e um processo que morreu é avisado.
+    - **Taxa de atualização alta.**
 - **Correção:** o botão Rodar não cobre mais as teclas da barra de código.
 - **Validação:** testado no computador. Não testado num celular.
 

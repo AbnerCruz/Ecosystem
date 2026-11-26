@@ -116,6 +116,9 @@ public sealed class GameSession : IDisposable
         Set(GameState.Faulted);
     }
 
+    /// <summary>The head reports that the running game died outside the GPU callback (the isolated process).</summary>
+    public void ReportFault(string message) => Fault(_gpuGeneration, message);
+
     /// <summary>A line from the running game (the GPU preview's log) for the Console panel.</summary>
     public void Write(string line) => Log?.Invoke(line);
 
