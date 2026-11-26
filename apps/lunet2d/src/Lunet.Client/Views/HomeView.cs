@@ -227,10 +227,15 @@ public sealed class HomeView : UserControl
         {
             if (Arranged.Continue is { } resume)
             {
-                var go = LunetUi.Button("Continuar " + resume.Name, ButtonKind.Primary, LunetIcons.Play, () => _shell.OpenProject(resume.Name));
+                // Tonal, not violet: "Novo jogo" is the screen's one primary action (linguagem visual, uma ação principal).
+                var go = LunetUi.Button("Continuar " + resume.Name, ButtonKind.Secondary, LunetIcons.Play, () => _shell.OpenProject(resume.Name));
                 go.Name = "Continue";
+                go.HorizontalContentAlignment = HorizontalAlignment.Left;
                 go.Margin = new Thickness(0, 0, 0, LunetTokens.Space.S);
-                _grid.Children.Add(Full(go));
+                var row = Full(new Border { Child = go });
+                go.HorizontalAlignment = HorizontalAlignment.Left;
+                go.Width = Math.Min(480, row.Width); // a full row on the phone, not a bar across a wide screen
+                _grid.Children.Add(row);
             }
             if (Arranged.Pinned.Count > 0)
             {

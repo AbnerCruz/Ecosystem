@@ -38,6 +38,14 @@ public static class ShellScreens
                 shell.CreateProject();
                 shell.GoHome();
                 Shot(window, output, size, "2-home", written);
+                // H2: several games — Continuar, a pinned one and the search.
+                shell.Workspace.Create("Plataforma"); shell.Workspace.Create("Nave-Espacial");
+                shell.Home.TogglePin("Plataforma");
+                shell.GoHome();
+                Shot(window, output, size, "2-home-varios", written);
+                shell.Home.Query = "nave";
+                Shot(window, output, size, "2-home-busca", written);
+                shell.Home.Query = "";
                 shell.Home.ShowCreate();
                 Shot(window, output, size, "2b-novo-jogo", written);
                 shell.Home.CloseSheet();
