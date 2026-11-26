@@ -121,3 +121,83 @@ public sealed class SortedBatchTests
         Assert.InRange(sorted.B, 62, 66);
     }
 }
+
+/// <summary>E1.6 gaps found in the 26/11 audit: ±0 ties, −∞, A/B/A texture switches with equal keys, and the new rectangle shortcut in a sorted pass.</summary>
+public sealed class SortedBatchEdgeTests
+{
+    private static float[] Xs(RecordingBackend backend) =>
+        backend.Batches.SelectMany(x => x.Vertices.Where((_, i) => i % 4 == 0)).Select(v => v.Position.X).ToArray();
+
+    [Fact]
+    public void PlusAndMinusZeroAreTheSameKey_SubmissionOrderBreaksTheTie()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(a, new Vector2(1, 0), Color.White, 0f);
+        batch.Draw(a, new Vector2(2, 0), Color.White, -0f);
+        batch.Draw(a, new Vector2(3, 0), Color.White, 0f);
+        batch.End();
+        Assert.Equal(new float[] { 1, 2, 3 }, Xs(backend));
+    }
+
+    [Fact]
+    public void NegativeInfinityIsRejected_AndThePassStaysUsable()
+    {
+        var device = new GraphicsDevice(new RecordingBackend(), 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        Assert.Throws<ArgumentOutOfRangeException>(() => batch.Draw(a, Vector2.Zero, Color.White, float.NegativeInfinity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => batch.SetOrder(float.NegativeInfinity));
+        batch.Draw(a, Vector2.Zero, Color.White, -1e30f);
+        batch.End();
+    }
+
+    [Fact]
+    public void ABA_WithEqualKeys_KeepsSubmissionOrderAcrossTextureSwitches()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        using var b = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(a, new Vector2(1, 0), Color.White, 1);
+        batch.Draw(b, new Vector2(2, 0), Color.White, 1);
+        batch.Draw(a, new Vector2(3, 0), Color.White, 1);
+        batch.End();
+        Assert.Equal(new float[] { 1, 2, 3 }, Xs(backend));                       // never regrouped by texture
+        Assert.Equal(new[] { a.Handle, b.Handle, a.Handle }, backend.Batches.Select(x => x.Texture));
+    }
+
+    [Fact]
+    public void TheRectangleShortcut_UsesTheCurrentOrderInASortedPass()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.SetOrder(10);
+        batch.Draw(new RectangleF(new Vector2(1, 0), new Vector2(1, 1)), Color.Red); // drawn later (key 10)
+        batch.SetOrder(0);
+        batch.Draw(a, new Vector2(2, 0), Color.White);                               // drawn first (key 0)
+        batch.End();
+        Assert.Equal(new float[] { 2, 1 }, Xs(backend));
+    }
+
+    [Fact]
+    public void ConsecutiveSameTexture_IsOneBatch_InSortedMode()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        using var b = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(a, new Vector2(1, 0), Color.White, 1);
+        batch.Draw(a, new Vector2(2, 0), Color.White, 2);
+        batch.Draw(b, new Vector2(3, 0), Color.White, 3);
+        batch.End();
+        Assert.Equal([2, 1], backend.Batches.Select(x => x.QuadCount));
+    }
+}
