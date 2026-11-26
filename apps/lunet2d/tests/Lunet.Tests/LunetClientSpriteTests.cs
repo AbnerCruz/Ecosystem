@@ -826,6 +826,8 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal("Scripts/Chefe.cs", code.RenameOpen("Chefe"));            // the extension is kept
                 Assert.DoesNotContain(path, shell.Workspace.Files());
                 Assert.Contains("vida = vida", shell.Workspace.Read("Scripts/Chefe.cs"));  // unsaved text went with it
+                Assert.Equal("Scripts/Inimigos/Chefe.cs", code.RenameOpen("Inimigos/Chefe")); // Pasta/Nome: into a folder
+                Assert.Throws<ArgumentException>(() => code.RenameOpen("../fora"));
 
                 code.ShowFind();
                 Assert.True(code.FindOpen);
@@ -837,7 +839,7 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal("int hp = 3; hp = hp - 1; // hp", code.Surface.Text);
 
                 code.DeleteOpen();
-                Assert.DoesNotContain("Scripts/Chefe.cs", shell.Workspace.Files());
+                Assert.DoesNotContain("Scripts/Inimigos/Chefe.cs", shell.Workspace.Files());
                 Assert.NotNull(code.OpenPath);
                 code.Load(entry);
                 Assert.Throws<Lunet.Core.ProjectException>(() => code.DeleteOpen());   // the game's entry stays

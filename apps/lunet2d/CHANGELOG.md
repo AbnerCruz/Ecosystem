@@ -8,6 +8,7 @@
 - **Editar todas as ocorrências** abre buscar e substituir com a palavra sob o cursor, só palavras inteiras: `x` não mexe em `max`.
 - **Inserir bloco** (paleta ou Ctrl+Shift+B) cria `{ }` com a linha recuada dentro.
 - **Salvar cópia** no menu ⋮ do arquivo grava o arquivo com outro nome e abre a cópia.
+- **Pastas para o código:** em Renomear, escreva `Pasta/Nome` para pôr o arquivo numa pasta, que é criada se não existir.
 - **Apresentar mapa mental** (▶ no alto do mapa): cada ramo vira uma tela, com título grande e os tópicos dele em lista. **Anterior** e **Próximo** ficam embaixo, e Voltar sai da apresentação.
 
 ## 0.0.1-dev.1000604 — Jogo e código ao alcance do polegar

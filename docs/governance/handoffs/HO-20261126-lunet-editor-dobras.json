@@ -32,7 +32,8 @@
   "work_completed": [
     "Audit of the previous 'Editor completo' commands against the shell editor; gaps closed: code folding (AvaloniaEdit FoldingManager fed by the analyzer's FoldRegion list, toggle at caret, fold/unfold all), position history (DocumentEditor.JumpTo used by palette, outline, go to line and Problemas; BackToPosition, Alt+Left), select next occurrence, edit all occurrences (find/replace prefilled, whole word, match case), Inserir bloco (IndentationService.InsertBlock, Ctrl+Shift+B), Salvar cópia in the file menu.",
     "Multi-cursor editing is not available in AvaloniaEdit; 'Editar todas as ocorrências' covers the same use through replace-all.",
-    "Mind map Apresentar in the shell (the previous screen's PresentMindMap): one slide per branch of the root with its topics as a list, Anterior/Próximo at the bottom, Back/✕ ends the presentation. Publicar of assets already lives in the shell's Biblioteca."
+    "Mind map Apresentar in the shell (the previous screen's PresentMindMap): one slide per branch of the root with its topics as a list, Anterior/Próximo at the bottom, Back/✕ ends the presentation. Publicar of assets already lives in the shell's Biblioteca.",
+    "Folders for code in the shell: Renomear accepts Pasta/Nome (relative to the file's folder, created as needed; '..' and .lunet refused)."
   ],
   "verification": [
     {
@@ -50,7 +51,7 @@
   ],
   "known_issues": [
     "Not exercised on a physical device (fold margin touch targets, Alt+Left needs a hardware keyboard).",
-    "The 'Editor completo' route still opens the previous screen; its explorer (folders, Nova pasta) has no shell equivalent yet."
+    "The 'Editor completo' route still opens the previous screen: its explorer edits any text file (raw .json, .txt), which the shell's Código tab (.cs and lunet.json) does not list yet."
   ],
   "blockers": [],
   "next_actions": [

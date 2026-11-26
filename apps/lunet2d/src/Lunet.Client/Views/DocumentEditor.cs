@@ -291,8 +291,11 @@ public sealed class DocumentEditor : UserControl
     public string? RenameOpen(string newName)
     {
         if (OpenPath is not { } from || _shell.Workspace.Project is not { } project) return null;
-        newName = newName.Trim();
-        if (newName.Length == 0 || newName.IndexOfAny(['/', '\\']) >= 0) throw new ArgumentException("Use só o nome do arquivo, sem pastas.");
+        // "Inimigos/Slime" moves the file into a folder (created as needed), relative to its current folder.
+        newName = newName.Trim().Replace('\\', '/').Trim('/');
+        var segments = newName.Split('/');
+        if (newName.Length == 0 || segments.Any(x => x.Trim().Length == 0 || x is "." or ".." || x.StartsWith(".lunet", StringComparison.OrdinalIgnoreCase)))
+            throw new ArgumentException("Use um nome de arquivo, ou Pasta/Nome para pôr numa pasta.");
         var ext = from.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) ? ".sprite.json" : Path.GetExtension(from);
         if (!newName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) newName += ext;
         var folder = Path.GetDirectoryName(from)?.Replace('\\', '/');
@@ -383,7 +386,8 @@ public sealed class DocumentEditor : UserControl
         if (OpenPath is { } open && open != Lunet.Core.ProjectStore.ManifestFileName && open != manifest?.EntryPoint)
         {
             var name = new TextBox { Text = Path.GetFileName(open), MinHeight = 40, Width = 180, VerticalContentAlignment = VerticalAlignment.Center, Name = "RenameFile" };
-            AutomationProperties.SetName(name, "Novo nome do arquivo");
+            AutomationProperties.SetName(name, "Novo nome do arquivo (Pasta/Nome põe numa pasta)");
+            ToolTip.SetTip(name, "Pasta/Nome põe o arquivo numa pasta");
             name.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; FileAction(() => RenameOpen(name.Text ?? "")); } };
             Add(name);
             var rename = LunetUi.Button("Renomear", ButtonKind.Ghost, LunetIcons.Edit, () => FileAction(() => RenameOpen(name.Text ?? "")));
