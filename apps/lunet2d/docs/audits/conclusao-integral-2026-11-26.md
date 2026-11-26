@@ -49,6 +49,8 @@
 
 | UX §6.5 / §6.1 / §6.4 | Studios agrupados em Arte (Sprite, Mapa, Paleta), Áudio (Música, Efeito, Tom WAV) e Outros (Partículas, Tabela), todos tonais e com ícones distintos. O menu do jogo na Home tem Editar e Jogar, por um só caminho (`LunetShell.Play`). Abrir ou criar a missão em Aprender abre o jogo com os **Objetivos** ao lado do código. | Capturas `2l-studios` e `2j-jogar`; `LunetClientLearnTests` atualizado |
 
+| Linguagem visual §5 | As bordas decorativas saíram dos cartões de cursos em Aprender, do cartão de alterações da IA e das miniaturas da Biblioteca; a profundidade agora vem do tom. Ajustes ganhou botão de voltar visível e o mesmo cabeçalho de subpágina de Aprender e Studios. | Capturas `2f-aprender` e `2k-ajustes` |
+
 ## Pendências conhecidas
 
 - **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)

@@ -400,7 +400,7 @@ public sealed class AiPanelView : UserControl
         return new Border
         {
             Child = card, Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.M),
-            Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(1),
+            Background = LunetTokens.Brush(LunetTokens.Color.Surface), // depth by tone, not by border
         };
     }
 }
