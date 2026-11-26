@@ -21,6 +21,7 @@ public sealed class MainWindow : Window
             LearningProgressPath = Path.Combine(Path.GetDirectoryName(ai)!, "learning", "progress.json"),
             LibraryPath = Path.Combine(Path.GetDirectoryName(ai)!, "Library"),
             GitAccountPath = Path.Combine(Path.GetDirectoryName(ai)!, "git-account.json"),
+            StudioWorkspacePath = Path.Combine(Path.GetDirectoryName(ai)!, "StudioWorkspace"),
             SettingsPath = Path.Combine(Path.GetDirectoryName(ai)!, "settings.json"),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new FileSecretVault(Path.Combine(ai, "secrets.json"))), ai),

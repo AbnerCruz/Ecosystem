@@ -92,12 +92,13 @@ public sealed class TileStudioView : UserControl
     private bool _dirty;
     private bool _erase;
 
-    public TileStudioView(LunetShell shell, string path, Action close)
+    public TileStudioView(LunetShell shell, string path, Action close, StudioAssetWorkspace? storage = null)
     {
         _shell = shell;
         _path = path;
         _close = close;
-        _storage = new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        // A game's folder, or the standalone Studio folder (Home → Studios) when given.
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
         var map = TileMap.Parse(_storage.ReadText(path));
         _tileset = LoadTileset(map);
         var tiles = _tileset is null ? 1 : Math.Max(1, (int)(_tileset.PixelSize.Width / map.TileWidth) * (int)(_tileset.PixelSize.Height / map.TileHeight));
@@ -141,6 +142,9 @@ public sealed class TileStudioView : UserControl
     }
 
     public TileStudioSession Session { get; }
+
+    /// <summary>Where "Tileset" goes outside a game (Home → Studios); null: the workspace's Sprite Studio.</summary>
+    public Action<string>? EditTileset { get; set; }
     public TileCanvas Canvas => _canvas;
     public bool Erasing => _erase;
 
@@ -260,10 +264,12 @@ public sealed class TileStudioView : UserControl
     }
 
     /// <summary>Creates a map with an editable tileset of four starting tiles (as the previous Studio does).</summary>
-    public static string Create(LunetShell shell, int cells = 16, int tile = 16)
+    public static string Create(LunetShell shell, int cells = 16, int tile = 16) =>
+        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Directory), shell.Workspace.Files(), cells, tile);
+
+    /// <summary>The same, in any Studio folder (a game's, or the standalone Studios').</summary>
+    public static string Create(StudioAssetWorkspace storage, IReadOnlyCollection<string> files, int cells = 16, int tile = 16)
     {
-        var storage = new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
-        var files = shell.Workspace.Files();
         var n = 1;
         while (files.Contains($"Content/Data/mapa-{n}.tilemap.json")) n++;
         var name = $"tiles-mapa-{n}";
@@ -365,7 +371,8 @@ public sealed class TileStudioView : UserControl
             var edit = LunetUi.Button("Tileset", ButtonKind.Ghost, LunetIcons.Art, () =>
             {
                 Save();
-                _shell.WorkspaceView.OpenSprite(tileset, reopen: () => _shell.WorkspaceView.OpenMap(_path));
+                if (EditTileset is { } edit) edit(tileset);
+                else _shell.WorkspaceView.OpenSprite(tileset, reopen: () => _shell.WorkspaceView.OpenMap(_path));
             });
             edit.Name = "EditTileset";
             _tools.Children.Add(edit);

@@ -93,16 +93,16 @@ public sealed class HomeView : UserControl
     }
 
     /// <summary>
-    /// The bottom bar: Jogos, Aprender (in the shell), Jogar and Studios (still the previous screens) and Mais
+    /// The bottom bar: Jogos, Aprender, Jogar and Studios (all in the shell) and Mais
     /// (Biblioteca, Explorar, Ajustes). Without the previous screens (desktop) only what lives in the shell appears.
     /// </summary>
     private void BuildNav()
     {
         var items = new List<(Destination Destination, string Label, string Icon)> { (Destination.Games, "Jogos", LunetIcons.Game), (Destination.Learn, "Aprender", LunetIcons.Book) };
         items.Add((Destination.Play, "Jogar", LunetIcons.Play));
+        items.Add((Destination.Studios, "Studios", LunetIcons.Art));
         if (_shell.OpenRoute is not null)
         {
-            items.Add((Destination.Studios, "Studios", LunetIcons.Art));
             items.Add((Destination.More, "Mais", LunetIcons.More));
         }
         else
@@ -130,7 +130,7 @@ public sealed class HomeView : UserControl
             case Destination.Games: CloseOverlay(); break;
             case Destination.Learn: ShowLearn(); break;
             case Destination.Play: ShowPlay(); break;
-            case Destination.Studios: _shell.OpenRoute?.Invoke("studios", null); break;
+            case Destination.Studios: ShowStudios(); break;
             case Destination.More: ShowMore(); break;
             case Destination.Library: ShowLibrary(); break;
             case Destination.Settings: ShowSettings(); break;
@@ -348,6 +348,7 @@ public sealed class HomeView : UserControl
         if (Sheet is null) return false;
         if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
         if (Sheet is LibraryView library) return library.Back();
+        if (Sheet is StudiosView studios) return studios.Back();
         if (Sheet is PlayView or SettingsView) return CloseOverlay();
         return CloseOverlay();
     }
@@ -424,6 +425,17 @@ public sealed class HomeView : UserControl
         Sheet = play;
         Select(Destination.Play);
         return play;
+    }
+
+    /// <summary>Studios without a game, full screen over the Home (Back closes the open Studio, then the page).</summary>
+    public StudiosView ShowStudios()
+    {
+        _overlay.Children.Clear();
+        var studios = new StudiosView(_shell, () => CloseOverlay(), (root, path) => ShowLibrary().ShowPublishStudio(root, path));
+        _overlay.Children.Add(studios);
+        Sheet = studios;
+        Select(Destination.Studios);
+        return studios;
     }
 
     /// <summary>The Biblioteca, full screen over the Home (Back walks its pages, then closes it).</summary>

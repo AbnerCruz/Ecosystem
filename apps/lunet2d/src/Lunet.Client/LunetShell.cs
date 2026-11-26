@@ -28,6 +28,7 @@ public sealed class LunetShell : UserControl
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
         GitAccountPath = Path.Combine(projectsRoot, ".lunet", "git-account.json");
+        StudioWorkspacePath = Path.Combine(projectsRoot, ".lunet", "studio");
         _settingsPath = Path.Combine(projectsRoot, ".lunet", "settings.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
@@ -100,6 +101,10 @@ public sealed class LunetShell : UserControl
     /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
     public string LibraryPath { get; set; }
 
+    /// <summary>The standalone Studios' folder (Home → Studios: creations without a game); the Android head points it
+    /// at the previous screens' FilesDir/StudioWorkspace, so drafts carry over.</summary>
+    public string StudioWorkspacePath { get; set; }
+
     /// <summary>Who signs versions and the token for sending/receiving (the app's private storage; the Android head
     /// points it at the previous screens' FilesDir/git-account.json, so the account carries over).</summary>
     public string GitAccountPath { get; set; } = "";
@@ -148,13 +153,6 @@ public sealed class LunetShell : UserControl
     [
         ("play", "Jogar", Ui.LunetIcons.Play), ("studios", "Studios", Ui.LunetIcons.Art), ("learn", "Aprender", Ui.LunetIcons.Notes),
         ("library", "Biblioteca", Ui.LunetIcons.Folder), ("explore", "Explorar", Ui.LunetIcons.Map), ("settings", "Ajustes", Ui.LunetIcons.Speed),
-    ];
-
-    /// <summary>What the "Mais" panel of a game opens through <see cref="OpenRoute"/> (route, label, icon).</summary>
-    public static readonly IReadOnlyList<(string Route, string Label, string Icon)> GameRoutes =
-    [
-        ("assets", "Recursos e Studios", Ui.LunetIcons.Art), ("notes", "Notas e mapas mentais", Ui.LunetIcons.Notes),
-        ("git", "Git", Ui.LunetIcons.Folder), ("apk", "Gerar APK", Ui.LunetIcons.Game), ("editor", "Editor completo", Ui.LunetIcons.File),
     ];
 
     /// <summary>Back from a routed screen: re-read the games (and the open documents, when not edited here).</summary>
@@ -438,6 +436,18 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
+        else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
+        {
+            e.Handled = _workspaceView.Code.BackToPosition();
+        }
+        else if (e.Key == Key.B && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code
+            && _workspaceView.Code.Surface is Views.CodeSurface block
+            && Lunet.Editor.IndentationService.InsertBlock(block.Text, block.SelectionStart, block.SelectionEnd) is var r)
+        {
+            block.Replace(r.Start, r.Start + r.DeleteLength, r.Insert, r.SelectionEnd);
+            block.Select(r.SelectionStart, r.SelectionEnd);
+            e.Handled = true;
+        }
         else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Notes)
         {
             (State.Tab == WorkspaceTab.Code ? _workspaceView.Code : _workspaceView.Notes).ShowFind();

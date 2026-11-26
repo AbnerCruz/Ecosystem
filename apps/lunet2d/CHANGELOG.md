@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.0.1-dev.1000605 — Editor com dobras, saltos e cópia
+
+- **Dobrar código:** setas na margem dobram classes, métodos, blocos, `#region` e comentários. Pela paleta (lupa): **Dobrar ou desdobrar região**, **Dobrar tudo** e **Desdobrar tudo**.
+- **Voltar à posição anterior** (paleta ou Alt+←): depois de ir para uma definição, linha, problema ou símbolo, volta para onde você estava, inclusive em outro arquivo.
+- **Selecionar próxima ocorrência:** o primeiro toque seleciona a palavra sob o cursor, e os seguintes vão para a próxima igual.
+- **Editar todas as ocorrências** abre buscar e substituir com a palavra sob o cursor, só palavras inteiras: `x` não mexe em `max`.
+- **Inserir bloco** (paleta ou Ctrl+Shift+B) cria `{ }` com a linha recuada dentro.
+- **Salvar cópia** no menu ⋮ do arquivo grava o arquivo com outro nome e abre a cópia.
+- **Arquivos de texto em Recursos:** um grupo **Outros** reúne JSON solto, `.txt`, `.csv`, `.xml` e `.md` fora das Notas. **Editar como texto** abre o arquivo no editor, sem marcar erros de C#. A tabela de dados também tem **Editar como texto**, e um `.json` que não é tabela abre a folha em vez de falhar.
+- **Studios sem abrir um jogo, na interface nova** (barra de baixo → Studios, também no computador):
+  - Os mesmos Studios de dentro do jogo: Sprite, Mapa (com o tileset abrindo ali mesmo), Efeito, Música, Partículas e Tabela.
+  - **Minhas criações** lista o que você fez, agrupado. Tocar edita.
+  - **Publicar** leva a criação para a Biblioteca, de onde qualquer jogo pode usá-la.
+  - Os rascunhos ficam na mesma pasta das telas anteriores, então nada se perde.
+- **Editor de WAV na interface nova** (Recursos → um `.wav` → Editar áudio, ou Studios → Tom):
+  - Recorte de início e fim e volume de 0 a 200%.
+  - Loop com marcadores gravados no WAV, para músicas que se repetem.
+  - **Ouvir** toca o resultado. **Salvar cópia** grava um novo `.wav` em `Content/Audio`, e o original nunca muda.
+- **Paleta completa na interface nova:**
+  - **Importar .gpl ou hex** (GIMP, Krita, Aseprite) e **Exportar .gpl**.
+  - **Gerar código C#** cria `Scripts/GamePalette.cs`, com uma `Color` por cor da paleta.
+  - Ao tocar numa cor, aparece o contraste dela no escuro e no claro.
+  - Em Studios dá para criar paletas sem jogo: cada uma é salva junto com o seu `.gpl` e pode ser publicada na Biblioteca.
+- **O ⋮ do jogo não leva mais a nenhuma tela antiga:** "Editor completo" saiu, porque tudo o que ele fazia já está na interface nova.
+- **Pastas para o código:** em Renomear, escreva `Pasta/Nome` para pôr o arquivo numa pasta, que é criada se não existir.
+- **Apresentar mapa mental** (▶ no alto do mapa): cada ramo vira uma tela, com título grande e os tópicos dele em lista. **Anterior** e **Próximo** ficam embaixo, e Voltar sai da apresentação.
+
 ## 0.0.1-dev.1000604 — Jogo e código ao alcance do polegar
 
 - **Rodar** flutua no canto de baixo do código e das notas, onde o polegar alcança. Some enquanto você digita. No computador continua no alto.

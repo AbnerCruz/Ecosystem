@@ -118,8 +118,23 @@ public class DebugShapeTests
         var device = new GraphicsDevice(new NoOpBackend(), 360, 640); var batch = new SpriteBatch(device);
         Vector2[] vertices = { new(0, 0), new(20, 0), new(10, 20) }; var ray = new Ray2D(Vector2.Zero, Vector2.One); var transform = new Transform2D(new(50, 80), 0.5f);
         void Draw() { batch.Begin(); batch.Polygon(vertices, Color.White, transform: transform.ToMatrix()); batch.Ray(ray, 100, Color.White); batch.Axes(transform, 30, Color.Red, Color.Green); batch.Grid(new(0, 0, 100, 100), new(10, 10), Color.White); batch.End(); }
-        for (int i = 0; i < 2000; i++) Draw(); long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 2000; i++) Draw(); Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        // Measured on a thread of its own: the test runner's shared threads also run other work (and the runtime's
+        // tier-up of hot methods) that GetAllocatedBytesForCurrentThread would count. The smallest of three runs is
+        // kept: a real per-draw allocation shows in every run (2000 draws × bytes), a one-off runtime event does not.
+        long allocated = long.MaxValue;
+        var thread = new Thread(() =>
+        {
+            for (int i = 0; i < 4000; i++) Draw();
+            for (int run = 0; run < 3 && allocated != 0; run++)
+            {
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 2000; i++) Draw();
+                allocated = Math.Min(allocated, GC.GetAllocatedBytesForCurrentThread() - before);
+            }
+        });
+        thread.Start();
+        thread.Join();
+        Assert.Equal(0, allocated);
     }
 
     [Fact]

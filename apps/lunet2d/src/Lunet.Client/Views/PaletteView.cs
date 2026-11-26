@@ -20,16 +20,27 @@ namespace Lunet.Client.Views;
 public sealed class PaletteView : UserControl
 {
     private readonly LunetShell _shell;
+    private readonly Action<string>? _publish;
     private readonly Action _close;
     private readonly StackPanel _page = new() { Spacing = LunetTokens.Space.S };
     private readonly TextBlock _status = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
     private int? _selected;
 
-    public PaletteView(LunetShell shell, Action close)
+    private readonly Lunet.Core.StudioAssetWorkspace? _storage;
+    private readonly string? _path;
+
+    /// <summary>The game's palette (Assets/palette.json), or with <paramref name="storage"/> and <paramref name="path"/> a
+    /// standalone <c>.palette.json</c> of the Studios (written with its <c>.gpl</c>, as the previous screen did).</summary>
+    public PaletteView(LunetShell shell, Action close, Lunet.Core.StudioAssetWorkspace? storage = null, string? path = null, Action<string>? publish = null)
     {
         _shell = shell;
         _close = close;
-        Palette = Load(shell) ?? new ProjectPalette();
+        _storage = storage;
+        _path = path;
+        _publish = publish;
+        Palette = storage is not null && path is not null
+            ? (File.Exists(Path.Combine(storage.RootDirectory, path)) ? ProjectPalette.Parse(storage.ReadText(path)) : new ProjectPalette { Name = "Paleta" })
+            : Load(shell) ?? new ProjectPalette();
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => Close());
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.M, 0) };
@@ -65,8 +76,8 @@ public sealed class PaletteView : UserControl
     /// <summary>The colours of the game's sprites (their saved sources), at most 16, nearest kept apart.</summary>
     public int ExtractFromArt()
     {
+        if (_shell.Workspace.Project is not { } project) return 0;
         var pixels = new List<uint>();
-        var project = _shell.Workspace.Project!;
         foreach (var file in project.ListFiles().Where(f => f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase)))
         {
             try { foreach (var frame in SpriteDocument.Parse(project.ReadText(file)).Frames) pixels.AddRange(frame.Where(p => (p >> 24) != 0)); }
@@ -74,6 +85,49 @@ public sealed class PaletteView : UserControl
             if (pixels.Count > 400_000) break;
         }
         return AddColors(ProjectPalette.FromPixels(pixels, 16));
+    }
+
+    /// <summary>Adds the colours of a .gpl (GIMP, Krita, Aseprite) or a list of hex values. Returns how many were new.</summary>
+    public int ImportText(string text, string name) => AddColors(ProjectPalette.Import(text, name).Argb);
+
+    /// <summary>Writes <c>Scripts/GamePalette.cs</c>: one <c>Color</c> per swatch, so code draws with the art's colours.</summary>
+    public string GenerateCode()
+    {
+        const string path = "Scripts/GamePalette.cs";
+        _shell.Workspace.Write(path, Palette.ToCSharp(null));
+        _status.Text = $"{path} gerado: use GamePalette.{Palette.ExportNames().FirstOrDefault() ?? "All"} no código.";
+        _status.Foreground = LunetTokens.Brush(LunetTokens.Color.Success);
+        return path;
+    }
+
+    private async Task PickImport()
+    {
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { CanOpen: true } storage) return;
+        var picked = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions { Title = "Importar paleta (.gpl ou hex)", AllowMultiple = false });
+        if (picked.FirstOrDefault() is not { } file) return;
+        try
+        {
+            await using var stream = await file.OpenReadAsync();
+            using var reader = new StreamReader(stream);
+            var added = ImportText(await reader.ReadToEndAsync(), Path.GetFileNameWithoutExtension(file.Name));
+            _status.Text = $"{added} cor(es) importadas.";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { _status.Text = "Não foi possível importar: " + e.Message; }
+    }
+
+    private async Task PickExportGpl()
+    {
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage) return;
+        var file = await storage.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions { Title = "Exportar paleta", SuggestedFileName = "paleta.gpl", DefaultExtension = "gpl" });
+        if (file is null) return;
+        try
+        {
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(Palette.ToGpl());
+            _status.Text = "Paleta exportada (.gpl: GIMP, Krita, Aseprite).";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { _status.Text = "Não foi possível exportar: " + e.Message; }
     }
 
     public void Remove(int index)
@@ -88,7 +142,9 @@ public sealed class PaletteView : UserControl
     {
         try
         {
-            _shell.Workspace.Project!.WriteText(ProjectPalette.DefaultPath, Palette.ToJson());
+            if (_storage is not null && _path is not null)
+                _storage.WriteTextPair(_path, Palette.ToJson(), _path[..^".palette.json".Length] + ".gpl", Palette.ToGpl());
+            else _shell.Workspace.Project!.WriteText(ProjectPalette.DefaultPath, Palette.ToJson());
             _status.Text = $"{Palette.Colors.Count} cores · salvo";
             _status.Foreground = LunetTokens.Brush(LunetTokens.Color.TextSecondary);
         }
@@ -144,6 +200,10 @@ public sealed class PaletteView : UserControl
             Action("Tríade", () => AddColors(ProjectPalette.Harmony(color, PaletteHarmony.Triadic)), "Triadic");
             Action("Remover", () => Remove(sel), "RemoveColor", ButtonKind.Ghost);
             _page.Children.Add(actions);
+            // Contrast (WCAG ratio) against dark and light backgrounds: is this colour readable as text or UI?
+            double dark = ProjectPalette.Contrast(color, 0xFF000000), light = ProjectPalette.Contrast(color, 0xFFFFFFFF);
+            string Grade(double r) => r >= 7 ? "ótimo" : r >= 4.5 ? "bom para texto" : r >= 3 ? "só para formas" : "fraco";
+            _page.Children.Add(LunetUi.Text($"Contraste: {dark:0.0}:1 no escuro ({Grade(dark)}) · {light:0.0}:1 no claro ({Grade(light)})", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
         }
 
         _page.Children.Add(Section("Adicionar"));
@@ -156,11 +216,24 @@ public sealed class PaletteView : UserControl
         });
         add.Name = "AddHex";
         _page.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs, Children = { hex, add } });
+        var files = new WrapPanel { Orientation = Orientation.Horizontal };
+        void FileAction(string label, string icon, Action act, string name)
+        {
+            var b = LunetUi.Button(label, ButtonKind.Secondary, icon, act);
+            b.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs); b.Name = name;
+            files.Children.Add(b);
+        }
+        FileAction("Importar .gpl ou hex", LunetIcons.Download, () => _ = PickImport(), "ImportGpl");
+        FileAction("Exportar .gpl", LunetIcons.Share, () => _ = PickExportGpl(), "ExportGpl");
+        if (_storage is null) FileAction("Gerar código C#", LunetIcons.Code, () => GenerateCode(), "PaletteCode");
+        if (_publish is not null && _path is not null) FileAction("Publicar", LunetIcons.Share, () => { Save(); _publish(_path); }, "PublishPalette");
+        _page.Children.Add(files);
         var extract = LunetUi.Button("Extrair da arte do jogo", ButtonKind.Secondary, LunetIcons.Art, () =>
         {
             if (ExtractFromArt() == 0) { _status.Text = "Nenhuma cor nova nos sprites do jogo."; _status.Foreground = LunetTokens.Brush(LunetTokens.Color.TextSecondary); }
         });
         extract.Name = "ExtractArt";
+        extract.IsVisible = _shell.Workspace.Project is not null && _storage is null;
         extract.HorizontalAlignment = HorizontalAlignment.Left;
         _page.Children.Add(extract);
 

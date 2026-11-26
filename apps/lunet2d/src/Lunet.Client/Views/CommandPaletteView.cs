@@ -158,6 +158,13 @@ public sealed class CommandPaletteView : UserControl
             yield return new("Apagar linha", "", () => Line(LineOperations.DeleteLines));
             yield return new("Mover linha para cima", "", () => Line((t, a, b) => LineOperations.MoveLines(t, a, b, up: true)));
             yield return new("Mover linha para baixo", "", () => Line((t, a, b) => LineOperations.MoveLines(t, a, b, up: false)));
+            yield return new("Inserir bloco", "{ } com a linha recuada dentro (Ctrl+Shift+B)", () => Line(IndentationService.InsertBlock));
+            yield return new("Selecionar próxima ocorrência", "A palavra sob o cursor, depois a próxima igual", () => { Close(); Code!.SelectNextOccurrence(); });
+            yield return new("Editar todas as ocorrências", "Troca a palavra sob o cursor em todo o arquivo", () => { Close(); _shell.WorkspaceView.Code.EditAllOccurrences(); });
+            yield return new("Dobrar ou desdobrar região", "O bloco onde está o cursor", () => { Close(); Code!.ToggleFoldAtCaret(); });
+            yield return new("Dobrar tudo", "", () => { Close(); Code!.SetAllFolded(true); });
+            yield return new("Desdobrar tudo", "", () => { Close(); Code!.SetAllFolded(false); });
+            yield return new("Voltar à posição anterior", "Antes do último salto (Alt+←)", () => { Close(); _shell.WorkspaceView.Code.BackToPosition(); });
             yield return new("Indentar", "", () => Line(LineOperations.Indent));
             yield return new("Recuar", "", () => Line(LineOperations.Outdent));
         }
@@ -288,10 +295,8 @@ public sealed class CommandPaletteView : UserControl
 
     private void OpenAt(string? file, int line, int column)
     {
-        var editor = _shell.WorkspaceView.Code;
-        if (file is not null && file != editor.OpenPath && _shell.Workspace.Files().Contains(file)) editor.Load(file);
         _shell.State.SelectTab(WorkspaceTab.Code);
-        if (editor.Surface is CodeSurface code) { code.GoTo(line, column); code.Focus(); }
+        _shell.WorkspaceView.Code.JumpTo(file, line, column);
     }
 
     private string LineText(string? file, int line)
@@ -309,7 +314,7 @@ public sealed class CommandPaletteView : UserControl
 
     private IReadOnlyList<PaletteItem> LineItems(string term) =>
         CommandPalette.Line(term) is { } line && Code is not null
-            ? [new($"Ir para a linha {line}", LineText(Path, line), () => { Close(); Code!.GoTo(line, 1); })]
+            ? [new($"Ir para a linha {line}", LineText(Path, line), () => { Close(); _shell.WorkspaceView.Code.JumpTo(null, line, 1); })]
             : [];
 
     private IReadOnlyList<PaletteItem> FindItems(string term)
@@ -333,7 +338,7 @@ public sealed class CommandPaletteView : UserControl
             foreach (var n in nodes)
             {
                 var node = n;
-                items.Add(new(indent + n.Name, $"{n.Kind} · linha {n.Line}", () => { Close(); Code!.GoTo(node.Line, 1); }));
+                items.Add(new(indent + n.Name, $"{n.Kind} · linha {n.Line}", () => { Close(); _shell.WorkspaceView.Code.JumpTo(null, node.Line, 1); }));
                 Walk(n.Children, indent + "  ");
             }
         }

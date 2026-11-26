@@ -126,8 +126,9 @@ public sealed class SupportPanelView : UserControl
             b.HorizontalContentAlignment = HorizontalAlignment.Left;
             list.Children.Add(b);
         }
-        if (_shell.OpenRoute is not null) list.Children.Add(LunetUi.Divider());
-        // Versões (P6), Gerar APK (P5), Recursos (tab) and Notas (tab) live in the shell; only the full editor still opens the previous screen.
+        list.Children.Add(LunetUi.Divider());
+        // Everything a game needs lives in the shell: Versões (P6), Gerar APK (P5), Recursos and Notas (tabs), the
+        // editor's folding, jumps, files and text files. No entry here opens a previous screen.
         var versions = LunetUi.Button("Versões (Git)", ButtonKind.Ghost, LunetIcons.Folder, () => { _shell.State.ShowPanel(SupportPanel.None); _shell.WorkspaceView.OpenGit(); });
         versions.HorizontalAlignment = HorizontalAlignment.Stretch;
         versions.HorizontalContentAlignment = HorizontalAlignment.Left;
@@ -138,13 +139,6 @@ public sealed class SupportPanelView : UserControl
         apk.HorizontalContentAlignment = HorizontalAlignment.Left;
         apk.Name = "OpenApk";
         list.Children.Add(apk);
-        foreach (var (route, label, icon) in _shell.OpenRoute is null ? [] : LunetShell.GameRoutes.Where(r => r.Route is not ("git" or "apk" or "assets" or "notes")))
-        {
-            var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => _shell.OpenRoute?.Invoke(route, _shell.State.Project));
-            b.HorizontalAlignment = HorizontalAlignment.Stretch;
-            b.HorizontalContentAlignment = HorizontalAlignment.Left;
-            list.Children.Add(b);
-        }
         return new ScrollViewer { Content = list };
     }
 
@@ -171,7 +165,7 @@ public sealed class SupportPanelView : UserControl
             {
                 _shell.State.ShowPanel(SupportPanel.None);
                 _shell.State.SelectTab(WorkspaceTab.Code);
-                if (_shell.WorkspaceView.Code.Surface is CodeSurface code) { code.GoTo(diagnostic.Line, diagnostic.Column); code.Focus(); }
+                _shell.WorkspaceView.Code.JumpTo(null, diagnostic.Line, diagnostic.Column);
             };
             list.Children.Add(row);
         }

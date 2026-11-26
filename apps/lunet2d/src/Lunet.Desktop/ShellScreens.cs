@@ -60,6 +60,15 @@ public static class ShellScreens
                 library.ShowAsset(library.Listed[0].Id, library.Listed[0].Version);
                 Shot(window, output, size, "2i-recurso", written);
                 shell.Home.CloseSheet(); shell.Home.CloseSheet();
+                var studios = shell.Home.ShowStudios();
+                studios.NewSprite().Paint(3, 3, first: true); studios.Back();
+                studios.NewMusic(); studios.Back();
+                Shot(window, output, size, "2l-studios", written);
+                var tone = studios.NewTone(330, 1.2, Lunet.Studio.WaveShape.Triangle);
+                tone.SetCut(0.15, 0.95); tone.SetLoop(true, 0.3, 0.8);
+                Shot(window, output, size, "2m-wav", written);
+                studios.Back();
+                shell.Home.CloseSheet();
                 shell.Home.ShowSettings();
                 Shot(window, output, size, "2k-ajustes", written);
                 shell.Home.CloseSheet();
@@ -170,6 +179,9 @@ public static class ShellScreens
                 mind.AddChild(mind.Map.Root, "Ideias soltas");
                 mind.Rename(mind.Map.Topics[^1].Id, "Ideias soltas");
                 Shot(window, output, size, "7b-mapa-mental", written);
+                mind.Present();
+                Shot(window, output, size, "7c-apresentar", written);
+                mind.EndPresentation();
                 shell.Back();
                 var music = shell.WorkspaceView.NewMusic();
                 Shot(window, output, size, "8f-musica", written);
