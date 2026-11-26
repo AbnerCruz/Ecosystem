@@ -11,6 +11,8 @@ using TileMap = Lunet.Graphics.TileMap;
 using GridPoint = Lunet.Pathfinding.GridPoint;
 using TileStudioSession = Lunet.Studio.TileStudioSession;
 using SpriteDocument = Lunet.Studio.SpriteDocument;
+using AutotileLayout = Lunet.Studio.AutotileLayout;
+using AutotileSet = Lunet.Studio.AutotileSet;
 
 namespace Lunet.Client.Views;
 
@@ -81,6 +83,10 @@ public sealed class TileStudioView : UserControl
     private readonly StackPanel _tiles = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
     private readonly StackPanel _layers = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
     private readonly StackPanel _tools = new() { Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center };
+    private readonly StackPanel _context = new() { Orientation = Orientation.Horizontal, Spacing = 4 };
+    private readonly ScrollViewer _contextRow;
+    private bool _terrainTool, _layerMenu, _confirmRemove;
+    private string? _message;
     private readonly TextBlock _info = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
     private Bitmap? _tileset;
     private bool _dirty;
@@ -118,10 +124,11 @@ public sealed class TileStudioView : UserControl
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         };
+        _contextRow = Row(_context);
         var bottom = new StackPanel
         {
             Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-            Children = { Row(_layers), Row(_tiles), new Border { Child = _tools, Padding = new Thickness(0, 0, 0, LunetTokens.Space.Xs) } },
+            Children = { Row(_layers), _contextRow, Row(_tiles), new Border { Child = _tools, Padding = new Thickness(0, 0, 0, LunetTokens.Space.Xs) } },
         };
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
@@ -171,8 +178,63 @@ public sealed class TileStudioView : UserControl
         _canvas.Show(Session.Map, _tileset, Session.Layer);
     }
 
-    public void SelectTile(int tile) { Session.Tile = tile; _erase = false; Refresh(); }
-    public void SetErase(bool erase) { _erase = erase; Refresh(); }
+    public void SelectTile(int tile)
+    {
+        Session.Tile = tile;
+        _erase = false;
+        // With the terrain tool the chosen tile is the terrain's first one.
+        if (_terrainTool && Session.Terrain is { } terrain) _message = SetTerrain(terrain.Layout);
+        Refresh();
+    }
+
+    public void SetErase(bool erase) { _erase = erase; _terrainTool = false; Session.Terrain = null; Refresh(); }
+
+    // ---------- Terrain (autotile, LUNET-506) ----------
+
+    public bool TerrainTool => _terrainTool;
+
+    /// <summary>The terrain tool: painting picks the edge and corner tiles from the neighbours.</summary>
+    public void UseTerrain()
+    {
+        _terrainTool = true;
+        _erase = false;
+        _message = Session.Terrain is null ? SetTerrain(AutotileLayout.Sides16) : null;
+        Refresh();
+    }
+
+    /// <summary>The terrain starts at the chosen tile; null when the tileset has its 16 or 47 tiles, else the reason.</summary>
+    public string? SetTerrain(AutotileLayout layout)
+    {
+        var set = new AutotileSet("terreno", Math.Max(1, Session.Tile), layout);
+        if (set.BaseTile + set.Count - 1 > Session.MaxTileId)
+        {
+            Session.Terrain = null;
+            return $"O terreno precisa de {set.Count} tiles a partir do tile {set.BaseTile}; o tileset tem {Session.MaxTileId}. Desenhe mais tiles no tileset.";
+        }
+        Session.Terrain = set;
+        _message = null;
+        Refresh();
+        return null;
+    }
+
+    public void SetTerrainErase(bool erase) { Session.EraseTerrain = erase; Refresh(); }
+
+    // ---------- Layers ----------
+
+    public bool LayerMenuOpen => _layerMenu;
+    public void ToggleLayerMenu() { _layerMenu = !_layerMenu; _confirmRemove = false; Refresh(); }
+    private void LayerChange(Action change) { change(); _dirty = true; Refresh(); }
+    public void RenameLayer(string name) { if (name.Trim().Length > 0) LayerChange(() => Session.RenameLayer(name.Trim())); }
+    public void MoveLayer(int direction) => LayerChange(() => Session.MoveLayer(direction));
+
+    /// <summary>Removes the current layer and its tiles (the map keeps at least one).</summary>
+    public bool RemoveLayer()
+    {
+        if (Session.Map.LayerCount <= 1) { _message = "O mapa precisa de pelo menos uma camada."; Refresh(); return false; }
+        _confirmRemove = false;
+        LayerChange(Session.RemoveLayer);
+        return true;
+    }
     public void Undo() { if (Session.Undo()) { _dirty = true; Refresh(); } }
     public void Redo() { if (Session.Redo()) { _dirty = true; Refresh(); } }
 
@@ -243,8 +305,11 @@ public sealed class TileStudioView : UserControl
             _layers.Children.Add(chip);
         }
         _layers.Children.Add(Small("+", "Nova camada", () => { Session.AddLayer("Camada " + (map.LayerCount + 1)); Session.SelectLayer(Session.Map.LayerCount - 1); _dirty = true; Refresh(); }));
-        _layers.Children.Add(Small(map.IsLayerVisible(Session.Layer) ? "👁" : "◌", "Mostrar ou esconder a camada", () => { Session.ToggleVisibility(); _dirty = true; Refresh(); }));
-        _layers.Children.Add(Small("▦", "Camada de colisão (liga/desliga)", () => { Session.ToggleCollision(); _dirty = true; Refresh(); }));
+        var more = Small("⋮", "Opções da camada", ToggleLayerMenu);
+        more.Name = "LayerMenu";
+        _layers.Children.Add(more);
+        if (_message is not null) { _info.Text = _message; _info.Foreground = LunetTokens.Brush(LunetTokens.Color.Danger); }
+        BuildContext();
 
         _tiles.Children.Clear();
         var columns = _tileset is null ? 1 : Math.Max(1, (int)(_tileset.PixelSize.Width / map.TileWidth));
@@ -289,7 +354,8 @@ public sealed class TileStudioView : UserControl
             b.Click += (_, _) => act();
             _tools.Children.Add(b);
         }
-        Tool(LunetIcons.Edit, "Pincel de tile", !_erase, () => SetErase(false), "Brush");
+        Tool(LunetIcons.Edit, "Pincel de tile", !_erase && !_terrainTool, () => SetErase(false), "Brush");
+        Tool(LunetIcons.Map, "Terreno (autotile)", _terrainTool, UseTerrain, "Terrain");
         Tool(LunetIcons.Eraser, "Borracha", _erase, () => SetErase(true), "Erase");
         _tools.Children.Add(new Border { Width = 1, Height = 28, Margin = new Thickness(6, 0), Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong), VerticalAlignment = VerticalAlignment.Center });
         _tools.Children.Add(Small("↶", "Desfazer", Undo));
@@ -304,6 +370,52 @@ public sealed class TileStudioView : UserControl
             edit.Name = "EditTileset";
             _tools.Children.Add(edit);
         }
+    }
+
+    /// <summary>The row above the tiles: the layer's options, or the terrain's, depending on what is open.</summary>
+    private void BuildContext()
+    {
+        _context.Children.Clear();
+        Button Chip(string label, Action act, string name, bool on = false)
+        {
+            var b = LunetUi.Button(label, on ? ButtonKind.Primary : ButtonKind.Secondary, null, act);
+            b.MinHeight = 40;
+            b.Name = name;
+            _context.Children.Add(b);
+            return b;
+        }
+        var map = Session.Map;
+        if (_layerMenu)
+        {
+            var name = new TextBox { Text = map.GetLayerName(Session.Layer), Width = 140, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center, Name = "LayerName" };
+            AutomationProperties.SetName(name, "Nome da camada");
+            name.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { RenameLayer(name.Text ?? ""); e.Handled = true; } };
+            name.LostFocus += (_, _) => { if ((name.Text ?? "").Trim() is { Length: > 0 } n && n != Session.Map.GetLayerName(Session.Layer)) RenameLayer(n); };
+            _context.Children.Add(name);
+            Chip("← Antes", () => MoveLayer(-1), "LayerUp");
+            Chip("Depois →", () => MoveLayer(1), "LayerDown");
+            Chip(map.IsLayerVisible(Session.Layer) ? "Esconder" : "Mostrar", () => LayerChange(Session.ToggleVisibility), "LayerVisible");
+            Chip("Colisão", () => LayerChange(Session.ToggleCollision), "LayerCollision", map.IsCollisionLayer(Session.Layer));
+            var remove = Chip(_confirmRemove ? "Apagar mesmo?" : "Apagar camada", () =>
+            {
+                if (!_confirmRemove) { _confirmRemove = true; Refresh(); }
+                else RemoveLayer();
+            }, "LayerRemove");
+            if (_confirmRemove) remove.Foreground = LunetTokens.Brush(LunetTokens.Color.Danger);
+        }
+        else if (_terrainTool)
+        {
+            Chip("Simples · 16", () => _message = SetTerrain(AutotileLayout.Sides16), "TerrainSides", Session.Terrain?.Layout == AutotileLayout.Sides16);
+            Chip("Suave · 47", () => _message = SetTerrain(AutotileLayout.Blob47), "TerrainBlob", Session.Terrain?.Layout == AutotileLayout.Blob47);
+            Chip(Session.EraseTerrain ? "Apagando" : "Pintando", () => SetTerrainErase(!Session.EraseTerrain), "TerrainErase", Session.EraseTerrain);
+            if (Session.Terrain is { } t)
+            {
+                var hint = LunetUi.Text($"a partir do tile {t.BaseTile}", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+                hint.VerticalAlignment = VerticalAlignment.Center;
+                _context.Children.Add(hint);
+            }
+        }
+        _contextRow.IsVisible = _context.Children.Count > 0;
     }
 
     private static Button Small(string face, string label, Action act)

@@ -41,6 +41,11 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Terreno (autotile) e camadas no Tile Studio da interface nova:**
+  - A ferramenta Terreno pinta caminhos, paredes e chãos escolhendo sozinha a borda e o canto certos pelos vizinhos.
+  - O terreno pode ser Simples (16 tiles) ou Suave (47), a partir do tile escolhido. Também dá para apagar terreno.
+  - Se o tileset não tiver os tiles necessários, a tela diz quantos faltam.
+  - O **⋮** da camada abre Renomear, Antes e Depois (ordem), Mostrar/Esconder, Colisão e Apagar camada (com confirmação).
 - **Seleção no Sprite Studio da interface nova** (ferramenta Selecionar):
   - Retângulo, Laço, Mesma cor ou Tudo, escolhidos logo acima das ferramentas.
   - Arrastar dentro da seleção move os pixels.

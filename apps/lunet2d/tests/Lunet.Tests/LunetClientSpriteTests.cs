@@ -500,4 +500,58 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void TileStudio_PaintsTerrainWithAutotileAndManagesLayers()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-terrain-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var map = shell.WorkspaceView.NewMap();
+                Assert.Equal(16, map.Session.MaxTileId);
+                map.SelectTile(1);
+                map.UseTerrain();                                                // 16 tiles from tile 1: fits
+                Assert.True(map.TerrainTool);
+                Assert.NotNull(map.Session.Terrain);
+                Assert.NotNull(map.SetTerrain(Lunet.Studio.AutotileLayout.Blob47)); // 47 do not: the reason
+                Assert.Null(map.Session.Terrain);
+                Assert.Null(map.SetTerrain(Lunet.Studio.AutotileLayout.Sides16));
+                map.Paint(3, 5, first: true);
+                map.Paint(4, 5, first: false);
+                map.Paint(5, 5, first: false);
+                Assert.True(map.Session.EndStroke());
+                int At(int x, int y) => map.Session.Map.GetTile(0, new Lunet.Pathfinding.GridPoint(x, y));
+                Assert.Equal(1 + 2, At(3, 5));                                    // east only
+                Assert.Equal(1 + 2 + 8, At(4, 5));                                // east and west
+                Assert.Equal(1 + 8, At(5, 5));                                    // west only
+                map.SetTerrainErase(true);
+                map.Paint(5, 5, first: true);
+                map.Session.EndStroke();
+                Assert.Equal(0, At(5, 5));
+                Assert.Equal(1 + 8, At(4, 5));                                    // the neighbour lost its east side
+
+                map.ToggleLayerMenu();
+                Assert.True(map.LayerMenuOpen);
+                map.Session.AddLayer("Detalhes");
+                map.RenameLayer("Decoração");
+                Assert.Equal("Decoração", map.Session.Map.GetLayerName(map.Session.Layer));
+                var layer = map.Session.Layer;
+                map.MoveLayer(-1);
+                Assert.Equal(layer - 1, map.Session.Layer);
+                Assert.Equal("Decoração", map.Session.Map.GetLayerName(0));
+                Assert.True(map.RemoveLayer());
+                Assert.Equal(1, map.Session.Map.LayerCount);
+                Assert.False(map.RemoveLayer());                                  // at least one layer
+                Assert.True(shell.Back());
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

@@ -140,6 +140,13 @@ public static class ShellScreens
                 for (var y = 9; y < 12; y++) tiles.Paint(5, y, first: y == 9);
                 tiles.Session.EndStroke();
                 Shot(window, output, size, "8d-mapa", written);
+                tiles.SelectTile(1);
+                tiles.UseTerrain();
+                Shot(window, output, size, "8d2-terreno", written);
+                tiles.SetErase(false);
+                tiles.ToggleLayerMenu();
+                Shot(window, output, size, "8d3-camada", written);
+                tiles.ToggleLayerMenu();
                 shell.Back();
                 shell.WorkspaceView.NewSound();
                 Shot(window, output, size, "8e-som", written);
