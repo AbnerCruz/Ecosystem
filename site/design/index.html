@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ecosystem — Linguagem visual</title>
+  <meta name="description" content="Todos os componentes e padrões da linguagem visual do Ecosystem, demonstrados na prática.">
+  <meta name="color-scheme" content="dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="design.css">
+  <script src="design.js" defer></script>
+</head>
+<body class="loading">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+
+  <header class="topbar" id="top">
+    <a class="back" href="../" aria-label="Voltar ao portal">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="topbar-title">
+      <strong>Linguagem visual</strong>
+      <span class="t-caption muted" data-version>carregando os tokens…</span>
+    </div>
+    <button class="btn ghost icon-only" type="button" data-motion-toggle aria-pressed="false" title="Reduzir movimento">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+      <span class="sr">Reduzir movimento</span>
+    </button>
+  </header>
+
+  <nav class="toc" aria-label="Seções">
+    <a href="#principios">Princípios</a><a href="#cor">Cor</a><a href="#tipografia">Tipografia</a><a href="#espaco">Espaço e forma</a>
+    <a href="#elevacao">Elevação</a><a href="#botoes">Botões</a><a href="#campos">Campos</a><a href="#selecao">Seleção</a>
+    <a href="#listas">Listas</a><a href="#navegacao">Navegação</a><a href="#sobreposicoes">Folhas</a><a href="#estados">Estados</a>
+    <a href="#icones">Ícones</a><a href="#movimento">Movimento</a><a href="#efeitos">Efeitos</a><a href="#antipadroes">Anti-padrões</a><a href="#checklist">Checklist</a>
+  </nav>
+
+  <main id="main" class="page">
+    <section class="hero">
+      <p class="t-label accent">Ecosystem · design</p>
+      <h1 class="t-display">Escuro, calmo e preciso.</h1>
+      <p class="t-body muted measure">Preto frio, branco suave, violeta para a ação e azul para a informação. Esta página lê os valores direto de <code>tokens.json</code>, a única fonte, e mostra cada regra funcionando. A norma completa está em <a href="https://github.com/AbnerCruz/Ecosystem/blob/main/docs/design/linguagem-visual.md">linguagem-visual.md</a>.</p>
+      <div class="row gap-2">
+        <a class="btn primary" href="#botoes">Ver componentes</a>
+        <a class="btn tonal" href="https://github.com/AbnerCruz/Ecosystem/blob/main/docs/design/estudo-visual-2026-11-26.md">Ler o estudo</a>
+      </div>
+    </section>
+
+    <section id="principios">
+      <h2 class="t-headline">Princípios</h2>
+      <ol class="principles">
+        <li><strong>Conteúdo primeiro, cromo mínimo.</strong><span>Código, jogo, nota e arte são o que importa; a moldura recua.</span></li>
+        <li><strong>Profundidade por tom, não por linha.</strong><span>Superfície mais alta é mais clara. Borda é exceção.</span></li>
+        <li><strong>Um acento manda por tela.</strong><span>Uma ação principal cheia; o resto é tonal ou texto.</span></li>
+        <li><strong>Ritmo de 4 pt.</strong><span>Todo espaço, tamanho e raio vem da escala.</span></li>
+        <li><strong>Polegar primeiro.</strong><span>Ações frequentes embaixo; alvos de 48 dp.</span></li>
+        <li><strong>Movimento com propósito.</strong><span>Curto, de 90 a 300 ms, saída mais rápida que entrada.</span></li>
+        <li><strong>Acessível por construção.</strong><span>WCAG AA e APCA, foco visível, rótulo sempre visível.</span></li>
+      </ol>
+    </section>
+
+    <section id="cor">
+      <h2 class="t-headline">Cor</h2>
+      <p class="muted measure">Doze passos neutros ("ink"), com leve matiz frio. Cada passo tem um papel fixo. O contraste é calculado aqui, sobre o fundo do app (ink 1).</p>
+      <div class="swatches" data-ink></div>
+      <h3 class="t-title">Acentos e semânticas</h3>
+      <p class="muted measure"><strong class="accent">Violeta</strong> é marca e ação. <strong class="info">Azul</strong> é informação, link e seleção. O passo 9 é o sólido; o 11 é para texto e ícone sobre o escuro; o soft é para fundo de seleção.</p>
+      <div class="scales" data-scales></div>
+      <h3 class="t-title">Proporção (60-30-10 no escuro)</h3>
+      <div class="ratio" aria-label="Proporção de cor: neutros 75%, texto 18%, acento 7%">
+        <span style="flex:75" class="r-ink">neutros · ~75%</span><span style="flex:18" class="r-text">texto · ~18%</span><span style="flex:7" class="r-accent">acento</span>
+      </div>
+      <div class="dodont">
+        <div class="do"><p class="t-label ok">Sim</p><p>Preto puro só no palco do jogo e em mídia. Texto em ink 12, nunca <code>#FFFFFF</code> em texto corrido.</p></div>
+        <div class="dont"><p class="t-label bad">Não</p><p>Acento sólido em chips, títulos e vários botões ao mesmo tempo: nada se destaca.</p></div>
+      </div>
+    </section>
+
+    <section id="tipografia">
+      <h2 class="t-headline">Tipografia</h2>
+      <p class="muted measure">Inter na interface, JetBrains Mono no código. No máximo três tamanhos por tela; hierarquia por peso e tamanho antes de cor.</p>
+      <div class="typescale" data-types></div>
+      <div class="stage">
+        <p class="t-label muted">Algarismos tabulares onde números se comparam</p>
+        <div class="tnum-demo">
+          <div><span class="t-caption muted">proporcional</span><p class="mono-off">1.111 · 8.888 · 60 FPS<br>12,4 ms · 3,1 ms</p></div>
+          <div><span class="t-caption muted">tabular</span><p class="tnum">1.111 · 8.888 · 60 FPS<br>12,4 ms · 3,1 ms</p></div>
+        </div>
+      </div>
+      <pre class="code"><span class="k">protected override void</span> <span class="m">Draw</span>(GameTime time)
+{
+    batch.<span class="m">Begin</span>(); <span class="c">// JetBrains Mono, 14/22</span>
+    batch.<span class="m">Circle</span>(posicao, <span class="n">24</span>, Color.White);
+    batch.<span class="m">End</span>();
+}</pre>
+    </section>
+
+    <section id="espaco">
+      <h2 class="t-headline">Espaço e forma</h2>
+      <p class="muted measure">Grade de 4 pt. Dentro de um grupo, 8–12; entre grupos, 24–32. O espaço separa antes da linha.</p>
+      <div class="spaces" data-spaces></div>
+      <h3 class="t-title">Raios</h3>
+      <div class="radii" data-radii></div>
+      <div class="stage">
+        <p class="t-label muted">Raios concêntricos: interno = externo − espaçamento</p>
+        <div class="concentric"><div class="outer"><div class="inner">20 − 8 = 12</div></div><div class="outer"><div class="inner bad-inner">20 por dentro de 20</div></div></div>
+      </div>
+    </section>
+
+    <section id="elevacao">
+      <h2 class="t-headline">Elevação</h2>
+      <p class="muted measure">Superfícies mais altas são mais claras. No máximo quatro níveis por tela. Sombra só no que flutua.</p>
+      <div class="elevation">
+        <div class="lv lv0"><span class="t-label">0 · fundo</span><span class="t-caption muted">ink 1</span>
+          <div class="lv lv1"><span class="t-label">1 · superfície</span><span class="t-caption muted">ink 3: campos, linhas, blocos</span>
+            <div class="lv lv2"><span class="t-label">2 · elevada</span><span class="t-caption muted">ink 4: hover, destaque</span></div>
+          </div>
+          <div class="lv lv3"><span class="t-label">3 · sobreposição</span><span class="t-caption muted">ink 5 + sombra: folha, menu, diálogo</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="botoes">
+      <h2 class="t-headline">Botões</h2>
+      <p class="muted measure">Uma ação principal por tela. Sem borda. Pressione: escala de 0,97 em 90 ms.</p>
+      <div class="stage">
+        <div class="row wrap gap-2">
+          <button class="btn primary" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Criar jogo</button>
+          <button class="btn tonal" type="button">Duplicar</button>
+          <button class="btn ghost" type="button">Cancelar</button>
+          <button class="btn danger" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Apagar</button>
+          <button class="btn selected" type="button" aria-pressed="true">Escolhido</button>
+          <button class="btn primary" type="button" disabled>Desativado</button>
+          <button class="btn primary" type="button" data-loading><span class="label">Gerar APK</span></button>
+        </div>
+        <div class="row wrap gap-2 sizes">
+          <button class="btn tonal" type="button">48 · celular</button>
+          <button class="btn tonal compact" type="button">40 · desktop</button>
+          <button class="btn tonal small" type="button">32 · pequeno</button>
+          <button class="btn ghost icon-only" type="button" title="Mais ações"><svg class="i" viewBox="0 0 24 24"><path d="M12 5.5h.01M12 12h.01M12 18.5h.01"/></svg><span class="sr">Mais ações</span></button>
+          <button class="fab" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" class="fill"/></svg>Rodar</button>
+        </div>
+      </div>
+      <table class="spec">
+        <tr><th>Tipo</th><th>Visual</th><th>Uso</th></tr>
+        <tr><td>Principal</td><td>violeta 9 sólido, texto branco 15/600</td><td>a ação que conclui; uma por tela</td></tr>
+        <tr><td>Tonal</td><td>ink 4, texto ink 12</td><td>ações secundárias</td></tr>
+        <tr><td>Fantasma</td><td>sem fundo</td><td>terciárias, barras</td></tr>
+        <tr><td>Destrutivo</td><td>vermelho soft, texto vermelho 11</td><td>apagar, sair sem salvar</td></tr>
+        <tr><td>Escolhido</td><td>violeta soft, texto violeta 11</td><td>opção ativa de um grupo, nunca o sólido</td></tr>
+      </table>
+    </section>
+
+    <section id="campos">
+      <h2 class="t-headline">Campos</h2>
+      <p class="muted measure">Fundo em tom, sem borda. Rótulo fora e acima, sempre visível. Placeholder é exemplo, nunca o rótulo. Foco com anel violeta de 2 px. Erro com texto e ícone, não só cor.</p>
+      <div class="stage form">
+        <label class="field">
+          <span class="field-label">Nome do jogo</span>
+          <input type="text" placeholder="Ex.: Fuga da floresta" value="Jogo-2">
+          <span class="field-hint">Aparece na Home e no APK.</span>
+        </label>
+        <label class="field" data-validate-email>
+          <span class="field-label">E-mail</span>
+          <input type="email" inputmode="email" placeholder="voce@exemplo.com" value="ana@">
+          <span class="field-error"><svg class="i" viewBox="0 0 24 24"><path d="M12 4l9 16H3zM12 10v4M12 17h.01"/></svg>Falta o domínio: escreva como em voce@exemplo.com.</span>
+        </label>
+        <label class="field">
+          <span class="field-label">Busca</span>
+          <span class="search"><svg class="i" viewBox="0 0 24 24"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4"/></svg><input type="search" placeholder="Buscar recursos"></span>
+        </label>
+        <label class="field">
+          <span class="field-label">Orientação</span>
+          <span class="select"><select><option>Paisagem</option><option>Retrato</option></select><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+        </label>
+        <label class="field">
+          <span class="field-label">Velocidade (px/s)</span>
+          <input type="number" inputmode="decimal" value="240">
+        </label>
+        <label class="field">
+          <span class="field-label">Desativado</span>
+          <input type="text" value="Não editável agora" disabled>
+        </label>
+        <label class="field full">
+          <span class="field-label">O que mudou nesta versão?</span>
+          <textarea rows="3" placeholder="Ex.: inimigos mais rápidos na fase 2"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section id="selecao">
+      <h2 class="t-headline">Seleção e ajuste</h2>
+      <div class="stage grid-2">
+        <div>
+          <p class="t-label muted">Interruptor</p>
+          <label class="switch"><input type="checkbox" checked><span class="track"><span class="knob"></span></span><span>Números de linha</span></label>
+          <label class="switch"><input type="checkbox"><span class="track"><span class="knob"></span></span><span>Formatar ao rodar</span></label>
+        </div>
+        <div>
+          <p class="t-label muted">Segmentado (2–4 opções)</p>
+          <div class="segmented" role="radiogroup" aria-label="Tela" data-segmented>
+            <button type="button" role="radio" aria-checked="true">Paisagem</button><button type="button" role="radio" aria-checked="false">Retrato</button><button type="button" role="radio" aria-checked="false">Livre</button>
+          </div>
+        </div>
+        <div>
+          <p class="t-label muted">Chips</p>
+          <div class="row wrap gap-1" data-chips>
+            <button class="chip selected" type="button" aria-pressed="true">Melodia</button><button class="chip" type="button" aria-pressed="false">Acordes</button><button class="chip" type="button" aria-pressed="false">Baixo</button><button class="chip" type="button" aria-pressed="false">Bateria</button>
+          </div>
+        </div>
+        <div>
+          <p class="t-label muted">Slider</p>
+          <label class="slider"><span class="slider-head"><span>Volume</span><output class="tnum" data-out>70%</output></span><input type="range" min="0" max="100" value="70" data-range></label>
+        </div>
+        <div>
+          <p class="t-label muted">Caixas e rádios</p>
+          <label class="check"><input type="checkbox" checked><span>Incluir Assets</span></label>
+          <label class="check"><input type="checkbox"><span>Assinar com chave de teste</span></label>
+          <label class="check radio"><input type="radio" name="r" checked><span>Simples · 16</span></label>
+          <label class="check radio"><input type="radio" name="r"><span>Suave · 47</span></label>
+        </div>
+      </div>
+    </section>
+
+    <section id="listas">
+      <h2 class="t-headline">Listas, blocos e cartões</h2>
+      <p class="muted measure">Listas são linhas sobre o fundo, não pilhas de caixas. Cartão só para conteúdo heterogêneo. Nunca cartão dentro de cartão.</p>
+      <div class="stage">
+        <p class="section-head">Arte · 3</p>
+        <a class="list-row" href="#listas"><span class="lead"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5-4-4L4 16zM13.5 6.5l4 4"/></svg></span><span class="txt"><strong>heroi.sprite.json</strong><span>Content/Textures · editar</span></span><svg class="i chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a class="list-row" href="#listas"><span class="lead"><svg class="i" viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15"/></svg></span><span class="txt"><strong>fase-1.tilemap.json</strong><span>Content/Data · editar</span></span><svg class="i chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+        <a class="list-row" href="#listas"><span class="lead"><svg class="i" viewBox="0 0 24 24"><path d="M9 18V6l11-2v12M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM20 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0z"/></svg></span><span class="txt"><strong>tema.song.json</strong><span>Content/Audio · editar</span></span><span class="trail t-caption muted tnum">1:24</span></a>
+        <p class="section-head">Criar</p>
+        <div class="tiles">
+          <button class="tile main" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5-4-4L4 16zM13.5 6.5l4 4"/></svg>Sprite</button>
+          <button class="tile" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15"/></svg>Mapa</button>
+          <button class="tile" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M9 18V6l11-2v12M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM20 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0z"/></svg>Música</button>
+          <button class="tile" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>Partículas</button>
+        </div>
+        <p class="section-head">Cartão</p>
+        <article class="card game">
+          <div class="cover">J</div>
+          <div><strong>Fuga da floresta</strong><span class="t-caption muted">editado há 5 min</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="navegacao">
+      <h2 class="t-headline">Barras e navegação</h2>
+      <p class="muted measure">Barra superior de 56 e navegação inferior de 64, com indicador em pílula. Ações frequentes ao alcance do polegar.</p>
+      <div class="phone">
+        <div class="ph-top"><svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><div><strong>Fuga da floresta</strong><span class="t-caption muted">Parado</span></div><svg class="i" viewBox="0 0 24 24"><path d="M12 5.5h.01M12 12h.01M12 18.5h.01"/></svg></div>
+        <div class="ph-body">
+          <div class="skeleton w80"></div><div class="skeleton w60"></div><div class="skeleton w90"></div><div class="skeleton w40"></div>
+          <button class="fab in-phone" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" class="fill"/></svg>Rodar</button>
+        </div>
+        <nav class="ph-nav" data-nav-demo>
+          <button type="button" class="on"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg></span>Código</button>
+          <button type="button"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M6 9h12a3 3 0 0 1 3 3v2a3 3 0 0 1-5.2 2.1L14 14h-4l-1.8 2.1A3 3 0 0 1 3 14v-2a3 3 0 0 1 3-3z"/></svg></span>Jogo</button>
+          <button type="button"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.9 1.8-1.8 0-1.1-.8-1.4-.8-2.4 0-.9.7-1.6 1.6-1.6H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/></svg></span>Recursos</button>
+          <button type="button"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"/></svg></span>Notas</button>
+        </nav>
+      </div>
+    </section>
+
+    <section id="sobreposicoes">
+      <h2 class="t-headline">Folhas, diálogos, menus e avisos</h2>
+      <p class="muted measure">Folha sobe com fade em 300 ms, tem alça e botão de fechar visível, e o scrim fecha. Uma folha por vez; nada de confirmação crítica em folha.</p>
+      <div class="stage row wrap gap-2">
+        <button class="btn tonal" type="button" data-open-sheet>Abrir folha</button>
+        <button class="btn tonal" type="button" data-open-dialog>Abrir diálogo</button>
+        <span class="menu-wrap"><button class="btn tonal" type="button" data-open-menu aria-expanded="false">Abrir menu</button>
+          <span class="menu" role="menu" hidden data-menu><button role="menuitem" type="button">Renomear</button><button role="menuitem" type="button">Duplicar</button><button role="menuitem" type="button" class="danger-text">Apagar</button></span></span>
+        <button class="btn tonal" type="button" data-toast>Mostrar aviso</button>
+        <span class="tip-wrap"><button class="btn ghost icon-only" type="button" aria-describedby="tip1"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M15 4v4M4 12h3M11 12h9M9 10v4M4 18h11M19 18h1M17 16v4"/></svg><span class="sr">Inspector</span></button><span class="tip" role="tooltip" id="tip1">Inspector</span></span>
+      </div>
+    </section>
+
+    <section id="estados">
+      <h2 class="t-headline">Estados</h2>
+      <div class="stage states">
+        <div><span class="state-demo">normal</span><span class="t-caption muted">ink 3</span></div>
+        <div><span class="state-demo hover">hover</span><span class="t-caption muted">+ branco 4%</span></div>
+        <div><span class="state-demo pressed">pressionado</span><span class="t-caption muted">+ branco 8%, 0,97</span></div>
+        <div><span class="state-demo sel">selecionado</span><span class="t-caption muted">violeta soft</span></div>
+        <div><span class="state-demo focus">foco</span><span class="t-caption muted">anel 2 px</span></div>
+        <div><span class="state-demo off">desativado</span><span class="t-caption muted">40%</span></div>
+        <div><span class="state-demo err">erro</span><span class="t-caption muted">vermelho 11 + texto</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="stage empty">
+          <svg class="i big" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4"/></svg>
+          <p class="t-title">Nenhuma nota neste jogo</p>
+          <p class="muted">Ideias, regras e roteiro ficam em Notes/, no seu disco.</p>
+          <button class="btn primary" type="button">Nova nota</button>
+        </div>
+        <div class="stage">
+          <p class="t-label muted">Carregando (esqueleto)</p>
+          <div class="skel-row"><span class="skeleton sq"></span><span class="grow"><span class="skeleton w60"></span><span class="skeleton w40"></span></span></div>
+          <div class="skel-row"><span class="skeleton sq"></span><span class="grow"><span class="skeleton w80"></span><span class="skeleton w30"></span></span></div>
+          <div class="notice ok"><svg class="i" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>Versão salva.</div>
+          <div class="notice warn"><svg class="i" viewBox="0 0 24 24"><path d="M12 4l9 16H3zM12 10v4M12 17h.01"/></svg>O tileset precisa de 16 tiles a partir do tile 1.</div>
+          <div class="notice bad"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>Não foi possível salvar: disco cheio.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="icones">
+      <h2 class="t-headline">Ícones</h2>
+      <p class="muted measure">Um conjunto de linha: grade 24, traço 1,75, pontas arredondadas. Tamanhos 16, 20 e 24. Ícone sozinho sempre tem nome acessível.</p>
+      <div class="icons" data-icons></div>
+    </section>
+
+    <section id="movimento">
+      <h2 class="t-headline">Movimento</h2>
+      <p class="muted measure">Só opacidade e transformação. Entrada desacelera; saída acelera e é mais curta. "Reduzir movimento" vira fade instantâneo (botão no topo, ou a preferência do sistema).</p>
+      <div class="motion" data-motion></div>
+      <button class="btn primary" type="button" data-play-motion>Tocar todos</button>
+    </section>
+
+    <section id="efeitos">
+      <h2 class="t-headline">Efeitos</h2>
+      <p class="muted measure">Orçamento: no máximo um brilho por tela, gradiente só em momento de marca, sem vidro sob texto e sem ruído.</p>
+      <div class="effects">
+        <div class="fx brand"><span class="t-title">Momento de marca</span><span class="t-caption">gradiente violeta → azul: abertura, destaque, estado vazio ilustrado</span></div>
+        <div class="fx"><button class="btn primary glow" type="button">Brilho no principal</button><span class="t-caption muted">halo do acento a 25%, um por tela</span></div>
+        <div class="fx"><div class="hairline-box">Linha fina translúcida</div><span class="t-caption muted">branco a 7%, só quando o tom não separa</span></div>
+        <div class="fx"><div class="float-box">Sombra flutuante</div><span class="t-caption muted">só em folha, menu, diálogo e botão flutuante</span></div>
+      </div>
+    </section>
+
+    <section id="antipadroes">
+      <h2 class="t-headline">Anti-padrões</h2>
+      <p class="muted measure">O que faz uma interface parecer barata e como corrigir.</p>
+      <div class="dodont-grid">
+        <div class="dont"><p class="t-label bad">Não</p><label class="field"><span class="field-label old">nome</span><input class="old-input" placeholder="Digite o nome do jogo aqui"></label></div>
+        <div class="do"><p class="t-label ok">Sim</p><label class="field"><span class="field-label">Nome do jogo</span><input placeholder="Ex.: Fuga da floresta"></label></div>
+        <div class="dont"><p class="t-label bad">Não</p><div class="nested"><div class="nested"><div class="nested">Cartão em cartão em cartão</div></div></div></div>
+        <div class="do"><p class="t-label ok">Sim</p><div class="flat"><span>Linha</span><span>Linha</span><span>Linha</span></div></div>
+        <div class="dont"><p class="t-label bad">Não</p><div class="row wrap gap-1"><button class="btn primary small" type="button">Salvar</button><button class="btn primary small" type="button">Enviar</button><button class="btn primary small" type="button">Receber</button></div></div>
+        <div class="do"><p class="t-label ok">Sim</p><div class="row wrap gap-1"><button class="btn primary small" type="button">Salvar</button><button class="btn tonal small" type="button">Enviar</button><button class="btn tonal small" type="button">Receber</button></div></div>
+        <div class="dont"><p class="t-label bad">Não</p><button class="btn gradient-bad" type="button">Botão com gradiente e borda brilhante</button></div>
+        <div class="do"><p class="t-label ok">Sim</p><button class="btn primary" type="button">Botão sólido e calmo</button></div>
+      </div>
+    </section>
+
+    <section id="checklist">
+      <h2 class="t-headline">Checklist de revisão de tela</h2>
+      <ul class="checklist" data-checklist>
+        <li><label class="check"><input type="checkbox"><span>Só componentes da casa; nenhum controle com o estilo padrão do tema.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Uma ação principal, na zona do polegar.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Espaços da escala de 4; margens 16 · 24 · 32.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>No máximo 3 tamanhos de fonte e 4 tons; nenhum cartão em cartão.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Rótulos visíveis, foco visível, erros com texto.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Contraste AA e APCA nos pares usados.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Estados definidos: hover, pressionado, desativado, vazio, carregando.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Transições com os tokens de movimento.</span></label></li>
+        <li><label class="check"><input type="checkbox"><span>Capturas no celular e no largo no PR (não são teste no aparelho).</span></label></li>
+      </ul>
+      <p class="t-caption muted" data-checklist-count>0 de 9</p>
+    </section>
+  </main>
+
+  <footer class="foot t-caption muted">
+    Valores lidos de <code>docs/design/tokens.json</code> (fonte única). Página do portal: projeção, nunca autoridade.
+  </footer>
+
+  <div class="scrim" hidden data-scrim></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t" hidden data-sheet>
+    <span class="handle" aria-hidden="true"></span>
+    <div class="sheet-head"><h3 class="t-title" id="sheet-t">Novo jogo</h3><button class="btn ghost icon-only" type="button" data-close title="Fechar"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="sr">Fechar</span></button></div>
+    <label class="field"><span class="field-label">Nome</span><input type="text" value="Jogo-2"></label>
+    <p class="field-label">Começar com</p>
+    <div class="opts" data-opts>
+      <button type="button" class="opt selected" aria-pressed="true"><strong>Vazio</strong><span>Só o esqueleto do jogo.</span></button>
+      <button type="button" class="opt" aria-pressed="false"><strong>Pegar moedas</strong><span>Um jogo pequeno e completo.</span></button>
+    </div>
+    <div class="row between"><button class="btn ghost" type="button" data-close>Importar ZIP</button><button class="btn primary" type="button" data-close>Criar</button></div>
+  </div>
+  <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlg-t" hidden data-dialog>
+    <h3 class="t-title" id="dlg-t">Apagar "Fuga da floresta"?</h3>
+    <p class="muted">O jogo vai para a lixeira e pode ser restaurado por 30 dias.</p>
+    <div class="row end gap-2"><button class="btn ghost" type="button" data-close>Cancelar</button><button class="btn danger-solid" type="button" data-close>Apagar</button></div>
+  </div>
+  <div class="toast" role="status" hidden data-toast-box><span>"Fuga da floresta" foi para a lixeira</span><button type="button" class="toast-act" data-close-toast>Desfazer</button></div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Linguagem visual do Ecosystem (v1.0)
 
-**Autoridade:** normativa para a interface de todos os Products e superfícies do Ecosystem (Lunet, Urbe, Hub, portal e casca). Ordem do proprietário de 26/11/2026, registrada em [ADD-0037](../governance/addenda/ADD-0037-linguagem-visual.md) / DEC-0069. **Valores:** [`tokens.json`](tokens.json), a autoridade única (NN-001). Cada Product copia os valores para o próprio código e o teste dele confere a cópia; não há dependência entre Products (NN-002). **Estudo e fontes:** [`estudo-visual-2026-11-26.md`](estudo-visual-2026-11-26.md).
+**Autoridade:** normativa para a interface de todos os Products e superfícies do Ecosystem (Lunet, Urbe, Hub, portal e casca). Ordem do proprietário de 26/11/2026, registrada em [ADD-0037](../governance/addenda/ADD-0037-linguagem-visual.md) / DEC-0069. **Valores:** [`tokens.json`](tokens.json), a autoridade única (NN-001). Cada Product copia os valores para o próprio código e o teste dele confere a cópia; não há dependência entre Products (NN-002). **Estudo e fontes:** [`estudo-visual-2026-11-26.md`](estudo-visual-2026-11-26.md). **Vitrine:** a página [`site/design/`](../../site/design/index.html), publicada no portal em https://abnercruz.github.io/Ecosystem/design/, mostra cada componente funcionando. Ela lê `tokens.json` na hora, então nunca diverge.
 
 Preferência do proprietário: **preto, azul, branco e roxo**. Esta linguagem é escura, calma e precisa: quase preto frio, texto branco suave, violeta para a ação e azul para a informação.
 
