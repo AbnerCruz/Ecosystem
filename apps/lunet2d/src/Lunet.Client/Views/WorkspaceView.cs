@@ -338,7 +338,7 @@ public sealed class WorkspaceView : UserControl
                 var sheet = new Border
                 {
                     // Inspector, Desempenho and the AI need room: half the screen, the game still above it.
-                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs && Bounds.Height > 0
+                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs or SupportPanel.Objectives && Bounds.Height > 0
                         ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
                     Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
                     CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),

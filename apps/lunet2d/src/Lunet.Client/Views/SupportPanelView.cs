@@ -36,6 +36,8 @@ public sealed class SupportPanelView : UserControl
 
     /// <summary>The offline documentation (P3), kept so its page and history survive closing it.</summary>
     public DocsView Docs { get; } = new();
+    public ObjectivesView Objectives => _objectives ??= new ObjectivesView(_shell);
+    private ObjectivesView? _objectives;
 
     public SupportPanelView(LunetShell shell)
     {
@@ -69,7 +71,7 @@ public sealed class SupportPanelView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", SupportPanel.Docs => "Documentação", _ => "Problemas" });
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", SupportPanel.Docs => "Documentação", SupportPanel.Objectives => "Objetivos", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -89,6 +91,12 @@ public sealed class SupportPanelView : UserControl
             if (Ai.Parent is Panel oldAi) oldAi.Children.Remove(Ai);
             Ai.Refresh();
             root.Children.Add(Ai);
+        }
+        else if (panel == SupportPanel.Objectives)
+        {
+            if (Objectives.Parent is Panel oldObjectives) oldObjectives.Children.Remove(Objectives);
+            Objectives.Refresh();
+            root.Children.Add(Objectives);
         }
         else if (panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Docs)
         {
@@ -110,8 +118,11 @@ public sealed class SupportPanelView : UserControl
     {
         var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.M) };
         var problems = _shell.Game.Problems.Count;
+        // Objetivos first when this game is a challenge of Aprender (H6: the mission stays beside the code).
+        var objectives = ObjectivesView.ChallengesOf(_shell, out _).Count > 0;
         foreach (var (panel, label, icon) in new[]
         {
+            (SupportPanel.Objectives, "Objetivos", LunetIcons.Book),
             (SupportPanel.Ai, "IA do jogo", LunetIcons.Function),
             (SupportPanel.Commands, "Comandos", LunetIcons.Search),
             (SupportPanel.Docs, "Documentação", LunetIcons.Book),
@@ -119,7 +130,7 @@ public sealed class SupportPanelView : UserControl
             (SupportPanel.Performance, "Desempenho", LunetIcons.Pulse),
             (SupportPanel.Console, "Console", LunetIcons.Console),
             (SupportPanel.Problems, problems > 0 ? $"Problemas ({problems})" : "Problemas", LunetIcons.Problems),
-        })
+        }.Where(p => p.Item1 != SupportPanel.Objectives || objectives))
         {
             var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => { if (panel == SupportPanel.Commands) _shell.OpenPalette(); else _shell.State.ShowPanel(panel); });
             b.HorizontalAlignment = HorizontalAlignment.Stretch;

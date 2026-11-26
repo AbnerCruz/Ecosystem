@@ -70,6 +70,18 @@ public sealed class AiPanelView : UserControl
         Content = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.S) };
     }
 
+    /// <summary>
+    /// Prepares a hint request in Estudo (from Objetivos): the text goes into the message field and the person sends it.
+    /// Estudo explains and does not change the game; nothing is sent or written by itself.
+    /// </summary>
+    public void AskForHint(string request)
+    {
+        Mode = LunetAiMode.Teach;
+        _input.Text = request;
+        Refresh();
+        _input.CaretIndex = request.Length;
+    }
+
     /// <summary>The mode of the next message: Estudo unless the person picks Fazer for it.</summary>
     public LunetAiMode Mode { get; private set; } = LunetAiMode.Teach;
     public bool Running => _run is not null;
