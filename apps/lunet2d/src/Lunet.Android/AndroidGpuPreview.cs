@@ -38,6 +38,7 @@ internal sealed class AndroidGpuPreview : IGpuGamePreview
 
     public Control View { get; }
     public string Backend => "GPU · OpenGL ES 3";
+    public long FramesRendered => _renderer.FramesDrawn;
 
     public void SetPaused(bool paused) => _renderer.SetPaused(paused);
     public void Step() => _renderer.RequestStep();

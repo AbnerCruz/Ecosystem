@@ -1,0 +1,48 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-lunet-gpu-quadros",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T23:59:18Z",
+  "agent": { "id": "claude-code-lunet-avalonia", "kind": "ai-agent" },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "3da594e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidGpuPreview.cs",
+    "apps/lunet2d/src/Lunet.Android/IsolatedGpuPreview.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/GpuGamePreview.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/GameSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GpuPreviewTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SortedBatchTests.cs",
+    "apps/lunet2d/docs/guides/colisao.md",
+    "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
+    "apps/lunet2d/docs/audits/conclusao-integral-2026-11-26.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/governance/handoffs/HO-20261126-lunet-gpu-quadros.json"
+  ],
+  "work_completed": [
+    "E-09: the CI Android journey failed after #1054 (frames=0) because GameSession counted only CPU frames; the GLES renderer now counts drawn frames and the session reads them on the GPU path.",
+    "E1.6 closed with evidence; E1.7 consumers (atlas, sprite, glyphs, nine-slice, DebugDraw, particles, tilemap) identical in sorted mode; collision guide uses the new RectangleF/Draw API."
+  ],
+  "verification": [
+    { "check": "GpuPreviewTests, SortedBatchTests, CollisionTests, LunetClientTests", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/tests/Lunet.Tests" },
+    { "check": "Lunet.Android build", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/src/Lunet.Android" }
+  ],
+  "known_issues": [
+    "The emulator log also shows 'Failed to find ColorBuffer'; if frames stay 0 the GLES surface inside NativeControlHost does not render on the emulator and must be fixed next. Not tested on a phone."
+  ],
+  "blockers": [],
+  "next_actions": ["Confirm the apk job on CI; release 0.0.1-dev.1000611 after integration."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/lunet2d/AGENTS.md"],
+  "invariants": [ { "id": "NN-017", "evidence": "Headless tests and emulator CI only; no device claim." } ],
+  "criticality": { "declared": "routine" }
+}

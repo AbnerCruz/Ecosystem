@@ -17,6 +17,7 @@ public sealed class GpuPreviewTests
     {
         public Control View { get; } = new Border { Name = "GpuSurface" };
         public string Backend => "GPU · teste";
+        public long FramesRendered { get; set; }
         public List<string> Calls { get; } = [];
         public void SetPaused(bool paused) => Calls.Add("pause:" + paused);
         public void Step() => Calls.Add("step");
@@ -49,6 +50,8 @@ public sealed class GpuPreviewTests
                 Assert.Same(gpu, shell.Game.Gpu);
                 Assert.Contains(window.GetVisualDescendants().OfType<Border>(), b => b.Name == "GpuSurface"); // on the stage
                 Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Name == "SpeedChip"); // no fake speed
+                gpu!.FramesRendered = 42;
+                Assert.Equal(42, shell.Game.FramesRendered);                 // the GPU's real count (the CI journey reads it)
 
                 shell.Game.TogglePause(); Assert.Contains("pause:True", gpu!.Calls);
                 shell.Game.Step(); Assert.Contains("step", gpu.Calls);

@@ -32,6 +32,8 @@
 | E-07 | `--screens`, o gerador de capturas, gravava progresso, Biblioteca, rascunhos dos Studios e ajustes no AppData **real** de quem o rodava. A contagem de "Minhas criações" subia a cada execução: 29, 31, 33. | A `MainWindow` sempre apontava para `AppData/Lunet`, e o gerador de capturas a reaproveitava | `MainWindow(projectsRoot, dataRoot)`: o gerador de capturas passa uma pasta temporária, e o app normal continua no AppData | Capturas `2l-studios` antes (33 itens) e depois (só os 2 do cenário) |
 | E-08 | Em Jogar, no celular, aparecia uma capa por linha, embora o código previsse duas | A conta da largura descontava a margem de uma capa só, e a segunda quebrava a linha | A largura passa a considerar a margem das duas capas | Captura `2j-jogar` antes e depois |
 
+| E-09 | O job `apk` do CI (jornada da casca no emulador Android 13) reprovou: "estado=Running quadros=0 → Nenhum quadro renderizado". O #1054 foi integrado mesmo assim. | Com a M5, o jogo roda no renderer GLES, mas `GameSession.FramesRendered` só contava quadros da CPU e ficava em 0 | O `PreviewRenderer` conta os quadros desenhados na thread GL (`Interlocked`), e a `GameSession` lê essa contagem quando o jogo está na GPU. O log do emulador também mostra "Failed to find ColorBuffer". Se a contagem continuar em 0, o problema é de renderização GLES dentro do `NativeControlHost` e será tratado a seguir. | Log do job `140048563727`; `GpuPreviewTests` lê a contagem da GPU; o CI do PR seguinte vai confirmar |
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
