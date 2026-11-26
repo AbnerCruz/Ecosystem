@@ -1023,4 +1023,37 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void Palette_ImportsGplGeneratesCode_AndStandalonePaletteSavesWithItsGpl()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-palette2-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var palette = shell.WorkspaceView.OpenPalette();
+                Assert.Equal(2, palette.ImportText("GIMP Palette\nName: X\n#\n255   0   0\tVermelho\n  0   0 255\tAzul\n", "x"));
+                Assert.Equal(1, palette.ImportText("#00FF00\n#00ff00\n", "hex"));     // repeated colours once
+                var code = palette.GenerateCode();
+                Assert.Contains("public static readonly Color Vermelho", shell.Workspace.Read(code));
+                Assert.True(shell.Workspace.Compile().Success);                         // the generated class compiles
+                shell.Back();
+
+                shell.GoHome();
+                var studios = shell.Home.ShowStudios();
+                var standalone = studios.NewPalette();
+                standalone.UsePreset("neon");
+                var path = studios.Creations.Single(f => f.EndsWith(".palette.json"));
+                Assert.Contains(path[..^".palette.json".Length] + ".gpl", studios.Creations);
+                Assert.StartsWith("GIMP Palette", File.ReadAllText(Path.Combine(shell.StudioWorkspacePath, path[..^".palette.json".Length] + ".gpl")));
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

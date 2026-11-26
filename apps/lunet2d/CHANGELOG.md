@@ -14,6 +14,11 @@
   - **Minhas criações** lista o que você fez, agrupado. Tocar edita.
   - **Publicar** leva a criação para a Biblioteca, de onde qualquer jogo pode usá-la.
   - Os rascunhos ficam na mesma pasta das telas anteriores, então nada se perde.
+- **Paleta completa na interface nova:**
+  - **Importar .gpl ou hex** (GIMP, Krita, Aseprite) e **Exportar .gpl**.
+  - **Gerar código C#** cria `Scripts/GamePalette.cs`, com uma `Color` por cor da paleta.
+  - Ao tocar numa cor, aparece o contraste dela no escuro e no claro.
+  - Em Studios dá para criar paletas sem jogo: cada uma é salva junto com o seu `.gpl` e pode ser publicada na Biblioteca.
 - **O ⋮ do jogo não leva mais a nenhuma tela antiga:** "Editor completo" saiu, porque tudo o que ele fazia já está na interface nova.
 - **Pastas para o código:** em Renomear, escreva `Pasta/Nome` para pôr o arquivo numa pasta, que é criada se não existir.
 - **Apresentar mapa mental** (▶ no alto do mapa): cada ramo vira uma tela, com título grande e os tópicos dele em lista. **Anterior** e **Próximo** ficam embaixo, e Voltar sai da apresentação.

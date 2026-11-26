@@ -43,7 +43,8 @@
     "Mind map Apresentar in the shell (the previous screen's PresentMindMap): one slide per branch of the root with its topics as a list, Anterior/Próximo at the bottom, Back/✕ ends the presentation. Publicar of assets already lives in the shell's Biblioteca.",
     "Folders for code in the shell: Renomear accepts Pasta/Nome (relative to the file's folder, created as needed; '..' and .lunet refused).",
     "Other text files in the shell: Recursos group 'Outros' (raw .json/.txt/.csv/.xml/.md outside Notes) with 'Editar como texto' into the Código editor (only .cs is analysed, so no false C# errors); DataView 'Editar como texto'; a Content/Data .json unreadable as a table falls back to the details sheet. The game ⋮ no longer routes to any previous screen ('Editor completo' removed; LunetShell.GameRoutes deleted).",
-    "Home → Studios in the shell (StudiosView) over LunetShell.StudioWorkspacePath (Android: the previous screens' FilesDir/StudioWorkspace): the shell's Studio views now take an optional StudioAssetWorkspace (default: the open game), TileStudioView.EditTileset/Create(storage, files) and DataView.Create(storage, files) work outside a game; Minhas criações grouped as Recursos; Publicar uses ReusableAssetLibrary.PublishWorkspace through LibraryView.ShowPublishStudio. The bottom bar shows Studios on every platform; the 'studios' route is no longer used by the shell."
+    "Home → Studios in the shell (StudiosView) over LunetShell.StudioWorkspacePath (Android: the previous screens' FilesDir/StudioWorkspace): the shell's Studio views now take an optional StudioAssetWorkspace (default: the open game), TileStudioView.EditTileset/Create(storage, files) and DataView.Create(storage, files) work outside a game; Minhas criações grouped as Recursos; Publicar uses ReusableAssetLibrary.PublishWorkspace through LibraryView.ShowPublishStudio. The bottom bar shows Studios on every platform; the 'studios' route is no longer used by the shell.",
+    "PaletteView parity with the previous Palette Studio: import .gpl/hex (system picker, ProjectPalette.Import), export .gpl, Gerar código C# (Scripts/GamePalette.cs via ToCSharp, compiles), contrast against dark/light for the selected colour; standalone .palette.json + .gpl pair in Home → Studios with Publicar."
   ],
   "verification": [
     {
@@ -61,7 +62,7 @@
   ],
   "known_issues": [
     "Not exercised on a physical device (fold margin touch targets, Alt+Left needs a hardware keyboard).",
-    "Standalone Studios not yet in the shell: the previous screens' standalone palette (GPL import/export) and WAV editor."
+    "Standalone WAV editor of the previous screens is not yet in the shell Studios."
   ],
   "blockers": [],
   "next_actions": [

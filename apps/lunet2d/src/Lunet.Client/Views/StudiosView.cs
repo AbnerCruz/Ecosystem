@@ -77,6 +77,7 @@ public sealed class StudiosView : UserControl
                 case MusicStudioView m: return m.Close();
                 case ParticleStudioView pa: return pa.Close();
                 case DataView d: return d.Back();
+                case PaletteView pv: return pv.Close();
             }
         }
         _close();
@@ -116,6 +117,9 @@ public sealed class StudiosView : UserControl
     public ParticleStudioView OpenParticles(string path) { var v = new ParticleStudioView(_shell, path, Home, Storage); Show(v); return v; }
     public DataView OpenData(string path) { var v = new DataView(_shell, path, Home, Storage); Show(v); return v; }
 
+    public PaletteView OpenPalette(string path) { var v = new PaletteView(_shell, Home, Storage, path, p => _publish(Storage.RootDirectory, p)); Show(v); return v; }
+    public PaletteView NewPalette() => OpenPalette(Unique("Assets", "paleta", ".palette.json"));
+
     public SpriteStudioView NewSprite() => OpenSprite(Unique("Content/Textures", "sprite", ".sprite.json"));
     public TileStudioView NewMap() => OpenMap(TileStudioView.Create(Storage, Files()));
     public SoundStudioView NewSound() => OpenSound(Unique("Content/Audio", "efeito", ".sfx.json"));
@@ -132,6 +136,7 @@ public sealed class StudiosView : UserControl
         else if (f.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase)) OpenMusic(f);
         else if (f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase)) OpenParticles(f);
         else if (DataView.IsTable(f)) OpenData(f);
+        else if (f.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)) OpenPalette(f);
         else return false;
         return true;
     }
@@ -165,6 +170,7 @@ public sealed class StudiosView : UserControl
         Tile(LunetIcons.Sound, "Música", () => NewMusic(), "StudioNewMusic");
         Tile(LunetIcons.Pulse, "Partículas", () => NewParticles(), "StudioNewParticles");
         Tile(LunetIcons.File, "Tabela", () => NewData(), "StudioNewData");
+        Tile(LunetIcons.Art, "Paleta", () => NewPalette(), "StudioNewPalette");
         return tiles;
     }
 
@@ -175,11 +181,13 @@ public sealed class StudiosView : UserControl
         heading.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
         _list.Children.Add(heading);
         var any = false;
-        foreach (var (label, icon, files) in ResourcesPage.Groups(Files()))
+        var all = Files();
+        var palettes = all.Where(f => f.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)).ToArray();
+        foreach (var (label, icon, files) in ResourcesPage.Groups(all).Append(("Paletas", LunetIcons.Art, (IReadOnlyList<string>)palettes)))
         {
             var editable = files.Where(f => f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase)
                 || f.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase)
-                || f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase) || DataView.IsTable(f)).ToArray();
+                || f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase) || DataView.IsTable(f) || f.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)).ToArray();
             if (editable.Length == 0) continue;
             any = true;
             var group = LunetUi.Text($"{label} · {editable.Length}", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary, FontWeight.SemiBold);
