@@ -277,7 +277,8 @@ public sealed class HomeView : UserControl
     private string? GameIdOf(string name)
     {
         try { return Lunet.Core.ProjectManifest.Parse(File.ReadAllText(Path.Combine(_shell.Workspace.Root, name, Lunet.Core.ProjectStore.ManifestFileName))).GameId; }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException or ArgumentException) { return null; }
+        // A damaged lunet.json must not take the Home down: the game is listed, just not pinnable (E-04).
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException or ArgumentException or Lunet.Core.ProjectException) { return null; }
     }
 
     /// <summary>Pins (or unpins) a game at the top of the Home, saved by GameId in the settings.</summary>

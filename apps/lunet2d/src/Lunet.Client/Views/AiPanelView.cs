@@ -58,6 +58,7 @@ public sealed class AiPanelView : UserControl
     private readonly HashSet<string> _openDiffs = new(StringComparer.Ordinal);
     private LunetAiSession? _session;
     private string? _sessionGame;
+    private string? _sessionName;
     private CancellationTokenSource? _run;
     private readonly List<LunetAiStep> _steps = [];
     private string _partial = "";
@@ -87,6 +88,8 @@ public sealed class AiPanelView : UserControl
     public LunetAiMode Mode { get; private set; } = LunetAiMode.Teach;
     public bool Running => _run is not null;
     public LunetAiSession? Session => _session;
+    /// <summary>The GameId of the conversation shown (the running one keeps its game until it ends).</summary>
+    public string? SessionGameId => _sessionGame;
     public TextBox Input => _input;
 
     /// <summary>The last reply (tests).</summary>
@@ -120,6 +123,9 @@ public sealed class AiPanelView : UserControl
     private void EnsureSession(AiHost host)
     {
         var project = _shell.Workspace.Project;
+        // A run in progress keeps its own game's session until it ends (G07: no cross-game run). Opening another game
+        // meanwhile shows that run, says which game it is changing, and only then switches.
+        if (Running) return;
         if (project is null) { _session = null; return; }
         if (_session is not null && _sessionGame == project.Manifest.GameId) return;
         // The same history file as the previous screens: one conversation per game, wherever it was started.
@@ -127,6 +133,7 @@ public sealed class AiPanelView : UserControl
         _session = new LunetAiSession(project, Path.Combine(host.HistoryDirectory, id + ".json"));
         _session.MarkInterruptedIfPending();
         _sessionGame = project.Manifest.GameId;
+        _sessionName = project.Name;
     }
 
     // ---------------- setup (once for the whole app) ----------------
@@ -252,7 +259,10 @@ public sealed class AiPanelView : UserControl
             _run?.Dispose();
             _run = null;
             _steps.Clear(); _partial = "";
-            _shell.WorkspaceView.ReloadFromDisk(); // show what the AI changed (nothing unsaved here: we saved before)
+            // Show what the AI changed — only when its game is the one open: another game opened during the run may
+            // hold edits not saved yet, and reloading it would drop them (G07).
+            if (_shell.Workspace.Project?.Manifest.GameId == _sessionGame) _shell.WorkspaceView.ReloadFromDisk();
+            else if (_shell.AiHost is { } h) EnsureSession(h); // the run ended: the conversation follows the open game
             BuildComposer();
             RenderMessages();
         }
@@ -310,6 +320,8 @@ public sealed class AiPanelView : UserControl
             if (turn.Pending) continue;
             _messages.Children.Add(turn.Role == "user" ? UserBubble(turn) : AssistantMessage(turn));
         }
+        if (Running && _shell.Workspace.Project?.Manifest.GameId != _sessionGame)
+            _messages.Children.Add(LunetUi.Notice($"A IA ainda trabalha em {_sessionName}. Ela termina lá (ou pare-a aqui); depois esta conversa passa para o jogo aberto.", LunetTokens.Color.Warning));
         if (Running)
         {
             _messages.Children.Add(_live);

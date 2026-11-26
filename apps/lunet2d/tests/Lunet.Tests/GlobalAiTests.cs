@@ -180,4 +180,46 @@ public sealed class AiStreamingRenderTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void ARunKeepsItsGame_AndNeverReloadsAnotherGameWithUnsavedText()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-ai-cross-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var model = new Blocking();
+                var aiDir = Path.Combine(root, ".ai");
+                var shell = new LunetShell(root) { AiHost = new AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "s.json"), new NoVault()), aiDir, model) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.Workspace.Create("Outro");
+                shell.CreateProject();
+                var first = shell.Workspace.Project!.Manifest.GameId;
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var ai = shell.WorkspaceView.Support.Ai;
+                ai.Input.Text = "explique";
+                var run = ai.SendAsync();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+
+                shell.OpenProject("Outro");                                   // another game during the run
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(ai.Running);
+                Assert.Equal(first, ai.SessionGameId);                     // still the first game's session
+                shell.WorkspaceView.Code.Surface.Text += "\n// escrito agora, ainda não salvo";
+                var typed = shell.WorkspaceView.Code.Surface.Text;
+
+                model.Release.SetResult();
+                var until = DateTime.UtcNow.AddSeconds(20);
+                while (!run.IsCompleted && DateTime.UtcNow < until) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(5); }
+                Assert.Equal(typed, shell.WorkspaceView.Code.Surface.Text);   // not reloaded from disk
+                Assert.NotEqual(first, ai.SessionGameId);                   // now the open game's conversation
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }
