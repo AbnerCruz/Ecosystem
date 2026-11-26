@@ -179,6 +179,9 @@ public static class ShellScreens
                 if (versions.Content is DockPanel dp && dp.Children.OfType<ScrollViewer>().FirstOrDefault() is { } sv) { sv.UpdateLayout(); sv.Offset = new Avalonia.Vector(0, 100000); }
                 Shot(window, output, size, "9b-enviar-receber", written);
                 shell.Back();
+                shell.WorkspaceView.OpenApk();
+                Shot(window, output, size, "9c-gerar-apk", written);
+                shell.Back();
                 var fx = shell.WorkspaceView.NewParticles();
                 for (var i = 0; i < 20; i++) fx.Step(0.033);
                 Shot(window, output, size, "8g-particulas", written);

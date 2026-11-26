@@ -145,6 +145,15 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens Gerar APK (P5).</summary>
+    public ApkView OpenApk()
+    {
+        var view = new ApkView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
     /// <summary>Opens a data table of the game (A5, Data Studio).</summary>
     public DataView OpenData(string path)
     {
@@ -214,6 +223,7 @@ public sealed class WorkspaceView : UserControl
         ParticleStudioView particles => particles.Close(),
         PaletteView palette => palette.Close(),
         DataView data => data.Back(),
+        ApkView apk => apk.Close(),
         _ => false,
     };
 

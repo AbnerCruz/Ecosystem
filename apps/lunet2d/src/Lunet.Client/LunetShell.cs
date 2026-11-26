@@ -104,6 +104,11 @@ public sealed class LunetShell : UserControl
     /// points it at the previous screens' FilesDir/git-account.json, so the account carries over).</summary>
     public string GitAccountPath { get; set; } = "";
 
+    /// <summary>Packs and signs a game's APK on the device (P5): the Android head gives the runtime template and the
+    /// device key (Android Keystore). Input: the project and its files (game/Game.dll, game/Content/…, game/Assets/…).
+    /// Null where an APK cannot be made (desktop): Gerar APK says so.</summary>
+    public Func<Lunet.Core.LunetProject, IReadOnlyDictionary<string, byte[]>, byte[]>? PackageGameApk { get; set; }
+
     /// <summary>How Versões talks to a remote (HTTP by default; tests use a local git).</summary>
     public Func<string, Lunet.Core.GitAccount, Lunet.Git.IGitTransport> GitTransport { get; set; } =
         (url, account) => new Lunet.Git.HttpGitTransport(url, account.Username.Length > 0 ? account.Username : null, account.Token.Length > 0 ? account.Token : null);

@@ -41,6 +41,11 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Gerar APK dentro da interface nova** (⋮ → Gerar APK):
+  - Uma página com o nome do jogo, o identificador Android (validado), a orientação e o aviso quando outro jogo usa a mesma identidade, com o botão para separar.
+  - **Gerar APK** compila o jogo, junta `Content/` e `Assets/` (nunca o código-fonte) e assina no aparelho, com a mesma chave de antes; a nova versão instala por cima da anterior.
+  - Erros de compilação aparecem com arquivo e linha. **Salvar o APK** abre o seletor do sistema.
+  - No computador, a página explica que o APK é gerado no celular.
 - **Enviar e receber versões dentro de Versões** (GitHub e outros servidores https):
   - Cole o endereço do repositório; **Receber** busca e junta as versões do servidor, e **Enviar** manda as suas.
   - A conta (nome, e-mail, usuário e token) fica no armazenamento privado do app, a mesma das telas anteriores, e nunca vai para a pasta do jogo.

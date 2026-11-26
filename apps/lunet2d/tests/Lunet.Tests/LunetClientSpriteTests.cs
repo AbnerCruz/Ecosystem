@@ -297,6 +297,60 @@ public sealed class LunetClientGitTests
     }
 
     [Fact]
+    public void GerarApk_SetsIdentity_CompilesPacksContentAndReportsErrors()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-apk-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                IReadOnlyDictionary<string, byte[]>? packed = null;
+                Lunet.Core.LunetProject? packedProject = null;
+                var shell = new LunetShell(root) { PackageGameApk = (project, files) => { packedProject = project; packed = files; return new byte[2048]; } };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.Workspace.Write("Content/Data/fase.json", "[]");
+                var apk = shell.WorkspaceView.OpenApk();
+                Assert.Same(apk, shell.WorkspaceView.Studio);
+
+                Assert.Throws<ArgumentException>(() => apk.SetPackage("Não Vale"));
+                apk.SetPackage("com.exemplo.meujogo");
+                apk.SetOrientation("landscape");
+                var manifest = Lunet.Core.ProjectManifest.Parse(shell.Workspace.Read(Lunet.Core.ProjectStore.ManifestFileName));
+                Assert.Equal("com.exemplo.meujogo", manifest.PackageId);
+                Assert.Equal("landscape", manifest.Orientation);
+
+                var bytes = Wait(apk.BuildAsync());
+                Assert.NotNull(bytes);
+                Assert.Equal("com.exemplo.meujogo", packedProject!.Manifest.PackageId);
+                Assert.True(packed!.ContainsKey("game/Game.dll"));
+                Assert.True(packed.ContainsKey("game/Content/Data/fase.json"));
+                Assert.DoesNotContain(packed.Keys, k => k.EndsWith(".cs", StringComparison.Ordinal));   // never the source
+                Assert.StartsWith("APK pronto", apk.Status);
+
+                var entry = shell.Workspace.Project!.Manifest.EntryPoint;
+                shell.Workspace.Write(entry, shell.Workspace.Read(entry) + "\nclass Quebrado { void X() { y = ; } }");
+                shell.WorkspaceView.ReloadFromDisk();
+                Assert.Null(Wait(apk.BuildAsync()));
+                Assert.NotEmpty(apk.Errors);
+                Assert.Contains("não compila", apk.Status);
+
+                Assert.True(shell.Back());
+                Assert.Null(shell.WorkspaceView.Studio);
+                var desktop = new LunetShell(Path.Combine(root, "b"));                 // no packer: says where it is made
+                window.Content = desktop;
+                desktop.CreateProject();
+                var none = desktop.WorkspaceView.OpenApk();
+                Assert.Null(Wait(none.BuildAsync()));
+                Assert.Contains("aparelho Android", none.Status);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void Versions_SendToAndReceiveFromARemote_WithTheAccountSaved()
     {
         var root = Path.Combine(Path.GetTempPath(), "lunet-gitremote-ui-" + Guid.NewGuid().ToString("N"));

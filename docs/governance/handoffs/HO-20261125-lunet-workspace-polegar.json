@@ -59,7 +59,8 @@
     "A1 selection in the shell's Sprite Studio: Select tool with rectangle, lasso, same colour (wand) and all; drag inside moves (SpriteFloating), apply/undo/rotate/flip/duplicate (stamp)/erase in a contextual row above the tools; one undo step per lift; changing tool/frame or leaving applies the floating pixels. The sprite format has no layers (SpriteDocument), so there is no layer gap in the Sprite Studio.",
     "A2 Tile Studio terrain and layers in the shell: Terrain tool (AutotileSet Sides16/Blob47 from the chosen tile, paint/erase, the reason when the tileset lacks tiles); layer ⋮ row with rename, reorder, show/hide, collision and remove (confirmed, at least one layer).",
     "A3 Music Studio in the shell: bottom tabs Notas/Faixa/Arranjo; note length 1–16 steps (clipped to the pattern); per-track instrument presets with preview, volume, pan, mute, solo, new track; arrangement order chips with earlier/later/remove and append current pattern; tempo in Arranjo; empty order plays the current pattern.",
-    "P6 Git remote in the shell's Versões: origin address (https, validated by Lunet.Git), account (GitAccountStore at LunetShell.GitAccountPath = the previous screens' FilesDir/git-account.json; token never in the game folder), Receber (pull + reload from disk) and Enviar (push) with progress and reasons; LunetShell.GitTransport hook; tested end to end against real git (ProcessGitTransport, bare repo, a second clone pushing)."
+    "P6 Git remote in the shell's Versões: origin address (https, validated by Lunet.Git), account (GitAccountStore at LunetShell.GitAccountPath = the previous screens' FilesDir/git-account.json; token never in the game folder), Receber (pull + reload from disk) and Enviar (push) with progress and reasons; LunetShell.GitTransport hook; tested end to end against real git (ProcessGitTransport, bare repo, a second clone pushing).",
+    "P5 Gerar APK in the shell (ApkView): package id (validated, written to lunet.json with rollback on failure), orientation, identity-conflict notice with Separar; build = shell compile (errors with file/line) + Content/ and Assets/ (never sources) + LunetShell.PackageGameApk hook; the Android head packs with the same runtime template and per-game AndroidGameApkSigner (Keystore) as MainActivity.GameBuild; save via the system picker; desktop explains the APK is made on the phone. The 'apk' route is no longer used by the shell."
   ],
   "verification": [
     {
@@ -79,11 +80,12 @@
     "Music Studio first slice: note length, instruments, mixer and the arrangement order are still in the previous Studio.",
     "Tile Studio first slice: autotile terrains and layer rename/reorder are still in the previous Studio.",
     "Sprite Studio first slice: no pinch zoom, layers, selection or HSV picker yet (the previous Studio keeps them).",
-    "Not tested on a physical device."
+    "Not tested on a physical device.",
+    "Gerar APK from the new shell (Keystore signing, system save picker, installing over a previous build) was not exercised on a physical device; only headless tests with a fake packer and the Android build ran."
   ],
   "blockers": [],
   "next_actions": [
-    "Gerar APK inside the shell; M5 GL preview; AI hint in Aprender challenges"
+    "M5 GL preview; AI hint in Aprender challenges; remaining routes (assets/notes/editor) audit"
   ],
   "decisions_required": [],
   "normative_sources": [

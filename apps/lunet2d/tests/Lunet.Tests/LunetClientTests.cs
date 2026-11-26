@@ -477,9 +477,17 @@ public sealed class LunetClientTests
                 var entry = shell.Workspace.Project!.Manifest.EntryPoint;
                 shell.State.ShowPanel(SupportPanel.More);
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                var apk = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Gerar APK");
+                var editor = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Editor completo");
+                editor.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal(("editor", (string?)shell.State.Project), routes.Last());
+                // Gerar APK moved into the shell (P5): it opens its own page, no route.
+                shell.State.ShowPanel(SupportPanel.More);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var apk = window.GetVisualDescendants().OfType<Button>().First(b => b.Name == "OpenApk");
                 apk.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                Assert.Equal(("apk", (string?)shell.State.Project), routes.Last());
+                Assert.IsType<ApkView>(shell.WorkspaceView.Studio);
+                Assert.DoesNotContain(routes, r => r.Route == "apk");
+                shell.Back();
 
                 // The routed screen (e.g. the AI) edits the game on disk; back in the shell the editor shows it.
                 File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// editado pela IA");
