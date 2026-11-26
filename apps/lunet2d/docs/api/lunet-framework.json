@@ -8787,6 +8787,25 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.GraphicsDevice.SetVirtualResolution(System.Drawing.Size)",
+          "name": "SetVirtualResolution",
+          "kind": "method",
+          "signature": "public void SetVirtualResolution(Size size)",
+          "summary": "Troca a resolu\u00E7\u00E3o virtual em que o jogo desenha (largura e altura agrupadas).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Nova resolu\u00E7\u00E3o, em unidades virtuais inteiras (positivas)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.GraphicsDevice.SetVirtualResolution(System.Int32,System.Int32)",
           "name": "SetVirtualResolution",
           "kind": "method",
@@ -10774,6 +10793,35 @@
       "related": [],
       "since": "0.0.1",
       "members": [
+        {
+          "id": "M:Lunet.Graphics.RenderTarget2D.#ctor(Lunet.Graphics.GraphicsDevice,System.Drawing.Size,Lunet.Graphics.TextureFilter)",
+          "name": "RenderTarget2D",
+          "kind": "constructor",
+          "signature": "public RenderTarget2D(GraphicsDevice device, Size size, TextureFilter filter = TextureFilter.Linear)",
+          "summary": "Cria um alvo de desenho com as dimens\u00F5es agrupadas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "device",
+              "type": "GraphicsDevice",
+              "description": "Dispositivo gr\u00E1fico."
+            },
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Largura e altura em pixels (1 a 4096)."
+            },
+            {
+              "name": "filter",
+              "type": "TextureFilter",
+              "description": "Filtro da textura resultante."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
         {
           "id": "M:Lunet.Graphics.RenderTarget2D.#ctor(Lunet.Graphics.GraphicsDevice,System.Int32,System.Int32,Lunet.Graphics.TextureFilter)",
           "name": "RenderTarget2D",
@@ -13035,6 +13083,35 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.Texture2D.CreateSolid(Lunet.Graphics.GraphicsDevice,System.Drawing.Size,Lunet.Graphics.Color)",
+          "name": "CreateSolid",
+          "kind": "method",
+          "signature": "public static Texture2D CreateSolid(GraphicsDevice device, Size size, Color color)",
+          "summary": "Cria uma textura de uma cor s\u00F3, com as dimens\u00F5es agrupadas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "device",
+              "type": "GraphicsDevice",
+              "description": "Dispositivo gr\u00E1fico."
+            },
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Largura e altura, em pixels."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor."
+            }
+          ],
+          "returns": "A textura.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.Texture2D.CreateSolid(Lunet.Graphics.GraphicsDevice,System.Int32,System.Int32,Lunet.Graphics.Color)",
           "name": "CreateSolid",
           "kind": "method",
@@ -13113,6 +13190,40 @@
               "name": "filter",
               "type": "TextureFilter",
               "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
+            }
+          ],
+          "returns": "A textura criada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.Texture2D.FromPixels(Lunet.Graphics.GraphicsDevice,System.Drawing.Size,System.ReadOnlySpan{System.Byte},Lunet.Graphics.TextureFilter)",
+          "name": "FromPixels",
+          "kind": "method",
+          "signature": "public static Texture2D FromPixels(GraphicsDevice device, Size size, ReadOnlySpan\u003Cbyte\u003E rgba, TextureFilter filter = TextureFilter.Linear)",
+          "summary": "Cria uma textura a partir de pixels RGBA, com as dimens\u00F5es agrupadas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "device",
+              "type": "GraphicsDevice",
+              "description": "Dispositivo gr\u00E1fico."
+            },
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Largura e altura, em pixels (positivas)."
+            },
+            {
+              "name": "rgba",
+              "type": "ReadOnlySpan\u003Cbyte\u003E",
+              "description": "Pixels em RGBA de 8 bits por canal, linha a linha de cima para baixo."
+            },
+            {
+              "name": "filter",
+              "type": "TextureFilter",
+              "description": "Filtro de amostragem."
             }
           ],
           "returns": "A textura criada.",

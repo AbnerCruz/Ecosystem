@@ -70,3 +70,52 @@ public sealed class RectangleDrawTests
         Assert.Equal(0, Allocation.Steady(() => { for (var i = 0; i < 5; i++) Frame(); }, Frame));
     }
 }
+
+/// <summary>Anexo B, parte A: System.Drawing.Size/Point na API, provados com o compilador do jogo (o mesmo do Preview e do APK).</summary>
+public sealed class SizeOverloadTests
+{
+    [Fact]
+    public void TheGameCompilerSeesSizeAndPoint_WithAliases_AndTheGroupedOverloadsResolve()
+    {
+        var compiler = new Lunet.Compiler.GameCompiler(new Lunet.Compiler.LoadedAssembliesReferenceProvider(typeof(Lunet.Game).Assembly));
+        var source = """
+            using System.Numerics;
+            using Lunet;
+            using Lunet.Graphics;
+            using Size = System.Drawing.Size;
+            using Point = System.Drawing.Point;
+            class Probe
+            {
+                static Texture2D Make(GraphicsDevice d) => Texture2D.CreateSolid(d, new Size(32, 64), Color.Red);
+                static void Resolution(GraphicsDevice d) => d.SetVirtualResolution(new Size(320, 180));
+                static RenderTarget2D Target(GraphicsDevice d) => new(d, new Size(64, 64));
+                static Point Cell => new(3, 4);
+                static RectangleF Box(Vector2 p, Vector2 s) => new(p, s);
+                static void Paint(SpriteBatch b, Texture2D t) { b.Draw(Box(Vector2.Zero, Vector2.One), Color.Red); b.Draw(t, new(1, 2), Color.White); }
+            }
+            """;
+        var result = compiler.Compile("SizeProbe", [new Lunet.Compiler.SourceFile("Probe.cs", source)]);
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        // Without the alias, Color and RectangleF stay Lunet's (System.Drawing is not imported globally).
+        var plain = compiler.Compile("SizeProbe2", [new Lunet.Compiler.SourceFile("P.cs", "using Lunet; using Lunet.Graphics; class P { Color c = Color.Red; RectangleF r = new(0,0,1,1); }")]);
+        Assert.True(plain.Success, string.Join("\n", plain.Diagnostics));
+    }
+
+    [Fact]
+    public void SizeOverloads_EqualTheScalarOnes_IncludingValidation()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 360, 640);
+        var a = Texture2D.CreateSolid(device, 3, 2, Color.Red); var b = Texture2D.CreateSolid(device, new System.Drawing.Size(3, 2), Color.Red);
+        Assert.Equal((a.Width, a.Height), (b.Width, b.Height));
+        Assert.Equal(backend.Pixels[a.Handle].Rgba, backend.Pixels[b.Handle].Rgba);
+        var rgba = new byte[2 * 2 * 4];
+        Assert.Equal(TextureFilter.Point, Texture2D.FromPixels(device, new System.Drawing.Size(2, 2), rgba, TextureFilter.Point).Filter);
+        Assert.Throws<ArgumentOutOfRangeException>(() => Texture2D.FromPixels(device, new System.Drawing.Size(0, 2), rgba));
+        device.SetVirtualResolution(new System.Drawing.Size(320, 180));
+        Assert.Equal((320, 180), (device.VirtualWidth, device.VirtualHeight));
+        Assert.Throws<ArgumentOutOfRangeException>(() => device.SetVirtualResolution(new System.Drawing.Size(-1, 180)));
+        using var target = new RenderTarget2D(device, new System.Drawing.Size(64, 32));
+        Assert.Equal((64, 32), (target.Width, target.Height));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new RenderTarget2D(device, new System.Drawing.Size(5000, 1)));
+    }
+}
