@@ -27,6 +27,8 @@
 | E-04 | A Home quebrava com um jogo cujo `lunet.json` não tinha `name` (`ProjectException` em `HomeView.GameIdOf`) | A leitura do GameId para Fixados e Continuar só capturava erros de I/O e de JSON | `ProjectException` também é capturada. O jogo continua listado e só deixa de poder ser fixado. | A suíte completa (1.344 testes) reproduziu o erro em `ProjectFolderTests`, que agora passa |
 | E-05 | Durante uma execução da IA, abrir outro jogo trocava a sessão no meio, mostrava "Parar" para outro jogo e, no fim, recarregava do disco o jogo aberto, o que perderia texto ainda não salvo | `EnsureSession` não considerava a execução em andamento, e o recarregamento final não conferia o jogo | A execução mantém a sessão do próprio jogo e avisa qual jogo está alterando. O recarregamento só acontece se o jogo da execução for o jogo aberto. Depois disso, a conversa passa para o jogo aberto. | `ARunKeepsItsGame_AndNeverReloadsAnotherGameWithUnsavedText` |
 
+| E-06 | Na aba **Jogo** (também em Recursos e Notas), a barra de abas do workspace sumia, e o único caminho de volta ao código era o Voltar | O estado "teclado aberto" usava a barra de código mesmo quando a aba Código não estava visível. A barra, aberta uma vez em Código, escondia as abas em todas as outras. | A barra de código só conta quando o Código está na tela (`CodeVisible`), e o `Rebuild` recalcula o estado a cada troca de aba | Captura `celular-4-jogo` (antes e depois) e `WorkspaceTabsTests` |
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |

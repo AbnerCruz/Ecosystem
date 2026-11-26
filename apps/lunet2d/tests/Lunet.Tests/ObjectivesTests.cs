@@ -95,3 +95,33 @@ public sealed class RunButtonLayoutTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+public sealed class WorkspaceTabsTests
+{
+    [Fact]
+    public void TheCodeBar_HidesTheTabsOnlyInCodigo_SoJogoAlwaysHasAWayBack()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-tabs-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.WorkspaceView.Code.ShowKeyboard();
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.False(shell.WorkspaceView.TabBarVisible);           // typing code: the bar gives way
+                shell.State.SelectTab(WorkspaceTab.Game);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(shell.WorkspaceView.TabBarVisible);            // Jogo: the tabs are there
+                shell.State.SelectTab(WorkspaceTab.Code);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.False(shell.WorkspaceView.TabBarVisible);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}

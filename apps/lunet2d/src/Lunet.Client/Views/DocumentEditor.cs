@@ -128,7 +128,7 @@ public sealed class DocumentEditor : UserControl
             _keyboard.IsVisible = on;
             _keyboard.MethodsHeight = Math.Max(240, (_shell.Bounds.Height > 0 ? _shell.Bounds.Height : 800) * 0.42);
         }
-        if (_tab == WorkspaceTab.Code) _shell.WorkspaceView.SetKeyboardOpen(on || _shell.KeyboardOpen);
+        if (_tab == WorkspaceTab.Code) _shell.WorkspaceView.SetKeyboardOpen((on && _shell.WorkspaceView.CodeVisible) || _shell.KeyboardOpen);
     }
 
     /// <summary>Métodos takes the system keyboard's place: off while it is open, back on (and shown) after.</summary>

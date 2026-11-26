@@ -55,6 +55,13 @@ public sealed class WorkspaceView : UserControl
     }
 
     private bool _typingInSheet;
+
+    /// <summary>
+    /// True when the code editor is on screen (Código, or code and game side by side). Only then does the code bar
+    /// count as "keyboard open": in Jogo, Recursos or Notas it used to hide the workspace tabs, leaving no way back to
+    /// the code but Back (capture 4-jogo, 26/11).
+    /// </summary>
+    public bool CodeVisible => _shell.State.Tab == WorkspaceTab.Code || _shell.State.CodeAndGameSideBySide;
     private (WorkspaceTab, SupportPanel) _place;
 
     /// <summary>The text field of this workspace that has the focus (code, notes, a field of a panel), or null.</summary>
@@ -289,6 +296,7 @@ public sealed class WorkspaceView : UserControl
         // panel is the person going elsewhere, and the keyboard rightly goes.
         var place = (_shell.State.Tab, _shell.State.Panel);
         var focused = place == _place ? FocusedField() : null;
+        _keyboardOpen = _shell.KeyboardOpen || (CodeVisible && _code.KeyboardVisible); // per tab, recomputed on each switch
         _place = place;
         _tabBar = _sheet = null;
         _runFab = null;

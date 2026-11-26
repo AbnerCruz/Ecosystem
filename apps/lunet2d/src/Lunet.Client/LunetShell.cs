@@ -457,7 +457,7 @@ public sealed class LunetShell : UserControl
         var closed = _keyboardShown && !open;
         _keyboardShown = open;
         if (closed) _workspaceView.Code.SystemKeyboardClosed(); // closed by its own Back/hide key: the code bar goes too
-        _workspaceView.SetKeyboardOpen(open || _workspaceView.Code.KeyboardVisible);
+        _workspaceView.SetKeyboardOpen(open || (_workspaceView.CodeVisible && _workspaceView.Code.KeyboardVisible));
         FitKeyboard();
     }
 
