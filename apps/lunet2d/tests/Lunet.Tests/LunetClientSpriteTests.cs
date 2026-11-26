@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Lunet.Client;
 using Lunet.Client.Shell;
 using Lunet.Client.Views;
@@ -742,6 +743,56 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal("Sino FM", saved.Tracks[0].Instrument.Name);
                 Assert.Equal(5, saved.Tracks.Count);
                 Assert.Contains(saved.Patterns.SelectMany(p => p.Notes), n => n.Track == 0 && n.Length == 4);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void Resources_GroupsWithoutTwins_ImportsSearchesShowsDetailsAndOpensStudios()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-resources-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.WorkspaceView.NewSprite().Paint(1, 1, first: true);
+                shell.Back();
+                shell.State.SelectTab(WorkspaceTab.Art);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var page = window.GetVisualDescendants().OfType<ResourcesPage>().Single();
+
+                var groups = ResourcesPage.Groups(shell.Workspace.Files());
+                var art = groups.First(g => g.Label == "Arte").Files;
+                Assert.Contains("Content/Textures/sprite-1.sprite.json", art);
+                Assert.DoesNotContain("Content/Textures/sprite-1.png", art);          // the sheet is the sprite's twin
+
+                var png = Lunet.Client.Shell.PngEncoder.Rgba(2, 2, new byte[16]);
+                Assert.Equal("Content/Textures/fundo.png", page.Import("fundo.png", png));
+                Assert.Equal("Content/Textures/fundo-2.png", page.Import("fundo.png", png));   // never over another file
+                Assert.Equal("Content/Audio/pulo.wav", page.Import("pulo.wav", [1, 2, 3]));
+                Assert.Equal("Content/Fonts/pixel.ttf", page.Import("pixel.ttf", [0]));
+                Assert.Contains("Content/Fonts/pixel.ttf", page.Shown);
+
+                var search = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "ResourceSearch");
+                search.Text = "fundo";
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Equal(["Content/Textures/fundo-2.png", "Content/Textures/fundo.png"], page.Shown);
+
+                page.Activate("Content/Textures/fundo.png");                         // not editable: the details sheet
+                Assert.Equal("Content/Textures/fundo.png", page.Open);
+                Assert.Equal("Textures/fundo.png", ResourcesPage.CodePath(page.Open!));
+                Assert.True(shell.Back());                                             // Back closes the sheet first
+                Assert.Null(page.Open);
+                Assert.Equal(ShellLevel.Workspace, shell.State.Level);
+
+                page.Activate("Content/Textures/sprite-1.sprite.json");
+                Assert.IsType<SpriteStudioView>(shell.WorkspaceView.Studio);
                 window.Close();
             });
         }

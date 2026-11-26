@@ -41,6 +41,12 @@
   - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
   - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
   - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Recursos redesenhados:**
+  - Blocos para criar Sprite, Mapa, Efeito, Música, Partículas, Tabela e Paleta, e para **Importar** arquivos do aparelho (cada tipo vai para a sua pasta em `Content/`, sem sobrescrever nada).
+  - Busca, grupos (Arte, Mapas, Sons, Partículas, Dados, Fontes) e miniaturas das imagens.
+  - O arquivo gerado (o `.png` de um sprite, o `.wav` de um som) não aparece duplicado.
+  - Tocar edita no Studio certo; imagens, áudios e fontes abrem uma folha com prévia, tamanho, **Ouvir**, **Copiar caminho** e o caminho para usar no código. Voltar fecha a folha.
+  - O menu ⋮ não leva mais para as telas antigas de Recursos e Notas.
 - **Gerar APK dentro da interface nova** (⋮ → Gerar APK):
   - Uma página com o nome do jogo, o identificador Android (validado), a orientação e o aviso quando outro jogo usa a mesma identidade, com o botão para separar.
   - **Gerar APK** compila o jogo, junta `Content/` e `Assets/` (nunca o código-fonte) e assina no aparelho, com a mesma chave de antes; a nova versão instala por cima da anterior.

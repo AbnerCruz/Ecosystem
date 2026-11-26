@@ -224,7 +224,7 @@ public sealed class WorkspaceView : UserControl
         PaletteView palette => palette.Close(),
         DataView data => data.Back(),
         ApkView apk => apk.Close(),
-        _ => false,
+        _ => _resources?.CloseSheet() ?? false,
     };
 
     /// <summary>Lays the workspace out for the current state (layout, tab, panel).</summary>
@@ -413,110 +413,16 @@ public sealed class WorkspaceView : UserControl
         };
     }
 
+    private ResourcesPage? _resources;
+
+    /// <summary>Recursos: the game's art, maps, sounds, effects, data and fonts in one place (see <see cref="ResourcesPage"/>).</summary>
+    public ResourcesPage ResourcesTab => _resources ??= new ResourcesPage(_shell, this);
+
     private Control AssetsView(WorkspaceTab tab)
     {
-        if (tab == WorkspaceTab.Art) return ResourcesView();
-        var files = ProjectFiles.For(tab, _shell.Workspace.Files());
-        var (icon, title, studio) = tab switch
-        {
-            WorkspaceTab.Art => (LunetIcons.Art, "Arte", "Sprite Studio"),
-            WorkspaceTab.Map => (LunetIcons.Map, "Mapa", "Tile Studio"),
-            _ => (LunetIcons.Sound, "Som", "Music Studio"),
-        };
-        var honest = $"O {studio} entra nesta casca na Onda 3, sobre um motor de canvas comum. Os arquivos são os mesmos que o app Android já cria e edita.";
-        if (files.Count == 0) return LunetUi.EmptyState(icon, $"Nenhum arquivo de {title.ToLowerInvariant()} neste jogo", honest);
-        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M) };
-        list.Children.Add(LunetUi.Title(title));
-        list.Children.Add(LunetUi.Secondary(honest));
-        foreach (var f in files)
-        {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, MinHeight = LunetTokens.MinTouch };
-            row.Children.Add(LunetIcons.Create(LunetIcons.File, LunetTokens.Color.TextSecondary));
-            var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
-            row.Children.Add(name);
-            list.Children.Add(row);
-        }
-        return new ScrollViewer { Content = list };
-    }
-
-    /// <summary>Recursos: the game's art, maps and sounds in one place, with the Studios one tap away.</summary>
-    private Control ResourcesView()
-    {
-        var all = _shell.Workspace.Files();
-        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.Xl) };
-        list.Children.Add(LunetUi.Title("Recursos"));
-        list.Children.Add(LunetUi.Secondary("Arte, mapas e sons deste jogo. Os Studios ainda abrem na tela anterior; os arquivos são os mesmos."));
-        var actions = new WrapPanel { Orientation = Orientation.Horizontal };
-        var newSprite = LunetUi.Button("Novo sprite", ButtonKind.Primary, LunetIcons.Plus, () => NewSprite());
-        newSprite.Name = "NewSprite";
-        newSprite.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(newSprite);
-        var newMap = LunetUi.Button("Novo mapa", ButtonKind.Secondary, LunetIcons.Map, () => NewMap());
-        newMap.Name = "NewMap";
-        newMap.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(newMap);
-        var newSound = LunetUi.Button("Novo efeito", ButtonKind.Secondary, LunetIcons.Sound, () => NewSound());
-        newSound.Name = "NewSound";
-        newSound.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(newSound);
-        var newMusic = LunetUi.Button("Nova música", ButtonKind.Secondary, LunetIcons.Sound, () => NewMusic());
-        newMusic.Name = "NewMusic";
-        newMusic.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(newMusic);
-        var newParticles = LunetUi.Button("Novas partículas", ButtonKind.Secondary, LunetIcons.Art, () => NewParticles());
-        newParticles.Name = "NewParticles";
-        newParticles.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(newParticles);
-        var palette = LunetUi.Button("Paleta do jogo", ButtonKind.Secondary, LunetIcons.Art, () => OpenPalette());
-        palette.Name = "OpenPalette";
-        palette.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(palette);
-        var newData = LunetUi.Button("Nova tabela", ButtonKind.Secondary, LunetIcons.File, () => NewData());
-        newData.Name = "NewData";
-        newData.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs);
-        actions.Children.Add(newData);
-        if (_shell.OpenRoute is { } route)
-        {
-            var studios = LunetUi.Button("Outros Studios", ButtonKind.Secondary, LunetIcons.Art, () => route("assets", _shell.State.Project));
-            studios.Margin = new Thickness(0, 0, 0, LunetTokens.Space.Xs);
-            actions.Children.Add(studios);
-        }
-        list.Children.Add(actions);
-        foreach (var (group, icon, label) in new[] { (WorkspaceTab.Art, LunetIcons.Art, "Arte"), (WorkspaceTab.Map, LunetIcons.Map, "Mapas"), (WorkspaceTab.Sound, LunetIcons.Sound, "Sons"), (WorkspaceTab.Code, LunetIcons.Art, "Partículas"), (WorkspaceTab.Notes, LunetIcons.File, "Dados") })
-        {
-            // Partículas: the .particles.json effects (ProjectFiles has no tab for them).
-            var files = group == WorkspaceTab.Code ? all.Where(f => f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase)).ToList()
-                : group == WorkspaceTab.Notes ? all.Where(DataView.IsTable).ToList() : ProjectFiles.For(group, all);
-            var heading = LunetUi.Text($"{label.ToUpperInvariant()} · {files.Count}", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
-            heading.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
-            list.Children.Add(heading);
-            if (files.Count == 0) list.Children.Add(LunetUi.Text("Nada ainda.", LunetTokens.Type.Label, LunetTokens.Color.TextTertiary));
-            foreach (var f in files)
-            {
-                var isMap = f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase);
-                var isSound = f.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase);
-                var isMusic = f.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase);
-                var isParticles = f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase);
-                var isData = DataView.IsTable(f);
-                var editable = isMap || isSound || isMusic || isParticles || isData || f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase);
-                var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, VerticalAlignment = VerticalAlignment.Center };
-                row.Children.Add(LunetIcons.Create(icon, editable ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary));
-                var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
-                row.Children.Add(name);
-                if (!editable) { list.Children.Add(new Border { Child = row, MinHeight = LunetTokens.MinTouch }); continue; }
-                // A sprite opens in the Sprite Studio of the shell.
-                var path = f;
-                var open = new Button
-                {
-                    Content = row, MinHeight = LunetTokens.MinTouch, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
-                    Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0), Padding = new Thickness(0), Name = "OpenSprite-" + f,
-                };
-                Avalonia.Automation.AutomationProperties.SetName(open, "Editar " + f);
-                open.Click += (_, _) => { if (isMap) OpenMap(path); else if (isSound) OpenSound(path); else if (isMusic) OpenMusic(path); else if (isParticles) OpenParticles(path); else if (isData) OpenData(path); else OpenSprite(path); };
-                list.Children.Add(open);
-            }
-        }
-        return new ScrollViewer { Content = list };
+        // Rebuilt from disk each time the tab is shown (a Studio may have added files).
+        _resources = new ResourcesPage(_shell, this);
+        return _resources;
     }
 
     private static void Detach(Control c)

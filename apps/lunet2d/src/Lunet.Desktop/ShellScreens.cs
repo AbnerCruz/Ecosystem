@@ -1,3 +1,4 @@
+using Avalonia.VisualTree;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -205,7 +206,14 @@ public static class ShellScreens
                 shell.Back();
                 shell.Back();
                 shell.Back();
+                shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Art);
                 Shot(window, output, size, "8-arte", written);
+                if (shell.WorkspaceView.GetVisualDescendants().OfType<Lunet.Client.Views.ResourcesPage>().FirstOrDefault() is { } resources)
+                {
+                    resources.ShowDetails("Content/Textures/sprite-1.png");
+                    Shot(window, output, size, "8-arte-detalhe", written);
+                    resources.CloseSheet();
+                }
                 window.Close();
             }
             finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
