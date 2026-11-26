@@ -1,0 +1,61 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-lunet-conclusao-fatia1",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T16:03:33Z",
+  "agent": { "id": "claude-code-lunet-avalonia", "kind": "ai-agent" },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "c32c498",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/RectangleF.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/Texture2D.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/GraphicsDevice.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/RenderTarget2D.cs",
+    "apps/lunet2d/src/Lunet.Compiler/LoadedAssembliesReferenceProvider.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ObjectivesView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/HomeOrder.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorSettings.cs",
+    "apps/lunet2d/docs/audits/conclusao-integral-2026-11-26.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/governance/handoffs/HO-20261126-lunet-conclusao-fatia1.json"
+  ],
+  "work_completed": [
+    "H0: state received from the GPT agent — #1053 already merged (c32c498) and released as 1000609; only stale PR #1038 open; recorded in apps/lunet2d/docs/audits/conclusao-integral-2026-11-26.md.",
+    "Anexo B A/B/C: System.Drawing.Primitives in the game compiler, RectangleF(Vector2,Vector2), Size overloads, Draw(RectangleF,Color) and Draw(Texture2D,RectangleF,Color) with OverloadResolutionPriority(-1) after reproducing CS0121 on existing new(x,y) call sites.",
+    "H6: Objetivos support panel in the IDE (mission by GameId, shared progress, reference, Estudo hint without writing).",
+    "H2: Home with Continuar, pinned by GameId, recent order and accent-insensitive search; one primary action per screen.",
+    "Fix: Rodar no longer covers the code bar."
+  ],
+  "verification": [
+    { "check": "RectangleDrawTests, SizeOverloadTests, ObjectivesTests, RunButtonLayoutTests, HomeOrderTests, CameraTests, ProjectManageTests, LunetClientTests", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/tests/Lunet.Tests" }
+  ],
+  "known_issues": [
+    "Not tested on a phone; System.Drawing.Primitives under Android trimming is proven by the APK CI only, not on a device.",
+    "PR #1038 is stale (E1–E3 already in main and released); closing it is left to the owner/integrator."
+  ],
+  "blockers": [],
+  "next_actions": ["M5 GLES preview in the Jogo tab", "H4 AI co-work gaps", "H5 Studios parity audit"],
+  "decisions_required": [],
+  "reuse_assessment": [
+    { "subject": "home-ordering", "status": "product-specific", "rationale": "Lunet Home rules; no other consumer." }
+  ],
+  "normative_sources": ["AGENTS.md", "apps/lunet2d/AGENTS.md", "docs/design/linguagem-visual.md", "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md"],
+  "invariants": [
+    { "id": "NN-017", "evidence": "Headless tests and captures only; no device claim." }
+  ],
+  "criticality": { "declared": "routine" }
+}

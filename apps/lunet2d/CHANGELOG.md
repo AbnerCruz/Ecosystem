@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.1-dev.1000610 — Home com Continuar e Fixados, Objetivos na IDE, retângulos e tamanhos no Framework
+
+- **Home:**
+  - busca por nome, sem diferenciar maiúsculas nem acentos;
+  - **Continuar** abre o último jogo editado;
+  - **Fixados** no início: pelo menu ⋮, "Fixar no início". A marca continua depois de renomear o jogo;
+  - os demais jogos aparecem dos mais recentes para os mais antigos.
+- **Objetivos ao lado do código** (Painéis → Objetivos), quando o jogo pertence a um desafio de Aprender:
+  - missão e lista de objetivos, gravada no mesmo progresso de Aprender;
+  - critérios de aceite e a referência offline;
+  - **pista** no modo Estudo: prepara a pergunta à IA, sem escrever código e sem enviar nada sozinho.
+- **Framework:**
+  - `new RectangleF(posição, tamanho)` com `Vector2`;
+  - `batch.Draw(retângulo, cor)` desenha um retângulo preenchido;
+  - `batch.Draw(textura, retângulo, cor)`;
+  - versões com `System.Drawing.Size` de `Texture2D.CreateSolid`, `Texture2D.FromPixels`, `SetVirtualResolution` e `RenderTarget2D`.
+
+  Jogos existentes que escrevem `Draw(textura, new(x, y), cor)` continuam iguais.
+- **Correção:** o botão Rodar não cobre mais as teclas da barra de código.
+- **Validação:** testado no computador. Não testado num celular.
+
 ## 0.0.1-dev.1000609 — Música e WAV nos Studios
 
 - Música prepara a prévia e salva em segundo plano. O controle Parar encerra a prévia e arquivos inválidos mostram o erro sem sobrescrever a composição.
