@@ -138,45 +138,8 @@ public sealed class AiPanelView : UserControl
 
     // ---------------- setup (once for the whole app) ----------------
 
-    private Control Setup(AiHost host, LunetAiLoadedSettings loaded)
-    {
-        var provider = LunetAiProviders.Find(loaded.Settings.ProviderId);
-        var providers = new ComboBox { ItemsSource = LunetAiProviders.All.Select(p => p.Name).ToArray(), SelectedIndex = LunetAiProviders.All.ToList().IndexOf(provider), HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = LunetTokens.MinTouch };
-        var key = new TextBox { PasswordChar = '•', PlaceholderText = provider.KeyHint, MinHeight = LunetTokens.MinTouch };
-        var model = new TextBox { Text = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : provider.SuggestedModels.FirstOrDefault() ?? "", PlaceholderText = "modelo", MinHeight = LunetTokens.MinTouch };
-        var endpoint = new TextBox { Text = loaded.Settings.Endpoint, PlaceholderText = "https://…/chat/completions", MinHeight = LunetTokens.MinTouch, IsVisible = provider.Id == "custom" };
-        AutomationProperties.SetName(key, "Chave da API"); AutomationProperties.SetName(model, "Modelo"); AutomationProperties.SetName(providers, "Provedor");
-        providers.SelectionChanged += (_, _) =>
-        {
-            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
-            key.PlaceholderText = p.KeyHint;
-            model.Text = p.SuggestedModels.FirstOrDefault() ?? "";
-            endpoint.IsVisible = p.Id == "custom";
-            endpoint.Text = p.Endpoint;
-        };
-        var status = LunetUi.Text("", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary);
-        var save = LunetUi.Button("Salvar e começar", ButtonKind.Primary, null, () =>
-        {
-            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
-            var url = p.Id == "custom" ? endpoint.Text ?? "" : p.Endpoint;
-            if (string.IsNullOrWhiteSpace(key.Text) || string.IsNullOrWhiteSpace(model.Text) || string.IsNullOrWhiteSpace(url))
-            {
-                status.Text = "Preencha a chave, o modelo e o endereço.";
-                return;
-            }
-            host.Store.Save(loaded.Settings with { ProviderId = p.Id, Endpoint = url.Trim(), Model = model.Text!.Trim() }, key.Text!.Trim());
-            Refresh();
-        });
-        var form = new StackPanel { Spacing = LunetTokens.Space.S };
-        form.Children.Add(LunetUi.Secondary("Configure uma vez: a chave fica no cofre do aparelho e vale para todo o Lunet."));
-        form.Children.Add(providers);
-        form.Children.Add(key);
-        form.Children.Add(model);
-        form.Children.Add(endpoint);
-        form.Children.Add(save);
-        form.Children.Add(status);
-        return new ScrollViewer { Content = form };
-    }
+    /// <summary>Not configured yet: the one AI settings form of the app (no copy here — anexo A §6.6).</summary>
+    private Control Setup(AiHost host, LunetAiLoadedSettings loaded) => new AiSettingsView(host, Refresh);
 
     // ---------------- conversation ----------------
 

@@ -923,7 +923,7 @@ public sealed class LunetClientTests
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 var key = window.GetVisualDescendants().OfType<TextBox>().First(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Chave da API");
                 key.Text = "sk-or-teste-1234567890";
-                var save = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Salvar e começar");
+                var save = window.GetVisualDescendants().OfType<Button>().First(b => b.Name == "AiSave"); // the one AI settings form (AiSettingsView)
                 save.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 // Same store as the rest of Lunet: the key is in the vault and a new store (another screen) sees it.
