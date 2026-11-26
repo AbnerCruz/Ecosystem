@@ -36,7 +36,8 @@
     "apps/lunet2d/src/Lunet.Client/Views/LibraryView.cs",
     "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
     "apps/lunet2d/src/Lunet.Desktop/MainWindow.cs",
-    "apps/lunet2d/src/Lunet.Client/Views/WaveEditorView.cs"
+    "apps/lunet2d/src/Lunet.Client/Views/WaveEditorView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DebugShapeTests.cs"
   ],
   "work_completed": [
     "Audit of the previous 'Editor completo' commands against the shell editor; gaps closed: code folding (AvaloniaEdit FoldingManager fed by the analyzer's FoldRegion list, toggle at caret, fold/unfold all), position history (DocumentEditor.JumpTo used by palette, outline, go to line and Problemas; BackToPosition, Alt+Left), select next occurrence, edit all occurrences (find/replace prefilled, whole word, match case), Inserir bloco (IndentationService.InsertBlock, Ctrl+Shift+B), Salvar cópia in the file menu.",
@@ -46,7 +47,8 @@
     "Other text files in the shell: Recursos group 'Outros' (raw .json/.txt/.csv/.xml/.md outside Notes) with 'Editar como texto' into the Código editor (only .cs is analysed, so no false C# errors); DataView 'Editar como texto'; a Content/Data .json unreadable as a table falls back to the details sheet. The game ⋮ no longer routes to any previous screen ('Editor completo' removed; LunetShell.GameRoutes deleted).",
     "Home → Studios in the shell (StudiosView) over LunetShell.StudioWorkspacePath (Android: the previous screens' FilesDir/StudioWorkspace): the shell's Studio views now take an optional StudioAssetWorkspace (default: the open game), TileStudioView.EditTileset/Create(storage, files) and DataView.Create(storage, files) work outside a game; Minhas criações grouped as Recursos; Publicar uses ReusableAssetLibrary.PublishWorkspace through LibraryView.ShowPublishStudio. The bottom bar shows Studios on every platform; the 'studios' route is no longer used by the shell.",
     "PaletteView parity with the previous Palette Studio: import .gpl/hex (system picker, ProjectPalette.Import), export .gpl, Gerar código C# (Scripts/GamePalette.cs via ToCSharp, compiles), contrast against dark/light for the selected colour; standalone .palette.json + .gpl pair in Home → Studios with Publicar.",
-    "WAV editor in the shell (WaveEditorView over WaveAudioDocument, as the previous WaveAudioStudioView): waveform with cut and loop markers, start/end, volume 0–200%, loop points (SMPL), Ouvir, Salvar cópia into Content/Audio (never overwriting, original untouched); opens from a game's .wav in Recursos and as 'Tom (WAV)' in Home → Studios. With this, the standalone Studios of the previous screens are all in the shell."
+    "WAV editor in the shell (WaveEditorView over WaveAudioDocument, as the previous WaveAudioStudioView): waveform with cut and loop markers, start/end, volume 0–200%, loop points (SMPL), Ouvir, Salvar cópia into Content/Audio (never overwriting, original untouched); opens from a game's .wav in Recursos and as 'Tom (WAV)' in Home → Studios. With this, the standalone Studios of the previous screens are all in the shell.",
+    "CI fix: DebugShapeTests.HelpersDoNotAllocateAfterWarmup failed once on the apk job (1112 B) because GetAllocatedBytesForCurrentThread counted other work on the runner's shared thread; it now measures on a dedicated thread after warm-up there and keeps the minimum of three runs (a real per-draw allocation still fails every run)."
   ],
   "verification": [
     {
