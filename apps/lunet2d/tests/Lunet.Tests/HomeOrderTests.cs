@@ -73,3 +73,43 @@ public sealed class HomeOrderTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+/// <summary>Anexo A §4.1: the same five global destinations everywhere; Mais holds the secondary ones.</summary>
+public sealed class GlobalNavigationTests
+{
+    [Fact]
+    public void TheGlobalBar_IsInicioJogarAprenderStudiosMais_OnDesktopAndPhone()
+    {
+        foreach (var android in new[] { false, true })
+        {
+            var root = Path.Combine(Path.GetTempPath(), "lunet-nav-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                UiSession.Run(() =>
+                {
+                    var shell = new LunetShell(root);
+                    if (android) shell.OpenRoute = (_, _) => { };
+                    var window = new Window { Width = 412, Height = 915, Content = shell };
+                    window.Show();
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    var tabs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Control>()
+                        .Where(c => c.Name?.StartsWith("Nav-", StringComparison.Ordinal) == true).Select(c => c.Name).ToList();
+                    Assert.Equal(["Nav-Games", "Nav-Play", "Nav-Learn", "Nav-Studios", "Nav-More"], tabs);
+                    shell.Home.Go(Lunet.Client.Views.HomeView.Destination.More);
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    var routes = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(window).OfType<Button>()
+                        .Select(b => b.Name).Where(n => n?.StartsWith("Route-", StringComparison.Ordinal) == true).ToList();
+                    Assert.Contains("Route-docs", routes);
+                    Assert.Contains("Route-library", routes);
+                    Assert.Contains("Route-settings", routes);
+                    Assert.Equal(android, routes.Contains("Route-explore")); // only where its screen exists, never a dead link
+                    shell.Home.ShowDocs();
+                    Assert.True(shell.Back());                             // Back closes Documentação
+                    Assert.Null(shell.Home.Sheet);
+                    window.Close();
+                });
+            }
+            finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+        }
+    }
+}

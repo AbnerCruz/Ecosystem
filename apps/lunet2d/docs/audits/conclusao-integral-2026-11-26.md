@@ -40,7 +40,11 @@
 
 | H4 — streaming | O painel de IA redesenhava toda a conversa (Markdown, código e diffs) a cada pedaço de texto ou passo recebido. Agora atualiza só o bloco ao vivo, no máximo a cada 100 ms. Quem subiu a rolagem para ler não é puxado de volta. | `AiStreamingRenderTests`: 200 atualizações ao vivo e zero reconstruções |
 
-## Pendências conhecidas (não declaradas como feitas)
+| UX §4.1 / §6.1 | A barra global agora é Início, Jogar, Aprender, Studios e Mais, nessa ordem, no celular e no desktop (antes eram seis destinos no desktop, e Biblioteca e Ajustes ficavam soltos). Mais reúne Lunet IA, **Documentação** (agora global, com o mesmo leitor offline), Biblioteca, Explorar (só onde existe a tela, sem link morto) e Ajustes. O título é "Área de trabalho". | `GlobalNavigationTests` (desktop e Android); capturas |
+
+## Pendências conhecidas
+
+- **UX §4.1, tela larga:** a especificação pede barra lateral com os destinos rotulados em telas a partir de 840 dp. Hoje a barra inferior aparece em todas as larguras. (não declaradas como feitas)
 
 - **M5, isolamento:** resolvido. Ajustes → Jogo → "Preview isolado" abre o jogo na Activity de processo separado (`IsolatedGpuPreview`). Na volta, a aba recolhe o console e acusa se o processo morreu (o arquivo marcador). Taxa de atualização alta também voltou a Ajustes.
 - **M5, aparelho:** falta conferir no celular a superfície GL dentro da casca (toque, rotação, troca de aba, minimizar e voltar).

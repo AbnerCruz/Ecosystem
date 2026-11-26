@@ -59,7 +59,7 @@ public sealed class HomeView : UserControl
         if (_grid.Parent is Panel old) old.Children.Remove(_grid);
         if (_count.Parent is Panel oldParent) oldParent.Children.Remove(_count);
         var titles = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(0, LunetTokens.Space.S, 0, LunetTokens.Space.M) };
-        titles.Children.Add(LunetUi.Headline("Seus jogos"));
+        titles.Children.Add(LunetUi.Headline("Área de trabalho")); // anexo A §4.1
         titles.Children.Add(_count);
         if (_search.Parent is Panel oldSearch) oldSearch.Children.Remove(_search);
         titles.Children.Add(_search);
@@ -99,23 +99,18 @@ public sealed class HomeView : UserControl
     }
 
     /// <summary>
-    /// The bottom bar: Jogos, Aprender, Jogar and Studios (all in the shell) and Mais
-    /// (Biblioteca, Explorar, Ajustes). Without the previous screens (desktop) only what lives in the shell appears.
+    /// The global bar (anexo A §4.1): Início (the work area), Jogar, Aprender, Studios and Mais — the same five on the
+    /// phone and on wide screens. Mais holds Lunet IA, Documentação, Biblioteca, Explorar (where its screen exists) and
+    /// Ajustes. "Área de trabalho" is shortened to "Início" so five labels fit at 320–412 dp.
     /// </summary>
     private void BuildNav()
     {
-        var items = new List<(Destination Destination, string Label, string Icon)> { (Destination.Games, "Jogos", LunetIcons.Game), (Destination.Learn, "Aprender", LunetIcons.Book) };
-        items.Add((Destination.Play, "Jogar", LunetIcons.Play));
-        items.Add((Destination.Studios, "Studios", LunetIcons.Art));
-        if (_shell.OpenRoute is not null)
+        var items = new List<(Destination Destination, string Label, string Icon)>
         {
-            items.Add((Destination.More, "Mais", LunetIcons.More));
-        }
-        else
-        {
-            items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
-            items.Add((Destination.Settings, "Ajustes", LunetIcons.Speed));
-        }
+            (Destination.Games, "Início", LunetIcons.Game), (Destination.Play, "Jogar", LunetIcons.Play),
+            (Destination.Learn, "Aprender", LunetIcons.Book), (Destination.Studios, "Studios", LunetIcons.Art),
+            (Destination.More, "Mais", LunetIcons.More),
+        };
         _navGrid.Children.Clear();
         _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
         for (var i = 0; i < items.Count; i++)
@@ -157,10 +152,11 @@ public sealed class HomeView : UserControl
         foreach (var (route, label, icon, detail) in new[]
         {
             ("ai", "Lunet IA", LunetIcons.Code, "Conversa sem jogo aberto: dúvidas de C# e ideias"),
+            ("docs", "Documentação", LunetIcons.Book, "Manual e referência da API, offline"),
             ("library", "Biblioteca", LunetIcons.Folder, "Recursos seus para usar em qualquer jogo"),
             ("explore", "Explorar", LunetIcons.Map, "Referências e inspiração"),
             ("settings", "Ajustes", LunetIcons.Speed, "Aparência, pasta de projetos, IA"),
-        }.Where(d => d.Item1 != "ai" || _shell.AiHost is not null))
+        }.Where(d => (d.Item1 != "ai" || _shell.AiHost is not null) && (d.Item1 != "explore" || _shell.OpenRoute is not null)))
         {
             var stack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             stack.Children.Add(LunetUi.Text(label, LunetTokens.Type.Callout, weight: FontWeight.SemiBold));
@@ -184,6 +180,7 @@ public sealed class HomeView : UserControl
             {
                 CloseOverlay();
                 if (r == "ai") ShowGlobalAi();
+                else if (r == "docs") ShowDocs();
                 else if (r == "library") ShowLibrary();
                 else if (r == "settings") ShowSettings();
                 else _shell.OpenRoute?.Invoke(r, null);
@@ -493,8 +490,30 @@ public sealed class HomeView : UserControl
         if (settings) ai.OpenSettings();
         _overlay.Children.Add(LunetUi.Enter(ai));
         Sheet = ai;
-        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        Select(Destination.More);
         return ai;
+    }
+
+    /// <summary>Documentação, full screen over the Home: the same offline reader as inside a game (anexo A §6.7).</summary>
+    public DocsView ShowDocs()
+    {
+        _overlay.Children.Clear();
+        var docs = new DocsView();
+        var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => CloseSheet());
+        var title = LunetUi.Title("Documentação");
+        title.VerticalAlignment = VerticalAlignment.Center;
+        var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.M, 0) };
+        DockPanel.SetDock(back, Avalonia.Controls.Dock.Left);
+        bar.Children.Add(back);
+        bar.Children.Add(title);
+        var page = new DockPanel { Background = LunetTokens.Brush(LunetTokens.Color.Background) };
+        DockPanel.SetDock(bar, Avalonia.Controls.Dock.Top);
+        page.Children.Add(bar);
+        page.Children.Add(docs);
+        _overlay.Children.Add(LunetUi.Enter(page));
+        Sheet = docs;
+        Select(Destination.More);
+        return docs;
     }
 
     /// <summary>Ajustes, full screen over the Home (P7).</summary>
@@ -504,7 +523,7 @@ public sealed class HomeView : UserControl
         var settings = new SettingsView(_shell);
         _overlay.Children.Add(LunetUi.Enter(settings));
         Sheet = settings;
-        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        Select(Destination.More);
         return settings;
     }
 
@@ -537,7 +556,7 @@ public sealed class HomeView : UserControl
         var library = new LibraryView(_shell, () => CloseOverlay());
         _overlay.Children.Add(LunetUi.Enter(library));
         Sheet = library;
-        Select(_shell.OpenRoute is null ? Destination.Library : Destination.More);
+        Select(Destination.More);
         return library;
     }
 
