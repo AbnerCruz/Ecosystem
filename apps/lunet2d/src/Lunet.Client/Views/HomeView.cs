@@ -49,6 +49,7 @@ public sealed class HomeView : UserControl
 
     private readonly StackPanel _nav = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly Grid _navGrid = new();
+    private bool _rail;
 
     /// <summary>The destination selected in the bottom bar.</summary>
     public Destination Selected { get; private set; } = Destination.Games;
@@ -91,7 +92,14 @@ public sealed class HomeView : UserControl
             BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
         };
         var root = new DockPanel();
-        DockPanel.SetDock(nav, Avalonia.Controls.Dock.Bottom);
+        // ≥ 840 dp: a rail on the left with the same five destinations (anexo A §4.1); below, the bottom bar.
+        if (_rail)
+        {
+            nav.BorderThickness = new Thickness(0, 0, 1, 0);
+            nav.Width = 88;
+            DockPanel.SetDock(nav, Avalonia.Controls.Dock.Left);
+        }
+        else DockPanel.SetDock(nav, Avalonia.Controls.Dock.Bottom);
         root.Children.Add(nav);
         root.Children.Add(page);
         Content = root;
@@ -112,13 +120,16 @@ public sealed class HomeView : UserControl
             (Destination.More, "Mais", LunetIcons.More),
         };
         _navGrid.Children.Clear();
-        _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
+        _navGrid.ColumnDefinitions = _rail ? new ColumnDefinitions("*") : new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
+        _navGrid.RowDefinitions = _rail ? new RowDefinitions(string.Join(",", items.Select(_ => "Auto"))) : new RowDefinitions("*");
+        _navGrid.Margin = _rail ? new Thickness(0, LunetTokens.Space.M, 0, 0) : new Thickness(0);
         for (var i = 0; i < items.Count; i++)
         {
             var (destination, label, icon) = items[i];
             var tab = LunetUi.Tab(icon, label, destination == Selected, () => Go(destination));
             tab.Name = "Nav-" + destination;
-            Grid.SetColumn(tab, i);
+            if (_rail) { Grid.SetRow(tab, i); Grid.SetColumn(tab, 0); tab.Margin = new Thickness(0, 0, 0, LunetTokens.Space.S); }
+            else { Grid.SetColumn(tab, i); Grid.SetRow(tab, 0); }
             _navGrid.Children.Add(tab);
         }
     }
@@ -196,6 +207,8 @@ public sealed class HomeView : UserControl
     protected override void OnSizeChanged(SizeChangedEventArgs e)
     {
         base.OnSizeChanged(e);
+        var rail = e.NewSize.Width >= Lunet.Client.Shell.ShellState.ExpandedMinWidth;
+        if (rail != _rail) { _rail = rail; Build(); return; } // bottom bar ↔ rail
         if (Math.Abs(e.NewSize.Width - e.PreviousSize.Width) > 1) Refresh(); // card columns follow the width
     }
 
@@ -260,7 +273,7 @@ public sealed class HomeView : UserControl
     private Control Full(Control c)
     {
         // A whole row of the wrap panel (cards are laid side by side on wide screens).
-        c.Width = Math.Max(0, (Bounds.Width > 0 ? Bounds.Width : 412) - 2 * LunetTokens.Space.M);
+        c.Width = Math.Max(0, (Bounds.Width > 0 ? Bounds.Width : 412) - (_rail ? 88 : 0) - 2 * LunetTokens.Space.M); // minus the rail
         return c;
     }
 

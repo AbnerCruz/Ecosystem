@@ -44,7 +44,7 @@
 
 ## Pendências conhecidas
 
-- **UX §4.1, tela larga:** a especificação pede barra lateral com os destinos rotulados em telas a partir de 840 dp. Hoje a barra inferior aparece em todas as larguras. (não declaradas como feitas)
+- **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)
 
 - **M5, isolamento:** resolvido. Ajustes → Jogo → "Preview isolado" abre o jogo na Activity de processo separado (`IsolatedGpuPreview`). Na volta, a aba recolhe o console e acusa se o processo morreu (o arquivo marcador). Taxa de atualização alta também voltou a Ajustes.
 - **M5, aparelho:** falta conferir no celular a superfície GL dentro da casca (toque, rotação, troca de aba, minimizar e voltar).
