@@ -1,5 +1,95 @@
 # Changelog
 
+## 0.0.1-dev.1000604 — Jogo e código ao alcance do polegar
+
+- **Rodar** flutua no canto de baixo do código e das notas, onde o polegar alcança. Some enquanto você digita. No computador continua no alto.
+- Os controles do jogo descem para baixo: pausar, avançar um quadro, parar, Inspector, Desempenho e a velocidade. A velocidade virou um botão só: cada toque passa para a próxima (0,25×, 0,5×, 1×, 2×).
+- O tempo por quadro aparece no canto do jogo, sem disputar espaço com os botões.
+- **Sprite Studio na interface nova** (Recursos → Novo sprite, ou toque num `.sprite.json`):
+  - Pintura em tela cheia com pixels nítidos e grade ao aproximar.
+  - O quadro anterior aparece clarinho por baixo, para animar.
+  - Lápis, borracha, balde, conta-gotas, desfazer e refazer embaixo, com a paleta e os quadros (novo, duplicar, apagar) logo acima.
+  - Prévia da animação.
+  - O primeiro quadradinho da paleta é a cor em uso. Tocar nele abre o seletor: matiz, saturação, brilho, opacidade e código hex.
+  - Dois dedos aproximam e arrastam a tela; um dedo sempre pinta. Se o segundo dedo encosta no meio de um traço, o ponto deixado pelo primeiro é desfeito. No computador, a roda do mouse aproxima. Um botão volta a mostrar o sprite inteiro.
+  - Voltar salva o `.sprite.json` e o `.png` juntos, no mesmo formato de antes.
+- **Tile Studio na interface nova** (Recursos → Novo mapa, ou toque num `.tilemap.json`):
+  - O mapa ocupa a tela, com aproximar e arrastar com dois dedos, como no Sprite Studio.
+  - Embaixo ficam as camadas (nova, mostrar ou esconder, colisão), os tiles do tileset, pincel, borracha, desfazer, refazer e **Tileset**, que abre o desenho do tileset no Sprite Studio e volta para o mapa.
+  - Um mapa novo já vem com quatro tiles editáveis. Voltar salva o `.tilemap.json`.
+- **Efeitos sonoros na interface nova** (Recursos → Novo efeito, ou toque num `.sfx.json`):
+  - Escolha o que o som é (moeda, tiro, explosão, power-up, dano, pulo, menu, magia, alarme). Depois use **Gerar de novo** e **Variar** até ficar bom; cada mudança toca na hora.
+  - A forma da onda aparece na tela. A onda e o tom, o deslizar, a duração, o vibrato e o volume podem ser ajustados.
+  - Voltar salva o `.sfx.json` e o `.wav` juntos.
+- **Música na interface nova** (Recursos → Nova música, ou toque num `.song.json`):
+  - Uma música nova já vem com melodia, acordes, baixo e bateria, para você ouvir e mudar.
+  - Piano roll do padrão e da faixa escolhidos: tocar cria ou tira uma nota, e arrastar pinta várias. As notas da escala ficam destacadas, e as das outras faixas aparecem clarinhas.
+  - Embaixo ficam as faixas, os padrões (novo, duplicar), o andamento e os botões **Padrão** e **Música** para ouvir.
+  - Voltar salva o `.song.json` e o `.wav` juntos.
+- **Versões (Git) na interface nova** (⋮ → Versões):
+  - **Começar o histórico** cria o repositório com a lista de pastas ignoradas.
+  - Mostra o que mudou desde a última versão; tocar num arquivo mostra a diferença.
+  - Uma frase e **Salvar versão** guardam tudo. O nome e o e-mail de quem assina são pedidos uma vez e ficam guardados no jogo.
+  - A lista de versões mostra, para cada uma, os arquivos que mudaram.
+  - Enviar e receber de um remoto (GitHub e outros) abre a tela própria, onde ficam os tokens.
+- **Partículas na interface nova** (Recursos → Novas partículas, ou toque num `.particles.json`):
+  - O efeito roda ao vivo com o mesmo emissor que o jogo usa.
+  - Comece de um modelo pronto e ajuste quantidade, explosão, velocidade, direção, abertura, gravidade, vida, tamanhos, cores do começo e do fim, e brilho somado.
+  - Tocar na prévia solta uma explosão naquele ponto.
+  - Voltar salva o `.particles.json`.
+- **Paleta do jogo na interface nova** (Recursos → Paleta do jogo):
+  - Comece de um modelo (noite, floresta, deserto, neon, pastel, mono) ou extraia as cores dos sprites do jogo.
+  - Adicione por hex. Toque numa cor para criar uma rampa de 5 tons, a complementar, as análogas ou a tríade, ou para removê-la.
+  - Cada mudança é salva na hora, e o Sprite Studio passa a oferecer as cores do jogo.
+- **Arquivos e busca no editor da interface nova** (o **⋮** ao lado das abas de arquivo):
+  - **Novo arquivo** cria `Scripts/Nome.cs` com a classe pronta.
+  - **Renomear** mantém a pasta e a extensão. **Apagar** pede confirmação. O arquivo base do jogo e o `lunet.json` ficam protegidos.
+  - **Buscar e substituir** (também Ctrl+F) mostra a contagem e tem próximo, maiúsculas, trocar um e trocar todos. Trocar todos é um único desfazer.
+  - Funciona também nas Notas.
+- **Recursos redesenhados:**
+  - Blocos para criar Sprite, Mapa, Efeito, Música, Partículas, Tabela e Paleta, e para **Importar** arquivos do aparelho (cada tipo vai para a sua pasta em `Content/`, sem sobrescrever nada).
+  - Busca, grupos (Arte, Mapas, Sons, Partículas, Dados, Fontes) e miniaturas das imagens.
+  - O arquivo gerado (o `.png` de um sprite, o `.wav` de um som) não aparece duplicado.
+  - Tocar edita no Studio certo; imagens, áudios e fontes abrem uma folha com prévia, tamanho, **Ouvir**, **Copiar caminho** e o caminho para usar no código. Voltar fecha a folha.
+  - O menu ⋮ não leva mais para as telas antigas de Recursos e Notas.
+- **Gerar APK dentro da interface nova** (⋮ → Gerar APK):
+  - Uma página com o nome do jogo, o identificador Android (validado), a orientação e o aviso quando outro jogo usa a mesma identidade, com o botão para separar.
+  - **Gerar APK** compila o jogo, junta `Content/` e `Assets/` (nunca o código-fonte) e assina no aparelho, com a mesma chave de antes; a nova versão instala por cima da anterior.
+  - Erros de compilação aparecem com arquivo e linha. **Salvar o APK** abre o seletor do sistema.
+  - No computador, a página explica que o APK é gerado no celular.
+- **Enviar e receber versões dentro de Versões** (GitHub e outros servidores https):
+  - Cole o endereço do repositório; **Receber** busca e junta as versões do servidor, e **Enviar** manda as suas.
+  - A conta (nome, e-mail, usuário e token) fica no armazenamento privado do app, a mesma das telas anteriores, e nunca vai para a pasta do jogo.
+  - Sem token, dá para receber de repositórios públicos.
+  - Erros aparecem na tela com o motivo.
+- **Music Studio da interface nova com Notas, Faixa e Arranjo** (abas na parte de baixo):
+  - **Notas:** duração da nota de 1 a 16 passos; uma nota perto do fim é cortada para caber.
+  - **Faixa:** instrumento entre os 12 prontos, com prévia ao trocar; volume, esquerda/direita, mudo e solo; nova faixa.
+  - **Arranjo:** a ordem dos padrões em chips. Toque num chip para movê-lo para antes ou depois, ou para tirá-lo; **+** põe o padrão atual no fim. O andamento fica aqui.
+  - Com o arranjo vazio, Música toca o padrão atual.
+- **Terreno (autotile) e camadas no Tile Studio da interface nova:**
+  - A ferramenta Terreno pinta caminhos, paredes e chãos escolhendo sozinha a borda e o canto certos pelos vizinhos.
+  - O terreno pode ser Simples (16 tiles) ou Suave (47), a partir do tile escolhido. Também dá para apagar terreno.
+  - Se o tileset não tiver os tiles necessários, a tela diz quantos faltam.
+  - O **⋮** da camada abre Renomear, Antes e Depois (ordem), Mostrar/Esconder, Colisão e Apagar camada (com confirmação).
+- **Seleção no Sprite Studio da interface nova** (ferramenta Selecionar):
+  - Retângulo, Laço, Mesma cor ou Tudo, escolhidos logo acima das ferramentas.
+  - Arrastar dentro da seleção move os pixels.
+  - Com algo selecionado aparecem Aplicar, Desfazer, Girar, Espelhar ↔ e ↕, Duplicar (carimba uma cópia) e Apagar.
+  - Desfazer volta o movimento inteiro. Trocar de ferramenta, de quadro ou sair aplica o que estiver flutuando.
+- **Tabelas de dados na interface nova** (Recursos → Nova tabela, ou uma tabela em `Content/Data`):
+  - No celular, cada registro vira um cartão. Tocar abre um formulário com um campo por coluna: texto, número com teclado numérico, sim/não com chave, escolha com lista.
+  - Valor inválido não é gravado, e o motivo aparece embaixo do campo.
+  - **Novo registro** fica ao alcance do polegar. O registro aberto tem Duplicar e Apagar.
+  - Dá para adicionar e remover colunas. Os problemas da tabela aparecem no topo.
+  - Cada mudança grava o `.json` e o `.schema.json` juntos. Voltar sai do registro para a lista.
+- **Mapas mentais nas Notas** (Notas → Novo mapa mental):
+  - Os mapas aparecem como uma lista de tópicos recuados, fácil de ler e editar no celular.
+  - Tocar no texto edita; Enter cria o próximo tópico. **+** cria um tópico dentro. A seta recolhe um ramo.
+  - **⋮** tem Tópico ao lado, Subir um nível e Apagar.
+  - Desfazer e refazer. Cada mudança é salva na hora, em `Notes/`.
+- A barra do jogo tem quatro abas: **Código**, **Jogo**, **Recursos** e **Notas**. Recursos junta arte, mapas e sons do jogo e abre os Studios.
+
 ## 0.0.1-dev.1000603 — Aprender, barra de código e Voltar que volta
 
 - **A digitação é do teclado do sistema.** O teclado próprio do Lunet saiu: a digitação estava lenta demais.

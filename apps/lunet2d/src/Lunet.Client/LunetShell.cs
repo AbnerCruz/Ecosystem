@@ -27,6 +27,7 @@ public sealed class LunetShell : UserControl
         Workspace = new WorkspaceSession(projectsRoot);
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
+        GitAccountPath = Path.Combine(projectsRoot, ".lunet", "git-account.json");
         _settingsPath = Path.Combine(projectsRoot, ".lunet", "settings.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
@@ -90,11 +91,27 @@ public sealed class LunetShell : UserControl
         KeepScreenOn?.Invoke(Settings.KeepScreenOn);
     }
 
+    /// <summary>Plays a WAV (the sound Studio); set by the Android head, null (silent) elsewhere.</summary>
+    public Action<byte[]>? PlaySound { get; set; }
+
     /// <summary>Plays a game full screen (P4); the Android head runs it in its own process. Null: it runs in the workspace.</summary>
     public Action<string>? PlayGame { get; set; }
 
     /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
     public string LibraryPath { get; set; }
+
+    /// <summary>Who signs versions and the token for sending/receiving (the app's private storage; the Android head
+    /// points it at the previous screens' FilesDir/git-account.json, so the account carries over).</summary>
+    public string GitAccountPath { get; set; } = "";
+
+    /// <summary>Packs and signs a game's APK on the device (P5): the Android head gives the runtime template and the
+    /// device key (Android Keystore). Input: the project and its files (game/Game.dll, game/Content/…, game/Assets/…).
+    /// Null where an APK cannot be made (desktop): Gerar APK says so.</summary>
+    public Func<Lunet.Core.LunetProject, IReadOnlyDictionary<string, byte[]>, byte[]>? PackageGameApk { get; set; }
+
+    /// <summary>How Versões talks to a remote (HTTP by default; tests use a local git).</summary>
+    public Func<string, Lunet.Core.GitAccount, Lunet.Git.IGitTransport> GitTransport { get; set; } =
+        (url, account) => new Lunet.Git.HttpGitTransport(url, account.Username.Length > 0 ? account.Username : null, account.Token.Length > 0 ? account.Token : null);
     public ShellState State { get; } = new();
     public GameSession Game { get; }
     public HomeView Home => _home;
@@ -421,10 +438,17 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
+        else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Notes)
+        {
+            (State.Tab == WorkspaceTab.Code ? _workspaceView.Code : _workspaceView.Notes).ShowFind();
+            e.Handled = true;
+        }
     }
 
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
-    private bool BeforeBack() => (State.Level == ShellLevel.Home && _home.CloseSheet()) || _workspaceView.Code.HideKeyboard() || State.Back();
+    private bool BeforeBack() => (State.Level == ShellLevel.Home && _home.CloseSheet())
+        || (State.Level == ShellLevel.Workspace && _workspaceView.CloseStudio())
+        || _workspaceView.Code.HideKeyboard() || State.Back();
 
     /// <summary>The system Back, as the heads route it (public for tests).</summary>
     public bool Back() => BeforeBack();

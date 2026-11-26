@@ -231,6 +231,209 @@ public sealed class DocumentEditor : UserControl
         }
     }
 
+    // ---------- File actions (new, rename, delete) ----------
+
+    private bool _fileMenu, _confirmDelete;
+
+    public bool FileMenuOpen => _fileMenu;
+    public void ToggleFileMenu() { _fileMenu = !_fileMenu; _confirmDelete = false; Rebuild(); }
+
+    /// <summary>A new C# file with a class named after it (Scripts/ next to the game). Returns its path.</summary>
+    public string NewCodeFile(string name = "NovaClasse")
+    {
+        var clean = new string(name.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
+        if (clean.Length == 0 || char.IsDigit(clean[0])) clean = "NovaClasse" + clean;
+        clean = char.ToUpperInvariant(clean[0]) + clean[1..];
+        var existing = _shell.Workspace.Files().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var className = clean;
+        for (var n = 2; existing.Contains($"Scripts/{className}.cs"); n++) className = clean + n;
+        var path = $"Scripts/{className}.cs";
+        _shell.Workspace.Write(path, $"using Lunet;\n\npublic sealed class {className}\n{{\n}}\n");
+        _fileMenu = false;
+        Load(path);
+        return path;
+    }
+
+    /// <summary>Renames the open file (keeps its folder and, when no extension is typed, its extension).</summary>
+    public string? RenameOpen(string newName)
+    {
+        if (OpenPath is not { } from || _shell.Workspace.Project is not { } project) return null;
+        newName = newName.Trim();
+        if (newName.Length == 0 || newName.IndexOfAny(['/', '\\']) >= 0) throw new ArgumentException("Use só o nome do arquivo, sem pastas.");
+        var ext = from.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) ? ".sprite.json" : Path.GetExtension(from);
+        if (!newName.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) newName += ext;
+        var folder = Path.GetDirectoryName(from)?.Replace('\\', '/');
+        var to = string.IsNullOrEmpty(folder) ? newName : folder + "/" + newName;
+        if (to == from) return from;
+        Save();
+        project.Rename(from, to);
+        _session?.Reconcile(_shell.Workspace.Files());
+        OpenPath = null;
+        _fileMenu = false;
+        Load(to);
+        return to;
+    }
+
+    /// <summary>Deletes the open file (the game's entry and lunet.json are kept by the project).</summary>
+    public void DeleteOpen()
+    {
+        if (OpenPath is not { } path || _shell.Workspace.Project is not { } project) return;
+        project.Delete(path);
+        _session?.Reconcile(_shell.Workspace.Files());
+        OpenPath = null;
+        _saved = null;
+        _fileMenu = _confirmDelete = false;
+        Load(null);
+    }
+
+    private void FileAction(Action action)
+    {
+        try { action(); }
+        catch (Exception e) when (e is Lunet.Core.ProjectException or IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            _shell.Report(e.Message);
+            Rebuild();
+        }
+    }
+
+    private Control FileMenu()
+    {
+        var row = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(LunetTokens.Space.Xs, LunetTokens.Space.Xxs) };
+        void Add(Control c) { c.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xxs); row.Children.Add(c); }
+        var find = LunetUi.Button("Buscar e substituir", ButtonKind.Secondary, LunetIcons.Search, () => { _fileMenu = false; ShowFind(); });
+        find.Name = "ShowFind";
+        Add(find);
+        if (_tab == WorkspaceTab.Code)
+        {
+            var add = LunetUi.Button("Novo arquivo", ButtonKind.Secondary, LunetIcons.Plus, () => FileAction(() => NewCodeFile()));
+            add.Name = "NewCodeFile";
+            Add(add);
+        }
+        var manifest = _shell.Workspace.Project?.Manifest;
+        if (OpenPath is { } open && open != Lunet.Core.ProjectStore.ManifestFileName && open != manifest?.EntryPoint)
+        {
+            var name = new TextBox { Text = Path.GetFileName(open), MinHeight = 40, Width = 180, VerticalContentAlignment = VerticalAlignment.Center, Name = "RenameFile" };
+            AutomationProperties.SetName(name, "Novo nome do arquivo");
+            name.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; FileAction(() => RenameOpen(name.Text ?? "")); } };
+            Add(name);
+            var rename = LunetUi.Button("Renomear", ButtonKind.Ghost, LunetIcons.Edit, () => FileAction(() => RenameOpen(name.Text ?? "")));
+            rename.Name = "RenameOpen";
+            Add(rename);
+            var delete = LunetUi.Button(_confirmDelete ? "Apagar mesmo?" : "Apagar", ButtonKind.Ghost, LunetIcons.Trash, () =>
+            {
+                if (!_confirmDelete) { _confirmDelete = true; Rebuild(); }
+                else FileAction(DeleteOpen);
+            });
+            delete.Name = "DeleteOpen";
+            if (_confirmDelete) delete.Foreground = LunetTokens.Brush(LunetTokens.Color.Danger);
+            Add(delete);
+        }
+        else if (OpenPath is { } kept)
+        {
+            var note = LunetUi.Text($"{Path.GetFileName(kept)} é a base do jogo: não se renomeia nem se apaga.", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary);
+            note.VerticalAlignment = VerticalAlignment.Center;
+            Add(note);
+        }
+        return new Border { Child = row, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) };
+    }
+
+    // ---------- Find and replace ----------
+
+    private bool _findOpen;
+    private string _findQuery = "", _replaceText = "";
+    private bool _matchCase;
+    private readonly TextBlock _findCount = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+
+    public bool FindOpen => _findOpen;
+    private Lunet.Editor.FindOptions FindOptions => new(MatchCase: _matchCase);
+
+    public void ShowFind() { _findOpen = true; Rebuild(); }
+    public void HideFind() { _findOpen = false; Rebuild(); }
+
+    /// <summary>Sets what to look for; selects the first match from the caret. Returns how many there are.</summary>
+    public int Find(string query)
+    {
+        _findQuery = query;
+        var count = query.Length == 0 ? 0 : Lunet.Editor.FindReplace.FindAll(_surface.Text, query, FindOptions).Count;
+        _findCount.Text = query.Length == 0 ? "" : count == 0 ? "nada" : $"{count}×";
+        if (count > 0) FindNext(fromCaret: true);
+        return count;
+    }
+
+    /// <summary>Selects the next match (wrapping to the start).</summary>
+    public bool FindNext(bool fromCaret = false)
+    {
+        if (_findQuery.Length == 0) return false;
+        var text = _surface.Text;
+        var from = fromCaret ? _surface.SelectionStart : _surface.SelectionEnd;
+        var match = Lunet.Editor.FindReplace.FindNext(text, _findQuery, Math.Min(from, text.Length), FindOptions) ?? Lunet.Editor.FindReplace.FindNext(text, _findQuery, 0, FindOptions);
+        if (match is not { } m) return false;
+        _surface.Select(m.Start, m.Start + m.Length);
+        return true;
+    }
+
+    /// <summary>Replaces the selected match and goes to the next one.</summary>
+    public bool ReplaceCurrent(string replacement)
+    {
+        _replaceText = replacement;
+        var text = _surface.Text;
+        var (start, end) = (_surface.SelectionStart, _surface.SelectionEnd);
+        var selected = end > start ? text[start..end] : "";
+        if (selected.Length == 0 || !string.Equals(selected, _findQuery, _matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
+            return FindNext(fromCaret: true);
+        _surface.Replace(start, end, replacement, start + replacement.Length);
+        Find(_findQuery);
+        return true;
+    }
+
+    /// <summary>Replaces every match as one undo step. Returns how many were replaced.</summary>
+    public int ReplaceAll(string replacement)
+    {
+        _replaceText = replacement;
+        if (_findQuery.Length == 0) return 0;
+        var result = Lunet.Editor.FindReplace.ReplaceAll(_surface.Text, _findQuery, replacement, FindOptions, out var count);
+        if (count > 0) _surface.Replace(0, _surface.Text.Length, result, Math.Min(_surface.Caret, result.Length));
+        _findCount.Text = count == 0 ? "nada" : $"{count} trocado(s)";
+        return count;
+    }
+
+    private Control FindBar()
+    {
+        var find = new TextBox { Text = _findQuery, PlaceholderText = "Buscar", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center, Name = "FindText" };
+        AutomationProperties.SetName(find, "Buscar no arquivo");
+        find.TextChanged += (_, _) => Find(find.Text ?? "");
+        find.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; FindNext(); } else if (e.Key == Avalonia.Input.Key.Escape) { e.Handled = true; HideFind(); } };
+        var replace = new TextBox { Text = _replaceText, PlaceholderText = "Substituir por", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center, Name = "ReplaceText" };
+        AutomationProperties.SetName(replace, "Substituir por");
+        Button Small(string label, Action act, string name, string? tip = null)
+        {
+            var b = LunetUi.Button(label, ButtonKind.Ghost, null, act);
+            b.MinHeight = 40; b.Name = name;
+            AutomationProperties.SetName(b, tip ?? label);
+            return b;
+        }
+        var top = new DockPanel();
+        var close = LunetUi.IconButton(LunetIcons.Close, "Fechar a busca", HideFind);
+        var next = Small("↓", () => FindNext(), "FindNext", "Próximo");
+        var caseButton = Small("Aa", () => { _matchCase = !_matchCase; Find(find.Text ?? ""); Rebuild(); }, "MatchCase", "Diferenciar maiúsculas");
+        if (_matchCase) caseButton.Foreground = LunetTokens.Brush(LunetTokens.Color.Primary);
+        if (_findCount.Parent is Panel previous) previous.Children.Remove(_findCount);
+        _findCount.VerticalAlignment = VerticalAlignment.Center;
+        _findCount.Margin = new Thickness(LunetTokens.Space.Xs, 0);
+        foreach (var c in new Control[] { close, next, caseButton, _findCount }) { DockPanel.SetDock(c, Dock.Right); top.Children.Add(c); }
+        top.Children.Add(find);
+        var bottom = new DockPanel { Margin = new Thickness(0, LunetTokens.Space.Xxs, 0, 0) };
+        var all = Small("Tudo", () => ReplaceAll(replace.Text ?? ""), "ReplaceAll", "Substituir todos");
+        var one = Small("Trocar", () => ReplaceCurrent(replace.Text ?? ""), "ReplaceOne", "Substituir este");
+        DockPanel.SetDock(all, Dock.Right); DockPanel.SetDock(one, Dock.Right);
+        bottom.Children.Add(all); bottom.Children.Add(one); bottom.Children.Add(replace);
+        return new Border
+        {
+            Child = new StackPanel { Children = { top, bottom } }, Padding = new Thickness(LunetTokens.Space.Xs),
+            Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1),
+        };
+    }
+
     private void NewNote()
     {
         var existing = _shell.Workspace.Files().ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -265,13 +468,34 @@ public sealed class DocumentEditor : UserControl
             entries.Add(b);
         }
         if (_tab == WorkspaceTab.Notes)
+        {
+            // P2: the game's mind maps sit with its notes; they open as an outline.
+            foreach (var map in _shell.Workspace.Files().Where(f => f.StartsWith(Lunet.Core.ProjectNotes.Folder + "/", StringComparison.Ordinal)
+                && f.EndsWith(Lunet.Core.ProjectMindMap.Extension, StringComparison.OrdinalIgnoreCase)))
+            {
+                var path = map;
+                var b = LunetUi.Button(Path.GetFileName(map).Replace(Lunet.Core.ProjectMindMap.Extension, "", StringComparison.OrdinalIgnoreCase), ButtonKind.Ghost, LunetIcons.Map,
+                    () => _shell.WorkspaceView.OpenMindMap(path));
+                b.Name = "OpenMindMap-" + map;
+                entries.Add(b);
+            }
             entries.Add(LunetUi.Button("Nova nota", ButtonKind.Ghost, LunetIcons.Plus, NewNote));
+            var newMap = LunetUi.Button("Novo mapa mental", ButtonKind.Ghost, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap());
+            newMap.Name = "NewMindMap";
+            entries.Add(newMap);
+        }
+
+        var more = LunetUi.IconButton(LunetIcons.More, "Arquivo: novo, renomear, apagar, buscar", ToggleFileMenu, _fileMenu ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary);
+        more.Name = "FileMenu";
+        entries.Add(more);
 
         if (OpenPath is null && _tab == WorkspaceTab.Notes)
         {
+            var start = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+            start.Children.Add(LunetUi.Button("Nova nota", ButtonKind.Primary, LunetIcons.Plus, NewNote));
+            start.Children.Add(LunetUi.Button("Novo mapa mental", ButtonKind.Secondary, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap()));
             Content = LunetUi.EmptyState(LunetIcons.Notes, "Nenhuma nota neste jogo",
-                "Ideias, regras e roteiro ficam em Notes/ dentro do jogo, em Markdown, no seu disco.",
-                LunetUi.Button("Nova nota", ButtonKind.Primary, LunetIcons.Plus, NewNote));
+                "Ideias, regras e roteiro ficam em Notes/ dentro do jogo, em Markdown ou como mapa mental, no seu disco.", start);
             return;
         }
         var column = new StackPanel { Spacing = 2, Margin = new Thickness(LunetTokens.Space.Xs) };
@@ -302,6 +526,18 @@ public sealed class DocumentEditor : UserControl
             var stripHost = new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) };
             DockPanel.SetDock(stripHost, Dock.Top);
             root.Children.Add(stripHost);
+        }
+        if (_findOpen && OpenPath is not null)
+        {
+            var bar = FindBar();
+            DockPanel.SetDock(bar, Dock.Top);
+            root.Children.Add(bar);
+        }
+        if (_fileMenu)
+        {
+            var menu = FileMenu();
+            DockPanel.SetDock(menu, Dock.Top);
+            root.Children.Add(menu);
         }
         if (_keyboard?.Parent is Panel kp) kp.Children.Remove(_keyboard);
         if (_keyboard is not null) root.Children.Add(_keyboard);

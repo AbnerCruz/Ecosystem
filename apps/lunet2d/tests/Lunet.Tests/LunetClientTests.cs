@@ -477,9 +477,17 @@ public sealed class LunetClientTests
                 var entry = shell.Workspace.Project!.Manifest.EntryPoint;
                 shell.State.ShowPanel(SupportPanel.More);
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                var git = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Git");
-                git.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                Assert.Equal(("git", (string?)shell.State.Project), routes.Last());
+                var editor = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Editor completo");
+                editor.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal(("editor", (string?)shell.State.Project), routes.Last());
+                // Gerar APK moved into the shell (P5): it opens its own page, no route.
+                shell.State.ShowPanel(SupportPanel.More);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var apk = window.GetVisualDescendants().OfType<Button>().First(b => b.Name == "OpenApk");
+                apk.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.IsType<ApkView>(shell.WorkspaceView.Studio);
+                Assert.DoesNotContain(routes, r => r.Route == "apk");
+                shell.Back();
 
                 // The routed screen (e.g. the AI) edits the game on disk; back in the shell the editor shows it.
                 File.WriteAllText(Path.Combine(shell.Workspace.Project.Directory, entry), "// editado pela IA");
@@ -603,7 +611,7 @@ public sealed class LunetClientTests
                 Assert.All(bar, b => Assert.True(b.Bounds.Height >= LunetTokens.MinTouch - 0.5));
                 // D4: M3 navigation items are 64 dp tall.
                 var tabs = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("lunet-tab")).ToArray();
-                Assert.Equal(6, tabs.Length);
+                Assert.Equal(4, tabs.Length); // Código, Jogo, Recursos, Notas (Material: at most five)
                 Assert.All(tabs, t => Assert.True(t.Bounds.Height >= 64));
                 shell.GoHome();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();

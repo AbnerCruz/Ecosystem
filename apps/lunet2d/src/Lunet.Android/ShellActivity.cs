@@ -78,10 +78,15 @@ public sealed class ShellActivity : AvaloniaActivity
             LearningProgressPath = Path.Combine(FilesDir!.AbsolutePath, "learning", "progress.json"),
             // A6: the same Biblioteca as the previous screen (MainActivity.AssetLibrary).
             LibraryPath = Path.Combine(FilesDir!.AbsolutePath, "Library"),
+            GitAccountPath = Path.Combine(FilesDir!.AbsolutePath, "git-account.json"),
             // P4: the game runs full screen in the :gameplay process, prepared by the existing pipeline.
             PlayGame = game => OpenRoute("play-game", game),
+            // A4: the sound Studio plays its WAV through MediaPlayer (a temp file in the cache).
+            PlaySound = PlayWav,
             // P7: the same settings.json as the previous screens.
             SettingsPath = Path.Combine(FilesDir!.AbsolutePath, "settings.json"),
+            // P5: Gerar APK packs with the same runtime template and per-game Keystore key as the previous screen.
+            PackageGameApk = PackageGameApk,
             KeepScreenOn = on => { if (on) Window?.AddFlags(WindowManagerFlags.KeepScreenOn); else Window?.ClearFlags(WindowManagerFlags.KeepScreenOn); },
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
@@ -95,6 +100,40 @@ public sealed class ShellActivity : AvaloniaActivity
             if (show) ime.ShowSoftInput(view, global::Android.Views.InputMethods.ShowFlags.Implicit);
             else ime.HideSoftInputFromWindow(view.WindowToken, global::Android.Views.InputMethods.HideSoftInputFlags.None);
         };
+    }
+
+    private global::Android.Media.MediaPlayer? _player;
+
+    /// <summary>The previous screen's packing (MainActivity.GameBuild): runtime template from the app's assets, the
+    /// game's own signing key from the Android Keystore, so a new APK installs over the previous one.</summary>
+    private byte[] PackageGameApk(LunetProject project, IReadOnlyDictionary<string, byte[]> files)
+    {
+        if (!Guid.TryParse(project.Manifest.GameId, out var gameId)) throw new InvalidDataException("GameId inválido em lunet.json.");
+        using var template = Assets!.Open("templates/game-runtime.apk");
+        using var buffer = new MemoryStream();
+        template.CopyTo(buffer);
+        if (buffer.Length < 1024) throw new InvalidDataException("Runtime Android do Lunet ausente no pacote.");
+        try
+        {
+            return OfflineGameApkBuilder.Build(buffer.ToArray(), files, project.Manifest.PackageId, project.Name,
+                new AndroidGameApkSigner(gameId), project.Manifest.Orientation);
+        }
+        catch (Java.Lang.Exception e) { throw new InvalidOperationException("Assinatura no aparelho falhou: " + e.Message, e); }
+    }
+
+    private void PlayWav(byte[] wav)
+    {
+        try
+        {
+            var file = Path.Combine(CacheDir!.AbsolutePath, "studio-preview.wav");
+            File.WriteAllBytes(file, wav);
+            _player?.Release();
+            _player = new global::Android.Media.MediaPlayer();
+            _player.SetDataSource(file);
+            _player.Prepare();
+            _player.Start();
+        }
+        catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { global::Android.Util.Log.Warn("Lunet.Sound", ex.Message); }
     }
 
     /// <summary>

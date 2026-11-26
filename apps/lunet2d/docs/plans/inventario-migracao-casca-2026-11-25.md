@@ -24,7 +24,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 
 | Recurso | Onde está hoje | Estado | Próximo passo |
 |---|---|---|---|
-| Sprite Studio (desenho, frames, seleção, gestos, HSV) | `SpriteStudioView`, `MainActivity.Studio` | rota (Recursos/Studios) | **A1**: motor de canvas comum (gestos, zoom, undo por diferença, autosave) e Sprite v2 com camadas e clips. |
+| Sprite Studio (desenho, frames, seleção, gestos, HSV) | casca: `Views/SpriteStudioView` (lápis, borracha, balde, conta-gotas, quadros, prévia); tela anterior mantém seleção, HSV e gestos | **casca** (1ª fatia) | **A1**: motor de canvas comum (gestos, zoom, undo por diferença, autosave) e Sprite v2 com camadas e clips. |
 | Tile Studio (camadas, colisão, autotile) | `TileStudioView` | rota | **A2**: Tile v2 com IntGrid e regras. |
 | Música (faixas, padrões, sintetizador, WAV) | `MusicStudioView`, `MainActivity.Music` | rota | **A3**: grade de padrões e piano roll no canvas comum. |
 | Efeitos sonoros e áudio WAV | `MainActivity.AudioStudio`, `WaveAudioStudioView`, `AudioPreviewView` | rota | **A4**. |

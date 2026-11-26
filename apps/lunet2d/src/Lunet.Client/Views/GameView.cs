@@ -29,12 +29,15 @@ public sealed class GameView : UserControl
     {
         _shell = shell;
         Focusable = true;
-        _status.VerticalAlignment = VerticalAlignment.Center;
+        _status.VerticalAlignment = VerticalAlignment.Top;
+        _status.HorizontalAlignment = HorizontalAlignment.Left;
         _status.TextWrapping = TextWrapping.NoWrap;
-        _status.Margin = new Thickness(LunetTokens.Space.Xs, 0);
+        _status.Margin = new Thickness(LunetTokens.Space.S);
+        _status.IsHitTestVisible = false;
 
         // The bar scrolls sideways on a narrow phone instead of clipping its controls.
-        var barContent = new StackPanel { Orientation = Orientation.Horizontal, Children = { _bar, _status } };
+        // The frame time reads in the stage's corner, so the bar keeps its room for the controls.
+        var barContent = new StackPanel { Orientation = Orientation.Horizontal, Children = { _bar } };
         var barRow = new ScrollViewer
         {
             Content = barContent, Margin = new Thickness(LunetTokens.Space.Xs, LunetTokens.Space.Xxs),
@@ -51,10 +54,16 @@ public sealed class GameView : UserControl
         KeyDown += (_, e) => { if (Map(e.Key) is { } k) { _shell.Game.Key(k, true); e.Handled = true; } };
         KeyUp += (_, e) => { if (Map(e.Key) is { } k) { _shell.Game.Key(k, false); e.Handled = true; } };
 
+        // The controls sit at the bottom, in the thumb's reach (owner 25/11: mobile first); the status above them.
         var root = new DockPanel();
-        DockPanel.SetDock(barRow, Dock.Top);
-        root.Children.Add(barRow);
-        root.Children.Add(_stage);
+        var bottom = new Border
+        {
+            Child = barRow, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
+        };
+        DockPanel.SetDock(bottom, Dock.Bottom);
+        root.Children.Add(bottom);
+        root.Children.Add(new Panel { Children = { _stage, _status } });
         Content = root;
         Background = LunetTokens.Brush(LunetTokens.Color.Surface);
 
@@ -95,15 +104,17 @@ public sealed class GameView : UserControl
             _bar.Children.Add(PanelButton(SupportPanel.Performance, LunetIcons.Pulse, "Desempenho"));
         }
         else _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _shell.RunGame(), LunetTokens.Color.Primary));
-        foreach (var speed in GameSession.Speeds)
+        // One chip for the speed: a tap goes to the next one (0.25× → 0.5× → 1× → 2×), instead of four buttons off screen.
+        var speedLabel = game.Speed + "×";
+        var speedChip = LunetUi.Button(speedLabel, game.Speed == 1 ? ButtonKind.Ghost : ButtonKind.Primary, LunetIcons.Speed, () =>
         {
-            var label = speed + "×";
-            var chip = LunetUi.Button(label, speed == game.Speed ? ButtonKind.Primary : ButtonKind.Ghost, null, () => game.SetSpeed(speed));
-            chip.MinWidth = LunetTokens.MinTouch; chip.Padding = new Thickness(LunetTokens.Space.Xs, 0);
-            Avalonia.Automation.AutomationProperties.SetName(chip, "Velocidade " + label);
-            _bar.Children.Add(chip);
-        }
-
+            var i = GameSession.Speeds.ToList().IndexOf(game.Speed);
+            game.SetSpeed(GameSession.Speeds[(i + 1) % GameSession.Speeds.Count]);
+        });
+        speedChip.Padding = new Thickness(LunetTokens.Space.S, 0);
+        speedChip.Name = "SpeedChip";
+        Avalonia.Automation.AutomationProperties.SetName(speedChip, "Velocidade " + speedLabel + ", tocar muda");
+        _bar.Children.Add(speedChip);
         if (!running)
         {
             _frame = null;

@@ -127,7 +127,18 @@ public sealed class SupportPanelView : UserControl
             list.Children.Add(b);
         }
         if (_shell.OpenRoute is not null) list.Children.Add(LunetUi.Divider());
-        foreach (var (route, label, icon) in _shell.OpenRoute is null ? [] : LunetShell.GameRoutes)
+        // Versões (P6), Gerar APK (P5), Recursos (tab) and Notas (tab) live in the shell; only the full editor still opens the previous screen.
+        var versions = LunetUi.Button("Versões (Git)", ButtonKind.Ghost, LunetIcons.Folder, () => { _shell.State.ShowPanel(SupportPanel.None); _shell.WorkspaceView.OpenGit(); });
+        versions.HorizontalAlignment = HorizontalAlignment.Stretch;
+        versions.HorizontalContentAlignment = HorizontalAlignment.Left;
+        versions.Name = "OpenGit";
+        list.Children.Add(versions);
+        var apk = LunetUi.Button("Gerar APK", ButtonKind.Ghost, LunetIcons.Download, () => { _shell.State.ShowPanel(SupportPanel.None); _shell.WorkspaceView.OpenApk(); });
+        apk.HorizontalAlignment = HorizontalAlignment.Stretch;
+        apk.HorizontalContentAlignment = HorizontalAlignment.Left;
+        apk.Name = "OpenApk";
+        list.Children.Add(apk);
+        foreach (var (route, label, icon) in _shell.OpenRoute is null ? [] : LunetShell.GameRoutes.Where(r => r.Route is not ("git" or "apk" or "assets" or "notes")))
         {
             var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => _shell.OpenRoute?.Invoke(route, _shell.State.Project));
             b.HorizontalAlignment = HorizontalAlignment.Stretch;

@@ -18,9 +18,8 @@ public sealed class WorkspaceView : UserControl
     [
         (WorkspaceTab.Code, LunetIcons.Code, "Código"),
         (WorkspaceTab.Game, LunetIcons.Game, "Jogo"),
-        (WorkspaceTab.Art, LunetIcons.Art, "Arte"),
-        (WorkspaceTab.Map, LunetIcons.Map, "Mapa"),
-        (WorkspaceTab.Sound, LunetIcons.Sound, "Som"),
+        // Arte, Mapa and Som are one tab on the bar (Material: at most five destinations); their views stay.
+        (WorkspaceTab.Art, LunetIcons.Art, "Recursos"),
         (WorkspaceTab.Notes, LunetIcons.Notes, "Notas"),
     ];
 
@@ -45,6 +44,7 @@ public sealed class WorkspaceView : UserControl
     {
         _keyboardOpen = open;
         if (_tabBar is not null) _tabBar.IsVisible = !open;
+        if (_runFab is not null) _runFab.IsVisible = !open;
         if (_sheet is not null) _sheet.IsVisible = !open;
     }
 
@@ -93,10 +93,151 @@ public sealed class WorkspaceView : UserControl
         _code.SaveSession();
     }
 
+    private Control? _studio;
+
+    /// <summary>The Studio open over the workspace (Sprite or Tile), or null.</summary>
+    public Control? Studio => _studio;
+
+    /// <summary>Opens the Sprite Studio on a sprite of the game, full screen; leaving saves and comes back here (or to <paramref name="reopen"/>).</summary>
+    public SpriteStudioView OpenSprite(string path, Action? reopen = null)
+    {
+        var view = new SpriteStudioView(_shell, path, () => { _studio = null; if (reopen is not null) reopen(); else Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>Opens the Tile Studio on a map of the game (A2).</summary>
+    public TileStudioView OpenMap(string path)
+    {
+        var view = new TileStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>Opens the sound effects Studio (A4).</summary>
+    public SoundStudioView OpenSound(string path)
+    {
+        var view = new SoundStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>Opens a mind map of the game as an outline (P2).</summary>
+    public MindMapView OpenMindMap(string path)
+    {
+        var view = new MindMapView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    public MindMapView NewMindMap() => OpenMindMap(MindMapView.NewPath(_shell));
+
+    /// <summary>Opens Versões (Git) of the game (P6).</summary>
+    public GitView OpenGit()
+    {
+        var view = new GitView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>Opens Gerar APK (P5).</summary>
+    public ApkView OpenApk()
+    {
+        var view = new ApkView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>Opens a data table of the game (A5, Data Studio).</summary>
+    public DataView OpenData(string path)
+    {
+        var view = new DataView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    public DataView NewData(string name = "dados") => OpenData(DataView.Create(_shell, name));
+
+    /// <summary>Opens the game's palette (A5).</summary>
+    public PaletteView OpenPalette()
+    {
+        var view = new PaletteView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    /// <summary>Opens the particles Studio (A5).</summary>
+    public ParticleStudioView OpenParticles(string path)
+    {
+        var view = new ParticleStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    public ParticleStudioView NewParticles() => OpenParticles(ParticleStudioView.NewPath(_shell));
+
+    /// <summary>Opens the Music Studio (A3).</summary>
+    public MusicStudioView OpenMusic(string path)
+    {
+        var view = new MusicStudioView(_shell, path, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
+    public MusicStudioView NewMusic() => OpenMusic(MusicStudioView.NewPath(_shell));
+
+    /// <summary>A new sound effect.</summary>
+    public SoundStudioView NewSound() => OpenSound(SoundStudioView.NewPath(_shell));
+
+    /// <summary>A new map with its editable tileset.</summary>
+    public TileStudioView NewMap() => OpenMap(TileStudioView.Create(_shell));
+
+    /// <summary>A new sprite in Content/Textures (its PNG is where the game loads textures from).</summary>
+    public SpriteStudioView NewSprite()
+    {
+        var files = _shell.Workspace.Files();
+        var n = 1;
+        while (files.Contains($"Content/Textures/sprite-{n}.sprite.json")) n++;
+        return OpenSprite($"Content/Textures/sprite-{n}.sprite.json");
+    }
+
+    /// <summary>Back with a Studio open: save and leave it. False when none is open.</summary>
+    public bool CloseStudio() => _studio switch
+    {
+        SpriteStudioView sprite => sprite.Close(),
+        TileStudioView map => map.Close(),
+        SoundStudioView sound => sound.Close(),
+        MindMapView mind => mind.Close(),
+        MusicStudioView music => music.Close(),
+        GitView git => git.Close(),
+        ParticleStudioView particles => particles.Close(),
+        PaletteView palette => palette.Close(),
+        DataView data => data.Back(),
+        ApkView apk => apk.Close(),
+        _ => _resources?.CloseSheet() ?? false,
+    };
+
     /// <summary>Lays the workspace out for the current state (layout, tab, panel).</summary>
     public void Rebuild()
     {
+        if (_studio is not null)
+        {
+            foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
+            Content = _studio;
+            return;
+        }
         _tabBar = _sheet = null;
+        _runFab = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
         _code.Relayout();
         _notes.Relayout();
@@ -156,7 +297,7 @@ public sealed class WorkspaceView : UserControl
                 sheet.IsVisible = !_keyboardOpen;
                 root.Children.Add(sheet);
             }
-            root.Children.Add(Body(expanded));
+            root.Children.Add(WithRunButton(Body(expanded)));
         }
         _support.Refresh();
         Content = root;
@@ -164,7 +305,7 @@ public sealed class WorkspaceView : UserControl
 
     private bool IsSelected(WorkspaceTab tab) => _shell.State.CodeAndGameSideBySide
         ? tab is WorkspaceTab.Code or WorkspaceTab.Game
-        : _shell.State.Tab == tab;
+        : _shell.State.Tab == tab || (tab == WorkspaceTab.Art && _shell.State.Tab is WorkspaceTab.Map or WorkspaceTab.Sound);
 
     private Control Body(bool expanded)
     {
@@ -187,6 +328,30 @@ public sealed class WorkspaceView : UserControl
             _ => AssetsView(state.Tab),
         };
     }
+
+    /// <summary>
+    /// On a phone, Rodar (or Parar) floats bottom-right over the code, where the thumb rests (Material FAB); the game
+    /// tab has its own controls at the bottom. Hidden while typing: the code bar's Atalhos has the palette.
+    /// </summary>
+    private Control WithRunButton(Control body)
+    {
+        var state = _shell.State;
+        if (state.Tab is not (WorkspaceTab.Code or WorkspaceTab.Notes) || _keyboardOpen) return body;
+        var running = _shell.Game.State is GameState.Running or GameState.Paused;
+        var run = running
+            ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
+            : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
+        run.Name = "RunButton";
+        run.MinHeight = 56;
+        run.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
+        run.HorizontalAlignment = HorizontalAlignment.Right;
+        run.VerticalAlignment = VerticalAlignment.Bottom;
+        run.Margin = new Thickness(LunetTokens.Space.M);
+        _runFab = run;
+        return new Grid { Children = { body, run } };
+    }
+
+    private Button? _runFab;
 
     private Control TopBar()
     {
@@ -215,13 +380,17 @@ public sealed class WorkspaceView : UserControl
             actions.Children.Add(host);
         }
         else actions.Children.Add(panels);
-        var running = _shell.Game.State is GameState.Running or GameState.Paused;
-        var run = running
-            ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
-            : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
-        run.Name = "RunButton";
-        run.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
-        actions.Children.Add(run);
+        // Wide screens keep Rodar in the top bar (pointer, both hands); phones float it at the bottom.
+        if (_shell.State.Layout == ShellLayout.Expanded)
+        {
+            var running = _shell.Game.State is GameState.Running or GameState.Paused;
+            var run = running
+                ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
+                : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
+            run.Name = "RunButton";
+            run.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
+            actions.Children.Add(run);
+        }
         DockPanel.SetDock(actions, Dock.Right);
         bar.Children.Add(actions);
         _title.Margin = new Thickness(0);
@@ -244,29 +413,16 @@ public sealed class WorkspaceView : UserControl
         };
     }
 
+    private ResourcesPage? _resources;
+
+    /// <summary>Recursos: the game's art, maps, sounds, effects, data and fonts in one place (see <see cref="ResourcesPage"/>).</summary>
+    public ResourcesPage ResourcesTab => _resources ??= new ResourcesPage(_shell, this);
+
     private Control AssetsView(WorkspaceTab tab)
     {
-        var files = ProjectFiles.For(tab, _shell.Workspace.Files());
-        var (icon, title, studio) = tab switch
-        {
-            WorkspaceTab.Art => (LunetIcons.Art, "Arte", "Sprite Studio"),
-            WorkspaceTab.Map => (LunetIcons.Map, "Mapa", "Tile Studio"),
-            _ => (LunetIcons.Sound, "Som", "Music Studio"),
-        };
-        var honest = $"O {studio} entra nesta casca na Onda 3, sobre um motor de canvas comum. Os arquivos são os mesmos que o app Android já cria e edita.";
-        if (files.Count == 0) return LunetUi.EmptyState(icon, $"Nenhum arquivo de {title.ToLowerInvariant()} neste jogo", honest);
-        var list = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M) };
-        list.Children.Add(LunetUi.Title(title));
-        list.Children.Add(LunetUi.Secondary(honest));
-        foreach (var f in files)
-        {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.S, MinHeight = LunetTokens.MinTouch };
-            row.Children.Add(LunetIcons.Create(LunetIcons.File, LunetTokens.Color.TextSecondary));
-            var name = LunetUi.Text(f, LunetTokens.Type.Callout); name.VerticalAlignment = VerticalAlignment.Center;
-            row.Children.Add(name);
-            list.Children.Add(row);
-        }
-        return new ScrollViewer { Content = list };
+        // Rebuilt from disk each time the tab is shown (a Studio may have added files).
+        _resources = new ResourcesPage(_shell, this);
+        return _resources;
     }
 
     private static void Detach(Control c)
