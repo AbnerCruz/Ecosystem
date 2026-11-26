@@ -9,7 +9,10 @@
   - **Campos:** em tom, sem borda, com o rótulo fora e um anel violeta ao focar. Valem para texto, listas, interruptores, sliders, caixas de seleção, menus e dicas: nenhum controle fica mais com o cinza padrão do tema.
   - **Botões:** o principal é violeta sólido com texto branco, um por tela. Os secundários são tonais, sem contorno. Opções escolhidas aparecem em violeta suave.
   - **Folhas e cartões:** cantos de 20, sombra só no que flutua e cartões sem borda.
-  - **Movimento:** os botões encolhem um pouco ao toque (90 ms) e cores e campos mudam com transição de 150 ms.
+  - **Movimento:**
+    - Os botões encolhem um pouco ao toque (90 ms), e cores e campos mudam com transição de 150 ms.
+    - Folhas sobem com fade (300 ms). Páginas e Studios entram com fade e um leve deslocamento (220 ms).
+    - Com "remover animações" ligado no Android, tudo aparece na hora.
   - **Código:** comentários, chamadas e pontuação seguem as cores da linguagem.
 
 - **Dobrar código:** setas na margem dobram classes, métodos, blocos, `#region` e comentários. Pela paleta (lupa): **Dobrar ou desdobrar região**, **Dobrar tudo** e **Desdobrar tudo**.

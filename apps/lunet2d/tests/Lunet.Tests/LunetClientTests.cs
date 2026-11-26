@@ -165,6 +165,24 @@ public sealed class LunetClientTests
         }
     }
 
+    [Fact]
+    public void Motion_EntriesSettleVisible_AndReduceMotionSkipsThem()
+    {
+        UiSession.Run(() =>
+        {
+            var page = Lunet.Client.Ui.LunetUi.Enter(new Border { Width = 10, Height = 10 }, 24, TimeSpan.FromMilliseconds(1));
+            Assert.Equal(0, page.Opacity);                                       // starts hidden, below its place
+            var window = new Window { Width = 100, Height = 100, Content = page };
+            window.Show();
+            for (var i = 0; i < 20 && page.Opacity < 1; i++) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(5); }
+            Assert.Equal(1, page.Opacity, 2);                                    // and settles visible
+            Lunet.Client.Ui.LunetUi.ReduceMotion = true;
+            try { Assert.Equal(1, Lunet.Client.Ui.LunetUi.Enter(new Border()).Opacity); }
+            finally { Lunet.Client.Ui.LunetUi.ReduceMotion = false; }
+            window.Close();
+        });
+    }
+
     /// <summary>The Lunet copy of the tokens matches docs/design/tokens.json, the single authority (NN-001, DEC-0069).</summary>
     [Fact]
     public void Tokens_MatchTheEcosystemVisualLanguage()

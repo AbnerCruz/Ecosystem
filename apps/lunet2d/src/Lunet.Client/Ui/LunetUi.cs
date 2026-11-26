@@ -35,6 +35,38 @@ public static class Haptics
 
 public static class LunetUi
 {
+    /// <summary>"Reduzir movimento" (§8): entries become an instant appearance. Captures turn it on too.</summary>
+    public static bool ReduceMotion { get; set; }
+
+    /// <summary>
+    /// Entry motion of the visual language (§8): fade in while rising <paramref name="rise"/> dp, with the enter curve.
+    /// Sheets use 24 dp over 300 ms; pages and Studios 16 dp over 220 ms. Only opacity and transform animate.
+    /// </summary>
+    public static T Enter<T>(T control, double rise = 16, TimeSpan? duration = null) where T : Control
+    {
+        if (ReduceMotion) return control;
+        var time = duration ?? LunetTokens.Motion.Base;
+        var enter = new Avalonia.Animation.Easings.SplineEasing(0, 0, 0, 1);
+        control.Opacity = 0;
+        control.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse($"translateY({rise.ToString(System.Globalization.CultureInfo.InvariantCulture)}px)");
+        control.Transitions = new Avalonia.Animation.Transitions
+        {
+            new Avalonia.Animation.DoubleTransition { Property = Visual.OpacityProperty, Duration = time, Easing = enter },
+            new Avalonia.Animation.TransformOperationsTransition { Property = Visual.RenderTransformProperty, Duration = time, Easing = enter },
+        };
+        void Start(object? sender, VisualTreeAttachmentEventArgs e)
+        {
+            control.AttachedToVisualTree -= Start;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                control.Opacity = 1;
+                control.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("translateY(0px)");
+            }, Avalonia.Threading.DispatcherPriority.Render);
+        }
+        control.AttachedToVisualTree += Start;
+        return control;
+    }
+
     public static TextBlock Text(string text, double size = LunetTokens.Type.Body, string color = LunetTokens.Color.TextPrimary,
         FontWeight weight = FontWeight.Normal) => new()
     {

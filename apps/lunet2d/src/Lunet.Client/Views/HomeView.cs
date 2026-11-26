@@ -388,8 +388,8 @@ public sealed class HomeView : UserControl
         // A scrim that closes on tap: the sheet is light, nothing is lost by dismissing it.
         var scrim = new Border { Background = LunetTokens.Brush(LunetTokens.Color.Scrim) };
         scrim.PointerPressed += (_, _) => CloseSheet();
-        _overlay.Children.Add(scrim);
-        _overlay.Children.Add(card);
+        _overlay.Children.Add(LunetUi.Enter(scrim, 0, LunetTokens.Motion.Fast));
+        _overlay.Children.Add(LunetUi.Enter(card, 24, LunetTokens.Motion.Slow));
         Sheet = card;
     }
 
@@ -400,7 +400,7 @@ public sealed class HomeView : UserControl
     {
         _overlay.Children.Clear();
         var learn = new LearnView(_shell, () => CloseOverlay());
-        _overlay.Children.Add(learn);
+        _overlay.Children.Add(LunetUi.Enter(learn));
         Sheet = learn;
         Select(Destination.Learn);
         return learn;
@@ -411,7 +411,7 @@ public sealed class HomeView : UserControl
     {
         _overlay.Children.Clear();
         var settings = new SettingsView(_shell);
-        _overlay.Children.Add(settings);
+        _overlay.Children.Add(LunetUi.Enter(settings));
         Sheet = settings;
         Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
         return settings;
@@ -422,7 +422,7 @@ public sealed class HomeView : UserControl
     {
         _overlay.Children.Clear();
         var play = new PlayView(_shell, () => CloseOverlay());
-        _overlay.Children.Add(play);
+        _overlay.Children.Add(LunetUi.Enter(play));
         Sheet = play;
         Select(Destination.Play);
         return play;
@@ -433,7 +433,7 @@ public sealed class HomeView : UserControl
     {
         _overlay.Children.Clear();
         var studios = new StudiosView(_shell, () => CloseOverlay(), (root, path) => ShowLibrary().ShowPublishStudio(root, path));
-        _overlay.Children.Add(studios);
+        _overlay.Children.Add(LunetUi.Enter(studios));
         Sheet = studios;
         Select(Destination.Studios);
         return studios;
@@ -444,7 +444,7 @@ public sealed class HomeView : UserControl
     {
         _overlay.Children.Clear();
         var library = new LibraryView(_shell, () => CloseOverlay());
-        _overlay.Children.Add(library);
+        _overlay.Children.Add(LunetUi.Enter(library));
         Sheet = library;
         Select(_shell.OpenRoute is null ? Destination.Library : Destination.More);
         return library;

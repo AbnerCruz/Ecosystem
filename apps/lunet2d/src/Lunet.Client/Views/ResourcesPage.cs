@@ -323,7 +323,7 @@ public sealed class ResourcesPage : UserControl
         };
         var scrim = new Border { Background = LunetTokens.Brush(LunetTokens.Color.Scrim) };
         scrim.PointerPressed += (_, e) => { CloseSheet(); e.Handled = true; };
-        _sheet = new Grid { Children = { scrim, sheet } };
+        _sheet = new Grid { Children = { LunetUi.Enter(scrim, 0, LunetTokens.Motion.Fast), LunetUi.Enter(sheet, 24, LunetTokens.Motion.Slow) } };
         _root.Children.Add(_sheet);
     }
 

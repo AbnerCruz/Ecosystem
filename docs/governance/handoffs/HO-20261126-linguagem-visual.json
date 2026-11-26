@@ -33,12 +33,14 @@
     "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
     "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
     "apps/lunet2d/CHANGELOG.md",
-    "docs/governance/handoffs/HO-20261126-linguagem-visual.json"
+    "docs/governance/handoffs/HO-20261126-linguagem-visual.json",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs"
   ],
   "work_completed": [
     "Owner order (26/11/2026) recorded as ADD-0037 / DEC-0069: study of UX, colour, typography, inputs, panels, borders, motion and effects with contemporary references and community discussions (docs/design/estudo-visual-2026-11-26.md, sources linked).",
     "Ecosystem visual language v1.0 (docs/design/linguagem-visual.md) with docs/design/tokens.json as the single authority of values: cool ink scale of 12 steps, violet (action/brand) and blue (information/selection), Inter + JetBrains Mono, 4-pt spacing, radii, elevation by tone, components (buttons, fields, selection, lists, sheets), motion tokens, effects budget, contrast WCAG AA + APCA floors, anti-patterns and review checklist; AGENTS.md §1.4 points every agent to it.",
-    "Lunet adopts v1.0: LunetTokens copied from tokens.json (version declared, test compares), Fluent palette and resource keys re-tinted for every stock control (fields without border and a 2 px violet focus ring, combo, switch, slider, checks, menus, tool tips, scroll bars), Inter embedded (Avalonia.Fonts.Inter) and JetBrains Mono embedded (OFL), buttons with press scale and colour transitions, primary = violet solid + white, secondary tonal without border, Selected kind for chosen options, cards and sheets without borders, shared Notice/Section/Field/Row components, labels outside fields in Versões, one primary per screen there."
+    "Lunet adopts v1.0: LunetTokens copied from tokens.json (version declared, test compares), Fluent palette and resource keys re-tinted for every stock control (fields without border and a 2 px violet focus ring, combo, switch, slider, checks, menus, tool tips, scroll bars), Inter embedded (Avalonia.Fonts.Inter) and JetBrains Mono embedded (OFL), buttons with press scale and colour transitions, primary = violet solid + white, secondary tonal without border, Selected kind for chosen options, cards and sheets without borders, shared Notice/Section/Field/Row components, labels outside fields in Versões, one primary per screen there.",
+    "Entry motion (§8): LunetUi.Enter (fade + rise with the enter curve; sheets 24 dp/300 ms, pages and Studios 16 dp/220 ms, scrims fade 150 ms), LunetUi.ReduceMotion honoured from Android's animator duration scale and used by the headless captures; test Motion_EntriesSettleVisible_AndReduceMotionSkipsThem."
   ],
   "verification": [
     {

@@ -85,7 +85,7 @@ public sealed class StudiosView : UserControl
         return true;
     }
 
-    private void Show(Control studio) { _studio = studio; Content = studio; }
+    private void Show(Control studio) { _studio = studio; Content = LunetUi.Enter(studio); }
     private void Home() { _studio = null; Content = _home; Fill(); }
 
     private string Unique(string folder, string stem, string ext)
