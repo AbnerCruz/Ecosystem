@@ -40,7 +40,10 @@ public sealed class LunetClientLearnTests
                 Click(Find<Button>(learn, "CreateChallenge")!);
                 Assert.Equal(ShellLevel.Workspace, shell.State.Level);
                 Assert.Equal("AprenderLRN001P1", shell.State.Project);
-                Assert.Equal(SupportPanel.Docs, shell.State.Panel); // the challenge's reference beside the code
+                Assert.Equal(SupportPanel.Objectives, shell.State.Panel); // the mission's objectives beside the code (anexo A §6.4)
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Click(Find<Button>(shell, "ObjectiveReference")!);              // its Referência: the exact offline page
+                Assert.Equal(SupportPanel.Docs, shell.State.Panel);
                 Assert.StartsWith("guide:responder-ao-toque", shell.WorkspaceView.Support.Docs.Page!.Target);
                 Assert.Null(shell.Home.Sheet);
 

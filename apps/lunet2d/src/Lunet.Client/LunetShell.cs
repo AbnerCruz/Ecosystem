@@ -351,6 +351,17 @@ public sealed class LunetShell : UserControl
     public void GoHome() => State.GoHome();
 
     /// <summary>Saves, compiles and runs. On a phone it switches to the Jogo tab; on a wide screen the game is already beside the code.</summary>
+    /// <summary>
+    /// Plays a game: full screen on its own (Android: the head's <see cref="PlayGame"/>), else running in the
+    /// workspace. The one path for the Jogar grid and the Home's menu.
+    /// </summary>
+    public void Play(string name)
+    {
+        if (PlayGame is { } play) { play(name); return; }
+        OpenProject(name);
+        RunGame();
+    }
+
     public void RunGame()
     {
         if (Workspace.Project is null) return;

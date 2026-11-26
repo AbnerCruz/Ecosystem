@@ -586,7 +586,8 @@ public sealed class HomeView : UserControl
             b.Name = "Action-" + label;
             list.Children.Add(b);
         }
-        Item("Abrir", LunetIcons.Play, () => { CloseSheet(); _shell.OpenProject(name); });
+        Item("Editar", LunetIcons.Code, () => { CloseSheet(); _shell.OpenProject(name); });
+        Item("Jogar", LunetIcons.Play, () => { CloseSheet(); _shell.Play(name); }); // same path as the Jogar grid
         Item(IsPinned(name) ? "Desafixar" : "Fixar no início", LunetIcons.Star, () => { CloseSheet(); TogglePin(name); });
         Item("Renomear", LunetIcons.Edit, () => ShowRename(name));
         Item("Duplicar", LunetIcons.Copy, () => Run(() =>

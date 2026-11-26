@@ -53,10 +53,8 @@ public sealed class PlayView : UserControl
     /// <summary>Plays a game (the same path as a tap).</summary>
     public void Play(string name)
     {
-        if (_shell.PlayGame is { } play) { play(name); return; }
-        _close();
-        _shell.OpenProject(name);
-        _shell.RunGame();
+        if (_shell.PlayGame is null) _close(); // the game opens in the workspace: Jogar steps aside
+        _shell.Play(name);
     }
 
     private Control Cover(string name, double width)
