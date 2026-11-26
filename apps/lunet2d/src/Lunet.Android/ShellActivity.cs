@@ -225,7 +225,7 @@ public sealed class ShellActivity : AvaloniaActivity
             player.SetDataSource(file);
             player.PrepareAsync();
         }
-        catch (OperationCanceledException) when (write.IsCancellationRequested) { }
+        catch (System.OperationCanceledException) when (write.IsCancellationRequested) { }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or Java.Lang.Exception)
         {
             if (!write.IsCancellationRequested) WavFailed(e.Message);
