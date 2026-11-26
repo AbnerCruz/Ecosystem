@@ -30,7 +30,20 @@
 - **IA do jogo mais leve ao responder:**
   - enquanto a resposta chega, só o trecho ao vivo é atualizado, no máximo 10 vezes por segundo; antes, a conversa inteira era redesenhada a cada pedaço de texto;
   - se você subir para ler, a tela não é puxada de volta para o fim.
-- **Correção:** o botão Rodar não cobre mais as teclas da barra de código.
+- **Navegação organizada (reconciliação de UX):**
+  - a mesma barra global no celular e no computador: **Início · Jogar · Aprender · Studios · Mais**; em tela larga ela fica na lateral;
+  - Mais reúne Lunet IA, **Documentação** (agora também fora de um jogo), Biblioteca, Explorar e Ajustes;
+  - a Home se chama Área de trabalho, e o menu ⋮ de cada jogo tem **Editar** e **Jogar**;
+  - Studios aparecem agrupados em Arte, Áudio e Outros;
+  - abrir uma missão em Aprender leva ao jogo com os **Objetivos** ao lado do código;
+  - a aba do arquivo mostra **•** enquanto há alterações não salvas.
+- **Correções:**
+  - o botão Rodar não cobre mais as teclas da barra de código;
+  - a aba Jogo não perde mais a barra Código · Jogo · Recursos · Notas;
+  - Jogar mostra duas capas por linha no celular;
+  - um `lunet.json` danificado não derruba mais a Home;
+  - a IA não mistura jogos nem recarrega outro jogo por cima de texto não salvo;
+  - visual: profundidade por tom, sem bordas decorativas; Ajustes com botão de voltar.
 - **Validação:** testado no computador. Não testado num celular.
 
 ## 0.0.1-dev.1000609 — Música e WAV nos Studios
