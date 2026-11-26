@@ -31,6 +31,37 @@ public sealed class SettingsView : UserControl
         Build();
     }
 
+    private Control? _main;
+
+    /// <summary>The open Pasta de projetos page, or null.</summary>
+    public ProjectFolderView? Folder { get; private set; }
+
+    /// <summary>Opens Pasta de projetos inside Ajustes (Back returns here).</summary>
+    public ProjectFolderView ShowFolder(ProjectFolderHost host)
+    {
+        _main ??= (Control)Content!;
+        Folder = new ProjectFolderView(_shell, host);
+        var root = new DockPanel();
+        var back = LunetUi.IconButton(LunetIcons.Back, "Voltar aos ajustes", () => Back());
+        back.Margin = new Thickness(LunetTokens.Space.Xs);
+        back.HorizontalAlignment = HorizontalAlignment.Left;
+        DockPanel.SetDock(back, Dock.Top);
+        root.Children.Add(back);
+        root.Children.Add(Folder);
+        Content = root;
+        return Folder;
+    }
+
+    /// <summary>Back: from Pasta de projetos to Ajustes; false at Ajustes itself (the Home closes it).</summary>
+    public bool Back()
+    {
+        if (Folder is null || _main is null) return false;
+        Folder = null;
+        Content = _main;
+        Build();
+        return true;
+    }
+
     private void Build()
     {
         _page.Children.Clear();
@@ -74,11 +105,14 @@ public sealed class SettingsView : UserControl
             Toggle("Manter a tela ligada", "Enquanto o Lunet estiver aberto", settings.KeepScreenOn, v => Change(s => s.KeepScreenOn = v), "KeepScreenOn");
         }
 
-        if (_shell.OpenRoute is { } route)
+        if (_shell.ProjectFolder is not null || _shell.AiHost is not null)
         {
             Section("Projetos e IA");
-            Link("Pasta de projetos", "Onde ficam seus jogos: interna ou uma pasta sua, com revisões", () => route("project-folder", null), "ProjectFolder");
-            Link("Configurar IA", "Provedor, modelo e chave, guardada no cofre do aparelho", () => route("ai-settings", null), "AiSettings");
+            if (_shell.ProjectFolder is { } folder)
+                Link("Pasta de projetos", "Onde ficam seus jogos: interna ou uma pasta sua, com revisões", () => ShowFolder(folder), "ProjectFolder");
+            // In the shell now (LUNET-521): the same store and vault as the AI of each game.
+            if (_shell.AiHost is not null)
+                Link("Configurar IA", "Provedor, modelo e chave, guardada no cofre do aparelho", () => _shell.Home.ShowGlobalAi(settings: true), "AiSettings");
         }
 
         Section("Sobre");

@@ -181,6 +181,15 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens Conexões of the game (P8).</summary>
+    public ConnectionsView OpenConnections()
+    {
+        var view = new ConnectionsView(_shell, () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
     /// <summary>Opens Gerar APK (P5).</summary>
     public ApkView OpenApk()
     {
@@ -260,6 +269,7 @@ public sealed class WorkspaceView : UserControl
         PaletteView palette => palette.Close(),
         DataView data => data.Back(),
         ApkView apk => apk.Close(),
+        ConnectionsView connections => connections.Close(),
         WaveEditorView wave => wave.Close(),
         _ => _resources?.CloseSheet() ?? false,
     };

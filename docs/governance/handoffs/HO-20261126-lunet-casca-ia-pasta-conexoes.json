@@ -1,0 +1,61 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-lunet-casca-ia-pasta-conexoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T12:43:00Z",
+  "agent": { "id": "claude-code-lunet-avalonia", "kind": "ai-agent" },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "a8d1be9",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Client/Views/GlobalAiView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ProjectFolderView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ConnectionsView.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectFolderSync.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SettingsView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidProjectFolder.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GlobalAiTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectFolderTests.cs",
+    "apps/lunet2d/docs/plans/inventario-migracao-casca-2026-11-25.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "docs/governance/handoffs/HO-20261126-lunet-casca-ia-pasta-conexoes.json"
+  ],
+  "work_completed": [
+    "LUNET-521 in the shell: GlobalAiView over WorkspaceAiChat (same ai/workspace-history.json as the previous screen), AiSettingsView (provider, model, endpoint, key in the vault, forget key) from Ajustes and the AI gear; no ai/ai-settings routes used.",
+    "P1 Pasta de projetos in the shell: ProjectFolderSync in Lunet.Core is a line-by-line port of MainActivity.ProjectFolder (connect/reconnect, publish verified revision refusing a foreign one, restore into a new working copy, swap, internal/resume, refuse a new folder with unpublished work); IProjectFolderTree implemented by AndroidProjectFolder; ProjectFolderView in Ajustes; ShellActivity picks the SAF tree, takes/releases the persistable grant and reopens the shell over the new root.",
+    "P8 Conexões in the shell: ConnectionsView lists the Host Registry for the game's Context, runs text.inspect locally and offers the optional paired Ecosystem client (EcosystemConnection hook from ShellActivity).",
+    "Inventory updated: only Explorar still routes to the previous screen (frozen by ADD-0036 §4 until the Onda 2 gate)."
+  ],
+  "verification": [
+    { "check": "GlobalAiTests, ConnectionsTests, ProjectFolderTests", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/tests/Lunet.Tests" },
+    { "check": "Lunet.Android build", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/src/Lunet.Android" }
+  ],
+  "known_issues": [
+    "Not tested on a phone: SAF picker, persistable grants and the paired Ecosystem client run only on Android.",
+    "Explorar stays on the previous screen: frozen by ADD-0036 §4 until the Onda 2 gate, an owner decision."
+  ],
+  "blockers": [],
+  "next_actions": ["M5 embedded GL preview in the Jogo tab; LUNET-535 cold start; LUNET-533 own code view decision."],
+  "decisions_required": [],
+  "reuse_assessment": [
+    { "subject": "project-folder-revisions", "status": "product-specific", "rationale": "Lunet's working copy and revision scheme; no other Product consumes it." }
+  ],
+  "normative_sources": ["AGENTS.md", "apps/lunet2d/AGENTS.md", "docs/governance/addenda/ADD-0036-lunet-casca-avalonia.md"],
+  "invariants": [
+    { "id": "NN-003", "evidence": "The Ecosystem connection is optional; Conexões works without it and hides it on heads without a client." },
+    { "id": "NN-017", "evidence": "Headless tests only; no device claim." }
+  ],
+  "criticality": { "declared": "routine" }
+}

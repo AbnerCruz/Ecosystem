@@ -196,6 +196,12 @@ public sealed class LunetShell : UserControl
         }
     }
 
+    /// <summary>The optional paired connection to the Ecosystem on this device (Android); null hides it (NN-003).</summary>
+    public Views.EcosystemConnection? EcosystemConnection { get; set; }
+
+    /// <summary>The chosen projects folder (Android: SAF); null hides Ajustes → Pasta de projetos.</summary>
+    public Views.ProjectFolderHost? ProjectFolder { get; set; }
+
     /// <summary>The AI settings, key vault and history the head provides (M7); null hides the AI.</summary>
     public AiHost? AiHost { get; set; }
 

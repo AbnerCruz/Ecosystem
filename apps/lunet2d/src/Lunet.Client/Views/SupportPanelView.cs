@@ -139,6 +139,11 @@ public sealed class SupportPanelView : UserControl
         apk.HorizontalContentAlignment = HorizontalAlignment.Left;
         apk.Name = "OpenApk";
         list.Children.Add(apk);
+        var connections = LunetUi.Button("Conexões", ButtonKind.Ghost, LunetIcons.Map, () => { _shell.State.ShowPanel(SupportPanel.None); _shell.WorkspaceView.OpenConnections(); });
+        connections.HorizontalAlignment = HorizontalAlignment.Stretch;
+        connections.HorizontalContentAlignment = HorizontalAlignment.Left;
+        connections.Name = "OpenConnections";
+        list.Children.Add(connections);
         return new ScrollViewer { Content = list };
     }
 

@@ -6,7 +6,7 @@ using Uri = Android.Net.Uri;
 namespace Lunet.Android;
 
 /// <summary>Revision I/O through DocumentsContract. The provider's document IDs remain opaque.</summary>
-internal sealed class AndroidProjectFolder(ContentResolver resolver, Uri tree)
+internal sealed class AndroidProjectFolder(ContentResolver resolver, Uri tree) : IProjectFolderTree
 {
     private const string PendingPrefix = "lunet-pending-";
     private const string RevisionPrefix = "lunet-revision-";

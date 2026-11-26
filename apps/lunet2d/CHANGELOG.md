@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.0.1-dev.1000608 — IA sem jogo, Pasta de projetos e Conexões na casca
+
+- **Lunet IA sem jogo** (Início → Mais → Lunet IA): uma conversa que não lê nem altera seus projetos. A conversa anterior continua, porque usa o mesmo histórico da tela antiga. Uma falha de rede devolve a mensagem ao campo.
+- **Configurar IA na casca** (Ajustes → Configurar IA ou a engrenagem da IA): provedor, modelo, endereço e chave. A chave fica no cofre do aparelho e nunca no arquivo de ajustes. Dá para apagar a chave de cada provedor.
+- **Pasta de projetos na casca** (Ajustes → Pasta de projetos), com as mesmas regras da tela antiga:
+  - escolher ou reconectar uma pasta sua pelo seletor do sistema;
+  - gravar uma revisão conferida;
+  - abrir uma revisão antiga numa nova cópia de trabalho;
+  - voltar à cópia anterior;
+  - usar os jogos internos;
+  - liberar o acesso.
+
+  Nada é apagado. Trocar de pasta é recusado enquanto houver trabalho não gravado na pasta anterior.
+- **Conexões na casca** (Painéis → Conexões):
+  - as capabilities que o Host tem neste jogo;
+  - text.inspect rodando localmente sobre o código aberto;
+  - a conexão opcional com o Ecosystem do aparelho, para conectar e testar ou esquecer a conexão.
+- **Fora da casca agora:** só Explorar abre a tela antiga. Ele está congelado por decisão do proprietário até o portão da Onda 2.
+- **Validação:** testado no computador. Não testado num celular.
+
 ## 0.0.1-dev.1000607 — Editor e teclado: Enter, cursor, teclado que abre e não fecha sozinho
 
 Corrige os problemas de teclado no editor e na IA. O estudo com as causas está em `docs/architecture/editor-de-texto-avalonia.md`.

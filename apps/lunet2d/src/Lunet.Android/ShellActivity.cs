@@ -89,6 +89,16 @@ public sealed class ShellActivity : AvaloniaActivity
             // P5: Gerar APK packs with the same runtime template and per-game Keystore key as the previous screen.
             PackageGameApk = PackageGameApk,
             KeepScreenOn = on => { if (on) Window?.AddFlags(WindowManagerFlags.KeepScreenOn); else Window?.ClearFlags(WindowManagerFlags.KeepScreenOn); },
+            // P8: the paired IPC client of the previous screen, now offered by the shell's Conexões (optional, NN-003).
+            EcosystemConnection = new Lunet.Client.Views.EcosystemConnection(
+                async (text, token) => { var r = await (_ecosystem ??= new EcosystemHostClient(this)).ConnectAndInspectAsync(text, token); return (r.Success, r.Message); },
+                () => (_ecosystem ??= new EcosystemHostClient(this)).ResetTrust()),
+            ProjectFolder = new Lunet.Client.Views.ProjectFolderHost(
+                new ProjectFolderSync(FilesDir!.AbsolutePath, CacheDir!.AbsolutePath),
+                PickProjectFolder,
+                key => new AndroidProjectFolder(ContentResolver!, global::Android.Net.Uri.Parse(key)!),
+                key => ReleaseProjectFolder(key),
+                () => Window?.DecorView?.Post(ReopenOverNewRoot)),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
         };
@@ -107,6 +117,59 @@ public sealed class ShellActivity : AvaloniaActivity
             if (show) view.Post(() => ime.ShowSoftInput(view, 0));
             else ime.HideSoftInputFromWindow(view.WindowToken, global::Android.Views.InputMethods.HideSoftInputFlags.None);
         };
+    }
+
+    // ---------------- Pasta de projetos (LUNET-536 P1: the shell's page over the system folder picker) ----------------
+
+    private EcosystemHostClient? _ecosystem;
+    private const int ProjectFolderRequest = 4139;
+    private TaskCompletionSource<(string, IProjectFolderTree)?>? _folderPick;
+
+    private Task<(string Key, IProjectFolderTree Tree)?> PickProjectFolder()
+    {
+        _folderPick?.TrySetResult(null);
+        var pick = _folderPick = new TaskCompletionSource<(string, IProjectFolderTree)?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var intent = new Intent(Intent.ActionOpenDocumentTree);
+        intent.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.GrantWriteUriPermission |
+            ActivityFlags.GrantPersistableUriPermission | ActivityFlags.GrantPrefixUriPermission);
+        try { StartActivityForResult(intent, ProjectFolderRequest); }
+        catch (ActivityNotFoundException) { _folderPick = null; _shell?.Report("O seletor de pastas está indisponível."); return Task.FromResult<(string, IProjectFolderTree)?>(null); }
+        return pick.Task!;
+    }
+
+    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
+    {
+        if (requestCode != ProjectFolderRequest) { base.OnActivityResult(requestCode, resultCode, data); return; }
+        var pick = _folderPick;
+        _folderPick = null;
+        if (pick is null) return;
+        if (resultCode != Result.Ok || data?.Data is not global::Android.Net.Uri tree) { pick.TrySetResult(null); return; }
+        try
+        {
+            ContentResolver!.TakePersistableUriPermission(tree, data.Flags & (ActivityFlags.GrantReadUriPermission | ActivityFlags.GrantWriteUriPermission));
+            pick.TrySetResult((tree.ToString()!, new AndroidProjectFolder(ContentResolver!, tree)));
+        }
+        catch (Java.Lang.SecurityException ex) { _shell?.Report("A pasta não autorizou escrita: " + ex.Message); pick.TrySetResult(null); }
+    }
+
+    private void ReleaseProjectFolder(string key)
+    {
+        try
+        {
+            using var tree = global::Android.Net.Uri.Parse(key)!;
+            ContentResolver!.ReleasePersistableUriPermission(tree, ActivityFlags.GrantReadUriPermission | ActivityFlags.GrantWriteUriPermission);
+        }
+        catch (Java.Lang.SecurityException) { }
+    }
+
+    /// <summary>The projects folder changed: the shell reopens over it (what OnResume does after the previous screen).</summary>
+    private void ReopenOverNewRoot()
+    {
+        if (_shell is null || ProjectsRoot(this) == _projectsRoot) return;
+        _shell.SaveAll();
+        _shell.Shutdown();
+        CreateShell();
+        ApplyDevice(Resources?.Configuration);
     }
 
     private global::Android.Media.MediaPlayer? _player;
@@ -183,6 +246,13 @@ public sealed class ShellActivity : AvaloniaActivity
         }
         // Back from a routed screen: those screens may have changed the games (AI edits, Git, Studios).
         _shell?.ReturnedFromRoute();
+    }
+
+    protected override void OnDestroy()
+    {
+        _ecosystem?.Dispose();
+        _ecosystem = null;
+        base.OnDestroy();
     }
 
     protected override void OnPause()
