@@ -178,7 +178,7 @@ public sealed class ApkView : UserControl
         foreach (var (value, label) in new[] { ("portrait", "Vertical"), ("landscape", "Horizontal") })
         {
             var v = value;
-            var b = LunetUi.Button(label, manifest.Orientation == value ? ButtonKind.Primary : ButtonKind.Secondary, null, () => Run(() => SetOrientation(v)));
+            var b = LunetUi.Button(label, manifest.Orientation == value ? ButtonKind.Selected : ButtonKind.Secondary, null, () => Run(() => SetOrientation(v)));
             b.Name = "Orientation-" + value;
             orientation.Children.Add(b);
         }
@@ -220,17 +220,7 @@ public sealed class ApkView : UserControl
         }
     }
 
-    private static TextBlock Section(string text)
-    {
-        var t = LunetUi.Text(text.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
-        t.Margin = new Thickness(0, LunetTokens.Space.M, 0, 0);
-        return t;
-    }
+    private static TextBlock Section(string text) => LunetUi.Section(text);
 
-    private static Control Notice(string text, string color) => new Border
-    {
-        Child = LunetUi.Text(text, LunetTokens.Type.Label), Padding = new Thickness(LunetTokens.Space.S),
-        Background = LunetTokens.Brush(LunetTokens.Color.Surface), CornerRadius = new CornerRadius(LunetTokens.Radius.S),
-        BorderBrush = LunetTokens.Brush(color), BorderThickness = new Thickness(3, 0, 0, 0),
-    };
+    private static Control Notice(string text, string color) => LunetUi.Notice(text, color);
 }

@@ -181,7 +181,7 @@ public sealed class SoundStudioView : UserControl
         foreach (var w in new[] { (Waveform.Square, "Quadrada"), (Waveform.Triangle, "Triângulo"), (Waveform.Saw, "Serra"), (Waveform.Sine, "Seno"), (Waveform.Noise, "Ruído") })
         {
             var (wave, label) = w;
-            var b = LunetUi.Button(label, Sound.Wave == wave ? ButtonKind.Primary : ButtonKind.Ghost, null, () => Set(Sound with { Wave = wave }));
+            var b = LunetUi.Button(label, Sound.Wave == wave ? ButtonKind.Selected : ButtonKind.Ghost, null, () => Set(Sound with { Wave = wave }));
             b.MinHeight = 40;
             b.Margin = new Thickness(0, 0, LunetTokens.Space.Xxs, LunetTokens.Space.Xxs);
             waves.Children.Add(b);
@@ -216,10 +216,5 @@ public sealed class SoundStudioView : UserControl
         _knobs.Children.Add(row);
     }
 
-    private static TextBlock Section(string text)
-    {
-        var t = LunetUi.Text(text.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
-        t.Margin = new Thickness(0, LunetTokens.Space.S, 0, 0);
-        return t;
-    }
+    private static TextBlock Section(string text) => LunetUi.Section(text);
 }

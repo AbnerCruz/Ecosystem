@@ -71,9 +71,9 @@ public sealed class CodeSurface : ITextSurface
         _editor.Options.IndentationSize = 4;
         _editor.Options.EnableHyperlinks = false;
         _editor.Options.EnableEmailHyperlinks = false;
-        _editor.TextArea.TextView.CurrentLineBackground = LunetTokens.Brush("#1b1d22");
+        _editor.TextArea.TextView.CurrentLineBackground = LunetTokens.Brush(LunetTokens.Ink.I2);
         _editor.TextArea.TextView.CurrentLineBorder = new Pen(LunetTokens.Brush("#00000000"));
-        _editor.TextArea.SelectionBrush = LunetTokens.Brush("#665b45cf");
+        _editor.TextArea.SelectionBrush = LunetTokens.Brush(LunetTokens.Color.Selection);
         _editor.TextArea.SelectionCornerRadius = 3;
         _editor.TextArea.Caret.CaretBrush = LunetTokens.Brush(LunetTokens.Color.Primary);
         AutomationProperties.SetName(_editor.TextArea, "Editor de código");
@@ -219,11 +219,11 @@ public sealed class CodeSurface : ITextSurface
         {
             var hex = color.Name switch
             {
-                "Comment" => "#7f8696",
+                "Comment" => LunetTokens.Ink.I10,
                 "String" or "Char" => "#a5d6a7",
                 "Preprocessor" => "#c4a7e7",
-                "Punctuation" => "#b8bdc8",
-                "MethodCall" => "#82aaff",
+                "Punctuation" => LunetTokens.Ink.I11,
+                "MethodCall" => LunetTokens.Color.Info,
                 "NumberLiteral" => "#f7c97e",
                 "NullOrValueKeywords" or "TrueFalse" => "#ff9e80",
                 "Keywords" or "GotoKeywords" or "ContextKeywords" or "ExceptionKeywords" or "CheckedKeyword" or "UnsafeKeywords"

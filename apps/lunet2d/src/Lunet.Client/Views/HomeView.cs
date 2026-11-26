@@ -220,7 +220,7 @@ public sealed class HomeView : UserControl
     /// <summary>A stable colour per game (its name hashed onto the accent family), so cards are told apart at a glance.</summary>
     public static string CardColor(string name)
     {
-        string[] palette = ["#3b3270", "#27466b", "#2f5a4a", "#5a3b52", "#5a4a2b", "#2b4f5a"];
+        string[] palette = ["#3A2F7A", "#1E3F78", "#2E3A8C", "#4A2F78", "#213F66", "#3B2A66"];
         uint h = 2166136261;
         foreach (var c in name) h = (h ^ c) * 16777619;
         return palette[h % (uint)palette.Length];
@@ -374,8 +374,9 @@ public sealed class HomeView : UserControl
         header.Children.Add(t);
         var card = new Border
         {
-            Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
-            BorderBrush = LunetTokens.Brush(LunetTokens.Color.BorderStrong), BorderThickness = new Thickness(compact ? 0 : 1, 1, compact ? 0 : 1, compact ? 0 : 1),
+            // §6.5: a sheet is ink 5 with the floating shadow; a hairline on top catches the light.
+            Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay),
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Hairline), BorderThickness = new Thickness(compact ? 0 : 1, 1, compact ? 0 : 1, compact ? 0 : 1),
             CornerRadius = compact ? new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0) : new CornerRadius(LunetTokens.Radius.Xl),
             Padding = new Thickness(LunetTokens.Space.L, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.L),
             Width = compact ? double.NaN : 440, MaxWidth = 520, MaxHeight = Bounds.Height > 0 ? Bounds.Height * 0.85 : double.PositiveInfinity,
@@ -385,7 +386,7 @@ public sealed class HomeView : UserControl
             Child = new DockPanel { Children = { DockTop(header), new ScrollViewer { Content = body } } },
         };
         // A scrim that closes on tap: the sheet is light, nothing is lost by dismissing it.
-        var scrim = new Border { Background = LunetTokens.Brush("#99000000") };
+        var scrim = new Border { Background = LunetTokens.Brush(LunetTokens.Color.Scrim) };
         scrim.PointerPressed += (_, _) => CloseSheet();
         _overlay.Children.Add(scrim);
         _overlay.Children.Add(card);
@@ -543,8 +544,8 @@ public sealed class HomeView : UserControl
                 {
                     Content = stack, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
                     Padding = new Thickness(LunetTokens.Space.S), MinHeight = LunetTokens.MinTouch,
-                    Background = LunetTokens.Brush(selected ? LunetTokens.Color.PrimarySoft : LunetTokens.Color.Surface),
-                    BorderBrush = LunetTokens.Brush(selected ? LunetTokens.Color.Primary : LunetTokens.Color.Border), BorderThickness = new Thickness(1),
+                    // §6.4/§6.6: selection by tone (violet soft, violet title), never a border.
+                    Background = LunetTokens.Brush(selected ? LunetTokens.Color.PrimarySoft : LunetTokens.Color.Surface), BorderThickness = new Thickness(0),
                     CornerRadius = new CornerRadius(LunetTokens.Radius.M), Name = "Template-" + t,
                 };
                 AutomationProperties.SetName(b, title + (selected ? ", escolhido" : ""));
@@ -561,7 +562,7 @@ public sealed class HomeView : UserControl
             orientations.Children.Clear();
             foreach (var (value, label) in new[] { ("landscape", "Paisagem"), ("portrait", "Retrato") })
             {
-                var b = LunetUi.Button(label, value == orientation ? ButtonKind.Primary : ButtonKind.Secondary, null, () => { orientation = value; DrawOrientations(); });
+                var b = LunetUi.Button(label, value == orientation ? ButtonKind.Selected : ButtonKind.Secondary, null, () => { orientation = value; DrawOrientations(); });
                 b.Name = "Orientation-" + value;
                 orientations.Children.Add(b);
             }

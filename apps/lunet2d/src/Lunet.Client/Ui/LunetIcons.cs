@@ -67,7 +67,7 @@ public static class LunetIcons
         {
             Data = StreamGeometry.Parse(data),
             Stroke = LunetTokens.Brush(color),
-            StrokeThickness = 1.8,
+            StrokeThickness = 1.75, // the icon stroke of the visual language (§7)
             StrokeLineCap = PenLineCap.Round,
             StrokeJoin = PenLineJoin.Round,
             Fill = filled ? LunetTokens.Brush(color) : null,

@@ -7,7 +7,17 @@ using Avalonia.Media;
 namespace Lunet.Client.Ui;
 
 /// <summary>Visual weight of a button.</summary>
-public enum ButtonKind { Primary, Secondary, Ghost }
+public enum ButtonKind
+{
+    /// <summary>The one main action of a screen: solid violet, white text.</summary>
+    Primary,
+    /// <summary>Tonal (ink 4): secondary actions.</summary>
+    Secondary,
+    /// <summary>Text only: tertiary actions, bars.</summary>
+    Ghost,
+    /// <summary>The chosen option of a group (chip, segment, tab): violet soft with violet text, never the solid.</summary>
+    Selected,
+}
 
 /// <summary>
 /// The component set of the shell: every screen is built from these, never from hand-set colours and sizes
@@ -43,14 +53,16 @@ public static class LunetUi
     /// <summary>A labelled button, optionally with an icon before the label.</summary>
     public static Button Button(string label, ButtonKind kind = ButtonKind.Secondary, string? icon = null, Action? onClick = null)
     {
-        var (bg, fg, border) = kind switch
+        // §6.1: principal = solid violet 9 with white text (one per screen); tonal = ink 4; ghost = text only. No borders.
+        var (bg, fg) = kind switch
         {
-            ButtonKind.Primary => (LunetTokens.Color.Primary, LunetTokens.Color.OnPrimary, LunetTokens.Color.Primary),
-            ButtonKind.Secondary => (LunetTokens.Color.SurfaceRaised, LunetTokens.Color.TextPrimary, LunetTokens.Color.BorderStrong),
-            _ => ("#00000000", LunetTokens.Color.TextPrimary, "#00000000"),
+            ButtonKind.Primary => (LunetTokens.Color.Accent, LunetTokens.Color.OnAccent),
+            ButtonKind.Secondary => (LunetTokens.Color.SurfaceRaised, LunetTokens.Color.TextPrimary),
+            ButtonKind.Selected => (LunetTokens.Color.PrimarySoft, LunetTokens.Color.Primary),
+            _ => ("#00000000", LunetTokens.Color.TextPrimary),
         };
         var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs, VerticalAlignment = VerticalAlignment.Center };
-        if (icon is not null) content.Children.Add(LunetIcons.Create(icon, fg, 18, filled: icon == LunetIcons.Play));
+        if (icon is not null) content.Children.Add(LunetIcons.Create(icon, fg, 20, filled: icon == LunetIcons.Play));
         content.Children.Add(new TextBlock
         {
             Text = label, FontFamily = LunetTokens.UiFont, FontSize = LunetTokens.Type.Callout, FontWeight = FontWeight.SemiBold,
@@ -60,10 +72,9 @@ public static class LunetUi
         {
             Content = content,
             MinHeight = LunetTokens.MinTouch,
-            Padding = new Thickness(LunetTokens.Space.M, 0),
+            Padding = new Thickness(icon is null ? 20 : LunetTokens.Space.M, 0, 20, 0),
             Background = LunetTokens.Brush(bg),
-            BorderBrush = LunetTokens.Brush(border),
-            BorderThickness = new Thickness(1),
+            BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(LunetTokens.Radius.M),
             VerticalContentAlignment = VerticalAlignment.Center,
             HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -129,16 +140,95 @@ public static class LunetUi
         return button;
     }
 
-    /// <summary>A raised surface with the family radius.</summary>
+    /// <summary>A card (§6.4): ink 3, radius l, no border. Only for heterogeneous content; never a card in a card.</summary>
     public static Border Card(Control child, double padding = LunetTokens.Space.M) => new()
     {
         Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-        BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border),
-        BorderThickness = new Thickness(1),
         CornerRadius = new CornerRadius(LunetTokens.Radius.L),
         Padding = new Thickness(padding),
         Child = child,
     };
+
+    /// <summary>A section header (§6.4): label 13/600 in capitals, ink 10, 24 above and 8 below.</summary>
+    public static TextBlock Section(string text)
+    {
+        var t = Text(text.ToUpperInvariant(), LunetTokens.Type.Label, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+        t.LetterSpacing = 0.5;
+        t.Margin = new Thickness(0, LunetTokens.Space.L, 0, LunetTokens.Space.Xs);
+        return t;
+    }
+
+    /// <summary>
+    /// A labelled field (§6.2): the label outside and above (13/500, ink 11), the control, and a hint or error below.
+    /// Placeholders are examples, never the label.
+    /// </summary>
+    public static StackPanel Field(string label, Control input, string? hint = null)
+    {
+        var stack = new StackPanel { Spacing = 6 };
+        stack.Children.Add(Text(label, LunetTokens.Type.Label, LunetTokens.Color.TextSecondary, FontWeight.Medium));
+        if (input is TextBox box && string.IsNullOrEmpty(AutomationProperties.GetName(box))) AutomationProperties.SetName(box, label);
+        stack.Children.Add(input);
+        if (hint is not null) stack.Children.Add(Text(hint, LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary));
+        return stack;
+    }
+
+    /// <summary>
+    /// A list row (§6.4): 40 dp leading tile, title 15/600 and subtitle 14 ink 11, optional trailing control; the whole
+    /// row is the touch target, hover and press are overlays.
+    /// </summary>
+    public static Button Row(string title, string? subtitle, Control? leading = null, Control? trailing = null, Action? onClick = null)
+    {
+        var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        var t = Text(title, LunetTokens.Type.Callout, weight: FontWeight.SemiBold);
+        t.TextTrimming = TextTrimming.CharacterEllipsis; t.TextWrapping = TextWrapping.NoWrap;
+        text.Children.Add(t);
+        if (!string.IsNullOrEmpty(subtitle))
+        {
+            var sub = Text(subtitle, LunetTokens.Type.BodySmall, LunetTokens.Color.TextSecondary);
+            sub.TextTrimming = TextTrimming.CharacterEllipsis; sub.TextWrapping = TextWrapping.NoWrap;
+            text.Children.Add(sub);
+        }
+        var dock = new DockPanel();
+        if (leading is not null) { leading.Margin = new Thickness(0, 0, LunetTokens.Space.S, 0); DockPanel.SetDock(leading, Dock.Left); dock.Children.Add(leading); }
+        if (trailing is not null) { trailing.Margin = new Thickness(LunetTokens.Space.S, 0, 0, 0); DockPanel.SetDock(trailing, Dock.Right); dock.Children.Add(trailing); }
+        dock.Children.Add(text);
+        var button = new Button
+        {
+            Content = dock, MinHeight = 56, Padding = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xs),
+            HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Center, Background = LunetTokens.Brush("#00000000"),
+            BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(LunetTokens.Radius.M),
+        };
+        button.Classes.Add("lunet-row");
+        AutomationProperties.SetName(button, string.IsNullOrEmpty(subtitle) ? title : $"{title}, {subtitle}");
+        if (onClick is not null) button.Click += (_, _) => onClick();
+        return button;
+    }
+
+    /// <summary>A 40 dp leading tile for a row: an icon on ink 4, radius s.</summary>
+    public static Border Tile(string icon, string color = LunetTokens.Color.Primary) => new()
+    {
+        Width = 40, Height = 40, CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+        Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
+        Child = LunetIcons.Create(icon, color, 20),
+    };
+
+    /// <summary>A notice (status line in a page): ink 3, radius m, a 3 dp coloured lead and an icon.</summary>
+    public static Border Notice(string text, string color)
+    {
+        var icon = color == LunetTokens.Color.Danger || color == LunetTokens.Color.Warning ? LunetIcons.Problems : LunetIcons.Check;
+        var row = new DockPanel();
+        var i = LunetIcons.Create(icon, color, 18);
+        i.Margin = new Thickness(0, 1, LunetTokens.Space.S, 0); i.VerticalAlignment = VerticalAlignment.Top;
+        DockPanel.SetDock(i, Dock.Left);
+        row.Children.Add(i);
+        row.Children.Add(Text(text, LunetTokens.Type.BodySmall));
+        return new Border
+        {
+            Child = row, Padding = new Thickness(LunetTokens.Space.S, 10), Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            CornerRadius = new CornerRadius(LunetTokens.Radius.M),
+        };
+    }
 
     /// <summary>An honest empty state: what is here, and what to do next. Never a fake feature.</summary>
     public static Control EmptyState(string icon, string title, string body, Control? action = null)

@@ -5,45 +5,79 @@ using Avalonia.Media.Immutable;
 namespace Lunet.Client.Ui;
 
 /// <summary>
-/// The visual system of the Lunet shell, defined once (ADR 0013). It is the same family as Numa
-/// (its design tokens): same near-black surfaces, 8-pt spacing, radii, type scale and
-/// 48 dp touch targets; only the accent is Lunet's own (violet). The values are copied, not referenced: Products do not
-/// depend on each other (NN-002). Extracting a shared <c>Ecosystem.Ui</c> needs the NN-022 review recorded in ADR 0013.
-/// Every text/background pair here meets WCAG AA (checked by <c>LunetClientTests.Tokens_TextPairsMeetAA</c>).
+/// The visual system of the Lunet shell: the Ecosystem visual language v1.0 (docs/design/linguagem-visual.md,
+/// DEC-0069 / ADD-0037). Values are copied from docs/design/tokens.json, the single authority (NN-001); Products do
+/// not depend on each other (NN-002). Lunet's leading accent is violet; blue is information, links and selection.
+/// Every text/background pair here meets WCAG AA and the APCA floors (LunetClientTests.Tokens_*).
 /// </summary>
 public static class LunetTokens
 {
-    /// <summary>The smallest touch target: 48 dp (Android guideline; the old shell used 40 dp keys).</summary>
+    /// <summary>The version of docs/design/tokens.json these values come from.</summary>
+    public const string LanguageVersion = "1.0.0";
+
+    /// <summary>The smallest touch target: 48 dp.</summary>
     public const double MinTouch = 48;
+
+    /// <summary>The neutral "ink" scale (12 steps, LCH, slightly cool), as in tokens.json.</summary>
+    public static class Ink
+    {
+        public const string I1 = "#0B0B0F", I2 = "#111116", I3 = "#17171E", I4 = "#1D1D26", I5 = "#24242F", I6 = "#2C2C38",
+            I7 = "#383846", I8 = "#4A4A5C", I9 = "#6E6E82", I10 = "#9494A9", I11 = "#B4B4C6", I12 = "#EDEDF3";
+    }
 
     public static class Color
     {
-        public const string Background = "#0e0f11";
-        public const string Surface = "#15161a";
-        public const string SurfaceRaised = "#1b1d22";
-        public const string SurfaceOverlay = "#24262c";
-        public const string Border = "#25272d";
-        public const string BorderStrong = "#33363e";
-        public const string TextPrimary = "#ececf0";
-        public const string TextSecondary = "#a3a6af";
-        public const string TextTertiary = "#898c95";
-        /// <summary>Lunet's accent: the violet of the old shell (#5b45cf) lifted to AA on the dark surfaces.</summary>
-        public const string Primary = "#a594ff";
-        public const string OnPrimary = "#140c33";
-        /// <summary>The accent at low opacity, for the selected tab and the selected card.</summary>
-        public const string PrimarySoft = "#33a594ff";
-        public const string Success = "#7fdca6";
-        public const string Warning = "#f1c46e";
-        public const string Danger = "#ff7b86";
-        /// <summary>The game surface letterbox.</summary>
+        /// <summary>ink 1: the app background (never pure black in the interface).</summary>
+        public const string Background = Ink.I1;
+        /// <summary>ink 2: bars, navigation, the keyboard deck.</summary>
+        public const string BackgroundSubtle = Ink.I2;
+        /// <summary>ink 3: fields, list rows, blocks.</summary>
+        public const string Surface = Ink.I3;
+        /// <summary>ink 4: raised surface and surface hover; tonal buttons.</summary>
+        public const string SurfaceRaised = Ink.I4;
+        /// <summary>ink 5: sheets, menus, dialogs, pressed.</summary>
+        public const string SurfaceOverlay = Ink.I5;
+        /// <summary>ink 6: dividers.</summary>
+        public const string Border = Ink.I6;
+        /// <summary>ink 7: a border where tone cannot separate.</summary>
+        public const string BorderStrong = Ink.I7;
+        public const string TextPrimary = Ink.I12;
+        public const string TextSecondary = Ink.I11;
+        public const string TextTertiary = Ink.I10;
+        public const string TextDisabled = Ink.I9;
+        /// <summary>violet 11: accent text, icons and indicators on dark.</summary>
+        public const string Primary = "#A594FF";
+        /// <summary>violet 9: the solid of the one main action (white text on it, 4.8:1).</summary>
+        public const string Accent = "#6E56F8";
+        public const string AccentHover = "#7A64FF";
+        public const string OnAccent = "#FFFFFF";
+        /// <summary>Kept for older callers: text on <see cref="Accent"/>.</summary>
+        public const string OnPrimary = OnAccent;
+        /// <summary>violet soft (16%): selected tab, selected chip, selected row.</summary>
+        public const string PrimarySoft = "#296E56F8";
+        /// <summary>blue: information, links, text selection.</summary>
+        public const string Info = "#7CB3FF";
+        public const string InfoSolid = "#2563EB";
+        public const string InfoSoft = "#292563EB";
+        public const string Selection = "#472563EB";
+        public const string Success = "#4ADE80";
+        public const string Warning = "#FBBF24";
+        public const string Danger = "#FF6B7A";
+        public const string DangerSoft = "#24FF6B7A";
+        /// <summary>Hover and pressed overlays (white at 4% and 8%), the hairline (7%) and the sheet scrim.</summary>
+        public const string Hover = "#0AFFFFFF";
+        public const string Pressed = "#14FFFFFF";
+        public const string Hairline = "#12FFFFFF";
+        public const string Scrim = "#A3000000";
+        /// <summary>The game surface letterbox (pure black only here).</summary>
         public const string Stage = "#000000";
-        /// <summary>Keyboard (LUNET-537 D2): the deck behind the keys, letter keys, modifier keys, pressed key.</summary>
-        public const string KeyboardDeck = "#111215";
-        public const string Key = "#2b2d34";
-        public const string KeyModifier = "#1d1f24";
-        public const string KeyPressed = "#3d4049";
+        /// <summary>Keyboard: the deck behind the keys, letter keys, modifier keys, pressed key.</summary>
+        public const string KeyboardDeck = Ink.I2;
+        public const string Key = Ink.I4;
+        public const string KeyModifier = Ink.I3;
+        public const string KeyPressed = Ink.I6;
         /// <summary>Code text (monospace).</summary>
-        public const string Code = "#e6e1f5";
+        public const string Code = "#E4E1F2";
     }
 
     public static class Space
@@ -53,18 +87,29 @@ public static class LunetTokens
 
     public static class Radius
     {
-        public const double S = 8, M = 12, L = 16, Xl = 24, Pill = 999;
+        public const double Xs = 6, S = 8, M = 10, L = 14, Xl = 20, Pill = 999;
     }
 
     public static class Type
     {
-        public const double Caption = 12, Label = 13, Callout = 15, Body = 16, Title = 20, Headline = 24, Code = 14;
+        public const double Caption = 12, Label = 13, BodySmall = 14, Callout = 15, Body = 16, TitleSmall = 17, Title = 20, Headline = 24, Display = 32, Code = 14;
     }
 
-    public static FontFamily UiFont { get; } = new("Segoe UI, Roboto, Inter, Helvetica Neue, Arial, sans-serif");
-    public static FontFamily MonoFont { get; } = new("Cascadia Mono, Consolas, JetBrains Mono, DejaVu Sans Mono, monospace");
+    /// <summary>Inter, embedded (Avalonia.Fonts.Inter, OFL); the system sans only if it cannot load.</summary>
+    public static FontFamily UiFont { get; } = new("avares://Avalonia.Fonts.Inter/Assets#Inter, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif");
+    /// <summary>JetBrains Mono, embedded (Assets/Fonts, OFL).</summary>
+    public static FontFamily MonoFont { get; } = new("avares://Lunet.Client/Assets/Fonts#JetBrains Mono, Cascadia Mono, Consolas, DejaVu Sans Mono, monospace");
 
-    public static BoxShadows Low { get; } = BoxShadows.Parse("0 1 2 0 #59000000, 0 6 20 0 #47000000");
+    /// <summary>Floating elements only (sheets, menus, dialogs, the floating button): shadow.overlay.</summary>
+    public static BoxShadows Low { get; } = BoxShadows.Parse("0 12 32 0 #99000000, 0 2 6 0 #66000000");
+
+    /// <summary>Motion durations (ms) and the press scale, from tokens.json.</summary>
+    public static class Motion
+    {
+        public static readonly TimeSpan Instant = TimeSpan.FromMilliseconds(90), Fast = TimeSpan.FromMilliseconds(150),
+            Base = TimeSpan.FromMilliseconds(220), Slow = TimeSpan.FromMilliseconds(300);
+        public const double PressScale = 0.97;
+    }
 
     private static readonly Dictionary<string, IImmutableSolidColorBrush> Brushes = new(StringComparer.Ordinal);
 

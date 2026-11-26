@@ -160,13 +160,13 @@ public sealed class StudiosView : UserControl
             var content = new StackPanel
             {
                 Spacing = LunetTokens.Space.Xs,
-                Children = { LunetIcons.Create(icon, primary ? LunetTokens.Color.OnPrimary : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, primary ? LunetTokens.Color.OnPrimary : LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
+                Children = { LunetIcons.Create(icon, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, primary ? LunetTokens.Color.OnAccent : LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
             };
             var b = new Button
             {
                 Content = content, Width = 116, Height = 76, Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs),
                 Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.L), BorderThickness = new Thickness(0),
-                Background = LunetTokens.Brush(primary ? LunetTokens.Color.Primary : LunetTokens.Color.Surface),
+                Background = LunetTokens.Brush(primary ? LunetTokens.Color.Accent : LunetTokens.Color.Surface),
                 HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Top, Name = name,
             };
             AutomationProperties.SetName(b, "Novo " + label);

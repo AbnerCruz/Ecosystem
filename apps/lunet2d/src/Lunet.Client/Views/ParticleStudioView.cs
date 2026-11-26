@@ -250,10 +250,5 @@ public sealed class ParticleStudioView : UserControl
         _knobs.Children.Add(new ScrollViewer { Content = row, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
     }
 
-    private static TextBlock Section(string text)
-    {
-        var t = LunetUi.Text(text.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
-        t.Margin = new Thickness(0, LunetTokens.Space.S, 0, 0);
-        return t;
-    }
+    private static TextBlock Section(string text) => LunetUi.Section(text);
 }

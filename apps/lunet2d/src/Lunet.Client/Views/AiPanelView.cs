@@ -161,7 +161,7 @@ public sealed class AiPanelView : UserControl
         var modes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
         foreach (var (mode, label, hint) in new[] { (LunetAiMode.Teach, "Estudar", "Explica e responde, não altera nada"), (LunetAiMode.Do, "Fazer", "Altera o jogo, mostra o que mudou e permite desfazer") })
         {
-            var b = LunetUi.Button(label, Mode == mode ? ButtonKind.Primary : ButtonKind.Ghost, null, () => { Mode = mode; BuildComposer(); });
+            var b = LunetUi.Button(label, Mode == mode ? ButtonKind.Selected : ButtonKind.Ghost, null, () => { Mode = mode; BuildComposer(); });
             b.MinHeight = 40;
             AutomationProperties.SetHelpText(b, hint);
             modes.Children.Add(b);
