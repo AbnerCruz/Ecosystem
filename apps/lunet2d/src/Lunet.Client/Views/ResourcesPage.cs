@@ -305,6 +305,8 @@ public sealed class ResourcesPage : UserControl
         body.Children.Add(LunetUi.Text(facts, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
         void Act(Button b, string name) { b.Name = name; b.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs); actions.Children.Add(b); }
+        if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && File.Exists(full))
+            Act(LunetUi.Button("Editar áudio", ButtonKind.Secondary, LunetIcons.Edit, () => EditWave(f)), "EditWave");
         if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && _shell.PlaySound is { } play && File.Exists(full))
             Act(LunetUi.Button("Ouvir", ButtonKind.Primary, LunetIcons.Play, () => play(File.ReadAllBytes(full))), "PlayResource");
         if (IsOtherText(f) || DataView.IsTable(f))
@@ -322,6 +324,18 @@ public sealed class ResourcesPage : UserControl
         scrim.PointerPressed += (_, e) => { CloseSheet(); e.Handled = true; };
         _sheet = new Grid { Children = { scrim, sheet } };
         _root.Children.Add(_sheet);
+    }
+
+    /// <summary>Opens a game's .wav in the WAV editor (a broken file says why instead of failing).</summary>
+    public void EditWave(string f)
+    {
+        CloseSheet();
+        try { _workspace.OpenWave(f); }
+        catch (Exception e) when (e is InvalidDataException or IOException or ArgumentException or NotSupportedException)
+        {
+            _notice = $"Não foi possível abrir {Path.GetFileName(f)}: {e.Message}";
+            Fill();
+        }
     }
 
     /// <summary>Opens a plain text file in the Código editor (the same verified saving).</summary>

@@ -78,6 +78,7 @@ public sealed class StudiosView : UserControl
                 case ParticleStudioView pa: return pa.Close();
                 case DataView d: return d.Back();
                 case PaletteView pv: return pv.Close();
+                case WaveEditorView wv: return wv.Close();
             }
         }
         _close();
@@ -118,6 +119,14 @@ public sealed class StudiosView : UserControl
     public DataView OpenData(string path) { var v = new DataView(_shell, path, Home, Storage); Show(v); return v; }
 
     public PaletteView OpenPalette(string path) { var v = new PaletteView(_shell, Home, Storage, path, p => _publish(Storage.RootDirectory, p)); Show(v); return v; }
+    /// <summary>A tone to shape in the WAV editor (as the previous screens' "Editor WAV").</summary>
+    public WaveEditorView NewTone(double hz = 440, double seconds = 0.5, Lunet.Studio.WaveShape shape = Lunet.Studio.WaveShape.Sine)
+    {
+        var v = new WaveEditorView(_shell, Storage, Lunet.Studio.WaveAudioDocument.CreateEffect(hz, seconds, shape), "tom", Home);
+        Show(v);
+        return v;
+    }
+
     public PaletteView NewPalette() => OpenPalette(Unique("Assets", "paleta", ".palette.json"));
 
     public SpriteStudioView NewSprite() => OpenSprite(Unique("Content/Textures", "sprite", ".sprite.json"));
@@ -171,6 +180,7 @@ public sealed class StudiosView : UserControl
         Tile(LunetIcons.Pulse, "Partículas", () => NewParticles(), "StudioNewParticles");
         Tile(LunetIcons.File, "Tabela", () => NewData(), "StudioNewData");
         Tile(LunetIcons.Art, "Paleta", () => NewPalette(), "StudioNewPalette");
+        Tile(LunetIcons.Pulse, "Tom (WAV)", () => NewTone(), "StudioNewTone");
         return tiles;
     }
 

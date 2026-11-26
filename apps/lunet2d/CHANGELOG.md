@@ -14,6 +14,10 @@
   - **Minhas criações** lista o que você fez, agrupado. Tocar edita.
   - **Publicar** leva a criação para a Biblioteca, de onde qualquer jogo pode usá-la.
   - Os rascunhos ficam na mesma pasta das telas anteriores, então nada se perde.
+- **Editor de WAV na interface nova** (Recursos → um `.wav` → Editar áudio, ou Studios → Tom):
+  - Recorte de início e fim e volume de 0 a 200%.
+  - Loop com marcadores gravados no WAV, para músicas que se repetem.
+  - **Ouvir** toca o resultado. **Salvar cópia** grava um novo `.wav` em `Content/Audio`, e o original nunca muda.
 - **Paleta completa na interface nova:**
   - **Importar .gpl ou hex** (GIMP, Krita, Aseprite) e **Exportar .gpl**.
   - **Gerar código C#** cria `Scripts/GamePalette.cs`, com uma `Color` por cor da paleta.

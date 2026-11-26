@@ -64,6 +64,10 @@ public static class ShellScreens
                 studios.NewSprite().Paint(3, 3, first: true); studios.Back();
                 studios.NewMusic(); studios.Back();
                 Shot(window, output, size, "2l-studios", written);
+                var tone = studios.NewTone(330, 1.2, Lunet.Studio.WaveShape.Triangle);
+                tone.SetCut(0.15, 0.95); tone.SetLoop(true, 0.3, 0.8);
+                Shot(window, output, size, "2m-wav", written);
+                studios.Back();
                 shell.Home.CloseSheet();
                 shell.Home.ShowSettings();
                 Shot(window, output, size, "2k-ajustes", written);

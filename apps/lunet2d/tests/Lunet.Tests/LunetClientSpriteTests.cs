@@ -1056,4 +1056,54 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void WaveEditor_CutsSetsVolumeAndLoop_PlaysAndSavesACopy()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-wave-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var played = new List<byte[]>();
+                var shell = new LunetShell(root) { PlaySound = played.Add };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                var studios = shell.Home.ShowStudios();
+                var tone = studios.NewTone(440, 1.0);
+                tone.SetCut(0.2, 0.7);
+                tone.SetGain(1.5f);
+                tone.SetLoop(true, 0.3, 0.6);
+                var wav = tone.Render();
+                var edited = Lunet.Studio.WaveAudioDocument.Parse(wav);
+                Assert.InRange(edited.DurationSeconds, 0.49, 0.51);                       // only the cut
+                tone.Play();
+                Assert.Single(played);
+                var copy = tone.SaveCopy();
+                Assert.Equal("Content/Audio/tom-editado.wav", copy);
+                Assert.Equal("Content/Audio/tom-editado-2.wav", tone.SaveCopy());        // never over the first
+                Assert.True(shell.Back());
+                Assert.Null(studios.Studio);
+
+                // In a game: a .wav from Recursos opens in the same editor; the original stays as it was.
+                studios.Back();
+                shell.CreateProject();
+                var original = Lunet.Studio.WaveAudioDocument.CreateEffect(220, 0.4, Lunet.Studio.WaveShape.Square).Render(0, 0.4);
+                shell.Workspace.Write("Content/Audio/passo.wav", "");
+                File.WriteAllBytes(Path.Combine(shell.Workspace.Project!.Directory, "Content", "Audio", "passo.wav"), original);
+                shell.State.SelectTab(WorkspaceTab.Art);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var page = window.GetVisualDescendants().OfType<ResourcesPage>().Single();
+                page.EditWave("Content/Audio/passo.wav");
+                var editor = Assert.IsType<WaveEditorView>(shell.WorkspaceView.Studio);
+                editor.SetCut(0.1, 0.3);
+                Assert.Equal("Content/Audio/passo-editado.wav", editor.SaveCopy());
+                Assert.Equal(original, File.ReadAllBytes(Path.Combine(shell.Workspace.Project.Directory, "Content", "Audio", "passo.wav")));
+                Assert.True(shell.Back());
+                Assert.Null(shell.WorkspaceView.Studio);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

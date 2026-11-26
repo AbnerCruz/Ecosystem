@@ -145,6 +145,17 @@ public sealed class WorkspaceView : UserControl
         return view;
     }
 
+    /// <summary>Opens the WAV editor on a game's .wav (cut, volume, loop; saves a copy).</summary>
+    public WaveEditorView OpenWave(string path)
+    {
+        var storage = new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Directory);
+        var audio = Lunet.Studio.WaveAudioDocument.Parse(File.ReadAllBytes(Path.Combine(storage.RootDirectory, path)));
+        var view = new WaveEditorView(_shell, storage, audio, Path.GetFileNameWithoutExtension(path), () => { _studio = null; Rebuild(); });
+        _studio = view;
+        Rebuild();
+        return view;
+    }
+
     /// <summary>Opens Gerar APK (P5).</summary>
     public ApkView OpenApk()
     {
@@ -224,6 +235,7 @@ public sealed class WorkspaceView : UserControl
         PaletteView palette => palette.Close(),
         DataView data => data.Back(),
         ApkView apk => apk.Close(),
+        WaveEditorView wave => wave.Close(),
         _ => _resources?.CloseSheet() ?? false,
     };
 
