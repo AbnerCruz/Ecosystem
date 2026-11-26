@@ -44,9 +44,13 @@ public sealed class MindMapView : UserControl
         _redo = LunetUi.IconButton(LunetIcons.Redo, "Refazer", () => { if (History.CanRedo) Change(h => h.Redo(Persist)); });
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.Xs, 0) };
         DockPanel.SetDock(back, Dock.Left);
+        var present = LunetUi.IconButton(LunetIcons.Play, "Apresentar", () => Present());
+        present.Name = "PresentMindMap";
+        DockPanel.SetDock(present, Dock.Right);
         DockPanel.SetDock(_redo, Dock.Right);
         DockPanel.SetDock(_undo, Dock.Right);
         bar.Children.Add(back);
+        bar.Children.Add(present);
         bar.Children.Add(_redo);
         bar.Children.Add(_undo);
         bar.Children.Add(new StackPanel
@@ -58,8 +62,67 @@ public sealed class MindMapView : UserControl
         DockPanel.SetDock(bar, Dock.Top);
         root.Children.Add(bar);
         root.Children.Add(new ScrollViewer { Content = new Border { Child = _rows, Padding = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.M, 96) } });
+        _outline = root;
         Content = root;
         Refresh();
+    }
+
+    private readonly Control _outline;
+
+    // ---------- Apresentar: one branch per slide (as the previous screen), buttons under the thumb ----------
+
+    private int? _slide;
+    public int? Slide => _slide;
+    public int SlideCount => Math.Max(1, Map.Topics.Count(t => t.Parent == Map.Root));
+
+    public void Present(int slide = 0)
+    {
+        _slide = Math.Clamp(slide, 0, SlideCount - 1);
+        var branches = Map.Topics.Where(t => t.Parent == Map.Root).ToArray();
+        var branch = branches.Length == 0 ? Map.Topics.First(t => t.Id == Map.Root) : branches[_slide.Value];
+        var body = new StackPanel { Spacing = LunetTokens.Space.S, Margin = new Thickness(LunetTokens.Space.L, LunetTokens.Space.Xl, LunetTokens.Space.L, LunetTokens.Space.L) };
+        body.Children.Add(LunetUi.Text(Map.Topics.First(t => t.Id == Map.Root).Text, LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold));
+        var title = LunetUi.Text(branch.Text, 30, LunetTokens.Color.TextPrimary, FontWeight.Bold);
+        title.TextWrapping = TextWrapping.Wrap;
+        body.Children.Add(title);
+        foreach (var place in Map.Walk(branch.Id, fold: false).Skip(branches.Length == 0 ? 0 : 1))
+        {
+            if (branches.Length == 0 && place.Topic.Id == Map.Root) continue;
+            var line = LunetUi.Text((place.Depth <= 1 ? "• " : "◦ ") + place.Topic.Text, place.Depth <= 1 ? 20 : LunetTokens.Type.Body,
+                place.Depth <= 1 ? LunetTokens.Color.TextPrimary : LunetTokens.Color.TextSecondary);
+            line.TextWrapping = TextWrapping.Wrap;
+            line.Margin = new Thickness(Math.Max(0, place.Depth - 1) * 24, 0, 0, 0);
+            body.Children.Add(line);
+        }
+        var previous = LunetUi.Button("Anterior", ButtonKind.Secondary, LunetIcons.Back, () => { if (_slide > 0) Present(_slide.Value - 1); });
+        previous.Name = "SlidePrevious";
+        previous.Opacity = _slide > 0 ? 1 : 0.35;
+        var next = LunetUi.Button(_slide + 1 < SlideCount ? "Próximo" : "Fim", ButtonKind.Primary, null, () => { if (_slide + 1 < SlideCount) Present(_slide.Value + 1); else EndPresentation(); });
+        next.Name = "SlideNext";
+        var counter = LunetUi.Text($"{_slide + 1} / {SlideCount}", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary);
+        counter.VerticalAlignment = VerticalAlignment.Center;
+        counter.HorizontalAlignment = HorizontalAlignment.Center;
+        var controls = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*"), Margin = new Thickness(LunetTokens.Space.M) };
+        foreach (var b in new[] { previous, next }) { b.MinHeight = 56; b.HorizontalAlignment = HorizontalAlignment.Stretch; }
+        Grid.SetColumn(counter, 1); Grid.SetColumn(next, 2);
+        counter.Margin = new Thickness(LunetTokens.Space.M, 0);
+        controls.Children.Add(previous); controls.Children.Add(counter); controls.Children.Add(next);
+        var close = LunetUi.IconButton(LunetIcons.Close, "Sair da apresentação", () => EndPresentation());
+        close.HorizontalAlignment = HorizontalAlignment.Right;
+        close.VerticalAlignment = VerticalAlignment.Top;
+        var page = new DockPanel { Background = LunetTokens.Brush(LunetTokens.Color.Background) };
+        DockPanel.SetDock(controls, Dock.Bottom);
+        page.Children.Add(controls);
+        page.Children.Add(new Grid { Children = { new ScrollViewer { Content = body }, close } });
+        Content = page;
+    }
+
+    public bool EndPresentation()
+    {
+        if (_slide is null) return false;
+        _slide = null;
+        Content = _outline;
+        return true;
     }
 
     public MindMapHistory History { get; }
@@ -113,7 +176,7 @@ public sealed class MindMapView : UserControl
 
     private void Persist(ProjectMindMap map) => _shell.Workspace.Project!.WriteText(_path, map.Serialize());
 
-    public bool Close() { _close(); return true; }
+    public bool Close() { if (EndPresentation()) return true; _close(); return true; }
 
     /// <summary>A new mind map in Notes/.</summary>
     public static string NewPath(LunetShell shell)

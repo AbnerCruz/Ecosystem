@@ -791,6 +791,29 @@ public sealed class LunetClientPaletteTests
                 Assert.Null(page.Open);
                 Assert.Equal(ShellLevel.Workspace, shell.State.Level);
 
+                Assert.Equal("Content/Data/config.json", page.Import("config.json", System.Text.Encoding.UTF8.GetBytes("{ \"vidas\": 3 }")));
+                Assert.Equal("Content/Data/notas.txt", page.Import("notas.txt", [65]));
+                Assert.Contains("Content/Data/notas.txt", ResourcesPage.Groups(shell.Workspace.Files()).First(g => g.Label == "Outros").Files);
+                Assert.Equal("Content/Data/quebrado.json", page.Import("quebrado.json", System.Text.Encoding.UTF8.GetBytes("vidas = 3")));
+                page.Activate("Content/Data/quebrado.json");                           // not readable as a table: the sheet
+                Assert.Null(shell.WorkspaceView.Studio);
+                Assert.Equal("Content/Data/quebrado.json", page.Open);
+                page.CloseSheet();
+                page.Activate("Content/Data/config.json");                             // an object reads as one record…
+                var table = Assert.IsType<DataView>(shell.WorkspaceView.Studio);
+                table.EditAsText();                                                    // …and can be edited as text
+                Assert.Null(shell.WorkspaceView.Studio);
+                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                Assert.Equal("Content/Data/config.json", shell.WorkspaceView.Code.OpenPath);
+                var analysis = shell.WorkspaceView.Code.AnalyzeNow();
+                while (!analysis.IsCompleted) Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Empty(((CodeSurface)shell.WorkspaceView.Code.Surface).Diagnostics);  // no C# errors on JSON
+                shell.WorkspaceView.Code.Surface.Text = "{ \"vidas\": 5 }";
+                Assert.True(shell.WorkspaceView.Code.Save());
+                Assert.Contains("5", shell.Workspace.Read("Content/Data/config.json"));
+                shell.State.SelectTab(WorkspaceTab.Art);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                page = window.GetVisualDescendants().OfType<ResourcesPage>().Single();
                 page.Activate("Content/Textures/sprite-1.sprite.json");
                 Assert.IsType<SpriteStudioView>(shell.WorkspaceView.Studio);
                 window.Close();
@@ -826,6 +849,8 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal("Scripts/Chefe.cs", code.RenameOpen("Chefe"));            // the extension is kept
                 Assert.DoesNotContain(path, shell.Workspace.Files());
                 Assert.Contains("vida = vida", shell.Workspace.Read("Scripts/Chefe.cs"));  // unsaved text went with it
+                Assert.Equal("Scripts/Inimigos/Chefe.cs", code.RenameOpen("Inimigos/Chefe")); // Pasta/Nome: into a folder
+                Assert.Throws<ArgumentException>(() => code.RenameOpen("../fora"));
 
                 code.ShowFind();
                 Assert.True(code.FindOpen);
@@ -837,11 +862,245 @@ public sealed class LunetClientPaletteTests
                 Assert.Equal("int hp = 3; hp = hp - 1; // hp", code.Surface.Text);
 
                 code.DeleteOpen();
-                Assert.DoesNotContain("Scripts/Chefe.cs", shell.Workspace.Files());
+                Assert.DoesNotContain("Scripts/Inimigos/Chefe.cs", shell.Workspace.Files());
                 Assert.NotNull(code.OpenPath);
                 code.Load(entry);
                 Assert.Throws<Lunet.Core.ProjectException>(() => code.DeleteOpen());   // the game's entry stays
                 Assert.Contains(entry, shell.Workspace.Files());
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void CodeEditor_FoldsRegions_SelectsOccurrences_InsertsBlocks_AndGoesBack()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-fold-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var editor = shell.WorkspaceView.Code;
+                var code = (CodeSurface)editor.Surface;
+                code.Text = "public sealed class A\n{\n    void M()\n    {\n        int x = 1;\n        x = x + 1;\n        int max = 2;\n    }\n}\n";
+                var analysis = editor.AnalyzeNow();
+                while (!analysis.IsCompleted) Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(code.FoldCount >= 2);                                   // the class and the method
+                code.GoTo(3, 5);
+                Assert.True(code.ToggleFoldAtCaret());
+                Assert.Equal(1, code.FoldedCount);
+                code.SetAllFolded(false);
+                Assert.Equal(0, code.FoldedCount);
+
+                code.GoTo(5, 13);                                                    // inside "x"
+                Assert.True(code.SelectNextOccurrence());
+                Assert.Equal("x", code.Text[code.SelectionStart..code.SelectionEnd]);
+                var first = code.SelectionStart;
+                Assert.True(code.SelectNextOccurrence());
+                Assert.True(code.SelectionStart > first);
+
+                editor.JumpTo(null, 1, 1);
+                Assert.Equal(1, editor.PositionsBack);
+                Assert.True(editor.BackToPosition());
+                Assert.True(code.Caret > 0);
+                Assert.False(editor.BackToPosition());
+
+                code.GoTo(5, 13);
+                editor.EditAllOccurrences();
+                Assert.True(editor.FindOpen);
+                Assert.Equal(3, editor.ReplaceAll("valor"));                          // x, x, x — "max"-like words untouched
+                Assert.Contains("int valor = 1;", code.Text);
+                Assert.Contains("int max = 2;", code.Text);
+                editor.HideFind();
+
+                var copy = editor.SaveCopyAs("Copia");
+                Assert.Equal("Copia.cs", copy);
+                Assert.Contains("int valor = 1;", shell.Workspace.Read(copy!));
+                Assert.Equal(copy, editor.OpenPath);
+                Assert.Throws<ArgumentException>(() => editor.SaveCopyAs("Copia"));
+
+                code.GoTo(5, 9);
+                var r = Lunet.Editor.IndentationService.InsertBlock(code.Text, code.SelectionStart, code.SelectionEnd);
+                code.Replace(r.Start, r.Start + r.DeleteLength, r.Insert, r.SelectionEnd);
+                Assert.Contains("{", code.Text.Split('\n')[4] + code.Text.Split('\n')[5]);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void MindMap_PresentsOneBranchPerSlide_AndBackLeavesThePresentation()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-present-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var map = shell.WorkspaceView.NewMindMap();
+                var a = map.AddChild(map.Map.Root, "Mecânicas");
+                map.AddChild(a, "Pulo duplo");
+                map.AddChild(map.Map.Root, "Fases");
+                map.Present();
+                Assert.Equal(0, map.Slide);
+                Assert.Equal(2, map.SlideCount);
+                window.UpdateLayout();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text?.Contains("Pulo duplo") == true);
+                map.Present(1);
+                window.UpdateLayout();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Fases");
+                Assert.True(shell.Back());                                             // Back ends the presentation…
+                Assert.Null(map.Slide);
+                Assert.Same(map, shell.WorkspaceView.Studio);                          // …and stays in the map
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void Studios_WithoutAGame_CreateEditSaveInTheStudioFolder_AndPublish()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-studios-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.Home.Go(HomeView.Destination.Studios);
+                var studios = Assert.IsType<StudiosView>(shell.Home.Sheet);
+                Assert.Null(shell.Workspace.Project);                                  // no game open
+
+                var sprite = studios.NewSprite();
+                sprite.Paint(2, 2, first: true);
+                Assert.True(shell.Back());                                             // saves and returns to the page
+                Assert.Null(studios.Studio);
+                Assert.Contains("Content/Textures/sprite-1.sprite.json", studios.Creations);
+                Assert.True(File.Exists(Path.Combine(shell.StudioWorkspacePath, "Content", "Textures", "sprite-1.png")));
+
+                var map = studios.NewMap();
+                map.EditTileset!(map.TilesetSource!);                                  // the tileset opens here, not in a game
+                Assert.IsType<SpriteStudioView>(studios.Studio);
+                shell.Back();
+                Assert.IsType<TileStudioView>(studios.Studio);                         // back to the map
+                shell.Back();
+
+                studios.NewMusic(); shell.Back();
+                studios.NewSound(); shell.Back();
+                studios.NewParticles(); shell.Back();
+                var data = studios.NewData("itens");
+                window.UpdateLayout();
+                Assert.False(window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "DataAsText").IsVisible);
+                shell.Back();
+                Assert.Contains(studios.Creations, f => f.EndsWith(".song.json"));
+                Assert.Contains(studios.Creations, f => f.EndsWith(".sfx.json"));
+                Assert.Contains(studios.Creations, f => f.EndsWith(".particles.json"));
+                Assert.Contains("Content/Data/itens.json", studios.Creations);
+
+                Assert.True(studios.Activate("Content/Textures/sprite-1.sprite.json"));
+                Assert.Equal(16, Assert.IsType<SpriteStudioView>(studios.Studio).Document.Width);
+                shell.Back();
+
+                // Publicar goes to the Biblioteca with the creation; it then lives there for any game.
+                var library = new Lunet.Core.ReusableAssetLibrary(shell.LibraryPath);
+                var published = library.PublishWorkspace(shell.StudioWorkspacePath, "Content/Textures/sprite-1.sprite.json", "Herói", "Ana", "CC0");
+                Assert.Equal(1, published.Version);
+                Assert.True(shell.Back());                                             // closes the Studios page
+                Assert.Null(shell.Home.Sheet);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void Palette_ImportsGplGeneratesCode_AndStandalonePaletteSavesWithItsGpl()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-palette2-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var palette = shell.WorkspaceView.OpenPalette();
+                Assert.Equal(2, palette.ImportText("GIMP Palette\nName: X\n#\n255   0   0\tVermelho\n  0   0 255\tAzul\n", "x"));
+                Assert.Equal(1, palette.ImportText("#00FF00\n#00ff00\n", "hex"));     // repeated colours once
+                var code = palette.GenerateCode();
+                Assert.Contains("public static readonly Color Vermelho", shell.Workspace.Read(code));
+                Assert.True(shell.Workspace.Compile().Success);                         // the generated class compiles
+                shell.Back();
+
+                shell.GoHome();
+                var studios = shell.Home.ShowStudios();
+                var standalone = studios.NewPalette();
+                standalone.UsePreset("neon");
+                var path = studios.Creations.Single(f => f.EndsWith(".palette.json"));
+                Assert.Contains(path[..^".palette.json".Length] + ".gpl", studios.Creations);
+                Assert.StartsWith("GIMP Palette", File.ReadAllText(Path.Combine(shell.StudioWorkspacePath, path[..^".palette.json".Length] + ".gpl")));
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void WaveEditor_CutsSetsVolumeAndLoop_PlaysAndSavesACopy()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-wave-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var played = new List<byte[]>();
+                var shell = new LunetShell(root) { PlaySound = played.Add };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                var studios = shell.Home.ShowStudios();
+                var tone = studios.NewTone(440, 1.0);
+                tone.SetCut(0.2, 0.7);
+                tone.SetGain(1.5f);
+                tone.SetLoop(true, 0.3, 0.6);
+                var wav = tone.Render();
+                var edited = Lunet.Studio.WaveAudioDocument.Parse(wav);
+                Assert.InRange(edited.DurationSeconds, 0.49, 0.51);                       // only the cut
+                tone.Play();
+                Assert.Single(played);
+                var copy = tone.SaveCopy();
+                Assert.Equal("Content/Audio/tom-editado.wav", copy);
+                Assert.Equal("Content/Audio/tom-editado-2.wav", tone.SaveCopy());        // never over the first
+                Assert.True(shell.Back());
+                Assert.Null(studios.Studio);
+
+                // In a game: a .wav from Recursos opens in the same editor; the original stays as it was.
+                studios.Back();
+                shell.CreateProject();
+                var original = Lunet.Studio.WaveAudioDocument.CreateEffect(220, 0.4, Lunet.Studio.WaveShape.Square).Render(0, 0.4);
+                shell.Workspace.Write("Content/Audio/passo.wav", "");
+                File.WriteAllBytes(Path.Combine(shell.Workspace.Project!.Directory, "Content", "Audio", "passo.wav"), original);
+                shell.State.SelectTab(WorkspaceTab.Art);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var page = window.GetVisualDescendants().OfType<ResourcesPage>().Single();
+                page.EditWave("Content/Audio/passo.wav");
+                var editor = Assert.IsType<WaveEditorView>(shell.WorkspaceView.Studio);
+                editor.SetCut(0.1, 0.3);
+                Assert.Equal("Content/Audio/passo-editado.wav", editor.SaveCopy());
+                Assert.Equal(original, File.ReadAllBytes(Path.Combine(shell.Workspace.Project.Directory, "Content", "Audio", "passo.wav")));
+                Assert.True(shell.Back());
+                Assert.Null(shell.WorkspaceView.Studio);
                 window.Close();
             });
         }

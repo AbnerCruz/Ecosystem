@@ -37,12 +37,13 @@ public sealed class ParticleStudioView : UserControl
     private Lunet.Graphics.ParticleEmitter? _emitter;
     private bool _dirty;
 
-    public ParticleStudioView(LunetShell shell, string path, Action close)
+    public ParticleStudioView(LunetShell shell, string path, Action close, StudioAssetWorkspace? storage = null)
     {
         _shell = shell;
         _path = path;
         _close = close;
-        _storage = new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        // A game's folder, or the standalone Studio folder (Home → Studios) when given.
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
         _device = new Lunet.Graphics.GraphicsDevice(_backend, Size, Size);
         _device.Resize(Size, Size);
         _batch = new Lunet.Graphics.SpriteBatch(_device);
