@@ -42,8 +42,12 @@ public sealed class DataView : UserControl
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => Back());
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.M, 0) };
+        var raw = LunetUi.IconButton(LunetIcons.Code, "Editar como texto", () => EditAsText());
+        raw.Name = "DataAsText";
         DockPanel.SetDock(back, Dock.Left);
+        DockPanel.SetDock(raw, Dock.Right);
         bar.Children.Add(back);
+        bar.Children.Add(raw);
         bar.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _title, _status } });
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
@@ -93,6 +97,14 @@ public sealed class DataView : UserControl
         if (_record is not null) { _record = null; Refresh(); return true; }
         _close();
         return true;
+    }
+
+    /// <summary>Leaves the Studio and opens the table's JSON in the Código editor.</summary>
+    public void EditAsText()
+    {
+        _close();
+        _shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
+        _shell.WorkspaceView.Code.Load(_path);
     }
 
     public void OpenRecord(int row) { _record = row; Refresh(); }

@@ -53,6 +53,8 @@ public sealed class DocumentEditor : UserControl
     public async Task AnalyzeNow()
     {
         if (_surface is not CodeSurface code || OpenPath is not { } path || _shell.Assistant is not { } assistant) return;
+        // Only C# is analysed: a raw .json or .txt opened from Recursos shows no compiler errors.
+        if (!path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) { code.SetDiagnostics([]); code.SetFolds([]); return; }
         _analysis?.Cancel();
         var cts = _analysis = new CancellationTokenSource();
         var text = code.Text;
@@ -526,7 +528,10 @@ public sealed class DocumentEditor : UserControl
         var entries = new List<Control>();
         // Files you opened come first (most recent session order), then the rest of the game's files.
         var open = _session?.Tabs.ToList() ?? [];
-        foreach (var file in ProjectFiles.For(_tab, _shell.Workspace.Files()).OrderBy(f => open.IndexOf(f) is var i && i >= 0 ? i : int.MaxValue))
+        // A text file opened from Recursos (raw .json, .txt…) shows in the strip while it is open.
+        var listed = ProjectFiles.For(_tab, _shell.Workspace.Files()).ToList();
+        if (OpenPath is { } extra && !listed.Contains(extra)) listed.Insert(0, extra);
+        foreach (var file in listed.OrderBy(f => f == OpenPath && !ProjectFiles.For(_tab, [f]).Any() ? -1 : open.IndexOf(f) is var i && i >= 0 ? i : int.MaxValue))
         {
             var selected = file == OpenPath;
             var label = LunetUi.Text(file, LunetTokens.Type.Label, selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary,

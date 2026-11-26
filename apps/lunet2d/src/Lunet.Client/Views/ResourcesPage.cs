@@ -133,6 +133,14 @@ public sealed class ResourcesPage : UserControl
 
     private static bool IsFont(string f) => f.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".otf", StringComparison.OrdinalIgnoreCase);
     private static bool IsImage(string f) => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Text files no Studio edits and no tab lists (raw .json, .txt, .csv, .xml, .md outside Notes).</summary>
+    public static bool IsOtherText(string f) =>
+        (f.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+            || f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".md", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".ini", StringComparison.OrdinalIgnoreCase))
+        && !ProjectFiles.IsCode(f) && !ProjectFiles.IsNote(f) && !ProjectFiles.IsMap(f) && !ProjectFiles.IsSound(f) && !ProjectFiles.IsArt(f)
+        && !DataView.IsTable(f) && !f.EndsWith(".schema.json", StringComparison.OrdinalIgnoreCase) && !f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase)
+        && !f.EndsWith(Lunet.Core.ProjectMindMap.Extension, StringComparison.OrdinalIgnoreCase) && !f.StartsWith(".", StringComparison.Ordinal);
+
     private static bool IsParticles(string f) => f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The groups and their files, without the generated twins of editable sources.</summary>
@@ -154,6 +162,7 @@ public sealed class ResourcesPage : UserControl
             ("Partículas", LunetIcons.Pulse, visible.Where(IsParticles).ToArray()),
             ("Dados", LunetIcons.File, visible.Where(DataView.IsTable).ToArray()),
             ("Fontes", LunetIcons.File, visible.Where(IsFont).ToArray()),
+            ("Outros", LunetIcons.File, visible.Where(IsOtherText).ToArray()),
         ];
     }
 
@@ -173,7 +182,7 @@ public sealed class ResourcesPage : UserControl
         foreach (var (label, icon, files) in Groups(_shell.Workspace.Files()))
         {
             var match = files.Where(f => _query.Length == 0 || f.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (match.Length == 0 && (_query.Length > 0 || label == "Fontes")) continue;
+            if (match.Length == 0 && (_query.Length > 0 || label is "Fontes" or "Outros")) continue;
             var heading = LunetUi.Text($"{label.ToUpperInvariant()} · {match.Length}", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
             heading.Margin = new Thickness(0, LunetTokens.Space.M, 0, LunetTokens.Space.Xxs);
             _list.Children.Add(heading);
@@ -196,7 +205,17 @@ public sealed class ResourcesPage : UserControl
         else if (f.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase)) _workspace.OpenSound(f);
         else if (f.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase)) _workspace.OpenMusic(f);
         else if (IsParticles(f)) _workspace.OpenParticles(f);
-        else if (DataView.IsTable(f)) _workspace.OpenData(f);
+        else if (DataView.IsTable(f))
+        {
+            // A .json in Content/Data that is not a table (an object, a config) opens as text instead.
+            try { _workspace.OpenData(f); }
+            catch (Exception e) when (e is InvalidDataException or System.Text.Json.JsonException or InvalidOperationException or ArgumentException or KeyNotFoundException)
+            {
+                _notice = $"{Path.GetFileName(f)} não é uma tabela: abra como texto.";
+                Fill();
+                ShowDetails(f);
+            }
+        }
         else ShowDetails(f);
     }
 
@@ -288,6 +307,8 @@ public sealed class ResourcesPage : UserControl
         void Act(Button b, string name) { b.Name = name; b.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs); actions.Children.Add(b); }
         if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && _shell.PlaySound is { } play && File.Exists(full))
             Act(LunetUi.Button("Ouvir", ButtonKind.Primary, LunetIcons.Play, () => play(File.ReadAllBytes(full))), "PlayResource");
+        if (IsOtherText(f) || DataView.IsTable(f))
+            Act(LunetUi.Button("Editar como texto", ButtonKind.Primary, LunetIcons.Edit, () => EditAsText(f)), "EditAsText");
         Act(LunetUi.Button("Copiar caminho", ButtonKind.Secondary, LunetIcons.Copy, () => _ = CopyPath(f)), "CopyResourcePath");
         Act(LunetUi.Button("Fechar", ButtonKind.Ghost, null, () => CloseSheet()), "CloseResource");
         body.Children.Add(actions);
@@ -301,6 +322,14 @@ public sealed class ResourcesPage : UserControl
         scrim.PointerPressed += (_, e) => { CloseSheet(); e.Handled = true; };
         _sheet = new Grid { Children = { scrim, sheet } };
         _root.Children.Add(_sheet);
+    }
+
+    /// <summary>Opens a plain text file in the Código editor (the same verified saving).</summary>
+    public void EditAsText(string f)
+    {
+        CloseSheet();
+        _shell.State.SelectTab(WorkspaceTab.Code);
+        _shell.WorkspaceView.Code.Load(f);
     }
 
     private async Task CopyPath(string f)

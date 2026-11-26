@@ -150,13 +150,6 @@ public sealed class LunetShell : UserControl
         ("library", "Biblioteca", Ui.LunetIcons.Folder), ("explore", "Explorar", Ui.LunetIcons.Map), ("settings", "Ajustes", Ui.LunetIcons.Speed),
     ];
 
-    /// <summary>What the "Mais" panel of a game opens through <see cref="OpenRoute"/> (route, label, icon).</summary>
-    public static readonly IReadOnlyList<(string Route, string Label, string Icon)> GameRoutes =
-    [
-        ("assets", "Recursos e Studios", Ui.LunetIcons.Art), ("notes", "Notas e mapas mentais", Ui.LunetIcons.Notes),
-        ("git", "Git", Ui.LunetIcons.Folder), ("apk", "Gerar APK", Ui.LunetIcons.Game), ("editor", "Editor completo", Ui.LunetIcons.File),
-    ];
-
     /// <summary>Back from a routed screen: re-read the games (and the open documents, when not edited here).</summary>
     public void ReturnedFromRoute()
     {

@@ -8,6 +8,8 @@
 - **Editar todas as ocorrências** abre buscar e substituir com a palavra sob o cursor, só palavras inteiras: `x` não mexe em `max`.
 - **Inserir bloco** (paleta ou Ctrl+Shift+B) cria `{ }` com a linha recuada dentro.
 - **Salvar cópia** no menu ⋮ do arquivo grava o arquivo com outro nome e abre a cópia.
+- **Arquivos de texto em Recursos:** um grupo **Outros** reúne JSON solto, `.txt`, `.csv`, `.xml` e `.md` fora das Notas. **Editar como texto** abre o arquivo no editor, sem marcar erros de C#. A tabela de dados também tem **Editar como texto**, e um `.json` que não é tabela abre a folha em vez de falhar.
+- **O ⋮ do jogo não leva mais a nenhuma tela antiga:** "Editor completo" saiu, porque tudo o que ele fazia já está na interface nova.
 - **Pastas para o código:** em Renomear, escreva `Pasta/Nome` para pôr o arquivo numa pasta, que é criada se não existir.
 - **Apresentar mapa mental** (▶ no alto do mapa): cada ramo vira uma tela, com título grande e os tópicos dele em lista. **Anterior** e **Próximo** ficam embaixo, e Voltar sai da apresentação.
 

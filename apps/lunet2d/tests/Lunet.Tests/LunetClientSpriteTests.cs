@@ -791,6 +791,29 @@ public sealed class LunetClientPaletteTests
                 Assert.Null(page.Open);
                 Assert.Equal(ShellLevel.Workspace, shell.State.Level);
 
+                Assert.Equal("Content/Data/config.json", page.Import("config.json", System.Text.Encoding.UTF8.GetBytes("{ \"vidas\": 3 }")));
+                Assert.Equal("Content/Data/notas.txt", page.Import("notas.txt", [65]));
+                Assert.Contains("Content/Data/notas.txt", ResourcesPage.Groups(shell.Workspace.Files()).First(g => g.Label == "Outros").Files);
+                Assert.Equal("Content/Data/quebrado.json", page.Import("quebrado.json", System.Text.Encoding.UTF8.GetBytes("vidas = 3")));
+                page.Activate("Content/Data/quebrado.json");                           // not readable as a table: the sheet
+                Assert.Null(shell.WorkspaceView.Studio);
+                Assert.Equal("Content/Data/quebrado.json", page.Open);
+                page.CloseSheet();
+                page.Activate("Content/Data/config.json");                             // an object reads as one record…
+                var table = Assert.IsType<DataView>(shell.WorkspaceView.Studio);
+                table.EditAsText();                                                    // …and can be edited as text
+                Assert.Null(shell.WorkspaceView.Studio);
+                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                Assert.Equal("Content/Data/config.json", shell.WorkspaceView.Code.OpenPath);
+                var analysis = shell.WorkspaceView.Code.AnalyzeNow();
+                while (!analysis.IsCompleted) Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Empty(((CodeSurface)shell.WorkspaceView.Code.Surface).Diagnostics);  // no C# errors on JSON
+                shell.WorkspaceView.Code.Surface.Text = "{ \"vidas\": 5 }";
+                Assert.True(shell.WorkspaceView.Code.Save());
+                Assert.Contains("5", shell.Workspace.Read("Content/Data/config.json"));
+                shell.State.SelectTab(WorkspaceTab.Art);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                page = window.GetVisualDescendants().OfType<ResourcesPage>().Single();
                 page.Activate("Content/Textures/sprite-1.sprite.json");
                 Assert.IsType<SpriteStudioView>(shell.WorkspaceView.Studio);
                 window.Close();
