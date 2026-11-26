@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
 using Lunet.Client.Views;
@@ -42,8 +43,34 @@ public sealed class LunetShell : UserControl
         Game.Log += line => Avalonia.Threading.Dispatcher.UIThread.Post(() => _workspaceView.Support.Append(line));
         _timer.Tick += (_, _) => TickGame();
         KeyDown += OnKeyDown;
+        // A finger lifted on a text field asks for the keyboard explicitly (after focus has settled on it).
+        // Only a tap on the field itself: a key of the code bar or its ⌄ (which closes the keyboard) keep their meaning.
+        AddHandler(PointerReleasedEvent, (_, e) =>
+        {
+            if (e.Pointer.Type == PointerType.Mouse || e.Source is not Visual tapped) return;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => RequestKeyboardForFocus(tapped));
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         Content = _home;
     }
+
+    /// <summary>
+    /// Asks the system keyboard for the focused text field, if any (a TextBox that can be written, or the code editor
+    /// with the system keyboard on). Called after a tap; the head turns it into an explicit request, which Android
+    /// honours even after Back closed the keyboard.
+    /// </summary>
+    public bool RequestKeyboardForFocus(Visual? tapped = null)
+    {
+        if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not InputElement focused) return false;
+        if (tapped is not null && !ReferenceEquals(tapped, focused) && !(focused is Visual f && f.IsVisualAncestorOf(tapped))) return false;
+        var field = focused is TextBox { IsReadOnly: false } || focused is AvaloniaEdit.Editing.TextArea { IsReadOnly: false };
+        if (!field || !InputMethod.GetIsInputMethodEnabled(focused)) return false;
+        KeyboardRequests++;
+        SystemKeyboard?.Invoke(true);
+        return true;
+    }
+
+    /// <summary>How many times a tap asked for the keyboard (tests).</summary>
+    public int KeyboardRequests { get; private set; }
 
     public WorkspaceSession Workspace { get; }
 
