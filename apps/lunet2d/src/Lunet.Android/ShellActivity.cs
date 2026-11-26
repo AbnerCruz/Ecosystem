@@ -108,6 +108,9 @@ public sealed class ShellActivity : AvaloniaActivity
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
         catch (Java.Lang.Exception) { }
         Content = _shell;
+        // M5: the game runs on the GPU inside the Jogo tab (the GLES Preview, hosted by the shell).
+        _shell.Game.GpuFactory = (compiled, project, fault) => new AndroidGpuPreview(this, compiled, project,
+            _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.StopGame());
         // Shows and hides the system keyboard (Avalonia exposes no call for it). Showing is an explicit request, as a
         // tap on Android's own EditText makes it: Avalonia only asks with SHOW_IMPLICIT, which Android ignores after
         // the person closed the keyboard with Back — the "teclado que não abre" of the editor and the AI (estudo do
@@ -315,6 +318,7 @@ public sealed class ShellActivity : AvaloniaActivity
         }
         // Back from a routed screen: those screens may have changed the games (AI edits, Git, Studios).
         _shell?.ReturnedFromRoute();
+        _shell?.Game.Gpu?.SetAppVisible(true);
     }
 
     protected override void OnDestroy()
@@ -327,6 +331,7 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnPause()
     {
+        _shell?.Game.Gpu?.SetAppVisible(false);
         _paused = true;
         if (_shell is { } shell) shell.CancelStudioAudio();
         else StopWav();

@@ -18,6 +18,12 @@
   - versões com `System.Drawing.Size` de `Texture2D.CreateSolid`, `Texture2D.FromPixels`, `SetVirtualResolution` e `RenderTarget2D`.
 
   Jogos existentes que escrevem `Draw(textura, new(x, y), cor)` continuam iguais.
+- **Jogo na GPU dentro da aba Jogo (Android):** o jogo roda no mesmo Preview OpenGL ES das telas antigas, agora dentro da casca.
+  - Mantém toque, sensores, controle, áudio e saves.
+  - A barra pausa, avança um quadro, reinicia e para o jogo.
+  - Inspector e Desempenho medem o próprio jogo na GPU.
+  - Não há chip de velocidade na GPU, porque essa prévia roda no ritmo da tela; mostrar o chip seria fingir uma função que não existe.
+  - No computador continua a prévia em CPU.
 - **Correção:** o botão Rodar não cobre mais as teclas da barra de código.
 - **Validação:** testado no computador. Não testado num celular.
 

@@ -349,6 +349,7 @@ public sealed class LunetShell : UserControl
         if (Game.Run(w, h))
         {
             if (!State.CodeAndGameSideBySide) State.SelectTab(WorkspaceTab.Game);
+            if (Game.Gpu is not null) return; // the GPU surface keeps its own clock
             _lastTick = 0;
             _clock.Restart();
             _timer.Start();

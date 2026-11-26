@@ -31,7 +31,12 @@
 | Anexo B, parte C | `Draw(RectangleF, Color)` e `Draw(Texture2D, RectangleF, Color)`. Produzem os mesmos vértices, UV, cor e lotes que `FillRect` e a sobrecarga completa, reaproveitam o pixel branco e não alocam no caminho aquecido. | `RectangleDrawTests` |
 | H6 — Objetivos | Apoio **Objetivos** na IDE: mostra a missão ligada ao jogo pelo GameId, a lista de objetivos gravada no mesmo arquivo de progresso de Aprender, os critérios de aceite, a referência offline e uma pista no modo Estudo. A pista não escreve código nem envia nada sozinha. | `ObjectivesTests`, captura `9a-objetivos` |
 
+| H3 — M5 | A aba Jogo no Android roda o jogo na GPU: o `PreviewHost` e o `PreviewRenderer` GLES das telas antigas, sem mudança, hospedados num `NativeControlHost`. A `GameSession` dirige a prévia: compilar, pausar, passo, reiniciar, teclas e parar. Uma falha atrasada de uma execução já parada é ignorada. O app pausa e retoma a superfície GL junto com a Activity. Inspector e Desempenho medem o próprio jogo na GPU. Não há chip de velocidade. | `GpuPreviewTests`, com uma prévia falsa; build do APK. A superfície GL real só roda no Android. |
+
 ## Pendências conhecidas (não declaradas como feitas)
+
+- **M5, isolamento:** a opção "Preview isolado" (processo separado) ainda não tem equivalente na aba Jogo. A prévia GPU embutida roda no processo do app. A Activity isolada das telas antigas continua existindo e não foi removida. Isso precisa ser religado como opção da aba Jogo.
+- **M5, aparelho:** falta conferir no celular a superfície GL dentro da casca (toque, rotação, troca de aba, minimizar e voltar).
 
 - **Anexo B, parte A:** falta conferir no Preview do Android e no APK exportado, com trimming, que o `System.Drawing.Primitives` carrega no aparelho. Isso depende do CI de APK e do celular.
 - **#1038:** precisa ser fechado administrativamente, com prova de que as releases posteriores já contêm o E1–E3. Fechar PR de outro agente fica a cargo do proprietário ou do integrador.

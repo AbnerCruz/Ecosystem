@@ -23,6 +23,13 @@ public sealed class GameSession : IDisposable
 
     public GameSession(WorkspaceSession workspace) => _workspace = workspace;
 
+    /// <summary>The head's GPU preview (Android: GLES); null keeps the portable CPU host (desktop, tests).</summary>
+    public GpuPreviewFactory? GpuFactory { get; set; }
+
+    /// <summary>The game running on the GPU now, or null (CPU path or stopped).</summary>
+    public IGpuGamePreview? Gpu => _gpu;
+    private IGpuGamePreview? _gpu;
+
     public GameState State { get; private set; } = GameState.Stopped;
     public double Speed { get; private set; } = 1;
     public RunningGame? Game => _game;
@@ -41,6 +48,7 @@ public sealed class GameSession : IDisposable
     {
         StopInternal();
         Problems = [];
+        if (GpuFactory is { } factory && _workspace.Project is { } project) return RunOnGpu(factory, project);
         RunningGame? game;
         try { game = _workspace.Run(width, height); }
         catch (InvalidOperationException ex)
@@ -67,6 +75,53 @@ public sealed class GameSession : IDisposable
         return true;
     }
 
+    private bool RunOnGpu(GpuPreviewFactory factory, Lunet.Core.LunetProject project)
+    {
+        var compiled = _workspace.Compile();
+        if (!compiled.Success || compiled.Assembly is null)
+        {
+            Problems = compiled.Diagnostics.Select(d => d.ToString()).ToArray();
+            Set(GameState.CompileErrors);
+            Log?.Invoke($"Compilação com {Problems.Count} problema(s).");
+            return false;
+        }
+        try
+        {
+            var generation = ++_gpuGeneration;
+            _gpu = factory(compiled, project, message => Avalonia.Threading.Dispatcher.UIThread.Post(() => Fault(generation, message)));
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or NotSupportedException)
+        {
+            Problems = ["A prévia na GPU não abriu: " + ex.Message];
+            Set(GameState.Faulted);
+            Log?.Invoke(Problems[0]);
+            return false;
+        }
+        FramesRendered = 0;
+        Frames.Clear();
+        Log?.Invoke("Jogo iniciado na GPU (" + _gpu.Backend + ").");
+        Set(GameState.Running);
+        return true;
+    }
+
+    private int _gpuGeneration;
+
+    /// <summary>A fault from the GPU game of this run (a late one from a stopped run is ignored).</summary>
+    private void Fault(int generation, string message)
+    {
+        if (generation != _gpuGeneration || _gpu is null) return;
+        Problems = [message];
+        Log?.Invoke("O jogo parou com erro: " + message);
+        StopInternal();
+        Set(GameState.Faulted);
+    }
+
+    /// <summary>A line from the running game (the GPU preview's log) for the Console panel.</summary>
+    public void Write(string line) => Log?.Invoke(line);
+
+    /// <summary>Restarts the running game from the start (GPU: in place; CPU: compile and run again).</summary>
+    public void Restart() => _gpu?.Restart();
+
     /// <summary>Advances one display tick. Returns true when a new frame was rendered.</summary>
     public bool Tick(double realSeconds)
     {
@@ -79,11 +134,19 @@ public sealed class GameSession : IDisposable
     {
         if (State == GameState.Running) Set(GameState.Paused);
         else if (State == GameState.Paused) Set(GameState.Running);
+        _gpu?.SetPaused(State == GameState.Paused);
     }
 
     /// <summary>Advances exactly one 60 Hz frame; pauses first when running, so the frame is inspectable.</summary>
     public bool Step()
     {
+        if (_gpu is not null)
+        {
+            if (State == GameState.Running) { Set(GameState.Paused); _gpu.SetPaused(true); }
+            _gpu.Step();
+            FramesRendered++;
+            return false; // drawn by the GPU surface itself, nothing to blit
+        }
         if (_game is null) return false;
         if (State == GameState.Running) Set(GameState.Paused);
         return State == GameState.Paused && Advance(StepSeconds);
@@ -98,14 +161,14 @@ public sealed class GameSession : IDisposable
 
     public void Stop()
     {
-        if (_game is null && State == GameState.Stopped) return;
+        if (_game is null && _gpu is null && State == GameState.Stopped) return;
         StopInternal();
         Set(GameState.Stopped);
     }
 
     public void Pointer(TouchPhase phase, float x, float y) { if (State == GameState.Running) _game?.Pointer(phase, x, y); }
     public void PointerUp() => _game?.PointerUp();
-    public void Key(Keys key, bool down) { if (State == GameState.Running) _game?.Key(key, down); }
+    public void Key(Keys key, bool down) { if (State != GameState.Running) return; if (_gpu is not null) _gpu.Key(key, down); else _game?.Key(key, down); }
 
     private bool Advance(double seconds)
     {
@@ -143,6 +206,7 @@ public sealed class GameSession : IDisposable
     {
         _game?.Dispose();
         _game = null;
+        if (_gpu is not null) { _gpuGeneration++; _gpu.Dispose(); _gpu = null; }
     }
 
     private void Set(GameState state)
