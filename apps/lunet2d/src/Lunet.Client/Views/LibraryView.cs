@@ -365,7 +365,21 @@ public sealed class LibraryView : UserControl
         || path.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Step 3: name, author, license, attribution and tags; then publish.</summary>
-    private void ShowPublishForm(string game, string path, string? existingId)
+    private void ShowPublishForm(string game, string path, string? existingId) =>
+        ShowPublishForm(game, path, existingId, (title, author, license, attribution, tags, existing) =>
+            _library.Publish(_shell.Workspace.Store.Open(game), path, title, author, license, attribution, tags, existing));
+
+    /// <summary>Publicar a creation of the standalone Studios (Home → Studios), no game needed.</summary>
+    public void ShowPublishStudio(string workspaceRoot, string path)
+    {
+        _history.Clear();
+        _history.Push(ShowList);
+        ShowPublishForm("Studios", path, null, (title, author, license, attribution, tags, existing) =>
+            _library.PublishWorkspace(workspaceRoot, path, title, author, license, attribution, tags, existing));
+    }
+
+    private void ShowPublishForm(string game, string path, string? existingId,
+        Func<string, string, string, string, string[], string?, LibraryAssetVersion> publishWith)
     {
         Begin(existingId is null ? "Publicar" : "Nova versão", "publish-form");
         _page.Children.Add(LunetUi.Text(game + " · " + path, LunetTokens.Type.Caption, LunetTokens.Color.Primary));
@@ -393,8 +407,7 @@ public sealed class LibraryView : UserControl
         {
             try
             {
-                var project = _shell.Workspace.Store.Open(game);
-                var published = _library.Publish(project, path, title.Text ?? "", author.Text ?? "", license.Text ?? "", attribution.Text ?? "",
+                var published = publishWith(title.Text ?? "", author.Text ?? "", license.Text ?? "", attribution.Text ?? "",
                     (tags.Text ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), existingId);
                 _history.Clear();
                 _history.Push(ShowList);

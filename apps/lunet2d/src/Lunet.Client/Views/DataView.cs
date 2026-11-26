@@ -31,12 +31,13 @@ public sealed class DataView : UserControl
     private readonly Button _add;
     private int? _record;
 
-    public DataView(LunetShell shell, string path, Action close)
+    public DataView(LunetShell shell, string path, Action close, StudioAssetWorkspace? storage = null)
     {
         _shell = shell;
         _path = path;
         _close = close;
-        _storage = new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        // A game's folder, or the standalone Studio folder (Home → Studios) when given.
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
         var schema = SchemaPath(path);
         Table = DataTable.Parse(_storage.ReadText(path), File.Exists(Path.Combine(_storage.RootDirectory, schema)) ? _storage.ReadText(schema) : null);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
@@ -44,6 +45,7 @@ public sealed class DataView : UserControl
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.M, 0) };
         var raw = LunetUi.IconButton(LunetIcons.Code, "Editar como texto", () => EditAsText());
         raw.Name = "DataAsText";
+        raw.IsVisible = storage is null; // the Código editor belongs to a game
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(raw, Dock.Right);
         bar.Children.Add(back);
@@ -75,19 +77,21 @@ public sealed class DataView : UserControl
         && !new[] { ".schema.json", ".tilemap.json", ".particles.json", ".song.json", ".sfx.json" }.Any(e => path.EndsWith(e, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>A new table with an id and a name column and one record (as the previous Data Studio).</summary>
-    public static string Create(LunetShell shell, string name)
+    public static string Create(LunetShell shell, string name) =>
+        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Directory), shell.Workspace.Files(), name);
+
+    public static string Create(StudioAssetWorkspace storage, IReadOnlyCollection<string> files, string name)
     {
         var clean = new string(name.Trim().ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
         if (clean.Length == 0) clean = "dados";
         var path = $"{Folder}/{clean}.json";
-        var files = shell.Workspace.Files();
         for (var n = 2; files.Contains(path); n++) path = $"{Folder}/{clean}-{n}.json";
         var className = Lunet.Studio.ProjectPalette.Identifier(clean.TrimEnd('s'));
         var table = DataTable.Create(className,
             new DataColumn { Name = "id", Type = DataColumnType.Text, Key = true, Required = true },
             new DataColumn { Name = "nome", Type = DataColumnType.Text, Required = true });
         table.AddRow();
-        new StudioAssetWorkspace(shell.Workspace.Project!.Directory).WriteTextPair(path, table.ToJson(), SchemaPath(path), table.SchemaToJson());
+        storage.WriteTextPair(path, table.ToJson(), SchemaPath(path), table.SchemaToJson());
         return path;
     }
 

@@ -966,4 +966,61 @@ public sealed class LunetClientPaletteTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void Studios_WithoutAGame_CreateEditSaveInTheStudioFolder_AndPublish()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-studios-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.Home.Go(HomeView.Destination.Studios);
+                var studios = Assert.IsType<StudiosView>(shell.Home.Sheet);
+                Assert.Null(shell.Workspace.Project);                                  // no game open
+
+                var sprite = studios.NewSprite();
+                sprite.Paint(2, 2, first: true);
+                Assert.True(shell.Back());                                             // saves and returns to the page
+                Assert.Null(studios.Studio);
+                Assert.Contains("Content/Textures/sprite-1.sprite.json", studios.Creations);
+                Assert.True(File.Exists(Path.Combine(shell.StudioWorkspacePath, "Content", "Textures", "sprite-1.png")));
+
+                var map = studios.NewMap();
+                map.EditTileset!(map.TilesetSource!);                                  // the tileset opens here, not in a game
+                Assert.IsType<SpriteStudioView>(studios.Studio);
+                shell.Back();
+                Assert.IsType<TileStudioView>(studios.Studio);                         // back to the map
+                shell.Back();
+
+                studios.NewMusic(); shell.Back();
+                studios.NewSound(); shell.Back();
+                studios.NewParticles(); shell.Back();
+                var data = studios.NewData("itens");
+                window.UpdateLayout();
+                Assert.False(window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "DataAsText").IsVisible);
+                shell.Back();
+                Assert.Contains(studios.Creations, f => f.EndsWith(".song.json"));
+                Assert.Contains(studios.Creations, f => f.EndsWith(".sfx.json"));
+                Assert.Contains(studios.Creations, f => f.EndsWith(".particles.json"));
+                Assert.Contains("Content/Data/itens.json", studios.Creations);
+
+                Assert.True(studios.Activate("Content/Textures/sprite-1.sprite.json"));
+                Assert.Equal(16, Assert.IsType<SpriteStudioView>(studios.Studio).Document.Width);
+                shell.Back();
+
+                // Publicar goes to the Biblioteca with the creation; it then lives there for any game.
+                var library = new Lunet.Core.ReusableAssetLibrary(shell.LibraryPath);
+                var published = library.PublishWorkspace(shell.StudioWorkspacePath, "Content/Textures/sprite-1.sprite.json", "Herói", "Ana", "CC0");
+                Assert.Equal(1, published.Version);
+                Assert.True(shell.Back());                                             // closes the Studios page
+                Assert.Null(shell.Home.Sheet);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

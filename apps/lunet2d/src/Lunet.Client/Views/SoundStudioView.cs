@@ -61,12 +61,13 @@ public sealed class SoundStudioView : UserControl
     private string _category = "coin";
     private bool _dirty;
 
-    public SoundStudioView(LunetShell shell, string path, Action close)
+    public SoundStudioView(LunetShell shell, string path, Action close, StudioAssetWorkspace? storage = null)
     {
         _shell = shell;
         _path = path;
         _close = close;
-        _storage = new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        // A game's folder, or the standalone Studio folder (Home → Studios) when given.
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
         var file = Path.Combine(_storage.RootDirectory, path);
         if (File.Exists(file)) Sound = SoundDesigner.Parse(_storage.ReadText(path));
         else { Sound = SoundDesigner.Generate(_category, 1); _dirty = true; }

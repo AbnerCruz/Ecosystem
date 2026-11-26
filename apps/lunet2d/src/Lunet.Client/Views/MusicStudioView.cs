@@ -102,12 +102,13 @@ public sealed class MusicStudioView : UserControl
     private bool? _adding;
     private int? _orderSelected;
 
-    public MusicStudioView(LunetShell shell, string path, Action close)
+    public MusicStudioView(LunetShell shell, string path, Action close, StudioAssetWorkspace? storage = null)
     {
         _shell = shell;
         _path = path;
         _close = close;
-        _storage = new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        // A game's folder, or the standalone Studio folder (Home → Studios) when given.
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
         if (File.Exists(Path.Combine(_storage.RootDirectory, path))) Song = MusicSong.Parse(_storage.ReadText(path));
         else { Song = MusicSong.Starter(Path.GetFileName(path).Replace(".song.json", "", StringComparison.OrdinalIgnoreCase)); _dirty = true; }
         Pattern = Song.Patterns.Count > 1 ? 1 : 0; // the Tema of a starter song has every track

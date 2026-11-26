@@ -28,6 +28,7 @@ public sealed class LunetShell : UserControl
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
         GitAccountPath = Path.Combine(projectsRoot, ".lunet", "git-account.json");
+        StudioWorkspacePath = Path.Combine(projectsRoot, ".lunet", "studio");
         _settingsPath = Path.Combine(projectsRoot, ".lunet", "settings.json");
         Methods = new MethodCatalog(Path.Combine(projectsRoot, ".lunet", "metodos.json"));
         Game = new GameSession(Workspace);
@@ -99,6 +100,10 @@ public sealed class LunetShell : UserControl
 
     /// <summary>The Biblioteca's folder; the Android head points it at the previous screen's (FilesDir/Library).</summary>
     public string LibraryPath { get; set; }
+
+    /// <summary>The standalone Studios' folder (Home → Studios: creations without a game); the Android head points it
+    /// at the previous screens' FilesDir/StudioWorkspace, so drafts carry over.</summary>
+    public string StudioWorkspacePath { get; set; }
 
     /// <summary>Who signs versions and the token for sending/receiving (the app's private storage; the Android head
     /// points it at the previous screens' FilesDir/git-account.json, so the account carries over).</summary>
