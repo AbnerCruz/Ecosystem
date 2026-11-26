@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261126-lunet-studio-audio",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-26T15:10:30Z",
+  "agent": {
+    "id": "codex-lunet-studio-audio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-studio-audio-20261126",
+  "base_commit": "f22eb24586f822d1104573a8b2b3aa55cb63a624",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/audits/studios-audio-2026-11-26.md",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/MusicStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/StudiosView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/src/Lunet.Studio/Music/MusicRenderer.cs",
+    "apps/lunet2d/src/Lunet.Studio/Music/MusicSong.cs",
+    "apps/lunet2d/src/Lunet.Studio/WaveAudioDocument.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/MusicStudioTests.cs",
+    "docs/governance/handoffs/HO-20261126-lunet-studio-audio.json"
+  ],
+  "work_completed": [
+    "Corrigidos os caminhos de abertura, prévia e gravação de música da casca, no projeto e sem jogo.",
+    "Implementada liberação do player Android ao parar, falhar, concluir e pausar a atividade.",
+    "Incluída reabertura de WAV independente em Minhas criações e auditoria das lacunas dos Studios."
+  ],
+  "verification": [
+    {
+      "check": "Build de Lunet.Studio com .NET 10.0.404",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/src/Lunet.Studio/Lunet.Studio.csproj"
+    },
+    {
+      "check": "Consistência local do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "tests/consistency/Check.cs"
+    },
+    {
+      "check": "1.327 testes Debug de Lunet e capturas headless da casca",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d/tests/Lunet.Tests/LunetClientSpriteTests.cs"
+    },
+    {
+      "check": "Build Android e integração da main combinada",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "O caso relatado não foi reproduzido em aparelho físico. O orçamento Android limita exportações longas até a renderização em blocos.",
+    "A auditoria registra as lacunas que permanecem na Fase 5; a entrega não conclui toda a suíte Studio."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI do head combinado e release 1000609 gerada após integração.",
+    "Seguir o inventário A3/A4/A6 e a Fase 5 para fechar os fluxos descritos no relatório."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "apps/lunet2d/docs/audits/studios-audio-2026-11-26.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A música mantém .song.json como fonte e o WAV como derivado exportado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "apps/lunet2d/docs/audits/studios-audio-2026-11-26.md"
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A verificação automática e a ausência de verificação física estão registradas."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "studio-audio-preview-and-bundle",
+      "status": "product-specific",
+      "rationale": "Reusa MusicRenderer, StudioAssetWorkspace e MediaPlayer dentro do Lunet."
+    }
+  ]
+}

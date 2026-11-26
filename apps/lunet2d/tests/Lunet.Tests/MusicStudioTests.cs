@@ -6,6 +6,25 @@ namespace Lunet.Tests;
 /// <summary>LUNET-500: the audio studio composes multi-track music and designs complex sound effects.</summary>
 public sealed class MusicStudioTests
 {
+    [Fact]
+    public void ParseRejectsNullTrackBeforePlayback()
+    {
+        var song = MusicSong.Empty("Inválida");
+        song.Tracks[0] = null!;
+        Assert.Throws<InvalidDataException>(() => MusicSong.Parse(song.ToJson()));
+    }
+
+    [Fact]
+    public void RendererRejectsOverBudgetBeforeAllocating()
+    {
+        var song = MusicSong.Starter("Longa");
+        var renderer = new MusicRenderer(memoryBudgetBytes: 8 * 1024 * 1024);
+        var token = TestContext.Current.CancellationToken;
+        Assert.Throws<InvalidDataException>(() => renderer.RenderWav(song, cancellationToken: token));
+        var wav = renderer.RenderWav(MusicSong.Empty("Curta"), cancellationToken: token);
+        Assert.StartsWith("RIFF", System.Text.Encoding.ASCII.GetString(wav, 0, 4));
+    }
+
     [Theory]
     [InlineData(60, "C4")]
     [InlineData(69, "A4")]

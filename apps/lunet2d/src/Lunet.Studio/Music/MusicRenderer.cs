@@ -38,12 +38,17 @@ public static class WavEncoder
 public sealed class MusicRenderer
 {
     public const int DefaultSampleRate = 44_100;
+    // Conservative allowance for the mix buffers, stereo output and WAV PCM copies.
+    private const int EstimatedBytesPerFrame = 32;
+    private const long AndroidMemoryBudget = 96 * 1024 * 1024;
     private readonly int _rate;
+    private readonly long _memoryBudgetBytes;
 
-    public MusicRenderer(int sampleRate = DefaultSampleRate)
+    public MusicRenderer(int sampleRate = DefaultSampleRate, long? memoryBudgetBytes = null)
     {
         if (sampleRate is < 8000 or > 96_000) throw new ArgumentOutOfRangeException(nameof(sampleRate));
         _rate = sampleRate;
+        _memoryBudgetBytes = memoryBudgetBytes ?? (OperatingSystem.IsAndroid() ? AndroidMemoryBudget : long.MaxValue);
     }
 
     /// <summary>Renders the song (or one pattern looped once when <paramref name="onlyPattern"/> is set) to interleaved stereo floats.</summary>
@@ -56,9 +61,13 @@ public sealed class MusicRenderer
         int totalSteps = order.Sum(i => song.Patterns[i].Steps);
         double tail = 2.5; // releases, echoes and reverb ring out
         int frames = (int)Math.Ceiling((totalSteps * stepSeconds + tail) * _rate);
+        cancellationToken.ThrowIfCancellationRequested();
+        if ((long)frames * EstimatedBytesPerFrame > _memoryBudgetBytes)
+            throw new InvalidDataException("Esta renderização é grande demais para a memória de áudio disponível. Ouça um padrão ou divida o arranjo.");
         var left = new float[frames];
         var right = new float[frames];
         var reverbBus = new float[frames];
+        var dry = new float[frames];
         bool anySolo = song.Tracks.Any(t => t.Solo);
 
         for (int t = 0; t < song.Tracks.Count; t++)
@@ -66,10 +75,11 @@ public sealed class MusicRenderer
             cancellationToken.ThrowIfCancellationRequested();
             var track = song.Tracks[t];
             if (track.Muted || anySolo && !track.Solo) continue;
-            var dry = new float[frames];
+            Array.Clear(dry);
             int offset = 0;
             foreach (var index in order)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var pattern = song.Patterns[index];
                 foreach (var note in pattern.Notes.Where(n => n.Track == t))
                 {
@@ -97,6 +107,7 @@ public sealed class MusicRenderer
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         if (reverbBus.Any(v => v != 0))
         {
             var (wetL, wetR) = Reverb(reverbBus);
@@ -113,6 +124,7 @@ public sealed class MusicRenderer
             for (int i = length; i <= last; i++) { left[i - length] += left[i]; right[i - length] += right[i]; }
         }
         length = Math.Clamp(length, 1, frames);
+        cancellationToken.ThrowIfCancellationRequested();
         var output = new float[length * 2];
         float master = Math.Clamp(song.MasterVolume, 0, 1.5f);
         for (int i = 0; i < length; i++)

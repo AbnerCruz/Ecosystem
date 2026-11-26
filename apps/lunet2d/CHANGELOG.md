@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000609 — Música e WAV nos Studios
+
+- Música prepara a prévia e salva em segundo plano. O controle Parar encerra a prévia e arquivos inválidos mostram o erro sem sobrescrever a composição.
+- O piano roll acompanha o registro da faixa e permite mudar de oitava. As ferramentas inferiores rolam quando a tela tem pouca altura.
+- WAVs criados sem jogo podem ser reabertos ou publicados a partir de Minhas criações.
+- [Diagnóstico e inventário do Studio](docs/audits/studios-audio-2026-11-26.md).
+
 ## 0.0.1-dev.1000608 — IA sem jogo, Pasta de projetos e Conexões na casca
 
 - **Lunet IA sem jogo** (Início → Mais → Lunet IA): uma conversa que não lê nem altera seus projetos. A conversa anterior continua, porque usa o mesmo histórico da tela antiga. Uma falha de rede devolve a mensagem ao campo.

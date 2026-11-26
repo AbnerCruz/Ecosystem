@@ -21,6 +21,7 @@ public sealed class StudiosView : UserControl
     private readonly Action<string, string> _publish;
     private readonly StackPanel _list = new() { Spacing = LunetTokens.Space.Xxs };
     private readonly Control _home;
+    private readonly TextBlock _notice = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.Danger);
     private Control? _studio;
 
     public StudiosView(LunetShell shell, Action close, Action<string, string> publish)
@@ -41,6 +42,9 @@ public sealed class StudiosView : UserControl
         var page = new StackPanel { Spacing = LunetTokens.Space.S, Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.Xl) };
         page.Children.Add(LunetUi.Secondary("Crie sem abrir um jogo. Publique na Biblioteca para usar em qualquer jogo."));
         page.Children.Add(Tiles());
+        _notice.TextWrapping = TextWrapping.Wrap;
+        _notice.IsVisible = false;
+        page.Children.Add(_notice);
         page.Children.Add(_list);
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Top);
@@ -85,7 +89,7 @@ public sealed class StudiosView : UserControl
         return true;
     }
 
-    private void Show(Control studio) { _studio = studio; Content = LunetUi.Enter(studio); }
+    private void Show(Control studio) { _notice.IsVisible = false; _studio = studio; Content = LunetUi.Enter(studio); }
     private void Home() { _studio = null; Content = _home; Fill(); }
 
     private string Unique(string folder, string stem, string ext)
@@ -146,6 +150,19 @@ public sealed class StudiosView : UserControl
         else if (f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase)) OpenParticles(f);
         else if (DataView.IsTable(f)) OpenData(f);
         else if (f.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)) OpenPalette(f);
+        else if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var audio = Lunet.Studio.WaveAudioDocument.Parse(Storage.ReadBytes(f, Lunet.Studio.WaveAudioDocument.MaxSourceBytes));
+                Show(new WaveEditorView(_shell, Storage, audio, Path.GetFileNameWithoutExtension(f), Home));
+            }
+            catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            {
+                _notice.Text = "Não foi possível abrir " + Path.GetFileName(f) + ": " + e.Message;
+                _notice.IsVisible = true;
+            }
+        }
         else return false;
         return true;
     }
@@ -197,7 +214,7 @@ public sealed class StudiosView : UserControl
         {
             var editable = files.Where(f => f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase)
                 || f.EndsWith(".sfx.json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".song.json", StringComparison.OrdinalIgnoreCase)
-                || f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase) || DataView.IsTable(f) || f.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase)).ToArray();
+                || f.EndsWith(".particles.json", StringComparison.OrdinalIgnoreCase) || DataView.IsTable(f) || f.EndsWith(".palette.json", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)).ToArray();
             if (editable.Length == 0) continue;
             any = true;
             var group = LunetUi.Text($"{label} · {editable.Length}", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary, FontWeight.SemiBold);
