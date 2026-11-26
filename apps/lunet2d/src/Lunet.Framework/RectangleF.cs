@@ -21,6 +21,11 @@ public readonly struct RectangleF : IEquatable<RectangleF>
         X = x; Y = y; Width = width; Height = height;
     }
 
+    /// <summary>Cria um retângulo a partir da posição (canto superior esquerdo) e do tamanho.</summary>
+    /// <param name="position">Canto superior esquerdo.</param>
+    /// <param name="size">Largura (X) e altura (Y).</param>
+    public RectangleF(Vector2 position, Vector2 size) : this(position.X, position.Y, size.X, size.Y) { }
+
     /// <summary>Posição X do canto superior esquerdo.</summary>
     public float X { get; }
     /// <summary>Posição Y do canto superior esquerdo.</summary>

@@ -3822,6 +3822,30 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.RectangleF.#ctor(System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "RectangleF",
+          "kind": "constructor",
+          "signature": "public RectangleF(Vector2 position, Vector2 size)",
+          "summary": "Cria um ret\u00E2ngulo a partir da posi\u00E7\u00E3o (canto superior esquerdo) e do tamanho.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Canto superior esquerdo."
+            },
+            {
+              "name": "size",
+              "type": "Vector2",
+              "description": "Largura (X) e altura (Y)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.RectangleF.Bottom",
           "name": "Bottom",
           "kind": "property",
@@ -12231,6 +12255,61 @@
               "name": "color",
               "type": "Color",
               "description": "Cor de multiplica\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.Graphics.Texture2D,Lunet.RectangleF,Lunet.Graphics.Color)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(Texture2D texture, RectangleF destination, Color color)",
+          "summary": "Desenha a textura inteira esticada em \u0060destination\u0060.",
+          "remarks": "Prioridade menor: \u0060Draw(textura, new(x, y), cor)\u0060 escrito antes desta sobrecarga continua sendo a posi\u00E7\u00E3o \u0060Vector2\u0060 (o \u0060new(...)\u0060 sem tipo combinaria com as duas).",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura."
+            },
+            {
+              "name": "destination",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo de destino, em coordenadas virtuais."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor de tinta (multiplica as cores da imagem)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "T:System.Numerics.Vector2"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.RectangleF,Lunet.Graphics.Color)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(RectangleF rectangle, Color color)",
+          "summary": "Desenha um ret\u00E2ngulo preenchido com a cor (o mesmo que \u0060FillRect\u0060; contornos continuam em \u0060DebugDraw.Rect\u0060). Usa o pixel branco compartilhado do dispositivo: nenhuma textura \u00E9 criada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "rectangle",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo, em coordenadas virtuais."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor."
             }
           ],
           "returns": "",
