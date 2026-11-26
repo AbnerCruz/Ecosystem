@@ -125,3 +125,31 @@ public sealed class WorkspaceTabsTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }
+
+public sealed class DirtyTabTests
+{
+    [Fact]
+    public void TheOpenFileTab_ShowsUnsavedChanges_AndClearsAfterSaving()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-dirty-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var code = shell.WorkspaceView.Code;
+                Assert.DoesNotContain("•", code.OpenTabLabel);
+                code.Surface.Text += "\n// mudança";
+                code.UpdateDirtyMark();                                  // what the pause after typing does
+                Assert.EndsWith(" •", code.OpenTabLabel);
+                Assert.True(code.Save());
+                Assert.DoesNotContain("•", code.OpenTabLabel);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+}
