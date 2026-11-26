@@ -307,7 +307,7 @@ public sealed class LearnView : UserControl
             var name = _shell.Workspace.Store.FreeName("Aprender" + challenge.Id.Replace("-", "", StringComparison.Ordinal));
             var project = _shell.Workspace.Store.Create(name, ProjectTemplate.Blank, challenge.Orientation);
             Progress()!.LinkProject(challenge.Id, name, project.Manifest.GameId);
-            OpenChallengeGame(name, challenge.ReferenceTarget);
+            OpenChallengeGame(name, null); // Objetivos beside the code; its Referência opens the exact page
         }
         catch (Exception e) when (e is ProjectException or IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -320,7 +320,8 @@ public sealed class LearnView : UserControl
     {
         _close();
         _shell.OpenProject(name);
-        if (reference is null) return;
+        // Opening a mission lands in its game with the objectives beside the code (anexo A §6.4), not in the catalog.
+        if (reference is null) { _shell.State.ShowPanel(Shell.SupportPanel.Objectives); return; }
         _shell.State.ShowPanel(Shell.SupportPanel.Docs);
         _shell.WorkspaceView.Support.Docs.Navigate(reference);
     }
@@ -361,8 +362,8 @@ public sealed class LearnView : UserControl
         {
             Content = content, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
             MinHeight = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S),
-            Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border),
-            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(LunetTokens.Radius.L),
+            // Depth by tone, not by border (linguagem visual §5).
+            Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(LunetTokens.Radius.L),
         };
         AutomationProperties.SetName(b, name);
         b.Click += (_, _) => onClick();

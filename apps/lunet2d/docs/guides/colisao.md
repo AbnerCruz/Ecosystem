@@ -59,13 +59,15 @@ public sealed class CollisionDemo : Game
         batch.Begin();
         batch.Rect(new RectangleF(100, 180, 160, 160), Color.Yellow, 3);
         batch.Rect(new RectangleF(desired.X, desired.Y, 32, 32), Color.Red, 2);
-        batch.FillRect(new RectangleF(position.X, position.Y, 32, 32), Color.Green);
+        batch.Draw(new RectangleF(position, new Vector2(32, 32)), Color.Green); // retângulo preenchido: posição + tamanho
         batch.Line(desired, position, Color.White, 2);
         batch.DrawString(font, $"Separacao: {push.Length():F1}", new Vector2(10, 20), Color.White);
         batch.End();
     }
 }
 ```
+
+`batch.Draw(retângulo, cor)` desenha um retângulo **preenchido**, igual a `batch.FillRect(retângulo, cor)`. Os dois usam o mesmo pixel branco do dispositivo, então nenhuma textura é criada por forma. `new RectangleF(posição, tamanho)` monta o retângulo direto dos dois `Vector2`. Contornos continuam em `batch.Rect`.
 
 1. Ao iniciar, o quadrado vermelho está inteiramente dentro do obstáculo amarelo. O verde aparece fora, encostado na esquerda; separação inicial **72,0** unidades.
 2. Toque/arraste dentro do obstáculo. O vermelho segue o ponto desejado; o verde é separado até a borda mais próxima. A linha branca representa o empurrão.

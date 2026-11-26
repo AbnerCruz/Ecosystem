@@ -127,6 +127,10 @@ public sealed class GraphicsDevice
     /// <summary>Uma textura branca de 1×1, útil para retângulos e linhas.</summary>
     public Texture2D WhiteTexture => _white ??= Texture2D.CreateSolid(this, 1, 1, Color.White);
 
+    /// <summary>Troca a resolução virtual em que o jogo desenha (largura e altura agrupadas).</summary>
+    /// <param name="size">Nova resolução, em unidades virtuais inteiras (positivas).</param>
+    public void SetVirtualResolution(System.Drawing.Size size) => SetVirtualResolution(size.Width, size.Height);
+
     /// <summary>Troca a resolução virtual em que o jogo desenha.</summary>
     /// <param name="width">Nova largura.</param>
     /// <param name="height">Nova altura.</param>

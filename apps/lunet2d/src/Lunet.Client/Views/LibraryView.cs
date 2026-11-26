@@ -452,8 +452,7 @@ public sealed class LibraryView : UserControl
         return new Border
         {
             Width = size, Height = size, CornerRadius = new CornerRadius(LunetTokens.Radius.M), ClipToBounds = true,
-            Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), Child = child,
-            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(1),
+            Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), Child = child, // depth by tone, not by border
         };
     }
 

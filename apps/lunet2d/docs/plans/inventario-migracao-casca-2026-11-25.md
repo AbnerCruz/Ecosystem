@@ -13,7 +13,7 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Ir para definição, referências, renomear, formatar, quick fixes, estrutura, símbolos, buscar, operações de linha | `CommandPaletteView` | **casca** (M3) | — |
 | Vários documentos abertos, histórico de posição | `DocumentEditor` + `EditorDocuments` (sessão em `.lunet/editor-session.json`) | **casca** (M4) | — |
 | Rodar, pausar, passo, velocidade | `GameSession`/`GameView` | **casca** | — |
-| Preview isolado (processo separado) e GL | `IsolatedPreview`, `PreviewHost`, `Gles` | rota (Editor completo) | **M5**: preview GL embutido na aba Jogo (Android); rasterizador em CPU fica no desktop. |
+| Preview isolado (processo separado) e GL | `AndroidGpuPreview` (o `PreviewHost`/`Gles` dentro da aba Jogo) e `IsolatedGpuPreview` (o mesmo processo separado, por Ajustes → Jogo); CPU no desktop | **casca** (M5, 26/11; sem aparelho) | Conferir no celular. |
 | Profiler e Inspector | `InspectorView` + `GameInspection`, `PerformanceView` + `FrameStats` | **casca** (M6) | Próximo: medir também a GPU quando a prévia GL embutida (M5) existir. |
 | Console e Problemas | `SupportPanelView` | **casca** | — |
 | IA no jogo (chat, modos Estudo/Fazer, diff, desfazer, chave) | `AiPanelView` sobre `Lunet.Ai` | **casca** (M7) | Próximos: anexos e imagens, pesquisa na web, catálogo de modelos, revisão trecho a trecho dentro do editor, execução em segundo plano com notificação (`AiRunCoordinator`). |
@@ -48,6 +48,10 @@ Ordem do proprietário: "não pare enquanto não estiver com todas as features d
 | Aparência, primeiro uso, ajustes | `SettingsView` (mesmo `settings.json`); pasta e IA por janela própria | **casca** (P7) | Próximo: tema claro nos tokens da casca. |
 | Conexão com o Ecosystem (IPC, capabilities) | `Views/ConnectionsView` (Registry do Host, text.inspect local) + `EcosystemConnection` da cabeça Android (pareamento opcional, NN-003) | **casca** (26/11) | — |
 | Benchmark e demonstrações | `MainActivity.Benchmark`/`Demo` | ferramentas internas | Ficam enquanto a tela anterior existir. |
+
+## Estado em 26/11 (fim da migração da casca)
+
+Só **Explorar** ainda abre a tela anterior, porque está congelado pelo proprietário (ADD-0036 §4). `Jogar → jogo` usa a `GameplayActivity` em tela cheia, que é um serviço de plataforma, não uma tela duplicada. Também ficam na cabeça Android os serviços de plataforma: seletor SAF, Keystore, áudio e empacotador de APK. Apagar a `MainActivity` antiga continua dependendo de dois pontos: o portão de Explorar e a conferência no aparelho de cada recurso migrado. Não apagar antes.
 
 ## Regra de saída
 

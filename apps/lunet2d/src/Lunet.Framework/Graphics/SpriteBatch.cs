@@ -238,6 +238,25 @@ public sealed class SpriteBatch
     public void Draw(Texture2D texture, Vector2 position, Color color) =>
         Draw(texture, new RectangleF(position.X, position.Y, texture.Width, texture.Height), null, color, 0f, Vector2.Zero);
 
+    /// <summary>Desenha a textura inteira esticada em <paramref name="destination"/>.</summary>
+    /// <param name="texture">Textura.</param>
+    /// <param name="destination">Retângulo de destino, em coordenadas virtuais.</param>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
+    /// <remarks>Prioridade menor: <c>Draw(textura, new(x, y), cor)</c> escrito antes desta sobrecarga continua sendo
+    /// a posição <see cref="Vector2"/> (o <c>new(...)</c> sem tipo combinaria com as duas).</remarks>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
+    public void Draw(Texture2D texture, RectangleF destination, Color color) =>
+        Draw(texture, destination, null, color, 0f, Vector2.Zero);
+
+    /// <summary>
+    /// Desenha um retângulo <b>preenchido</b> com a cor (o mesmo que <c>FillRect</c>; contornos continuam em
+    /// <c>DebugDraw.Rect</c>). Usa o pixel branco compartilhado do dispositivo: nenhuma textura é criada.
+    /// </summary>
+    /// <param name="rectangle">Retângulo, em coordenadas virtuais.</param>
+    /// <param name="color">Cor.</param>
+    public void Draw(RectangleF rectangle, Color color) =>
+        Draw(GraphicsDevice.WhiteTexture, rectangle, null, color, 0f, Vector2.Zero);
+
     /// <summary>Desenha um recorte (<paramref name="source"/>, em pixels) na posição dada, sem escala.</summary>
     /// <param name="texture">Textura a desenhar.</param>
     /// <param name="position">Posição, em coordenadas virtuais.</param>

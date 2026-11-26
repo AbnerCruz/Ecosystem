@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
+using Lunet.Client.Shell;
 using Avalonia.Threading;
 using Lunet.Client.Ui;
 using Lunet.Core;
@@ -23,6 +24,7 @@ public sealed class HomeView : UserControl
     /// <summary>A phone: one game per row (list); wider, cards in a grid.</summary>
     private bool Compact => Bounds.Width is > 0 and < 600 || Bounds.Width <= 0;
     private readonly TextBlock _count = LunetUi.Secondary("");
+    private readonly TextBox _search = new() { PlaceholderText = "Buscar jogo", Name = "HomeSearch", MinHeight = LunetTokens.MinTouch, Margin = new Thickness(0, LunetTokens.Space.S, 0, 0) };
     private readonly StackPanel _trashRow = new() { Margin = new Thickness(0, LunetTokens.Space.S, 0, 0) };
     // Sheets and the undo bar float over the Home; the Home stays in place under them (no navigation).
     private readonly Panel _overlay = new();
@@ -36,6 +38,8 @@ public sealed class HomeView : UserControl
     {
         _shell = shell;
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        Avalonia.Automation.AutomationProperties.SetName(_search, "Buscar jogo");
+        _search.TextChanged += (_, _) => Refresh(); // the field is outside the list: typing never loses focus
         _snackbarTimer.Tick += (_, _) => HideSnackbar();
         Build();
     }
@@ -45,6 +49,7 @@ public sealed class HomeView : UserControl
 
     private readonly StackPanel _nav = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly Grid _navGrid = new();
+    private bool _rail;
 
     /// <summary>The destination selected in the bottom bar.</summary>
     public Destination Selected { get; private set; } = Destination.Games;
@@ -55,8 +60,10 @@ public sealed class HomeView : UserControl
         if (_grid.Parent is Panel old) old.Children.Remove(_grid);
         if (_count.Parent is Panel oldParent) oldParent.Children.Remove(_count);
         var titles = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(0, LunetTokens.Space.S, 0, LunetTokens.Space.M) };
-        titles.Children.Add(LunetUi.Headline("Seus jogos"));
+        titles.Children.Add(LunetUi.Headline("Área de trabalho")); // anexo A §4.1
         titles.Children.Add(_count);
+        if (_search.Parent is Panel oldSearch) oldSearch.Children.Remove(_search);
+        titles.Children.Add(_search);
 
         var content = new StackPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L, LunetTokens.Space.M, 96) };
         content.Children.Add(titles);
@@ -85,7 +92,14 @@ public sealed class HomeView : UserControl
             BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
         };
         var root = new DockPanel();
-        DockPanel.SetDock(nav, Avalonia.Controls.Dock.Bottom);
+        // ≥ 840 dp: a rail on the left with the same five destinations (anexo A §4.1); below, the bottom bar.
+        if (_rail)
+        {
+            nav.BorderThickness = new Thickness(0, 0, 1, 0);
+            nav.Width = 88;
+            DockPanel.SetDock(nav, Avalonia.Controls.Dock.Left);
+        }
+        else DockPanel.SetDock(nav, Avalonia.Controls.Dock.Bottom);
         root.Children.Add(nav);
         root.Children.Add(page);
         Content = root;
@@ -93,31 +107,29 @@ public sealed class HomeView : UserControl
     }
 
     /// <summary>
-    /// The bottom bar: Jogos, Aprender, Jogar and Studios (all in the shell) and Mais
-    /// (Biblioteca, Explorar, Ajustes). Without the previous screens (desktop) only what lives in the shell appears.
+    /// The global bar (anexo A §4.1): Início (the work area), Jogar, Aprender, Studios and Mais — the same five on the
+    /// phone and on wide screens. Mais holds Lunet IA, Documentação, Biblioteca, Explorar (where its screen exists) and
+    /// Ajustes. "Área de trabalho" is shortened to "Início" so five labels fit at 320–412 dp.
     /// </summary>
     private void BuildNav()
     {
-        var items = new List<(Destination Destination, string Label, string Icon)> { (Destination.Games, "Jogos", LunetIcons.Game), (Destination.Learn, "Aprender", LunetIcons.Book) };
-        items.Add((Destination.Play, "Jogar", LunetIcons.Play));
-        items.Add((Destination.Studios, "Studios", LunetIcons.Art));
-        if (_shell.OpenRoute is not null)
+        var items = new List<(Destination Destination, string Label, string Icon)>
         {
-            items.Add((Destination.More, "Mais", LunetIcons.More));
-        }
-        else
-        {
-            items.Add((Destination.Library, "Biblioteca", LunetIcons.Folder));
-            items.Add((Destination.Settings, "Ajustes", LunetIcons.Speed));
-        }
+            (Destination.Games, "Início", LunetIcons.Game), (Destination.Play, "Jogar", LunetIcons.Play),
+            (Destination.Learn, "Aprender", LunetIcons.Book), (Destination.Studios, "Studios", LunetIcons.Art),
+            (Destination.More, "Mais", LunetIcons.More),
+        };
         _navGrid.Children.Clear();
-        _navGrid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
+        _navGrid.ColumnDefinitions = _rail ? new ColumnDefinitions("*") : new ColumnDefinitions(string.Join(",", items.Select(_ => "*")));
+        _navGrid.RowDefinitions = _rail ? new RowDefinitions(string.Join(",", items.Select(_ => "Auto"))) : new RowDefinitions("*");
+        _navGrid.Margin = _rail ? new Thickness(0, LunetTokens.Space.M, 0, 0) : new Thickness(0);
         for (var i = 0; i < items.Count; i++)
         {
             var (destination, label, icon) = items[i];
             var tab = LunetUi.Tab(icon, label, destination == Selected, () => Go(destination));
             tab.Name = "Nav-" + destination;
-            Grid.SetColumn(tab, i);
+            if (_rail) { Grid.SetRow(tab, i); Grid.SetColumn(tab, 0); tab.Margin = new Thickness(0, 0, 0, LunetTokens.Space.S); }
+            else { Grid.SetColumn(tab, i); Grid.SetRow(tab, 0); }
             _navGrid.Children.Add(tab);
         }
     }
@@ -151,10 +163,11 @@ public sealed class HomeView : UserControl
         foreach (var (route, label, icon, detail) in new[]
         {
             ("ai", "Lunet IA", LunetIcons.Code, "Conversa sem jogo aberto: dúvidas de C# e ideias"),
+            ("docs", "Documentação", LunetIcons.Book, "Manual e referência da API, offline"),
             ("library", "Biblioteca", LunetIcons.Folder, "Recursos seus para usar em qualquer jogo"),
             ("explore", "Explorar", LunetIcons.Map, "Referências e inspiração"),
             ("settings", "Ajustes", LunetIcons.Speed, "Aparência, pasta de projetos, IA"),
-        }.Where(d => d.Item1 != "ai" || _shell.AiHost is not null))
+        }.Where(d => (d.Item1 != "ai" || _shell.AiHost is not null) && (d.Item1 != "explore" || _shell.OpenRoute is not null)))
         {
             var stack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             stack.Children.Add(LunetUi.Text(label, LunetTokens.Type.Callout, weight: FontWeight.SemiBold));
@@ -178,6 +191,7 @@ public sealed class HomeView : UserControl
             {
                 CloseOverlay();
                 if (r == "ai") ShowGlobalAi();
+                else if (r == "docs") ShowDocs();
                 else if (r == "library") ShowLibrary();
                 else if (r == "settings") ShowSettings();
                 else _shell.OpenRoute?.Invoke(r, null);
@@ -193,21 +207,58 @@ public sealed class HomeView : UserControl
     protected override void OnSizeChanged(SizeChangedEventArgs e)
     {
         base.OnSizeChanged(e);
+        var rail = e.NewSize.Width >= Lunet.Client.Shell.ShellState.ExpandedMinWidth;
+        if (rail != _rail) { _rail = rail; Build(); return; } // bottom bar ↔ rail
         if (Math.Abs(e.NewSize.Width - e.PreviousSize.Width) > 1) Refresh(); // card columns follow the width
     }
+
+    /// <summary>The Home's arrangement now (Continuar, Fixados, the rest by last edit) — tests and screen readers.</summary>
+    public HomeOrder.Arrangement Arranged { get; private set; } = new(null, [], []);
+
+    /// <summary>The search typed above the games (accents and case ignored).</summary>
+    public string Query { get => _search.Text ?? ""; set { _search.Text = value; Refresh(); } }
 
     public void Refresh()
     {
         _grid.Children.Clear();
-        Shown = _shell.Workspace.Projects();
-        _count.Text = Shown.Count switch { 0 => "Comece criando um jogo", 1 => "1 jogo", _ => $"{Shown.Count} jogos" };
-        if (Shown.Count == 0)
+        var names = _shell.Workspace.Projects();
+        _count.Text = names.Count switch { 0 => "Comece criando um jogo", 1 => "1 jogo", _ => $"{names.Count} jogos" };
+        _search.IsVisible = names.Count > 1;
+        var games = names.Select(n => new HomeGame(n, GameIdOf(n), LastEdited(n))).ToList();
+        var prefs = _shell.LauncherPreferences();
+        var pins = prefs?.PinnedProjectIds.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+        Arranged = HomeOrder.Arrange(games, pins, _search.IsVisible ? _search.Text : null, prefs?.LastProjectId);
+        Shown = [.. Arranged.Pinned.Concat(Arranged.Others).Select(g => g.Name).OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase)];
+        if (names.Count == 0)
         {
             _grid.Children.Add(LunetUi.EmptyState(LunetIcons.Game, "Nenhum jogo ainda",
                 "Crie um jogo: o código, a arte, o som e o jogo rodando ficam juntos, a um toque de distância.",
                 LunetUi.Button("Criar o primeiro jogo", ButtonKind.Primary, LunetIcons.Plus, ShowCreate)));
         }
-        else foreach (var name in Shown) _grid.Children.Add(Compact ? ProjectRow(name) : ProjectCard(name));
+        else
+        {
+            if (Arranged.Continue is { } resume)
+            {
+                // Tonal, not violet: "Novo jogo" is the screen's one primary action (linguagem visual, uma ação principal).
+                var go = LunetUi.Button("Continuar " + resume.Name, ButtonKind.Secondary, LunetIcons.Play, () => _shell.OpenProject(resume.Name));
+                go.Name = "Continue";
+                go.HorizontalContentAlignment = HorizontalAlignment.Left;
+                go.Margin = new Thickness(0, 0, 0, LunetTokens.Space.S);
+                var row = Full(new Border { Child = go });
+                go.HorizontalAlignment = HorizontalAlignment.Left;
+                go.Width = Math.Min(480, row.Width); // a full row on the phone, not a bar across a wide screen
+                _grid.Children.Add(row);
+            }
+            if (Arranged.Pinned.Count > 0)
+            {
+                _grid.Children.Add(Full(SectionLabel("Fixados")));
+                foreach (var g in Arranged.Pinned) _grid.Children.Add(Compact ? ProjectRow(g.Name) : ProjectCard(g.Name));
+                if (Arranged.Others.Count > 0) _grid.Children.Add(Full(SectionLabel("Recentes")));
+            }
+            foreach (var g in Arranged.Others) _grid.Children.Add(Compact ? ProjectRow(g.Name) : ProjectCard(g.Name));
+            if (Arranged.Pinned.Count + Arranged.Others.Count == 0)
+                _grid.Children.Add(Full(LunetUi.Secondary("Nenhum jogo com esse nome.")));
+        }
         _trashRow.Children.Clear();
         var trash = _shell.Workspace.Store.Trash();
         if (trash.Count > 0)
@@ -218,6 +269,39 @@ public sealed class HomeView : UserControl
             _trashRow.Children.Add(b);
         }
     }
+
+    private Control Full(Control c)
+    {
+        // A whole row of the wrap panel (cards are laid side by side on wide screens).
+        c.Width = Math.Max(0, (Bounds.Width > 0 ? Bounds.Width : 412) - (_rail ? 88 : 0) - 2 * LunetTokens.Space.M); // minus the rail
+        return c;
+    }
+
+    private static TextBlock SectionLabel(string text)
+    {
+        var t = LunetUi.Text(text, LunetTokens.Type.Label, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+        t.Margin = new Thickness(0, LunetTokens.Space.S, 0, LunetTokens.Space.Xxs);
+        return t;
+    }
+
+    private string? GameIdOf(string name)
+    {
+        try { return Lunet.Core.ProjectManifest.Parse(File.ReadAllText(Path.Combine(_shell.Workspace.Root, name, Lunet.Core.ProjectStore.ManifestFileName))).GameId; }
+        // A damaged lunet.json must not take the Home down: the game is listed, just not pinnable (E-04).
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException or ArgumentException or Lunet.Core.ProjectException) { return null; }
+    }
+
+    /// <summary>Pins (or unpins) a game at the top of the Home, saved by GameId in the settings.</summary>
+    public void TogglePin(string name)
+    {
+        if (GameIdOf(name) is not { } id) return;
+        if (_shell.LauncherPreferences() is not { } prefs) { _shell.Report("As preferências de início estão danificadas; o arquivo foi preservado e nada foi alterado."); return; }
+        try { prefs.SetPinnedProject(name, id, !prefs.IsPinnedProject(id)); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { _shell.Report("Não foi possível salvar: " + e.Message); return; }
+        Refresh();
+    }
+
+    public bool IsPinned(string name) => GameIdOf(name) is { } id && _shell.LauncherPreferences()?.IsPinnedProject(id) == true;
 
     /// <summary>A stable colour per game (its name hashed onto the accent family), so cards are told apart at a glance.</summary>
     public static string CardColor(string name)
@@ -419,8 +503,30 @@ public sealed class HomeView : UserControl
         if (settings) ai.OpenSettings();
         _overlay.Children.Add(LunetUi.Enter(ai));
         Sheet = ai;
-        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        Select(Destination.More);
         return ai;
+    }
+
+    /// <summary>Documentação, full screen over the Home: the same offline reader as inside a game (anexo A §6.7).</summary>
+    public DocsView ShowDocs()
+    {
+        _overlay.Children.Clear();
+        var docs = new DocsView();
+        var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => CloseSheet());
+        var title = LunetUi.Title("Documentação");
+        title.VerticalAlignment = VerticalAlignment.Center;
+        var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.M, 0) };
+        DockPanel.SetDock(back, Avalonia.Controls.Dock.Left);
+        bar.Children.Add(back);
+        bar.Children.Add(title);
+        var page = new DockPanel { Background = LunetTokens.Brush(LunetTokens.Color.Background) };
+        DockPanel.SetDock(bar, Avalonia.Controls.Dock.Top);
+        page.Children.Add(bar);
+        page.Children.Add(docs);
+        _overlay.Children.Add(LunetUi.Enter(page));
+        Sheet = docs;
+        Select(Destination.More);
+        return docs;
     }
 
     /// <summary>Ajustes, full screen over the Home (P7).</summary>
@@ -430,7 +536,7 @@ public sealed class HomeView : UserControl
         var settings = new SettingsView(_shell);
         _overlay.Children.Add(LunetUi.Enter(settings));
         Sheet = settings;
-        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        Select(Destination.More);
         return settings;
     }
 
@@ -463,7 +569,7 @@ public sealed class HomeView : UserControl
         var library = new LibraryView(_shell, () => CloseOverlay());
         _overlay.Children.Add(LunetUi.Enter(library));
         Sheet = library;
-        Select(_shell.OpenRoute is null ? Destination.Library : Destination.More);
+        Select(Destination.More);
         return library;
     }
 
@@ -480,7 +586,9 @@ public sealed class HomeView : UserControl
             b.Name = "Action-" + label;
             list.Children.Add(b);
         }
-        Item("Abrir", LunetIcons.Play, () => { CloseSheet(); _shell.OpenProject(name); });
+        Item("Editar", LunetIcons.Code, () => { CloseSheet(); _shell.OpenProject(name); });
+        Item("Jogar", LunetIcons.Play, () => { CloseSheet(); _shell.Play(name); }); // same path as the Jogar grid
+        Item(IsPinned(name) ? "Desafixar" : "Fixar no início", LunetIcons.Star, () => { CloseSheet(); TogglePin(name); });
         Item("Renomear", LunetIcons.Edit, () => ShowRename(name));
         Item("Duplicar", LunetIcons.Copy, () => Run(() =>
         {

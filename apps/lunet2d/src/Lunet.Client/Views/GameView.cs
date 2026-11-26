@@ -99,12 +99,24 @@ public sealed class GameView : UserControl
                 : LunetUi.IconButton(LunetIcons.Play, "Continuar", () => game.TogglePause(), LunetTokens.Color.Primary));
             _bar.Children.Add(LunetUi.IconButton(LunetIcons.Step, "Avançar um quadro", () => { if (game.Step()) Blit(); }));
             _bar.Children.Add(LunetUi.IconButton(LunetIcons.Stop, "Parar", () => _shell.StopGame()));
-            // M6: inspect and measure next to the game, one tap away (Godot's Remote tree and Monitors while running).
-            _bar.Children.Add(PanelButton(SupportPanel.Inspector, LunetIcons.Inspector, "Inspector"));
-            _bar.Children.Add(PanelButton(SupportPanel.Performance, LunetIcons.Pulse, "Desempenho"));
+            if (game.Gpu is { } gpu)
+            {
+                // M5: the GPU game has its own Inspector and profiler, measured by the GLES backend itself.
+                _bar.Children.Add(LunetUi.IconButton(LunetIcons.Rotate, "Reiniciar o jogo", gpu.Restart));
+                _bar.Children.Add(LunetUi.IconButton(LunetIcons.Inspector, "Inspector", gpu.ToggleInspector));
+                _bar.Children.Add(LunetUi.IconButton(LunetIcons.Pulse, "Desempenho (GPU)", gpu.ToggleProfiler));
+            }
+            else
+            {
+                // M6: inspect and measure next to the game, one tap away (Godot's Remote tree and Monitors while running).
+                _bar.Children.Add(PanelButton(SupportPanel.Inspector, LunetIcons.Inspector, "Inspector"));
+                _bar.Children.Add(PanelButton(SupportPanel.Performance, LunetIcons.Pulse, "Desempenho"));
+            }
         }
         else _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _shell.RunGame(), LunetTokens.Color.Primary));
         // One chip for the speed: a tap goes to the next one (0.25× → 0.5× → 1× → 2×), instead of four buttons off screen.
+        // The GPU preview runs at the display's pace: no speed chip there rather than one that does nothing.
+        if (game.Gpu is not null) { ShowStage(); UpdateStatus(); return; }
         var speedLabel = game.Speed + "×";
         var speedChip = LunetUi.Button(speedLabel, game.Speed == 1 ? ButtonKind.Ghost : ButtonKind.Primary, LunetIcons.Speed, () =>
         {
@@ -115,15 +127,26 @@ public sealed class GameView : UserControl
         speedChip.Name = "SpeedChip";
         Avalonia.Automation.AutomationProperties.SetName(speedChip, "Velocidade " + speedLabel + ", tocar muda");
         _bar.Children.Add(speedChip);
-        if (!running)
-        {
-            _frame = null;
-            _image.Source = null;
-            if (_stage.Children.Count == 1) _stage.Children.Add(Idle());
-            else _stage.Children[1] = Idle();
-        }
-        else if (_stage.Children.Count > 1) _stage.Children.RemoveAt(1);
+        ShowStage();
         UpdateStatus();
+    }
+
+    /// <summary>The stage: the GPU surface, the CPU frame, or the idle message.</summary>
+    private void ShowStage()
+    {
+        var game = _shell.Game;
+        _stage.Children.Clear();
+        if (game.Gpu is { } gpu)
+        {
+            if (gpu.View.Parent is Panel old) old.Children.Remove(gpu.View);
+            _stage.Children.Add(gpu.View);
+            return;
+        }
+        _stage.Children.Add(_image);
+        if (game.State is GameState.Running or GameState.Paused) return;
+        _frame = null;
+        _image.Source = null;
+        _stage.Children.Add(Idle());
     }
 
     private Button PanelButton(SupportPanel panel, string icon, string label) => LunetUi.IconButton(icon, label,
@@ -134,6 +157,7 @@ public sealed class GameView : UserControl
         var game = _shell.Game;
         _status.Text = game.State switch
         {
+            GameState.Running when game.Gpu is { } gpu => gpu.Backend,
             GameState.Running => $"{game.Game!.AverageFrameMilliseconds:0.0} ms por quadro · {game.Speed}×",
             GameState.Paused => $"Pausado no quadro {game.FramesRendered}",
             GameState.CompileErrors => $"{game.Problems.Count} problema(s)",

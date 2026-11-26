@@ -58,6 +58,7 @@ public sealed class AiPanelView : UserControl
     private readonly HashSet<string> _openDiffs = new(StringComparer.Ordinal);
     private LunetAiSession? _session;
     private string? _sessionGame;
+    private string? _sessionName;
     private CancellationTokenSource? _run;
     private readonly List<LunetAiStep> _steps = [];
     private string _partial = "";
@@ -67,13 +68,28 @@ public sealed class AiPanelView : UserControl
         _shell = shell;
         AutomationProperties.SetName(_input, "Mensagem para a IA");
         _scroll.Content = _messages;
+        _scroll.ScrollChanged += (_, _) => _followTail = _scroll.Offset.Y >= _scroll.Extent.Height - _scroll.Viewport.Height - 48;
         Content = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.M, LunetTokens.Space.S) };
+    }
+
+    /// <summary>
+    /// Prepares a hint request in Estudo (from Objetivos): the text goes into the message field and the person sends it.
+    /// Estudo explains and does not change the game; nothing is sent or written by itself.
+    /// </summary>
+    public void AskForHint(string request)
+    {
+        Mode = LunetAiMode.Teach;
+        _input.Text = request;
+        Refresh();
+        _input.CaretIndex = request.Length;
     }
 
     /// <summary>The mode of the next message: Estudo unless the person picks Fazer for it.</summary>
     public LunetAiMode Mode { get; private set; } = LunetAiMode.Teach;
     public bool Running => _run is not null;
     public LunetAiSession? Session => _session;
+    /// <summary>The GameId of the conversation shown (the running one keeps its game until it ends).</summary>
+    public string? SessionGameId => _sessionGame;
     public TextBox Input => _input;
 
     /// <summary>The last reply (tests).</summary>
@@ -107,6 +123,9 @@ public sealed class AiPanelView : UserControl
     private void EnsureSession(AiHost host)
     {
         var project = _shell.Workspace.Project;
+        // A run in progress keeps its own game's session until it ends (G07: no cross-game run). Opening another game
+        // meanwhile shows that run, says which game it is changing, and only then switches.
+        if (Running) return;
         if (project is null) { _session = null; return; }
         if (_session is not null && _sessionGame == project.Manifest.GameId) return;
         // The same history file as the previous screens: one conversation per game, wherever it was started.
@@ -114,49 +133,13 @@ public sealed class AiPanelView : UserControl
         _session = new LunetAiSession(project, Path.Combine(host.HistoryDirectory, id + ".json"));
         _session.MarkInterruptedIfPending();
         _sessionGame = project.Manifest.GameId;
+        _sessionName = project.Name;
     }
 
     // ---------------- setup (once for the whole app) ----------------
 
-    private Control Setup(AiHost host, LunetAiLoadedSettings loaded)
-    {
-        var provider = LunetAiProviders.Find(loaded.Settings.ProviderId);
-        var providers = new ComboBox { ItemsSource = LunetAiProviders.All.Select(p => p.Name).ToArray(), SelectedIndex = LunetAiProviders.All.ToList().IndexOf(provider), HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = LunetTokens.MinTouch };
-        var key = new TextBox { PasswordChar = '•', PlaceholderText = provider.KeyHint, MinHeight = LunetTokens.MinTouch };
-        var model = new TextBox { Text = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : provider.SuggestedModels.FirstOrDefault() ?? "", PlaceholderText = "modelo", MinHeight = LunetTokens.MinTouch };
-        var endpoint = new TextBox { Text = loaded.Settings.Endpoint, PlaceholderText = "https://…/chat/completions", MinHeight = LunetTokens.MinTouch, IsVisible = provider.Id == "custom" };
-        AutomationProperties.SetName(key, "Chave da API"); AutomationProperties.SetName(model, "Modelo"); AutomationProperties.SetName(providers, "Provedor");
-        providers.SelectionChanged += (_, _) =>
-        {
-            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
-            key.PlaceholderText = p.KeyHint;
-            model.Text = p.SuggestedModels.FirstOrDefault() ?? "";
-            endpoint.IsVisible = p.Id == "custom";
-            endpoint.Text = p.Endpoint;
-        };
-        var status = LunetUi.Text("", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary);
-        var save = LunetUi.Button("Salvar e começar", ButtonKind.Primary, null, () =>
-        {
-            var p = LunetAiProviders.All[Math.Max(0, providers.SelectedIndex)];
-            var url = p.Id == "custom" ? endpoint.Text ?? "" : p.Endpoint;
-            if (string.IsNullOrWhiteSpace(key.Text) || string.IsNullOrWhiteSpace(model.Text) || string.IsNullOrWhiteSpace(url))
-            {
-                status.Text = "Preencha a chave, o modelo e o endereço.";
-                return;
-            }
-            host.Store.Save(loaded.Settings with { ProviderId = p.Id, Endpoint = url.Trim(), Model = model.Text!.Trim() }, key.Text!.Trim());
-            Refresh();
-        });
-        var form = new StackPanel { Spacing = LunetTokens.Space.S };
-        form.Children.Add(LunetUi.Secondary("Configure uma vez: a chave fica no cofre do aparelho e vale para todo o Lunet."));
-        form.Children.Add(providers);
-        form.Children.Add(key);
-        form.Children.Add(model);
-        form.Children.Add(endpoint);
-        form.Children.Add(save);
-        form.Children.Add(status);
-        return new ScrollViewer { Content = form };
-    }
+    /// <summary>Not configured yet: the one AI settings form of the app (no copy here — anexo A §6.6).</summary>
+    private Control Setup(AiHost host, LunetAiLoadedSettings loaded) => new AiSettingsView(host, Refresh);
 
     // ---------------- conversation ----------------
 
@@ -217,8 +200,8 @@ public sealed class AiPanelView : UserControl
         var request = new LunetAiRequest(loaded.Settings with { Model = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : "teste" },
             loaded.ApiKey ?? "chave-local-de-teste", context, new ShellAiBuild(_shell.Workspace), host.Provider,
             Mode: mode,
-            Steps: new Progress<LunetAiStep>(step => { var i = _steps.FindIndex(s => s.Id == step.Id); if (i >= 0) _steps[i] = step; else _steps.Add(step); RenderMessages(); }),
-            PartialText: new Progress<string>(text => { _partial = text; RenderMessages(); }));
+            Steps: new Progress<LunetAiStep>(step => { var i = _steps.FindIndex(s => s.Id == step.Id); if (i >= 0) _steps[i] = step; else _steps.Add(step); ScheduleLive(); }),
+            PartialText: new Progress<string>(text => { _partial = text; ScheduleLive(); }));
         _input.Text = "";
         Mode = LunetAiMode.Teach; // Fazer is a choice for one message, never sticky
         _steps.Clear(); _partial = "";
@@ -239,7 +222,10 @@ public sealed class AiPanelView : UserControl
             _run?.Dispose();
             _run = null;
             _steps.Clear(); _partial = "";
-            _shell.WorkspaceView.ReloadFromDisk(); // show what the AI changed (nothing unsaved here: we saved before)
+            // Show what the AI changed — only when its game is the one open: another game opened during the run may
+            // hold edits not saved yet, and reloading it would drop them (G07).
+            if (_shell.Workspace.Project?.Manifest.GameId == _sessionGame) _shell.WorkspaceView.ReloadFromDisk();
+            else if (_shell.AiHost is { } h) EnsureSession(h); // the run ended: the conversation follows the open game
             BuildComposer();
             RenderMessages();
         }
@@ -247,8 +233,46 @@ public sealed class AiPanelView : UserControl
 
     public void Stop() => _run?.Cancel();
 
+    // ---- the live part of a run (steps and streamed text) ----
+    // Every token and step used to rebuild the whole conversation (Markdown, code blocks, diffs): a long history made
+    // the streaming stutter (GOAL H4: "evitar rebuild por token"). Now the history is built at the start and end of a
+    // run only; while it runs, one live block is updated in place, at most ten times a second.
+    private readonly StackPanel _live = new() { Spacing = 2 };
+    private readonly TextBlock _livePartial = LunetUi.Text("", LunetTokens.Type.Label);
+    private readonly Avalonia.Threading.DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
+    private bool _liveTimerHooked;
+
+    /// <summary>How many times the whole conversation was rebuilt (tests: streaming must not rebuild it).</summary>
+    public int FullRenders { get; private set; }
+
+    private void ScheduleLive()
+    {
+        if (!_liveTimerHooked) { _liveTimerHooked = true; _liveTimer.Tick += (_, _) => { _liveTimer.Stop(); RenderLive(); }; }
+        if (!_liveTimer.IsEnabled) _liveTimer.Start();
+    }
+
+    /// <summary>Updates only the live block (steps and the text so far); the rest of the conversation stays as built.</summary>
+    public void RenderLive()
+    {
+        if (!Running) return;
+        if (!_messages.Children.Contains(_live)) { RenderMessages(); return; }
+        _live.Children.Clear();
+        _livePartial.TextWrapping = TextWrapping.Wrap;
+        foreach (var step in _steps.TakeLast(6))
+            _live.Children.Add(LunetUi.Text((step.Status == LunetAiStepStatus.Done ? "✓ " : "… ") + step.Label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        _livePartial.Text = _partial;
+        if (_partial.Length > 0) _live.Children.Add(_livePartial);
+        if (_live.Children.Count == 0) _live.Children.Add(LunetUi.Text("Pensando…", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        if (_followTail) _scroll.ScrollToEnd();
+    }
+
+    // The reader scrolled up to read: streaming does not pull the view back down until they return to the end.
+    private bool _followTail = true;
+
     private void RenderMessages()
     {
+        FullRenders++;
+        _liveTimer.Stop();
         _messages.Children.Clear();
         var history = _session?.History ?? [];
         if (history.Count == 0 && !Running)
@@ -259,15 +283,14 @@ public sealed class AiPanelView : UserControl
             if (turn.Pending) continue;
             _messages.Children.Add(turn.Role == "user" ? UserBubble(turn) : AssistantMessage(turn));
         }
+        if (Running && _shell.Workspace.Project?.Manifest.GameId != _sessionGame)
+            _messages.Children.Add(LunetUi.Notice($"A IA ainda trabalha em {_sessionName}. Ela termina lá (ou pare-a aqui); depois esta conversa passa para o jogo aberto.", LunetTokens.Color.Warning));
         if (Running)
         {
-            var live = new StackPanel { Spacing = 2 };
-            foreach (var step in _steps.TakeLast(6))
-                live.Children.Add(LunetUi.Text((step.Status == LunetAiStepStatus.Done ? "✓ " : "… ") + step.Label, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
-            if (_partial.Length > 0) live.Children.Add(LunetUi.Text(_partial, LunetTokens.Type.Label));
-            if (live.Children.Count == 0) live.Children.Add(LunetUi.Text("Pensando…", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
-            _messages.Children.Add(live);
+            _messages.Children.Add(_live);
+            RenderLive();
         }
+        _followTail = true;
         _scroll.ScrollToEnd();
     }
 
@@ -340,7 +363,7 @@ public sealed class AiPanelView : UserControl
         return new Border
         {
             Child = card, Padding = new Thickness(LunetTokens.Space.S), CornerRadius = new CornerRadius(LunetTokens.Radius.M),
-            Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(1),
+            Background = LunetTokens.Brush(LunetTokens.Color.Surface), // depth by tone, not by border
         };
     }
 }

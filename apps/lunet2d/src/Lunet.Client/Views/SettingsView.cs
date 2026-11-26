@@ -26,7 +26,7 @@ public sealed class SettingsView : UserControl
         _status.IsVisible = false;
         Content = new ScrollViewer
         {
-            Content = new Border { Child = _page, MaxWidth = 720, Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.L, LunetTokens.Space.M, LunetTokens.Space.Xl) },
+            Content = new Border { Child = _page, MaxWidth = 720, Padding = new Thickness(LunetTokens.Space.M, LunetTokens.Space.Xxs, LunetTokens.Space.M, LunetTokens.Space.Xl) },
         };
         Build();
     }
@@ -65,7 +65,14 @@ public sealed class SettingsView : UserControl
     private void Build()
     {
         _page.Children.Clear();
-        _page.Children.Add(LunetUi.Headline("Ajustes"));
+        // A visible way back, like Aprender and Studios (Back/Esc also close it).
+        var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => _shell.Home.CloseSheet());
+        back.Name = "SettingsBack";
+        var title = LunetUi.Title("Ajustes"); // the same sub-page header as Aprender and Studios
+        title.VerticalAlignment = VerticalAlignment.Center;
+        var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs, Children = { back, title },
+            Margin = new Thickness(LunetTokens.Space.Xxs - LunetTokens.Space.M, 0, 0, 0) }; // the back arrow sits at the edge, as in Aprender
+        _page.Children.Add(head);
         _page.Children.Add(_status);
         var settings = _shell.Settings;
 
@@ -98,6 +105,13 @@ public sealed class SettingsView : UserControl
         });
         Toggle("Números de linha", "Ao lado do código", settings.ShowLineNumbers, v => Change(s => s.ShowLineNumbers = v), "LineNumbers");
         Toggle("Formatar ao rodar", "Arruma a indentação do arquivo aberto antes de rodar o jogo", settings.FormatOnRun, v => Change(s => s.FormatOnRun = v), "FormatOnRun");
+
+        if (_shell.Game.GpuFactory is not null)
+        {
+            Section("Jogo");
+            Toggle("Preview isolado", "Roda o jogo num processo separado: se ele travar ou faltar memória, o Lunet continua de pé", settings.IsolatedPreview, v => Change(s => s.IsolatedPreview = v), "IsolatedPreview");
+            Toggle("Taxa de atualização alta", "Pede 90/120 Hz ao rodar o jogo, onde a tela tiver", settings.HighRefreshRate, v => Change(s => s.HighRefreshRate = v), "HighRefreshRate");
+        }
 
         if (_shell.KeepScreenOn is not null)
         {

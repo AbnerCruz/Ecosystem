@@ -29,7 +29,7 @@ public static class ShellScreens
             var root = Path.Combine(Path.GetTempPath(), "lunet-screens-" + Guid.NewGuid().ToString("N"));
             try
             {
-                var window = new MainWindow(root) { Width = w, Height = h };
+                var window = new MainWindow(root, Path.Combine(root, ".data")) { Width = w, Height = h }; // never the user's AppData
                 window.Show();
                 var shell = window.Shell;
                 shell.HardwareKeyboard = size != "celular"; // the phone captures show the code bar
@@ -38,6 +38,14 @@ public static class ShellScreens
                 shell.CreateProject();
                 shell.GoHome();
                 Shot(window, output, size, "2-home", written);
+                // H2: several games — Continuar, a pinned one and the search.
+                shell.Workspace.Create("Plataforma"); shell.Workspace.Create("Nave-Espacial");
+                shell.Home.TogglePin("Plataforma");
+                shell.GoHome();
+                Shot(window, output, size, "2-home-varios", written);
+                shell.Home.Query = "nave";
+                Shot(window, output, size, "2-home-busca", written);
+                shell.Home.Query = "";
                 shell.Home.ShowCreate();
                 Shot(window, output, size, "2b-novo-jogo", written);
                 shell.Home.CloseSheet();
@@ -239,6 +247,16 @@ public static class ShellScreens
                     Shot(window, output, size, "8-arte-detalhe", written);
                     resources.CloseSheet();
                 }
+                // H6: Objetivos beside the code (the game linked to the first Aprender challenge).
+                var challenge = Lunet.Core.LearningCatalog.FindProject(Lunet.Core.LearningCatalog.FirstProjectId)!;
+                new Lunet.Core.LearningProgressStore(shell.LearningProgressPath).LinkProject(challenge.Id, shell.Workspace.Project!.Name, shell.Workspace.Project.Manifest.GameId);
+                shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Objectives);
+                Shot(window, output, size, "9a-objetivos", written);
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.None);
+                shell.WorkspaceView.OpenConnections();
+                Shot(window, output, size, "9b-conexoes", written);
+                shell.Back();
                 window.Close();
             }
             finally { if (Directory.Exists(root)) Directory.Delete(root, true); }

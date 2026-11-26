@@ -1,0 +1,65 @@
+# Conclusão integral do Lunet — relatório vivo (26/11/2026)
+
+**Missão:** o documento "LUNET — GOAL de continuidade, consolidação e conclusão integral" (26/11). Este é o único relatório da missão. Ele guarda o estado recebido, os erros encontrados (com causa, correção e prova) e a matriz de estado.
+
+**Rótulos de estado:** "Código" quer dizer só integrado à `main`. "Release" quer dizer publicado. "Aparelho" quer dizer que alguém conferiu num celular. Nada aqui foi testado num celular.
+
+## H0 — Estado recebido
+
+| Item | Fato verificado |
+|---|---|
+| `main` ao assumir | `c32c498` (merge do #1053, trabalho do agente GPT: estabilizar música e reabrir WAV sem jogo) |
+| `VERSION` na `main` | `0.0.1-dev.1000609` |
+| Releases | 1000606, 1000607, 1000608 e 1000609 publicadas com APK arm64. A 1000609 cobre o #1053. |
+| PRs abertos do Lunet | Só o #1038 ("publicar E1–E3 como dev.1000593"). Está obsoleto: o E1–E3 já está na `main` (`cd258e55`) e foi publicado em releases posteriores. Não deve ser publicado com tag velha (§2 do GOAL). |
+| Trabalho do GPT | Integrado: commits `8a62d80` e `90d1108`, merge `c32c498`. Nenhum commit sem PR encontrado no remoto. Não foi feito cherry-pick redundante. |
+| Branch de trabalho | `ccr-0dc592a4-9d3w98`, avançada por fast-forward até a `main`. O force push foi recusado pela política, e não foi necessário. |
+
+## Erros encontrados e corrigidos nesta missão
+
+| # | Erro | Causa comprovada | Correção | Prova |
+|---|---|---|---|---|
+| E-01 | O build dos testes quebrou com CS0121 ("a chamada é ambígua") em `CameraTests` linhas 234 e 250, depois de acrescentar `Draw(Texture2D, RectangleF, Color)` | `new(40, 50)` sem tipo explícito converte para qualquer tipo de destino. Com a nova sobrecarga, `Draw(textura, new(x, y), cor)` passou a combinar com `Vector2` e com `RectangleF`. Jogos de usuários que escrevem assim também quebrariam. | `[OverloadResolutionPriority(-1)]` na nova sobrecarga, o mesmo recurso que o `SpriteBatch` já usa. O código antigo continua resolvendo para `Vector2`. | `RectangleDrawTests.DrawTextureRectangleColor_…` (chamada `Draw(tex, new(5, 6), cor)`), mais `CameraTests` verdes. O agente de teste reproduziu o erro antes da correção. |
+| E-02 | Na aba Código, o botão **Rodar** cobria as teclas da barra de código | O botão flutuante ficava a 16 dp do fundo do editor, e a barra de código também fica no fundo do editor. Com um painel aberto, quando o editor recupera o foco, a barra volta e fica embaixo do botão. | `WorkspaceView.PlaceRunButton`: o botão sobe pela altura da barra e acompanha o redimensionamento dela. | Captura `celular-9a-objetivos` (antes e depois) e `RunButtonLayoutTests.Rodar_NeverCoversTheCodeBar` (retângulos sem interseção). |
+
+| E-03 | Os Fixados da Home nova eram gravados em `settings.json` (`PinnedGameIds`), mas as telas antigas já guardavam fixados e recentes por GameId em `launcher-preferences.json`. Eram duas autoridades para o mesmo conceito, o que viola a NN-001. | Faltou auditar `LauncherPreferences` antes de criar o campo (erro do próprio agente, encontrado no H6). | O campo novo foi removido. A Home usa `LauncherPreferences`, o mesmo arquivo das telas antigas. "Continuar" usa `LastProjectId`, e abrir um jogo registra o recente. Se o arquivo estiver danificado, ele não é sobrescrito. | `HomeOrderTests` grava e lê `launcher-preferences.json`, e `Continue_PrefersTheGameOpenedLast` cobre o "Continuar" |
+
+| E-04 | A Home quebrava com um jogo cujo `lunet.json` não tinha `name` (`ProjectException` em `HomeView.GameIdOf`) | A leitura do GameId para Fixados e Continuar só capturava erros de I/O e de JSON | `ProjectException` também é capturada. O jogo continua listado e só deixa de poder ser fixado. | A suíte completa (1.344 testes) reproduziu o erro em `ProjectFolderTests`, que agora passa |
+| E-05 | Durante uma execução da IA, abrir outro jogo trocava a sessão no meio, mostrava "Parar" para outro jogo e, no fim, recarregava do disco o jogo aberto, o que perderia texto ainda não salvo | `EnsureSession` não considerava a execução em andamento, e o recarregamento final não conferia o jogo | A execução mantém a sessão do próprio jogo e avisa qual jogo está alterando. O recarregamento só acontece se o jogo da execução for o jogo aberto. Depois disso, a conversa passa para o jogo aberto. | `ARunKeepsItsGame_AndNeverReloadsAnotherGameWithUnsavedText` |
+
+| E-06 | Na aba **Jogo** (também em Recursos e Notas), a barra de abas do workspace sumia, e o único caminho de volta ao código era o Voltar | O estado "teclado aberto" usava a barra de código mesmo quando a aba Código não estava visível. A barra, aberta uma vez em Código, escondia as abas em todas as outras. | A barra de código só conta quando o Código está na tela (`CodeVisible`), e o `Rebuild` recalcula o estado a cada troca de aba | Captura `celular-4-jogo` (antes e depois) e `WorkspaceTabsTests` |
+
+| E-07 | `--screens`, o gerador de capturas, gravava progresso, Biblioteca, rascunhos dos Studios e ajustes no AppData **real** de quem o rodava. A contagem de "Minhas criações" subia a cada execução: 29, 31, 33. | A `MainWindow` sempre apontava para `AppData/Lunet`, e o gerador de capturas a reaproveitava | `MainWindow(projectsRoot, dataRoot)`: o gerador de capturas passa uma pasta temporária, e o app normal continua no AppData | Capturas `2l-studios` antes (33 itens) e depois (só os 2 do cenário) |
+| E-08 | Em Jogar, no celular, aparecia uma capa por linha, embora o código previsse duas | A conta da largura descontava a margem de uma capa só, e a segunda quebrava a linha | A largura passa a considerar a margem das duas capas | Captura `2j-jogar` antes e depois |
+
+## Entregas (código na branch e depois na `main`; nada conferido num celular)
+
+| Frente | O que mudou | Prova |
+|---|---|---|
+| Anexo B, parte A | `System.Drawing.Primitives` entrou na lista obrigatória do compilador do jogo, sem `System.Drawing.Common`. `Size` e `Point` funcionam com alias e não colidem com `Color` nem com `RectangleF`. | `SizeOverloadTests.TheGameCompilerSeesSizeAndPoint_…`, que usa o `GameCompiler` real |
+| Anexo B, parte B | `RectangleF(Vector2, Vector2)`. Sobrecargas com `Size` em `CreateSolid`, `FromPixels`, `SetVirtualResolution` e `RenderTarget2D`, cada uma encaminhando para a escalar (mesma validação). | `RectangleDrawTests`, `SizeOverloadTests` |
+| Anexo B, parte C | `Draw(RectangleF, Color)` e `Draw(Texture2D, RectangleF, Color)`. Produzem os mesmos vértices, UV, cor e lotes que `FillRect` e a sobrecarga completa, reaproveitam o pixel branco e não alocam no caminho aquecido. | `RectangleDrawTests` |
+| H6 — Objetivos | Apoio **Objetivos** na IDE: mostra a missão ligada ao jogo pelo GameId, a lista de objetivos gravada no mesmo arquivo de progresso de Aprender, os critérios de aceite, a referência offline e uma pista no modo Estudo. A pista não escreve código nem envia nada sozinha. | `ObjectivesTests`, captura `9a-objetivos` |
+
+| H3 — M5 | A aba Jogo no Android roda o jogo na GPU: o `PreviewHost` e o `PreviewRenderer` GLES das telas antigas, sem mudança, hospedados num `NativeControlHost`. A `GameSession` dirige a prévia: compilar, pausar, passo, reiniciar, teclas e parar. Uma falha atrasada de uma execução já parada é ignorada. O app pausa e retoma a superfície GL junto com a Activity. Inspector e Desempenho medem o próprio jogo na GPU. Não há chip de velocidade. | `GpuPreviewTests`, com uma prévia falsa; build do APK. A superfície GL real só roda no Android. |
+
+| H4 — streaming | O painel de IA redesenhava toda a conversa (Markdown, código e diffs) a cada pedaço de texto ou passo recebido. Agora atualiza só o bloco ao vivo, no máximo a cada 100 ms. Quem subiu a rolagem para ler não é puxado de volta. | `AiStreamingRenderTests`: 200 atualizações ao vivo e zero reconstruções |
+
+| UX §4.1 / §6.1 | A barra global agora é Início, Jogar, Aprender, Studios e Mais, nessa ordem, no celular e no desktop (antes eram seis destinos no desktop, e Biblioteca e Ajustes ficavam soltos). Mais reúne Lunet IA, **Documentação** (agora global, com o mesmo leitor offline), Biblioteca, Explorar (só onde existe a tela, sem link morto) e Ajustes. O título é "Área de trabalho". | `GlobalNavigationTests` (desktop e Android); capturas |
+
+| UX §6.5 / §6.1 / §6.4 | Studios agrupados em Arte (Sprite, Mapa, Paleta), Áudio (Música, Efeito, Tom WAV) e Outros (Partículas, Tabela), todos tonais e com ícones distintos. O menu do jogo na Home tem Editar e Jogar, por um só caminho (`LunetShell.Play`). Abrir ou criar a missão em Aprender abre o jogo com os **Objetivos** ao lado do código. | Capturas `2l-studios` e `2j-jogar`; `LunetClientLearnTests` atualizado |
+
+| Linguagem visual §5 | As bordas decorativas saíram dos cartões de cursos em Aprender, do cartão de alterações da IA e das miniaturas da Biblioteca; a profundidade agora vem do tom. Ajustes ganhou botão de voltar visível e o mesmo cabeçalho de subpágina de Aprender e Studios. | Capturas `2f-aprender` e `2k-ajustes` |
+
+| UX §6.3 — decisão do teclado | **Divergência resolvida com a fonte.** O pedido original (PR #1040, 25/11) era um teclado próprio da IDE. Depois, o proprietário escreveu na sessão de 25/11: "A digitação do editor, ms extremamente alto, não da pra digitar, vamos abortar a ideia de ter um teclado nativo mas não abortar a ideia de ter varias abas". O PR #1047 aplicou isso: o teclado do sistema digita, e uma barra única tem as abas Teclas, Atalhos e Métodos. **Decisão vigente:** IME do sistema mais a barra de três abas. Nenhum caminho com dois teclados. A ponte de teclado e o Enter foram corrigidos no #1051. | Ordem citada; `CodeBar` e `EditorKeyboardTests` |
+| UX §6.6 | O painel da IA do jogo usava uma cópia do formulário de configuração. Agora reaproveita o formulário único (`AiSettingsView`). | Teste `AiPanel_IsConfiguredOnceForTheWholeApp` atualizado |
+
+## Pendências conhecidas
+
+- **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)
+
+- **M5, isolamento:** resolvido. Ajustes → Jogo → "Preview isolado" abre o jogo na Activity de processo separado (`IsolatedGpuPreview`). Na volta, a aba recolhe o console e acusa se o processo morreu (o arquivo marcador). Taxa de atualização alta também voltou a Ajustes.
+- **M5, aparelho:** falta conferir no celular a superfície GL dentro da casca (toque, rotação, troca de aba, minimizar e voltar).
+
+- **Anexo B, parte A:** falta conferir no Preview do Android e no APK exportado, com trimming, que o `System.Drawing.Primitives` carrega no aparelho. Isso depende do CI de APK e do celular.
+- **#1038:** precisa ser fechado administrativamente, com prova de que as releases posteriores já contêm o E1–E3. Fechar PR de outro agente fica a cargo do proprietário ou do integrador.

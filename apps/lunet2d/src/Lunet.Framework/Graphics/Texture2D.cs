@@ -49,6 +49,23 @@ public sealed class Texture2D : IDisposable
         return new Texture2D(device, device.Backend.CreateTexture(width, height, rgba, filter), width, height, filter);
     }
 
+    /// <summary>Cria uma textura a partir de pixels RGBA, com as dimensões agrupadas.</summary>
+    /// <param name="device">Dispositivo gráfico.</param>
+    /// <param name="size">Largura e altura, em pixels (positivas).</param>
+    /// <param name="rgba">Pixels em RGBA de 8 bits por canal, linha a linha de cima para baixo.</param>
+    /// <param name="filter">Filtro de amostragem.</param>
+    /// <returns>A textura criada.</returns>
+    public static Texture2D FromPixels(GraphicsDevice device, System.Drawing.Size size, ReadOnlySpan<byte> rgba, TextureFilter filter = TextureFilter.Linear) =>
+        FromPixels(device, size.Width, size.Height, rgba, filter);
+
+    /// <summary>Cria uma textura de uma cor só, com as dimensões agrupadas.</summary>
+    /// <param name="device">Dispositivo gráfico.</param>
+    /// <param name="size">Largura e altura, em pixels.</param>
+    /// <param name="color">Cor.</param>
+    /// <returns>A textura.</returns>
+    public static Texture2D CreateSolid(GraphicsDevice device, System.Drawing.Size size, Color color) =>
+        CreateSolid(device, size.Width, size.Height, color);
+
     /// <summary>Cria uma textura de uma cor só.</summary>
     /// <param name="device">Dispositivo gráfico.</param>
     /// <param name="width">Largura.</param>
