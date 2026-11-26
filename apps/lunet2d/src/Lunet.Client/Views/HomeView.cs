@@ -150,10 +150,11 @@ public sealed class HomeView : UserControl
         var list = new StackPanel { Spacing = LunetTokens.Space.Xxs };
         foreach (var (route, label, icon, detail) in new[]
         {
+            ("ai", "Lunet IA", LunetIcons.Code, "Conversa sem jogo aberto: dúvidas de C# e ideias"),
             ("library", "Biblioteca", LunetIcons.Folder, "Recursos seus para usar em qualquer jogo"),
             ("explore", "Explorar", LunetIcons.Map, "Referências e inspiração"),
             ("settings", "Ajustes", LunetIcons.Speed, "Aparência, pasta de projetos, IA"),
-        })
+        }.Where(d => d.Item1 != "ai" || _shell.AiHost is not null))
         {
             var stack = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             stack.Children.Add(LunetUi.Text(label, LunetTokens.Type.Callout, weight: FontWeight.SemiBold));
@@ -176,7 +177,8 @@ public sealed class HomeView : UserControl
             b.Click += (_, _) =>
             {
                 CloseOverlay();
-                if (r == "library") ShowLibrary();
+                if (r == "ai") ShowGlobalAi();
+                else if (r == "library") ShowLibrary();
                 else if (r == "settings") ShowSettings();
                 else _shell.OpenRoute?.Invoke(r, null);
             };
@@ -349,6 +351,8 @@ public sealed class HomeView : UserControl
         if (Sheet is LearnView learn) return learn.Back(); // its pages first; at the catalog it calls CloseOverlay
         if (Sheet is LibraryView library) return library.Back();
         if (Sheet is StudiosView studios) return studios.Back();
+        if (Sheet is GlobalAiView ai) return ai.Back();
+        if (Sheet is SettingsView settings && settings.Back()) return true;
         if (Sheet is PlayView or SettingsView) return CloseOverlay();
         return CloseOverlay();
     }
@@ -404,6 +408,19 @@ public sealed class HomeView : UserControl
         Sheet = learn;
         Select(Destination.Learn);
         return learn;
+    }
+
+    /// <summary>The AI without a game (LUNET-521), full screen over the Home; null when the head has no key vault.</summary>
+    public GlobalAiView? ShowGlobalAi(bool settings = false)
+    {
+        if (_shell.AiHost is not { } host) return null;
+        _overlay.Children.Clear();
+        var ai = new GlobalAiView(_shell, host, () => CloseOverlay());
+        if (settings) ai.OpenSettings();
+        _overlay.Children.Add(LunetUi.Enter(ai));
+        Sheet = ai;
+        Select(_shell.OpenRoute is null ? Destination.Settings : Destination.More);
+        return ai;
     }
 
     /// <summary>Ajustes, full screen over the Home (P7).</summary>
