@@ -201,3 +201,37 @@ public sealed class SortedBatchEdgeTests
         Assert.Equal([2, 1], backend.Batches.Select(x => x.QuadCount));
     }
 }
+
+/// <summary>E1.7: every SpriteBatch consumer draws the same vertices in a sorted pass with one key as in the legacy pass.</summary>
+public sealed class SortedBatchConsumerTests
+{
+    private static List<SpriteVertex[]> Draw(bool sorted)
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 200, 200);
+        var tex = Texture2D.CreateSolid(device, 16, 16, Color.White);
+        var font = SpriteFont.CreateDefault(device);
+        var atlas = new TextureAtlas(tex, [new AtlasRegion("a", new RectangleF(0, 0, 8, 8))]);
+        var slice = new NineSlice(tex, new RectangleF(0, 0, 16, 16), 4, 4, 4, 4);
+        var sprite = new Sprite(tex, new RectangleF(4, 4, 8, 8));
+        var batch = new SpriteBatch(device);
+        if (sorted) batch.BeginSorted(); else batch.Begin();
+        batch.Draw(tex, new Vector2(1, 2), new RectangleF(0, 0, 4, 4), Color.White); // cropped texture
+        batch.Draw(atlas, "a", new Vector2(20, 20), Color.White);
+        batch.Draw(sprite, new Vector2(40, 40));
+        batch.DrawString(font, "Ola", new Vector2(60, 60), Color.White);
+        batch.Draw(slice, new RectangleF(80, 80, 40, 30), Color.White);
+        batch.FillRect(new RectangleF(5, 150, 30, 10), Color.Red);
+        batch.Rect(new RectangleF(50, 150, 30, 10), Color.Green, 2);
+        batch.End();
+        return backend.Batches.Select(b => b.Vertices).ToList();
+    }
+
+    [Fact]
+    public void ConsumersDrawTheSameVertices_SortedWithOneKeyAsLegacy()
+    {
+        var legacy = Draw(sorted: false).SelectMany(v => v).ToArray();
+        var sorted = Draw(sorted: true).SelectMany(v => v).ToArray();
+        Assert.NotEmpty(legacy);
+        Assert.Equal(legacy, sorted);
+    }
+}
