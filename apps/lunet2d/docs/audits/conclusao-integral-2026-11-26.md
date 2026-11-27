@@ -87,7 +87,7 @@ As provas são testes headless da casca real e as capturas de `--screens`, em 41
 |---|---|---|---|
 | UX01 | Headless ok | `GlobalNavigationTests`, `LunetClientTests` (criar jogo vazio), captura `1-home-vazia` | Instalação limpa no aparelho |
 | UX02 | Headless ok | `HomeOrderTests` (busca, Continuar, Fixados), `EditorSession_ReopensTheGameOnTheFileAndCaretYouLeft` | Aparelho |
-| UX03 | Parcial | `EditorKeyboardTests` (IME, Enter, desfazer), testes da barra de código (Métodos) | Jornada única Métodos → assinatura → rodar num teste só |
+| UX03 | Feito, exceto aparelho | `EditorKeyboardTests` (IME, Enter, desfazer); `MethodsJourneyTests`, numa jornada só: Métodos insere `Color.Red` com o tipo, volta para Teclas e entra em Recentes; a assinatura aparece ao digitar a chamada; o jogo compila e roda com o código inserido | Conferir no aparelho, com o teclado do sistema |
 | UX04 | Headless ok | `AiStreamingRenderTests`: fechar e reabrir sem cancelar, sem reconstruir a conversa a cada pedaço de texto, sem cruzar jogos | Aparência compacta e expandida no aparelho |
 | UX05 | Headless ok | `ObjectivesTests`, `LunetClientLearnTests` (missão → Objetivos → Referência) | Aparelho |
 | UX06 | Headless ok | `Studios_WithoutAGame_…`, `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects`, matriz H5 | Aparelho |
