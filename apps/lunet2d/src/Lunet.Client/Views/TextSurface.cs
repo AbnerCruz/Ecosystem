@@ -79,8 +79,14 @@ public sealed class CodeSurface : ITextSurface
         AutomationProperties.SetName(_editor.TextArea, "Editor de código");
         _editor.TextArea.TextView.BackgroundRenderers.Add(_diagnostics);
         _editor.Document.TextChanged += (_, _) => TextChanged?.Invoke();
-        _editor.TextArea.GotFocus += (_, _) => Engaged?.Invoke();
-        _editor.TextArea.AddHandler(InputElement.PointerReleasedEvent, (_, _) => Engaged?.Invoke(),
+        // A finger on the code decides on release whether it was a tap (keyboard) or a scroll (no keyboard): focus taken
+        // under that finger waits for it. Focus from code (a file opened, a jump to a line) engages at once.
+        _editor.TextArea.AddHandler(InputElement.PointerPressedEvent, (_, e) => _fingerDown = e.Pointer.Type != PointerType.Mouse,
+            Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        _editor.TextArea.AddHandler(InputElement.PointerCaptureLostEvent, (_, e) => { if (e.Pointer.Captured is null) _fingerDown = false; },
+            Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        _editor.TextArea.GotFocus += (_, _) => { if (!_fingerDown) Engaged?.Invoke(); };
+        _editor.TextArea.AddHandler(InputElement.PointerReleasedEvent, (_, e) => { _fingerDown = false; if (!TouchTap.Moved(e)) Engaged?.Invoke(); },
             Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         // The system keyboard (estudo do editor, 26/11/2026): a multi-line field whose Enter is a line break (without
         // it Avalonia declares "Done" and Enter closes the keyboard), no suggestions or autocorrect (code; it also keeps
@@ -103,6 +109,7 @@ public sealed class CodeSurface : ITextSurface
 
     /// <summary>Raised after every change of the text (typing, keyboard edits, loading).</summary>
     public event Action? TextChanged;
+    private bool _fingerDown;
 
     /// <summary>The diagnostics drawn under the code now (LUNET-536 M1).</summary>
     public IReadOnlyList<LunetDiagnostic> Diagnostics => _diagnostics.Items;

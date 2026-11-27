@@ -45,9 +45,15 @@ public sealed class LunetShell : UserControl
         _timer.Tick += (_, _) => TickGame();
         // A finger lifted on a text field asks for the keyboard explicitly (after focus has settled on it).
         // Only a tap on the field itself: a key of the code bar or its ⌄ (which closes the keyboard) keep their meaning.
+        // A finger that dragged was scrolling: it never asks for the keyboard (owner, 27/11: scrolling the code kept
+        // opening it). The press is recorded first, before any control can handle it.
+        AddHandler(PointerPressedEvent, (_, e) => TouchTap.Press(e), Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerReleasedEvent, (_, e) => TouchTap.Release(e), Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        AddHandler(PointerCaptureLostEvent, (_, e) => { if (e.Pointer.Captured is null) TouchTap.Cancel(e.Pointer); }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         AddHandler(PointerReleasedEvent, (_, e) =>
         {
             if (e.Pointer.Type == PointerType.Mouse || e.Source is not Visual tapped) return;
+            if (TouchTap.Moved(e)) return;
             Avalonia.Threading.Dispatcher.UIThread.Post(() => RequestKeyboardForFocus(tapped));
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         Content = _home;

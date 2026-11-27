@@ -41,6 +41,8 @@
 
 - **E-14 (dados na atualização):** a casca lia só os fixados por GameId. Quem atualiza de uma versão cuja Home salvava fixados e o último jogo por nome (preferências v1) os perdia na Home nova. A conversão para GameId (`UpgradeProjectReferences`) existia, mas só a tela anterior a chamava. Agora a casca a executa na primeira leitura; nomes sem jogo correspondente são mantidos. Achado e provado pelo `UpgradeDataTests`.
 
+- **E-15 (relatado pelo proprietário no celular, 27/11):** rolar o código abria o teclado. Três pontos pediam o teclado a cada dedo levantado, sem distinguir toque de arraste, e o foco tomado no primeiro toque também abria. Agora `TouchTap` compara a posição do dedo ao descer e ao subir (tolerância de 10 px); o editor espera o dedo subir para decidir. Provado por `ScrollNoKeyboardTests`: o teste falha sem a correção e passa com ela.
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
@@ -151,12 +153,12 @@ Legenda:
 | G08 | Sprite com camadas e animações, Tile, áudio, publicar e usar no jogo | Automatizado | Matriz H5 completa em testes | Aparelho |
 | G09 | Aprender T01, objetivo, pista, Docs, Preview e reabrir | Automatizado | `ObjectivesTests`, `LunetClientLearnTests`, `ProblemDocsTests` | Aparelho |
 | G10 | ZIP, importar, exportar por SAF, cancelar, revogar e recuperar | Automatizado (ZIP) | 44 testes rodados em 27/11. `ProjectZipImportTests` e `ProjectFolderSnapshotTests` (30) cobrem limite de entradas, caminho fora da pasta, duplicados, 512 MiB, ZIP corrompido e stream não posicionável. `ProjectManageTests`, `ProjectJourneyTests` e `ProjectFolderTests` (14) cobrem exportar, importar como jogo novo e salvar o aberto antes | Aparelho: SAF real, cancelar o seletor, revogar a permissão |
-| G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7) | Scene2D no modo ordenado |
+| G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7, Scene2D incluído) | — |
 | G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
 | G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
 | G14 | Atualizar o Lunet existente e conferir dados | Automatizado (parcial) | `UpgradeDataTests`: preferências v1 (fixados e último jogo por nome) chegam à Home nova (E-14 corrigido). Arquivos de IA, Notas e progresso mantêm os mesmos caminhos | Aparelho: instalar por cima da versão anterior |
 | G15 | Matriz de migração e todas as rotas | Feito, exceto aparelho | Revisão rota a rota em §H8 abaixo: duas rotas ficam na tela anterior, com motivo; a lacuna de Notas encontrada foi portada (`NotesImportTests`) | Aparelho |
-| G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
+| G16 | PR integrado, release oficial, APK e SHA | Feito | #1056 integrado em `70a06fe` (01:01 UTC, 27/11). Release [`lunet2d-v0.0.1-dev.1000611`](https://github.com/AbnerCruz/Ecosystem/releases/tag/lunet2d-v0.0.1-dev.1000611) publicada às 01:18 UTC a partir de `70a06fe`, com `Lunet-0.0.1-dev.1000611-arm64.apk` (71,8 MB, sha256 `82b224e7884c9b633094a4f5acae3a5e8b223d021d234712fcceffb446ca8410`), `release-manifest.json` e `SHA256SUMS.txt` | Instalar no aparelho |
 
 **Conclusão honesta:**
 - **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.

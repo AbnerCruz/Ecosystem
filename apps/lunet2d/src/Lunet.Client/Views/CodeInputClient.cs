@@ -37,7 +37,7 @@ public sealed class CodeInputClient : TextInputMethodClient
         _area.SelectionChanged += (_, _) => OnCaretOrSelection();
         _area.DocumentChanged += (_, _) => Attach(_area.Document);
         // A tap on the editor asks for the keyboard (also after Back closed it while the editor kept the focus).
-        _area.AddHandler(InputElement.PointerReleasedEvent, (_, _) => { if (_area.IsFocused) RaiseInputPaneActivationRequested(); },
+        _area.AddHandler(InputElement.PointerReleasedEvent, (_, e) => { if (_area.IsFocused && !TouchTap.Moved(e)) RaiseInputPaneActivationRequested(); },
             RoutingStrategies.Bubble, handledEventsToo: true);
         Attach(_area.Document);
     }
