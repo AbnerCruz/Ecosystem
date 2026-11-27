@@ -260,10 +260,24 @@ public sealed class DocumentEditor : UserControl
 
     private readonly Stack<(string Path, int Caret)> _positions = new();
     public int PositionsBack => _positions.Count;
+    private readonly Stack<(string Path, int Caret)> _forward = new();
+    public int PositionsForward => _forward.Count;
+
+    /// <summary>Forward again after <see cref="BackToPosition"/> (Alt+→, VS Code's "Go Forward").</summary>
+    public bool ForwardToPosition()
+    {
+        if (!_forward.TryPop(out var position)) return false;
+        if (OpenPath is { } here) _positions.Push((here, _surface.Caret));
+        if (position.Path != OpenPath && _shell.Workspace.Files().Contains(position.Path)) Load(position.Path);
+        _surface.Caret = Math.Min(position.Caret, _surface.Text.Length);
+        if (_surface is CodeSurface code) code.Focus();
+        return true;
+    }
 
     /// <summary>Goes to a line (in this file or another), remembering where you were for <see cref="BackToPosition"/>.</summary>
     public void JumpTo(string? file, int line, int column)
     {
+        _forward.Clear(); // a new jump starts a new way forward, like a browser
         if (OpenPath is { } here)
         {
             _positions.Push((here, _surface.Caret));
@@ -282,6 +296,7 @@ public sealed class DocumentEditor : UserControl
     public bool BackToPosition()
     {
         if (!_positions.TryPop(out var position)) return false;
+        if (OpenPath is { } here) _forward.Push((here, _surface.Caret));
         if (position.Path != OpenPath && _shell.Workspace.Files().Contains(position.Path)) Load(position.Path);
         _surface.Caret = Math.Min(position.Caret, _surface.Text.Length);
         if (_surface is CodeSurface code) code.Focus();
@@ -730,6 +745,36 @@ public sealed class DocumentEditor : UserControl
         return new Border { Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), Name = "AiReviewBar" };
     }
 
+    /// <summary>
+    /// Where the open file is (VS Code's breadcrumbs): each folder shows it in the Explorer; the file's name lists its
+    /// classes and methods to jump to (the palette's "@").
+    /// </summary>
+    private Control Breadcrumbs(string path)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(LunetTokens.Space.S, 0), Name = "Breadcrumbs" };
+        var parts = path.Split('/');
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var last = i == parts.Length - 1;
+            var target = string.Join('/', parts[..(i + 1)]);
+            var label = LunetUi.Text(parts[i], LunetTokens.Type.Caption, last ? LunetTokens.Color.TextPrimary : LunetTokens.Color.TextSecondary);
+            var b = new Button
+            {
+                Content = label, MinHeight = LunetTokens.MinTouch, MinWidth = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.Xs, 0), Background = LunetTokens.Brush("#00000000"),
+                BorderThickness = new Thickness(0), Name = last ? "BreadcrumbFile" : "BreadcrumbFolder",
+            };
+            AutomationProperties.SetName(b, last ? "Estrutura de " + parts[i] : "Mostrar a pasta " + target);
+            b.Click += (_, _) => { if (last) _shell.OpenPalette("@"); else _shell.WorkspaceView.RevealInExplorer(target); };
+            row.Children.Add(b);
+            if (!last) row.Children.Add(new TextBlock { Text = "›", FontSize = LunetTokens.Type.Caption, Foreground = LunetTokens.Brush(LunetTokens.Color.TextTertiary), VerticalAlignment = VerticalAlignment.Center });
+        }
+        return new ScrollViewer
+        {
+            Content = row, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        };
+    }
+
     private string? _tabMenuFor;
     private Border? _selectedTab;
 
@@ -927,6 +972,7 @@ public sealed class DocumentEditor : UserControl
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Left; row.Children.Add(e); }
             _chrome.Children.Add(new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) });
         }
+        if (_tab == WorkspaceTab.Code && OpenPath is { } crumbsFor) _chrome.Children.Add(Breadcrumbs(crumbsFor));
         if (_tabMenuFor is { } menuFor && OpenTabs.Contains(menuFor)) _chrome.Children.Add(TabMenu(menuFor)); else _tabMenuFor = null;
         // The open tab is always in sight, even far to the right on a phone.
         if (_selectedTab is { } shown) Avalonia.Threading.Dispatcher.UIThread.Post(() => shown.BringIntoView(), Avalonia.Threading.DispatcherPriority.Background);

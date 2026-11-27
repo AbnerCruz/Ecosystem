@@ -249,6 +249,7 @@ public sealed class ExplorerView : UserControl
     {
         var parts = path.Split('/');
         for (var i = 1; i < parts.Length; i++) _collapsed.Remove(string.Join('/', parts[..i]));
+        _collapsed.Remove(path); // a folder shown is a folder open
         Fill();
         var index = Shown.ToList().IndexOf(path);
         Revealed = index >= 0 ? path : null;

@@ -551,6 +551,10 @@ public sealed class LunetShell : UserControl
         {
             e.Handled = _workspaceView.Code.BackToPosition();
         }
+        else if (e.Key == Key.Right && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
+        {
+            e.Handled = _workspaceView.Code.ForwardToPosition();
+        }
         else if (e.Key == Key.B && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code
             && _workspaceView.Code.Surface is Views.CodeSurface block
             && Lunet.Editor.IndentationService.InsertBlock(block.Text, block.SelectionStart, block.SelectionEnd) is var r)

@@ -193,6 +193,7 @@ public sealed class CommandPaletteView : UserControl
             yield return new("Dobrar tudo", "", () => { Close(); Code!.SetAllFolded(true); });
             yield return new("Desdobrar tudo", "", () => { Close(); Code!.SetAllFolded(false); });
             yield return new("Voltar à posição anterior", "Antes do último salto (Alt+←)", () => { Close(); _shell.WorkspaceView.Code.BackToPosition(); });
+            yield return new("Avançar à próxima posição", "Desfaz o último voltar (Alt+→)", () => { Close(); _shell.WorkspaceView.Code.ForwardToPosition(); });
             yield return new("Indentar", "", () => Line(LineOperations.Indent));
             yield return new("Recuar", "", () => Line(LineOperations.Outdent));
         }
