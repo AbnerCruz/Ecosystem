@@ -110,7 +110,8 @@ public sealed class ShellActivity : AvaloniaActivity
         // §8 of the visual language: the system's "remove animations" turns the entries into an instant appearance.
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
         catch (Java.Lang.Exception) { }
-        Content = _shell;
+        _textScale = new Lunet.Client.TextScaleHost(_shell) { Requested = Resources?.Configuration?.FontScale ?? 1f };
+        Content = _textScale;
         // M5: the game runs on the GPU inside the Jogo tab (the GLES Preview, hosted by the shell).
         // With Ajustes → Preview isolado, it runs in the separate-process Preview instead (the IDE survives a crash).
         _shell.Game.GpuFactory = (compiled, project, fault) => _shell.Settings.IsolatedPreview
@@ -308,6 +309,7 @@ public sealed class ShellActivity : AvaloniaActivity
         StartActivity(MainActivity.RouteIntent(this, route, project));
     }
 
+    private Lunet.Client.TextScaleHost? _textScale;
     private bool _askedNotifications;
 
     /// <summary>
@@ -370,6 +372,7 @@ public sealed class ShellActivity : AvaloniaActivity
     public override void OnConfigurationChanged(global::Android.Content.Res.Configuration newConfig)
     {
         base.OnConfigurationChanged(newConfig);
+        if (_textScale is not null) _textScale.Requested = newConfig.FontScale; // UX12: the system font size
         ApplyDevice(newConfig);
     }
 

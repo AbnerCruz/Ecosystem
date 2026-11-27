@@ -217,7 +217,7 @@ public sealed class WaveEditorView : UserControl
         _controls.Children.Add(Row("Início", 0, d, Start, v => SetCut(v, End), "WaveStart"));
         _controls.Children.Add(Row("Fim", 0, d, End, v => SetCut(Start, v), "WaveEnd"));
         _controls.Children.Add(Row("Volume", 0, 2, Gain, v => SetGain((float)v), "WaveGain"));
-        var loop = new ToggleSwitch { IsChecked = Loop, OnContent = "Repetir em loop (marcadores no WAV)", OffContent = "Repetir em loop (marcadores no WAV)", Name = "WaveLoop" };
+        var loop = new ToggleSwitch { MinHeight = LunetTokens.MinTouch, IsChecked = Loop, OnContent = "Repetir em loop (marcadores no WAV)", OffContent = "Repetir em loop (marcadores no WAV)", Name = "WaveLoop" };
         loop.IsCheckedChanged += (_, _) => { if (!_syncing && loop.IsChecked != Loop) SetLoop(loop.IsChecked == true, Loop ? LoopStart : Start, Loop ? LoopEnd : End); };
         _loopSwitch = loop;
         _controls.Children.Add(loop);

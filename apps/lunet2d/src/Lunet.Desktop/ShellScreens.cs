@@ -51,6 +51,15 @@ public static class ShellScreens
                 shell.Home.TogglePin("Plataforma");
                 shell.GoHome();
                 Shot(window, output, size, "2-home-varios", written);
+                if (phone && h > w)
+                {
+                    // UX12: Android's largest font size zooms the shell up to its narrowest tested width.
+                    window.Content = null;
+                    var big = new TextScaleHost(shell) { Requested = 2.0 };
+                    window.Content = big;
+                    Shot(window, output, size, "2-home-fonte-grande", written);
+                    window.Content = null; big.Child = null; window.Content = shell;
+                }
                 shell.Home.Query = "nave";
                 Shot(window, output, size, "2-home-busca", written);
                 shell.Home.Query = "";

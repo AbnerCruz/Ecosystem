@@ -243,7 +243,7 @@ public sealed class DataView : UserControl
             Control editor;
             if (c.Type == DataColumnType.Boolean)
             {
-                var toggle = new ToggleSwitch { IsChecked = Table.Display(row, c.Name) == "sim", OnContent = null, OffContent = null, Name = "Field-" + c.Name };
+                var toggle = new ToggleSwitch { MinHeight = LunetTokens.MinTouch, IsChecked = Table.Display(row, c.Name) == "sim", OnContent = null, OffContent = null, Name = "Field-" + c.Name };
                 toggle.IsCheckedChanged += (_, _) => Apply(toggle.IsChecked == true ? "true" : "false");
                 editor = toggle;
             }

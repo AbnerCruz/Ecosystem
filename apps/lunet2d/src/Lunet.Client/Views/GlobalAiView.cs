@@ -87,7 +87,7 @@ public sealed class AiSettingsView : UserControl
         form.Children.Add(LunetUi.Field("Modelo", model));
         form.Children.Add(BuildCatalog(() => all[Math.Max(0, providers.SelectedIndex)], endpoint, key, model));
         form.Children.Add(endpointField);
-        var web = new ToggleSwitch { IsChecked = loaded.Settings.WebResearch, OnContent = null, OffContent = null, Name = "AiWeb", VerticalAlignment = VerticalAlignment.Center };
+        var web = new ToggleSwitch { MinHeight = LunetTokens.MinTouch, IsChecked = loaded.Settings.WebResearch, OnContent = null, OffContent = null, Name = "AiWeb", VerticalAlignment = VerticalAlignment.Center };
         AutomationProperties.SetName(web, "Pesquisa na web");
         web.IsCheckedChanged += (_, _) =>
         {

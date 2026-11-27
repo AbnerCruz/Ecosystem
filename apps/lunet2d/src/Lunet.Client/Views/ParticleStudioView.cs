@@ -202,7 +202,7 @@ public sealed class ParticleStudioView : UserControl
         Knob("Tamanho no fim", 0, 48, Draft.EndSize, v => Draft.EndSize = v, "EndSize");
         Colors("Cor no início", Draft.StartColor, c => Draft.StartColor = c);
         Colors("Cor no fim", Draft.EndColor, c => Draft.EndColor = c);
-        var glow = new ToggleSwitch { IsChecked = Draft.Additive, OnContent = null, OffContent = null, Name = "Additive" };
+        var glow = new ToggleSwitch { MinHeight = LunetTokens.MinTouch, IsChecked = Draft.Additive, OnContent = null, OffContent = null, Name = "Additive" };
         AutomationProperties.SetName(glow, "Brilho somado (fogo, magia)");
         glow.IsCheckedChanged += (_, _) => { Draft.Additive = glow.IsChecked == true; Changed(); };
         var row = new DockPanel { MinHeight = 48 };
