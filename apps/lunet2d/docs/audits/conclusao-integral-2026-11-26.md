@@ -151,11 +151,11 @@ Legenda:
 | G10 | ZIP, importar, exportar por SAF, cancelar, revogar e recuperar | Pendente nesta missão | Testes de importação e exportação existentes antes da missão; não reauditados aqui | Auditoria e aparelho (SAF real) |
 | G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7) | Scene2D no modo ordenado |
 | G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
-| G13 | Gerar o APK do jogo, instalar e rodar | Pendente | — | Exportação do jogo no CI e no aparelho |
+| G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
 | G14 | Atualizar o Lunet existente e conferir dados | Pendente | `LauncherPreferences` e caminhos de dados preservados por desenho; não houve teste de atualização | Aparelho com instalação anterior |
 | G15 | Matriz de migração e todas as rotas | Parcial | Explorar segue congelado (ADD-0036); as demais rotas estão na casca | H8: revisar o inventário rota a rota |
 | G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
 
 **Conclusão honesta:**
 - **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.
-- **Pendentes, sem prova automatizada:** G10, G13, G14 e a revisão H8 (G15).
+- **Pendentes, sem prova automatizada:** G10, G14 e a revisão H8 (G15). G13 tem prova da geração do APK, mas não da instalação.
