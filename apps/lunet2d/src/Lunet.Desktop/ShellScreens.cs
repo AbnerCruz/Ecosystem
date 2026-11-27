@@ -58,7 +58,9 @@ public static class ShellScreens
                     var big = new TextScaleHost(shell) { Requested = 2.0 };
                     window.Content = big;
                     Shot(window, output, size, "2-home-fonte-grande", written);
-                    window.Content = null; big.Child = null; window.Content = shell;
+                    window.Content = null; big.Child = null;
+                    shell.RenderTransform = null; // LayoutTransformControl leaves its scale on the child it held
+                    window.Content = shell;
                 }
                 shell.Home.Query = "nave";
                 Shot(window, output, size, "2-home-busca", written);
@@ -110,6 +112,9 @@ public static class ShellScreens
                 shell.Home.CloseSheet();
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
+                shell.State.ShowPanel(SupportPanel.Explorer);
+                Shot(window, output, size, "3a-explorador", written);
+                shell.State.ShowPanel(SupportPanel.None);
                 shell.WorkspaceView.Code.ShowKeyboard();
                 if (shell.WorkspaceView.Code.Keyboard is { } bar)
                 {
@@ -284,6 +289,10 @@ public static class ShellScreens
 
     private static void Shot(Window window, string output, string size, string name, List<string> written)
     {
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        // The frame of this state, not the previous one: lay out and render before capturing.
+        window.UpdateLayout();
+        Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         var file = Path.Combine(output, $"{size}-{name}.png");
 #pragma warning disable CS0618 // plain PNG

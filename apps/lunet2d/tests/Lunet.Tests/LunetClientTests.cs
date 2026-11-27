@@ -687,14 +687,12 @@ public sealed class LunetClientTests
                 window.Show();
                 shell.CreateProject();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                // D3: the top bar holds at most back + panels + the primary action (UX P5).
-                var bar = window.GetVisualDescendants().OfType<Button>().Where(b => b.Bounds.Height > 0 && b.TranslatePoint(default, window)?.Y < 56).ToArray();
-                Assert.True(bar.Length <= 3, string.Join(", ", bar.Select(b => Avalonia.Automation.AutomationProperties.GetName(b))));
+                // IDE after the owner's review (27/11): the top bar holds back + files (☰) + ▶ + ⋮, nothing else.
+                var bar = window.GetVisualDescendants().OfType<Button>().Where(b => b.Bounds.Height > 0 && b.IsEffectivelyVisible && b.TranslatePoint(default, window)?.Y < 56).ToArray();
+                Assert.True(bar.Length <= 4, string.Join(", ", bar.Select(b => Avalonia.Automation.AutomationProperties.GetName(b))));
                 Assert.All(bar, b => Assert.True(b.Bounds.Height >= LunetTokens.MinTouch - 0.5));
-                // D4: M3 navigation items are 64 dp tall.
-                var tabs = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("lunet-tab")).ToArray();
-                Assert.Equal(4, tabs.Length); // Código, Jogo, Recursos, Notas (Material: at most five)
-                Assert.All(tabs, t => Assert.True(t.Bounds.Height >= 64));
+                // No navigation bar inside a game: the folders are in the Explorer, the game runs under the code.
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Button>(), b => b.Classes.Contains("lunet-tab") && b.IsEffectivelyVisible);
                 shell.GoHome();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "1 jogo");

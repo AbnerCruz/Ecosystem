@@ -73,6 +73,7 @@ public sealed class DocumentEditor : UserControl
     }
 
     private CodeBar? _keyboard;
+    private bool _creatingKeyboard;
     private bool _keyboardWanted;
 
     /// <summary>The code bar of the Código tab (created on first use, kept across layouts so its tab survives).</summary>
@@ -116,12 +117,16 @@ public sealed class DocumentEditor : UserControl
     public void UpdateKeyboard()
     {
         var on = _keyboardWanted && KeyboardApplies;
-        if (on && _keyboard is null)
+        if (on && _keyboard is null && !_creatingKeyboard)
         {
-            _keyboard = new CodeBar(_surface, _shell.Methods, ProjectSources, () => _shell.OpenPalette(), () => HideKeyboard(), SetSystemKeyboard);
+            // Building the bar can call back here (its first row asks the editor for the caret): without the guard a
+            // second bar was built and both showed (capture 4-jogo, 27/11).
+            _creatingKeyboard = true;
+            try { _keyboard = new CodeBar(_surface, _shell.Methods, ProjectSources, () => _shell.OpenPalette(), () => HideKeyboard(), SetSystemKeyboard); }
+            finally { _creatingKeyboard = false; }
             DockPanel.SetDock(_keyboard, Dock.Bottom);
             // Into the fixed frame, before the text: the editor itself does not move (its focus and the keyboard stay).
-            if (_frame is not null) _frame.Children.Insert(_frame.Children.Count - 1, _keyboard);
+            AttachKeyboard();
         }
         if (_keyboard is not null)
         {
@@ -578,6 +583,51 @@ public sealed class DocumentEditor : UserControl
         if (done > 0) _shell.Report(done == 1 ? "Importado em Notas." : $"{done} arquivos importados em Notas.");
     }
 
+    /// <summary>Closes a tab (saving it first); the next tab opens, or the editor shows that nothing is open.</summary>
+    public void CloseTab(string path)
+    {
+        if (path == OpenPath) Save();
+        if (_session is null) return;
+        _session.Close(path);
+        SaveSession();
+        if (path != OpenPath) { Rebuild(); return; }
+        if (_session.Current is { } next) Load(next);
+        else
+        {
+            OpenPath = null; _saved = null; _surface.Text = "";
+            Rebuild();
+        }
+    }
+
+    /// <summary>
+    /// A file or folder was renamed (to) or deleted (null) in the Explorer: the open tab follows the file, or closes.
+    /// </summary>
+    public void FilesMoved(string from, string? to)
+    {
+        static bool Under(string path, string root) => path == root || path.StartsWith(root + "/", StringComparison.Ordinal);
+        var open = OpenPath;
+        if (_session is not null)
+        {
+            foreach (var tab in _session.Tabs.Where(t => Under(t, from)).ToArray())
+            {
+                if (to is not null && _session.Current == tab) { _session.Close(tab); _session.Open(to + tab[from.Length..], additional: true); }
+                else _session.Close(tab);
+            }
+            SaveSession();
+        }
+        if (open is not null && Under(open, from))
+        {
+            OpenPath = null; _saved = null;
+            var target = to is null ? _session?.Current : to + open[from.Length..];
+            if (target is null) { _surface.Text = ""; Rebuild(); }
+            else Load(target);
+        }
+        else Rebuild();
+    }
+
+    /// <summary>The open tabs (tests).</summary>
+    public IReadOnlyList<string> OpenTabs => _session?.Tabs.ToList() ?? [];
+
     private void NewNote()
     {
         var existing = _shell.Workspace.Files().ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -591,29 +641,39 @@ public sealed class DocumentEditor : UserControl
     private void Rebuild()
     {
         var entries = new List<Control>();
-        // Files you opened come first (most recent session order), then the rest of the game's files.
+        // Only the files you opened are tabs (the Explorer lists every file): name, ● when unsaved, ✕ to close.
         var open = _session?.Tabs.ToList() ?? [];
-        // A text file opened from Recursos (raw .json, .txt…) shows in the strip while it is open.
-        var listed = ProjectFiles.For(_tab, _shell.Workspace.Files()).ToList();
-        if (OpenPath is { } extra && !listed.Contains(extra)) listed.Insert(0, extra);
-        foreach (var file in listed.OrderBy(f => f == OpenPath && !ProjectFiles.For(_tab, [f]).Any() ? -1 : open.IndexOf(f) is var i && i >= 0 ? i : int.MaxValue))
+        if (OpenPath is { } extra && !open.Contains(extra)) open.Insert(0, extra);
+        foreach (var file in open)
         {
             var selected = file == OpenPath;
-            var label = LunetUi.Text(selected && IsDirty ? file + " •" : file, LunetTokens.Type.Label, selected ? LunetTokens.Color.Primary : LunetTokens.Color.TextSecondary,
+            var name = Path.GetFileName(file);
+            var label = LunetUi.Text(selected && IsDirty ? name + " ●" : name, LunetTokens.Type.Label, selected ? LunetTokens.Color.TextPrimary : LunetTokens.Color.TextSecondary,
                 selected ? FontWeight.SemiBold : FontWeight.Normal);
             if (selected) _openLabel = label;
             label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
             label.VerticalAlignment = VerticalAlignment.Center;
+            label.MaxWidth = 180;
             var b = new Button
             {
-                Content = label, MinHeight = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.S, 0),
-                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
-                Background = LunetTokens.Brush(selected ? LunetTokens.Color.PrimarySoft : "#00000000"), BorderThickness = new Thickness(0),
-                CornerRadius = new CornerRadius(LunetTokens.Radius.S),
+                Content = label, MinHeight = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.Xxs, 0),
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0),
             };
             AutomationProperties.SetName(b, "Abrir " + file);
+            ToolTip.SetTip(b, file);
             b.Click += (_, _) => Load(file);
-            entries.Add(b);
+            var path = file;
+            var close = LunetUi.IconButton(LunetIcons.Close, "Fechar " + name, () => CloseTab(path), LunetTokens.Color.TextSecondary);
+            close.Name = "CloseTab";
+            var tab = new StackPanel { Orientation = Orientation.Horizontal, Children = { b, close } };
+            entries.Add(new Border
+            {
+                Child = tab, Name = "EditorTab",
+                // The open tab is marked by tone and a line under it, never a box (visual language §3).
+                Background = LunetTokens.Brush(selected ? LunetTokens.Color.SurfaceRaised : "#00000000"),
+                BorderBrush = LunetTokens.Brush(selected ? LunetTokens.Color.Primary : "#00000000"), BorderThickness = new Thickness(0, 0, 0, 2),
+            });
         }
         if (_tab == WorkspaceTab.Notes)
         {
@@ -670,18 +730,7 @@ public sealed class DocumentEditor : UserControl
         }
         _empty.Content = null; _empty.IsVisible = false;
         _surface.View.IsVisible = true;
-        // On a phone the file list collapses: the text gets the width; files are one tap away in the header.
-        if (_shell.State.Layout == ShellLayout.Expanded && !_shell.State.CodeAndGameSideBySide)
-        {
-            var column = new StackPanel { Spacing = 2, Margin = new Thickness(LunetTokens.Space.Xs) };
-            foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Stretch; column.Children.Add(e); }
-            _side.Content = new Border
-            {
-                Child = new ScrollViewer { Content = column }, Width = 220, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
-                BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 1, 0),
-            };
-        }
-        else
+        // The open tabs on top, on every screen (the Explorer, not a side column, lists the game's files).
         {
             var strip = new ScrollViewer
             {
@@ -695,7 +744,7 @@ public sealed class DocumentEditor : UserControl
         }
         if (_findOpen && OpenPath is not null) _chrome.Children.Add(FindBar());
         if (_fileMenu) _chrome.Children.Add(FileMenu());
-        if (_keyboard is not null && _keyboard.Parent is null) _frame!.Children.Insert(_frame.Children.Count - 1, _keyboard);
+        AttachKeyboard();
         UpdateKeyboard();
     }
 
@@ -705,6 +754,14 @@ public sealed class DocumentEditor : UserControl
     private readonly ContentControl _empty = new() { IsVisible = false };
 
     /// <summary>The fixed frame: list (left), file strip, find bar and menu (top), code bar (bottom), the text.</summary>
+    /// <summary>Puts the code bar into the frame once (the same bar inserted twice showed two bars over the game, 27/11).</summary>
+    private void AttachKeyboard()
+    {
+        if (_keyboard is null || _frame is null || _frame.Children.Contains(_keyboard)) return;
+        if (_keyboard.Parent is Panel other) other.Children.Remove(_keyboard);
+        _frame.Children.Insert(_frame.Children.Count - 1, _keyboard);
+    }
+
     private void EnsureFrame()
     {
         if (_frame is not null) return;

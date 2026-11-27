@@ -38,6 +38,20 @@ public sealed class EditorDocuments
         Current = Tabs.FirstOrDefault();
     }
 
+    /// <summary>Closes one tab (✕ on it); the current one moves to the neighbour, like an editor's tabs.</summary>
+    public void Close(string path)
+    {
+        var tabs = Tabs.ToList();
+        var index = tabs.IndexOf(path);
+        if (index < 0) return;
+        if (path == Primary) Primary = null; else Additional.Remove(path);
+        if (Current == path)
+        {
+            var rest = Tabs.ToList();
+            Current = rest.Count == 0 ? null : rest[Math.Min(index, rest.Count - 1)];
+        }
+    }
+
     public void Reconcile(IEnumerable<string> validPaths)
     {
         var valid = validPaths.ToHashSet(StringComparer.Ordinal);

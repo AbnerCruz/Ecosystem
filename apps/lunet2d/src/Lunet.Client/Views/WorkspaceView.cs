@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -16,15 +17,6 @@ namespace Lunet.Client.Views;
 /// </summary>
 public sealed class WorkspaceView : UserControl
 {
-    private static readonly (WorkspaceTab Tab, string Icon, string Label)[] Tabs =
-    [
-        (WorkspaceTab.Code, LunetIcons.Code, "Código"),
-        (WorkspaceTab.Game, LunetIcons.Game, "Jogo"),
-        // Arte, Mapa and Som are one tab on the bar (Material: at most five destinations); their views stay.
-        (WorkspaceTab.Art, LunetIcons.Art, "Recursos"),
-        (WorkspaceTab.Notes, LunetIcons.Notes, "Notas"),
-    ];
-
     private readonly LunetShell _shell;
     private readonly DocumentEditor _code;
     private readonly DocumentEditor _notes;
@@ -35,7 +27,7 @@ public sealed class WorkspaceView : UserControl
     private readonly Border _topHost = new();
 
     /// <summary>Redraws only the top bar (state, problems), never moving the editor (that would close the keyboard).</summary>
-    public void RefreshTopBar() => _topHost.Child = TopBar();
+    public void RefreshTopBar() { _topHost.Child = TopBar(); _statusHost.Child = StatusBar(); }
     private bool _keyboardOpen;
 
     /// <summary>
@@ -49,8 +41,9 @@ public sealed class WorkspaceView : UserControl
         // would take the focus from it and Android would close the keyboard at once ("teclado não abre na IA").
         _typingInSheet = open && _sheet is not null && FocusedField() is Visual f && _sheet.IsVisualAncestorOf(f);
         if (_tabBar is not null) _tabBar.IsVisible = !open;
-        if (_runFab is not null) _runFab.IsVisible = !open;
+        if (_bottomPanel is not null) _bottomPanel.IsVisible = !open;
         if (_sheet is not null) _sheet.IsVisible = !open || _typingInSheet;
+        UpdateCursor();
         PlaceRunButton();
     }
 
@@ -94,6 +87,9 @@ public sealed class WorkspaceView : UserControl
         _title.TextTrimming = TextTrimming.CharacterEllipsis;
         _title.VerticalAlignment = VerticalAlignment.Center;
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        // The status bar's "Ln, Col" follows the caret of the code and of the notes.
+        foreach (var editor in new[] { _code, _notes })
+            if (editor.Surface is CodeSurface surface) surface.Editor.TextArea.Caret.PositionChanged += (_, _) => UpdateCursor();
     }
 
     public GameView Game => _game;
@@ -288,6 +284,7 @@ public sealed class WorkspaceView : UserControl
         if (_studio is not null)
         {
             foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
+            if (_explorer is not null) Detach(_explorer);
             if (!ReferenceEquals(_studio, _entered)) { LunetUi.Enter(_studio); _entered = _studio; } // §8: a Studio enters once
             Content = _studio;
             return;
@@ -298,29 +295,43 @@ public sealed class WorkspaceView : UserControl
         var focused = place == _place ? FocusedField() : null;
         _keyboardOpen = _shell.KeyboardOpen || (CodeVisible && _code.KeyboardVisible); // per tab, recomputed on each switch
         _place = place;
-        _tabBar = _sheet = null;
-        _runFab = null;
+        _tabBar = _sheet = _bottomPanel = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
+        if (_explorer is not null) Detach(_explorer);
         _code.Relayout();
         _notes.Relayout();
         var state = _shell.State;
         var expanded = state.Layout == ShellLayout.Expanded;
+        _support.HeaderInPanel = false;
 
+        // The IDE (owner, 27/11, after VS Code): top bar (☰ files · game · ▶ · ⋮), the editor with its open tabs, the
+        // bottom panel (Jogo · Console · Problemas) under the code, and a status bar. No tab bar: the game's folders are
+        // in the Explorer, and the game runs under the code instead of replacing it.
         var root = new DockPanel();
         if (_topHost.Parent is Panel oldTop) oldTop.Children.Remove(_topHost);
         _topHost.Child = TopBar();
-        var top = _topHost;
-        DockPanel.SetDock(top, Dock.Top);
-        root.Children.Add(top);
+        DockPanel.SetDock(_topHost, Dock.Top);
+        root.Children.Add(_topHost);
+        if (_statusHost.Parent is Panel oldStatus) oldStatus.Children.Remove(_statusHost);
+        _statusHost.Child = StatusBar();
+        _statusHost.IsVisible = !_keyboardOpen;
+        DockPanel.SetDock(_statusHost, Dock.Bottom);
+        root.Children.Add(_statusHost);
+        _tabBar = _statusHost;
 
         if (expanded)
         {
-            var rail = new StackPanel { Spacing = LunetTokens.Space.Xxs, Width = 80, Margin = new Thickness(0, LunetTokens.Space.Xs) };
-            foreach (var (tab, icon, label) in Tabs) rail.Children.Add(LunetUi.Tab(icon, label, IsSelected(tab), () => state.SelectTab(tab)));
-            var railHost = new Border { Child = rail, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 1, 0) };
-            DockPanel.SetDock(railHost, Dock.Left);
-            root.Children.Add(railHost);
-            if (state.Panel != SupportPanel.None)
+            if (!_explorerHidden)
+            {
+                var column = new Border
+                {
+                    Width = 260, Child = Explorer, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+                    BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 1, 0), Name = "ExplorerColumn",
+                };
+                DockPanel.SetDock(column, Dock.Left);
+                root.Children.Add(column);
+            }
+            if (state.Panel is not (SupportPanel.None or SupportPanel.Explorer))
             {
                 var column = new Border
                 {
@@ -331,40 +342,214 @@ public sealed class WorkspaceView : UserControl
                 root.Children.Add(column);
             }
             root.Children.Add(Body(expanded));
+            _support.Refresh();
+            Content = root;
+            Refocus(focused);
+            return;
         }
-        else
+
+        var inPanel = state.Panel is SupportPanel.Console or SupportPanel.Problems;
+        var sheetPanel = state.Panel is not (SupportPanel.None or SupportPanel.Explorer) && !inPanel;
+        if (sheetPanel)
         {
-            var bar = new Avalonia.Controls.Primitives.UniformGrid { Rows = 1, Columns = Tabs.Length };
-            foreach (var (tab, icon, label) in Tabs) bar.Children.Add(LunetUi.Tab(icon, label, IsSelected(tab), () => state.SelectTab(tab)));
-            var barHost = new Border { Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0) };
-            DockPanel.SetDock(barHost, Dock.Bottom);
-            _tabBar = barHost;
-            barHost.IsVisible = !_keyboardOpen;
-            root.Children.Add(barHost);
-            if (state.Panel != SupportPanel.None)
+            // AI, Inspector, Documentação…: a sheet over the bottom; the game stays above it when it is running.
+            var sheet = new Border
             {
-                // Bottom sheet: the content stays visible above it (no scrim, no modal).
-                var sheet = new Border
-                {
-                    // Inspector, Desempenho and the AI need room: half the screen, the game still above it.
-                    Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs or SupportPanel.Objectives && Bounds.Height > 0
-                        ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
-                    Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
-                    CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),
-                    BorderBrush = LunetTokens.Brush(LunetTokens.Color.BorderStrong), BorderThickness = new Thickness(0, 1, 0, 0),
-                    BoxShadow = LunetTokens.Low,
-                };
-                DockPanel.SetDock(sheet, Dock.Bottom);
-                _sheet = sheet;
-                sheet.IsVisible = !_keyboardOpen || _typingInSheet;
-                root.Children.Add(sheet);
-            }
-            root.Children.Add(WithRunButton(Body(expanded)));
+                Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs or SupportPanel.Objectives && Bounds.Height > 0
+                    ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
+                Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
+                CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),
+                BorderBrush = LunetTokens.Brush(LunetTokens.Color.BorderStrong), BorderThickness = new Thickness(0, 1, 0, 0),
+                BoxShadow = LunetTokens.Low,
+            };
+            DockPanel.SetDock(sheet, Dock.Bottom);
+            _sheet = sheet;
+            sheet.IsVisible = !_keyboardOpen || _typingInSheet;
+            root.Children.Add(sheet);
+            root.Children.Add(state.Tab == WorkspaceTab.Game ? _game : Body(expanded));
         }
+        else if (state.Tab == WorkspaceTab.Game || inPanel)
+        {
+            var panel = BottomPanel(inPanel);
+            _bottomPanel = panel;
+            panel.IsVisible = !_keyboardOpen;
+            if (_panelFull && !_keyboardOpen) root.Children.Add(panel);
+            else
+            {
+                panel.Height = Bounds.Height > 0 ? Math.Max(240, Math.Round(Bounds.Height * 0.45)) : 320;
+                DockPanel.SetDock(panel, Dock.Bottom);
+                root.Children.Add(panel);
+                root.Children.Add(state.Tab is WorkspaceTab.Notes ? _notes : _code);
+            }
+        }
+        else root.Children.Add(Body(expanded));
         _support.Refresh();
-        Content = root;
+
+        if (state.Panel == SupportPanel.Explorer)
+        {
+            // The Explorer as a drawer from the left, over the code; a tap outside closes it.
+            var scrim = new Border { Background = LunetTokens.Brush(LunetTokens.Color.Scrim), Name = "ExplorerScrim" };
+            scrim.PointerPressed += (_, e) => { _shell.State.ShowPanel(SupportPanel.None); e.Handled = true; };
+            var drawer = new Border
+            {
+                Child = Explorer, Width = Bounds.Width > 0 ? Math.Min(340, Math.Round(Bounds.Width * 0.85)) : 320, HorizontalAlignment = HorizontalAlignment.Left,
+                Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), BoxShadow = LunetTokens.Low, Name = "ExplorerDrawer",
+            };
+            Content = new Grid { Children = { root, LunetUi.Enter(scrim, 0, LunetTokens.Motion.Fast), LunetUi.Enter(drawer, 0, LunetTokens.Motion.Fast) } };
+        }
+        else Content = root;
         Refocus(focused);
     }
+
+    private Border? _bottomPanel;
+    private bool _panelFull;
+    private bool _explorerHidden;
+    private readonly Border _statusHost = new() { Name = "StatusBar" };
+    private ExplorerView? _explorer;
+
+    /// <summary>The game's file tree (drawer on a phone, side column on a wide screen).</summary>
+    public ExplorerView Explorer => _explorer ??= new ExplorerView(_shell, () =>
+    {
+        if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.None);
+    });
+
+    /// <summary>True while the bottom panel (Jogo · Console · Problemas) is on screen (tests).</summary>
+    public bool BottomPanelVisible => _bottomPanel is { IsVisible: true };
+
+    /// <summary>
+    /// Opens a file where it belongs: code and text as a tab of the editor, notes in Notas, mind maps, art, maps, sounds,
+    /// music and data in their Studio (the Explorer's tap; the AI's and the problems' jumps go through the editor).
+    /// </summary>
+    public void OpenFile(string path)
+    {
+        var lower = path.ToLowerInvariant();
+        if (lower.EndsWith(Lunet.Core.ProjectMindMap.Extension)) { OpenMindMap(path); return; }
+        if (lower.EndsWith(".md") && lower.StartsWith(Lunet.Core.ProjectNotes.Folder.ToLowerInvariant() + "/"))
+        {
+            _shell.State.SelectTab(WorkspaceTab.Notes);
+            _notes.Load(path);
+            return;
+        }
+        if (lower.EndsWith(".wav")) { ResourcesTab.EditWave(path); return; }
+        var asset = lower.EndsWith(".sprite.json") || lower.EndsWith(".sfx.json") || lower.EndsWith(".song.json") || ProjectFiles.IsMap(path)
+            || lower.EndsWith(".png") || lower.EndsWith(".jpg") || lower.EndsWith(".jpeg") || lower.EndsWith(".ogg") || lower.EndsWith(".mp3")
+            || lower.EndsWith(".ttf") || lower.EndsWith(".otf") || lower.EndsWith(".particles.json") || lower.StartsWith("content/data/");
+        if (asset)
+        {
+            _shell.State.SelectTab(WorkspaceTab.Art);
+            ResourcesTab.Activate(path);
+            return;
+        }
+        if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
+        _code.Load(path);
+    }
+
+    /// <summary>A file or folder was renamed (to) or deleted (null): the editors' tabs follow, and the Explorer redraws.</summary>
+    public void FilesMoved(string from, string? to)
+    {
+        _code.FilesMoved(from, to);
+        _notes.FilesMoved(from, to);
+        _explorer?.Fill();
+    }
+
+    private Border BottomPanel(bool showSupport)
+    {
+        var state = _shell.State;
+        var header = new DockPanel { Margin = new Thickness(LunetTokens.Space.Xs, 0) };
+        var actions = new StackPanel { Orientation = Orientation.Horizontal };
+        var full = LunetUi.IconButton(_panelFull ? LunetIcons.ChevronDown : LunetIcons.Fit, _panelFull ? "Painel menor" : "Painel em tela cheia", () => { _panelFull = !_panelFull; Rebuild(); });
+        full.Name = "PanelFull";
+        var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () =>
+        {
+            _panelFull = false;
+            if (state.Panel != SupportPanel.None) state.ShowPanel(SupportPanel.None);
+            if (state.Tab == WorkspaceTab.Game) state.SelectTab(WorkspaceTab.Code);
+        });
+        close.Name = "PanelClose";
+        actions.Children.Add(full);
+        actions.Children.Add(close);
+        DockPanel.SetDock(actions, Dock.Right);
+        header.Children.Add(actions);
+        var problems = _shell.Game.Problems.Count > 0 ? _shell.Game.Problems.Count : _shell.LiveProblems.Count;
+        var tabs = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var (name, label, selected, go) in new (string, string, bool, Action)[]
+        {
+            ("PanelGame", "Jogo", !showSupport, () => { if (state.Panel != SupportPanel.None) state.ShowPanel(SupportPanel.None); if (state.Tab != WorkspaceTab.Game) state.SelectTab(WorkspaceTab.Game); }),
+            ("PanelConsole", "Console", state.Panel == SupportPanel.Console, () => state.ShowPanel(SupportPanel.Console)),
+            ("PanelProblems", problems > 0 ? $"Problemas ({problems})" : "Problemas", state.Panel == SupportPanel.Problems, () => state.ShowPanel(SupportPanel.Problems)),
+        })
+        {
+            var b = LunetUi.Button(label, selected ? ButtonKind.Selected : ButtonKind.Ghost, null, go);
+            b.Name = name; b.MinHeight = 40;
+            tabs.Children.Add(b);
+        }
+        header.Children.Add(new ScrollViewer { Content = tabs, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
+        var body = new DockPanel();
+        DockPanel.SetDock(header, Dock.Top);
+        body.Children.Add(header);
+        if (showSupport) { _support.HeaderInPanel = true; body.Children.Add(_support); }
+        else body.Children.Add(_game);
+        return new Border
+        {
+            Child = body, Name = "BottomPanel", Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
+        };
+    }
+
+    private Control StatusBar()
+    {
+        var errors = _shell.LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error) + _shell.Game.Problems.Count;
+        var warnings = _shell.LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Warning);
+        var bar = new DockPanel { Height = LunetTokens.MinTouch, Margin = new Thickness(LunetTokens.Space.Xs, 0) }; // touched with a finger: 48, not a desktop 22
+        var ai = LunetUi.Button("IA", _shell.State.Panel == SupportPanel.Ai ? ButtonKind.Selected : ButtonKind.Ghost, LunetIcons.Sparkle, () => _shell.State.TogglePanel(SupportPanel.Ai));
+        ai.Name = "AiButton"; ai.MinHeight = LunetTokens.MinTouch; ai.Padding = new Thickness(LunetTokens.Space.S, 0);
+        DockPanel.SetDock(ai, Dock.Right);
+        bar.Children.Add(ai);
+        _cursor.VerticalAlignment = VerticalAlignment.Center;
+        _cursor.Margin = new Thickness(LunetTokens.Space.S, 0);
+        Detach(_cursor);
+        DockPanel.SetDock(_cursor, Dock.Right);
+        bar.Children.Add(_cursor);
+        UpdateCursor();
+        var problems = LunetUi.Button($"⊗ {errors}   ⚠ {warnings}", ButtonKind.Ghost, null, () => _shell.State.ShowPanel(SupportPanel.Problems));
+        problems.Name = "StatusProblems"; problems.MinHeight = LunetTokens.MinTouch; problems.Padding = new Thickness(LunetTokens.Space.S, 0);
+        problems.Foreground = LunetTokens.Brush(errors > 0 ? LunetTokens.Color.Danger : LunetTokens.Color.TextSecondary);
+        AutomationProperties.SetName(problems, $"{errors} erros e {warnings} avisos: abrir Problemas");
+        DockPanel.SetDock(problems, Dock.Left);
+        bar.Children.Add(problems);
+        var running = LunetUi.Text(_shell.Game.State switch
+        {
+            GameState.Running => "▶ Rodando",
+            GameState.Paused => "❚❚ Pausado",
+            GameState.CompileErrors => "Não compilou",
+            GameState.Faulted => "Parou com erro",
+            _ => "",
+        }, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+        running.VerticalAlignment = VerticalAlignment.Center;
+        bar.Children.Add(running);
+        return new Border
+        {
+            Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
+            BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 1, 0, 0),
+        };
+    }
+
+    private readonly TextBlock _cursor = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
+
+    /// <summary>Line and column of the caret in the status bar ("Ln 12, Col 8"), like VS Code's right side.</summary>
+    public void UpdateCursor()
+    {
+        var editor = _shell.State.Tab == WorkspaceTab.Notes ? _notes : _code;
+        if (editor.Surface is CodeSurface code && editor.OpenPath is not null)
+        {
+            var caret = code.Editor.TextArea.Caret;
+            _cursor.Text = $"Ln {caret.Line}, Col {caret.Column}";
+        }
+        else _cursor.Text = "";
+    }
+
+    /// <summary>The status bar's text of the caret (tests).</summary>
+    public string CursorText => _cursor.Text ?? "";
 
     private bool IsSelected(WorkspaceTab tab) => _shell.State.CodeAndGameSideBySide
         ? tab is WorkspaceTab.Code or WorkspaceTab.Game
@@ -392,47 +577,13 @@ public sealed class WorkspaceView : UserControl
         };
     }
 
-    /// <summary>
-    /// On a phone, Rodar (or Parar) floats bottom-right over the code, where the thumb rests (Material FAB); the game
-    /// tab has its own controls at the bottom. Hidden while typing: the code bar's Atalhos has the palette.
-    /// </summary>
-    private Control WithRunButton(Control body)
-    {
-        var state = _shell.State;
-        if (state.Tab is not (WorkspaceTab.Code or WorkspaceTab.Notes) || _keyboardOpen) return body;
-        var running = _shell.Game.State is GameState.Running or GameState.Paused;
-        var run = running
-            ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
-            : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
-        run.Name = "RunButton";
-        run.MinHeight = 56;
-        run.CornerRadius = new CornerRadius(LunetTokens.Radius.L);
-        run.HorizontalAlignment = HorizontalAlignment.Right;
-        run.VerticalAlignment = VerticalAlignment.Bottom;
-        _runFab = run;
-        PlaceRunButton();
-        return new Grid { Children = { body, run } };
-    }
+    /// <summary>Kept for the head and tests: Rodar now lives in the top bar on every screen.</summary>
+    public void PlaceRunButton() { }
 
-    /// <summary>
-    /// Keeps Rodar above the code bar: in Código the bar sits at the bottom of the editor and the button covered its
-    /// keys (capture 9a-objetivos, 26/11). The button moves up by the bar's height and follows it when it resizes.
-    /// </summary>
-    public void PlaceRunButton()
-    {
-        if (_runFab is null) return;
-        var bar = _shell.State.Tab == WorkspaceTab.Code && _code.KeyboardVisible ? _code.Keyboard : null;
-        if (bar is not null && !_watchedBar) { _watchedBar = true; bar.SizeChanged += (_, _) => PlaceRunButton(); }
-        var lift = bar is null ? 0 : (bar.Bounds.Height > 0 ? bar.Bounds.Height : CodeBar.RowHeight);
-        _runFab.Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M, LunetTokens.Space.M + lift);
-    }
+    /// <summary>The Rodar/Parar button (the top bar's primary action).</summary>
+    public Button? RunButton => _runButton;
 
-    private bool _watchedBar;
-
-    /// <summary>The Rodar/Parar button over the editor (tests).</summary>
-    public Button? RunButton => _runFab;
-
-    private Button? _runFab;
+    private Button? _runButton;
 
     private Control TopBar()
     {
@@ -440,53 +591,37 @@ public sealed class WorkspaceView : UserControl
         var back = LunetUi.IconButton(LunetIcons.Back, "Voltar aos jogos", () => _shell.GoHome());
         DockPanel.SetDock(back, Dock.Left);
         bar.Children.Add(back);
+        var expanded = _shell.State.Layout == ShellLayout.Expanded;
+        var explorerOpen = expanded ? !_explorerHidden : _shell.State.Panel == SupportPanel.Explorer;
+        var files = LunetUi.IconButton(LunetIcons.Folder, explorerOpen ? "Fechar arquivos" : "Arquivos do jogo", () =>
+        {
+            if (_shell.State.Layout == ShellLayout.Expanded) { _explorerHidden = !_explorerHidden; Rebuild(); }
+            else _shell.State.TogglePanel(SupportPanel.Explorer);
+        }, explorerOpen ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
+        files.Name = "ExplorerButton";
+        DockPanel.SetDock(files, Dock.Left);
+        bar.Children.Add(files);
 
-        // M3 top app bar (LUNET-537 D3): back, the game and its state, one panels button and the primary action.
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, VerticalAlignment = VerticalAlignment.Center };
-        var liveErrors = _shell.LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
-        var problems = _shell.Game.Problems.Count > 0 ? _shell.Game.Problems.Count : liveErrors;
-        var panels = LunetUi.IconButton(LunetIcons.More, problems > 0 ? $"Painéis — {problems} problema(s)" : "Painéis",
-            () => _shell.State.TogglePanel(SupportPanel.More),
-            _shell.State.Panel != SupportPanel.None ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
-        panels.Name = "PanelsButton";
-        if (problems > 0)
-        {
-            // A small red dot, like a notification badge, instead of a second icon.
-            var host = new Panel { Children = { panels, new Border
-            {
-                Width = 10, Height = 10, CornerRadius = new CornerRadius(5), Background = LunetTokens.Brush(LunetTokens.Color.Danger),
-                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 10, 10, 0),
-                IsHitTestVisible = false,
-            } } };
-            actions.Children.Add(host);
-        }
-        else actions.Children.Add(panels);
-        // Wide screens keep Rodar in the top bar (pointer, both hands); phones float it at the bottom.
-        if (_shell.State.Layout == ShellLayout.Expanded)
-        {
-            var running = _shell.Game.State is GameState.Running or GameState.Paused;
-            var run = running
-                ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
-                : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame());
-            run.Name = "RunButton";
-            run.Margin = new Thickness(LunetTokens.Space.Xs, 0, 0, 0);
-            actions.Children.Add(run);
-        }
+        var running = _shell.Game.State is GameState.Running or GameState.Paused;
+        // A phone has room for the ▶ icon only (the name is for the screen reader); a wide screen shows the label.
+        Button run = expanded
+            ? (running ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
+                       : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame()))
+            : LunetUi.IconButton(running ? LunetIcons.Stop : LunetIcons.Play, running ? "Parar" : "Rodar",
+                () => { if (running) _shell.StopGame(); else _shell.RunGame(); }, running ? LunetTokens.Color.Danger : LunetTokens.Color.Primary);
+        run.Name = "RunButton";
+        _runButton = run;
+        actions.Children.Add(run);
+        var more = LunetUi.IconButton(LunetIcons.More, "Mais: comandos, painéis, Git, APK", () => _shell.State.TogglePanel(SupportPanel.More),
+            _shell.State.Panel == SupportPanel.More ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
+        more.Name = "PanelsButton";
+        actions.Children.Add(more);
         DockPanel.SetDock(actions, Dock.Right);
         bar.Children.Add(actions);
         _title.Margin = new Thickness(0);
         Detach(_title);
-        var status = LunetUi.Text(_shell.Game.State switch
-        {
-            GameState.Running => "Rodando",
-            GameState.Paused => "Pausado",
-            GameState.CompileErrors => problems == 1 ? "1 problema" : $"{problems} problemas",
-            GameState.Faulted => "Parou com erro",
-            _ when liveErrors > 0 => liveErrors == 1 ? "1 erro no código" : $"{liveErrors} erros no código",
-            _ => "Parado",
-        }, LunetTokens.Type.Caption, problems > 0 ? LunetTokens.Color.Danger : LunetTokens.Color.TextSecondary);
-        status.TextWrapping = TextWrapping.NoWrap;
-        bar.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(LunetTokens.Space.Xxs, 0), Children = { _title, status } });
+        bar.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(LunetTokens.Space.Xxs, 0), Children = { _title } });
         return new Border
         {
             Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.Surface),
