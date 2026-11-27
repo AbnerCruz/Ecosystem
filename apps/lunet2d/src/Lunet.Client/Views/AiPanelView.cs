@@ -20,7 +20,8 @@ namespace Lunet.Client.Views;
 /// so the key is configured once for the whole app. <paramref name="Provider"/> replaces the network model (tests).
 /// </summary>
 public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null, LunetAiModelCatalog? Catalog = null,
-    Func<LunetAiKnowledge?>? Knowledge = null, ILunetAiImages? Images = null, ILunetAiWeb? Web = null)
+    Func<LunetAiKnowledge?>? Knowledge = null, ILunetAiImages? Images = null, ILunetAiWeb? Web = null,
+    Func<string, IDisposable?>? KeepAlive = null)
 {
     private LunetAiKnowledge? _knowledge;
     private bool _knowledgeLoaded;
@@ -282,6 +283,8 @@ public sealed class AiPanelView : UserControl
         _run = new CancellationTokenSource();
         BuildComposer();
         RenderMessages();
+        // Android: a foreground service with a notification keeps the run alive while the app is in the background.
+        using var alive = host.KeepAlive?.Invoke(_shell.Workspace.Project.Name);
         try
         {
             LastReply = await _session!.AskAsync(prompt, request, _run.Token);

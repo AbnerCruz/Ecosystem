@@ -138,4 +138,45 @@ public sealed class AiCoworkShellTests
         }
         finally { Directory.Delete(dir, true); }
     }
+
+    private sealed class Hold(List<string> log) : IDisposable { public void Dispose() => log.Add("release"); }
+
+    private sealed class Failing : AgentRuntime.IModelProvider
+    {
+        public string ProviderId => "chat-completions";
+        public ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken) =>
+            throw new HttpRequestException("sem rede");
+    }
+
+    [Fact]
+    public void ARun_HoldsTheAppAliveWithTheGameName_AndReleasesIt_EvenOnFailure()
+    {
+        var root = Directory.CreateTempSubdirectory("lunet-hold-").FullName;
+        try
+        {
+            UiSession.Run(() =>
+            {
+                foreach (var model in new AgentRuntime.IModelProvider[] { new Recording(), new Failing() })
+                {
+                    var log = new List<string>();
+                    var aiDir = Path.Combine(root, ".ai");
+                    var host = new AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "s.json"), new Vault()), aiDir, model,
+                        KeepAlive: game => { log.Add("hold " + game); return new Hold(log); });
+                    var shell = new LunetShell(root) { AiHost = host };
+                    var window = new Window { Width = 412, Height = 915, Content = shell };
+                    window.Show();
+                    shell.CreateProject();
+                    shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    var ai = shell.WorkspaceView.Support.Ai;
+                    ai.Input.Text = "oi";
+                    RunToEnd(ai.SendAsync());
+                    Assert.Equal(["hold " + shell.Workspace.Project!.Name, "release"], log);
+                    Assert.False(ai.Running);
+                    window.Close();
+                }
+            });
+        }
+        finally { Directory.Delete(root, true); }
+    }
 }
