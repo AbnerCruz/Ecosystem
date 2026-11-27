@@ -56,6 +56,25 @@
 | UX §6.3 — decisão do teclado | **Divergência resolvida com a fonte.** O pedido original (PR #1040, 25/11) era um teclado próprio da IDE. Depois, o proprietário escreveu na sessão de 25/11: "A digitação do editor, ms extremamente alto, não da pra digitar, vamos abortar a ideia de ter um teclado nativo mas não abortar a ideia de ter varias abas". O PR #1047 aplicou isso: o teclado do sistema digita, e uma barra única tem as abas Teclas, Atalhos e Métodos. **Decisão vigente:** IME do sistema mais a barra de três abas. Nenhum caminho com dois teclados. A ponte de teclado e o Enter foram corrigidos no #1051. | Ordem citada; `CodeBar` e `EditorKeyboardTests` |
 | UX §6.6 | O painel da IA do jogo usava uma cópia do formulário de configuração. Agora reaproveita o formulário único (`AiSettingsView`). | Teste `AiPanel_IsConfiguredOnceForTheWholeApp` atualizado |
 
+## H5 — Matriz dos Studios (§6.5): criar → salvar → reabrir → publicar → usar no jogo
+
+As provas são testes headless que já existiam (exceto onde marcado) e foram conferidos na suíte de 27/11 (1.348 testes verdes). "—" significa sem teste dedicado. Nada foi conferido num celular.
+
+| Tipo | Criar / editar / salvar | Reabrir | Publicar na Biblioteca | Usar em outro jogo |
+|---|---|---|---|---|
+| Sprite | `SpriteStudio_DrawsFillsUndoesAnimatesAndSavesSourceAndSheetTogether`, `SpriteStudio_SelectsMovesFlipsDuplicatesAndErasesPixels` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | `PublishAndImport_CopyBothEditableSourceAndDerivedSpriteWithoutSharedDependency` | o mesmo teste e `Game_LoadsSpriteStudioExportFromProjectAssetsThroughHost` (o runtime carrega o PNG) |
+| Mapa (Tile) | `TileStudio_CreatesAMapPaintsLayersUndoesAndSaves_AndEditsItsTileset`, `TileStudio_PaintsTerrainWithAutotileAndManagesLayers` | `Painting_FixesNeighbours_AndErasingReopensEdges` | `StudioPublishesAndForksAllFamiliesWithoutAnotherProjectAsSource` | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
+| Música | `MusicStudio_StartsWithASong_TogglesNotesPlaysAndSaves`, `MusicStudio_SetsNoteLengthInstrumentMixerAndArrangement` | `MusicStudio_InvalidDraftRemainsIntactAndCanBeClosed` (fonte inválida preservada, #1053) | `PublishingRenderedOutputUsesExactSourceAndDoesNotRewriteTheDraft` (sem WAV atrasado) | `StudioPublishesAndForksAllFamilies…` |
+| Efeito (Sound) | `SoundStudio_GeneratesVariesPlaysAndSavesSourceAndWavTogether` | — | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
+| Tom (WAV) | `CreateEditAssetsPreviewExportAndReopen` e os testes de WAV do #1053 | os testes de reabrir WAV sem jogo, do #1053 | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
+| Partículas | `ParticleStudio_RunsTheRealEmitter_BurstsAndSavesTheEffect` | — | `StudioPublishesAndForksAllFamilies…` | `Content_LoadsAStudioEffectAsAReadyEmitter` (o runtime usa o efeito) |
+| Paleta | `Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio` | — | `StudioPublishesAndForksAllFamilies…` | — |
+| Dados (Tabela) | `DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether` | — | `StudioPublishesAndForksAllFamilies…` | — |
+| Sem jogo (rascunho global) | `Studios_WithoutAGame_CreateEditSaveInTheStudioFolder_AndPublish` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | idem | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
+| Segurança da Biblioteca | `UnsafePaths_AreRejectedWithoutPublishingProject`, `PublishRevision_RejectsSymlinkedAssetDirectory…`, `ExistingDestinationFiles_AreNotOverwrittenByStudioLibraryImport`, `InterruptedBundleRestoresPreviousBytesWhenReopened`, `InvalidPersistedMetadata_CannotCrashLibraryOrModifyTarget` | | | |
+
+**Lacunas da matriz:** falta teste dedicado de reabrir para Efeito, Partículas, Paleta e Dados, e de usar Paleta e Dados num jogo. O fluxo existe no código, mas não há prova automatizada específica. Essas lacunas ficam abertas, não marcadas como feitas.
+
 ## Pendências conhecidas
 
 - **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)
