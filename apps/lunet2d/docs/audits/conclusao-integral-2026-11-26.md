@@ -129,3 +129,33 @@ Leitura dos números:
 - Cerca de 11 ms por tecla é custo do próprio runner, que renderiza um quadro a cada tecla. O editor (AvaloniaEdit mais o cliente de IME) acrescenta cerca de 9 ms.
 - **E-10:** a primeira execução falhou na compilação, não no teste; a segunda passou.
 - Não há número do Moto G32, e nenhum é alegado. A medição no aparelho continua pendente.
+
+## Matriz G01–G16 (Parte II do GOAL): estado em 27/11/2026
+
+Legenda:
+- **Automatizado:** teste no runner ou CI, sem aparelho.
+- **Pendente:** ainda não executado.
+- **Aparelho:** depende de celular, e nenhum foi usado.
+
+| ID | Cenário | Estado | Evidência | Falta |
+|---|---|---|---|---|
+| G01 | Assumir o trabalho anterior e reconciliar com a `main` | Feito | §H0 deste relatório; #1054 integrado (3da594e); #1056 sobre a `main` | — |
+| G02 | Música inválida, recuperar, tocar e trocar de tela durante a exportação | Automatizado | Testes do #1053 (fonte inválida preservada, render fora da UI); `MusicLeaveTests` (E-12); `StudioLeaveSavesTests` (E-13) | Aparelho: ANR e áudio real |
+| G03 | WAV independente, editar, reabrir, publicar e copiar para o jogo | Automatizado | Matriz H5 (Studios) | Aparelho |
+| G04 | Digitação, IME PT-BR, Métodos, assinatura, desfazer e rotação | Automatizado | `EditorKeyboardTests`, `AndroidImeSimulator`, `MethodsJourneyTests`, `TypingLatencyTests` (p50 ≈ 20 ms no runner, sem rebuild por tecla) | Aparelho: IME real, rotação, latência no Moto G32 |
+| G05 | Código, Preview GLES, pausar, passo, Inspector e retorno | Automatizado/CI | `GpuPreviewTests`; jornada `apk` do CI no emulador com quadros reais (E-09) | Aparelho: toque, rotação, minimizar |
+| G06 | IA Estudo e Fazer, revisão, arquivo alterado durante a execução, desfazer | Automatizado | `AiStreamingRenderTests` (não recarrega outro jogo com texto não salvo, E-05) e `AiCoworkShellTests` | Aparelho com provedor real |
+| G07 | IA, minimizar, trocar de jogo, notificação e cancelar | Automatizado (parcial) | A execução mantém o jogo (E-05); hold liberado mesmo com falha (`AiCoworkShellTests`); serviço em primeiro plano compila | Aparelho: notificação, permissão, morte do processo |
+| G08 | Sprite com camadas e animações, Tile, áudio, publicar e usar no jogo | Automatizado | Matriz H5 completa em testes | Aparelho |
+| G09 | Aprender T01, objetivo, pista, Docs, Preview e reabrir | Automatizado | `ObjectivesTests`, `LunetClientLearnTests`, `ProblemDocsTests` | Aparelho |
+| G10 | ZIP, importar, exportar por SAF, cancelar, revogar e recuperar | Pendente nesta missão | Testes de importação e exportação existentes antes da missão; não reauditados aqui | Auditoria e aparelho (SAF real) |
+| G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7) | Scene2D no modo ordenado |
+| G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
+| G13 | Gerar o APK do jogo, instalar e rodar | Pendente | — | Exportação do jogo no CI e no aparelho |
+| G14 | Atualizar o Lunet existente e conferir dados | Pendente | `LauncherPreferences` e caminhos de dados preservados por desenho; não houve teste de atualização | Aparelho com instalação anterior |
+| G15 | Matriz de migração e todas as rotas | Parcial | Explorar segue congelado (ADD-0036); as demais rotas estão na casca | H8: revisar o inventário rota a rota |
+| G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
+
+**Conclusão honesta:**
+- **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.
+- **Pendentes, sem prova automatizada:** G10, G13, G14 e a revisão H8 (G15).
