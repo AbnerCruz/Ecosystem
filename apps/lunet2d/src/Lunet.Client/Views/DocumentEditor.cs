@@ -197,6 +197,7 @@ public sealed class DocumentEditor : UserControl
         _saved = path is null ? null : _shell.Workspace.Read(path);
         _surface.Text = _saved ?? "";
         if (_surface is CodeSurface loaded) { loaded.SetDiagnostics([]); _analysisDelay.Stop(); _analysisDelay.Start(); }
+        ApplyChangedLines();
         if (path is not null && _session is not null)
         {
             _session.Open(path, additional: true);
@@ -625,6 +626,108 @@ public sealed class DocumentEditor : UserControl
         else Rebuild();
     }
 
+    private Lunet.Ai.LunetAiCheckpoint? _review;
+    private int _reviewIndex;
+
+    /// <summary>Text files the AI changed in the run under review (code, data, notes), in its order.</summary>
+    public IReadOnlyList<Lunet.Ai.LunetAiChange> ReviewChanges => _review is { IsReverted: false } r
+        ? r.Changes().Where(c => c.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) || c.Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+            || c.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) || c.Path.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)).ToArray()
+        : [];
+
+    /// <summary>
+    /// Numa-like review (owner, 27/11: "o Numa faz isso bem"): what the AI changed shows in the file itself — the
+    /// changed lines tinted, a bar to go through the changed files, keep them or undo the whole run.
+    /// </summary>
+    public bool Review(Lunet.Ai.LunetAiCheckpoint checkpoint)
+    {
+        _review = checkpoint;
+        _reviewIndex = 0;
+        if (ReviewChanges.Count == 0) { _review = null; return false; }
+        Load(ReviewChanges[0].Path);
+        return true;
+    }
+
+    /// <summary>Goes to the next (or previous) changed file of the review.</summary>
+    public void ReviewStep(int delta)
+    {
+        var changes = ReviewChanges;
+        if (changes.Count == 0) return;
+        _reviewIndex = ((_reviewIndex + delta) % changes.Count + changes.Count) % changes.Count;
+        Load(changes[_reviewIndex].Path);
+    }
+
+    /// <summary>Keeps the AI's changes (they are already in the files) and ends the review.</summary>
+    public void KeepReview()
+    {
+        _review = null;
+        ApplyChangedLines();
+        Rebuild();
+    }
+
+    /// <summary>Undoes the whole run under review (the on-disk checkpoint) and reloads.</summary>
+    public void UndoReview()
+    {
+        if (_review is null) return;
+        _review.Revert();
+        _review = null;
+        _shell.WorkspaceView.ReloadFromDisk();
+        _shell.Report("Alterações da IA desfeitas.");
+        ApplyChangedLines();
+        Rebuild();
+    }
+
+    /// <summary>The 1-based lines of the open file that the change under review added or rewrote.</summary>
+    public static IReadOnlyList<int> ChangedLinesOf(string? before, string after)
+    {
+        var result = new List<int>();
+        var line = 0;
+        foreach (var d in Lunet.Ai.LunetAiDiff.Lines(before, after))
+        {
+            if (d.Kind == Lunet.Ai.DiffKind.Removed) continue;
+            line++;
+            if (d.Kind == Lunet.Ai.DiffKind.Added) result.Add(line);
+        }
+        return result;
+    }
+
+    private void ApplyChangedLines()
+    {
+        if (_surface is not CodeSurface code) return;
+        var change = OpenPath is null ? null : ReviewChanges.FirstOrDefault(c => c.Path == OpenPath);
+        code.SetChangedLines(change is null ? [] : ChangedLinesOf(change.Before, change.After));
+    }
+
+    private Control ReviewBar()
+    {
+        var changes = ReviewChanges;
+        var index = Math.Max(0, changes.ToList().FindIndex(c => c.Path == OpenPath));
+        var change = changes[index];
+        var diff = Lunet.Ai.LunetAiDiff.Lines(change.Before, change.After);
+        int added = diff.Count(l => l.Kind == Lunet.Ai.DiffKind.Added), removed = diff.Count(l => l.Kind == Lunet.Ai.DiffKind.Removed);
+        var bar = new DockPanel { Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.Xxs) };
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs };
+        if (changes.Count > 1)
+        {
+            actions.Children.Add(LunetUi.IconButton(LunetIcons.Back, "Arquivo alterado anterior", () => ReviewStep(-1)));
+            actions.Children.Add(LunetUi.IconButton(LunetIcons.ChevronRight, "Próximo arquivo alterado", () => ReviewStep(1)));
+        }
+        var undo = LunetUi.Button("Desfazer", ButtonKind.Ghost, LunetIcons.Undo, UndoReview);
+        undo.Name = "ReviewUndo";
+        var keep = LunetUi.Button("Manter", ButtonKind.Primary, LunetIcons.Check, KeepReview);
+        keep.Name = "ReviewKeep";
+        actions.Children.Add(undo);
+        actions.Children.Add(keep);
+        DockPanel.SetDock(actions, Dock.Right);
+        bar.Children.Add(actions);
+        var text = LunetUi.Text($"IA alterou {Path.GetFileName(change.Path)}  +{added} −{removed}" + (changes.Count > 1 ? $" · {index + 1} de {changes.Count}" : ""),
+            LunetTokens.Type.Label, LunetTokens.Color.TextPrimary, FontWeight.SemiBold);
+        text.VerticalAlignment = VerticalAlignment.Center;
+        text.TextTrimming = TextTrimming.CharacterEllipsis;
+        bar.Children.Add(text);
+        return new Border { Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), Name = "AiReviewBar" };
+    }
+
     /// <summary>The open tabs (tests).</summary>
     public IReadOnlyList<string> OpenTabs => _session?.Tabs.ToList() ?? [];
 
@@ -742,6 +845,7 @@ public sealed class DocumentEditor : UserControl
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Left; row.Children.Add(e); }
             _chrome.Children.Add(new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) });
         }
+        if (ReviewChanges.Count > 0 && OpenPath is not null && ReviewChanges.Any(c => c.Path == OpenPath)) _chrome.Children.Add(ReviewBar());
         if (_findOpen && OpenPath is not null) _chrome.Children.Add(FindBar());
         if (_fileMenu) _chrome.Children.Add(FileMenu());
         AttachKeyboard();

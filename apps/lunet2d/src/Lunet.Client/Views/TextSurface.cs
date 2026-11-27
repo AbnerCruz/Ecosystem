@@ -77,6 +77,7 @@ public sealed class CodeSurface : ITextSurface
         _editor.TextArea.SelectionCornerRadius = 3;
         _editor.TextArea.Caret.CaretBrush = LunetTokens.Brush(LunetTokens.Color.Primary);
         AutomationProperties.SetName(_editor.TextArea, "Editor de código");
+        _editor.TextArea.TextView.BackgroundRenderers.Add(_changed);
         _editor.TextArea.TextView.BackgroundRenderers.Add(_diagnostics);
         _editor.Document.TextChanged += (_, _) => TextChanged?.Invoke();
         // A finger on the code decides on release whether it was a tap (keyboard) or a scroll (no keyboard): focus taken
@@ -103,6 +104,16 @@ public sealed class CodeSurface : ITextSurface
     public CodeInputClient InputClient => _ime;
 
     private readonly DiagnosticsRenderer _diagnostics = new();
+    private readonly ChangedLinesRenderer _changed = new();
+
+    /// <summary>Lines (1-based) an AI change added or rewrote, tinted until kept or undone (Numa-like review in the file).</summary>
+    public IReadOnlyCollection<int> ChangedLines => _changed.Lines;
+
+    public void SetChangedLines(IEnumerable<int> lines)
+    {
+        _changed.Lines = lines.ToHashSet();
+        _editor.TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+    }
 
     /// <summary>The underlying editor (tests and the head's hardware shortcuts).</summary>
     public TextEditor Editor => _editor;
@@ -260,6 +271,26 @@ public sealed class CodeSurface : ITextSurface
 }
 
 /// <summary>Draws a wavy underline under each diagnostic's span (red errors, amber warnings).</summary>
+internal sealed class ChangedLinesRenderer : IBackgroundRenderer
+{
+    public HashSet<int> Lines { get; set; } = [];
+    public KnownLayer Layer => KnownLayer.Background;
+
+    public void Draw(TextView textView, DrawingContext drawingContext)
+    {
+        if (Lines.Count == 0 || !textView.VisualLinesValid) return;
+        var fill = new SolidColorBrush(Avalonia.Media.Color.Parse(LunetTokens.Color.Success), 0.14);
+        var mark = LunetTokens.Brush(LunetTokens.Color.Success);
+        foreach (var visual in textView.VisualLines)
+        {
+            if (!Lines.Contains(visual.FirstDocumentLine.LineNumber)) continue;
+            var y = visual.VisualTop - textView.ScrollOffset.Y;
+            drawingContext.FillRectangle(fill, new Rect(0, y, textView.Bounds.Width, visual.Height));
+            drawingContext.FillRectangle(mark, new Rect(0, y, 3, visual.Height));
+        }
+    }
+}
+
 internal sealed class DiagnosticsRenderer : IBackgroundRenderer
 {
     public IReadOnlyList<LunetDiagnostic> Items { get; set; } = [];

@@ -109,8 +109,15 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Reloads the open documents from disk (another screen may have changed them); unsaved edits here win.</summary>
     public void ReloadFromDisk()
     {
-        if (!_code.IsDirty) _code.Load(_code.OpenPath);
-        if (!_notes.IsDirty) _notes.Load(_notes.OpenPath);
+        // A file that no longer exists (an AI run undone that had created it, a delete outside) closes its tab instead
+        // of being read again (that crashed: "Could not find file", 27/11).
+        var files = _shell.Workspace.Project is null ? [] : _shell.Workspace.Files().ToHashSet(StringComparer.Ordinal);
+        foreach (var editor in new[] { _code, _notes })
+        {
+            if (editor.OpenPath is { } open && !files.Contains(open)) editor.FilesMoved(open, null);
+            else if (!editor.IsDirty) editor.Load(editor.OpenPath);
+        }
+        _explorer?.Fill();
         Rebuild();
     }
 
@@ -442,6 +449,18 @@ public sealed class WorkspaceView : UserControl
         }
         if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
         _code.Load(path);
+    }
+
+    /// <summary>
+    /// After the AI changed files: the code shows the change in the file to keep or undo (Numa-like). On a phone the AI
+    /// panel steps down so the code is seen; the IA button brings the conversation back.
+    /// </summary>
+    public bool ReviewAiChanges(Lunet.Ai.LunetAiCheckpoint checkpoint)
+    {
+        if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
+        if (!_code.Review(checkpoint)) return false;
+        if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Ai) _shell.State.ShowPanel(SupportPanel.None);
+        return true;
     }
 
     /// <summary>A file or folder was renamed (to) or deleted (null): the editors' tabs follow, and the Explorer redraws.</summary>

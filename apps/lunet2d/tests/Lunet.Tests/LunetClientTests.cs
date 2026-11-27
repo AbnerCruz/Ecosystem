@@ -892,6 +892,10 @@ public sealed class LunetClientTests
                 var enemy = Path.Combine(shell.Workspace.Project.Directory, "Enemy.cs");
                 Assert.True(File.Exists(enemy));
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                // Like the Numa (27/11): the change shows in the file; the panel steps aside, the conversation keeps its card.
+                Assert.Contains(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "AiReviewBar" && c.IsEffectivelyVisible);
+                shell.State.ShowPanel(SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Alterou 1 arquivo(s)");
                 var undo = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Desfazer estas alterações");
                 undo.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));

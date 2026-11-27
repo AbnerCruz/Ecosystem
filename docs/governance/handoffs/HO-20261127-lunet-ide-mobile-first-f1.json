@@ -29,23 +29,27 @@
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/VERSION",
     "apps/lunet2d/VERSION_CODE",
-    "docs/governance/handoffs/HO-20261127-lunet-ide-mobile-first-f1.json"
+    "docs/governance/handoffs/HO-20261127-lunet-ide-mobile-first-f1.json",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AiReviewInFileTests.cs"
   ],
   "work_completed": [
     "Study (owner, 27/11): IDE mobile-first after VS Code, AI after Numa, files edited directly in the chosen folder via SAF (owner's choice); slices F1-F5 in apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md.",
     "F1: no workspace navigation bar; top bar (back, Explorer, run, more); Explorer tree (drawer on phone, side column on wide screens) with new file/folder, rename, delete; editor tabs are the open files only, closable; running shows the game under the code in a bottom panel (Jogo, Console, Problemas); status bar with problems, caret line/column and the AI.",
-    "Fixed: the code bar could be built twice (reentrant creation); the screenshot tool kept the large-font zoom on later captures."
+    "Fixed: the code bar could be built twice (reentrant creation); the screenshot tool kept the large-font zoom on later captures.",
+    "F2: AI changes show in the file (Numa-like): the changed file opens with its new lines tinted and a review bar (previous/next file, Keep, Undo); on a phone the AI panel steps aside. Fixed: undoing an AI run that had created the open file crashed the reload."
   ],
   "verification": [
     {
-      "check": "IdeLayoutTests (3) and full Lunet suite (1388 passed)",
+      "check": "IdeLayoutTests (3), AiReviewInFileTests (5) and full Lunet suite (1393 passed)",
       "kind": "automated",
       "result": "passed",
       "evidence": "apps/lunet2d/tests/Lunet.Tests"
     }
   ],
   "known_issues": [
-    "Not tested on a phone. F2 (AI after Numa), F3-F5 (direct SAF files) are the next slices."
+    "Not tested on a phone. F3-F5 (direct SAF files) are the next slices."
   ],
   "blockers": [],
   "next_actions": [
