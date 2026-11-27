@@ -156,7 +156,7 @@ Legenda:
 | G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
 | G14 | Atualizar o Lunet existente e conferir dados | Automatizado (parcial) | `UpgradeDataTests`: preferências v1 (fixados e último jogo por nome) chegam à Home nova (E-14 corrigido). Arquivos de IA, Notas e progresso mantêm os mesmos caminhos | Aparelho: instalar por cima da versão anterior |
 | G15 | Matriz de migração e todas as rotas | Feito, exceto aparelho | Revisão rota a rota em §H8 abaixo: duas rotas ficam na tela anterior, com motivo; a lacuna de Notas encontrada foi portada (`NotesImportTests`) | Aparelho |
-| G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
+| G16 | PR integrado, release oficial, APK e SHA | Feito | #1056 integrado em `70a06fe` (01:01 UTC, 27/11). Release [`lunet2d-v0.0.1-dev.1000611`](https://github.com/AbnerCruz/Ecosystem/releases/tag/lunet2d-v0.0.1-dev.1000611) publicada às 01:18 UTC a partir de `70a06fe`, com `Lunet-0.0.1-dev.1000611-arm64.apk` (71,8 MB, sha256 `82b224e7884c9b633094a4f5acae3a5e8b223d021d234712fcceffb446ca8410`), `release-manifest.json` e `SHA256SUMS.txt` | Instalar no aparelho |
 
 **Conclusão honesta:**
 - **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.
