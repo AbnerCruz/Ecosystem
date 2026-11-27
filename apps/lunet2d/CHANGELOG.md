@@ -1,12 +1,19 @@
 # Changelog
 
-## 0.0.1-dev.1000611 — Correção do jogo na GPU e testes do Framework
+## 0.0.1-dev.1000611 — Jogo na GPU, IA como co-work na casca e testes do Framework
 
 - **Correção:** com o jogo rodando na GPU dentro da aba Jogo, a contagem de quadros ficava sempre em zero, e a jornada de teste no emulador reprovava a versão. Agora a contagem vem dos quadros que a GPU de fato desenhou.
 - **Framework:** novos testes da ordenação do SpriteBatch:
   - ±0, −∞, troca de textura A/B/A e textura repetida num lote só;
   - atlas, Sprite, fonte, nine-slice, DebugDraw, partículas e tilemap desenham igual no modo ordenado e no antigo.
 - **Guia de colisão:** usa `new RectangleF(posição, tamanho)` e `batch.Draw(retângulo, cor)`.
+- **IA do jogo:** o painel novo passa a ter o que a tela anterior tinha.
+  - **Anexos:** botão Anexar, com as notas, imagens e arquivos das Notas do jogo, valendo para uma mensagem.
+  - **Imagens:** a IA enxerga imagens em qualquer aparelho.
+  - **Documentação:** usa a documentação do Lunet que vem no app.
+  - **Pesquisa na web:** com um botão para ligar e desligar nos ajustes da IA.
+- **Modelos:** Ajustes da IA → "Ver modelos do provedor" lista os modelos de verdade, com filtro e "Mostrar mais". Sem internet ou sem chave, avisa e deixa digitar o modelo.
+- **Segundo plano:** a IA continua trabalhando com o app minimizado, com uma notificação "Lunet IA · trabalhando em…". Ao terminar fora do app, avisa "Lunet IA terminou". O Android 13 pede a permissão de notificação uma vez.
 - **Validação:** testado no computador e no emulador do CI. Não testado num celular.
 
 ## 0.0.1-dev.1000610 — Home com Continuar e Fixados, Objetivos na IDE, retângulos e tamanhos no Framework

@@ -56,6 +56,8 @@
 | UX §6.3 — decisão do teclado | **Divergência resolvida com a fonte.** O pedido original (PR #1040, 25/11) era um teclado próprio da IDE. Depois, o proprietário escreveu na sessão de 25/11: "A digitação do editor, ms extremamente alto, não da pra digitar, vamos abortar a ideia de ter um teclado nativo mas não abortar a ideia de ter varias abas". O PR #1047 aplicou isso: o teclado do sistema digita, e uma barra única tem as abas Teclas, Atalhos e Métodos. **Decisão vigente:** IME do sistema mais a barra de três abas. Nenhum caminho com dois teclados. A ponte de teclado e o Enter foram corrigidos no #1051. | Ordem citada; `CodeBar` e `EditorKeyboardTests` |
 | UX §6.6 | O painel da IA do jogo usava uma cópia do formulário de configuração. Agora reaproveita o formulário único (`AiSettingsView`). | Teste `AiPanel_IsConfiguredOnceForTheWholeApp` atualizado |
 
+| H4 — co-work | O painel de IA da casca não passava anexos, percepção de imagem, documentação nem pesquisa web, que a tela anterior do Android passava. Agora passa os quatro. Há catálogo de modelos com filtro, páginas e cache, e o id manual continua. A execução segura o processo com serviço em primeiro plano e notificação. | `AiCoworkShellTests` (3), `ModelCatalogViewTests` (2); build Android verde. Não foi testado no aparelho nenhum destes: notificação, permissão do Android 13, IA em segundo plano. |
+
 ## H5 — Matriz dos Studios (§6.5): criar → salvar → reabrir → publicar → usar no jogo
 
 As provas são testes headless que já existiam (exceto onde marcado) e foram conferidos na suíte de 27/11 (1.348 testes verdes). "—" significa sem teste dedicado. Nada foi conferido num celular.
