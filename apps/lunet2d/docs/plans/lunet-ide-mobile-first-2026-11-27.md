@@ -28,7 +28,7 @@ Pedido do proprietário (27/11/2026, no celular):
 - Cerca de 80 pontos fora dele usam `project.Directory` com caminhos de disco.
 - O conteúdo do jogo já passa por `IContentSource`, e o compilador recebe textos, sem disco.
 
-### Numa (`apps/urbe/csharp`): o que ele faz bem
+### Numa (o app de notas do Ecosystem): o que ele faz bem
 - **Arquivos:** `AndroidVaultStorage` usa a pasta SAF como autoridade, sem cópia oculta. A pasta é percorrida uma vez por abertura (DocumentsContract, só as colunas necessárias), e há cache dos bytes de arquivos que não mudaram (tamanho e data de modificação).
 - **IA (`AssistantPanel`, `MainView.Assistant`):**
   - painel sobre o editor, ocupando cerca de meia tela, com uma rolagem só e o campo de escrita sempre visível;
