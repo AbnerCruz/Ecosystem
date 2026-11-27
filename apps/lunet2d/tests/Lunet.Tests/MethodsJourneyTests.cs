@@ -53,7 +53,9 @@ public sealed class MethodsJourneyTests
 
                 // Typing a call shows its signature (the analysis runs off the keystroke).
                 Type(bar, surface.Caret, ";\n        Console.WriteLine(");
-                Pump(1500);
+                // The analysis is debounced and off the UI thread; the first one is cold (Roslyn), slower on CI runners.
+                var signatureBy = DateTime.UtcNow.AddSeconds(30);
+                while (string.IsNullOrEmpty(bar.SignatureText) && DateTime.UtcNow < signatureBy) Pump(50);
                 Assert.False(string.IsNullOrEmpty(bar.SignatureText), "sem assinatura enquanto digita a chamada");
                 Type(bar, surface.Caret, "cor);");
 
