@@ -87,6 +87,20 @@ public sealed class AiSettingsView : UserControl
         form.Children.Add(LunetUi.Field("Modelo", model));
         form.Children.Add(BuildCatalog(() => all[Math.Max(0, providers.SelectedIndex)], endpoint, key, model));
         form.Children.Add(endpointField);
+        var web = new ToggleSwitch { IsChecked = loaded.Settings.WebResearch, OnContent = null, OffContent = null, Name = "AiWeb", VerticalAlignment = VerticalAlignment.Center };
+        AutomationProperties.SetName(web, "Pesquisa na web");
+        web.IsCheckedChanged += (_, _) =>
+        {
+            _host.Store.Save(_host.Store.Load().Settings with { WebResearch = web.IsChecked == true }, null);
+            _status.Text = web.IsChecked == true ? "A IA pode pesquisar na web quando precisar." : "A IA não acessa a web.";
+        };
+        var webText = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        webText.Children.Add(LunetUi.Text("Pesquisa na web", LunetTokens.Type.Callout));
+        webText.Children.Add(LunetUi.Text("Busca pública e leitura de páginas quando a pergunta pedir", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        var webRow = new DockPanel { MinHeight = 56 };
+        DockPanel.SetDock(web, Dock.Right);
+        webRow.Children.Add(web); webRow.Children.Add(webText);
+        form.Children.Add(webRow);
         form.Children.Add(save);
         form.Children.Add(forget);
         form.Children.Add(_status);

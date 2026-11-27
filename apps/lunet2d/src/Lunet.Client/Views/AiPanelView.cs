@@ -19,8 +19,22 @@ namespace Lunet.Client.Views;
 /// where conversations are kept. On Android these are the same files and Keystore vault the previous screens use,
 /// so the key is configured once for the whole app. <paramref name="Provider"/> replaces the network model (tests).
 /// </summary>
-public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null, LunetAiModelCatalog? Catalog = null)
+public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null, LunetAiModelCatalog? Catalog = null,
+    Func<LunetAiKnowledge?>? Knowledge = null, ILunetAiImages? Images = null, ILunetAiWeb? Web = null)
 {
+    private LunetAiKnowledge? _knowledge;
+    private bool _knowledgeLoaded;
+
+    /// <summary>The Framework reference and guides, indexed once on first use (never at startup).</summary>
+    public LunetAiKnowledge? LoadKnowledge()
+    {
+        if (!_knowledgeLoaded) { _knowledge = Knowledge?.Invoke(); _knowledgeLoaded = true; }
+        return _knowledge;
+    }
+
+    /// <summary>Image perception for the AI: the head's decoder, or Avalonia's (works on every head).</summary>
+    public ILunetAiImages ImageReader => Images ?? AvaloniaAiImages.Instance;
+
     private static readonly Lazy<LunetAiModelCatalog> Shared = new(() => new LunetAiModelCatalog(new HttpClient { Timeout = TimeSpan.FromSeconds(20) }));
 
     /// <summary>The provider's model list (memory cache of a few minutes, per provider, address and key).</summary>
@@ -166,9 +180,11 @@ public sealed class AiPanelView : UserControl
             row.Children.Add(_sendHost);
             if (_input.Parent is Panel p) p.Children.Remove(_input);
             row.Children.Add(_input);
+            _composer.Children.Add(_attachmentRow);
             _composer.Children.Add(_modes);
             _composer.Children.Add(row);
         }
+        BuildAttachments();
         _modes.Children.Clear();
         foreach (var (mode, label, hint) in new[] { (LunetAiMode.Teach, "Estudar", "Explica e responde, não altera nada"), (LunetAiMode.Do, "Fazer", "Altera o jogo, mostra o que mudou e permite desfazer") })
         {
@@ -178,11 +194,60 @@ public sealed class AiPanelView : UserControl
             AutomationProperties.SetHelpText(b, hint);
             _modes.Children.Add(b);
         }
+        var attach = LunetUi.Button("Anexar", ButtonKind.Ghost, LunetIcons.Paperclip, ToggleAttachPicker);
+        attach.MinHeight = 40; attach.Focusable = false; attach.Name = "AiAttach"; attach.IsEnabled = !Running;
+        AutomationProperties.SetHelpText(attach, "Anexa uma nota, imagem ou arquivo das Notas do jogo à próxima mensagem");
+        _modes.Children.Add(attach);
         var send = Running
             ? LunetUi.IconButton(LunetIcons.Stop, "Parar a IA", Stop, LunetTokens.Color.Danger)
             : LunetUi.IconButton(LunetIcons.Play, "Enviar", () => _ = SendAsync(), LunetTokens.Color.Primary);
         send.Focusable = false;
         _sendHost.Child = send;
+    }
+
+    private readonly List<string> _attachments = [];
+    private readonly WrapPanel _attachmentRow = new() { Name = "AiAttachments" };
+    private bool _picking;
+
+    /// <summary>Files of the game attached to the next message (project paths; the AI reads them, images by perception).</summary>
+    public IReadOnlyList<string> Attachments => _attachments;
+
+    /// <summary>Attaches a project file to the next message (no duplicates; only files that exist in the game).</summary>
+    public bool Attach(string projectPath)
+    {
+        if (_shell.Workspace.Project is not { } project || _attachments.Contains(projectPath)) return false;
+        if (!File.Exists(Path.Combine(project.Directory, projectPath.Replace('/', Path.DirectorySeparatorChar)))) return false;
+        _attachments.Add(projectPath);
+        _picking = false;
+        BuildComposer();
+        return true;
+    }
+
+    private void ToggleAttachPicker() { _picking = !_picking; BuildComposer(); }
+
+    private void BuildAttachments()
+    {
+        _attachmentRow.Children.Clear();
+        foreach (var path in _attachments.ToArray())
+        {
+            var chip = LunetUi.Button(Path.GetFileName(path) + "  ✕", ButtonKind.Selected, null, () => { _attachments.Remove(path); BuildComposer(); });
+            chip.MinHeight = 36; chip.Focusable = false;
+            AutomationProperties.SetName(chip, "Remover anexo " + Path.GetFileName(path));
+            _attachmentRow.Children.Add(chip);
+        }
+        if (!_picking || _shell.Workspace.Project is not { } project) return;
+        var notes = ProjectNotes.List(project).Where(n => !_attachments.Contains(n.Path)).ToList();
+        if (notes.Count == 0)
+        {
+            _attachmentRow.Children.Add(LunetUi.Secondary("Nada nas Notas deste jogo. Importe imagens e arquivos em Notas para anexar."));
+            return;
+        }
+        foreach (var note in notes.Take(40))
+        {
+            var pick = LunetUi.Button((ProjectNotes.IsImage(note.Path) ? "Imagem · " : "") + Path.GetFileName(note.Path), ButtonKind.Ghost, null, () => Attach(note.Path));
+            pick.MinHeight = 36; pick.Focusable = false;
+            _attachmentRow.Children.Add(pick);
+        }
     }
 
     /// <summary>Sends the input in the chosen mode (then the mode goes back to Estudo). Saves everything first.</summary>
@@ -205,10 +270,13 @@ public sealed class AiPanelView : UserControl
             _shell.WorkspaceView.Support.ConsoleLines.TakeLast(20).ToArray());
         var request = new LunetAiRequest(loaded.Settings with { Model = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : "teste" },
             loaded.ApiKey ?? "chave-local-de-teste", context, new ShellAiBuild(_shell.Workspace), host.Provider,
+            Knowledge: host.LoadKnowledge(), Images: host.ImageReader, Attachments: _attachments.ToArray(),
+            Web: loaded.Settings.WebResearch ? host.Web : null, ModelTools: host.Models.KnownTools(loaded),
             Mode: mode,
             Steps: new Progress<LunetAiStep>(step => { var i = _steps.FindIndex(s => s.Id == step.Id); if (i >= 0) _steps[i] = step; else _steps.Add(step); ScheduleLive(); }),
             PartialText: new Progress<string>(text => { _partial = text; ScheduleLive(); }));
         _input.Text = "";
+        _attachments.Clear();
         Mode = LunetAiMode.Teach; // Fazer is a choice for one message, never sticky
         _steps.Clear(); _partial = "";
         _run = new CancellationTokenSource();

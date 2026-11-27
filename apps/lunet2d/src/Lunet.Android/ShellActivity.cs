@@ -103,7 +103,8 @@ public sealed class ShellActivity : AvaloniaActivity
                 key => ReleaseProjectFolder(key),
                 () => Window?.DecorView?.Post(ReopenOverNewRoot)),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
-                new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
+                new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai,
+                Knowledge: () => AndroidAiKnowledge.Load(Assets!), Web: new Lunet.Ai.LunetAiWebSession()),
         };
         // §8 of the visual language: the system's "remove animations" turns the entries into an instant appearance.
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }

@@ -24,24 +24,7 @@ public sealed partial class MainActivity
     private LunetProject? _attachmentProject;
 
     /// <summary>The Framework API reference and guides already shipped in the APK, indexed once per process.</summary>
-    private LunetAiKnowledge AiKnowledge()
-    {
-        if (_aiKnowledge is not null) return _aiKnowledge;
-        var assets = Assets!;
-        string Read(string path)
-        {
-            using var stream = assets.Open(path);
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
-        }
-        string? api = null;
-        try { api = Read("docs/lunet-framework.json"); } catch (Java.IO.IOException) { }
-        var guides = new Dictionary<string, string>();
-        foreach (var file in assets.List("docs/guides") ?? [])
-            if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                guides[System.IO.Path.GetFileNameWithoutExtension(file)] = Read("docs/guides/" + file);
-        return _aiKnowledge = LunetAiKnowledge.Create(api, guides);
-    }
+    private LunetAiKnowledge AiKnowledge() => _aiKnowledge ??= AndroidAiKnowledge.Load(Assets!);
 
     /// <summary>PNG/JPG/WebP decoding for the AI; large photos are subsampled to keep memory bounded.</summary>
     private sealed class AndroidAiImages : ILunetAiImages
