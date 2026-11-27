@@ -34,6 +34,8 @@
 
 | E-09 | O job `apk` do CI (jornada da casca no emulador Android 13) reprovou: "estado=Running quadros=0 → Nenhum quadro renderizado". O #1054 foi integrado mesmo assim. | Com a M5, o jogo roda no renderer GLES, mas `GameSession.FramesRendered` só contava quadros da CPU e ficava em 0 | O `PreviewRenderer` conta os quadros desenhados na thread GL (`Interlocked`), e a `GameSession` lê essa contagem quando o jogo está na GPU. O log do emulador também mostra "Failed to find ColorBuffer". Se a contagem continuar em 0, o problema é de renderização GLES dentro do `NativeControlHost` e será tratado a seguir. | Log do job `140048563727`; `GpuPreviewTests` lê a contagem da GPU; o CI do PR seguinte vai confirmar |
 
+- **E-11:** Esc não fechava Jogar (nem as outras folhas) quando nada estava focado, e os atalhos F5, Ctrl+S e F1 também falhavam nesse caso. A causa: o atalho ficava na casca, e a tecla, sem foco, chega só à janela. Agora o atalho fica na janela. Achado pelo `BackSequenceTests`.
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
@@ -94,9 +96,9 @@ As provas são testes headless da casca real e as capturas de `--screens`, em 41
 | UX09 | Parcial | `GlobalNavigationTests` (Documentação global), `DocsLibrary_…`, Referência exata nos Objetivos | Docs contextual a partir de um erro de diagnóstico |
 | UX10 | Headless ok | `ProjectFolderTests` (conectar, gravar, recusar revisão alheia, restaurar, alternar) | Acesso revogado e cancelamento no seletor do aparelho |
 | UX11 | **Não feito** | Só há capturas em 412×915 e 1280×800 | 320 e 360 dp, paisagem e passagem por ≥ 840 dp em todas as telas |
-| UX12 | **Não feito** | — | Fonte ampliada, ordem de foco, leitor de tela |
+| UX12 | Feito, exceto aparelho | `AccessibilityAuditTests` em 11 destinos: todo controle tem nome para o leitor de tela e alvo mínimo de toque (interruptores subiram de 32 para 48 px). A fonte do sistema amplia a casca até a largura lógica de 320; testado com a fonte máxima. Captura `celular-2-home-fonte-grande` | Conferir no aparelho: TalkBack e Tamanho da fonte do Android |
 | UX13 | Parcial | Streaming da IA sem reconstruir a conversa; `TypingLatencyTests` executado em 27/11 (ver §Latência) | Muitos projetos e recursos; medir no aparelho |
-| UX14 | Parcial | `GlobalNavigationTests` (Voltar fecha Documentação), Voltar de Ajustes → Pasta de projetos | Sequência completa de Voltar/Esc por todos os destinos |
+| UX14 | Feito, exceto aparelho | `BackSequenceTests`: Voltar e Esc fecham, nível por nível, as 11 folhas da Home (a IA vai de Ajustes para a conversa e depois fecha). No jogo, Voltar vai de painel para código e de código para Início; no Início, sai do app | Gesto de Voltar do Android no aparelho |
 
 ## Pendências conhecidas
 

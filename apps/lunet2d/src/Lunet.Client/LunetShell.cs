@@ -43,7 +43,6 @@ public sealed class LunetShell : UserControl
         Game.StateChanged += () => { _workspaceView.Game.Refresh(); if (State.Level == ShellLevel.Workspace) _workspaceView.Rebuild(); };
         Game.Log += line => Avalonia.Threading.Dispatcher.UIThread.Post(() => _workspaceView.Support.Append(line));
         _timer.Tick += (_, _) => TickGame();
-        KeyDown += OnKeyDown;
         // A finger lifted on a text field asks for the keyboard explicitly (after focus has settled on it).
         // Only a tap on the field itself: a key of the code bar or its ⌄ (which closes the keyboard) keep their meaning.
         AddHandler(PointerReleasedEvent, (_, e) =>
@@ -423,6 +422,7 @@ public sealed class LunetShell : UserControl
         _top = TopLevel.GetTopLevel(this);
         if (_top is null) return;
         _top.BackRequested += OnBackRequested;
+        _top.KeyDown += OnKeyDown; // on the window: Esc and the shortcuts also work with nothing focused (a sheet just opened)
         _inputPane = _top.InputPane;
         _insets = _top.InsetsManager;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
@@ -432,7 +432,7 @@ public sealed class LunetShell : UserControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        if (_top is not null) _top.BackRequested -= OnBackRequested;
+        if (_top is not null) { _top.BackRequested -= OnBackRequested; _top.KeyDown -= OnKeyDown; }
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
         if (_insets is not null) _insets.SafeAreaChanged -= OnSafeArea;
         _keyboardClosed.Tick -= OnKeyboardClosed;
