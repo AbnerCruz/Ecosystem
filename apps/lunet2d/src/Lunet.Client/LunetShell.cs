@@ -537,6 +537,11 @@ public sealed class LunetShell : UserControl
             block.Select(r.SelectionStart, r.SelectionEnd);
             e.Handled = true;
         }
+        else if (e.Key == Key.F && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && State.Level == ShellLevel.Workspace)
+        {
+            _workspaceView.ShowSearch();
+            e.Handled = true;
+        }
         else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Notes)
         {
             (State.Tab == WorkspaceTab.Code ? _workspaceView.Code : _workspaceView.Notes).ShowFind();

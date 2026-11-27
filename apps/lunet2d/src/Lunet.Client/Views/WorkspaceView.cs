@@ -420,6 +420,20 @@ public sealed class WorkspaceView : UserControl
         if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.None);
     });
 
+    /// <summary>
+    /// Search in the whole game (Ctrl+Shift+F, the magnifier): the Explorer comes up in its search, with the selected
+    /// word of the code already in the field, like VS Code.
+    /// </summary>
+    public void ShowSearch()
+    {
+        string? selected = null;
+        if (_code.Surface is CodeSurface code && code.SelectionEnd > code.SelectionStart)
+            selected = code.Text[code.SelectionStart..code.SelectionEnd];
+        if (_shell.State.Layout == ShellLayout.Compact) { if (_shell.State.Panel != SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.Explorer); }
+        else if (_explorerHidden) { _explorerHidden = false; Rebuild(); }
+        Explorer.ShowSearch(true, selected);
+    }
+
     /// <summary>True while the bottom panel (Jogo · Console · Problemas) is on screen (tests).</summary>
     public bool BottomPanelVisible => _bottomPanel is { IsVisible: true };
 

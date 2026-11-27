@@ -141,6 +141,8 @@ public sealed class CommandPaletteView : UserControl
     private IEnumerable<PaletteItem> Commands()
     {
         var hasCode = Code is not null && Path is not null;
+        if (_shell.Workspace.Project is not null)
+            yield return new("Buscar no jogo…", "Texto em todos os arquivos, com substituir (Ctrl+Shift+F)", () => { Close(); _shell.WorkspaceView.ShowSearch(); });
         if (hasCode)
         {
             yield return new("Formatar documento", "Arruma indentação e espaços do arquivo", () => { EditWhole(CodeFormatter.Format(Code!.Text)); Close(); });

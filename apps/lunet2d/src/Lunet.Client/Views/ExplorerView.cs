@@ -47,6 +47,9 @@ public sealed class ExplorerView : UserControl
         newFile.Name = "ExplorerNewFile";
         var newFolder = LunetUi.IconButton(LunetIcons.Folder, "Nova pasta", () => Create(folder: true));
         newFolder.Name = "ExplorerNewFolder";
+        var search = LunetUi.IconButton(LunetIcons.Search, "Buscar no jogo", () => ShowSearch(!Searching));
+        search.Name = "ExplorerSearch";
+        actions.Children.Add(search);
         actions.Children.Add(newFile);
         actions.Children.Add(newFolder);
         DockPanel.SetDock(actions, Dock.Right);
@@ -59,9 +62,28 @@ public sealed class ExplorerView : UserControl
         root.Children.Add(header);
         DockPanel.SetDock(_notice, Dock.Bottom);
         root.Children.Add(_notice);
-        root.Children.Add(new ScrollViewer { Content = _list });
+        _tree.Content = _list;
+        _body.Child = _tree;
+        root.Children.Add(_body);
         Content = root;
         Fill();
+    }
+
+    private readonly ScrollViewer _tree = new();
+    private readonly Border _body = new();
+    private SearchView? _search;
+
+    /// <summary>The search in the whole game (the magnifier in the header; Ctrl+Shift+F).</summary>
+    public SearchView Search => _search ??= new SearchView(_shell, _opened);
+
+    /// <summary>True while the search shows instead of the tree.</summary>
+    public bool Searching => _body.Child == _search && _search is not null;
+
+    /// <summary>Shows the search (with a word to look for) or back the tree.</summary>
+    public void ShowSearch(bool on, string? text = null)
+    {
+        _body.Child = on ? Search : _tree;
+        if (on) Search.Focus(text);
     }
 
     /// <summary>Redraws the tree from the game's folder (after a Studio or the AI added files).</summary>
