@@ -36,6 +36,9 @@
 
 - **E-11:** Esc não fechava Jogar (nem as outras folhas) quando nada estava focado, e os atalhos F5, Ctrl+S e F1 também falhavam nesse caso. A causa: o atalho ficava na casca, e a tecla, sem foco, chega só à janela. Agora o atalho fica na janela. Achado pelo `BackSequenceTests`.
 
+- **E-12:** ao sair do estúdio de música por outro destino com a prévia ainda renderizando, o som tocava por cima da tela seguinte. Agora a prévia para quando o estúdio sai da tela. Achado pelo `MusicLeaveTests`.
+- **E-13 (perda de dados):** com um Studio aberto na página Studios, tocar em Jogar, Aprender ou Início na barra global descartava o desenho ou a música ainda não salvos. Voltar salvava; a barra não. Agora a troca de destino fecha o Studio pelo mesmo caminho do Voltar, que salva. Achado e provado pelo `StudioLeaveSavesTests`: música e sprite, por Jogar e por Início.
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
@@ -91,7 +94,7 @@ As provas são testes headless da casca real e as capturas de `--screens`, em 41
 | UX04 | Headless ok | `AiStreamingRenderTests`: fechar e reabrir sem cancelar, sem reconstruir a conversa a cada pedaço de texto, sem cruzar jogos | Aparência compacta e expandida no aparelho |
 | UX05 | Headless ok | `ObjectivesTests`, `LunetClientLearnTests` (missão → Objetivos → Referência) | Aparelho |
 | UX06 | Headless ok | `Studios_WithoutAGame_…`, `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects`, matriz H5 | Aparelho |
-| UX07 | Parcial | Testes de música e WAV do #1053 (render fora da thread de UI, fonte inválida preservada) | Trocar de tela durante o render, reproduzido no aparelho |
+| UX07 | Parcial | Testes de música e WAV do #1053 (render fora da thread de UI, fonte inválida preservada); `MusicLeaveTests` (sair durante o render não toca nada depois, E-12); `StudioLeaveSavesTests` (trocar de destino salva, E-13) | Reproduzir no aparelho |
 | UX08 | Parcial | `GpuPreviewTests` (falha de compilação não abre a GPU), `PlayView` com o caminho único `LunetShell.Play` | Partida em tela cheia no aparelho; volta à grade |
 | UX09 | Feito, exceto aparelho | `GlobalNavigationTests` (Documentação global), Referência exata nos Objetivos; `ProblemDocsTests`: cada problema ao vivo tem um botão de Documentação, que abre a busca do nome citado pelo compilador sem sair do jogo, e Voltar retorna ao código | Conferir no aparelho |
 | UX10 | Headless ok | `ProjectFolderTests` (conectar, gravar, recusar revisão alheia, restaurar, alternar) | Acesso revogado e cancelamento no seletor do aparelho |

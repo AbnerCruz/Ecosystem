@@ -444,15 +444,25 @@ public sealed class HomeView : UserControl
     private bool CloseOverlay()
     {
         if (Sheet is null) return false;
-        _overlay.Children.Clear();
+        LeaveSheet();
         Sheet = null;
         Select(Destination.Games);
         return true;
     }
 
+    /// <summary>
+    /// Another destination takes the screen: a Studio open on the Studios page closes the way Back closes it, which
+    /// saves (a new drawing or song exists only in memory until then), and the sheet is replaced.
+    /// </summary>
+    private void LeaveSheet()
+    {
+        if (Sheet is StudiosView { Studio: not null } studios) studios.Back();
+        _overlay.Children.Clear();
+    }
+
     private void Open(string title, Control body)
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var compact = Bounds.Width is > 0 and < 600;
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, LunetTokens.Space.S) };
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar", () => CloseSheet());
@@ -486,7 +496,7 @@ public sealed class HomeView : UserControl
     /// <summary>Aprender, full screen over the Home (Back walks its pages, then closes it).</summary>
     public LearnView ShowLearn()
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var learn = new LearnView(_shell, () => CloseOverlay());
         _overlay.Children.Add(LunetUi.Enter(learn));
         Sheet = learn;
@@ -498,7 +508,7 @@ public sealed class HomeView : UserControl
     public GlobalAiView? ShowGlobalAi(bool settings = false)
     {
         if (_shell.AiHost is not { } host) return null;
-        _overlay.Children.Clear();
+        LeaveSheet();
         var ai = new GlobalAiView(_shell, host, () => CloseOverlay());
         if (settings) ai.OpenSettings();
         _overlay.Children.Add(LunetUi.Enter(ai));
@@ -510,7 +520,7 @@ public sealed class HomeView : UserControl
     /// <summary>Documentação, full screen over the Home: the same offline reader as inside a game (anexo A §6.7).</summary>
     public DocsView ShowDocs()
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var docs = new DocsView();
         var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => CloseSheet());
         var title = LunetUi.Title("Documentação");
@@ -532,7 +542,7 @@ public sealed class HomeView : UserControl
     /// <summary>Ajustes, full screen over the Home (P7).</summary>
     public SettingsView ShowSettings()
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var settings = new SettingsView(_shell);
         _overlay.Children.Add(LunetUi.Enter(settings));
         Sheet = settings;
@@ -543,7 +553,7 @@ public sealed class HomeView : UserControl
     /// <summary>Jogar, full screen over the Home (P4).</summary>
     public PlayView ShowPlay()
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var play = new PlayView(_shell, () => CloseOverlay());
         _overlay.Children.Add(LunetUi.Enter(play));
         Sheet = play;
@@ -554,7 +564,7 @@ public sealed class HomeView : UserControl
     /// <summary>Studios without a game, full screen over the Home (Back closes the open Studio, then the page).</summary>
     public StudiosView ShowStudios()
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var studios = new StudiosView(_shell, () => CloseOverlay(), (root, path) => ShowLibrary().ShowPublishStudio(root, path));
         _overlay.Children.Add(LunetUi.Enter(studios));
         Sheet = studios;
@@ -565,7 +575,7 @@ public sealed class HomeView : UserControl
     /// <summary>The Biblioteca, full screen over the Home (Back walks its pages, then closes it).</summary>
     public LibraryView ShowLibrary()
     {
-        _overlay.Children.Clear();
+        LeaveSheet();
         var library = new LibraryView(_shell, () => CloseOverlay());
         _overlay.Children.Add(LunetUi.Enter(library));
         Sheet = library;
