@@ -153,9 +153,34 @@ Legenda:
 | G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
 | G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
 | G14 | Atualizar o Lunet existente e conferir dados | Pendente | `LauncherPreferences` e caminhos de dados preservados por desenho; não houve teste de atualização | Aparelho com instalação anterior |
-| G15 | Matriz de migração e todas as rotas | Parcial | Explorar segue congelado (ADD-0036); as demais rotas estão na casca | H8: revisar o inventário rota a rota |
+| G15 | Matriz de migração e todas as rotas | Feito, exceto aparelho | Revisão rota a rota em §H8 abaixo: duas rotas ficam na tela anterior, com motivo; a lacuna de Notas encontrada foi portada (`NotesImportTests`) | Aparelho |
 | G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
 
 **Conclusão honesta:**
 - **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.
-- **Pendentes, sem prova automatizada:** G14 e a revisão H8 (G15). G13 tem prova da geração do APK, mas não da instalação.
+- **Pendentes, sem prova automatizada:** G14 (atualização sobre uma instalação existente, só no aparelho). G13 tem prova da geração do APK, mas não da instalação.
+
+
+## H8: rotas da tela anterior × casca (27/11/2026)
+
+A tela anterior do Android (`MainActivity.Route`) atende 15 rotas. A casca chama só duas delas: `explore` e `play-game`.
+
+| Rota | Na casca | Observação |
+|---|---|---|
+| studios | `StudiosView` | Sem jogo e dentro do jogo |
+| learn | `LearnView` | |
+| play | `PlayView` | |
+| play-game | Tela anterior | Partida em tela cheia na Activity de jogo. A casca chama `PlayGame`; o caminho é único (`LunetShell.Play`) |
+| library | `LibraryView` | |
+| settings | `SettingsView` | |
+| project-folder | `ProjectFolderView` | SAF no Android |
+| ai-settings | `AiSettingsView` | Agora com catálogo de modelos e pesquisa web |
+| ai | `AiPanelView` / `GlobalAiView` | Agora com anexos, imagens, documentação, web e segundo plano |
+| git | `GitView` | |
+| assets | `ResourcesPage` | Inclui importar |
+| notes | Aba Notas (`DocumentEditor`) | **Lacuna encontrada e portada:** a casca não importava imagens nem arquivos para `Notes/`. Agora importa (64 MB, escrita atômica, sem sobrescrever), lista os arquivos e, com um toque, anexa à IA |
+| apk | `ApkView` | |
+| explore | Tela anterior | Congelado pelo proprietário (ADD-0036 §4); acesso e dados preservados, sem ampliar |
+| editor | — | Rota vazia (volta ao editor) |
+
+**Remoção da UI anterior:** não foi feita. O GOAL só permite remover depois da paridade e do teste no aparelho e no emulador. `play-game` e `explore` ainda usam a tela anterior, e nada foi testado num celular.
