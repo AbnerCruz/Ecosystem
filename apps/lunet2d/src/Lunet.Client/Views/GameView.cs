@@ -83,9 +83,9 @@ public sealed class GameView : UserControl
         {
             GameState.CompileErrors => "Abra Problemas para ver cada erro e a linha onde está.",
             GameState.Faulted => "Veja Problemas e o Console; corrija e rode de novo.",
-            _ => "Toque em Rodar: o jogo compila e aparece aqui, sem sair do código.",
+            _ => "Toque em Rodar para abrir o preview do jogo.",
         },
-        LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame()));
+        LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _ = _shell.RunGame()));
 
     public void Refresh()
     {
@@ -113,7 +113,7 @@ public sealed class GameView : UserControl
                 _bar.Children.Add(PanelButton(SupportPanel.Performance, LunetIcons.Pulse, "Desempenho"));
             }
         }
-        else _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _shell.RunGame(), LunetTokens.Color.Primary));
+        else _bar.Children.Add(LunetUi.IconButton(LunetIcons.Play, "Rodar", () => _ = _shell.RunGame(), LunetTokens.Color.Primary));
         // One chip for the speed: a tap goes to the next one (0.25× → 0.5× → 1× → 2×), instead of four buttons off screen.
         // The GPU preview runs at the display's pace: no speed chip there rather than one that does nothing.
         if (game.Gpu is not null) { ShowStage(); UpdateStatus(); return; }
@@ -135,13 +135,16 @@ public sealed class GameView : UserControl
     private void ShowStage()
     {
         var game = _shell.Game;
-        _stage.Children.Clear();
         if (game.Gpu is { } gpu)
         {
-            if (gpu.View.Parent is Panel old) old.Children.Remove(gpu.View);
-            _stage.Children.Add(gpu.View);
+            if (!ReferenceEquals(gpu.View.Parent, _stage))
+            {
+                _stage.Children.Clear();
+                _stage.Children.Add(gpu.View);
+            }
             return;
         }
+        _stage.Children.Clear();
         _stage.Children.Add(_image);
         if (game.State is GameState.Running or GameState.Paused) return;
         _frame = null;

@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261127-lunet-ide-preview",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-27T12:46:59Z",
+  "agent": {
+    "id": "codex-lunet-preview",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-ide-preview-20261127",
+  "base_commit": "21ba94e50152326521420d51e9ea4896910aefa1",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/GameSession.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CommandPaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/GameView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/InspectorView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/PerformanceView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/MainWindow.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/src/Lunet.Host/WorkspaceSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GpuPreviewTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeLayoutTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "docs/governance/handoffs/HO-20261127-lunet-ide-preview.json"
+  ],
+  "work_completed": [
+    "Rodar abre o Preview em tela cheia. Voltar retorna ao arquivo aberto no editor e depois à Home.",
+    "A compilação do Preview GPU roda fora da thread da interface e reutiliza o compilador por projeto. Voltar durante a compilação descarta a abertura atrasada.",
+    "A superfície permanece montada durante pausa e retomada, e falhas gerenciadas na GPU são registradas no Console e em Problemas.",
+    "A versão permanece dev, com incremento para 1000614."
+  ],
+  "verification": [
+    {
+      "check": "Build da suíte Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build tests/Lunet.Tests/Lunet.Tests.csproj --no-restore -m:1"
+    },
+    {
+      "check": "Sintaxe da jornada Android",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "bash -n apps/lunet2d/tools/ci-android-shell.sh"
+    },
+    {
+      "check": "65 regressões locais de IDE, Preview, compilação e host",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet.Tests: GpuPreviewTests, IdeLayoutTests, LunetClientTests, LunetClientInspectionTests, WorkspaceTabsTests, IncrementalCompilerTests e DesktopHostTests."
+    },
+    {
+      "check": "Suíte completa: 1.395 testes passaram",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet.Tests.dll pelo runner xUnit local com fontes TrueType."
+    },
+    {
+      "check": "Consistência do Ecosystem: 22 verificações aprovadas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs"
+    },
+    {
+      "check": "Captura headless do Preview em tela cheia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet --screens, celular-4-jogo.png e largo-4-jogo.png."
+    }
+  ],
+  "known_issues": [
+    "Sem teste físico e sem logcat para confirmar a causa específica do crash ou medir a latência no aparelho.",
+    "APK e execução no emulador dependem do pipeline oficial."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar a validação da revisão e confirmar a publicação do APK da main."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Build e testes automatizados não constituem teste físico."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "O incremento pertence ao Lunet e preserva o estágio dev."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-preview",
+      "status": "product-specific",
+      "rationale": "Correção do ciclo do Preview e navegação da IDE do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

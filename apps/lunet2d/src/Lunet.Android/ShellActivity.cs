@@ -112,11 +112,19 @@ public sealed class ShellActivity : AvaloniaActivity
         catch (Java.Lang.Exception) { }
         _textScale = new Lunet.Client.TextScaleHost(_shell) { Requested = Resources?.Configuration?.FontScale ?? 1f };
         Content = _textScale;
-        // M5: the game runs on the GPU inside the Jogo tab (the GLES Preview, hosted by the shell).
-        // With Ajustes → Preview isolado, it runs in the separate-process Preview instead (the IDE survives a crash).
-        _shell.Game.GpuFactory = (compiled, project, fault) => _shell.Settings.IsolatedPreview
-            ? new IsolatedGpuPreview(this, compiled, project)
-            : new AndroidGpuPreview(this, compiled, project, _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.StopGame());
+        _shell.Game.GpuFactory = (compiled, project, fault) =>
+        {
+            try
+            {
+                return _shell.Settings.IsolatedPreview
+                    ? new IsolatedGpuPreview(this, compiled, project)
+                    : new AndroidGpuPreview(this, compiled, project, _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.ClosePreview());
+            }
+            catch (Java.Lang.Exception ex)
+            {
+                throw new InvalidOperationException("O Android não conseguiu iniciar a superfície do preview: " + ex.Message, ex);
+            }
+        };
         // Shows and hides the system keyboard (Avalonia exposes no call for it). Showing is an explicit request, as a
         // tap on Android's own EditText makes it: Avalonia only asks with SHOW_IMPLICIT, which Android ignores after
         // the person closed the keyboard with Back — the "teclado que não abre" of the editor and the AI (estudo do
@@ -301,12 +309,15 @@ public sealed class ShellActivity : AvaloniaActivity
         return Path.Combine(files, "Projects");
     }
 
+    private bool _returningFromRoute;
+
     /// <summary>Opens a screen still served by MainActivity, after saving what the shell has open.</summary>
     private void OpenRoute(string route, string? project)
     {
         _shell?.SaveAll();
         _shell?.StopGame();
         StartActivity(MainActivity.RouteIntent(this, route, project));
+        _returningFromRoute = true;
     }
 
     private Lunet.Client.TextScaleHost? _textScale;
@@ -340,19 +351,25 @@ public sealed class ShellActivity : AvaloniaActivity
             ApplyDevice(Resources?.Configuration);
             return;
         }
-        // Back from a routed screen: those screens may have changed the games (AI edits, Git, Studios).
-        _shell?.ReturnedFromRoute();
-        _shell?.Game.Gpu?.SetAppVisible(true);
-        // Back from the isolated Preview: its console comes in; a process that died is reported, else the run ends.
+        if (_returningFromRoute)
+        {
+            _returningFromRoute = false;
+            _shell?.ReturnedFromRoute();
+        }
+
         if (_shell?.Game.Gpu is IsolatedGpuPreview isolated)
         {
             var died = isolated.Collect(_shell.Game.Write);
-            if (died is not null) _shell.Game.ReportFault(died); else _shell.StopGame();
+            if (died is not null) _shell.Game.ReportFault(died);
+            _shell.ClosePreview();
+            if (died is not null) _shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Problems);
         }
+        else _shell?.Game.Gpu?.SetAppVisible(true);
     }
 
     protected override void OnDestroy()
     {
+        _shell?.Shutdown();
         StopWav();
         _ecosystem?.Dispose();
         _ecosystem = null;
@@ -361,6 +378,7 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnPause()
     {
+        if (_shell?.Game.State == Lunet.Client.Shell.GameState.Compiling) _shell.StopGame();
         _shell?.Game.Gpu?.SetAppVisible(false);
         _paused = true;
         if (_shell is { } shell) shell.CancelStudioAudio();
@@ -401,11 +419,14 @@ public sealed class ShellActivity : AvaloniaActivity
             {
                 shell.CreateProject();
                 global::Android.Util.Log.Info("lunet-e2e", "projeto criado: " + shell.State.Project);
-                shell.RunGame();
+                await shell.RunGame();
                 await Task.Delay(4000);
                 global::Android.Util.Log.Info("lunet-e2e", $"estado={shell.Game.State} quadros={shell.Game.FramesRendered} problemas={shell.Game.Problems.Count}");
-                shell.StopGame();
-                shell.State.SelectTab(Lunet.Client.Shell.WorkspaceTab.Code);
+                if (!shell.WorkspaceView.PreviewFull || !shell.Back()
+                    || shell.State.Tab != Lunet.Client.Shell.WorkspaceTab.Code
+                    || shell.State.Level != Lunet.Client.Shell.ShellLevel.Workspace)
+                    throw new InvalidOperationException("Rodar deve abrir o Preview em tela cheia, e Voltar deve mostrar o editor.");
+                global::Android.Util.Log.Info("lunet-e2e", "preview=cheio retorno=editor");
                 var editor = shell.WorkspaceView.Code;
                 global::Android.Util.Log.Info("lunet-e2e", $"teclado-fisico-detectado={shell.HardwareKeyboard}");
                 shell.HardwareKeyboard = false;

@@ -54,6 +54,7 @@ grep 'lunet-e2e.*barra=' "$out/android-logcat.txt" || { echo 'A barra de código
 adb shell screencap -p /sdcard/shell-keyboard.png
 adb pull /sdcard/shell-keyboard.png "$out/android-shell-keyboard.png"
 adb shell dumpsys input_method | grep -E 'mInputShown|mIsInputViewShown' > "$out/android-ime.txt" || true
+grep -q 'lunet-e2e.*preview=cheio retorno=editor' "$out/android-logcat.txt" || { echo 'Preview não abriu em tela cheia ou não voltou ao editor'; exit 1; }
 grep -q 'lunet-e2e.*barra=visivel ime=on texto={' "$out/android-logcat.txt" || { echo 'Barra de código: estado inesperado'; exit 1; }
 adb shell am force-stop "$package"
 echo "Lunet: instalado, aberto ($(grep TotalTime "$out/android-launch.txt" | tr -d '\r')), jogo criado, compilado e rodando no Android 13 (emulador)."

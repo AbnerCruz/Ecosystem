@@ -8,6 +8,13 @@ Pedido do proprietário (27/11/2026, no celular):
 - Os arquivos devem ser editados direto no dispositivo, "não é cópia, não é espelho", como no Numa.
 - Decisão do proprietário, na mesma conversa: **só a pasta escolhida, por SAF, como o Numa**, em vez da permissão de acesso a todos os arquivos.
 
+## Ajuste do Preview após a versão 613
+
+- **Rodar** abre Jogo em tela cheia dentro da IDE. O controle do painel ainda permite reduzir sua altura e ver o código junto com o jogo. Console e Problemas continuam no mesmo painel.
+- A seta da IDE e o Voltar do sistema encerram o Preview e voltam ao arquivo aberto. O próximo Voltar no editor vai à área de trabalho, depois de fechar o teclado se estiver visível.
+- Na auditoria da versão 613, a compilação GPU lia fontes e executava Roslyn na thread da interface. Abrir, pausar e redimensionar a prévia também percorriam o caminho que recriava o layout e remontava o controle nativo. O ajuste move a compilação para fora da thread da interface, reaproveita o cache do compilador e mantém a superfície montada ao pausar e continuar. Falhas gerenciadas no renderizador chegam à IDE como diagnóstico.
+- O [código de NativeControlHost](https://github.com/AvaloniaUI/Avalonia/blob/main/src/Avalonia.Controls/NativeControlHost.cs) mostra que a associação nativa depende da árvore visual. A [referência de GLSurfaceView](https://developer.android.com/reference/android/opengl/GLSurfaceView) descreve o ciclo próprio da thread e do contexto EGL. O relato do celular não veio com log de falha ou medições de latência.
+
 ## 1. Auditoria do que existe (main em 70a06fe)
 
 ### IDE (`WorkspaceView`, `DocumentEditor`, `SupportPanelView`)

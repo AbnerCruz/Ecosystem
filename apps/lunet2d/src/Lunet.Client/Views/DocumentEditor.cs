@@ -33,7 +33,13 @@ public sealed class DocumentEditor : UserControl
         {
             // M1: analyse a moment after typing stops (Roslyn runs off the UI thread; stale results are dropped).
             _analysisDelay.Tick += (_, _) => { _analysisDelay.Stop(); UpdateDirtyMark(); _ = AnalyzeNow(); };
-            code.TextChanged += () => { _analysisDelay.Stop(); _analysisDelay.Start(); _keyboard?.TextChanged(); };
+            code.TextChanged += () =>
+            {
+                _analysis?.Cancel();
+                _analysisDelay.Stop();
+                _analysisDelay.Start();
+                if (KeyboardVisible) _keyboard?.TextChanged();
+            };
         }
     }
 
@@ -54,7 +60,13 @@ public sealed class DocumentEditor : UserControl
     {
         if (_surface is not CodeSurface code || OpenPath is not { } path || _shell.Assistant is not { } assistant) return;
         // Only C# is analysed: a raw .json or .txt opened from Recursos shows no compiler errors.
-        if (!path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) { code.SetDiagnostics([]); code.SetFolds([]); return; }
+        if (!path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+        {
+            code.SetDiagnostics([]);
+            code.SetFolds([]);
+            _shell.SetLiveProblems([]);
+            return;
+        }
         _analysis?.Cancel();
         var cts = _analysis = new CancellationTokenSource();
         var text = code.Text;
@@ -63,13 +75,22 @@ public sealed class DocumentEditor : UserControl
         try
         {
             var result = await assistant.AnalyzeAsync(path, text, caret, version, ++_analysisRevision, complete: KeyboardVisible, cts.Token);
-            if (version != _analysisVersion || path != OpenPath) return; // a newer edit or another file won
+            if (cts.IsCancellationRequested || version != _analysisVersion || path != OpenPath || !ReferenceEquals(assistant, _shell.Assistant)) return; // a newer edit or another file won
             code.SetDiagnostics(result.Diagnostics);
             code.SetFolds(result.Folds);
             _shell.SetLiveProblems(code.Diagnostics);
             _keyboard?.SetAnalysis(text, caret, result.Completions, result.Signature);
         }
         catch (OperationCanceledException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (!cts.IsCancellationRequested) _shell.Report("Não foi possível analisar o código: " + ex.Message);
+        }
+        finally
+        {
+            if (ReferenceEquals(_analysis, cts)) _analysis = null;
+            cts.Dispose();
+        }
     }
 
     private CodeBar? _keyboard;
@@ -190,6 +211,7 @@ public sealed class DocumentEditor : UserControl
 
     public void Load(string? path)
     {
+        _analysis?.Cancel();
         Save();
         CaptureViewport();
         if (path is null) path = ProjectFiles.For(_tab, _shell.Workspace.Files()).FirstOrDefault();
@@ -879,6 +901,4 @@ public sealed class DocumentEditor : UserControl
         Content = _frame;
     }
 
-    /// <summary>Re-lays out the file list for the current shell layout.</summary>
-    public void Relayout() => Rebuild();
 }

@@ -4,7 +4,7 @@ using Lunet.Input;
 namespace Lunet.Client.Shell;
 
 /// <summary>The state of the game in the workspace, as the speed bar shows it.</summary>
-public enum GameState { Stopped, Running, Paused, Faulted, CompileErrors }
+public enum GameState { Stopped, Running, Paused, Faulted, CompileErrors, Compiling }
 
 /// <summary>
 /// The game running inside the workspace (Godot 4.4 style "game embedded in the editor"): run, stop, pause, step one
@@ -50,7 +50,6 @@ public sealed class GameSession : IDisposable
     {
         StopInternal();
         Problems = [];
-        if (GpuFactory is { } factory && _workspace.Project is { } project) return RunOnGpu(factory, project);
         RunningGame? game;
         try { game = _workspace.Run(width, height); }
         catch (InvalidOperationException ex)
@@ -77,9 +76,22 @@ public sealed class GameSession : IDisposable
         return true;
     }
 
-    private bool RunOnGpu(GpuPreviewFactory factory, Lunet.Core.LunetProject project)
+    /// <summary>Does file and compiler work off-thread. The calling dispatcher owns the preview and session state.</summary>
+    public async Task<bool> RunOnGpuAsync(GpuPreviewFactory factory, Lunet.Core.LunetProject project, Action openPreview)
     {
-        var compiled = _workspace.Compile();
+        StopInternal();
+        Problems = [];
+        var generation = _gpuGeneration;
+        Set(GameState.Compiling);
+        Lunet.Compiler.CompileResult compiled;
+        try { compiled = await Task.Run(() => _workspace.Compile(project)); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            if (generation == _gpuGeneration) StartFailed("Não foi possível compilar o jogo: " + ex.Message);
+            return false;
+        }
+
+        if (generation != _gpuGeneration) return false;
         if (!compiled.Success || compiled.Assembly is null)
         {
             Problems = compiled.Diagnostics.Select(d => d.ToString()).ToArray();
@@ -89,21 +101,27 @@ public sealed class GameSession : IDisposable
         }
         try
         {
-            var generation = ++_gpuGeneration;
             _gpu = factory(compiled, project, message => Avalonia.Threading.Dispatcher.UIThread.Post(() => Fault(generation, message)));
         }
-        catch (Exception ex) when (ex is InvalidOperationException or IOException or NotSupportedException)
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException or NotSupportedException)
         {
-            Problems = ["A prévia na GPU não abriu: " + ex.Message];
-            Set(GameState.Faulted);
-            Log?.Invoke(Problems[0]);
+            StartFailed("A prévia na GPU não abriu: " + ex.Message);
             return false;
         }
         FramesRendered = 0;
         Frames.Clear();
         Log?.Invoke("Jogo iniciado na GPU (" + _gpu.Backend + ").");
+        // Move the empty game view into place before StateChanged mounts the native surface.
+        openPreview();
         Set(GameState.Running);
         return true;
+    }
+
+    private void StartFailed(string message)
+    {
+        Problems = [message];
+        Set(GameState.Faulted);
+        Log?.Invoke(message);
     }
 
     private int _gpuGeneration;
@@ -210,7 +228,9 @@ public sealed class GameSession : IDisposable
     {
         _game?.Dispose();
         _game = null;
-        if (_gpu is not null) { _gpuGeneration++; _gpu.Dispose(); _gpu = null; }
+        _gpuGeneration++;
+        _gpu?.Dispose();
+        _gpu = null;
     }
 
     private void Set(GameState state)

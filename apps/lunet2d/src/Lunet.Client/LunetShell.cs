@@ -40,7 +40,12 @@ public sealed class LunetShell : UserControl
         FontFamily = LunetTokens.UiFont;
 
         State.Changed += Render;
-        Game.StateChanged += () => { _workspaceView.Game.Refresh(); if (State.Level == ShellLevel.Workspace) _workspaceView.Rebuild(); };
+        Game.StateChanged += () =>
+        {
+            if (State.Level != ShellLevel.Workspace) return;
+            _workspaceView.RefreshTopBar();
+            if (State.Panel != SupportPanel.None) _workspaceView.Support.Refresh();
+        };
         Game.Log += line => Avalonia.Threading.Dispatcher.UIThread.Post(() => _workspaceView.Support.Append(line));
         _timer.Tick += (_, _) => TickGame();
         // A finger lifted on a text field asks for the keyboard explicitly (after focus has settled on it).
@@ -192,7 +197,7 @@ public sealed class LunetShell : UserControl
     public bool HardwareKeyboard
     {
         get => _hardwareKeyboard;
-        set { if (_hardwareKeyboard == value) return; _hardwareKeyboard = value; if (Workspace.Project is not null) _workspaceView.Code.Relayout(); }
+        set { if (_hardwareKeyboard == value) return; _hardwareKeyboard = value; if (Workspace.Project is not null) _workspaceView.Code.UpdateKeyboard(); }
     }
 
     /// <summary>The last message the shell had to tell you (a failed save, a failed open); also in the Console.</summary>
@@ -265,11 +270,14 @@ public sealed class LunetShell : UserControl
     /// <summary>Called by the code editor after each analysis; refreshes the top bar and an open Problemas panel.</summary>
     public void SetLiveProblems(IReadOnlyList<Lunet.Compiler.LunetDiagnostic> problems)
     {
-        var before = LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
+        if (LiveProblems.SequenceEqual(problems)) return;
+        var previous = LiveProblems;
         LiveProblems = problems.Where(p => p.Severity != Lunet.Compiler.DiagnosticSeverity.Info).ToArray();
-        var after = LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error);
         if (State.Panel == SupportPanel.Problems) _workspaceView.Support.Refresh();
-        if (before != after) _workspaceView.RefreshTopBar();
+        if (previous.Count != LiveProblems.Count
+            || previous.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error)
+                != LiveProblems.Count(p => p.Severity == Lunet.Compiler.DiagnosticSeverity.Error))
+            _workspaceView.RefreshTopBar();
     }
 
     public void OpenProject(string name)
@@ -282,13 +290,18 @@ public sealed class LunetShell : UserControl
             typeof(Lunet.Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly));
         LiveProblems = [];
         var project = Workspace.Project!;
-        _ = Assistant.LoadProjectAsync(project.ListFiles().Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
-            .Select(f => (f, project.ReadText(f))).ToArray());
+        _ = Assistant.LoadProjectAsync(ReadEditorSources(project));
         State.OpenProject(name);
         _ = DocsLibrary.WarmUpAsync(); // after the game opens, never on the cold start path
         _workspaceView.Load();
         ApplySettings();
-        Render();
+    }
+
+    private static IEnumerable<(string Path, string Text)> ReadEditorSources(Lunet.Core.LunetProject project)
+    {
+        foreach (var file in project.ListFiles())
+            if (file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+                yield return (file, project.ReadText(file));
     }
 
     /// <summary>Creates "Jogo-N" (the first free number) from the blank template and opens it.</summary>
@@ -368,7 +381,6 @@ public sealed class LunetShell : UserControl
     /// <summary>Back to the Home. Saving and stopping happen in <see cref="Render"/>, so every way back (button, Back, Esc) does it.</summary>
     public void GoHome() => State.GoHome();
 
-    /// <summary>Saves, compiles and runs. On a phone it switches to the Jogo tab; on a wide screen the game is already beside the code.</summary>
     /// <summary>
     /// Plays a game: full screen on its own (Android: the head's <see cref="PlayGame"/>), else running in the
     /// workspace. The one path for the Jogar grid and the Home's menu.
@@ -377,34 +389,45 @@ public sealed class LunetShell : UserControl
     {
         if (PlayGame is { } play) { play(name); return; }
         OpenProject(name);
-        RunGame();
+        _ = RunGame();
     }
 
-    public void RunGame()
+    public async Task RunGame()
     {
-        if (Workspace.Project is null) return;
+        if (State.Level != ShellLevel.Workspace || Workspace.Project is not { } project || Game.State == GameState.Compiling) return;
         // Ajustes: "Formatar o código ao rodar" (the same option as the previous screens).
         if (Settings.FormatOnRun && _workspaceView.Code.Surface is CodeSurface code && _workspaceView.Code.OpenPath?.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) == true)
         {
             var formatted = Lunet.Editor.CodeFormatter.Format(code.Text);
             if (formatted != code.Text) code.Replace(0, code.Text.Length, formatted, Math.Min(code.Caret, formatted.Length));
         }
-        _workspaceView.SaveAll();
-        var (w, h) = Workspace.Project.Manifest.Orientation == "landscape" ? (640, 360) : (360, 640);
-        if (Game.Run(w, h))
+        if (!_workspaceView.SaveAll()) return;
+        _workspaceView.Code.HideKeyboard();
+        SystemKeyboard?.Invoke(false);
+        _timer.Stop();
+        var (w, h) = project.Manifest.Orientation == "landscape" ? (640, 360) : (360, 640);
+        bool ran = Game.GpuFactory is { } factory
+            ? await Game.RunOnGpuAsync(factory, project, _workspaceView.OpenPreview)
+            : Game.Run(w, h);
+        if (State.Level != ShellLevel.Workspace || !ReferenceEquals(Workspace.Project, project)) return;
+        if (!ran)
         {
-            if (!State.CodeAndGameSideBySide) State.SelectTab(WorkspaceTab.Game);
-            if (Game.Gpu is not null) return; // the GPU surface keeps its own clock
-            _lastTick = 0;
-            _clock.Restart();
-            _timer.Start();
-            TickGame(1 / 60.0);
+            if (Game.State is GameState.CompileErrors or GameState.Faulted) State.ShowPanel(SupportPanel.Problems);
+            return;
         }
-        else
-        {
-            _timer.Stop();
-            State.ShowPanel(SupportPanel.Problems);
-        }
+        if (Game.Gpu is not null) return;
+        _workspaceView.OpenPreview();
+        _lastTick = 0;
+        _clock.Restart();
+        _timer.Start();
+        TickGame(1 / 60.0);
+    }
+
+    public bool ClosePreview()
+    {
+        if (State.Level != ShellLevel.Workspace || State.Tab != WorkspaceTab.Game) return false;
+        if (Game.State != GameState.Faulted) StopGame();
+        return State.ClosePreview();
     }
 
     public void StopGame()
@@ -521,7 +544,7 @@ public sealed class LunetShell : UserControl
     {
         if (e.Handled) return;
         if (e.Key == Key.Escape && BeforeBack()) e.Handled = true;
-        else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { RunGame(); e.Handled = true; }
+        else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { _ = RunGame(); e.Handled = true; }
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
@@ -547,7 +570,14 @@ public sealed class LunetShell : UserControl
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
     private bool BeforeBack() => (State.Level == ShellLevel.Home && _home.CloseSheet())
         || (State.Level == ShellLevel.Workspace && _workspaceView.CloseStudio())
-        || _workspaceView.Code.HideKeyboard() || State.Back();
+        || ClosePreview() || _workspaceView.Code.HideKeyboard() || CancelCompilation() || State.Back();
+
+    private bool CancelCompilation()
+    {
+        if (Game.State != GameState.Compiling) return false;
+        StopGame();
+        return true;
+    }
 
     /// <summary>The system Back, as the heads route it (public for tests).</summary>
     public bool Back() => BeforeBack();

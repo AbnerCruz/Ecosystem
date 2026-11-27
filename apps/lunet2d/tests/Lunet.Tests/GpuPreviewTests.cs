@@ -36,7 +36,7 @@ public sealed class GpuPreviewTests
         var root = Path.Combine(Path.GetTempPath(), "lunet-gpu-" + Guid.NewGuid().ToString("N"));
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var shell = new LunetShell(root);
                 FakeGpu? gpu = null; Action<string>? fault = null;
@@ -44,7 +44,7 @@ public sealed class GpuPreviewTests
                 var window = new Window { Width = 412, Height = 915, Content = shell };
                 window.Show();
                 shell.CreateProject();
-                shell.RunGame();
+                await shell.RunGame();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.Equal(GameState.Running, shell.Game.State);
                 Assert.Same(gpu, shell.Game.Gpu);
@@ -53,11 +53,14 @@ public sealed class GpuPreviewTests
                 gpu!.FramesRendered = 42;
                 Assert.Equal(42, shell.Game.FramesRendered);                 // the GPU's real count (the CI journey reads it)
 
-                shell.Game.TogglePause(); Assert.Contains("pause:True", gpu!.Calls);
+                var detachments = 0;
+                gpu.View.DetachedFromVisualTree += (_, _) => detachments++;
+                shell.Game.TogglePause(); Assert.Contains("pause:True", gpu.Calls);
                 shell.Game.Step(); Assert.Contains("step", gpu.Calls);
                 shell.Game.TogglePause(); Assert.Contains("pause:False", gpu.Calls);
                 shell.Game.Key(Keys.Space, true); Assert.Contains("key:Space:True", gpu.Calls);
                 shell.Game.Restart(); Assert.Contains("restart", gpu.Calls);
+                Assert.Equal(0, detachments); // gameplay controls must not restart a native surface
 
                 shell.StopGame();
                 Assert.True(gpu.Disposed);
@@ -66,7 +69,7 @@ public sealed class GpuPreviewTests
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 Assert.Equal(GameState.Stopped, shell.Game.State);        // …changes nothing
 
-                shell.RunGame();
+                await shell.RunGame();
                 var second = gpu;
                 fault!("OpenGL ES 3.0 indisponível");
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -85,7 +88,7 @@ public sealed class GpuPreviewTests
         var root = Path.Combine(Path.GetTempPath(), "lunet-gpu-err-" + Guid.NewGuid().ToString("N"));
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var shell = new LunetShell(root);
                 var opened = 0;
@@ -94,13 +97,45 @@ public sealed class GpuPreviewTests
                 window.Show();
                 shell.CreateProject();
                 shell.WorkspaceView.Code.Surface.Text = "class Quebrado {";
-                shell.RunGame();
+                await shell.RunGame();
                 Assert.Equal(GameState.CompileErrors, shell.Game.State);
                 Assert.Equal(0, opened);
                 window.Close();
             });
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void BackDuringCompilation_LeavesTheEditorUsable_AndDoesNotOpenALatePreview()
+    {
+        var root = Directory.CreateTempSubdirectory("lunet-gpu-cancel-").FullName;
+        try
+        {
+            UiSession.RunAsync(async () =>
+            {
+                var shell = new LunetShell(root);
+                var opened = 0;
+                shell.Game.GpuFactory = (_, _, _) => { opened++; return new FakeGpu(); };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+
+                var pending = shell.RunGame();
+                Assert.Equal(GameState.Compiling, shell.Game.State);
+                Assert.False(pending.IsCompleted);
+                Assert.True(shell.Back());
+                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                await pending;
+
+                Assert.Equal(0, opened);
+                Assert.Equal(GameState.Stopped, shell.Game.State);
+                Assert.True(shell.Back());
+                Assert.Equal(ShellLevel.Home, shell.State.Level);
+                window.Close();
+            });
+        }
+        finally { Directory.Delete(root, true); }
     }
 
     [Fact]

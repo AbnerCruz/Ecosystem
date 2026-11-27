@@ -42,6 +42,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private int _width = 1;
     private int _height = 1;
     private bool _reportedFault;
+    private bool _graphicsFault;
     private volatile bool _stepRequested;
     private volatile bool _paused;
     private volatile bool _restartRequested;
@@ -123,7 +124,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     public void PauseForBackground()
     {
         _appPaused = true;
-        if (_host is { IsPaused: false }) _host.Pause();
+        try { if (_host is { IsPaused: false }) _host.Pause(); }
+        catch (Exception ex) { ReportPreviewFault("pausar", ex); }
     }
 
     public void SetPaused(bool paused) => _paused = paused;
@@ -132,30 +134,35 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
 
     public void OnSurfaceCreated(IGL10? gl, EGLConfig? config)
     {
-        // O contexto GL é novo (primeira vez ou após voltar do segundo plano): recursos antigos são inválidos.
-        DisposeSession();
-        _performance.Reset();
+        _graphicsFault = false;
         try
         {
+            // EGL can recreate the context after a surface change or a trip to the background.
+            DisposeSession();
+            _backend = null;
             _backend = new GlesBackend();
         }
-        catch (Exception ex)
-        {
-            _log(LogLevel.Error, "OpenGL ES 3.0 indisponível: " + ex.Message);
-            _onFatal?.Invoke("OpenGL ES 3.0 indisponível: " + ex.Message);
-        }
+        catch (Exception ex) { ReportPreviewFault("inicializar o OpenGL ES 3.0", ex); }
     }
 
     public void OnSurfaceChanged(IGL10? gl, int width, int height)
     {
         _width = Math.Max(1, width);
         _height = Math.Max(1, height);
-        _host?.Resize(_width, _height);
+        if (_graphicsFault) return;
+        try { _host?.Resize(_width, _height); }
+        catch (Exception ex) { ReportPreviewFault("redimensionar", ex); }
     }
 
     public void OnDrawFrame(IGL10? gl)
     {
-        if (_backend is null) return;
+        if (_backend is null || _graphicsFault) return;
+        try { DrawFrame(); }
+        catch (Exception ex) { ReportPreviewFault("renderizar", ex); }
+    }
+
+    private void DrawFrame()
+    {
         if (_restartRequested)
         {
             _restartRequested = false;
@@ -197,7 +204,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         long start = 0, allocationStart = 0;
         if (profile)
         {
-            _backend.BeginProfileFrame();
+            _backend!.BeginProfileFrame();
             start = Stopwatch.GetTimestamp();
             allocationStart = GC.GetAllocatedBytesForCurrentThread();
         }
@@ -220,7 +227,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         Interlocked.Increment(ref _framesDrawn);
         if (profile)
         {
-            _backend.EndProfileFrame();
+            _backend!.EndProfileFrame();
             if (elapsed > 0 && double.IsFinite(elapsed))
             {
                 double cpuMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
@@ -264,11 +271,24 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         }
     }
 
+    private void ReportPreviewFault(string operation, Exception exception)
+    {
+        if (_graphicsFault) return;
+        _graphicsFault = true;
+        var message = $"Falha ao {operation} o preview: {exception.Message}";
+        _log(LogLevel.Error, message);
+        _onFatal?.Invoke(message);
+    }
+
     public void Shutdown()
     {
-        DisposeSession();
-        _backend?.Dispose();
-        _backend = null;
+        try
+        {
+            DisposeSession();
+            _backend?.Dispose();
+        }
+        catch (Exception ex) { _log(LogLevel.Error, "Falha ao encerrar o preview: " + ex.Message); }
+        finally { _backend = null; }
     }
 
     private void DisposeSession()

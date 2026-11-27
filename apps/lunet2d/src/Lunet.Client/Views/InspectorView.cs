@@ -79,7 +79,7 @@ public sealed class InspectorView : UserControl
             _root.Children.Clear();
             _root.Children.Add(LunetUi.EmptyState(LunetIcons.Inspector, "O jogo não está rodando",
                 "Rode o jogo para ver e mudar os valores dele aqui, ao vivo. A mudança vale até o jogo parar; o código não muda.",
-                LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame())));
+                LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _ = _shell.RunGame())));
             return;
         }
         var signature = GameInspection.Signature(items) + "|" + _shell.Game.State; // the note says paused or live

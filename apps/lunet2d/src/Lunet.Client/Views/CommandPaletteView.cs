@@ -168,7 +168,7 @@ public sealed class CommandPaletteView : UserControl
             yield return new("Indentar", "", () => Line(LineOperations.Indent));
             yield return new("Recuar", "", () => Line(LineOperations.Outdent));
         }
-        yield return new("Rodar o jogo", "F5", () => { Close(false); _shell.RunGame(); });
+        yield return new("Rodar o jogo", "F5", () => { Close(false); _ = _shell.RunGame(); });
         yield return new("Parar o jogo", "", () => { Close(false); _shell.StopGame(); });
         yield return new("Documentação", "Manual, guias e referência da API", () => _shell.State.ShowPanel(SupportPanel.Docs));
         yield return new("Console", "O que o jogo escreveu", () => _shell.State.ShowPanel(SupportPanel.Console));

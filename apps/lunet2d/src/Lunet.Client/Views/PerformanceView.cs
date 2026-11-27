@@ -138,7 +138,7 @@ public sealed class PerformanceView : UserControl
                 _shell.Game.State is GameState.Running or GameState.Paused
                     ? "Os quadros aparecem aqui enquanto o jogo roda."
                     : "Rode o jogo: o tempo de cada quadro aparece aqui, com as linhas de 60 e 30 quadros por segundo.",
-                _shell.Game.State is GameState.Running or GameState.Paused ? null : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame()));
+                _shell.Game.State is GameState.Running or GameState.Paused ? null : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _ = _shell.RunGame()));
             return;
         }
         if (Content != _body) Content = _body;

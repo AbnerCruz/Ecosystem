@@ -40,7 +40,7 @@ public sealed class MainWindow : Window
     internal void OpenAndRun(string project)
     {
         Shell.OpenProject(project);
-        Shell.RunGame();
+        _ = Shell.RunGame();
     }
 
     internal void Step() => Shell.TickGame(1 / 60.0);
