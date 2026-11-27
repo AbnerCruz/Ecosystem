@@ -113,7 +113,7 @@ public sealed class ApkView : UserControl
                 {
                     if (!relative.StartsWith("Content/", StringComparison.Ordinal) && !relative.StartsWith("Assets/", StringComparison.Ordinal)) continue;
                     ct.ThrowIfCancellationRequested();
-                    files.Add("game/" + relative, File.ReadAllBytes(Path.Combine(project.Directory, relative.Replace('/', Path.DirectorySeparatorChar))));
+                    files.Add("game/" + relative, project.ReadBytes(relative));
                 }
                 ct.ThrowIfCancellationRequested();
                 return pack(project, files);

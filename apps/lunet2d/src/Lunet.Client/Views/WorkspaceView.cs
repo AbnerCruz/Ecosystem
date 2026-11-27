@@ -184,7 +184,7 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Opens the WAV editor on a game's .wav (cut, volume, loop; saves a copy).</summary>
     public WaveEditorView OpenWave(string path)
     {
-        var storage = new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Directory);
+        var storage = new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Files);
         var audio = Lunet.Studio.WaveAudioDocument.Parse(storage.ReadBytes(path, Lunet.Studio.WaveAudioDocument.MaxSourceBytes));
         var view = new WaveEditorView(_shell, storage, audio, Path.GetFileNameWithoutExtension(path), () => { _studio = null; Rebuild(); });
         _studio = view;

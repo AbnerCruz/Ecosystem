@@ -61,6 +61,20 @@ public sealed class EditorDocuments
         foreach (var path in Positions.Keys.Where(path => !valid.Contains(path)).ToArray()) Positions.Remove(path);
     }
 
+    /// <summary>The session kept inside the game (read through the game's files), or a new one.</summary>
+    public static EditorDocuments Load(LunetProject project, string relativePath)
+    {
+        try
+        {
+            if (project.Exists(relativePath) && JsonSerializer.Deserialize<EditorDocuments>(project.ReadText(relativePath)) is
+                { Additional: not null, Positions: not null } state) return state;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ProjectException) { }
+        return new();
+    }
+
+    public void Save(LunetProject project, string relativePath) => project.WriteText(relativePath, JsonSerializer.Serialize(this));
+
     public static EditorDocuments Load(string path)
     {
         try

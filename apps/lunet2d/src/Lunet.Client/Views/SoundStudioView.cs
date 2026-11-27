@@ -67,7 +67,7 @@ public sealed class SoundStudioView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
         var file = Path.Combine(_storage.RootDirectory, path);
         if (File.Exists(file)) Sound = SoundDesigner.Parse(_storage.ReadText(path));
         else { Sound = SoundDesigner.Generate(_category, 1); _dirty = true; }

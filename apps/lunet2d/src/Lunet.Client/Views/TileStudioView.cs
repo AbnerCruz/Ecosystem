@@ -98,7 +98,7 @@ public sealed class TileStudioView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
         var map = TileMap.Parse(_storage.ReadText(path));
         _tileset = LoadTileset(map);
         var tiles = _tileset is null ? 1 : Math.Max(1, (int)(_tileset.PixelSize.Width / map.TileWidth) * (int)(_tileset.PixelSize.Height / map.TileHeight));
@@ -265,7 +265,7 @@ public sealed class TileStudioView : UserControl
 
     /// <summary>Creates a map with an editable tileset of four starting tiles (as the previous Studio does).</summary>
     public static string Create(LunetShell shell, int cells = 16, int tile = 16) =>
-        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Directory), shell.Workspace.Files(), cells, tile);
+        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Files), shell.Workspace.Files(), cells, tile);
 
     /// <summary>The same, in any Studio folder (a game's, or the standalone Studios').</summary>
     public static string Create(StudioAssetWorkspace storage, IReadOnlyCollection<string> files, int cells = 16, int tile = 16)

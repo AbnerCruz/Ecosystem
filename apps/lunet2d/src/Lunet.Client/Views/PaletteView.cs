@@ -61,9 +61,8 @@ public sealed class PaletteView : UserControl
     public static ProjectPalette? Load(LunetShell shell)
     {
         if (shell.Workspace.Project is not { } project) return null;
-        var file = Path.Combine(project.Directory, ProjectPalette.DefaultPath);
-        if (!File.Exists(file)) return null;
-        try { return ProjectPalette.Parse(File.ReadAllText(file)); }
+        if (!project.Exists(ProjectPalette.DefaultPath)) return null;
+        try { return ProjectPalette.Parse(project.ReadText(ProjectPalette.DefaultPath)); }
         catch (Exception e) when (e is IOException or InvalidDataException or System.Text.Json.JsonException) { return null; }
     }
 

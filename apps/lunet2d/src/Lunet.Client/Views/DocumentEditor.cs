@@ -168,6 +168,7 @@ public sealed class DocumentEditor : UserControl
 
     private Lunet.Core.EditorDocuments? _session;
     private string? _sessionFile;
+    private Lunet.Core.LunetProject? _sessionProject;
 
     /// <summary>
     /// The editor session of the open game (M4): the files you opened, the current one and where the caret and the
@@ -179,8 +180,9 @@ public sealed class DocumentEditor : UserControl
     public void OpenSession(string fallback)
     {
         _session = null;
-        _sessionFile = _shell.Workspace.Project is { } project ? Path.Combine(project.Directory, ".lunet", "editor-session.json") : null;
-        var session = _sessionFile is null ? new Lunet.Core.EditorDocuments() : Lunet.Core.EditorDocuments.Load(_sessionFile);
+        _sessionProject = _shell.Workspace.Project;
+        _sessionFile = _sessionProject is null ? null : ".lunet/editor-session.json"; // inside the game, through its files
+        var session = _sessionProject is null ? new Lunet.Core.EditorDocuments() : Lunet.Core.EditorDocuments.Load(_sessionProject, _sessionFile!);
         session.Reconcile(_shell.Workspace.Files().Where(f => ProjectFiles.For(_tab, [f]).Count > 0));
         OpenPath = null; // the previous game's file must not be saved into this one
         _saved = null;
@@ -228,10 +230,10 @@ public sealed class DocumentEditor : UserControl
     /// <summary>Writes the session next to the game (a lost session never loses code: it is only positions).</summary>
     public void SaveSession()
     {
-        if (_session is null || _sessionFile is null) return;
+        if (_session is null || _sessionFile is null || _sessionProject is null) return;
         CaptureViewport();
-        try { _session.Save(_sessionFile); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        try { _session.Save(_sessionProject, _sessionFile); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Lunet.Core.ProjectException) { }
     }
 
     /// <summary>Writes the open document when it changed, then reads it back; reports a failed write instead of hiding it.</summary>

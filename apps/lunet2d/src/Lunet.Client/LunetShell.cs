@@ -355,7 +355,7 @@ public sealed class LunetShell : UserControl
     {
         var project = Workspace.Store.ImportZip(source);
         Avalonia.Threading.Dispatcher.UIThread.Post(_home.Refresh);
-        return Path.GetFileName(project.Directory);
+        return Path.GetFileName(project.Files.Location.TrimEnd('/', Path.DirectorySeparatorChar));
     }
 
     /// <summary>Erases a game from the trash for good.</summary>
