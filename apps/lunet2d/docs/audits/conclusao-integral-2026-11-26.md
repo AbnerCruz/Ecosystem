@@ -41,6 +41,8 @@
 
 - **E-14 (dados na atualização):** a casca lia só os fixados por GameId. Quem atualiza de uma versão cuja Home salvava fixados e o último jogo por nome (preferências v1) os perdia na Home nova. A conversão para GameId (`UpgradeProjectReferences`) existia, mas só a tela anterior a chamava. Agora a casca a executa na primeira leitura; nomes sem jogo correspondente são mantidos. Achado e provado pelo `UpgradeDataTests`.
 
+- **E-15 (relatado pelo proprietário no celular, 27/11):** rolar o código abria o teclado. Três pontos pediam o teclado a cada dedo levantado, sem distinguir toque de arraste, e o foco tomado no primeiro toque também abria. Agora `TouchTap` compara a posição do dedo ao descer e ao subir (tolerância de 10 px); o editor espera o dedo subir para decidir. Provado por `ScrollNoKeyboardTests`: o teste falha sem a correção e passa com ela.
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |

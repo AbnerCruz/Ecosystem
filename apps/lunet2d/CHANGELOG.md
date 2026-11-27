@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.1-dev.1000612 — Rolar o código sem abrir o teclado
+
+- **Correção (relatada no celular):** arrastar o dedo para rolar o código abria o teclado. Agora só um toque abre o teclado; o dedo que anda mais que a tolerância de toque (10 px) está rolando, inclusive no primeiro toque e depois de fechar o teclado com Voltar.
+- **Validação:** testado no computador e no emulador do CI. Não testado num celular.
+
 ## 0.0.1-dev.1000611 — Jogo na GPU, IA como co-work na casca e testes do Framework
 
 - **Correção:** com o jogo rodando na GPU dentro da aba Jogo, a contagem de quadros ficava sempre em zero, e a jornada de teste no emulador reprovava a versão. Agora a contagem vem dos quadros que a GPU de fato desenhou.
