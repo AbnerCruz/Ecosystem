@@ -19,7 +19,13 @@ namespace Lunet.Client.Views;
 /// where conversations are kept. On Android these are the same files and Keystore vault the previous screens use,
 /// so the key is configured once for the whole app. <paramref name="Provider"/> replaces the network model (tests).
 /// </summary>
-public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null);
+public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null, LunetAiModelCatalog? Catalog = null)
+{
+    private static readonly Lazy<LunetAiModelCatalog> Shared = new(() => new LunetAiModelCatalog(new HttpClient { Timeout = TimeSpan.FromSeconds(20) }));
+
+    /// <summary>The provider's model list (memory cache of a few minutes, per provider, address and key).</summary>
+    public LunetAiModelCatalog Models => Catalog ?? Shared.Value;
+}
 
 /// <summary>Compiles the open game for the AI's checks with the shell's own compiler (portable).</summary>
 internal sealed class ShellAiBuild(Lunet.Host.WorkspaceSession workspace) : ILunetAiBuild
