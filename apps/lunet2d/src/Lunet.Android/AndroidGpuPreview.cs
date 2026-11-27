@@ -22,12 +22,29 @@ internal sealed class AndroidGpuPreview : IGpuGamePreview
     private readonly PreviewRenderer _renderer;
     private bool _disposed;
 
+    /// <summary>
+    /// Where a game's test-run saves live (the app's storage, per game). Saves of earlier versions, kept inside the game
+    /// folder, are copied over once, so no progress is lost.
+    /// </summary>
+    internal static string PreviewSaves(Activity activity, LunetProject project)
+    {
+        var target = Path.Combine(activity.FilesDir!.AbsolutePath, "preview-saves", project.Manifest.GameId);
+        var old = project.Directory.Length == 0 ? null : Path.Combine(project.Directory, ".lunet", "saves");
+        if (old is not null && System.IO.Directory.Exists(old) && !System.IO.Directory.Exists(target))
+        {
+            System.IO.Directory.CreateDirectory(target);
+            foreach (var file in System.IO.Directory.EnumerateFiles(old)) File.Copy(file, Path.Combine(target, Path.GetFileName(file)));
+        }
+        return target;
+    }
+
     public AndroidGpuPreview(Activity activity, CompileResult compiled, LunetProject project, bool highRefresh, Action<string> log, Action<string> fault, Action stop)
     {
         _renderer = new PreviewRenderer(compiled.Assembly!, compiled.Symbols,
-            new ProjectContentSource(project.Directory),
+            new Lunet.Host.ProjectFilesContentSource(project.Files), // straight from the game's folder, no copy
             () => new AndroidAudioBackend(Path.Combine(activity.CacheDir!.AbsolutePath, "audio"), message => activity.RunOnUiThread(() => log("[erro] " + message))),
-            new DirectorySaveStore(Path.Combine(project.Directory, ".lunet", "saves")),
+            // A test run's saves are play data, not the game: in the app's own storage, per game (also for a SAF folder).
+            new DirectorySaveStore(PreviewSaves(activity, project)),
             new AndroidHaptics(activity),
             (level, message) => activity.RunOnUiThread(() => log((level == LogLevel.Error ? "[erro] " : level == LogLevel.Warning ? "[aviso] " : "") + message)),
             new AndroidGameImagePicker(activity),

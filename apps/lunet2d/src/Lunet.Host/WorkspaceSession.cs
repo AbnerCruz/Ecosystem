@@ -102,7 +102,7 @@ public sealed class WorkspaceSession
         var loaded = GameLoader.Load(result.Assembly!, result.Symbols);
         var screen = new SoftwareGraphicsBackend(surfaceWidth, surfaceHeight);
         var saves = Path.Combine(project.Directory, ".lunet", "desktop-saves");
-        var host = new GameHost(loaded.Game, screen, new ProjectContentSource(project.Directory), null, new Lunet.Storage.DirectorySaveStore(saves));
+        var host = new GameHost(loaded.Game, screen, new ProjectFilesContentSource(project.Files), null, new Lunet.Storage.DirectorySaveStore(saves));
         var running = new RunningGame(loaded, host, screen);
         if (!host.Start(surfaceWidth, surfaceHeight)) { running.Dispose(); throw new InvalidOperationException("O jogo falhou ao iniciar: " + host.Fault?.Message, host.Fault); }
         return running;
