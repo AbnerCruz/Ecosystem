@@ -68,12 +68,12 @@ As provas são testes headless que já existiam (exceto onde marcado) e foram co
 | Efeito (Sound) | `SoundStudio_GeneratesVariesPlaysAndSavesSourceAndWavTogether` | `SoundEffectReopenTests` (novo: reabre idêntico, mesmo WAV) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
 | Tom (WAV) | `CreateEditAssetsPreviewExportAndReopen` e os testes de WAV do #1053 | os testes de reabrir WAV sem jogo, do #1053 | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
 | Partículas | `ParticleStudio_RunsTheRealEmitter_BurstsAndSavesTheEffect` | `ParticleStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `Content_LoadsAStudioEffectAsAReadyEmitter` (o runtime usa o efeito) |
-| Paleta | `Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio` | `ProjectPaletteTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | — |
-| Dados (Tabela) | `DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether` | `DataStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | — |
+| Paleta | `Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio` | `ProjectPaletteTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` (importa em dois jogos) |
+| Dados (Tabela) | `DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether` | `DataStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` (importa em dois jogos, com a tabela referenciada) |
 | Sem jogo (rascunho global) | `Studios_WithoutAGame_CreateEditSaveInTheStudioFolder_AndPublish` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | idem | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
 | Segurança da Biblioteca | `UnsafePaths_AreRejectedWithoutPublishingProject`, `PublishRevision_RejectsSymlinkedAssetDirectory…`, `ExistingDestinationFiles_AreNotOverwrittenByStudioLibraryImport`, `InterruptedBundleRestoresPreviousBytesWhenReopened`, `InvalidPersistedMetadata_CannotCrashLibraryOrModifyTarget` | | | |
 
-**Lacunas da matriz:** reabrir está provado para todos os tipos. Ainda falta prova automatizada de usar Paleta e Dados num jogo por cópia da Biblioteca. Essas lacunas ficam abertas, não marcadas como feitas.
+**Matriz completa em teste automatizado.** Todas as etapas têm prova para todos os tipos: `StudioPublishesAndForksAllFamilies…` publica cada família e a importa em dois jogos (Paleta e Dados inclusive). Só falta a conferência num celular.
 
 ## Pendências conhecidas
 
