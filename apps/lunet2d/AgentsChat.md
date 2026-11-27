@@ -901,3 +901,9 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Base `f22eb24586f822d1104573a8b2b3aa55cb63a624`. Ramo `fix/lunet-studio-audio-20261126`.
 - Corrigidas as rotas do Music Studio para abertura, renderização, transporte e gravação, com proteção do par fonte/WAV, acompanhamento de oitava e continuidade de cópias WAV sem jogo.
 - [Relatório com inventário, referência externa e evidência](docs/audits/studios-audio-2026-11-26.md). O relato do Android não veio com log ou projeto e a ocorrência física segue sem confirmação. O código mantém os demais itens da Fase 5 em aberto.
+
+### 20261127-codex-lunet-preview — 27/11/2026 — Codex → integrador — LUNET-536
+
+- Base `21ba94e5`, ramo `fix/lunet-ide-preview-20261127`. Rodar abre o Preview em tela cheia. Voltar encerra o Preview e mostra o arquivo que estava no editor. O próximo Voltar leva à Home.
+- A compilação GPU roda fora da thread da interface, com cache por projeto. A IDE mantém a superfície montada ao pausar e retomar e expõe falhas gerenciadas de renderização como diagnósticos.
+- A jornada automatizada de Android agora verifica a abertura em tela cheia e a volta ao editor. Não houve teste no aparelho físico ou confirmação da causa específica do crash relatado.

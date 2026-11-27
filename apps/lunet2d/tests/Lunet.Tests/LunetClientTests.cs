@@ -261,7 +261,7 @@ public sealed class LunetClientTests
     }
 
     [Fact]
-    public void Shell_WideWindowKeepsCodeBesideTheRunningGame_AndCompileErrorsOpenProblems()
+    public void Shell_WideWindowOpensFullPreview_AndCompileErrorsOpenProblems()
     {
         var root = NewRoot();
         try
@@ -279,8 +279,11 @@ public sealed class LunetClientTests
                 shell.RunGame();
                 shell.TickGame(1 / 60.0);
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
-                Assert.True(shell.WorkspaceView.Code.IsEffectivelyVisible && shell.WorkspaceView.Game.IsEffectivelyVisible);
+                Assert.Equal(WorkspaceTab.Game, shell.State.Tab);
+                Assert.True(shell.WorkspaceView.PreviewFull);
+                Assert.False(shell.WorkspaceView.Code.IsAttachedToVisualTree());
+                Assert.True(shell.WorkspaceView.Game.IsEffectivelyVisible);
+                Assert.True(shell.Back());
 
                 shell.WorkspaceView.Code.Surface.Text = "class X { void M() { int a = ; } }";
                 shell.RunGame();

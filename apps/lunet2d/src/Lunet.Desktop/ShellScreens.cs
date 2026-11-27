@@ -130,7 +130,7 @@ public static class ShellScreens
                     bar.Show(Lunet.Client.Views.CodeBarTab.Keys);
                 }
                 shell.WorkspaceView.Code.HideKeyboard();
-                shell.RunGame();
+                _ = shell.RunGame();
                 for (int i = 0; i < 20; i++) shell.TickGame(1 / 60.0);
                 Shot(window, output, size, "4-jogo", written);
                 shell.Game.TogglePause();
@@ -148,7 +148,7 @@ public static class ShellScreens
                 shell.WorkspaceView.Code.ToggleFileMenu();
                 Shot(window, output, size, "2m-arquivo", written);
                 shell.WorkspaceView.Code.ToggleFileMenu();
-                shell.RunGame();
+                _ = shell.RunGame();
                 for (int i = 0; i < 90; i++) shell.TickGame(1 / 60.0);
                 shell.State.ShowPanel(SupportPanel.Inspector);
                 Shot(window, output, size, "5b-inspector", written);
@@ -161,7 +161,7 @@ public static class ShellScreens
                 Shot(window, output, size, "5e-docs-simbolo", written);
                 shell.StopGame();
                 shell.WorkspaceView.Code.Surface.Text = "public sealed class Quebrado : Lunet.Game { void X() { int a = ; } }";
-                shell.RunGame();
+                _ = shell.RunGame();
                 Shot(window, output, size, "6-problemas", written);
                 shell.State.ShowPanel(SupportPanel.None);
                 shell.State.SelectTab(WorkspaceTab.Notes);

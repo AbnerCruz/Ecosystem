@@ -17,8 +17,8 @@ public enum ShellLayout { Compact, Expanded }
 /// The navigation state of the Lunet shell, with no UI dependency so it is tested directly. Rules:
 /// <list type="bullet">
 /// <item>Leaving a game and coming back restores the tab you were on (per game), never resets to a default.</item>
-/// <item>Back closes the open support panel first, then goes back through the tabs visited, then returns to the Home; on the Home it is not consumed.</item>
-/// <item>On an expanded screen, Code and Game are shown side by side, so selecting either keeps both visible.</item>
+/// <item>Back from Preview returns to Code. In the rest of the workspace it closes support, returns through visited tabs, then goes Home.</item>
+/// <item>The expanded editor has room for an idle game view beside Code.</item>
 /// </list>
 /// </summary>
 public sealed class ShellState
@@ -40,7 +40,7 @@ public sealed class ShellState
     public event Action? Changed;
 
     /// <summary>True when the code and the running game are both on screen.</summary>
-    public bool CodeAndGameSideBySide => Layout == ShellLayout.Expanded && Tab is WorkspaceTab.Code or WorkspaceTab.Game;
+    public bool CodeAndGameSideBySide => Layout == ShellLayout.Expanded && Tab == WorkspaceTab.Code;
 
     public void OpenProject(string name)
     {
@@ -64,10 +64,31 @@ public sealed class ShellState
     public void SelectTab(WorkspaceTab tab)
     {
         if (Level != ShellLevel.Workspace || Project is null) return;
-        if (tab != Tab) _tabHistory.Push(Tab);
+        if (tab != Tab && Tab != WorkspaceTab.Game) _tabHistory.Push(Tab);
         Tab = tab;
         _lastTab[Project] = tab;
         Changed?.Invoke();
+    }
+
+    /// <summary>Opens the game over the editor as a single navigation change.</summary>
+    public void OpenPreview()
+    {
+        if (Level != ShellLevel.Workspace) return;
+        Tab = WorkspaceTab.Game;
+        Panel = SupportPanel.None;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Leaves the Preview at the code editor, with the Home as the next Back destination.</summary>
+    public bool ClosePreview()
+    {
+        if (Level != ShellLevel.Workspace || Tab != WorkspaceTab.Game) return false;
+        Tab = WorkspaceTab.Code;
+        Panel = SupportPanel.None;
+        _tabHistory.Clear();
+        if (Project is not null) _lastTab[Project] = Tab;
+        Changed?.Invoke();
+        return true;
     }
 
     /// <summary>Opens a support panel, or closes it when it is already the open one.</summary>
@@ -97,6 +118,7 @@ public sealed class ShellState
     /// <summary>The system Back gesture/key. Returns false when the shell has nothing to close (the app may exit).</summary>
     public bool Back()
     {
+        if (ClosePreview()) return true;
         if (Panel != SupportPanel.None) { Panel = SupportPanel.None; Changed?.Invoke(); return true; }
         if (Level == ShellLevel.Workspace && _tabHistory.TryPop(out var previous))
         {

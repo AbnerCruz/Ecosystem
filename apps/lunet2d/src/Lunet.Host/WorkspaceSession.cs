@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Lunet.Compiler;
 using Lunet.Content;
 using Lunet.Core;
@@ -85,12 +86,17 @@ public sealed class WorkspaceSession
     public string Read(string path) => Require().ReadText(path);
     public void Write(string path, string text) => Require().WriteText(path, text);
 
-    public CompileResult Compile()
+    private readonly ConditionalWeakTable<LunetProject, GameCompiler> _compilers = new();
+
+    public CompileResult Compile() => LastCompile = Compile(Require());
+
+    /// <summary>Compiles the captured project, even if the workspace opens another one during compilation.</summary>
+    public CompileResult Compile(LunetProject project)
     {
-        var project = Require();
-        var references = new LoadedAssembliesReferenceProvider(typeof(Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly);
         var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
-        return LastCompile = new GameCompiler(references).Compile("desktop_" + project.Manifest.GameId.Replace('.', '_').Replace('-', '_'), sources);
+        var compiler = _compilers.GetValue(project, static _ => new GameCompiler(
+            new LoadedAssembliesReferenceProvider(typeof(Game).Assembly, typeof(Lunet.Networking.NetworkSession).Assembly)));
+        return compiler.Compile("desktop_" + project.Manifest.GameId.Replace('.', '_').Replace('-', '_'), sources);
     }
 
     /// <summary>Compiles and starts the game with a CPU renderer of the given surface size; null when compilation fails.</summary>

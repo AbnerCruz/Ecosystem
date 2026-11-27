@@ -10,7 +10,7 @@ namespace Lunet.Tests;
 /// <summary>
 /// The IDE after the owner's review (27/11: "odiei a interface da IDE… o que mais me incomoda é a navbar"), on a phone:
 /// no tab bar; ☰ opens the Explorer (the game's folder as a tree); the editor's tabs are the open files only, each
-/// with ✕; ▶ runs the game under the code (Jogo · Console · Problemas), never replacing it; a status bar with the
+/// with ✕; ▶ opens the Preview in full-screen mode with Jogo, Console and Problemas. The status bar also shows the
 /// problems, the caret's line and column, and the AI.
 /// </summary>
 public sealed class IdeLayoutTests
@@ -73,8 +73,10 @@ public sealed class IdeLayoutTests
         finally { Directory.Delete(root, true); }
     }
 
-    [Fact]
-    public void Running_ShowsTheGameUnderTheCode_WithConsoleAndProblems_AndOneCodeBar()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Running_StartsFullScreen_AndBackShowsEditorBeforeHome(bool systemBack)
     {
         var root = Directory.CreateTempSubdirectory("lunet-ide-run-").FullName;
         try
@@ -82,31 +84,61 @@ public sealed class IdeLayoutTests
             UiSession.Run(() =>
             {
                 var (w, shell) = Open(root);
-                shell.State.SelectTab(WorkspaceTab.Game);                            // what ▶ does on a phone
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var file = shell.WorkspaceView.Code.OpenPath;
+                shell.WorkspaceView.Code.ShowKeyboard();
+                Click(Named<Button>(w, "RunButton"));
+                Assert.True(shell.WorkspaceView.PreviewFull);
                 Assert.True(shell.WorkspaceView.BottomPanelVisible);
-                Assert.True(shell.WorkspaceView.Code.IsEffectivelyVisible, "o jogo tirou o código da tela");
+                Assert.False(shell.WorkspaceView.Code.IsAttachedToVisualTree());
                 Assert.True(shell.WorkspaceView.Game.IsEffectivelyVisible);
 
+                Click(Named<Button>(w, "PanelFull"));
+                Assert.False(shell.WorkspaceView.PreviewFull);
+                Assert.True(shell.WorkspaceView.Code.IsAttachedToVisualTree());
+                Click(Named<Button>(w, "PanelFull"));
                 Click(Named<Button>(w, "PanelConsole"));
                 Assert.Equal(SupportPanel.Console, shell.State.Panel);
-                Assert.True(shell.WorkspaceView.BottomPanelVisible);
-                Assert.True(shell.WorkspaceView.Code.IsEffectivelyVisible);
+                Assert.True(shell.WorkspaceView.PreviewFull);
 
-                Click(Named<Button>(w, "PanelClose"));
-                Assert.False(shell.WorkspaceView.BottomPanelVisible);
+                if (systemBack) Assert.True(shell.Back());
+                else Click(Named<Button>(w, "IdeBack"));
+                Assert.Equal(ShellLevel.Workspace, shell.State.Level);
                 Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                Assert.Equal(SupportPanel.None, shell.State.Panel);
+                Assert.Equal(GameState.Stopped, shell.Game.State);
+                Assert.Equal(file, shell.WorkspaceView.Code.OpenPath);
+                Assert.True(shell.WorkspaceView.Code.IsAttachedToVisualTree());
+                Assert.False(shell.WorkspaceView.BottomPanelVisible);
 
-                // The capture's sequence (27/11): the bar opened and closed, then the game runs under the code.
                 shell.WorkspaceView.Code.ShowKeyboard();
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.Single(w.GetVisualDescendants().OfType<CodeBar>());
                 shell.WorkspaceView.Code.HideKeyboard();
-                shell.State.SelectTab(WorkspaceTab.Game);
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                shell.WorkspaceView.Code.Surface.Focus();
-                shell.WorkspaceView.Code.ShowKeyboard();
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                Assert.Single(w.GetVisualDescendants().OfType<CodeBar>());            // one bar, never two
+                Click(Named<Button>(w, "IdeBack"));
+                Assert.Equal(ShellLevel.Home, shell.State.Level);
+                w.Close();
+            });
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void OpeningAFileFromThePreview_ReturnsToItsEditorTab()
+    {
+        var root = Directory.CreateTempSubdirectory("lunet-ide-preview-file-").FullName;
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var (w, shell) = Open(root);
+                shell.Workspace.Write("Extra.cs", "class Extra { }");
+                Click(Named<Button>(w, "RunButton"));
+                Assert.True(shell.WorkspaceView.PreviewFull);
+
+                shell.WorkspaceView.OpenFile("Extra.cs");
+                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                Assert.Equal("Extra.cs", shell.WorkspaceView.Code.OpenPath);
+                Assert.True(shell.WorkspaceView.Code.IsAttachedToVisualTree());
+                Assert.Equal(GameState.Stopped, shell.Game.State);
                 w.Close();
             });
         }

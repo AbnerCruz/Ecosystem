@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.1-dev.1000614 — Preview em tela cheia e IDE responsiva ao compilar
+
+- **Rodar** abre o Preview em tela cheia. A seta da IDE e o Voltar do Android retornam ao arquivo aberto. O próximo Voltar no editor retorna à área de trabalho.
+- A compilação do Preview GPU saiu da thread da interface e reaproveita resultados e árvores de sintaxe entre execuções. A IDE reaproveita os controles do editor ao abrir painéis e descarta diagnósticos de edições superadas.
+- Pausar ou continuar mantém a superfície OpenGL montada. Falhas gerenciadas de inicialização e renderização aparecem como erros do Preview.
+
 ## 0.0.1-dev.1000613 — IDE nova: sem navbar, Explorador, abas reais e jogo embaixo do código
 
 - **Sem a barra Código/Jogo/Recursos/Notas.** O topo tem ← voltar, ☰ arquivos, o nome do jogo, ▶ rodar e ⋮ mais.

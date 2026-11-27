@@ -41,7 +41,7 @@ public sealed class WorkspaceView : UserControl
         // would take the focus from it and Android would close the keyboard at once ("teclado não abre na IA").
         _typingInSheet = open && _sheet is not null && FocusedField() is Visual f && _sheet.IsVisualAncestorOf(f);
         if (_tabBar is not null) _tabBar.IsVisible = !open;
-        if (_bottomPanel is not null) _bottomPanel.IsVisible = !open;
+        if (_bottomPanel is not null) _bottomPanel.IsVisible = _panelFull || !open;
         if (_sheet is not null) _sheet.IsVisible = !open || _typingInSheet;
         UpdateCursor();
         PlaceRunButton();
@@ -54,7 +54,8 @@ public sealed class WorkspaceView : UserControl
     /// count as "keyboard open": in Jogo, Recursos or Notas it used to hide the workspace tabs, leaving no way back to
     /// the code but Back (capture 4-jogo, 26/11).
     /// </summary>
-    public bool CodeVisible => _shell.State.Tab == WorkspaceTab.Code || _shell.State.CodeAndGameSideBySide;
+    public bool CodeVisible => _shell.State.Tab == WorkspaceTab.Code
+        || (_shell.State.Tab == WorkspaceTab.Game && !PreviewFull && _shell.Game.State is GameState.Running or GameState.Paused);
     private (WorkspaceTab, SupportPanel) _place;
 
     /// <summary>The text field of this workspace that has the focus (code, notes, a field of a panel), or null.</summary>
@@ -100,6 +101,7 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Opens the project's documents (entry point in Código, first note in Notas).</summary>
     public void Load()
     {
+        _panelFull = false;
         _title.Text = _shell.State.Project ?? "";
         _code.OpenSession(_shell.Workspace.Project!.Manifest.EntryPoint);
         _notes.Load(null);
@@ -122,11 +124,12 @@ public sealed class WorkspaceView : UserControl
     }
 
     /// <summary>Saves every open document (before running, leaving or closing). Verified write, never memory-only.</summary>
-    public void SaveAll()
+    public bool SaveAll()
     {
-        _code.Save();
-        _notes.Save();
+        var codeSaved = _code.Save();
+        var notesSaved = _notes.Save();
         _code.SaveSession();
+        return codeSaved && notesSaved;
     }
 
     private Control? _studio;
@@ -164,7 +167,12 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Opens a mind map of the game as an outline (P2).</summary>
     public MindMapView OpenMindMap(string path)
     {
-        var view = new MindMapView(_shell, path, () => { _studio = null; Rebuild(); });
+        var view = new MindMapView(_shell, path, () =>
+        {
+            _studio = null;
+            if (_shell.State.Tab == WorkspaceTab.Notes) _notes.RefreshFileTabs();
+            Rebuild();
+        });
         _studio = view;
         Rebuild();
         return view;
@@ -299,21 +307,19 @@ public sealed class WorkspaceView : UserControl
         // Same tab and panel (a game state change, turning the phone): the field being written keeps the focus. A new tab or
         // panel is the person going elsewhere, and the keyboard rightly goes.
         var place = (_shell.State.Tab, _shell.State.Panel);
+        if (_place.Item1 == WorkspaceTab.Game && place.Tab != WorkspaceTab.Game) _panelFull = false;
+        if (place.Tab == WorkspaceTab.Notes && _place.Item1 != WorkspaceTab.Notes) _notes.RefreshFileTabs();
         var focused = place == _place ? FocusedField() : null;
         _keyboardOpen = _shell.KeyboardOpen || (CodeVisible && _code.KeyboardVisible); // per tab, recomputed on each switch
         _place = place;
         _tabBar = _sheet = _bottomPanel = null;
         foreach (var c in new Control[] { _code, _notes, _game, _support }) Detach(c);
         if (_explorer is not null) Detach(_explorer);
-        _code.Relayout();
-        _notes.Relayout();
         var state = _shell.State;
-        var expanded = state.Layout == ShellLayout.Expanded;
+        var expanded = state.Layout == ShellLayout.Expanded && state.Tab != WorkspaceTab.Game;
         _support.HeaderInPanel = false;
 
-        // The IDE (owner, 27/11, after VS Code): top bar (☰ files · game · ▶ · ⋮), the editor with its open tabs, the
-        // bottom panel (Jogo · Console · Problemas) under the code, and a status bar. No tab bar: the game's folders are
-        // in the Explorer, and the game runs under the code instead of replacing it.
+        // The Preview starts at full workspace height. The same panel can shrink to show the editor underneath.
         var root = new DockPanel();
         if (_topHost.Parent is Panel oldTop) oldTop.Children.Remove(_topHost);
         _topHost.Child = TopBar();
@@ -348,7 +354,7 @@ public sealed class WorkspaceView : UserControl
                 DockPanel.SetDock(column, Dock.Right);
                 root.Children.Add(column);
             }
-            root.Children.Add(Body(expanded));
+            root.Children.Add(Body());
             _support.Refresh();
             Content = root;
             Refocus(focused);
@@ -373,14 +379,17 @@ public sealed class WorkspaceView : UserControl
             _sheet = sheet;
             sheet.IsVisible = !_keyboardOpen || _typingInSheet;
             root.Children.Add(sheet);
-            root.Children.Add(state.Tab == WorkspaceTab.Game ? _game : Body(expanded));
+            root.Children.Add(state.Tab == WorkspaceTab.Game ? _game : Body());
         }
         else if (state.Tab == WorkspaceTab.Game || inPanel)
         {
             var panel = BottomPanel(inPanel);
             _bottomPanel = panel;
-            panel.IsVisible = !_keyboardOpen;
-            if (_panelFull && !_keyboardOpen) root.Children.Add(panel);
+            panel.IsVisible = _panelFull || !_keyboardOpen;
+            if (_panelFull)
+            {
+                root.Children.Add(panel);
+            }
             else
             {
                 panel.Height = Bounds.Height > 0 ? Math.Max(240, Math.Round(Bounds.Height * 0.45)) : 320;
@@ -389,7 +398,7 @@ public sealed class WorkspaceView : UserControl
                 root.Children.Add(state.Tab is WorkspaceTab.Notes ? _notes : _code);
             }
         }
-        else root.Children.Add(Body(expanded));
+        else root.Children.Add(Body());
         _support.Refresh();
 
         if (state.Panel == SupportPanel.Explorer)
@@ -410,6 +419,13 @@ public sealed class WorkspaceView : UserControl
 
     private Border? _bottomPanel;
     private bool _panelFull;
+    public bool PreviewFull => _shell.State.Tab == WorkspaceTab.Game && _panelFull;
+
+    public void OpenPreview()
+    {
+        _panelFull = true;
+        _shell.State.OpenPreview();
+    }
     private bool _explorerHidden;
     private readonly Border _statusHost = new() { Name = "StatusBar" };
     private ExplorerView? _explorer;
@@ -429,6 +445,7 @@ public sealed class WorkspaceView : UserControl
     /// </summary>
     public void OpenFile(string path)
     {
+        if (PreviewFull) _shell.ClosePreview();
         var lower = path.ToLowerInvariant();
         if (lower.EndsWith(Lunet.Core.ProjectMindMap.Extension)) { OpenMindMap(path); return; }
         if (lower.EndsWith(".md") && lower.StartsWith(Lunet.Core.ProjectNotes.Folder.ToLowerInvariant() + "/"))
@@ -457,6 +474,7 @@ public sealed class WorkspaceView : UserControl
     /// </summary>
     public bool ReviewAiChanges(Lunet.Ai.LunetAiCheckpoint checkpoint)
     {
+        if (PreviewFull) _shell.ClosePreview();
         if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
         if (!_code.Review(checkpoint)) return false;
         if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Ai) _shell.State.ShowPanel(SupportPanel.None);
@@ -481,8 +499,7 @@ public sealed class WorkspaceView : UserControl
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () =>
         {
             _panelFull = false;
-            if (state.Panel != SupportPanel.None) state.ShowPanel(SupportPanel.None);
-            if (state.Tab == WorkspaceTab.Game) state.SelectTab(WorkspaceTab.Code);
+            if (!_shell.ClosePreview()) state.ShowPanel(SupportPanel.None);
         });
         close.Name = "PanelClose";
         actions.Children.Add(full);
@@ -493,7 +510,11 @@ public sealed class WorkspaceView : UserControl
         var tabs = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (var (name, label, selected, go) in new (string, string, bool, Action)[]
         {
-            ("PanelGame", "Jogo", !showSupport, () => { if (state.Panel != SupportPanel.None) state.ShowPanel(SupportPanel.None); if (state.Tab != WorkspaceTab.Game) state.SelectTab(WorkspaceTab.Game); }),
+            ("PanelGame", "Jogo", !showSupport, () =>
+            {
+                if (state.Tab == WorkspaceTab.Game) state.ShowPanel(SupportPanel.None);
+                else OpenPreview();
+            }),
             ("PanelConsole", "Console", state.Panel == SupportPanel.Console, () => state.ShowPanel(SupportPanel.Console)),
             ("PanelProblems", problems > 0 ? $"Problemas ({problems})" : "Problemas", state.Panel == SupportPanel.Problems, () => state.ShowPanel(SupportPanel.Problems)),
         })
@@ -538,6 +559,7 @@ public sealed class WorkspaceView : UserControl
         bar.Children.Add(problems);
         var running = LunetUi.Text(_shell.Game.State switch
         {
+            GameState.Compiling => "Compilando…",
             GameState.Running => "▶ Rodando",
             GameState.Paused => "❚❚ Pausado",
             GameState.CompileErrors => "Não compilou",
@@ -574,7 +596,7 @@ public sealed class WorkspaceView : UserControl
         ? tab is WorkspaceTab.Code or WorkspaceTab.Game
         : _shell.State.Tab == tab || (tab == WorkspaceTab.Art && _shell.State.Tab is WorkspaceTab.Map or WorkspaceTab.Sound);
 
-    private Control Body(bool expanded)
+    private Control Body()
     {
         var state = _shell.State;
         if (state.CodeAndGameSideBySide)
@@ -607,7 +629,8 @@ public sealed class WorkspaceView : UserControl
     private Control TopBar()
     {
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.Xs, 0) };
-        var back = LunetUi.IconButton(LunetIcons.Back, "Voltar aos jogos", () => _shell.GoHome());
+        var back = LunetUi.IconButton(LunetIcons.Back, _shell.State.Tab == WorkspaceTab.Game ? "Voltar ao editor" : "Voltar", () => _shell.Back());
+        back.Name = "IdeBack";
         DockPanel.SetDock(back, Dock.Left);
         bar.Children.Add(back);
         var expanded = _shell.State.Layout == ShellLayout.Expanded;
@@ -626,10 +649,11 @@ public sealed class WorkspaceView : UserControl
         // A phone has room for the ▶ icon only (the name is for the screen reader); a wide screen shows the label.
         Button run = expanded
             ? (running ? LunetUi.Button("Parar", ButtonKind.Secondary, LunetIcons.Stop, () => _shell.StopGame())
-                       : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _shell.RunGame()))
+                       : LunetUi.Button("Rodar", ButtonKind.Primary, LunetIcons.Play, () => _ = _shell.RunGame()))
             : LunetUi.IconButton(running ? LunetIcons.Stop : LunetIcons.Play, running ? "Parar" : "Rodar",
-                () => { if (running) _shell.StopGame(); else _shell.RunGame(); }, running ? LunetTokens.Color.Danger : LunetTokens.Color.Primary);
+                () => { if (running) _shell.StopGame(); else _ = _shell.RunGame(); }, running ? LunetTokens.Color.Danger : LunetTokens.Color.Primary);
         run.Name = "RunButton";
+        run.IsEnabled = _shell.Game.State != GameState.Compiling;
         _runButton = run;
         actions.Children.Add(run);
         var more = LunetUi.IconButton(LunetIcons.More, "Mais: comandos, painéis, Git, APK", () => _shell.State.TogglePanel(SupportPanel.More),
