@@ -112,13 +112,11 @@ public sealed class ShellActivity : AvaloniaActivity
         catch (Java.Lang.Exception) { }
         _textScale = new Lunet.Client.TextScaleHost(_shell) { Requested = Resources?.Configuration?.FontScale ?? 1f };
         Content = _textScale;
-        _shell.Game.GpuFactory = (compiled, project, fault) =>
+        _shell.Game.GpuFactory = (compiled, project, _) =>
         {
             try
             {
-                return _shell.Settings.IsolatedPreview
-                    ? new IsolatedGpuPreview(this, compiled, project)
-                    : new AndroidGpuPreview(this, compiled, project, _shell.Settings.HighRefreshRate, _shell.Game.Write, fault, () => _shell.ClosePreview());
+                return new IsolatedGpuPreview(this, compiled, project, _shell.Settings.HighRefreshRate);
             }
             catch (Java.Lang.Exception ex)
             {
@@ -158,6 +156,23 @@ public sealed class ShellActivity : AvaloniaActivity
 
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
+        if (requestCode == IsolatedGpuPreview.RequestCode)
+        {
+            if (_shell?.Game.Gpu is IsolatedGpuPreview preview)
+            {
+#if LUNET_EMULATOR
+                var full = _shell.WorkspaceView.PreviewFull;
+#endif
+                var failure = preview.Collect(resultCode, data, _shell.Game.Write);
+                if (failure is not null) _shell.Game.ReportFault(failure);
+                _shell.ClosePreview();
+                if (failure is not null) _shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Problems);
+#if LUNET_EMULATOR
+                TracePreviewReturn(full, failure);
+#endif
+            }
+            return;
+        }
         if (requestCode != ProjectFolderRequest) { base.OnActivityResult(requestCode, resultCode, data); return; }
         var pick = _folderPick;
         _folderPick = null;
@@ -357,14 +372,6 @@ public sealed class ShellActivity : AvaloniaActivity
             _shell?.ReturnedFromRoute();
         }
 
-        if (_shell?.Game.Gpu is IsolatedGpuPreview isolated)
-        {
-            var died = isolated.Collect(_shell.Game.Write);
-            if (died is not null) _shell.Game.ReportFault(died);
-            _shell.ClosePreview();
-            if (died is not null) _shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Problems);
-        }
-        else _shell?.Game.Gpu?.SetAppVisible(true);
     }
 
     protected override void OnDestroy()
@@ -403,41 +410,55 @@ public sealed class ShellActivity : AvaloniaActivity
     }
 
 #if LUNET_EMULATOR
-    /// <summary>
-    /// CI emulator only (tools/ci-android-shell.sh): with the extra <c>lunet.e2e</c>, create a game, compile and run it
-    /// in the shell, then use the code bar over the system keyboard — the journey a person makes with a few taps.
-    /// </summary>
+    private bool _previewJourney;
+    private string? _journeyFile;
+
     protected override void OnPostResume()
     {
         base.OnPostResume();
         if (Intent?.GetBooleanExtra("lunet.e2e", false) != true || _shell is not { } shell) return;
         Intent.RemoveExtra("lunet.e2e");
-        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            await Task.Delay(1500);
             try
             {
                 shell.CreateProject();
-                global::Android.Util.Log.Info("lunet-e2e", "projeto criado: " + shell.State.Project);
-                await shell.RunGame();
-                await Task.Delay(4000);
-                global::Android.Util.Log.Info("lunet-e2e", $"estado={shell.Game.State} quadros={shell.Game.FramesRendered} problemas={shell.Game.Problems.Count}");
-                if (!shell.WorkspaceView.PreviewFull || !shell.Back()
-                    || shell.State.Tab != Lunet.Client.Shell.WorkspaceTab.Code
-                    || shell.State.Level != Lunet.Client.Shell.ShellLevel.Workspace)
-                    throw new InvalidOperationException("Rodar deve abrir o Preview em tela cheia, e Voltar deve mostrar o editor.");
-                global::Android.Util.Log.Info("lunet-e2e", "preview=cheio retorno=editor");
-                var editor = shell.WorkspaceView.Code;
-                global::Android.Util.Log.Info("lunet-e2e", $"teclado-fisico-detectado={shell.HardwareKeyboard}");
+                _previewJourney = true;
+                _journeyFile = shell.WorkspaceView.Code.OpenPath;
                 shell.HardwareKeyboard = false;
-                editor.Surface.Focus();
-                editor.ShowKeyboard();
-                editor.Surface.Caret = 0;
-                editor.Keyboard?.Shortcut("{");
-                await Task.Delay(1500);
-                global::Android.Util.Log.Info("lunet-e2e", $"barra={(editor.KeyboardVisible ? "visivel" : "oculta")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget) ? "on" : "off")} texto={(editor.Surface.Text).Split('\n')[0]}");
+                shell.WorkspaceView.Code.Surface.Focus();
+                shell.WorkspaceView.Code.ShowKeyboard();
+                global::Android.Util.Log.Info("lunet-e2e", $"editor=pronto idePid={Process.MyPid()}");
             }
             catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void TracePreviewReturn(bool full, string? failure)
+    {
+        if (!_previewJourney || _shell is not { } shell) return;
+        if (!full || shell.State.Tab != Lunet.Client.Shell.WorkspaceTab.Code
+            || shell.State.Level != Lunet.Client.Shell.ShellLevel.Workspace
+            || shell.WorkspaceView.Code.OpenPath != _journeyFile)
+        {
+            global::Android.Util.Log.Error("lunet-e2e", "falhou: o preview não retornou ao arquivo aberto.");
+            return;
+        }
+        if (failure is not null)
+        {
+            global::Android.Util.Log.Info("lunet-e2e", $"preview=recuperado idePid={Process.MyPid()} motivo={failure}");
+            return;
+        }
+
+        global::Android.Util.Log.Info("lunet-e2e", $"preview=cheio retorno=editor idePid={Process.MyPid()}");
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var editor = shell.WorkspaceView.Code;
+            editor.Surface.Focus();
+            editor.ShowKeyboard();
+            editor.Surface.Caret = 0;
+            editor.Keyboard?.Shortcut("{");
+            global::Android.Util.Log.Info("lunet-e2e", $"barra={(editor.KeyboardVisible ? "visivel" : "oculta")} ime={(Avalonia.Input.InputMethod.GetIsInputMethodEnabled(editor.Surface.InputTarget) ? "on" : "off")} texto={(editor.Surface.Text).Split('\n')[0]}");
         }, Avalonia.Threading.DispatcherPriority.Background);
     }
 #endif
