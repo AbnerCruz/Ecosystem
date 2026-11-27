@@ -26,26 +26,28 @@ public sealed class LunetAiProjectFiles(LunetProject project)
     public IReadOnlyList<string> List()
     {
         var result = new List<string>();
-        void Walk(string absolute, string prefix)
+        // Through the game's files (the disk, or the folder chosen on Android), never a copy.
+        void Walk(string folder, string prefix)
         {
-            foreach (var file in Directory.EnumerateFiles(absolute))
+            foreach (var entry in project.Files.List(folder))
             {
-                if (IsLink(file)) continue;
-                var relative = prefix + Path.GetFileName(file);
-                if (IsAllowed(relative)) result.Add(relative);
-            }
-            foreach (var directory in Directory.EnumerateDirectories(absolute))
-            {
-                var name = Path.GetFileName(directory);
-                if (name is ".git" or ".lunet" or "bin" or "obj" || name.StartsWith(".", StringComparison.Ordinal) ||
-                    IsLink(directory)) continue;
-                Walk(directory, prefix + name + "/");
+                var relative = prefix + entry.Name;
+                if (entry.IsDirectory)
+                {
+                    if (entry.Name is ".git" or ".lunet" or "bin" or "obj" || entry.Name.StartsWith(".", StringComparison.Ordinal) || IsLinkAt(relative)) continue;
+                    Walk(relative, relative + "/");
+                }
+                else if (!IsLinkAt(relative) && IsAllowed(relative)) result.Add(relative);
             }
         }
-        Walk(project.Directory, "");
+        Walk("", "");
         result.Sort(StringComparer.Ordinal);
         return result;
     }
+
+    /// <summary>A link on the disk (never followed by the AI's tools); a SAF folder has none.</summary>
+    private bool IsLinkAt(string relative) =>
+        project.Files.LocalDirectory is { } root && IsLink(Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar)));
 
     public LunetAiFile Read(string relativePath)
     {
@@ -95,11 +97,10 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         foreach (var path in List())
         {
             if (hits.Count >= maxResults) break;
-            var absolute = Path.Combine(project.Directory, path.Replace('/', Path.DirectorySeparatorChar));
             try
             {
                 EnsureNoLinks(path);
-                if (new FileInfo(absolute).Length > 1_000_000) continue;
+                if (project.ReadBytes(path).Length > 1_000_000) continue;
                 var lines = project.ReadText(path).Split('\n');
                 for (int i = 0; i < lines.Length && hits.Count < maxResults; i++)
                 {
@@ -168,11 +169,11 @@ public sealed class LunetAiProjectFiles(LunetProject project)
 
     private void EnsureNoLinks(string path)
     {
-        var current = project.Directory;
+        var current = "";
         foreach (var part in path.Split('/'))
         {
-            current = Path.Combine(current, part);
-            if (IsLink(current))
+            current = current.Length == 0 ? part : current + "/" + part;
+            if (IsLinkAt(current))
                 throw new InvalidOperationException("Links simbólicos não podem ser usados por ferramentas de IA.");
         }
     }
