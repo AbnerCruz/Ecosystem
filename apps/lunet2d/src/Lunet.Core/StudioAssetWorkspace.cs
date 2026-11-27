@@ -5,75 +5,90 @@ using System.Text.Json;
 namespace Lunet.Core;
 
 /// <summary>
-/// Local editable drafts for the standalone Studios. No game/project identity is created.
-/// Final assets are published by ReusableAssetLibrary.PublishWorkspace, then copied to
-/// chosen projects with existing verified library import; the draft is never a live link.
+/// Where the Studios read and write: a game's folder (its <see cref="LunetProject.Files"/>, edited directly) or the
+/// standalone Studios' drafts. Every multi-file save is journaled (<see cref="WriteBundle"/>): prepared first, then
+/// replaced, and rolled back on the next opening if the app stopped in the middle. Disk-only protections (no writing
+/// through links) apply where there is a disk folder.
 /// </summary>
 public sealed class StudioAssetWorkspace
 {
     private static readonly object BundleGate = new();
     private sealed record BundleFile(string Relative, string? Before, string After);
     public const string RecoveryFolder = ".lunet/studio-recovery";
-    private string RecoveryDirectory => Path.Combine(RootDirectory, RecoveryFolder);
     private const string StagePrefix = "stage-";
-    public StudioAssetWorkspace(string rootDirectory)
+    private readonly IProjectFiles _files;
+
+    public StudioAssetWorkspace(string rootDirectory) : this(CreateDisk(rootDirectory)) { }
+
+    private static IProjectFiles CreateDisk(string rootDirectory)
     {
-        RootDirectory = Path.GetFullPath(rootDirectory);
-        Directory.CreateDirectory(RootDirectory);
+        var full = Path.GetFullPath(rootDirectory);
+        Directory.CreateDirectory(full);
+        return new DiskProjectFiles(full);
+    }
+
+    /// <summary>The Studios over a game's own files (no copy): what they save is in the game's folder.</summary>
+    public StudioAssetWorkspace(IProjectFiles files)
+    {
+        _files = files;
         lock (BundleGate)
         {
             RejectLinkedRecoveryRoot();
-            if (!Directory.Exists(RecoveryDirectory)) return;
-            foreach (var stage in Directory.EnumerateDirectories(RecoveryDirectory, StagePrefix + "*"))
+            foreach (var stage in _files.List(RecoveryFolder).Where(e => e.IsDirectory && e.Name.StartsWith(StagePrefix, StringComparison.Ordinal)))
             {
-                if (!Guid.TryParseExact(Path.GetFileName(stage)[StagePrefix.Length..], "N", out _) ||
-                    File.GetAttributes(stage).HasFlag(FileAttributes.ReparsePoint)) continue;
-                Recover(stage);
+                if (!Guid.TryParseExact(stage.Name[StagePrefix.Length..], "N", out _) || IsLink(RecoveryFolder + "/" + stage.Name)) continue;
+                Recover(RecoveryFolder + "/" + stage.Name);
             }
         }
     }
 
-    public string RootDirectory { get; }
+    /// <summary>The folder on this device's disk (desktop, tests); empty when the folder is reached only through SAF.</summary>
+    public string RootDirectory => _files.LocalDirectory ?? "";
 
-    public IReadOnlyList<string> ListFiles() =>
-        new[] { "Assets", "Content" }.Select(directory => Path.Combine(RootDirectory, directory))
-            .Where(Directory.Exists).SelectMany(folder => Directory.EnumerateFiles(folder, "*", new EnumerationOptions
-            { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint }))
-            .Select(p => Path.GetRelativePath(RootDirectory, p).Replace('\\', '/'))
-            .OrderBy(p => p, StringComparer.Ordinal).ToArray();
+    /// <summary>Where the files are (for messages).</summary>
+    public string Location => _files.Location;
 
-    public bool Exists(string relativePath) => File.Exists(Resolve(relativePath));
+    public IReadOnlyList<string> ListFiles()
+    {
+        var result = new List<string>();
+        foreach (var root in new[] { "Assets", "Content" }) Walk(root, result);
+        result.Sort(StringComparer.Ordinal);
+        return result;
+    }
 
-    public string ReadText(string relativePath) => File.ReadAllText(Resolve(relativePath));
+    private void Walk(string folder, List<string> result)
+    {
+        if (IsLink(folder)) return;
+        foreach (var entry in _files.List(folder))
+        {
+            var path = folder + "/" + entry.Name;
+            if (entry.IsDirectory) Walk(path, result);
+            else if (!IsLink(path)) result.Add(path);
+        }
+    }
 
-    public byte[] ReadBytes(string relativePath) => File.ReadAllBytes(Resolve(relativePath));
+    public bool Exists(string relativePath) => _files.FileExists(Resolve(relativePath));
+
+    public string ReadText(string relativePath)
+    {
+        using var reader = new StreamReader(new MemoryStream(ReadBytes(relativePath)), Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
+    }
+
+    public byte[] ReadBytes(string relativePath) => _files.Read(Resolve(relativePath));
 
     public byte[] ReadBytes(string relativePath, int maxBytes)
     {
-        using var file = File.OpenRead(Resolve(relativePath));
-        if (file.Length > maxBytes)
+        var bytes = ReadBytes(relativePath);
+        if (bytes.Length > maxBytes)
             throw new InvalidDataException($"O arquivo ultrapassa o tamanho máximo de {maxBytes / (1024 * 1024)} MiB.");
-        var bytes = new byte[(int)file.Length];
-        file.ReadExactly(bytes);
         return bytes;
     }
 
     public void WriteText(string relativePath, string value) =>
-        WriteBytes(relativePath, System.Text.Encoding.UTF8.GetBytes(value));
+        WriteBytes(relativePath, Encoding.UTF8.GetBytes(value));
 
-    public void WriteBytes(string relativePath, ReadOnlySpan<byte> bytes)
-    {
-        string target = Resolve(relativePath);
-        string parent = Path.GetDirectoryName(target)!;
-        Directory.CreateDirectory(parent);
-        var temp = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        try
-        {
-            File.WriteAllBytes(temp, bytes.ToArray());
-            File.Move(temp, target, overwrite: true);
-        }
-        finally { if (File.Exists(temp)) File.Delete(temp); }
-    }
+    public void WriteBytes(string relativePath, ReadOnlySpan<byte> bytes) => _files.Write(Resolve(relativePath), bytes.ToArray());
 
     /// <summary>Prepare every output before replacing files. If commit fails, restore the previous
     /// files that still contain this operation's bytes. Publication commits its own immutable directory.</summary>
@@ -86,36 +101,37 @@ public sealed class StudioAssetWorkspace
                 throw new ArgumentException("Arquivos duplicados no pacote.");
 
             RejectLinkedRecoveryRoot();
-            var staging = Path.Combine(RecoveryDirectory, StagePrefix + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(staging);
-            string journal = Path.Combine(staging, "journal.json");
+            var staging = RecoveryFolder + "/" + StagePrefix + Guid.NewGuid().ToString("N");
+            _files.CreateDirectory(staging);
+            var journal = staging + "/journal.json";
             try
             {
                 var prepared = new List<BundleFile>();
                 for (int i = 0; i < entries.Length; i++)
                 {
                     var entry = entries[i];
-                    File.WriteAllBytes(Path.Combine(staging, i + ".next"), entry.Bytes);
+                    _files.Write(staging + "/" + i + ".next", entry.Bytes);
                     string? before = null;
-                    if (File.Exists(entry.Target))
+                    if (_files.FileExists(entry.Target))
                     {
-                        var backup = Path.Combine(staging, i + ".before");
-                        File.Copy(entry.Target, backup);
-                        before = HashFile(backup);
+                        var previous = _files.Read(entry.Target);
+                        _files.Write(staging + "/" + i + ".before", previous);
+                        before = Hash(previous);
                     }
-                    prepared.Add(new(entry.Path, before, Convert.ToHexString(SHA256.HashData(entry.Bytes))));
+                    prepared.Add(new(entry.Path, before, Hash(entry.Bytes)));
                 }
 
-                AtomicFile.WriteAllText(journal, JsonSerializer.Serialize(prepared));
+                _files.Write(journal, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(prepared)));
                 for (int i = 0; i < entries.Length; i++)
                 {
-                    var target = Resolve(entries[i].Path);
+                    var target = entries[i].Target;
                     if (CurrentHash(target) != prepared[i].Before)
                         throw new IOException("Outro editor alterou " + entries[i].Path + " durante a gravação.");
-                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                    File.Move(Path.Combine(staging, i + ".next"), target, overwrite: true);
+                    _files.Write(target, entries[i].Bytes);
+                    // Gone .next = this output was written (the recovery's "committed" mark per file).
+                    _files.Delete(staging + "/" + i + ".next");
                 }
-                File.WriteAllText(Path.Combine(staging, "committed"), "");
+                _files.Write(staging + "/committed", []);
             }
             finally { Recover(staging); }
         }
@@ -123,44 +139,47 @@ public sealed class StudioAssetWorkspace
 
     private void RejectLinkedRecoveryRoot()
     {
-        foreach (var directory in new[] { Path.Combine(RootDirectory, ".lunet"), RecoveryDirectory })
-            if (Directory.Exists(directory) && File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint))
-                throw new IOException("A recuperação do Studio não usa links.");
+        if (IsLink(".lunet") || IsLink(RecoveryFolder)) throw new IOException("A recuperação do Studio não usa links.");
+    }
+
+    /// <summary>A symbolic link or junction on the disk (never followed by the Studios); SAF has none.</summary>
+    private bool IsLink(string relative)
+    {
+        if (_files.LocalDirectory is not { } root) return false;
+        var full = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        return (File.Exists(full) || Directory.Exists(full)) && File.GetAttributes(full).HasFlag(FileAttributes.ReparsePoint);
     }
 
     private void Recover(string staging)
     {
-        var journal = Path.Combine(staging, "journal.json");
-        if (!File.Exists(Path.Combine(staging, "committed")) && File.Exists(journal))
+        var journal = staging + "/journal.json";
+        if (!_files.FileExists(staging + "/committed") && _files.FileExists(journal))
         {
-            var entries = JsonSerializer.Deserialize<BundleFile[]>(File.ReadAllText(journal))
+            var entries = JsonSerializer.Deserialize<BundleFile[]>(Encoding.UTF8.GetString(_files.Read(journal)))
                 ?? throw new InvalidDataException("Registro de recuperação do Studio inválido.");
             for (int i = entries.Length - 1; i >= 0; i--)
             {
                 var item = entries[i];
-                // A staged output that still exists was never committed.
-                if (File.Exists(Path.Combine(staging, i + ".next"))) continue;
                 var target = Resolve(item.Relative);
+                // Only an output that reached its file is rolled back: its content is this operation's (a staged .next
+                // that still exists may still have been written, if the app stopped between writing and marking it).
                 if (CurrentHash(target) != item.After) continue;
-                var backup = Path.Combine(staging, i + ".before");
-                if (item.Before is null) File.Delete(target);
+                var backup = staging + "/" + i + ".before";
+                if (item.Before is null) _files.Delete(target);
                 else
                 {
-                    if (CurrentHash(backup) != item.Before) throw new InvalidDataException("Backup do Studio inconsistente.");
-                    File.Move(backup, target, overwrite: true);
+                    var previous = _files.FileExists(backup) ? _files.Read(backup) : null;
+                    if (previous is null || Hash(previous) != item.Before) throw new InvalidDataException("Backup do Studio inconsistente.");
+                    _files.Write(target, previous);
                 }
             }
         }
-        Directory.Delete(staging, recursive: true);
+        _files.Delete(staging);
     }
 
-    private static string? CurrentHash(string path) => File.Exists(path) ? HashFile(path) : null;
+    private string? CurrentHash(string path) => _files.FileExists(path) ? Hash(_files.Read(path)) : null;
 
-    private static string HashFile(string path)
-    {
-        using var stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream));
-    }
+    private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes));
 
     public void WriteTextPair(string first, string firstText, string second, string secondText) =>
         WriteBundle((first, Encoding.UTF8.GetBytes(firstText)), (second, Encoding.UTF8.GetBytes(secondText)));
@@ -177,6 +196,7 @@ public sealed class StudioAssetWorkspace
         return directory + "/" + prefix + "-" + Guid.NewGuid().ToString("N")[..8] + extension;
     }
 
+    /// <summary>A path inside Assets/ or Content/ (checked part by part; never through a link on the disk).</summary>
     private string Resolve(string relative)
     {
         if (string.IsNullOrEmpty(relative) || relative.StartsWith('/') || relative.Contains('\\') ||
@@ -187,18 +207,12 @@ public sealed class StudioAssetWorkspace
             throw new ArgumentException("Caminho inválido.", nameof(relative));
         if (parts[0] != "Assets" && parts[0] != "Content")
             throw new ArgumentException("Os Studios salvam em Assets/ ou Content/.", nameof(relative));
-        var cursor = RootDirectory;
+        var cursor = "";
         foreach (var part in parts)
         {
-            cursor = Path.Combine(cursor, part);
-            if ((File.Exists(cursor) || Directory.Exists(cursor)) &&
-                File.GetAttributes(cursor).HasFlag(FileAttributes.ReparsePoint))
-                throw new IOException("O Studio não grava através de links.");
+            cursor = cursor.Length == 0 ? part : cursor + "/" + part;
+            if (IsLink(cursor)) throw new IOException("O Studio não grava através de links.");
         }
-        string target = Path.GetFullPath(cursor);
-        if (!target.StartsWith(RootDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
-                StringComparison.Ordinal))
-            throw new ArgumentException("Destino fora do Studio.", nameof(relative));
-        return target;
+        return relative;
     }
 }
