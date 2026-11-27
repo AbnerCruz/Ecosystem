@@ -83,9 +83,22 @@ public sealed class LunetShell : UserControl
     /// <summary>The launcher preferences, or null when the file is damaged (it is never overwritten then).</summary>
     public Lunet.Core.LauncherPreferences? LauncherPreferences()
     {
-        try { return new Lunet.Core.LauncherPreferences(LauncherPreferencesPath); }
+        try
+        {
+            var prefs = new Lunet.Core.LauncherPreferences(LauncherPreferencesPath);
+            // G14: a file from an earlier Home keeps pins and the last game by name; the first read in this shell
+            // moves them to GameIds (names matching no game are kept), as the previous screens did on start.
+            if (_preferencesUpgradedFor != LauncherPreferencesPath)
+            {
+                prefs.UpgradeProjectReferences(Lunet.Core.LauncherProjectCatalog.Scan(Workspace.Store));
+                _preferencesUpgradedFor = LauncherPreferencesPath;
+            }
+            return prefs;
+        }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException) { return null; }
     }
+
+    private string? _preferencesUpgradedFor;
 
     /// <summary>
     /// Where Aprender keeps the student's declared progress. The Android head points it at the file the previous screens

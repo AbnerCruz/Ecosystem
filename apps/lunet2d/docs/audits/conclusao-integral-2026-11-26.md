@@ -39,6 +39,8 @@
 - **E-12:** ao sair do estúdio de música por outro destino com a prévia ainda renderizando, o som tocava por cima da tela seguinte. Agora a prévia para quando o estúdio sai da tela. Achado pelo `MusicLeaveTests`.
 - **E-13 (perda de dados):** com um Studio aberto na página Studios, tocar em Jogar, Aprender ou Início na barra global descartava o desenho ou a música ainda não salvos. Voltar salvava; a barra não. Agora a troca de destino fecha o Studio pelo mesmo caminho do Voltar, que salva. Achado e provado pelo `StudioLeaveSavesTests`: música e sprite, por Jogar e por Início.
 
+- **E-14 (dados na atualização):** a casca lia só os fixados por GameId. Quem atualiza de uma versão cuja Home salvava fixados e o último jogo por nome (preferências v1) os perdia na Home nova. A conversão para GameId (`UpgradeProjectReferences`) existia, mas só a tela anterior a chamava. Agora a casca a executa na primeira leitura; nomes sem jogo correspondente são mantidos. Achado e provado pelo `UpgradeDataTests`.
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
@@ -152,7 +154,7 @@ Legenda:
 | G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7) | Scene2D no modo ordenado |
 | G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
 | G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
-| G14 | Atualizar o Lunet existente e conferir dados | Pendente | `LauncherPreferences` e caminhos de dados preservados por desenho; não houve teste de atualização | Aparelho com instalação anterior |
+| G14 | Atualizar o Lunet existente e conferir dados | Automatizado (parcial) | `UpgradeDataTests`: preferências v1 (fixados e último jogo por nome) chegam à Home nova (E-14 corrigido). Arquivos de IA, Notas e progresso mantêm os mesmos caminhos | Aparelho: instalar por cima da versão anterior |
 | G15 | Matriz de migração e todas as rotas | Feito, exceto aparelho | Revisão rota a rota em §H8 abaixo: duas rotas ficam na tela anterior, com motivo; a lacuna de Notas encontrada foi portada (`NotesImportTests`) | Aparelho |
 | G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
 

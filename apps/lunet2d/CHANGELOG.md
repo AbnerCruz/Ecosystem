@@ -15,6 +15,7 @@
 - **Modelos:** Ajustes da IA → "Ver modelos do provedor" lista os modelos de verdade, com filtro e "Mostrar mais". Sem internet ou sem chave, avisa e deixa digitar o modelo.
 - **Segundo plano:** a IA continua trabalhando com o app minimizado, com uma notificação "Lunet IA · trabalhando em…". Ao terminar fora do app, avisa "Lunet IA terminou". O Android 13 pede a permissão de notificação uma vez.
 - **Correção, perda de dados:** com um Studio aberto, tocar em Jogar, Aprender ou Início na barra descartava o desenho ou a música ainda não salvos. Agora salva, como o Voltar.
+- **Correção na atualização:** jogos fixados e o último jogo, salvos por versões antigas da tela inicial, voltam a aparecer em Fixados e em Continuar.
 - **Correção:** sair do estúdio de música com a prévia ainda carregando fazia o som tocar por cima da tela seguinte.
 - **Correção:** Esc e os atalhos (F5, Ctrl+S, F1) não funcionavam logo depois de abrir uma tela, quando nada estava focado.
 - **Acessibilidade:**
