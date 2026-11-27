@@ -533,6 +533,19 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
         else if (e.Key == Key.P && e.KeyModifiers == KeyModifiers.Control) { QuickOpen(); e.Handled = true; }
+        else if (State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Game
+            && ((e.Key == Key.Tab && e.KeyModifiers.HasFlag(KeyModifiers.Control)) || (e.Key is Key.PageDown or Key.PageUp && e.KeyModifiers == KeyModifiers.Control)))
+        {
+            var back = e.Key == Key.PageUp || e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+            _workspaceView.Code.NextTab(back ? -1 : +1);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.W && e.KeyModifiers == KeyModifiers.Control && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Game
+            && _workspaceView.Code.OpenPath is { } closing)
+        {
+            _workspaceView.Code.CloseTab(closing);
+            e.Handled = true;
+        }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
         else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
         {

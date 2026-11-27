@@ -52,6 +52,50 @@ public sealed class EditorDocuments
         }
     }
 
+    /// <summary>Keeps only <paramref name="path"/> (VS Code's "Close Others").</summary>
+    public void CloseOthers(string path)
+    {
+        if (!Tabs.Contains(path)) return;
+        foreach (var t in Tabs.Where(t => t != path).ToArray()) Close(t);
+        Current = path;
+    }
+
+    /// <summary>Closes the tabs after <paramref name="path"/> ("Close to the Right").</summary>
+    public void CloseToRight(string path)
+    {
+        var tabs = Tabs.ToList();
+        var index = tabs.IndexOf(path);
+        if (index < 0) return;
+        foreach (var t in tabs.Skip(index + 1)) Close(t);
+        if (Current is null || !Tabs.Contains(Current)) Current = path;
+    }
+
+    /// <summary>Closes every tab.</summary>
+    public void CloseAll() { Primary = null; Additional.Clear(); Current = null; }
+
+    /// <summary>Moves a tab one place left (-1) or right (+1) — the order is the person's.</summary>
+    public bool Move(string path, int delta)
+    {
+        var tabs = Tabs.ToList();
+        var from = tabs.IndexOf(path);
+        var to = from + delta;
+        if (from < 0 || to < 0 || to >= tabs.Count) return false;
+        tabs.RemoveAt(from);
+        tabs.Insert(to, path);
+        Primary = tabs[0];
+        Additional = tabs.Skip(1).ToList();
+        return true;
+    }
+
+    /// <summary>The tab after (or before) the current one, wrapping (Ctrl+Tab).</summary>
+    public string? Neighbour(int delta)
+    {
+        var tabs = Tabs.ToList();
+        if (tabs.Count == 0) return null;
+        var i = Current is null ? 0 : tabs.IndexOf(Current);
+        return tabs[((i + delta) % tabs.Count + tabs.Count) % tabs.Count];
+    }
+
     public void Reconcile(IEnumerable<string> validPaths)
     {
         var valid = validPaths.ToHashSet(StringComparer.Ordinal);

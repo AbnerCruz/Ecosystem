@@ -172,6 +172,21 @@ public sealed class ExplorerView : UserControl
         return panel;
     }
 
+    /// <summary>Opens the folders above <paramref name="path"/> and scrolls it into sight.</summary>
+    public void Reveal(string path)
+    {
+        var parts = path.Split('/');
+        for (var i = 1; i < parts.Length; i++) _collapsed.Remove(string.Join('/', parts[..i]));
+        Fill();
+        var index = Shown.ToList().IndexOf(path);
+        Revealed = index >= 0 ? path : null;
+        var row = _list.Children.OfType<Control>().Where(c => c is DockPanel).Skip(Math.Max(index, 0)).FirstOrDefault();
+        if (index >= 0 && row is not null) Avalonia.Threading.Dispatcher.UIThread.Post(() => row.BringIntoView(), Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    /// <summary>The last file revealed (tests).</summary>
+    public string? Revealed { get; private set; }
+
     /// <summary>Opens a file where it belongs (see the class summary).</summary>
     public void Open(string path)
     {

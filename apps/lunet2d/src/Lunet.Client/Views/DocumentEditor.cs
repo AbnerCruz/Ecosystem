@@ -730,6 +730,82 @@ public sealed class DocumentEditor : UserControl
         return new Border { Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), Name = "AiReviewBar" };
     }
 
+    private string? _tabMenuFor;
+    private Border? _selectedTab;
+
+    /// <summary>The tab whose actions are shown (long press / right click), or null.</summary>
+    public string? TabMenuFor => _tabMenuFor;
+
+    public void ShowTabMenu(string? path) { _tabMenuFor = path; Rebuild(); }
+
+    private Control TabMenu(string path)
+    {
+        var panel = new WrapPanel { Margin = new Thickness(LunetTokens.Space.Xs, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xxs), Name = "TabMenu" };
+        void Add(string label, string? icon, Action run, string name)
+        {
+            var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => { _tabMenuFor = null; run(); });
+            b.Name = name;
+            panel.Children.Add(b);
+        }
+        var tabs = OpenTabs;
+        var index = tabs.ToList().IndexOf(path);
+        if (index > 0) Add("Mover para a esquerda", LunetIcons.Back, () => MoveTab(path, -1), "TabLeft");
+        if (index >= 0 && index < tabs.Count - 1) Add("Mover para a direita", LunetIcons.ChevronRight, () => MoveTab(path, +1), "TabRight");
+        if (tabs.Count > 1) Add("Fechar outras", null, () => CloseOthers(path), "TabCloseOthers");
+        if (index >= 0 && index < tabs.Count - 1) Add("Fechar à direita", null, () => CloseToRight(path), "TabCloseRight");
+        Add("Fechar todas", LunetIcons.Close, CloseAll, "TabCloseAll");
+        Add("Mostrar no Explorador", LunetIcons.Folder, () => { Rebuild(); _shell.WorkspaceView.RevealInExplorer(path); }, "TabReveal");
+        Add("Copiar caminho", LunetIcons.Copy, () => { Rebuild(); if (TopLevel.GetTopLevel(this)?.Clipboard is { } clip) _ = Avalonia.Input.Platform.ClipboardExtensions.SetTextAsync(clip, path); }, "TabCopyPath");
+        return new Border { Child = panel, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised) };
+    }
+
+    /// <summary>Keeps only this tab (the open file is saved first).</summary>
+    public void CloseOthers(string path)
+    {
+        Save();
+        if (_session is null) return;
+        _session.CloseOthers(path);
+        SaveSession();
+        if (OpenPath != path) Load(path); else Rebuild();
+    }
+
+    /// <summary>Closes the tabs to the right of this one.</summary>
+    public void CloseToRight(string path)
+    {
+        Save();
+        if (_session is null) return;
+        var open = OpenPath;
+        _session.CloseToRight(path);
+        SaveSession();
+        if (open is not null && !_session.Tabs.Contains(open)) Load(path); else Rebuild();
+    }
+
+    /// <summary>Closes every tab (saved first); the editor says nothing is open.</summary>
+    public void CloseAll()
+    {
+        Save();
+        if (_session is null) return;
+        _session.CloseAll();
+        SaveSession();
+        OpenPath = null; _saved = null; _surface.Text = "";
+        Rebuild();
+    }
+
+    /// <summary>Moves a tab one place left or right.</summary>
+    public void MoveTab(string path, int delta)
+    {
+        if (_session?.Move(path, delta) == true) { SaveSession(); _tabMenuFor = path; }
+        Rebuild();
+    }
+
+    /// <summary>The next (or previous) tab, wrapping (Ctrl+Tab, Ctrl+PageDown).</summary>
+    public bool NextTab(int delta)
+    {
+        if (_session?.Neighbour(delta) is not { } next || next == OpenPath) return false;
+        Load(next);
+        return true;
+    }
+
     /// <summary>The open tabs (tests).</summary>
     public IReadOnlyList<string> OpenTabs => _session?.Tabs.ToList() ?? [];
 
@@ -772,13 +848,17 @@ public sealed class DocumentEditor : UserControl
             var close = LunetUi.IconButton(LunetIcons.Close, "Fechar " + name, () => CloseTab(path), LunetTokens.Color.TextSecondary);
             close.Name = "CloseTab";
             var tab = new StackPanel { Orientation = Orientation.Horizontal, Children = { b, close } };
-            entries.Add(new Border
+            var border = new Border
             {
                 Child = tab, Name = "EditorTab",
                 // The open tab is marked by tone and a line under it, never a box (visual language §3).
                 Background = LunetTokens.Brush(selected ? LunetTokens.Color.SurfaceRaised : "#00000000"),
                 BorderBrush = LunetTokens.Brush(selected ? LunetTokens.Color.Primary : "#00000000"), BorderThickness = new Thickness(0, 0, 0, 2),
-            });
+            };
+            // A long press (touch) or a right click opens the tab's actions, like VS Code's tab menu.
+            border.ContextRequested += (_, e) => { e.Handled = true; _tabMenuFor = _tabMenuFor == path ? null : path; Rebuild(); };
+            if (selected) _selectedTab = border;
+            entries.Add(border);
         }
         if (_tab == WorkspaceTab.Notes)
         {
@@ -847,6 +927,9 @@ public sealed class DocumentEditor : UserControl
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Left; row.Children.Add(e); }
             _chrome.Children.Add(new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) });
         }
+        if (_tabMenuFor is { } menuFor && OpenTabs.Contains(menuFor)) _chrome.Children.Add(TabMenu(menuFor)); else _tabMenuFor = null;
+        // The open tab is always in sight, even far to the right on a phone.
+        if (_selectedTab is { } shown) Avalonia.Threading.Dispatcher.UIThread.Post(() => shown.BringIntoView(), Avalonia.Threading.DispatcherPriority.Background);
         if (ReviewChanges.Count > 0 && OpenPath is not null && ReviewChanges.Any(c => c.Path == OpenPath)) _chrome.Children.Add(ReviewBar());
         if (_findOpen && OpenPath is not null) _chrome.Children.Add(FindBar());
         if (_fileMenu) _chrome.Children.Add(FileMenu());

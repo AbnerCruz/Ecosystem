@@ -434,6 +434,15 @@ public sealed class WorkspaceView : UserControl
         Explorer.ShowSearch(true, selected);
     }
 
+    /// <summary>Shows the Explorer with this file in sight (its folders opened), like VS Code's "Reveal".</summary>
+    public void RevealInExplorer(string path)
+    {
+        if (_shell.State.Layout == ShellLayout.Compact) { if (_shell.State.Panel != SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.Explorer); }
+        else if (_explorerHidden) { _explorerHidden = false; Rebuild(); }
+        Explorer.ShowSearch(false);
+        Explorer.Reveal(path);
+    }
+
     /// <summary>True while the bottom panel (Jogo · Console · Problemas) is on screen (tests).</summary>
     public bool BottomPanelVisible => _bottomPanel is { IsVisible: true };
 
