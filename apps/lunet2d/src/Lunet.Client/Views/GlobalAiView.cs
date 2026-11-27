@@ -85,11 +85,107 @@ public sealed class AiSettingsView : UserControl
         form.Children.Add(LunetUi.Field("Provedor", providers));
         form.Children.Add(LunetUi.Field("Chave da API", key));
         form.Children.Add(LunetUi.Field("Modelo", model));
+        form.Children.Add(BuildCatalog(() => all[Math.Max(0, providers.SelectedIndex)], endpoint, key, model));
         form.Children.Add(endpointField);
+        var web = new ToggleSwitch { MinHeight = LunetTokens.MinTouch, IsChecked = loaded.Settings.WebResearch, OnContent = null, OffContent = null, Name = "AiWeb", VerticalAlignment = VerticalAlignment.Center };
+        AutomationProperties.SetName(web, "Pesquisa na web");
+        web.IsCheckedChanged += (_, _) =>
+        {
+            _host.Store.Save(_host.Store.Load().Settings with { WebResearch = web.IsChecked == true }, null);
+            _status.Text = web.IsChecked == true ? "A IA pode pesquisar na web quando precisar." : "A IA não acessa a web.";
+        };
+        var webText = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        webText.Children.Add(LunetUi.Text("Pesquisa na web", LunetTokens.Type.Callout));
+        webText.Children.Add(LunetUi.Text("Busca pública e leitura de páginas quando a pergunta pedir", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
+        var webRow = new DockPanel { MinHeight = 56 };
+        DockPanel.SetDock(web, Dock.Right);
+        webRow.Children.Add(web); webRow.Children.Add(webText);
+        form.Children.Add(webRow);
         form.Children.Add(save);
         form.Children.Add(forget);
         form.Children.Add(_status);
         Content = new ScrollViewer { Content = form };
+    }
+
+    /// <summary>Models shown per page; "Mostrar mais" adds the next page (big catalogs have hundreds).</summary>
+    public const int CatalogPage = 30;
+
+    private IReadOnlyList<LunetAiModelInfo> _models = [];
+    private int _shown = CatalogPage;
+    private CancellationTokenSource? _listing;
+
+    /// <summary>
+    /// The provider's real model list (H4/M7): searchable, paged, cached by <see cref="LunetAiModelCatalog"/>.
+    /// Typing a model by hand keeps working; offline says so instead of inventing a list.
+    /// </summary>
+    private Control BuildCatalog(Func<LunetAiProvider> provider, TextBox endpoint, TextBox key, TextBox model)
+    {
+        var search = new TextBox { PlaceholderText = "Filtrar modelos", MinHeight = LunetTokens.MinTouch, Name = "AiModelSearch", IsVisible = false };
+        AutomationProperties.SetName(search, "Filtrar modelos");
+        var list = new StackPanel { Spacing = LunetTokens.Space.Xs, Name = "AiModelList" };
+        var note = LunetUi.Text("", LunetTokens.Type.Label, LunetTokens.Color.TextSecondary);
+        note.Name = "AiModelNote";
+
+        void Show()
+        {
+            list.Children.Clear();
+            var query = search.Text?.Trim() ?? "";
+            var matches = _models.Where(m => query.Length == 0 || m.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || m.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (var m in matches.Take(_shown))
+            {
+                var label = m.Name == m.Id ? m.Id : $"{m.Name} · {m.Id}";
+                if (m.Context is { } c) label += $" · {c / 1000}k";
+                if (m.Tools == false) label += " · sem ferramentas";
+                var pick = LunetUi.Button(label, m.Id == model.Text ? ButtonKind.Selected : ButtonKind.Ghost, null, () => { model.Text = m.Id; Show(); });
+                pick.HorizontalAlignment = HorizontalAlignment.Stretch;
+                list.Children.Add(pick);
+            }
+            if (matches.Count > _shown)
+            {
+                var more = LunetUi.Button($"Mostrar mais ({matches.Count - _shown})", ButtonKind.Ghost, null, () => { _shown += CatalogPage; Show(); });
+                more.Name = "AiModelMore";
+                list.Children.Add(more);
+            }
+            note.Text = _models.Count == 0 ? note.Text : matches.Count == 0 ? "Nenhum modelo com esse nome. Você pode digitar o id acima." : $"{matches.Count} de {_models.Count} modelos";
+        }
+        search.TextChanged += (_, _) => { _shown = CatalogPage; Show(); };
+
+        async void Load(bool refresh)
+        {
+            var p = provider();
+            var url = (p.Id == "custom" ? endpoint.Text : p.Endpoint)?.Trim() ?? "";
+            var apiKey = string.IsNullOrWhiteSpace(key.Text) ? _host.Store.KeyFor(p.Id) : key.Text.Trim();
+            if (string.IsNullOrEmpty(apiKey)) { note.Text = "Informe a chave para ver os modelos do provedor."; return; }
+            _listing?.Cancel();
+            var cts = _listing = new CancellationTokenSource();
+            note.Text = "Buscando modelos…";
+            try
+            {
+                var models = await _host.Models.ListAsync(p.Id, url, apiKey, cts.Token, refresh);
+                if (cts.IsCancellationRequested) return;
+                _models = models; _shown = CatalogPage;
+                search.IsVisible = models.Count > 0;
+                note.Text = models.Count == 0 ? "O provedor não listou modelos. Digite o id acima." : "";
+                Show();
+            }
+            catch (OperationCanceledException) when (cts.IsCancellationRequested) { }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or ArgumentException or InvalidOperationException or UriFormatException)
+            {
+                if (cts.IsCancellationRequested) return;
+                note.Text = ex is HttpRequestException { Message.Length: > 0 } h && h.InnerException is null ? h.Message
+                    : "Sem conexão com o provedor: não foi possível listar os modelos. Digite o id acima.";
+            }
+        }
+
+        var open = LunetUi.Button("Ver modelos do provedor", ButtonKind.Secondary, null, () => Load(refresh: false));
+        open.Name = "AiModelCatalog";
+        var reload = LunetUi.Button("Atualizar lista", ButtonKind.Ghost, null, () => Load(refresh: true));
+        var buttons = new WrapPanel();
+        buttons.Children.Add(open); buttons.Children.Add(reload);
+        var panel = new StackPanel { Spacing = LunetTokens.Space.S };
+        panel.Children.Add(buttons); panel.Children.Add(search); panel.Children.Add(note); panel.Children.Add(list);
+        return panel;
     }
 }
 

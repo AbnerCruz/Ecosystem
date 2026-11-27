@@ -27,7 +27,7 @@ public sealed class MainWindow : Window
             StudioWorkspacePath = Path.Combine(Path.GetDirectoryName(ai)!, "StudioWorkspace"),
             SettingsPath = Path.Combine(Path.GetDirectoryName(ai)!, "settings.json"),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
-                new FileSecretVault(Path.Combine(ai, "secrets.json"))), ai),
+                new FileSecretVault(Path.Combine(ai, "secrets.json"))), ai, Web: new Lunet.Ai.LunetAiWebSession()),
         };
         Content = Shell;
         Background = Shell.Background;

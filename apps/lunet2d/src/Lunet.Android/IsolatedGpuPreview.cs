@@ -37,6 +37,7 @@ internal sealed class IsolatedGpuPreview : IGpuGamePreview
 
     public Control View { get; }
     public string Backend => "GPU · processo separado";
+    public long FramesRendered => 0; // drawn in the other process: not counted here
     // The isolated Preview has its own controls (pause, step, restart, Inspector, profiler): nothing to drive from here.
     public void SetPaused(bool paused) { }
     public void Step() { }

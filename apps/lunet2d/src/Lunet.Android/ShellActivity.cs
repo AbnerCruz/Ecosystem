@@ -103,12 +103,15 @@ public sealed class ShellActivity : AvaloniaActivity
                 key => ReleaseProjectFolder(key),
                 () => Window?.DecorView?.Post(ReopenOverNewRoot)),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
-                new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai),
+                new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai,
+                Knowledge: () => AndroidAiKnowledge.Load(Assets!), Web: new Lunet.Ai.LunetAiWebSession(),
+                KeepAlive: HoldForAi),
         };
         // §8 of the visual language: the system's "remove animations" turns the entries into an instant appearance.
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
         catch (Java.Lang.Exception) { }
-        Content = _shell;
+        _textScale = new Lunet.Client.TextScaleHost(_shell) { Requested = Resources?.Configuration?.FontScale ?? 1f };
+        Content = _textScale;
         // M5: the game runs on the GPU inside the Jogo tab (the GLES Preview, hosted by the shell).
         // With Ajustes → Preview isolado, it runs in the separate-process Preview instead (the IDE survives a crash).
         _shell.Game.GpuFactory = (compiled, project, fault) => _shell.Settings.IsolatedPreview
@@ -306,6 +309,24 @@ public sealed class ShellActivity : AvaloniaActivity
         StartActivity(MainActivity.RouteIntent(this, route, project));
     }
 
+    private Lunet.Client.TextScaleHost? _textScale;
+    private bool _askedNotifications;
+
+    /// <summary>
+    /// An AI run keeps the process in the foreground with a notification (H4/M7). Android 13+ asks once for the
+    /// permission to show it; refused, the run still works while the app is open.
+    /// </summary>
+    private IDisposable? HoldForAi(string game)
+    {
+        if (OperatingSystem.IsAndroidVersionAtLeast(33) && !_askedNotifications &&
+            CheckSelfPermission(global::Android.Manifest.Permission.PostNotifications) != global::Android.Content.PM.Permission.Granted)
+        {
+            _askedNotifications = true;
+            RequestPermissions([global::Android.Manifest.Permission.PostNotifications], 4140);
+        }
+        return LunetAiForegroundService.Hold(this, game, () => !_paused);
+    }
+
     protected override void OnResume()
     {
         base.OnResume();
@@ -351,6 +372,7 @@ public sealed class ShellActivity : AvaloniaActivity
     public override void OnConfigurationChanged(global::Android.Content.Res.Configuration newConfig)
     {
         base.OnConfigurationChanged(newConfig);
+        if (_textScale is not null) _textScale.Requested = newConfig.FontScale; // UX12: the system font size
         ApplyDevice(newConfig);
     }
 

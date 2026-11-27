@@ -183,9 +183,41 @@ public sealed class SupportPanelView : UserControl
                 _shell.State.SelectTab(WorkspaceTab.Code);
                 _shell.WorkspaceView.Code.JumpTo(null, diagnostic.Line, diagnostic.Column);
             };
-            list.Children.Add(row);
+            if (DocsTarget(d.Message) is not { } target) { list.Children.Add(row); continue; }
+            var docs = LunetUi.IconButton(LunetIcons.Book, "Documentação de " + target["search:".Length..], () => OpenDocs(target));
+            docs.Name = "ProblemDocs";
+            var line = new DockPanel();
+            DockPanel.SetDock(docs, Dock.Right);
+            line.Children.Add(docs);
+            line.Children.Add(row);
+            list.Children.Add(line);
         }
         return new ScrollViewer { Content = list };
+    }
+
+    /// <summary>
+    /// UX09: the documentation search for a diagnostic — the first name the compiler quotes ('Velocidade',
+    /// 'SpriteBatch.Desenhar' → Desenhar). Null when the message names nothing searchable.
+    /// </summary>
+    public static string? DocsTarget(string message)
+    {
+        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(message, "['‘’\"]([^'‘’\"]{1,80})['‘’\"]"))
+        {
+            var name = m.Groups[1].Value.Trim();
+            var generic = name.IndexOf('<');
+            if (generic > 0) name = name[..generic];
+            name = name.Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "";
+            if (name.Length > 0 && (char.IsLetter(name[0]) || name[0] == '_') && name.All(c => char.IsLetterOrDigit(c) || c == '_'))
+                return "search:" + name;
+        }
+        return null;
+    }
+
+    /// <summary>Opens the Documentation panel on <paramref name="target"/>, next to the code.</summary>
+    public void OpenDocs(string target)
+    {
+        _shell.State.ShowPanel(SupportPanel.Docs);
+        Docs.Navigate(target);
     }
 
     private Control Problems()

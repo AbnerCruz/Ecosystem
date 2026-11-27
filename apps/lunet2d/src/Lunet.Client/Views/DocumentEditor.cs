@@ -527,6 +527,57 @@ public sealed class DocumentEditor : UserControl
         };
     }
 
+    /// <summary>Files in Notes/ that are not notes or mind maps (images, PDFs… imported).</summary>
+    public IReadOnlyList<string> NoteAttachments() => _shell.Workspace.Files()
+        .Where(f => f.StartsWith(Lunet.Core.ProjectNotes.Folder + "/", StringComparison.Ordinal)
+            && !f.EndsWith(".md", StringComparison.OrdinalIgnoreCase)
+            && !f.EndsWith(Lunet.Core.ProjectMindMap.Extension, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase).ToArray();
+
+    /// <summary>
+    /// Copies a file into Notes/ (never over another; atomic write; at most 64 MB, like the previous screen) and
+    /// returns its project path. Notes/ travels with the game (ZIP, Git) and the AI can read it.
+    /// </summary>
+    public string ImportNote(string fileName, byte[] bytes)
+    {
+        if (bytes.LongLength > Lunet.Core.ProjectNotes.MaxImportBytes) throw new IOException("arquivo maior que 64 MB");
+        var project = _shell.Workspace.Project ?? throw new InvalidOperationException("Nenhum jogo aberto.");
+        var path = Lunet.Core.ProjectNotes.ImportPath(project, fileName);
+        using (var source = new MemoryStream(bytes, writable: false))
+            project.Import(Lunet.Core.ProjectNotes.Folder, Path.GetFileName(path), source); // atomic: temporary file, then move
+        Rebuild();
+        return path;
+    }
+
+    private void AttachToAi(string path)
+    {
+        _shell.State.ShowPanel(SupportPanel.Ai);
+        _shell.WorkspaceView.Support.Ai.Attach(path);
+    }
+
+    private async Task PickAndImportNotes()
+    {
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { CanOpen: true } storage) return;
+        var picked = await storage.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions { Title = "Importar para Notas", AllowMultiple = true });
+        var done = 0;
+        foreach (var file in picked)
+        {
+            try
+            {
+                await using var stream = await file.OpenReadAsync();
+                using var buffer = new MemoryStream();
+                await stream.CopyToAsync(buffer);
+                ImportNote(file.Name, buffer.ToArray());
+                done++;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or Lunet.Core.ProjectException)
+            {
+                _shell.Report($"Não foi possível importar {file.Name}: {e.Message}");
+            }
+        }
+        if (done > 0) _shell.Report(done == 1 ? "Importado em Notas." : $"{done} arquivos importados em Notas.");
+    }
+
     private void NewNote()
     {
         var existing = _shell.Workspace.Files().ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -576,7 +627,18 @@ public sealed class DocumentEditor : UserControl
                 b.Name = "OpenMindMap-" + map;
                 entries.Add(b);
             }
+            // Images and files imported into Notes/: a tap attaches them to the AI's next message.
+            foreach (var file in NoteAttachments())
+            {
+                var path = file;
+                var b = LunetUi.Button(Path.GetFileName(file), ButtonKind.Ghost, LunetIcons.Paperclip, () => AttachToAi(path));
+                AutomationProperties.SetName(b, "Anexar " + Path.GetFileName(file) + " à IA");
+                entries.Add(b);
+            }
             entries.Add(LunetUi.Button("Nova nota", ButtonKind.Ghost, LunetIcons.Plus, NewNote));
+            var import = LunetUi.Button("Importar", ButtonKind.Ghost, LunetIcons.Download, () => _ = PickAndImportNotes());
+            import.Name = "ImportNotes";
+            entries.Add(import);
             var newMap = LunetUi.Button("Novo mapa mental", ButtonKind.Ghost, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap());
             newMap.Name = "NewMindMap";
             entries.Add(newMap);
@@ -593,10 +655,13 @@ public sealed class DocumentEditor : UserControl
         _side.Content = null; _chrome.Children.Clear();
         if (OpenPath is null && _tab == WorkspaceTab.Notes)
         {
-            var start = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs };
+            var start = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Center };
             start.Children.Add(LunetUi.Button("Nova nota", ButtonKind.Primary, LunetIcons.Plus, NewNote));
             start.Children.Add(LunetUi.Button("Novo mapa mental", ButtonKind.Secondary, LunetIcons.Map, () => _shell.WorkspaceView.NewMindMap()));
-            _empty.Content = LunetUi.EmptyState(LunetIcons.Notes, "Nenhuma nota neste jogo",
+            start.Children.Add(LunetUi.Button("Importar", ButtonKind.Secondary, LunetIcons.Download, () => _ = PickAndImportNotes()));
+            var imported = entries.Where(e => e is Button b && AutomationProperties.GetName(b)?.StartsWith("Anexar ", StringComparison.Ordinal) == true).ToList();
+            foreach (var e in imported) { entries.Remove(e); start.Children.Add(e); }
+            _empty.Content = LunetUi.EmptyState(LunetIcons.Notes, imported.Count == 0 ? "Nenhuma nota neste jogo" : "Arquivos nas Notas deste jogo",
                 "Ideias, regras e roteiro ficam em Notes/ dentro do jogo, em Markdown ou como mapa mental, no seu disco.", start);
             _empty.IsVisible = true;
             _surface.View.IsVisible = false;

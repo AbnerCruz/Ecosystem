@@ -163,7 +163,7 @@ public sealed class SettingsView : UserControl
 
     private void Toggle(string title, string detail, bool value, Action<bool> set, string name)
     {
-        var toggle = new ToggleSwitch { IsChecked = value, OnContent = null, OffContent = null, Name = name, VerticalAlignment = VerticalAlignment.Center };
+        var toggle = new ToggleSwitch { MinHeight = LunetTokens.MinTouch, IsChecked = value, OnContent = null, OffContent = null, Name = name, VerticalAlignment = VerticalAlignment.Center };
         AutomationProperties.SetName(toggle, title);
         toggle.IsCheckedChanged += (_, _) => set(toggle.IsChecked == true);
         var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };

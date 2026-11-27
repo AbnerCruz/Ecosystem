@@ -406,6 +406,16 @@ public sealed class MusicStudioView : UserControl
         if (!_saving) Say("");
     }
 
+    /// <summary>
+    /// UX07: left by any route (another destination, Home, the app going away), a preview still rendering stops and
+    /// plays nothing over the next screen. Unsaved edits are kept by the shell's save path, not here.
+    /// </summary>
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        if (!_saving) StopPreview();
+    }
+
     public bool Close()
     {
         _ = CloseAsync();

@@ -17,6 +17,12 @@ public static class ShellScreens
 {
     public static readonly (string Name, int Width, int Height)[] Sizes = [("celular", 412, 915), ("largo", 1280, 800)];
 
+    /// <summary>
+    /// The extra sizes of anexo A UX11 (compact 320/360 dp and landscape), with LUNET_SCREENS_ALL=1. Off by default so
+    /// the CI captures stay as fast as before.
+    /// </summary>
+    public static readonly (string Name, int Width, int Height)[] ExtraSizes = [("compacto320", 320, 640), ("compacto360", 360, 800), ("paisagem", 915, 412)];
+
     public static int Run(string output)
     {
         // Captures show the settled screen, not a frame of an entry (the same switch as "reduzir movimento").
@@ -24,7 +30,8 @@ public static class ShellScreens
         AppBuilder.Configure<ScreensApp>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         Directory.CreateDirectory(output);
         var written = new List<string>();
-        foreach (var (size, w, h) in Sizes)
+        var sizes = Environment.GetEnvironmentVariable("LUNET_SCREENS_ALL") == "1" ? Sizes.Concat(ExtraSizes) : Sizes;
+        foreach (var (size, w, h) in sizes)
         {
             var root = Path.Combine(Path.GetTempPath(), "lunet-screens-" + Guid.NewGuid().ToString("N"));
             try
@@ -32,8 +39,9 @@ public static class ShellScreens
                 var window = new MainWindow(root, Path.Combine(root, ".data")) { Width = w, Height = h }; // never the user's AppData
                 window.Show();
                 var shell = window.Shell;
-                shell.HardwareKeyboard = size != "celular"; // the phone captures show the code bar
-                if (size == "celular") shell.OpenRoute = (_, _) => { }; // show the Android Home destinations
+                var phone = w < 840 && h > w || w < 600; // phones, compact and phone landscape
+                shell.HardwareKeyboard = !phone; // the phone captures show the code bar
+                if (phone) shell.OpenRoute = (_, _) => { }; // show the Android Home destinations
                 Shot(window, output, size, "1-home-vazia", written);
                 shell.CreateProject();
                 shell.GoHome();
@@ -43,6 +51,15 @@ public static class ShellScreens
                 shell.Home.TogglePin("Plataforma");
                 shell.GoHome();
                 Shot(window, output, size, "2-home-varios", written);
+                if (phone && h > w)
+                {
+                    // UX12: Android's largest font size zooms the shell up to its narrowest tested width.
+                    window.Content = null;
+                    var big = new TextScaleHost(shell) { Requested = 2.0 };
+                    window.Content = big;
+                    Shot(window, output, size, "2-home-fonte-grande", written);
+                    window.Content = null; big.Child = null; window.Content = shell;
+                }
                 shell.Home.Query = "nave";
                 Shot(window, output, size, "2-home-busca", written);
                 shell.Home.Query = "";

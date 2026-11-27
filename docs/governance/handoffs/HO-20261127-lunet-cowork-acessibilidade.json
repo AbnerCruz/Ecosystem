@@ -1,0 +1,71 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261127-lunet-cowork-acessibilidade",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-27T00:28:30Z",
+  "agent": { "id": "claude-code-lunet-avalonia", "kind": "ai-agent" },
+  "task_id": "LUNET-536",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-0dc592a4-9d3w98",
+  "base_commit": "3da594e",
+  "commit": "7328303",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1056",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/GlobalAiView.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/AvaloniaAiImages.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/TextScaleHost.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/MusicStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidAiKnowledge.cs",
+    "apps/lunet2d/src/Lunet.Android/LunetAiForegroundService.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/Properties/AndroidManifest.xml",
+    "apps/lunet2d/tests/Lunet.Tests/AiCoworkShellTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ModelCatalogViewTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AccessibilityAuditTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/BackSequenceTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProblemDocsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/MethodsJourneyTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/MusicLeaveTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/StudioLeaveSavesTests.cs",
+    "apps/lunet2d/docs/audits/conclusao-integral-2026-11-26.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "docs/governance/handoffs/HO-20261127-lunet-cowork-acessibilidade.json"
+  ],
+  "work_completed": [
+    "H4/M7: the shell's game AI passes attachments (from Notes), image perception (Avalonia decoder, every head), the APK docs (indexed on first use) and web research (respecting the setting, now with a switch); provider model catalog with filter, pages, cache and manual id; Android foreground service with notification keeps a run alive in background.",
+    "UX12: accessibility audit over 11 destinations (screen-reader names, touch targets; switches 32→48 px); Android font size zooms the shell up to its narrowest tested width (320).",
+    "UX14: Back and Esc walk every destination one level at a time. UX09: each live problem opens the Documentation of the name it quotes. UX03: Métodos → signature → run as one journey.",
+    "Fixed E-11 (Esc/shortcuts without focus), E-12 (music preview played after leaving), E-13 (data loss: switching destination with a Studio open discarded unsaved work)."
+  ],
+  "verification": [
+    { "check": "Full Lunet test suite (1370 passed before the last 13 tests; those ran separately)", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/tests/Lunet.Tests" },
+    { "check": "Lunet.Android build", "kind": "automated", "result": "passed", "evidence": "apps/lunet2d/src/Lunet.Android" },
+    { "check": "Consistency checks (22)", "kind": "automated", "result": "passed", "evidence": "tests/consistency/Check.cs" }
+  ],
+  "known_issues": [
+    "Not tested on a phone: notification and Android 13 permission, AI in background, TalkBack and font size zoom (including the GLES preview under the zoom), Back gesture, GL surface inside the shell.",
+    "Typing latency measured only in the headless runner (p50 ~20 ms, size-independent)."
+  ],
+  "blockers": [],
+  "next_actions": ["Integrate PR #1056 and release 0.0.1-dev.1000611 with APK; continue UX07/UX08 device items, H8 migration and the H9 final report."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/lunet2d/AGENTS.md", "docs/design/linguagem-visual.md"],
+  "invariants": [
+    { "id": "NN-017", "evidence": "Headless tests and emulator CI only; every device-dependent item listed in known_issues." },
+    { "id": "NN-001", "evidence": "AI settings stay in LunetAiSettingsStore; attachments are project paths, no new store." }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-shell-ai-cowork",
+      "status": "product-specific",
+      "rationale": "Attachments, image perception, model catalog view and the background hold live in the Lunet shell over Lunet.Ai; no second consumer (ADR-0033 keeps extraction behind a review)."
+    }
+  ],
+  "criticality": { "declared": "routine" }
+}

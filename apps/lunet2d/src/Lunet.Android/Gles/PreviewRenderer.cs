@@ -50,6 +50,10 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
 
     /// <summary>Janela de medições opcional, lida pela UI sem tocar no estado do Game.</summary>
     public PreviewFrameSnapshot Performance => _performance.Snapshot();
+
+    private long _framesDrawn;
+    /// <summary>Frames the game drew on the GL thread so far (read from the UI thread: the shell's status and the CI journey).</summary>
+    public long FramesDrawn => Interlocked.Read(ref _framesDrawn);
     public long? MusicUnderruns => (_audio as AndroidAudioBackend)?.MusicUnderruns;
     public bool ProfilerIsPaused => _paused || _appPaused;
     // Leituras atômicas da GL thread; não usar para inferir VRAM total.
@@ -213,6 +217,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             lock (_inputLock) _touches.AcknowledgeFrame();
         }
+        Interlocked.Increment(ref _framesDrawn);
         if (profile)
         {
             _backend.EndProfileFrame();

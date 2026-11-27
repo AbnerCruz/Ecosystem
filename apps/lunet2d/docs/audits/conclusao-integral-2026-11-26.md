@@ -32,6 +32,15 @@
 | E-07 | `--screens`, o gerador de capturas, gravava progresso, Biblioteca, rascunhos dos Studios e ajustes no AppData **real** de quem o rodava. A contagem de "Minhas criações" subia a cada execução: 29, 31, 33. | A `MainWindow` sempre apontava para `AppData/Lunet`, e o gerador de capturas a reaproveitava | `MainWindow(projectsRoot, dataRoot)`: o gerador de capturas passa uma pasta temporária, e o app normal continua no AppData | Capturas `2l-studios` antes (33 itens) e depois (só os 2 do cenário) |
 | E-08 | Em Jogar, no celular, aparecia uma capa por linha, embora o código previsse duas | A conta da largura descontava a margem de uma capa só, e a segunda quebrava a linha | A largura passa a considerar a margem das duas capas | Captura `2j-jogar` antes e depois |
 
+| E-09 | O job `apk` do CI (jornada da casca no emulador Android 13) reprovou: "estado=Running quadros=0 → Nenhum quadro renderizado". O #1054 foi integrado mesmo assim. | Com a M5, o jogo roda no renderer GLES, mas `GameSession.FramesRendered` só contava quadros da CPU e ficava em 0 | O `PreviewRenderer` conta os quadros desenhados na thread GL (`Interlocked`), e a `GameSession` lê essa contagem quando o jogo está na GPU. O log do emulador também mostra "Failed to find ColorBuffer". Se a contagem continuar em 0, o problema é de renderização GLES dentro do `NativeControlHost` e será tratado a seguir. | Log do job `140048563727`; `GpuPreviewTests` lê a contagem da GPU; o CI do PR seguinte vai confirmar |
+
+- **E-11:** Esc não fechava Jogar (nem as outras folhas) quando nada estava focado, e os atalhos F5, Ctrl+S e F1 também falhavam nesse caso. A causa: o atalho ficava na casca, e a tecla, sem foco, chega só à janela. Agora o atalho fica na janela. Achado pelo `BackSequenceTests`.
+
+- **E-12:** ao sair do estúdio de música por outro destino com a prévia ainda renderizando, o som tocava por cima da tela seguinte. Agora a prévia para quando o estúdio sai da tela. Achado pelo `MusicLeaveTests`.
+- **E-13 (perda de dados):** com um Studio aberto na página Studios, tocar em Jogar, Aprender ou Início na barra global descartava o desenho ou a música ainda não salvos. Voltar salvava; a barra não. Agora a troca de destino fecha o Studio pelo mesmo caminho do Voltar, que salva. Achado e provado pelo `StudioLeaveSavesTests`: música e sprite, por Jogar e por Início.
+
+- **E-14 (dados na atualização):** a casca lia só os fixados por GameId. Quem atualiza de uma versão cuja Home salvava fixados e o último jogo por nome (preferências v1) os perdia na Home nova. A conversão para GameId (`UpgradeProjectReferences`) existia, mas só a tela anterior a chamava. Agora a casca a executa na primeira leitura; nomes sem jogo correspondente são mantidos. Achado e provado pelo `UpgradeDataTests`.
+
 ## Entregas (código na branch e depois na `main`; nada conferido num celular)
 
 | Frente | O que mudou | Prova |
@@ -54,6 +63,48 @@
 | UX §6.3 — decisão do teclado | **Divergência resolvida com a fonte.** O pedido original (PR #1040, 25/11) era um teclado próprio da IDE. Depois, o proprietário escreveu na sessão de 25/11: "A digitação do editor, ms extremamente alto, não da pra digitar, vamos abortar a ideia de ter um teclado nativo mas não abortar a ideia de ter varias abas". O PR #1047 aplicou isso: o teclado do sistema digita, e uma barra única tem as abas Teclas, Atalhos e Métodos. **Decisão vigente:** IME do sistema mais a barra de três abas. Nenhum caminho com dois teclados. A ponte de teclado e o Enter foram corrigidos no #1051. | Ordem citada; `CodeBar` e `EditorKeyboardTests` |
 | UX §6.6 | O painel da IA do jogo usava uma cópia do formulário de configuração. Agora reaproveita o formulário único (`AiSettingsView`). | Teste `AiPanel_IsConfiguredOnceForTheWholeApp` atualizado |
 
+| H4 — co-work | O painel de IA da casca não passava anexos, percepção de imagem, documentação nem pesquisa web, que a tela anterior do Android passava. Agora passa os quatro. Há catálogo de modelos com filtro, páginas e cache, e o id manual continua. A execução segura o processo com serviço em primeiro plano e notificação. | `AiCoworkShellTests` (3), `ModelCatalogViewTests` (2); build Android verde. Não foi testado no aparelho nenhum destes: notificação, permissão do Android 13, IA em segundo plano. |
+
+## H5 — Matriz dos Studios (§6.5): criar → salvar → reabrir → publicar → usar no jogo
+
+As provas são testes headless que já existiam (exceto onde marcado) e foram conferidos na suíte de 27/11 (1.348 testes verdes). "—" significa sem teste dedicado. Nada foi conferido num celular.
+
+| Tipo | Criar / editar / salvar | Reabrir | Publicar na Biblioteca | Usar em outro jogo |
+|---|---|---|---|---|
+| Sprite | `SpriteStudio_DrawsFillsUndoesAnimatesAndSavesSourceAndSheetTogether`, `SpriteStudio_SelectsMovesFlipsDuplicatesAndErasesPixels` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | `PublishAndImport_CopyBothEditableSourceAndDerivedSpriteWithoutSharedDependency` | o mesmo teste e `Game_LoadsSpriteStudioExportFromProjectAssetsThroughHost` (o runtime carrega o PNG) |
+| Mapa (Tile) | `TileStudio_CreatesAMapPaintsLayersUndoesAndSaves_AndEditsItsTileset`, `TileStudio_PaintsTerrainWithAutotileAndManagesLayers` | `Painting_FixesNeighbours_AndErasingReopensEdges` | `StudioPublishesAndForksAllFamiliesWithoutAnotherProjectAsSource` | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
+| Música | `MusicStudio_StartsWithASong_TogglesNotesPlaysAndSaves`, `MusicStudio_SetsNoteLengthInstrumentMixerAndArrangement` | `MusicStudio_InvalidDraftRemainsIntactAndCanBeClosed` (fonte inválida preservada, #1053) | `PublishingRenderedOutputUsesExactSourceAndDoesNotRewriteTheDraft` (sem WAV atrasado) | `StudioPublishesAndForksAllFamilies…` |
+| Efeito (Sound) | `SoundStudio_GeneratesVariesPlaysAndSavesSourceAndWavTogether` | `SoundEffectReopenTests` (novo: reabre idêntico, mesmo WAV) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
+| Tom (WAV) | `CreateEditAssetsPreviewExportAndReopen` e os testes de WAV do #1053 | os testes de reabrir WAV sem jogo, do #1053 | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
+| Partículas | `ParticleStudio_RunsTheRealEmitter_BurstsAndSavesTheEffect` | `ParticleStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `Content_LoadsAStudioEffectAsAReadyEmitter` (o runtime usa o efeito) |
+| Paleta | `Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio` | `ProjectPaletteTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` (importa em dois jogos) |
+| Dados (Tabela) | `DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether` | `DataStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` (importa em dois jogos, com a tabela referenciada) |
+| Sem jogo (rascunho global) | `Studios_WithoutAGame_CreateEditSaveInTheStudioFolder_AndPublish` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | idem | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
+| Segurança da Biblioteca | `UnsafePaths_AreRejectedWithoutPublishingProject`, `PublishRevision_RejectsSymlinkedAssetDirectory…`, `ExistingDestinationFiles_AreNotOverwrittenByStudioLibraryImport`, `InterruptedBundleRestoresPreviousBytesWhenReopened`, `InvalidPersistedMetadata_CannotCrashLibraryOrModifyTarget` | | | |
+
+**Matriz completa em teste automatizado.** Todas as etapas têm prova para todos os tipos: `StudioPublishesAndForksAllFamilies…` publica cada família e a importa em dois jogos (Paleta e Dados inclusive). Só falta a conferência num celular.
+
+## H9 — Jornadas UX01–UX14 (anexo A §8.1): estado em 27/11
+
+As provas são testes headless da casca real e as capturas de `--screens`, em 412×915 e 1280×800. Nenhuma jornada foi conferida num celular.
+
+| ID | Estado | Prova | O que falta |
+|---|---|---|---|
+| UX01 | Headless ok | `GlobalNavigationTests`, `LunetClientTests` (criar jogo vazio), captura `1-home-vazia` | Instalação limpa no aparelho |
+| UX02 | Headless ok | `HomeOrderTests` (busca, Continuar, Fixados), `EditorSession_ReopensTheGameOnTheFileAndCaretYouLeft` | Aparelho |
+| UX03 | Feito, exceto aparelho | `EditorKeyboardTests` (IME, Enter, desfazer); `MethodsJourneyTests`, numa jornada só: Métodos insere `Color.Red` com o tipo, volta para Teclas e entra em Recentes; a assinatura aparece ao digitar a chamada; o jogo compila e roda com o código inserido | Conferir no aparelho, com o teclado do sistema |
+| UX04 | Headless ok | `AiStreamingRenderTests`: fechar e reabrir sem cancelar, sem reconstruir a conversa a cada pedaço de texto, sem cruzar jogos | Aparência compacta e expandida no aparelho |
+| UX05 | Headless ok | `ObjectivesTests`, `LunetClientLearnTests` (missão → Objetivos → Referência) | Aparelho |
+| UX06 | Headless ok | `Studios_WithoutAGame_…`, `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects`, matriz H5 | Aparelho |
+| UX07 | Parcial | Testes de música e WAV do #1053 (render fora da thread de UI, fonte inválida preservada); `MusicLeaveTests` (sair durante o render não toca nada depois, E-12); `StudioLeaveSavesTests` (trocar de destino salva, E-13) | Reproduzir no aparelho |
+| UX08 | Parcial | `GpuPreviewTests` (falha de compilação não abre a GPU), `PlayView` com o caminho único `LunetShell.Play` | Partida em tela cheia no aparelho; volta à grade |
+| UX09 | Feito, exceto aparelho | `GlobalNavigationTests` (Documentação global), Referência exata nos Objetivos; `ProblemDocsTests`: cada problema ao vivo tem um botão de Documentação, que abre a busca do nome citado pelo compilador sem sair do jogo, e Voltar retorna ao código | Conferir no aparelho |
+| UX10 | Headless ok | `ProjectFolderTests` (conectar, gravar, recusar revisão alheia, restaurar, alternar) | Acesso revogado e cancelamento no seletor do aparelho |
+| UX11 | **Não feito** | Só há capturas em 412×915 e 1280×800 | 320 e 360 dp, paisagem e passagem por ≥ 840 dp em todas as telas |
+| UX12 | Feito, exceto aparelho | `AccessibilityAuditTests` em 11 destinos: todo controle tem nome para o leitor de tela e alvo mínimo de toque (interruptores subiram de 32 para 48 px). A fonte do sistema amplia a casca até a largura lógica de 320; testado com a fonte máxima. Captura `celular-2-home-fonte-grande` | Conferir no aparelho: TalkBack e Tamanho da fonte do Android |
+| UX13 | Parcial | Streaming da IA sem reconstruir a conversa; `TypingLatencyTests` executado em 27/11 (ver §Latência) | Muitos projetos e recursos; medir no aparelho |
+| UX14 | Feito, exceto aparelho | `BackSequenceTests`: Voltar e Esc fecham, nível por nível, as 11 folhas da Home (a IA vai de Ajustes para a conversa e depois fecha). No jogo, Voltar vai de painel para código e de código para Início; no Início, sai do app | Gesto de Voltar do Android no aparelho |
+
 ## Pendências conhecidas
 
 - **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)
@@ -63,3 +114,75 @@
 
 - **Anexo B, parte A:** falta conferir no Preview do Android e no APK exportado, com trimming, que o `System.Drawing.Primitives` carrega no aparelho. Isso depende do CI de APK e do celular.
 - **#1038:** precisa ser fechado administrativamente, com prova de que as releases posteriores já contêm o E1–E3. Fechar PR de outro agente fica a cargo do proprietário ou do integrador.
+
+
+## Latência de digitação (27/11/2026, runner Linux headless, não aparelho)
+
+`TypingLatencyTests`: 189 teclas pelo caminho do teclado Android simulado (`AndroidImeSimulator`), com o documento renderizado a cada tecla.
+
+| Cenário | p50 | p95 | máx |
+|---|---|---|---|
+| Arquivo de 3.000 linhas (~150 KB), 3 execuções | 19,1–20,5 ms | 28,4–33,4 ms | 31–42 ms |
+| Arquivo de 30 linhas | 20,0 ms | 25,9 ms | 43,7 ms |
+| Referência: `TextBox` vazio do Avalonia, mesmo runner | 10,9 ms | 14,1 ms | — |
+
+Leitura dos números:
+- A latência não cresce com o tamanho do arquivo: nenhuma tecla lê o documento inteiro, e o teclado recebe só uma janela de texto.
+- Cerca de 11 ms por tecla é custo do próprio runner, que renderiza um quadro a cada tecla. O editor (AvaloniaEdit mais o cliente de IME) acrescenta cerca de 9 ms.
+- **E-10:** a primeira execução falhou na compilação, não no teste; a segunda passou.
+- Não há número do Moto G32, e nenhum é alegado. A medição no aparelho continua pendente.
+
+## Matriz G01–G16 (Parte II do GOAL): estado em 27/11/2026
+
+Legenda:
+- **Automatizado:** teste no runner ou CI, sem aparelho.
+- **Pendente:** ainda não executado.
+- **Aparelho:** depende de celular, e nenhum foi usado.
+
+| ID | Cenário | Estado | Evidência | Falta |
+|---|---|---|---|---|
+| G01 | Assumir o trabalho anterior e reconciliar com a `main` | Feito | §H0 deste relatório; #1054 integrado (3da594e); #1056 sobre a `main` | — |
+| G02 | Música inválida, recuperar, tocar e trocar de tela durante a exportação | Automatizado | Testes do #1053 (fonte inválida preservada, render fora da UI); `MusicLeaveTests` (E-12); `StudioLeaveSavesTests` (E-13) | Aparelho: ANR e áudio real |
+| G03 | WAV independente, editar, reabrir, publicar e copiar para o jogo | Automatizado | Matriz H5 (Studios) | Aparelho |
+| G04 | Digitação, IME PT-BR, Métodos, assinatura, desfazer e rotação | Automatizado | `EditorKeyboardTests`, `AndroidImeSimulator`, `MethodsJourneyTests`, `TypingLatencyTests` (p50 ≈ 20 ms no runner, sem rebuild por tecla) | Aparelho: IME real, rotação, latência no Moto G32 |
+| G05 | Código, Preview GLES, pausar, passo, Inspector e retorno | Automatizado/CI | `GpuPreviewTests`; jornada `apk` do CI no emulador com quadros reais (E-09) | Aparelho: toque, rotação, minimizar |
+| G06 | IA Estudo e Fazer, revisão, arquivo alterado durante a execução, desfazer | Automatizado | `AiStreamingRenderTests` (não recarrega outro jogo com texto não salvo, E-05) e `AiCoworkShellTests` | Aparelho com provedor real |
+| G07 | IA, minimizar, trocar de jogo, notificação e cancelar | Automatizado (parcial) | A execução mantém o jogo (E-05); hold liberado mesmo com falha (`AiCoworkShellTests`); serviço em primeiro plano compila | Aparelho: notificação, permissão, morte do processo |
+| G08 | Sprite com camadas e animações, Tile, áudio, publicar e usar no jogo | Automatizado | Matriz H5 completa em testes | Aparelho |
+| G09 | Aprender T01, objetivo, pista, Docs, Preview e reabrir | Automatizado | `ObjectivesTests`, `LunetClientLearnTests`, `ProblemDocsTests` | Aparelho |
+| G10 | ZIP, importar, exportar por SAF, cancelar, revogar e recuperar | Automatizado (ZIP) | 44 testes rodados em 27/11. `ProjectZipImportTests` e `ProjectFolderSnapshotTests` (30) cobrem limite de entradas, caminho fora da pasta, duplicados, 512 MiB, ZIP corrompido e stream não posicionável. `ProjectManageTests`, `ProjectJourneyTests` e `ProjectFolderTests` (14) cobrem exportar, importar como jogo novo e salvar o aberto antes | Aparelho: SAF real, cancelar o seletor, revogar a permissão |
+| G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7) | Scene2D no modo ordenado |
+| G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
+| G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
+| G14 | Atualizar o Lunet existente e conferir dados | Automatizado (parcial) | `UpgradeDataTests`: preferências v1 (fixados e último jogo por nome) chegam à Home nova (E-14 corrigido). Arquivos de IA, Notas e progresso mantêm os mesmos caminhos | Aparelho: instalar por cima da versão anterior |
+| G15 | Matriz de migração e todas as rotas | Feito, exceto aparelho | Revisão rota a rota em §H8 abaixo: duas rotas ficam na tela anterior, com motivo; a lacuna de Notas encontrada foi portada (`NotesImportTests`) | Aparelho |
+| G16 | PR integrado, release oficial, APK e SHA | Em andamento | #1056 no CI; a release 1000611 sai após a integração | Confirmar o APK e o SHA da release |
+
+**Conclusão honesta:**
+- **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.
+- **Pendentes, sem prova automatizada:** G14 (atualização sobre uma instalação existente, só no aparelho). G13 tem prova da geração do APK, mas não da instalação.
+
+
+## H8: rotas da tela anterior × casca (27/11/2026)
+
+A tela anterior do Android (`MainActivity.Route`) atende 15 rotas. A casca chama só duas delas: `explore` e `play-game`.
+
+| Rota | Na casca | Observação |
+|---|---|---|
+| studios | `StudiosView` | Sem jogo e dentro do jogo |
+| learn | `LearnView` | |
+| play | `PlayView` | |
+| play-game | Tela anterior | Partida em tela cheia na Activity de jogo. A casca chama `PlayGame`; o caminho é único (`LunetShell.Play`) |
+| library | `LibraryView` | |
+| settings | `SettingsView` | |
+| project-folder | `ProjectFolderView` | SAF no Android |
+| ai-settings | `AiSettingsView` | Agora com catálogo de modelos e pesquisa web |
+| ai | `AiPanelView` / `GlobalAiView` | Agora com anexos, imagens, documentação, web e segundo plano |
+| git | `GitView` | |
+| assets | `ResourcesPage` | Inclui importar |
+| notes | Aba Notas (`DocumentEditor`) | **Lacuna encontrada e portada:** a casca não importava imagens nem arquivos para `Notes/`. Agora importa (64 MB, escrita atômica, sem sobrescrever), lista os arquivos e, com um toque, anexa à IA |
+| apk | `ApkView` | |
+| explore | Tela anterior | Congelado pelo proprietário (ADD-0036 §4); acesso e dados preservados, sem ampliar |
+| editor | — | Rota vazia (volta ao editor) |
+
+**Remoção da UI anterior:** não foi feita. O GOAL só permite remover depois da paridade e do teste no aparelho e no emulador. `play-game` e `explore` ainda usam a tela anterior, e nada foi testado num celular.

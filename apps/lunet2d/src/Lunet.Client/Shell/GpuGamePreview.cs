@@ -11,6 +11,8 @@ public interface IGpuGamePreview : IDisposable
 {
     /// <summary>The native surface, already wrapped as an Avalonia control.</summary>
     Control View { get; }
+    /// <summary>Frames the game really drew on the GPU so far.</summary>
+    long FramesRendered { get; }
     /// <summary>Name shown in the status ("GPU · OpenGL ES 3").</summary>
     string Backend { get; }
     void SetPaused(bool paused);

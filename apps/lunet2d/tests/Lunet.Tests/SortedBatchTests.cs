@@ -121,3 +121,133 @@ public sealed class SortedBatchTests
         Assert.InRange(sorted.B, 62, 66);
     }
 }
+
+/// <summary>E1.6 gaps found in the 26/11 audit: ±0 ties, −∞, A/B/A texture switches with equal keys, and the new rectangle shortcut in a sorted pass.</summary>
+public sealed class SortedBatchEdgeTests
+{
+    private static float[] Xs(RecordingBackend backend) =>
+        backend.Batches.SelectMany(x => x.Vertices.Where((_, i) => i % 4 == 0)).Select(v => v.Position.X).ToArray();
+
+    [Fact]
+    public void PlusAndMinusZeroAreTheSameKey_SubmissionOrderBreaksTheTie()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(a, new Vector2(1, 0), Color.White, 0f);
+        batch.Draw(a, new Vector2(2, 0), Color.White, -0f);
+        batch.Draw(a, new Vector2(3, 0), Color.White, 0f);
+        batch.End();
+        Assert.Equal(new float[] { 1, 2, 3 }, Xs(backend));
+    }
+
+    [Fact]
+    public void NegativeInfinityIsRejected_AndThePassStaysUsable()
+    {
+        var device = new GraphicsDevice(new RecordingBackend(), 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        Assert.Throws<ArgumentOutOfRangeException>(() => batch.Draw(a, Vector2.Zero, Color.White, float.NegativeInfinity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => batch.SetOrder(float.NegativeInfinity));
+        batch.Draw(a, Vector2.Zero, Color.White, -1e30f);
+        batch.End();
+    }
+
+    [Fact]
+    public void ABA_WithEqualKeys_KeepsSubmissionOrderAcrossTextureSwitches()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        using var b = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(a, new Vector2(1, 0), Color.White, 1);
+        batch.Draw(b, new Vector2(2, 0), Color.White, 1);
+        batch.Draw(a, new Vector2(3, 0), Color.White, 1);
+        batch.End();
+        Assert.Equal(new float[] { 1, 2, 3 }, Xs(backend));                       // never regrouped by texture
+        Assert.Equal(new[] { a.Handle, b.Handle, a.Handle }, backend.Batches.Select(x => x.Texture));
+    }
+
+    [Fact]
+    public void TheRectangleShortcut_UsesTheCurrentOrderInASortedPass()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.SetOrder(10);
+        batch.Draw(new RectangleF(new Vector2(1, 0), new Vector2(1, 1)), Color.Red); // drawn later (key 10)
+        batch.SetOrder(0);
+        batch.Draw(a, new Vector2(2, 0), Color.White);                               // drawn first (key 0)
+        batch.End();
+        Assert.Equal(new float[] { 2, 1 }, Xs(backend));
+    }
+
+    [Fact]
+    public void ConsecutiveSameTexture_IsOneBatch_InSortedMode()
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 100, 100);
+        using var a = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        using var b = Texture2D.CreateSolid(device, 1, 1, Color.White);
+        var batch = new SpriteBatch(device);
+        batch.BeginSorted();
+        batch.Draw(a, new Vector2(1, 0), Color.White, 1);
+        batch.Draw(a, new Vector2(2, 0), Color.White, 2);
+        batch.Draw(b, new Vector2(3, 0), Color.White, 3);
+        batch.End();
+        Assert.Equal([2, 1], backend.Batches.Select(x => x.QuadCount));
+    }
+}
+
+/// <summary>E1.7: every SpriteBatch consumer draws the same vertices in a sorted pass with one key as in the legacy pass.</summary>
+public sealed class SortedBatchConsumerTests
+{
+    private static List<SpriteVertex[]> Draw(bool sorted)
+    {
+        var backend = new RecordingBackend(); var device = new GraphicsDevice(backend, 200, 200);
+        var tex = Texture2D.CreateSolid(device, 16, 16, Color.White);
+        var font = SpriteFont.CreateDefault(device);
+        var atlas = new TextureAtlas(tex, [new AtlasRegion("a", new RectangleF(0, 0, 8, 8))]);
+        var slice = new NineSlice(tex, new RectangleF(0, 0, 16, 16), 4, 4, 4, 4);
+        var sprite = new Sprite(tex, new RectangleF(4, 4, 8, 8));
+        var particles = new ParticleEmitter(tex, new ParticleSettings(2, 50, 50), capacity: 16, seed: 7);
+        particles.Burst(5, new Vector2(100, 100));
+        particles.Update(0.1);
+        var map = TileMap.Create("Textures/t.png", 3, 2, 8, 8).WithTile(0, new Lunet.Pathfinding.GridPoint(1, 1), 1).WithTile(0, new Lunet.Pathfinding.GridPoint(2, 0), 2);
+        var batch = new SpriteBatch(device);
+        if (sorted) batch.BeginSorted(); else batch.Begin();
+        batch.Draw(tex, new Vector2(1, 2), new RectangleF(0, 0, 4, 4), Color.White); // cropped texture
+        batch.Draw(atlas, "a", new Vector2(20, 20), Color.White);
+        batch.Draw(sprite, new Vector2(40, 40));
+        batch.DrawString(font, "Ola", new Vector2(60, 60), Color.White);
+        batch.Draw(slice, new RectangleF(80, 80, 40, 30), Color.White);
+        batch.FillRect(new RectangleF(5, 150, 30, 10), Color.Red);
+        batch.Rect(new RectangleF(50, 150, 30, 10), Color.Green, 2);
+        particles.Draw(batch);
+        map.Draw(batch, tex, new RectangleF(0, 0, 200, 200), new Vector2(120, 150), Color.White);
+        var scene = new Lunet.Scenes.Scene2D();
+        var entity = new Lunet.Scenes.Entity2D();
+        entity.Add(new Box(tex));
+        scene.Add(entity);
+        scene.Draw(batch, new GameTime(0, 1 / 60f, 1));
+        batch.End();
+        return backend.Batches.Select(b => b.Vertices).ToList();
+    }
+
+    private sealed class Box(Texture2D texture) : Lunet.Scenes.Component2D
+    {
+        public override void Draw(SpriteBatch batch, GameTime time) => batch.Draw(texture, new RectangleF(170, 10, 12, 12), Color.Blue);
+    }
+
+    [Fact]
+    public void ConsumersDrawTheSameVertices_SortedWithOneKeyAsLegacy()
+    {
+        var legacy = Draw(sorted: false).SelectMany(v => v).ToArray();
+        var sorted = Draw(sorted: true).SelectMany(v => v).ToArray();
+        Assert.NotEmpty(legacy);
+        Assert.Equal(legacy, sorted);
+    }
+}

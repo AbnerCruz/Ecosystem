@@ -35,7 +35,9 @@ public sealed class GameSession : IDisposable
     public RunningGame? Game => _game;
     /// <summary>Compile diagnostics of the last run, or the fault message; empty when everything is fine.</summary>
     public IReadOnlyList<string> Problems { get; private set; } = [];
-    public long FramesRendered { get; private set; }
+    /// <summary>Frames drawn by this run: the CPU host's count, or the GPU preview's own count (M5).</summary>
+    public long FramesRendered { get => _gpu?.FramesRendered ?? _cpuFrames; private set => _cpuFrames = value; }
+    private long _cpuFrames;
     /// <summary>The last frames, kept while the game runs so the Desempenho panel can open at any time (M6).</summary>
     public FrameStats Frames { get; } = new();
 
@@ -147,7 +149,6 @@ public sealed class GameSession : IDisposable
         {
             if (State == GameState.Running) { Set(GameState.Paused); _gpu.SetPaused(true); }
             _gpu.Step();
-            FramesRendered++;
             return false; // drawn by the GPU surface itself, nothing to blit
         }
         if (_game is null) return false;
