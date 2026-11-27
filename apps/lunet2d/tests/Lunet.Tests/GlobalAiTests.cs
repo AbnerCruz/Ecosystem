@@ -222,4 +222,40 @@ public sealed class AiStreamingRenderTests
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
+
+    [Fact]
+    public void ClosingThePanel_DoesNotCancelTheRun_OnlyStopDoes()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-ai-close-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var model = new Blocking();
+                var aiDir = Path.Combine(root, ".ai");
+                var shell = new LunetShell(root) { AiHost = new AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(aiDir, "s.json"), new NoVault()), aiDir, model) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                var ai = shell.WorkspaceView.Support.Ai;
+                ai.Input.Text = "explique";
+                var run = ai.SendAsync();
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.None);       // the panel closes…
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(ai.Running);                                           // …the run goes on
+                shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);         // reopening shows it
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                Assert.True(ai.Running);
+                ai.Stop();                                                         // only Stop cancels
+                var until = DateTime.UtcNow.AddSeconds(20);
+                while (!run.IsCompleted && DateTime.UtcNow < until) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(5); }
+                Assert.True(run.IsCompleted);
+                Assert.False(ai.Running);
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }
