@@ -52,12 +52,25 @@ public sealed class MethodsJourneyTests
                 Assert.Contains(bar.Catalog.Recent(), m => m.Name == "Red");         // Recentes first next time
 
                 // Typing a call shows its signature (the analysis runs off the keystroke).
-                Type(bar, surface.Caret, ";\n        Console.WriteLine(");
-                // The analysis is debounced and off the UI thread; the first one is cold (Roslyn), slower on CI runners.
-                var signatureBy = DateTime.UtcNow.AddSeconds(30);
-                while (string.IsNullOrEmpty(bar.SignatureText) && DateTime.UtcNow < signatureBy) Pump(50);
+                Type(bar, surface.Caret, ";\n        batch.Draw(");
+                // The signature comes from the analysis, which offers completions only while the keyboard (and its bar)
+                // is up; it is awaited here instead of its 350 ms debounce, so the runner's speed does not matter.
+                surface.Focus();
+                editor.ShowKeyboard();
+                Pump();
+                Assert.True(editor.KeyboardVisible, "o teclado e a barra deviam estar abertos para a assinatura");
+                // The typing timer's analysis and this one cancel each other (the newest edit wins), so wait for the
+                // signature itself, asking again whenever no analysis is pending.
+                Task? pending = null;
+                var signatureBy = DateTime.UtcNow.AddSeconds(60);
+                while (string.IsNullOrEmpty(bar.SignatureText) && DateTime.UtcNow < signatureBy)
+                {
+                    if (pending is null || pending.IsCompleted) pending = editor.AnalyzeNow();
+                    Pump(50);
+                }
                 Assert.False(string.IsNullOrEmpty(bar.SignatureText), "sem assinatura enquanto digita a chamada");
-                Type(bar, surface.Caret, "cor);");
+                Assert.Contains("Draw(", bar.SignatureText);
+                Type(bar, surface.Caret, "new RectangleF(0, 0, 8, 8), cor);");   // Anexo B: Draw(RectangleF, Color)
 
                 shell.RunGame();
                 var until = DateTime.UtcNow.AddSeconds(30);
