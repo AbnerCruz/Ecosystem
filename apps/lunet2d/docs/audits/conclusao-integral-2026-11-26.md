@@ -93,7 +93,7 @@ As provas são testes headless da casca real e as capturas de `--screens`, em 41
 | UX06 | Headless ok | `Studios_WithoutAGame_…`, `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects`, matriz H5 | Aparelho |
 | UX07 | Parcial | Testes de música e WAV do #1053 (render fora da thread de UI, fonte inválida preservada) | Trocar de tela durante o render, reproduzido no aparelho |
 | UX08 | Parcial | `GpuPreviewTests` (falha de compilação não abre a GPU), `PlayView` com o caminho único `LunetShell.Play` | Partida em tela cheia no aparelho; volta à grade |
-| UX09 | Parcial | `GlobalNavigationTests` (Documentação global), `DocsLibrary_…`, Referência exata nos Objetivos | Docs contextual a partir de um erro de diagnóstico |
+| UX09 | Feito, exceto aparelho | `GlobalNavigationTests` (Documentação global), Referência exata nos Objetivos; `ProblemDocsTests`: cada problema ao vivo tem um botão de Documentação, que abre a busca do nome citado pelo compilador sem sair do jogo, e Voltar retorna ao código | Conferir no aparelho |
 | UX10 | Headless ok | `ProjectFolderTests` (conectar, gravar, recusar revisão alheia, restaurar, alternar) | Acesso revogado e cancelamento no seletor do aparelho |
 | UX11 | **Não feito** | Só há capturas em 412×915 e 1280×800 | 320 e 360 dp, paisagem e passagem por ≥ 840 dp em todas as telas |
 | UX12 | Feito, exceto aparelho | `AccessibilityAuditTests` em 11 destinos: todo controle tem nome para o leitor de tela e alvo mínimo de toque (interruptores subiram de 32 para 48 px). A fonte do sistema amplia a casca até a largura lógica de 320; testado com a fonte máxima. Captura `celular-2-home-fonte-grande` | Conferir no aparelho: TalkBack e Tamanho da fonte do Android |
