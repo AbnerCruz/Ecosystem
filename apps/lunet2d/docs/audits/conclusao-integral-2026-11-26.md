@@ -65,15 +65,15 @@ As provas são testes headless que já existiam (exceto onde marcado) e foram co
 | Sprite | `SpriteStudio_DrawsFillsUndoesAnimatesAndSavesSourceAndSheetTogether`, `SpriteStudio_SelectsMovesFlipsDuplicatesAndErasesPixels` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | `PublishAndImport_CopyBothEditableSourceAndDerivedSpriteWithoutSharedDependency` | o mesmo teste e `Game_LoadsSpriteStudioExportFromProjectAssetsThroughHost` (o runtime carrega o PNG) |
 | Mapa (Tile) | `TileStudio_CreatesAMapPaintsLayersUndoesAndSaves_AndEditsItsTileset`, `TileStudio_PaintsTerrainWithAutotileAndManagesLayers` | `Painting_FixesNeighbours_AndErasingReopensEdges` | `StudioPublishesAndForksAllFamiliesWithoutAnotherProjectAsSource` | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
 | Música | `MusicStudio_StartsWithASong_TogglesNotesPlaysAndSaves`, `MusicStudio_SetsNoteLengthInstrumentMixerAndArrangement` | `MusicStudio_InvalidDraftRemainsIntactAndCanBeClosed` (fonte inválida preservada, #1053) | `PublishingRenderedOutputUsesExactSourceAndDoesNotRewriteTheDraft` (sem WAV atrasado) | `StudioPublishesAndForksAllFamilies…` |
-| Efeito (Sound) | `SoundStudio_GeneratesVariesPlaysAndSavesSourceAndWavTogether` | — | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
+| Efeito (Sound) | `SoundStudio_GeneratesVariesPlaysAndSavesSourceAndWavTogether` | `SoundEffectReopenTests` (novo: reabre idêntico, mesmo WAV) | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
 | Tom (WAV) | `CreateEditAssetsPreviewExportAndReopen` e os testes de WAV do #1053 | os testes de reabrir WAV sem jogo, do #1053 | `StudioPublishesAndForksAllFamilies…` | `StudioPublishesAndForksAllFamilies…` |
-| Partículas | `ParticleStudio_RunsTheRealEmitter_BurstsAndSavesTheEffect` | — | `StudioPublishesAndForksAllFamilies…` | `Content_LoadsAStudioEffectAsAReadyEmitter` (o runtime usa o efeito) |
-| Paleta | `Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio` | — | `StudioPublishesAndForksAllFamilies…` | — |
-| Dados (Tabela) | `DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether` | — | `StudioPublishesAndForksAllFamilies…` | — |
+| Partículas | `ParticleStudio_RunsTheRealEmitter_BurstsAndSavesTheEffect` | `ParticleStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | `Content_LoadsAStudioEffectAsAReadyEmitter` (o runtime usa o efeito) |
+| Paleta | `Palette_PresetRampExtractRemove_SavesAndFeedsTheSpriteStudio` | `ProjectPaletteTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | — |
+| Dados (Tabela) | `DataStudio_CreatesATableEditsRecordsAndColumnsAndSavesDataAndSchemaTogether` | `DataStudioTests` (ida e volta) | `StudioPublishesAndForksAllFamilies…` | — |
 | Sem jogo (rascunho global) | `Studios_WithoutAGame_CreateEditSaveInTheStudioFolder_AndPublish` | `StandaloneStudio_WritesAndReopensEditableSpriteWithoutProject` | idem | `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects` |
 | Segurança da Biblioteca | `UnsafePaths_AreRejectedWithoutPublishingProject`, `PublishRevision_RejectsSymlinkedAssetDirectory…`, `ExistingDestinationFiles_AreNotOverwrittenByStudioLibraryImport`, `InterruptedBundleRestoresPreviousBytesWhenReopened`, `InvalidPersistedMetadata_CannotCrashLibraryOrModifyTarget` | | | |
 
-**Lacunas da matriz:** falta teste dedicado de reabrir para Efeito, Partículas, Paleta e Dados, e de usar Paleta e Dados num jogo. O fluxo existe no código, mas não há prova automatizada específica. Essas lacunas ficam abertas, não marcadas como feitas.
+**Lacunas da matriz:** reabrir está provado para todos os tipos. Ainda falta prova automatizada de usar Paleta e Dados num jogo por cópia da Biblioteca. Essas lacunas ficam abertas, não marcadas como feitas.
 
 ## Pendências conhecidas
 
