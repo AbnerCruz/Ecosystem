@@ -301,7 +301,12 @@ public sealed class AiPanelView : UserControl
             _steps.Clear(); _partial = "";
             // Show what the AI changed — only when its game is the one open: another game opened during the run may
             // hold edits not saved yet, and reloading it would drop them (G07).
-            if (_shell.Workspace.Project?.Manifest.GameId == _sessionGame) _shell.WorkspaceView.ReloadFromDisk();
+            if (_shell.Workspace.Project?.Manifest.GameId == _sessionGame)
+            {
+                _shell.WorkspaceView.ReloadFromDisk();
+                // What it changed shows in the file itself, to keep or undo there (owner, 27/11: "como o Numa").
+                if (LastReply?.Checkpoint is { IsEmpty: false } changed) _shell.WorkspaceView.ReviewAiChanges(changed);
+            }
             else if (_shell.AiHost is { } h) EnsureSession(h); // the run ended: the conversation follows the open game
             BuildComposer();
             RenderMessages();

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.1-dev.1000613 — IDE nova: sem navbar, Explorador, abas reais e jogo embaixo do código
+
+- **Sem a barra Código/Jogo/Recursos/Notas.** O topo tem ← voltar, ☰ arquivos, o nome do jogo, ▶ rodar e ⋮ mais.
+- **Explorador (☰):** a pasta do jogo em árvore. Um toque abre o arquivo onde ele pertence: código no editor, notas em Notas, arte, música, mapas e dados no Studio. Novo arquivo, nova pasta, renomear e apagar (com confirmação) ficam no próprio item.
+- **Abas reais:** só os arquivos abertos, com ● quando não salvos e ✕ para fechar. Fechar não apaga nada.
+- **Rodar não tira o código da tela:** o jogo roda embaixo, num painel com Jogo, Console e Problemas, que pode ir a tela cheia.
+- **Barra de status:** erros e avisos (um toque abre Problemas), estado do jogo, linha e coluna do cursor e o botão da IA.
+- **IA como no Numa:** quando a IA altera arquivos, o arquivo abre com as linhas alteradas destacadas e uma barra "IA alterou… Manter · Desfazer", com ‹ › para passar pelos arquivos alterados. No celular, o painel da IA sai da frente para mostrar o código; o botão IA traz a conversa de volta.
+- **Correção:** a barra de código podia aparecer duas vezes.
+- **Correção:** desfazer uma mudança da IA que tinha criado um arquivo aberto derrubava o editor. Agora a aba fecha.
+- **Validação:** testado no computador. Não testado num celular.
+
 ## 0.0.1-dev.1000612 — Rolar o código sem abrir o teclado
 
 - **Correção (relatada no celular):** arrastar o dedo para rolar o código abria o teclado. Agora só um toque abre o teclado; o dedo que anda mais que a tolerância de toque (10 px) está rolando, inclusive no primeiro toque e depois de fechar o teclado com Voltar.

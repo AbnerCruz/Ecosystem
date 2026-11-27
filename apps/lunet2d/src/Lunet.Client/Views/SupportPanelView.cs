@@ -63,6 +63,9 @@ public sealed class SupportPanelView : UserControl
         }
     }
 
+    /// <summary>True while Console and Problemas are shown inside the workspace's bottom panel (it has the header).</summary>
+    public bool HeaderInPanel { get; set; }
+
     public void Refresh()
     {
         var panel = _shell.State.Panel;
@@ -77,7 +80,8 @@ public sealed class SupportPanelView : UserControl
 
         var root = new DockPanel();
         DockPanel.SetDock(header, Dock.Top);
-        root.Children.Add(header);
+        // In the phone's bottom panel (Jogo · Console · Problemas) the panel's own tabs are the header.
+        if (!(HeaderInPanel && panel is SupportPanel.Console or SupportPanel.Problems)) root.Children.Add(header);
         if (_consoleScroll.Parent is Panel p) p.Children.Remove(_consoleScroll);
         if (panel == SupportPanel.Console)
         {
