@@ -240,6 +240,14 @@ public sealed class LunetShell : UserControl
     public AiHost? AiHost { get; set; }
 
     /// <summary>Opens the command palette (M3) with an optional prefix ("@", ":", "#", "/").</summary>
+    /// <summary>Quick Open: go to any file of the game by name (Ctrl+P, the magnifier in the top bar).</summary>
+    public void QuickOpen()
+    {
+        if (State.Level != ShellLevel.Workspace) return;
+        State.ShowPanel(SupportPanel.Commands);
+        _workspaceView.Support.Palette.OpenFiles();
+    }
+
     public void OpenPalette(string query = "")
     {
         if (State.Level != ShellLevel.Workspace) return;
@@ -524,6 +532,7 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { RunGame(); e.Handled = true; }
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
+        else if (e.Key == Key.P && e.KeyModifiers == KeyModifiers.Control) { QuickOpen(); e.Handled = true; }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
         else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
         {

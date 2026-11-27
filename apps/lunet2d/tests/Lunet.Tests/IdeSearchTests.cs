@@ -22,7 +22,9 @@ public sealed class IdeSearchTests
 
     private static void Wait(Task task)
     {
-        while (!task.IsCompleted) Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (!task.IsCompleted && DateTime.UtcNow < deadline) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(5); }
+        Assert.True(task.IsCompleted, "timed out");
         task.GetAwaiter().GetResult();
     }
 

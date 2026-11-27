@@ -54,10 +54,34 @@ public sealed class CommandPaletteView : UserControl
     /// <summary>Opens the palette with a query (e.g. "@" for the outline); keeps the editor's caret.</summary>
     public void Open(string query = "")
     {
-        _results = null; _input = null; _resultsTitle = null;
+        _results = null; _input = null; _resultsTitle = null; _quickOpen = false;
         _query.PlaceholderText = "Comando, @símbolo, :linha, #no jogo, /buscar";
         _query.Text = query;
         _query.CaretIndex = query.Length;
+        _ = RefreshAsync();
+    }
+
+    /// <summary>
+    /// Quick Open (VS Code's Ctrl+P): every file of the game by name, fuzzy, the open tabs first; a tap opens it where it
+    /// belongs (code as a tab, art in its Studio).
+    /// </summary>
+    private bool _quickOpen;
+
+    public void OpenFiles()
+    {
+        _input = null;
+        var tabs = _shell.WorkspaceView.Code.OpenTabs;
+        var files = _shell.Workspace.Project?.ListFiles() ?? [];
+        _results = files.OrderBy(f => { var i = tabs.ToList().IndexOf(f); return i < 0 ? int.MaxValue : i; })
+            .Select(f => new PaletteItem(f, tabs.Contains(f) ? "Aberto" : "", () =>
+            {
+                _shell.State.ShowPanel(SupportPanel.None);
+                _shell.WorkspaceView.OpenFile(f);
+            }, "file:" + f)).ToList();
+        _resultsTitle = "Ir para arquivo";
+        _quickOpen = true;
+        _query.PlaceholderText = "Nome do arquivo";
+        _query.Text = "";
         _ = RefreshAsync();
     }
 
@@ -91,6 +115,8 @@ public sealed class CommandPaletteView : UserControl
     public async Task RefreshAsync()
     {
         if (_input is not null) { Show([]); return; }
+        // In Quick Open, a VS Code prefix (> @ : # /) switches to commands, the outline, a line, symbols or find.
+        if (_quickOpen && (_query.Text ?? "") is { Length: > 0 } typed && ">@:#/".Contains(typed[0])) { _results = null; _resultsTitle = null; _quickOpen = false; }
         if (_results is not null) { Show(CommandPalette.Rank(_results, (_query.Text ?? "").Trim(), [])); return; }
         var (mode, term) = CommandPalette.Parse(_query.Text ?? "");
         IReadOnlyList<PaletteItem> items = mode switch

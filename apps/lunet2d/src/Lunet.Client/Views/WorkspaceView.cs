@@ -645,6 +645,14 @@ public sealed class WorkspaceView : UserControl
                 () => { if (running) _shell.StopGame(); else _shell.RunGame(); }, running ? LunetTokens.Color.Danger : LunetTokens.Color.Primary);
         run.Name = "RunButton";
         _runButton = run;
+        // The magnifier on a wide screen: go to a file by name (Quick Open, Ctrl+P).
+        // A phone keeps four buttons (owner, 27/11); there the Explorer's search finds files by name too.
+        if (expanded)
+        {
+            var find = LunetUi.IconButton(LunetIcons.Search, "Ir para arquivo", () => _shell.QuickOpen());
+            find.Name = "QuickOpenButton";
+            actions.Children.Add(find);
+        }
         actions.Children.Add(run);
         var more = LunetUi.IconButton(LunetIcons.More, "Mais: comandos, painéis, Git, APK", () => _shell.State.TogglePanel(SupportPanel.More),
             _shell.State.Panel == SupportPanel.More ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);

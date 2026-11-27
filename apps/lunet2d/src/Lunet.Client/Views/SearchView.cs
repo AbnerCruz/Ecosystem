@@ -126,7 +126,7 @@ public sealed class SearchView : UserControl
         _results.Children.Clear();
         if (Query.Length == 0) { _summary.Text = "Busque um nome, um texto ou uma expressão em todos os arquivos do jogo."; return; }
         var files = Matches.GroupBy(m => m.Path).ToList();
-        _summary.Text = Matches.Count == 0 ? "Nada encontrado." :
+        _summary.Text = Matches.Count == 0 ? "Nada no conteúdo dos arquivos." :
             $"{Matches.Count}{(Matches.Count >= Options.MaxResults ? "+" : "")} resultado{(Matches.Count == 1 ? "" : "s")} em {files.Count} arquivo{(files.Count == 1 ? "" : "s")}";
         if (_replace.IsVisible && Matches.Count > 0)
         {
@@ -135,6 +135,29 @@ public sealed class SearchView : UserControl
             all.Name = "SearchReplaceAll";
             all.Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.S);
             _results.Children.Add(all);
+        }
+        // Files whose name matches come first (Quick Open inside the search: a phone has no room for a second field).
+        var named = _shell.Workspace.Project is { } project
+            ? Shell.CommandPalette.Rank(project.ListFiles().Select(f => new Shell.PaletteItem(f, "", () => { })), Query.Trim(), []).Take(6).ToList()
+            : [];
+        NamedFiles = named.Select(n => n.Title).ToList();
+        if (named.Count > 0)
+        {
+            _results.Children.Add(Caption("Arquivos"));
+            foreach (var item in named)
+            {
+                var path = item.Title;
+                var line = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs, Margin = new Thickness(LunetTokens.Space.S, 0) };
+                line.Children.Add(LunetIcons.Create(LunetIcons.File, LunetTokens.Color.Info, 14));
+                var t = LunetUi.Text(path, LunetTokens.Type.Label, LunetTokens.Color.TextPrimary);
+                t.VerticalAlignment = VerticalAlignment.Center;
+                line.Children.Add(t);
+                var b = Row(line, "SearchFileName");
+                AutomationProperties.SetName(b, "Abrir " + path);
+                b.Click += (_, _) => { _shell.WorkspaceView.OpenFile(path); _opened(); };
+                _results.Children.Add(b);
+            }
+            if (Matches.Count > 0) _results.Children.Add(Caption("No conteúdo"));
         }
         var drawn = 0;
         foreach (var file in files)
@@ -243,6 +266,16 @@ public sealed class SearchView : UserControl
             _summary.Text = $"{count} substituiç{(count == 1 ? "ão" : "ões")} em {files.Count} arquivo{(files.Count == 1 ? "" : "s")}.";
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ProjectException) { _summary.Text = e.Message; }
+    }
+
+    /// <summary>Files whose name matches the query (tests).</summary>
+    public IReadOnlyList<string> NamedFiles { get; private set; } = [];
+
+    private static TextBlock Caption(string text)
+    {
+        var c = LunetUi.Text(text.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+        c.Margin = new Thickness(LunetTokens.Space.S, LunetTokens.Space.S, 0, LunetTokens.Space.Xxs);
+        return c;
     }
 
     private static Button Row(Control content, string name) => new()
