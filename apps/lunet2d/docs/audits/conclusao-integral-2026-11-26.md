@@ -148,7 +148,7 @@ Legenda:
 | G07 | IA, minimizar, trocar de jogo, notificação e cancelar | Automatizado (parcial) | A execução mantém o jogo (E-05); hold liberado mesmo com falha (`AiCoworkShellTests`); serviço em primeiro plano compila | Aparelho: notificação, permissão, morte do processo |
 | G08 | Sprite com camadas e animações, Tile, áudio, publicar e usar no jogo | Automatizado | Matriz H5 completa em testes | Aparelho |
 | G09 | Aprender T01, objetivo, pista, Docs, Preview e reabrir | Automatizado | `ObjectivesTests`, `LunetClientLearnTests`, `ProblemDocsTests` | Aparelho |
-| G10 | ZIP, importar, exportar por SAF, cancelar, revogar e recuperar | Pendente nesta missão | Testes de importação e exportação existentes antes da missão; não reauditados aqui | Auditoria e aparelho (SAF real) |
+| G10 | ZIP, importar, exportar por SAF, cancelar, revogar e recuperar | Automatizado (ZIP) | 44 testes rodados em 27/11. `ProjectZipImportTests` e `ProjectFolderSnapshotTests` (30) cobrem limite de entradas, caminho fora da pasta, duplicados, 512 MiB, ZIP corrompido e stream não posicionável. `ProjectManageTests`, `ProjectJourneyTests` e `ProjectFolderTests` (14) cobrem exportar, importar como jogo novo e salvar o aberto antes | Aparelho: SAF real, cancelar o seletor, revogar a permissão |
 | G11 | SpriteBatch ordenado e legado; ciclo de vida do Context | Automatizado | `SortedBatchTests`, `SortedBatchEdgeTests`, `SortedBatchConsumerTests` (E1.6/E1.7) | Scene2D no modo ordenado |
 | G12 | RectangleF(pos, size), Draw(rect, color), Size e Point | Automatizado | `RectangleDrawTests`, `SizeOverloadTests` (compilador do jogo) | Preview do Android e APK exportado, com trimming |
 | G13 | Gerar o APK do jogo, instalar e rodar | Automatizado (geração) | 13 testes rodados em 27/11: assinatura (`AndroidGameApkSignerRegressionTests`), orientação (`GameApkOrientationTests`), alinhamento do ZIP (`OfflineApkZipAlignmentTests`), `ProjectJourneyTests` | Instalar e rodar o APK do jogo num aparelho |
@@ -158,4 +158,4 @@ Legenda:
 
 **Conclusão honesta:**
 - **Ainda não validado no aparelho:** nada desta missão foi testado num celular. Cada item marcado como Aparelho continua aberto, conforme o NN-017.
-- **Pendentes, sem prova automatizada:** G10, G14 e a revisão H8 (G15). G13 tem prova da geração do APK, mas não da instalação.
+- **Pendentes, sem prova automatizada:** G14 e a revisão H8 (G15). G13 tem prova da geração do APK, mas não da instalação.
