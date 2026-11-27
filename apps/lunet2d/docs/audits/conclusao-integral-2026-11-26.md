@@ -75,6 +75,27 @@ As provas são testes headless que já existiam (exceto onde marcado) e foram co
 
 **Matriz completa em teste automatizado.** Todas as etapas têm prova para todos os tipos: `StudioPublishesAndForksAllFamilies…` publica cada família e a importa em dois jogos (Paleta e Dados inclusive). Só falta a conferência num celular.
 
+## H9 — Jornadas UX01–UX14 (anexo A §8.1): estado em 27/11
+
+As provas são testes headless da casca real e as capturas de `--screens`, em 412×915 e 1280×800. Nenhuma jornada foi conferida num celular.
+
+| ID | Estado | Prova | O que falta |
+|---|---|---|---|
+| UX01 | Headless ok | `GlobalNavigationTests`, `LunetClientTests` (criar jogo vazio), captura `1-home-vazia` | Instalação limpa no aparelho |
+| UX02 | Headless ok | `HomeOrderTests` (busca, Continuar, Fixados), `EditorSession_ReopensTheGameOnTheFileAndCaretYouLeft` | Aparelho |
+| UX03 | Parcial | `EditorKeyboardTests` (IME, Enter, desfazer), testes da barra de código (Métodos) | Jornada única Métodos → assinatura → rodar num teste só |
+| UX04 | Headless ok | `AiStreamingRenderTests`: fechar e reabrir sem cancelar, sem reconstruir a conversa a cada pedaço de texto, sem cruzar jogos | Aparência compacta e expandida no aparelho |
+| UX05 | Headless ok | `ObjectivesTests`, `LunetClientLearnTests` (missão → Objetivos → Referência) | Aparelho |
+| UX06 | Headless ok | `Studios_WithoutAGame_…`, `StandaloneLibrary_PublishesAndCopiesIntoTwoDifferentProjects`, matriz H5 | Aparelho |
+| UX07 | Parcial | Testes de música e WAV do #1053 (render fora da thread de UI, fonte inválida preservada) | Trocar de tela durante o render, reproduzido no aparelho |
+| UX08 | Parcial | `GpuPreviewTests` (falha de compilação não abre a GPU), `PlayView` com o caminho único `LunetShell.Play` | Partida em tela cheia no aparelho; volta à grade |
+| UX09 | Parcial | `GlobalNavigationTests` (Documentação global), `DocsLibrary_…`, Referência exata nos Objetivos | Docs contextual a partir de um erro de diagnóstico |
+| UX10 | Headless ok | `ProjectFolderTests` (conectar, gravar, recusar revisão alheia, restaurar, alternar) | Acesso revogado e cancelamento no seletor do aparelho |
+| UX11 | **Não feito** | Só há capturas em 412×915 e 1280×800 | 320 e 360 dp, paisagem e passagem por ≥ 840 dp em todas as telas |
+| UX12 | **Não feito** | — | Fonte ampliada, ordem de foco, leitor de tela |
+| UX13 | Parcial | Streaming da IA sem reconstruir a conversa; `TypingLatencyTests` escrito, ainda não executado | Medir p50 e p95 e muitos projetos e recursos |
+| UX14 | Parcial | `GlobalNavigationTests` (Voltar fecha Documentação), Voltar de Ajustes → Pasta de projetos | Sequência completa de Voltar/Esc por todos os destinos |
+
 ## Pendências conhecidas
 
 - **UX §4.1, tela larga:** resolvido. A partir de 840 dp aparece uma barra lateral com os mesmos cinco destinos. A captura mostrou que as linhas de largura total ignoravam a barra e saíam cortadas; isso foi corrigido. (não declaradas como feitas)
