@@ -14,6 +14,14 @@
   - **Pesquisa na web:** com um botão para ligar e desligar nos ajustes da IA.
 - **Modelos:** Ajustes da IA → "Ver modelos do provedor" lista os modelos de verdade, com filtro e "Mostrar mais". Sem internet ou sem chave, avisa e deixa digitar o modelo.
 - **Segundo plano:** a IA continua trabalhando com o app minimizado, com uma notificação "Lunet IA · trabalhando em…". Ao terminar fora do app, avisa "Lunet IA terminou". O Android 13 pede a permissão de notificação uma vez.
+- **Correção, perda de dados:** com um Studio aberto, tocar em Jogar, Aprender ou Início na barra descartava o desenho ou a música ainda não salvos. Agora salva, como o Voltar.
+- **Correção:** sair do estúdio de música com a prévia ainda carregando fazia o som tocar por cima da tela seguinte.
+- **Correção:** Esc e os atalhos (F5, Ctrl+S, F1) não funcionavam logo depois de abrir uma tela, quando nada estava focado.
+- **Acessibilidade:**
+  - o tamanho da fonte do Android amplia o app inteiro, até o máximo que cabe na tela;
+  - interruptores maiores, com 48 px;
+  - todo botão e campo tem nome para o leitor de tela.
+- **Problemas:** cada problema do código tem um botão que abre a Documentação do nome citado, sem sair do jogo.
 - **Validação:** testado no computador e no emulador do CI. Não testado num celular.
 
 ## 0.0.1-dev.1000610 — Home com Continuar e Fixados, Objetivos na IDE, retângulos e tamanhos no Framework
