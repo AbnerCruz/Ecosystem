@@ -122,6 +122,30 @@ public sealed class IdeLayoutTests
     }
 
     [Fact]
+    public void OpeningAFileFromThePreview_ReturnsToItsEditorTab()
+    {
+        var root = Directory.CreateTempSubdirectory("lunet-ide-preview-file-").FullName;
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var (w, shell) = Open(root);
+                shell.Workspace.Write("Extra.cs", "class Extra { }");
+                Click(Named<Button>(w, "RunButton"));
+                Assert.True(shell.WorkspaceView.PreviewFull);
+
+                shell.WorkspaceView.OpenFile("Extra.cs");
+                Assert.Equal(WorkspaceTab.Code, shell.State.Tab);
+                Assert.Equal("Extra.cs", shell.WorkspaceView.Code.OpenPath);
+                Assert.True(shell.WorkspaceView.Code.IsAttachedToVisualTree());
+                Assert.Equal(GameState.Stopped, shell.Game.State);
+                w.Close();
+            });
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void TheStatusBar_ShowsTheCaret_AndProblemsOpenTheirPanel()
     {
         var root = Directory.CreateTempSubdirectory("lunet-ide-status-").FullName;

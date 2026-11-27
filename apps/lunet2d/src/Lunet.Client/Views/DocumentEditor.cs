@@ -284,6 +284,7 @@ public sealed class DocumentEditor : UserControl
     /// <summary>Goes to a line (in this file or another), remembering where you were for <see cref="BackToPosition"/>.</summary>
     public void JumpTo(string? file, int line, int column)
     {
+        if (_tab == WorkspaceTab.Code && _shell.WorkspaceView.PreviewFull) _shell.ClosePreview();
         if (OpenPath is { } here)
         {
             _positions.Push((here, _surface.Caret));
@@ -762,6 +763,8 @@ public sealed class DocumentEditor : UserControl
         _shell.Workspace.Write(path, "# Nova nota\n\n");
         Load(path);
     }
+
+    internal void RefreshFileTabs() => Rebuild();
 
     private void Rebuild()
     {

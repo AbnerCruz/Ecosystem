@@ -64,7 +64,7 @@ public sealed class ShellState
     public void SelectTab(WorkspaceTab tab)
     {
         if (Level != ShellLevel.Workspace || Project is null) return;
-        if (tab != Tab) _tabHistory.Push(Tab);
+        if (tab != Tab && Tab != WorkspaceTab.Game) _tabHistory.Push(Tab);
         Tab = tab;
         _lastTab[Project] = tab;
         Changed?.Invoke();

@@ -167,7 +167,12 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Opens a mind map of the game as an outline (P2).</summary>
     public MindMapView OpenMindMap(string path)
     {
-        var view = new MindMapView(_shell, path, () => { _studio = null; Rebuild(); });
+        var view = new MindMapView(_shell, path, () =>
+        {
+            _studio = null;
+            if (_shell.State.Tab == WorkspaceTab.Notes) _notes.RefreshFileTabs();
+            Rebuild();
+        });
         _studio = view;
         Rebuild();
         return view;
@@ -303,6 +308,7 @@ public sealed class WorkspaceView : UserControl
         // panel is the person going elsewhere, and the keyboard rightly goes.
         var place = (_shell.State.Tab, _shell.State.Panel);
         if (_place.Item1 == WorkspaceTab.Game && place.Tab != WorkspaceTab.Game) _panelFull = false;
+        if (place.Tab == WorkspaceTab.Notes && _place.Item1 != WorkspaceTab.Notes) _notes.RefreshFileTabs();
         var focused = place == _place ? FocusedField() : null;
         _keyboardOpen = _shell.KeyboardOpen || (CodeVisible && _code.KeyboardVisible); // per tab, recomputed on each switch
         _place = place;
@@ -439,6 +445,7 @@ public sealed class WorkspaceView : UserControl
     /// </summary>
     public void OpenFile(string path)
     {
+        if (PreviewFull) _shell.ClosePreview();
         var lower = path.ToLowerInvariant();
         if (lower.EndsWith(Lunet.Core.ProjectMindMap.Extension)) { OpenMindMap(path); return; }
         if (lower.EndsWith(".md") && lower.StartsWith(Lunet.Core.ProjectNotes.Folder.ToLowerInvariant() + "/"))
@@ -467,6 +474,7 @@ public sealed class WorkspaceView : UserControl
     /// </summary>
     public bool ReviewAiChanges(Lunet.Ai.LunetAiCheckpoint checkpoint)
     {
+        if (PreviewFull) _shell.ClosePreview();
         if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
         if (!_code.Review(checkpoint)) return false;
         if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Ai) _shell.State.ShowPanel(SupportPanel.None);

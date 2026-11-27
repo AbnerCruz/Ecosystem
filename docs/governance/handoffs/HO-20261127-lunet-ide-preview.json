@@ -46,7 +46,8 @@
     "Rodar abre o Preview em tela cheia. Voltar retorna ao arquivo aberto no editor e depois à Home.",
     "A compilação do Preview GPU roda fora da thread da interface e reutiliza o compilador por projeto. Voltar durante a compilação descarta a abertura atrasada.",
     "A superfície permanece montada durante pausa e retomada, e falhas gerenciadas na GPU são registradas no Console e em Problemas.",
-    "A versão permanece dev, com incremento para 1000614."
+    "A versão permanece dev, com incremento para 1000614.",
+    "Abrir arquivo, aplicar revisão da IA ou navegar para um diagnóstico no Preview retorna ao editor; a lista de mapas mentais é atualizada nos pontos em que muda."
   ],
   "verification": [
     {
@@ -68,7 +69,7 @@
       "evidence": "Lunet.Tests: GpuPreviewTests, IdeLayoutTests, LunetClientTests, LunetClientInspectionTests, WorkspaceTabsTests, IncrementalCompilerTests e DesktopHostTests."
     },
     {
-      "check": "Suíte completa: 1.395 testes passaram",
+      "check": "Suíte completa: 1.396 testes passaram",
       "kind": "automated",
       "result": "passed",
       "evidence": "Lunet.Tests.dll pelo runner xUnit local com fontes TrueType."

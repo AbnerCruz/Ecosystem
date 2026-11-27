@@ -22,6 +22,7 @@ public sealed class LunetShell : UserControl
     private readonly HomeView _home;
     private readonly WorkspaceView _workspaceView;
     private double _lastTick;
+    private WorkspaceTab _visibleWorkspaceTab;
 
     public LunetShell(string projectsRoot)
     {
@@ -593,6 +594,9 @@ public sealed class LunetShell : UserControl
             Content = _home;
             return;
         }
+        bool leavingPreview = _visibleWorkspaceTab == WorkspaceTab.Game && State.Tab != WorkspaceTab.Game;
+        _visibleWorkspaceTab = State.Tab;
+        if (leavingPreview && Game.State is GameState.Running or GameState.Paused or GameState.Compiling) StopGame();
         if (!ReferenceEquals(Content, _workspaceView)) Content = _workspaceView;
         // A panel the person opens takes the place of the keyboard (they are never stacked over the code).
         if (State.Panel != SupportPanel.None) _workspaceView.Code.HideKeyboard();
