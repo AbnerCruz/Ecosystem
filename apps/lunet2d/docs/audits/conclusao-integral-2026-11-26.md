@@ -93,7 +93,7 @@ As provas são testes headless da casca real e as capturas de `--screens`, em 41
 | UX10 | Headless ok | `ProjectFolderTests` (conectar, gravar, recusar revisão alheia, restaurar, alternar) | Acesso revogado e cancelamento no seletor do aparelho |
 | UX11 | **Não feito** | Só há capturas em 412×915 e 1280×800 | 320 e 360 dp, paisagem e passagem por ≥ 840 dp em todas as telas |
 | UX12 | **Não feito** | — | Fonte ampliada, ordem de foco, leitor de tela |
-| UX13 | Parcial | Streaming da IA sem reconstruir a conversa; `TypingLatencyTests` escrito, ainda não executado | Medir p50 e p95 e muitos projetos e recursos |
+| UX13 | Parcial | Streaming da IA sem reconstruir a conversa; `TypingLatencyTests` executado em 27/11 (ver §Latência) | Muitos projetos e recursos; medir no aparelho |
 | UX14 | Parcial | `GlobalNavigationTests` (Voltar fecha Documentação), Voltar de Ajustes → Pasta de projetos | Sequência completa de Voltar/Esc por todos os destinos |
 
 ## Pendências conhecidas
@@ -105,3 +105,20 @@ As provas são testes headless da casca real e as capturas de `--screens`, em 41
 
 - **Anexo B, parte A:** falta conferir no Preview do Android e no APK exportado, com trimming, que o `System.Drawing.Primitives` carrega no aparelho. Isso depende do CI de APK e do celular.
 - **#1038:** precisa ser fechado administrativamente, com prova de que as releases posteriores já contêm o E1–E3. Fechar PR de outro agente fica a cargo do proprietário ou do integrador.
+
+
+## Latência de digitação (27/11/2026, runner Linux headless, não aparelho)
+
+`TypingLatencyTests`: 189 teclas pelo caminho do teclado Android simulado (`AndroidImeSimulator`), com o documento renderizado a cada tecla.
+
+| Cenário | p50 | p95 | máx |
+|---|---|---|---|
+| Arquivo de 3.000 linhas (~150 KB), 3 execuções | 19,1–20,5 ms | 28,4–33,4 ms | 31–42 ms |
+| Arquivo de 30 linhas | 20,0 ms | 25,9 ms | 43,7 ms |
+| Referência: `TextBox` vazio do Avalonia, mesmo runner | 10,9 ms | 14,1 ms | — |
+
+Leitura dos números:
+- A latência não cresce com o tamanho do arquivo: nenhuma tecla lê o documento inteiro, e o teclado recebe só uma janela de texto.
+- Cerca de 11 ms por tecla é custo do próprio runner, que renderiza um quadro a cada tecla. O editor (AvaloniaEdit mais o cliente de IME) acrescenta cerca de 9 ms.
+- **E-10:** a primeira execução falhou na compilação, não no teste; a segunda passou.
+- Não há número do Moto G32, e nenhum é alegado. A medição no aparelho continua pendente.
