@@ -23,6 +23,7 @@ public sealed class ExplorerView : UserControl
     private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
     private string? _actionsFor;
     private bool _confirmDelete;
+    private bool _moving;
     private string? _renaming;
     private readonly TextBlock _notice = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
 
@@ -62,14 +63,28 @@ public sealed class ExplorerView : UserControl
         root.Children.Add(header);
         DockPanel.SetDock(_notice, Dock.Bottom);
         root.Children.Add(_notice);
-        _tree.Content = _list;
+        _filter.TextChanged += (_, _) => Fill();
+        AutomationProperties.SetName(_filter, "Filtrar arquivos");
+        var tree = new DockPanel();
+        DockPanel.SetDock(_filter, Dock.Top);
+        tree.Children.Add(_filter);
+        tree.Children.Add(new ScrollViewer { Content = _list });
+        _tree.Content = tree;
         _body.Child = _tree;
         root.Children.Add(_body);
         Content = root;
         Fill();
     }
 
-    private readonly ScrollViewer _tree = new();
+    private readonly ContentControl _tree = new();
+    private readonly TextBox _filter = new()
+    {
+        PlaceholderText = "Filtrar por nome", Name = "ExplorerFilter", MinHeight = LunetTokens.MinTouch,
+        Margin = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.S, LunetTokens.Space.Xs),
+    };
+
+    /// <summary>The name filter over the tree ("" shows everything).</summary>
+    public string Filter { get => _filter.Text ?? ""; set => _filter.Text = value; }
     private readonly Border _body = new();
     private SearchView? _search;
 
@@ -93,8 +108,30 @@ public sealed class ExplorerView : UserControl
         if (_shell.Workspace.Project is not { } project) { Shown = []; return; }
         var shown = new List<string>();
         string? hiddenUnder = null;
-        foreach (var entry in project.ListTree())
+        var tree = project.ListTree();
+        var filter = Filter.Trim();
+        HashSet<string>? keep = null;
+        if (filter.Length > 0)
         {
+            // Matching names and the folders above them, all open (the filter overrides what was collapsed).
+            keep = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var e in tree.Where(e => e.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+            {
+                keep.Add(e.Path);
+                var parts = e.Path.Split('/');
+                for (var i = 1; i < parts.Length; i++) keep.Add(string.Join('/', parts[..i]));
+            }
+        }
+        foreach (var entry in tree)
+        {
+            if (keep is not null)
+            {
+                if (!keep.Contains(entry.Path)) continue;
+                shown.Add(entry.Path);
+                _list.Children.Add(Row(entry));
+                if (_actionsFor == entry.Path) _list.Children.Add(Actions(entry));
+                continue;
+            }
             if (hiddenUnder is not null && entry.Path.StartsWith(hiddenUnder + "/", StringComparison.Ordinal)) continue;
             hiddenUnder = entry.IsDirectory && _collapsed.Contains(entry.Path) ? entry.Path : null;
             shown.Add(entry.Path);
@@ -128,12 +165,15 @@ public sealed class ExplorerView : UserControl
             if (entry.IsDirectory) { if (!_collapsed.Remove(path)) _collapsed.Add(path); Fill(); }
             else Open(path);
         };
-        var more = LunetUi.IconButton(LunetIcons.More, "Ações de " + entry.Name, () =>
+        void ToggleActions()
         {
             _actionsFor = _actionsFor == path ? null : path;
-            _confirmDelete = false; _renaming = null;
+            _confirmDelete = false; _renaming = null; _moving = false;
             Fill();
-        }, LunetTokens.Color.TextTertiary);
+        }
+        var more = LunetUi.IconButton(LunetIcons.More, "Ações de " + entry.Name, ToggleActions, LunetTokens.Color.TextTertiary);
+        // A long press (touch) or a right click opens the same actions, like VS Code's context menu.
+        row.ContextRequested += (_, e) => { e.Handled = true; ToggleActions(); };
         var dock = new DockPanel();
         DockPanel.SetDock(more, Dock.Right);
         dock.Children.Add(more);
@@ -154,9 +194,41 @@ public sealed class ExplorerView : UserControl
             Avalonia.Threading.Dispatcher.UIThread.Post(() => { box.Focus(); box.SelectAll(); });
             return panel;
         }
+        if (_moving)
+        {
+            // Mover para…: every folder of the game (and the root), except the item itself and what is inside it.
+            var folders = new List<string> { "" };
+            folders.AddRange(_shell.Workspace.Project!.ListTree().Where(e => e.IsDirectory).Select(e => e.Path));
+            var here = Path.GetDirectoryName(entry.Path)?.Replace('\\', '/') ?? "";
+            foreach (var folder in folders.Where(f => f != here && f != entry.Path && !f.StartsWith(entry.Path + "/", StringComparison.Ordinal)))
+            {
+                var target = folder;
+                var b = LunetUi.Button(folder.Length == 0 ? "(raiz do jogo)" : folder, ButtonKind.Ghost, LunetIcons.Folder, () => Move(entry, target));
+                b.Name = "ExplorerMoveTo";
+                panel.Children.Add(b);
+            }
+            panel.Children.Add(LunetUi.Button("Cancelar", ButtonKind.Ghost, null, () => { _moving = false; Fill(); }));
+            return panel;
+        }
         var rename = LunetUi.Button("Renomear", ButtonKind.Ghost, null, () => { _renaming = entry.Path; Fill(); });
         rename.Name = "ExplorerRename";
         panel.Children.Add(rename);
+        var move = LunetUi.Button("Mover para…", ButtonKind.Ghost, LunetIcons.Folder, () => { _moving = true; Fill(); });
+        move.Name = "ExplorerMove";
+        panel.Children.Add(move);
+        if (!entry.IsDirectory)
+        {
+            var duplicate = LunetUi.Button("Duplicar", ButtonKind.Ghost, LunetIcons.Copy, () => Duplicate(entry.Path));
+            duplicate.Name = "ExplorerDuplicate";
+            panel.Children.Add(duplicate);
+        }
+        var copyPath = LunetUi.Button("Copiar caminho", ButtonKind.Ghost, LunetIcons.Copy, () =>
+        {
+            if (TopLevel.GetTopLevel(this)?.Clipboard is { } clip) _ = Avalonia.Input.Platform.ClipboardExtensions.SetTextAsync(clip, entry.Path);
+            _actionsFor = null; Fill(); Say("Caminho copiado: " + entry.Path);
+        });
+        copyPath.Name = "ExplorerCopyPath";
+        panel.Children.Add(copyPath);
         if (entry.IsDirectory)
         {
             panel.Children.Add(LunetUi.Button("Novo arquivo aqui", ButtonKind.Ghost, LunetIcons.Plus, () => Create(folder: false, inside: entry.Path)));
@@ -252,6 +324,50 @@ public sealed class ExplorerView : UserControl
         _actionsFor = null; _confirmDelete = false;
         _shell.WorkspaceView.FilesMoved(entry.Path, null);
         Fill();
+    }
+
+    /// <summary>"Script.cs" → "Script cópia.cs" (then "Script cópia 2.cs"…), next to it, and opens the copy.</summary>
+    public string? Duplicate(string path)
+    {
+        var project = _shell.Workspace.Project ?? throw new InvalidOperationException("Nenhum jogo aberto.");
+        var folder = Path.GetDirectoryName(path)?.Replace('\\', '/');
+        var name = Path.GetFileName(path);
+        var dot = name.IndexOf('.', 1);
+        var (stem, ext) = dot < 0 ? (name, "") : (name[..dot], name[dot..]);
+        var taken = project.ListTree().Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        string to;
+        var n = 1;
+        do to = (string.IsNullOrEmpty(folder) ? "" : folder + "/") + stem + (n == 1 ? " cópia" : $" cópia {n}") + ext; while (taken.Contains(to) && n++ < 10_000);
+        try
+        {
+            _shell.WorkspaceView.SaveAll();
+            project.WriteBytes(to, project.ReadBytes(path));
+        }
+        catch (Exception e) when (e is IOException or ProjectException or UnauthorizedAccessException) { Say(e.Message); return null; }
+        _actionsFor = to; _renaming = to; // name the copy right away
+        Fill();
+        return to;
+    }
+
+    /// <summary>Moves a file or folder into another folder ("" is the game's root); open tabs follow.</summary>
+    public string? Move(ExplorerEntry entry, string folder)
+    {
+        var to = (folder.Length == 0 ? "" : folder + "/") + entry.Name;
+        _moving = false;
+        if (to == entry.Path) { Fill(); return to; }
+        try
+        {
+            if (_shell.Workspace.Project!.ListTree().Any(e => string.Equals(e.Path, to, StringComparison.OrdinalIgnoreCase)))
+            { Say($"Já existe {to}."); Fill(); return null; }
+            _shell.WorkspaceView.SaveAll();
+            _shell.Workspace.Project!.Rename(entry.Path, to);
+        }
+        catch (Exception e) when (e is IOException or ProjectException or UnauthorizedAccessException) { Say(e.Message); Fill(); return null; }
+        _actionsFor = null;
+        if (folder.Length > 0) _collapsed.Remove(folder);
+        _shell.WorkspaceView.FilesMoved(entry.Path, to);
+        Fill();
+        return to;
     }
 
     private void Say(string text) => _notice.Text = text;
