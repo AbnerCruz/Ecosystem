@@ -228,8 +228,18 @@ public sealed class SortedBatchConsumerTests
         batch.Rect(new RectangleF(50, 150, 30, 10), Color.Green, 2);
         particles.Draw(batch);
         map.Draw(batch, tex, new RectangleF(0, 0, 200, 200), new Vector2(120, 150), Color.White);
+        var scene = new Lunet.Scenes.Scene2D();
+        var entity = new Lunet.Scenes.Entity2D();
+        entity.Add(new Box(tex));
+        scene.Add(entity);
+        scene.Draw(batch, new GameTime(0, 1 / 60f, 1));
         batch.End();
         return backend.Batches.Select(b => b.Vertices).ToList();
+    }
+
+    private sealed class Box(Texture2D texture) : Lunet.Scenes.Component2D
+    {
+        public override void Draw(SpriteBatch batch, GameTime time) => batch.Draw(texture, new RectangleF(170, 10, 12, 12), Color.Blue);
     }
 
     [Fact]
