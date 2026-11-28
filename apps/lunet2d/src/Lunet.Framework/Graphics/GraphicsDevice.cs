@@ -24,21 +24,30 @@ public sealed class GraphicsDevice
     private ViewportScalingMode _viewportScaling;
     private RectI _insets;
     private Texture2D? _white;
-    private int _openBatches;
+    private readonly List<SpriteBatch> _openBatches = new();
+    private SpriteBatch? _defaultBatch;
+
+    // Resolve only unambiguous passes. Legacy explicit callers may still overlap batches.
+    internal SpriteBatch ContextualBatch => _openBatches.Count switch
+    {
+        0 => _defaultBatch ??= new SpriteBatch(this),
+        1 => _openBatches[0],
+        _ => throw new InvalidOperationException("Lunet.Context.Batch: há vários lotes abertos; use a instância explícita.")
+    };
     private bool _sortedOpen;
     private Shader? _sortedShader;
 
-    internal void OpenBatch(bool sorted, Shader? shader)
+    internal void OpenBatch(SpriteBatch batch, bool sorted, Shader? shader)
     {
-        if (_sortedOpen || (sorted && _openBatches != 0))
+        if (_sortedOpen || (sorted && _openBatches.Count != 0))
             throw new InvalidOperationException("Uma passagem ordenada exige exclusividade do dispositivo.");
-        _openBatches++;
+        _openBatches.Add(batch);
         if (sorted) { _sortedOpen = true; _sortedShader = shader; }
     }
 
-    internal void CloseBatch(bool sorted)
+    internal void CloseBatch(SpriteBatch batch, bool sorted)
     {
-        _openBatches--;
+        _openBatches.Remove(batch);
         if (sorted) { _sortedOpen = false; _sortedShader = null; }
     }
 
@@ -203,6 +212,10 @@ public sealed class GraphicsDevice
     {
         _white?.Dispose();
         _white = null;
+        _defaultBatch = null;
+        _openBatches.Clear();
+        _sortedOpen = false;
+        _sortedShader = null;
     }
 
     /// <summary>Passa a desenhar no alvo (ou volta à tela com <c>null</c>).</summary>

@@ -299,6 +299,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Context.Batch",
+          "name": "Batch",
+          "kind": "property",
+          "signature": "public static SpriteBatch Batch { get; }",
+          "summary": "Lote de sprites contextual: o \u00FAnico lote aberto ou um lote padr\u00E3o reutiliz\u00E1vel do dispositivo.",
+          "remarks": "Exige autoriza\u00E7\u00E3o gr\u00E1fica. Begin/End continuam expl\u00EDcitos; com v\u00E1rios lotes abertos, use a inst\u00E2ncia desejada diretamente para evitar ambiguidade.",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Context.Content",
           "name": "Content",
           "kind": "property",
@@ -383,6 +396,19 @@
           "signature": "public static GameServices Services { get; }",
           "summary": "Servi\u00E7os extens\u00EDveis do jogo corrente.",
           "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.Time",
+          "name": "Time",
+          "kind": "property",
+          "signature": "public static GameTime Time { get; }",
+          "summary": "Tempo exato do callback Update ou Draw atualmente em execu\u00E7\u00E3o.",
+          "remarks": "Usa o passo fixo em Update e o tempo do quadro em Draw. N\u00E3o existe fora desses callbacks s\u00EDncronos.",
           "parameters": [],
           "returns": "",
           "examples": [],
@@ -880,12 +906,27 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Game.Draw",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "protected virtual void Draw()",
+          "summary": "Desenho com tempo contextual (\u0060Context.Time\u0060).",
+          "remarks": "Alternativa \u00E0 sobrecarga com GameTime. Sobrescreva somente uma forma por padr\u00E3o.",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Context.Time"
+          ],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Game.Draw(Lunet.GameTime)",
           "name": "Draw",
           "kind": "method",
           "signature": "protected virtual void Draw(GameTime time)",
-          "summary": "Desenho; pode rodar mais ou menos vezes que \u0060Game.Update\u0060.",
-          "remarks": "",
+          "summary": "Desenho com tempo expl\u00EDcito; pode rodar mais ou menos vezes que \u0060Game.Update\u0060.",
+          "remarks": "O host chama esta sobrecarga; a implementa\u00E7\u00E3o padr\u00E3o delega a \u0060Game.Draw\u0060. Uma sobrescrita com par\u00E2metro controla se chama a implementa\u00E7\u00E3o base.",
           "parameters": [
             {
               "name": "time",
@@ -896,7 +937,8 @@
           "returns": "",
           "examples": [],
           "related": [
-            "M:Lunet.Game.Update(Lunet.GameTime)"
+            "M:Lunet.Game.Update(Lunet.GameTime)",
+            "M:Lunet.Game.Draw"
           ],
           "since": "0.0.1"
         },
@@ -969,22 +1011,39 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Game.Update",
+          "name": "Update",
+          "kind": "method",
+          "signature": "protected virtual void Update()",
+          "summary": "Passo fixo de simula\u00E7\u00E3o com tempo contextual (\u0060Context.Time\u0060).",
+          "remarks": "Alternativa \u00E0 sobrecarga com GameTime. Sobrescreva somente uma forma por padr\u00E3o.",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.Context.Time"
+          ],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Game.Update(Lunet.GameTime)",
           "name": "Update",
           "kind": "method",
           "signature": "protected virtual void Update(GameTime time)",
-          "summary": "Passo fixo de simula\u00E7\u00E3o.",
-          "remarks": "",
+          "summary": "Passo fixo de simula\u00E7\u00E3o com tempo expl\u00EDcito.",
+          "remarks": "O host chama esta sobrecarga; a implementa\u00E7\u00E3o padr\u00E3o delega a \u0060Game.Update\u0060. Uma sobrescrita com par\u00E2metro controla se chama a implementa\u00E7\u00E3o base.",
           "parameters": [
             {
               "name": "time",
               "type": "GameTime",
-              "description": "Tempo do quadro."
+              "description": "Tempo do passo."
             }
           ],
           "returns": "",
           "examples": [],
-          "related": [],
+          "related": [
+            "M:Lunet.Game.Update"
+          ],
           "since": "0.0.1"
         }
       ]

@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-contextual-batch-time",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-28T08:44:06Z",
+  "agent": {
+    "id": "chatgpt-lunet-contextual-lifecycle",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-302.1",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "gpt/lunet-contextual-batch-20261128",
+  "base_commit": "270fc7281cc491b5ea14afed56eba4d0d953eb64",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1064",
+  "files_changed": [
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/lunet-contextual-batch.md",
+    "apps/lunet2d/src/Lunet.Framework/Context.cs",
+    "apps/lunet2d/src/Lunet.Framework/Game.cs",
+    "apps/lunet2d/src/Lunet.Framework/GameHost.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/GraphicsDevice.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ContextTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ContextTimeTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ParameterlessLifecycleTests.cs",
+    "docs/governance/handoffs/HO-20261128-lunet-contextual-batch-time.json"
+  ],
+  "work_completed": [
+    "Extensão E3 solicitada pelo proprietário: Context.Batch e Context.Time; overloads virtuais Update() e Draw() com manutenção das assinaturas anteriores.",
+    "Testes de resolução de lote, escopo temporal e precedência de callbacks escritos; documentação de uso e API sincronizada com o gerador existente.",
+    "Corrigida a ausência de handoff NN-008 apontada pelo integrador."
+  ],
+  "verification": [
+    {
+      "check": "CI anterior: 1420 de 1421 aprovados; falha única na referência JSON de API",
+      "kind": "automated",
+      "result": "failed",
+      "tested_commit": "780fce2671d7fc629cf9b48f8d364c01c813160b",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46126941848/job/140923573714"
+    },
+    {
+      "check": "CI após sincronização da referência API e inclusão do handoff",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1064"
+    },
+    {
+      "check": "APK e release da main",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/1064"
+    }
+  ],
+  "known_issues": [
+    "SDK .NET, Android e Git direto indisponíveis localmente. Referência API sincronizada por edição determinística conforme gerador; CI verifica igualdade integral. Sem teste físico.",
+    "Context.Time exige callback temporizado; Context.Batch exige autorização gráfica e resolução não ambígua. Sobrecargas podem afetar reflexão por nome."
+  ],
+  "blockers": [
+    "Aguardar evidência de CI e integração automática da revisão corrigida."
+  ],
+  "next_actions": [
+    "Verificar CI, consistência e integrador; corrigir falhas remanescentes; confirmar merge e APK correspondente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "PR, arquivos, verificação e bloqueios registrados."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Context.Time usa o GameTime do host; referência API deriva do framework."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegação de teste no aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-contextual-lifecycle",
+      "status": "product-specific",
+      "rationale": "Ergonomia de execução do framework de jogos Lunet; nenhum consumidor externo identificado."
+    }
+  ]
+}
