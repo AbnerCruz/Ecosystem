@@ -1,0 +1,7 @@
+{
+  "product": "ecosystem-ai",
+  "version": "0.0.1-dev.48",
+  "head": "f1e911520e93b0a71ba2656f449f4620b2e94663",
+  "workflow": "ecosystem-ai-release.yml",
+  "tag": "ecosystem-ai-v0.0.1-dev.48"
+}
