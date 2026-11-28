@@ -38,6 +38,7 @@ internal sealed class AiActivityView : Border
     }
 
     public bool IsOpen { get; private set; }
+    public event Action<bool>? OpenChanged;
 
     public void SetOpen(bool open)
     {
@@ -46,6 +47,7 @@ internal sealed class AiActivityView : Border
         _chevron.Child = LunetIcons.Create(open ? LunetIcons.ChevronDown : LunetIcons.ChevronRight,
             LunetTokens.Color.TextSecondary, 16);
         UpdateDetails();
+        OpenChanged?.Invoke(open);
     }
 
     public void Update(IReadOnlyList<LunetAiStep> steps, bool running)

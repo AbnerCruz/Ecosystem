@@ -28,7 +28,7 @@ Caminhos de conteúdo no código: `Content.LoadTexture("Assets/heroi.png")` ou r
 - Física: Box2D gerenciado (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, contatos, raycast).
 - Cenas: `Scene2D`, `Entity2D`, `Component2D`, `Transform2D`.
 - UI de jogo: `TouchButton`, `TouchSlider`, `TouchToggle`, `TouchListView`, `TouchGridView`, `TouchScrollArea`, layouts (`UiStackLayout`, `UiGridLayout`), temas (`UiTheme`).
-- Utilidades: `Tween`/`Ease`, `Timers`, `RandomSource`, `ObjectPool`, `MathEx`, `Geometry`, `GridPathfinder` (A*), saves (`Save`, `ISaveStore`), `Localization`, `GameLog` (`Log.Info`).
+- Utilidades: `Tween`/`Ease`, `Timers`, `Rng` / `VisualRng`, `RandomSource` e `RandomField`, `ObjectPool`, `MathEx`, `Geometry`, `GridPathfinder` (A*), saves (`Save`, `ISaveStore`), `Localization`, `GameLog` (`Log.Info`).
 - Inspector: atributos `[Inspect]`, `[Range]`, `[Tooltip]`, `[Color]`, `[Asset]`, `[Group]`, `[ReadOnly]`, `[Hidden]`, `[Multiline]`.
 
 ## Multiplayer (existe, `using Lunet.Networking;`)

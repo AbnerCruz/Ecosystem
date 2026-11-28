@@ -114,7 +114,8 @@ public class MathAndRandomTests
             Assert.InRange(r.NextInt(3, 8), 3, 7);
             Assert.Equal(1f, r.NextDirection().Length(), 0.001f);
         }
-        Assert.Throws<ArgumentOutOfRangeException>(() => r.NextInt(0));
+        Assert.Equal(0, r.NextInt(0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => r.NextInt(-1));
     }
 
     [Fact]

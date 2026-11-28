@@ -1,6 +1,13 @@
 {
   "entries": [
     {
+      "id": "random-e-procedural",
+      "title": "Sorteios, sementes e geração procedural",
+      "category": "concepts",
+      "terms": ["Rng", "VisualRng", "RandomSource", "RandomField", "seed", "probabilidade", "Fork", "Philox"],
+      "since": "0.0.1-dev.1000621"
+    },
+    {
       "id": "ordenacao-importacoes-contexto",
       "title": "Ordene sprites e organize importações e dependências",
       "category": "concepts",

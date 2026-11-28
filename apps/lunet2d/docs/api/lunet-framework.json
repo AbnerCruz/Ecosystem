@@ -377,6 +377,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Context.Rng",
+          "name": "Rng",
+          "kind": "property",
+          "signature": "public static RandomSource Rng { get; }",
+          "summary": "Fluxo de simula\u00E7\u00E3o do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Context.Save",
           "name": "Save",
           "kind": "property",
@@ -421,6 +434,19 @@
           "kind": "property",
           "signature": "public static Timers Timers { get; }",
           "summary": "Timers do jogo corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Context.VisualRng",
+          "name": "VisualRng",
+          "kind": "property",
+          "signature": "public static RandomSource VisualRng { get; }",
+          "summary": "Fluxo de apresenta\u00E7\u00E3o do jogo corrente.",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -737,6 +763,25 @@
       "since": "0.0.1",
       "members": [
         {
+          "id": "M:Lunet.Game.#ctor(System.UInt64)",
+          "name": "Game",
+          "kind": "constructor",
+          "signature": "protected Game(ulong seed)",
+          "summary": "Cria o jogo com uma semente de simula\u00E7\u00E3o expl\u00EDcita.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "seed",
+              "type": "ulong",
+              "description": "Semente de origem da simula\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Game.Audio",
           "name": "Audio",
           "kind": "property",
@@ -867,6 +912,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Game.Rng",
+          "name": "Rng",
+          "kind": "property",
+          "signature": "public RandomSource Rng { get; }",
+          "summary": "Gerador principal desta inst\u00E2ncia do jogo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Game.Save",
           "name": "Save",
           "kind": "property",
@@ -898,6 +956,19 @@
           "kind": "property",
           "signature": "public Timers Timers { get; }",
           "summary": "Timers no tempo do jogo (param na pausa).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Game.VisualRng",
+          "name": "VisualRng",
+          "kind": "property",
+          "signature": "public RandomSource VisualRng { get; }",
+          "summary": "Fluxo de apresenta\u00E7\u00E3o derivado da semente inicial da simula\u00E7\u00E3o.",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -3463,15 +3534,199 @@
       ]
     },
     {
+      "id": "T:Lunet.RandomField",
+      "name": "RandomField",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class RandomField",
+      "summary": "Campo Philox4x32-10 imut\u00E1vel, indexado por coordenada, canal e amostra.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar field = new RandomField(42); float value = field.FloatAt(-3, 12, channel: 1);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.RandomField.#ctor(System.UInt64)",
+          "name": "RandomField",
+          "kind": "constructor",
+          "signature": "public RandomField(ulong seed)",
+          "summary": "Cria um campo reproduz\u00EDvel.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "seed",
+              "type": "ulong",
+              "description": "Chave de 64 bits."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomField.Seed",
+          "name": "Seed",
+          "kind": "property",
+          "signature": "public ulong Seed { get; }",
+          "summary": "Chave de origem do campo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomField.DoubleAt(System.Int32,System.Int32,System.UInt32,System.UInt32)",
+          "name": "DoubleAt",
+          "kind": "method",
+          "signature": "public double DoubleAt(int x, int y, uint channel = 0, uint sample = 0)",
+          "summary": "Calcula uma amostra real de precis\u00E3o dupla.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int",
+              "description": "Coordenada horizontal."
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "description": "Coordenada vertical."
+            },
+            {
+              "name": "channel",
+              "type": "uint",
+              "description": "Canal da posi\u00E7\u00E3o."
+            },
+            {
+              "name": "sample",
+              "type": "uint",
+              "description": "\u00CDndice no canal."
+            }
+          ],
+          "returns": "Real em [0, 1).",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomField.FloatAt(System.Int32,System.Int32,System.UInt32,System.UInt32)",
+          "name": "FloatAt",
+          "kind": "method",
+          "signature": "public float FloatAt(int x, int y, uint channel = 0, uint sample = 0)",
+          "summary": "Calcula uma amostra real de precis\u00E3o simples.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int",
+              "description": "Coordenada horizontal."
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "description": "Coordenada vertical."
+            },
+            {
+              "name": "channel",
+              "type": "uint",
+              "description": "Canal da posi\u00E7\u00E3o."
+            },
+            {
+              "name": "sample",
+              "type": "uint",
+              "description": "\u00CDndice no canal."
+            }
+          ],
+          "returns": "Real em [0, 1).",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomField.StreamAt(System.Int32,System.Int32,System.UInt32,System.UInt32)",
+          "name": "StreamAt",
+          "kind": "method",
+          "signature": "public RandomSource StreamAt(int x, int y, uint channel = 0, uint sample = 0)",
+          "summary": "Cria um fluxo sequencial local.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int",
+              "description": "Coordenada horizontal."
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "description": "Coordenada vertical."
+            },
+            {
+              "name": "channel",
+              "type": "uint",
+              "description": "Canal da posi\u00E7\u00E3o."
+            },
+            {
+              "name": "sample",
+              "type": "uint",
+              "description": "\u00CDndice no canal."
+            }
+          ],
+          "returns": "Gerador iniciado pela palavra da chave completa.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomField.UInt64At(System.Int32,System.Int32,System.UInt32,System.UInt32)",
+          "name": "UInt64At",
+          "kind": "method",
+          "signature": "public ulong UInt64At(int x, int y, uint channel = 0, uint sample = 0)",
+          "summary": "Calcula a amostra indexada. A sa\u00EDda truncada pode ter colis\u00F5es.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int",
+              "description": "Coordenada horizontal, inclusive negativa."
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "description": "Coordenada vertical, inclusive negativa."
+            },
+            {
+              "name": "channel",
+              "type": "uint",
+              "description": "Canal daquela posi\u00E7\u00E3o."
+            },
+            {
+              "name": "sample",
+              "type": "uint",
+              "description": "\u00CDndice da amostra no canal."
+            }
+          ],
+          "returns": "Palavra de 64 bits independente da ordem das consultas.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.RandomSource",
       "name": "RandomSource",
       "namespace": "Lunet",
       "kind": "class",
       "signature": "public sealed class RandomSource",
-      "summary": "Gerador pseudoaleat\u00F3rio determin\u00EDstico (xorshift64*): mesma semente, mesma sequ\u00EAncia, em qualquer aparelho.",
-      "remarks": "",
+      "summary": "Gerador Xoshiro256** inicializado com SplitMix64, para jogos.",
+      "remarks": "Possui estado mut\u00E1vel. Use inst\u00E2ncias separadas ou sincroniza\u00E7\u00E3o externa entre threads.",
       "examples": [
-        "\u0060\u0060\u0060\nvar dice = new RandomSource(42);\nint roll = dice.NextInt(1, 7);\nVector2 direction = dice.NextDirection();\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nvar loot = new RandomSource(42).Fork(\u0022loot\u0022); int roll = loot.NextInt(1, 7);\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
@@ -3481,15 +3736,237 @@
           "name": "RandomSource",
           "kind": "constructor",
           "signature": "public RandomSource(ulong seed)",
-          "summary": "Cria um gerador determin\u00EDstico.",
+          "summary": "Cria um fluxo reproduz\u00EDvel.",
           "remarks": "",
           "parameters": [
             {
               "name": "seed",
               "type": "ulong",
-              "description": "Semente: a mesma semente gera a mesma sequ\u00EAncia."
+              "description": "Semente de 64 bits, inclusive zero."
             }
           ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomSource.Seed",
+          "name": "Seed",
+          "kind": "property",
+          "signature": "public ulong Seed { get; }",
+          "summary": "Semente de origem, usada na deriva\u00E7\u00E3o de fluxos filhos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.CaptureState",
+          "name": "CaptureState",
+          "kind": "method",
+          "signature": "public RandomState CaptureState()",
+          "summary": "Captura a posi\u00E7\u00E3o exata sem alterar o fluxo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Vers\u00E3o, semente e as quatro palavras do estado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Chance(System.Double)",
+          "name": "Chance",
+          "kind": "method",
+          "signature": "public bool Chance(double probability)",
+          "summary": "Sorteia uma ocorr\u00EAncia na resolu\u00E7\u00E3o de NextDouble.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "probability",
+              "type": "double",
+              "description": "Probabilidade finita de zero a um, inclusive."
+            }
+          ],
+          "returns": "Verdadeiro quando a ocorr\u00EAncia \u00E9 sorteada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Clone",
+          "name": "Clone",
+          "kind": "method",
+          "signature": "public RandomSource Clone()",
+          "summary": "Copia a sequ\u00EAncia corrente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Gerador independente na mesma posi\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Fork(System.String)",
+          "name": "Fork",
+          "kind": "method",
+          "signature": "public RandomSource Fork(string stream)",
+          "summary": "Deriva um filho est\u00E1vel sem avan\u00E7ar o pai.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "stream",
+              "type": "string",
+              "description": "Chave textual n\u00E3o vazia, UTF-8 estrito e compara\u00E7\u00E3o ordinal."
+            }
+          ],
+          "returns": "Gerador com a semente derivada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Fork(System.UInt64)",
+          "name": "Fork",
+          "kind": "method",
+          "signature": "public RandomSource Fork(ulong stream)",
+          "summary": "Deriva um filho est\u00E1vel sem avan\u00E7ar o pai.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "stream",
+              "type": "ulong",
+              "description": "Chave num\u00E9rica do filho."
+            }
+          ],
+          "returns": "Gerador com a semente derivada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.FromState(Lunet.RandomState)",
+          "name": "FromState",
+          "kind": "method",
+          "signature": "public static RandomSource FromState(RandomState state)",
+          "summary": "Cria uma inst\u00E2ncia posicionada na captura.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "RandomState",
+              "description": "Vers\u00E3o, semente e posi\u00E7\u00E3o do fluxo."
+            }
+          ],
+          "returns": "Gerador restaurado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.InsideCircle(System.Single)",
+          "name": "InsideCircle",
+          "kind": "method",
+          "signature": "public Vector2 InsideCircle(float radius = 1f)",
+          "summary": "Sorteia um ponto uniforme pela \u00E1rea de um c\u00EDrculo na origem.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "radius",
+              "type": "float",
+              "description": "Raio finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o sorteada no c\u00EDrculo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.InsideCircle(System.Numerics.Vector2,System.Single)",
+          "name": "InsideCircle",
+          "kind": "method",
+          "signature": "public Vector2 InsideCircle(Vector2 center, float radius)",
+          "summary": "Sorteia um ponto uniforme pela \u00E1rea do c\u00EDrculo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "center",
+              "type": "Vector2",
+              "description": "Centro finito do c\u00EDrculo."
+            },
+            {
+              "name": "radius",
+              "type": "float",
+              "description": "Raio finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o sorteada, ou centro para raio zero.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.InsideRectangle(System.Drawing.Rectangle)",
+          "name": "InsideRectangle",
+          "kind": "method",
+          "signature": "public Point InsideRectangle(Rectangle rect)",
+          "summary": "Sorteia posi\u00E7\u00E3o inteira desde a origem, com extremidades direita e inferior exclu\u00EDdas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "rect",
+              "type": "Rectangle",
+              "description": "Ret\u00E2ngulo de dimens\u00F5es positivas."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o inteira no ret\u00E2ngulo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.InsideRectangle(Lunet.RectangleF)",
+          "name": "InsideRectangle",
+          "kind": "method",
+          "signature": "public Vector2 InsideRectangle(RectangleF rect)",
+          "summary": "Sorteia posi\u00E7\u00E3o real desde a origem, com extremidades direita e inferior exclu\u00EDdas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo de dimens\u00F5es positivas e extremidades finitas."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o real no ret\u00E2ngulo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Jump",
+          "name": "Jump",
+          "kind": "method",
+          "signature": "public void Jump()",
+          "summary": "Avan\u00E7a 2^128 passos, preservando a semente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.LongJump",
+          "name": "LongJump",
+          "kind": "method",
+          "signature": "public void LongJump()",
+          "summary": "Avan\u00E7a 2^192 passos, preservando a semente.",
+          "remarks": "",
+          "parameters": [],
           "returns": "",
           "examples": [],
           "related": [],
@@ -3500,10 +3977,61 @@
           "name": "NextBool",
           "kind": "method",
           "signature": "public bool NextBool()",
-          "summary": "Cara ou coroa.",
+          "summary": "Cara ou coroa com o bit superior da pr\u00F3xima palavra.",
           "remarks": "",
           "parameters": [],
-          "returns": "Verdadeiro ou falso com igual chance.",
+          "returns": "Verdadeiro quando o bit vale um.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextBytes(System.Span{System.Byte})",
+          "name": "NextBytes",
+          "kind": "method",
+          "signature": "public void NextBytes(Span\u003Cbyte\u003E destination)",
+          "summary": "Preenche bytes little-endian, usando uma palavra por bloco de oito ou cauda parcial.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "destination",
+              "type": "Span\u003Cbyte\u003E",
+              "description": "Mem\u00F3ria que receber\u00E1 os bytes."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextColor",
+          "name": "NextColor",
+          "kind": "method",
+          "signature": "public Color NextColor()",
+          "summary": "Sorteia uma cor opaca usando os tr\u00EAs bytes superiores da palavra.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Cor RGB uniforme por canal.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextColor(System.Byte)",
+          "name": "NextColor",
+          "kind": "method",
+          "signature": "public Color NextColor(byte alpha)",
+          "summary": "Sorteia uma cor usando os tr\u00EAs bytes superiores da palavra, na ordem RGB.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "alpha",
+              "type": "byte",
+              "description": "Alfa de 0 a 255."
+            }
+          ],
+          "returns": "Cor RGB uniforme por canal com alfa fixo.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3513,10 +4041,66 @@
           "name": "NextDirection",
           "kind": "method",
           "signature": "public Vector2 NextDirection()",
-          "summary": "Dire\u00E7\u00E3o aleat\u00F3ria de comprimento 1.",
+          "summary": "Sorteia dire\u00E7\u00E3o com \u00E2ngulo uniforme.",
           "remarks": "",
           "parameters": [],
-          "returns": "Vetor unit\u00E1rio.",
+          "returns": "Vetor de comprimento aproximadamente unit\u00E1rio.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextDouble",
+          "name": "NextDouble",
+          "kind": "method",
+          "signature": "public double NextDouble()",
+          "summary": "Extrai 53 bits de uma palavra nova.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Real de precis\u00E3o dupla em [0, 1).",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextDouble(System.Double,System.Double)",
+          "name": "NextDouble",
+          "kind": "method",
+          "signature": "public double NextDouble(double min, double maxExclusive)",
+          "summary": "Sorteia um real de precis\u00E3o dupla entre limites finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "double",
+              "description": "Limite inferior inclu\u00EDdo."
+            },
+            {
+              "name": "maxExclusive",
+              "type": "double",
+              "description": "Limite superior exclu\u00EDdo. Se igual a min, devolve min."
+            }
+          ],
+          "returns": "Real no intervalo pedido.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextExponential(System.Double)",
+          "name": "NextExponential",
+          "kind": "method",
+          "signature": "public double NextExponential(double rate)",
+          "summary": "Distribui\u00E7\u00E3o exponencial.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "rate",
+              "type": "double",
+              "description": "Taxa finita positiva."
+            }
+          ],
+          "returns": "Amostra n\u00E3o negativa. Lan\u00E7a OverflowException se a sa\u00EDda exceder a faixa finita.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3526,10 +4110,10 @@
           "name": "NextFloat",
           "kind": "method",
           "signature": "public float NextFloat()",
-          "summary": "N\u00FAmero em [0, 1).",
+          "summary": "Extrai 24 bits de uma palavra nova.",
           "remarks": "",
           "parameters": [],
-          "returns": "N\u00FAmero de 0 (inclu\u00EDdo) a 1 (n\u00E3o inclu\u00EDdo), ou dentro do intervalo pedido.",
+          "returns": "Real de precis\u00E3o simples em [0, 1).",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3538,22 +4122,59 @@
           "id": "M:Lunet.RandomSource.NextFloat(System.Single,System.Single)",
           "name": "NextFloat",
           "kind": "method",
-          "signature": "public float NextFloat(float min, float max)",
-          "summary": "N\u00FAmero decimal no intervalo dado.",
+          "signature": "public float NextFloat(float min, float maxExclusive)",
+          "summary": "Sorteia um real de precis\u00E3o simples entre limites finitos.",
           "remarks": "",
           "parameters": [
             {
               "name": "min",
               "type": "float",
-              "description": "Menor valor (inclusive)."
+              "description": "Limite inferior inclu\u00EDdo."
             },
             {
-              "name": "max",
+              "name": "maxExclusive",
               "type": "float",
-              "description": "Maior valor (exclusive)."
+              "description": "Limite superior exclu\u00EDdo. Se igual a min, devolve min."
             }
           ],
-          "returns": "N\u00FAmero entre min e max.",
+          "returns": "Real no intervalo pedido.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextGaussian(System.Double,System.Double)",
+          "name": "NextGaussian",
+          "kind": "method",
+          "signature": "public double NextGaussian(double mean = 0, double standardDeviation = 1)",
+          "summary": "Distribui\u00E7\u00E3o normal Box\u2013Muller sem cache.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "mean",
+              "type": "double",
+              "description": "M\u00E9dia finita."
+            },
+            {
+              "name": "standardDeviation",
+              "type": "double",
+              "description": "Desvio padr\u00E3o finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "Amostra da distribui\u00E7\u00E3o. Lan\u00E7a OverflowException se a sa\u00EDda exceder a faixa finita.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextInt",
+          "name": "NextInt",
+          "kind": "method",
+          "signature": "public int NextInt()",
+          "summary": "Sorteia um inteiro n\u00E3o negativo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Um inteiro menor que int.MaxValue.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3563,16 +4184,16 @@
           "name": "NextInt",
           "kind": "method",
           "signature": "public int NextInt(int maxExclusive)",
-          "summary": "Inteiro em [0, \u0060maxExclusive\u0060).",
+          "summary": "Sorteia um inteiro a partir de zero.",
           "remarks": "",
           "parameters": [
             {
               "name": "maxExclusive",
               "type": "int",
-              "description": "Limite superior, n\u00E3o inclu\u00EDdo."
+              "description": "Limite superior exclu\u00EDdo. Zero devolve zero."
             }
           ],
-          "returns": "N\u00FAmero inteiro dentro do intervalo pedido.",
+          "returns": "Inteiro no intervalo pedido.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3582,21 +4203,167 @@
           "name": "NextInt",
           "kind": "method",
           "signature": "public int NextInt(int min, int maxExclusive)",
-          "summary": "Inteiro em [\u0060min\u0060, \u0060maxExclusive\u0060).",
+          "summary": "Sorteia um inteiro com limite superior exclusivo.",
           "remarks": "",
           "parameters": [
             {
               "name": "min",
               "type": "int",
-              "description": "Menor valor poss\u00EDvel (inclu\u00EDdo)."
+              "description": "Limite inferior inclu\u00EDdo."
             },
             {
               "name": "maxExclusive",
               "type": "int",
-              "description": "Limite superior, n\u00E3o inclu\u00EDdo."
+              "description": "Limite superior exclu\u00EDdo."
             }
           ],
-          "returns": "N\u00FAmero inteiro dentro do intervalo pedido.",
+          "returns": "Inteiro sorteado, ou min quando o intervalo tem at\u00E9 uma sa\u00EDda.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextInt64",
+          "name": "NextInt64",
+          "kind": "method",
+          "signature": "public long NextInt64()",
+          "summary": "Sorteia um inteiro longo n\u00E3o negativo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Um inteiro menor que long.MaxValue.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextInt64(System.Int64)",
+          "name": "NextInt64",
+          "kind": "method",
+          "signature": "public long NextInt64(long maxExclusive)",
+          "summary": "Sorteia um inteiro longo a partir de zero.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "maxExclusive",
+              "type": "long",
+              "description": "Limite superior exclu\u00EDdo. Zero devolve zero."
+            }
+          ],
+          "returns": "Inteiro longo no intervalo pedido.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextInt64(System.Int64,System.Int64)",
+          "name": "NextInt64",
+          "kind": "method",
+          "signature": "public long NextInt64(long min, long maxExclusive)",
+          "summary": "Sorteia um inteiro longo com limite superior exclusivo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "long",
+              "description": "Limite inferior inclu\u00EDdo."
+            },
+            {
+              "name": "maxExclusive",
+              "type": "long",
+              "description": "Limite superior exclu\u00EDdo."
+            }
+          ],
+          "returns": "Inteiro sorteado, ou min quando o intervalo tem at\u00E9 uma sa\u00EDda.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextPoint(System.Int32,System.Int32)",
+          "name": "NextPoint",
+          "kind": "method",
+          "signature": "public Point NextPoint(int min, int maxExclusive)",
+          "summary": "Sorteia as coordenadas de um ponto com os mesmos limites em ambos os eixos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "int",
+              "description": "Limite inferior inclu\u00EDdo."
+            },
+            {
+              "name": "maxExclusive",
+              "type": "int",
+              "description": "Limite superior exclu\u00EDdo."
+            }
+          ],
+          "returns": "Ponto sorteado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextPoint(System.Drawing.Point,System.Drawing.Point)",
+          "name": "NextPoint",
+          "kind": "method",
+          "signature": "public Point NextPoint(Point min, Point maxExclusive)",
+          "summary": "Sorteia X e depois Y com limites por eixo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "Point",
+              "description": "Limites inferiores inclu\u00EDdos."
+            },
+            {
+              "name": "maxExclusive",
+              "type": "Point",
+              "description": "Limites superiores exclu\u00EDdos."
+            }
+          ],
+          "returns": "Ponto sorteado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextTriangular(System.Double,System.Double,System.Double)",
+          "name": "NextTriangular",
+          "kind": "method",
+          "signature": "public double NextTriangular(double min, double mode, double max)",
+          "summary": "Distribui\u00E7\u00E3o triangular com limites inclu\u00EDdos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "double",
+              "description": "Limite inferior finito."
+            },
+            {
+              "name": "mode",
+              "type": "double",
+              "description": "Moda finita entre os limites."
+            },
+            {
+              "name": "max",
+              "type": "double",
+              "description": "Limite superior finito."
+            }
+          ],
+          "returns": "Amostra da distribui\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextUInt32",
+          "name": "NextUInt32",
+          "kind": "method",
+          "signature": "public uint NextUInt32()",
+          "summary": "Extrai os 32 bits superiores da pr\u00F3xima palavra.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Uma palavra de 32 bits.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3606,10 +4373,403 @@
           "name": "NextUInt64",
           "kind": "method",
           "signature": "public ulong NextUInt64()",
-          "summary": "Pr\u00F3ximo n\u00FAmero de 64 bits sem sinal.",
+          "summary": "Avan\u00E7a a sequ\u00EAncia de Xoshiro256**.",
           "remarks": "",
           "parameters": [],
-          "returns": "N\u00FAmero pseudoaleat\u00F3rio.",
+          "returns": "Uma palavra de 64 bits.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextVector2(System.Single,System.Single)",
+          "name": "NextVector2",
+          "kind": "method",
+          "signature": "public Vector2 NextVector2(float min, float maxExclusive)",
+          "summary": "Sorteia as componentes de um vetor com os mesmos limites em ambos os eixos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "float",
+              "description": "Limite inferior inclu\u00EDdo."
+            },
+            {
+              "name": "maxExclusive",
+              "type": "float",
+              "description": "Limite superior exclu\u00EDdo."
+            }
+          ],
+          "returns": "Vetor sorteado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextVector2(System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "NextVector2",
+          "kind": "method",
+          "signature": "public Vector2 NextVector2(Vector2 min, Vector2 maxExclusive)",
+          "summary": "Sorteia X e depois Y com limites por eixo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "Vector2",
+              "description": "Limites inferiores inclu\u00EDdos."
+            },
+            {
+              "name": "maxExclusive",
+              "type": "Vector2",
+              "description": "Limites superiores exclu\u00EDdos."
+            }
+          ],
+          "returns": "Vetor sorteado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.NextWeightedIndex(System.ReadOnlySpan{System.Double})",
+          "name": "NextWeightedIndex",
+          "kind": "method",
+          "signature": "public int NextWeightedIndex(ReadOnlySpan\u003Cdouble\u003E weights)",
+          "summary": "Sorteia por pesos relativos. Pesos zero s\u00E3o ignorados.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "weights",
+              "type": "ReadOnlySpan\u003Cdouble\u003E",
+              "description": "Pesos finitos n\u00E3o negativos, incluindo pelo menos um positivo."
+            }
+          ],
+          "returns": "\u00CDndice da posi\u00E7\u00E3o sorteada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.OnCircle(System.Single)",
+          "name": "OnCircle",
+          "kind": "method",
+          "signature": "public Vector2 OnCircle(float radius = 1f)",
+          "summary": "Sorteia um ponto no contorno do c\u00EDrculo na origem.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "radius",
+              "type": "float",
+              "description": "Raio finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o no contorno.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.OnCircle(System.Numerics.Vector2,System.Single)",
+          "name": "OnCircle",
+          "kind": "method",
+          "signature": "public Vector2 OnCircle(Vector2 center, float radius)",
+          "summary": "Sorteia um ponto no contorno do c\u00EDrculo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "center",
+              "type": "Vector2",
+              "description": "Centro finito do c\u00EDrculo."
+            },
+            {
+              "name": "radius",
+              "type": "float",
+              "description": "Raio finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o no contorno, ou centro para raio zero.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Pick\u0060\u00601(System.Collections.Generic.IReadOnlyList{\u0060\u00600})",
+          "name": "Pick",
+          "kind": "method",
+          "signature": "public T Pick\u003CT\u003E(IReadOnlyList\u003CT\u003E items)",
+          "summary": "Escolhe um elemento pelo \u00EDndice.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "IReadOnlyList\u003CT\u003E",
+              "description": "Cole\u00E7\u00E3o n\u00E3o vazia."
+            }
+          ],
+          "returns": "Elemento sorteado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.PickWeighted\u0060\u00601(System.Collections.Generic.IReadOnlyList{\u0060\u00600},System.ReadOnlySpan{System.Double})",
+          "name": "PickWeighted",
+          "kind": "method",
+          "signature": "public T PickWeighted\u003CT\u003E(IReadOnlyList\u003CT\u003E items, ReadOnlySpan\u003Cdouble\u003E weights)",
+          "summary": "Escolhe um elemento pelo peso relativo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "IReadOnlyList\u003CT\u003E",
+              "description": "Cole\u00E7\u00E3o n\u00E3o vazia."
+            },
+            {
+              "name": "weights",
+              "type": "ReadOnlySpan\u003Cdouble\u003E",
+              "description": "Um peso para cada elemento."
+            }
+          ],
+          "returns": "Elemento sorteado.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.RestoreState(Lunet.RandomState)",
+          "name": "RestoreState",
+          "kind": "method",
+          "signature": "public void RestoreState(RandomState state)",
+          "summary": "Restaura a semente e a posi\u00E7\u00E3o a partir de um estado v\u00E1lido.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "RandomState",
+              "description": "Captura com a vers\u00E3o atual e ao menos uma palavra n\u00E3o nula."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Sample\u0060\u00601(System.Collections.Generic.IReadOnlyList{\u0060\u00600},System.Int32)",
+          "name": "Sample",
+          "kind": "method",
+          "signature": "public T[] Sample\u003CT\u003E(IReadOnlyList\u003CT\u003E items, int count)",
+          "summary": "Sorteia sem reposi\u00E7\u00E3o por \u00EDndice, preservando a cole\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "IReadOnlyList\u003CT\u003E",
+              "description": "Cole\u00E7\u00E3o a amostrar."
+            },
+            {
+              "name": "count",
+              "type": "int",
+              "description": "N\u00FAmero de \u00EDndices, de zero ao tamanho da cole\u00E7\u00E3o."
+            }
+          ],
+          "returns": "Array da amostra.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Shuffle\u0060\u00601(System.Collections.Generic.IList{\u0060\u00600})",
+          "name": "Shuffle",
+          "kind": "method",
+          "signature": "public void Shuffle\u003CT\u003E(IList\u003CT\u003E items)",
+          "summary": "Embaralha uma lista edit\u00E1vel in-place por Fisher\u2013Yates.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "IList\u003CT\u003E",
+              "description": "Lista a embaralhar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Shuffle\u0060\u00601(System.Span{\u0060\u00600})",
+          "name": "Shuffle",
+          "kind": "method",
+          "signature": "public void Shuffle\u003CT\u003E(Span\u003CT\u003E items)",
+          "summary": "Embaralha uma regi\u00E3o de mem\u00F3ria por Fisher\u2013Yates.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "Span\u003CT\u003E",
+              "description": "Mem\u00F3ria a embaralhar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RandomSource.Shuffle\u0060\u00601(\u0060\u00600[])",
+          "name": "Shuffle",
+          "kind": "method",
+          "signature": "public void Shuffle\u003CT\u003E(T[] items)",
+          "summary": "Embaralha o array in-place por Fisher\u2013Yates.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "T[]",
+              "description": "Array a embaralhar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.RandomState",
+      "name": "RandomState",
+      "namespace": "Lunet",
+      "kind": "struct",
+      "signature": "public readonly struct RandomState",
+      "summary": "Posi\u00E7\u00E3o e semente de um fluxo pseudoaleat\u00F3rio.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nRandomState state = new RandomSource(42).CaptureState(); var copy = RandomSource.FromState(state);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.RandomState.#ctor(System.Int32,System.UInt64,System.UInt64,System.UInt64,System.UInt64,System.UInt64)",
+          "name": "RandomState",
+          "kind": "constructor",
+          "signature": "public RandomState(int Version, ulong Seed, ulong S0, ulong S1, ulong S2, ulong S3)",
+          "summary": "Posi\u00E7\u00E3o e semente de um fluxo pseudoaleat\u00F3rio.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Version",
+              "type": "int",
+              "description": "Vers\u00E3o do formato."
+            },
+            {
+              "name": "Seed",
+              "type": "ulong",
+              "description": "Semente de origem."
+            },
+            {
+              "name": "S0",
+              "type": "ulong",
+              "description": "Primeira palavra do estado."
+            },
+            {
+              "name": "S1",
+              "type": "ulong",
+              "description": "Segunda palavra do estado."
+            },
+            {
+              "name": "S2",
+              "type": "ulong",
+              "description": "Terceira palavra do estado."
+            },
+            {
+              "name": "S3",
+              "type": "ulong",
+              "description": "Quarta palavra do estado."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nRandomState state = new RandomSource(42).CaptureState(); var copy = RandomSource.FromState(state);\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomState.S0",
+          "name": "S0",
+          "kind": "property",
+          "signature": "public ulong S0 { get; init; }",
+          "summary": "Primeira palavra do estado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomState.S1",
+          "name": "S1",
+          "kind": "property",
+          "signature": "public ulong S1 { get; init; }",
+          "summary": "Segunda palavra do estado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomState.S2",
+          "name": "S2",
+          "kind": "property",
+          "signature": "public ulong S2 { get; init; }",
+          "summary": "Terceira palavra do estado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomState.S3",
+          "name": "S3",
+          "kind": "property",
+          "signature": "public ulong S3 { get; init; }",
+          "summary": "Quarta palavra do estado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomState.Seed",
+          "name": "Seed",
+          "kind": "property",
+          "signature": "public ulong Seed { get; init; }",
+          "summary": "Semente de origem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RandomState.Version",
+          "name": "Version",
+          "kind": "property",
+          "signature": "public int Version { get; init; }",
+          "summary": "Vers\u00E3o do formato.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"

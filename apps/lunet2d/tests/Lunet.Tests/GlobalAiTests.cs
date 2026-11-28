@@ -131,12 +131,26 @@ public sealed class AiStreamingRenderTests
     private sealed class Blocking : AgentRuntime.IModelProvider
     {
         public readonly TaskCompletionSource Release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public readonly TaskCompletionSource Entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public string ProviderId => "chat-completions";
         public async ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken)
         {
+            Entered.TrySetResult();
             await Release.Task.WaitAsync(cancellationToken);
             return new([new AgentRuntime.TextBlock("pronto")], AgentRuntime.StopReason.EndTurn, new AgentRuntime.Usage(1, 1, AgentRuntime.Money.Zero("USD")));
         }
+    }
+
+    private static void WaitForModel(Blocking model)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!model.Entered.Task.IsCompleted && DateTime.UtcNow < deadline)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(5);
+        }
+        Assert.True(model.Entered.Task.IsCompleted);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
     }
 
     private sealed class NoVault : Lunet.Ai.ISecretVault
@@ -165,7 +179,7 @@ public sealed class AiStreamingRenderTests
                 var ai = shell.WorkspaceView.Support.Ai;
                 ai.Input.Text = "explique o Update";
                 var run = ai.SendAsync();
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                WaitForModel(model);
                 Assert.True(ai.Running);
                 var before = ai.FullRenders;
                 for (var i = 0; i < 200; i++) ai.RenderLive();          // what 200 streamed chunks do
@@ -202,7 +216,7 @@ public sealed class AiStreamingRenderTests
                 var ai = shell.WorkspaceView.Support.Ai;
                 ai.Input.Text = "explique";
                 var run = ai.SendAsync();
-                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                WaitForModel(model);
 
                 shell.OpenProject("Outro");                                   // another game during the run
                 shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);

@@ -252,7 +252,6 @@ public static class ProjectTemplates
 
             const float CoinRadius = 20f;
 
-            readonly RandomSource random = new(2024);
             readonly List<Coin> coins = new();
             SpriteBatch batch = null!;
             SpriteFont font = null!;
@@ -294,7 +293,7 @@ public static class ProjectTemplates
                 {
                     coins.Add(new Coin
                     {
-                        Position = new Vector2(random.NextFloat(CoinRadius, GraphicsDevice.VirtualWidth - CoinRadius), -CoinRadius),
+                        Position = new Vector2(Rng.NextFloat(CoinRadius, GraphicsDevice.VirtualWidth - CoinRadius), -CoinRadius),
                         Speed = 90 + System.Math.Min(score * 4, 220),
                     });
                     spawnTimer = System.Math.Max(0.35f, 1f - score * 0.02f);

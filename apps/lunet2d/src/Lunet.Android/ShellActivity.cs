@@ -148,7 +148,7 @@ public sealed class ShellActivity : AvaloniaActivity
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai,
                 Knowledge: () => AndroidAiKnowledge.Load(Assets!), Web: new Lunet.Ai.LunetAiWebSession(),
-                KeepAlive: HoldForAi),
+                KeepAlive: HoldForAi, Diagnostics: message => global::Android.Util.Log.Info("Lunet.Ai", message)),
         };
         // §8 of the visual language: the system's "remove animations" turns the entries into an instant appearance.
         try { Lunet.Client.Ui.LunetUi.ReduceMotion = global::Android.Provider.Settings.Global.GetFloat(ContentResolver, global::Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f; }
@@ -498,12 +498,40 @@ public sealed class ShellActivity : AvaloniaActivity
             {
                 try
                 {
-                    shell.CreateProject();
+                    shell.OpenProject("ProjetoSaf");
+                    var project = shell.Workspace.Project ?? throw new InvalidOperationException("Projeto SAF não reabriu.");
+                    if (project.Name != "ProjetoSaf") throw new InvalidOperationException("Projeto incorreto.");
+                    if (!project.Exists("ExistingTab.cs")) project.CreateFile("ExistingTab.cs", "class ExistingTab {}");
+                    shell.WorkspaceView.OpenFile("ExistingTab.cs");
+                    shell.WorkspaceView.Code.Surface.Text = "class ExistingTab { } // edição do emulador";
                     shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Explorer);
                     global::Android.Util.Log.Info("lunet-e2e", "filesux=pronto");
                 }
                 catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
             });
+            return;
+        }
+        if (Intent?.GetBooleanExtra("lunet.random.demo", false) == true)
+        {
+            Intent.RemoveExtra("lunet.random.demo");
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                try
+                {
+                    shell.OpenProject("random-coins");
+                    if (shell.Workspace.Project?.Name != "Moedas e sementes")
+                        throw new InvalidOperationException("O exemplo de Random não abriu.");
+                    global::Android.Util.Log.Info("lunet-e2e", "random=editor");
+                    await shell.RunGame();
+                }
+                catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
+            });
+            return;
+        }
+        if (Intent?.GetBooleanExtra("lunet.ai.stability", false) == true)
+        {
+            Intent.RemoveExtra("lunet.ai.stability");
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = RunAiStabilityJourney(shell));
             return;
         }
         if (Intent?.GetBooleanExtra("lunet.saf", false) == true)
@@ -558,6 +586,71 @@ public sealed class ShellActivity : AvaloniaActivity
             }
             catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
         }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private static async Task RunAiStabilityJourney(Lunet.Client.LunetShell shell)
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+            var host = shell.AiHost!;
+            var model = new JourneyModel();
+            shell.AiHost = host with { Provider = model };
+            shell.CreateProject();
+            var project = shell.Workspace.Project!;
+            var next = shell.Workspace.Store.Create(shell.NextProjectName());
+            var projectId = System.Text.Encoding.UTF8.GetBytes(project.Manifest.GameId);
+            var id = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(projectId)).ToLowerInvariant();
+            var historyPath = Path.Combine(host.HistoryDirectory, id + ".json");
+            await Task.Run(() =>
+            {
+                Directory.CreateDirectory(host.HistoryDirectory);
+                var history = Enumerable.Range(0, 200).Select(i => new Lunet.Ai.LunetAiTurn("Lunet", $"Histórico {i}")).ToArray();
+                File.WriteAllText(historyPath, System.Text.Json.JsonSerializer.Serialize(history));
+            }, timeout.Token);
+            shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Ai);
+            shell.State.ToggleAiSize();
+            var ai = shell.WorkspaceView.Support.Ai;
+            for (int turn = 0; turn < 8; turn++)
+            {
+                ai.Input.Text = $"Revise o Game.cs, rodada {turn}";
+                await ai.SendAsync().WaitAsync(timeout.Token);
+                if (ai.LastReply?.Text != "Resposta local") throw new InvalidOperationException("Resposta do teste não apareceu.");
+            }
+            model.WaitForStop = true;
+            ai.Input.Text = "Revise o Game.cs durante a troca de jogo";
+            var run = ai.SendAsync();
+            await model.Waiting.Task.WaitAsync(timeout.Token);
+            shell.OpenProject(next.Name);
+            ai.Stop();
+            await run.WaitAsync(timeout.Token);
+            if (ai.Running || shell.Workspace.Project?.Manifest.GameId != next.Manifest.GameId)
+                throw new InvalidOperationException("O cancelamento alterou o projeto aberto.");
+            var restored = await Task.Run(() => new Lunet.Ai.LunetAiSession(project, historyPath).History, timeout.Token);
+            if (restored.Count != 218 || restored[^1].Pending || !restored[^1].Text.Contains("cancelada", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Histórico incompleto depois do cancelamento.");
+            global::Android.Util.Log.Info("lunet-e2e", $"ai=preservada turnos={restored.Count} idePid={Process.MyPid()}");
+        }
+        catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
+    }
+
+    private sealed class JourneyModel : AgentRuntime.IModelProvider
+    {
+        public string ProviderId => "chat-completions";
+        public bool WaitForStop { get; set; }
+        public TaskCompletionSource Waiting { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken)
+        {
+            if (WaitForStop)
+            {
+                Waiting.TrySetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            await Task.Delay(80, cancellationToken);
+            return new([new AgentRuntime.TextBlock("Resposta local")], AgentRuntime.StopReason.EndTurn,
+                new AgentRuntime.Usage(1, 1, AgentRuntime.Money.Zero("USD")));
+        }
     }
 
     private async Task RunSafJourney(LunetShell shell)

@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-random",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-28T13:00:00Z",
+  "agent": {
+    "id": "codex-lunet-random",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-546",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-ide-ai-stability-20261128",
+  "base_commit": "a854f1e05a1a4ccd5756acade1a3e3daaec691dd",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1070",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/RandomSource.cs",
+    "apps/lunet2d/src/Lunet.Framework/Game.cs",
+    "apps/lunet2d/src/Lunet.Framework/Context.cs",
+    "apps/lunet2d/src/Lunet.Framework/RandomField.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetRandomTests.cs",
+    "apps/lunet2d/docs/plans/lunet-random-2026-11-28.md",
+    "docs/governance/handoffs/HO-20261128-lunet-random.json"
+  ],
+  "work_completed": [
+    "Integração do Random da especificação na mesma dev.1000621 das correções de estabilidade.",
+    "Núcleo Xoshiro256**/SplitMix64, Lemire, intervalos, geometria, distribuições, coleções, estado, saltos, Fork e campo indexado Philox4x32-10.",
+    "Integração no Game, Context, serviços, compilador real, template, Preview, APK de smoke, catálogo da IDE, manual offline e referência da IA.",
+    "Recuperação do código não commitado a partir do histórico da sessão após reinicialização. Backup do head anterior preservado no GitHub em backup/lunet-1070-20261128."
+  ],
+  "verification": [
+    {
+      "check": "Regressões focadas, importações, cobertura de API e Preview headless",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "31 testes passaram na reconstrução, incluindo vetores e comparação de pixels do exemplo com a mesma seed."
+    },
+    {
+      "check": "Baterias externas da rodada anterior",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SmallCrush e PractRand 1 GiB nas três seeds. Resultados preservados no histórico da conversa e resumidos no plano; logs brutos perdidos."
+    },
+    {
+      "check": "Crush e pipeline Android e Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Harness reproduzível e jornadas CI no PR #1070."
+    }
+  ],
+  "known_issues": [
+    "Sem homologação no aparelho físico. O Crush anterior perdeu o processo na reinicialização."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar o CI combinado e o pipeline de release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Seed e estado do RNG pertencem à instância do jogo. Context aponta para o GameHost ativo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "O Framework mantém somente suas dependências de plataforma e o IDE usa referências já existentes."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Headless, emulador e aparelho físico têm evidências distintas."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-game-random",
+      "status": "product-specific",
+      "rationale": "O contrato de seed, jogo, saves e catálogo pertence ao Framework do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

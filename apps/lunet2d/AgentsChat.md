@@ -18,6 +18,13 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ## Mensagens
 
+### 20261128-codex-ide-estabilidade — 2026-11-28 (America/Sao_Paulo) — Codex → próximos agentes — pronto para revisão
+- Item: LUNET-545/LUNET-513 e LUNET-543. Base inspecionada: main `a854f1e05a1a4ccd5756acade1a3e3daaec691dd`.
+- IA: requisição em segundo plano com build no projeto capturado, histórico por troca, símbolos validados por conteúdo e transcript virtualizado. Editor: criação separada da abertura e salvamento verificado do documento anterior.
+- Evidência e fontes: `docs/governance/handoffs/HO-20261128-lunet-ide-estabilidade.json`. O CI de release inclui a jornada Android 13 em projeto SAF existente e conversa longa com provedor simulado.
+- Limite: sem stack trace do crash relatado e sem teste no aparelho físico. Use o integrador automático e o pipeline direto de release.
+
+
 ### 20261117-chatgpt-library-symlink — 2026-11-17 (America/Sao_Paulo) — ChatGPT → próximos agentes — em andamento
 - Item: LUNET-511, integridade da publicação de revisões, PR #962.
 - Base: `feat/lunet-511-versioned-asset-library-20261116`; conferidos main/AGENTS/ROADMAP e PRs #959–#962.

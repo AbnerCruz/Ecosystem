@@ -8,6 +8,18 @@ public sealed class SmokeGame : Game
     private Texture2D _dot = null!;
     private Vector2 _position;
 
+    protected override void Initialize()
+    {
+        var rng = new RandomSource(42);
+        if (rng.NextUInt64() != 0x15780b2e0c2ec716UL ||
+            new RandomField(0).UInt64At(0, 0) != 0xe169c58d6627e8d5UL ||
+            !object.ReferenceEquals(Rng, Context.Rng) || object.ReferenceEquals(Rng, VisualRng))
+            throw new System.InvalidOperationException("A implementação de RNG divergiu no host do APK.");
+        var state = rng.CaptureState();
+        if (rng.NextUInt32() != RandomSource.FromState(state).NextUInt32())
+            throw new System.InvalidOperationException("O estado de RNG não reproduziu a sequência no APK.");
+    }
+
     protected override void LoadContent()
     {
         _batch = new SpriteBatch(GraphicsDevice);

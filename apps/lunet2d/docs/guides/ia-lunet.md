@@ -75,6 +75,10 @@ Antes de criar arte ou mecânicas, a IA lê o estilo do projeto e segue a paleta
 - Forçar parada ou o Android matar o processo pode interromper o trabalho. Ao abrir novamente, revise os arquivos alterados antes de repetir a solicitação; a execução não é retomada automaticamente.
 - `Content.LoadTexture("Textures/Cells.png")` procura `Content/Textures/Cells.png`. Para `Assets/heroi.png`, use `Content.LoadTexture("Assets/heroi.png")`. A forma antiga `Content.LoadTexture("Content/Textures/Cells.png")` tem fallback de compatibilidade. A IA verifica existência e assinatura de PNG ao compilar, mas não afirma que o jogo rodou sem executar o Preview.
 
+O chat da IDE carrega o histórico em segundo plano e monta as mensagens conforme entram na tela. A gravação incremental preserva a conversa mesmo quando o trabalho é interrompido. Ao trocar de jogo durante uma execução, a IA continua usando os arquivos e a compilação do jogo de origem.
+
+No Android, `adb logcat -s Lunet.Ai` mostra a duração da preparação, o tempo desde o envio até o primeiro token em streaming, uma amostra da espera na fila da interface e os bytes gerenciados no encerramento. O log contém diagnósticos locais e não inclui a conversa nem chaves de API.
+
 ### Testes em Android 13
 
 1. Inicie uma tarefa longa, saia do chat para o editor, retorne e confira pedido, passos e resposta; repita entrando em outro projeto.

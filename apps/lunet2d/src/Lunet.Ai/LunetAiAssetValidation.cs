@@ -33,8 +33,7 @@ public static class LunetAiAssetValidation
                 var candidates = new List<string> { "Content/" + name };
                 if (name.StartsWith("Assets/", StringComparison.Ordinal))
                     candidates.Add(name);
-                var located = candidates.FirstOrDefault(candidate =>
-                    File.Exists(Path.Combine(project.Directory, candidate.Replace('/', Path.DirectorySeparatorChar))));
+                var located = candidates.FirstOrDefault(project.Exists);
                 if (located is null)
                 {
                     errors.Add(source.Path + ": textura ausente: " + path +
@@ -44,15 +43,23 @@ public static class LunetAiAssetValidation
 
                 if (name.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                 {
-                    using var stream = File.OpenRead(Path.Combine(project.Directory,
-                        located.Replace('/', Path.DirectorySeparatorChar)));
-                    var signature = new byte[8];
-                    if (stream.Read(signature) != signature.Length ||
-                        !signature.AsSpan().SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
+                    if (!HasPngSignature(project, located))
                         errors.Add(source.Path + ": o arquivo não tem assinatura PNG: " + located);
                 }
             }
         }
         return errors;
+    }
+
+    private static ReadOnlySpan<byte> PngSignature => [137, 80, 78, 71, 13, 10, 26, 10];
+
+    private static bool HasPngSignature(LunetProject project, string path)
+    {
+        if (project.Files.LocalDirectory is not { } directory)
+            return project.ReadBytes(path).AsSpan().StartsWith(PngSignature);
+        using var stream = File.OpenRead(Path.Combine(directory, path));
+        Span<byte> header = stackalloc byte[8];
+        return stream.ReadAtLeast(header, header.Length, throwOnEndOfStream: false) == header.Length
+            && header.SequenceEqual(PngSignature);
     }
 }

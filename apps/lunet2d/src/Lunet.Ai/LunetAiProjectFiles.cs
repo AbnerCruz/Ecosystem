@@ -23,7 +23,9 @@ public sealed class LunetAiProjectFiles(LunetProject project)
     /// <summary>Largest file <c>lunet.files.read</c> returns whole; longer files are read by excerpt.</summary>
     public const int MaxFullReadChars = 48_000;
 
-    public IReadOnlyList<string> List()
+    public IReadOnlyList<string> List() => List(null);
+
+    internal IReadOnlyList<string> List(Func<string, bool>? include)
     {
         var result = new List<string>();
         // Through the game's files (the disk, or the folder chosen on Android), never a copy.
@@ -37,7 +39,7 @@ public sealed class LunetAiProjectFiles(LunetProject project)
                     if (entry.Name is ".git" or ".lunet" or "bin" or "obj" || entry.Name.StartsWith(".", StringComparison.Ordinal) || IsLinkAt(relative)) continue;
                     Walk(relative, relative + "/");
                 }
-                else if (!IsLinkAt(relative) && IsAllowed(relative)) result.Add(relative);
+                else if (!IsLinkAt(relative) && (IsAllowed(relative) || include?.Invoke(relative) == true)) result.Add(relative);
             }
         }
         Walk("", "");
