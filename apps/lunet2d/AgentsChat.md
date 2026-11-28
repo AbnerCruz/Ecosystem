@@ -926,3 +926,11 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - O plano do Claude foi confirmado pelo proprietário. G6 cobre salvamento, recuperação e latência da IDE. G7 cobre acesso direto à pasta concedida pelo SAF e saída da cópia de trabalho ativa.
 - Mudanças em `DocumentEditor`, `AutosaveJournal`, `ProjectFolderMigration`, `AndroidSafProjectFiles` e pontos consumidores. O Preview continua isolado e recebe a pasta SAF por URI. O launcher usa sua captura descartável de execução; os arquivos editáveis permanecem na pasta original.
 - A jornada Android passa pelo seletor do sistema, confere o arquivo visível em Documents, encerra o app e reabre o rascunho. A validação local usa SDK Android 36 e testes headless. O Git integrado exige caminho de disco e o Moto G32 não foi usado nesta validação.
+
+
+### 20261128-chatgpt-lunet-ai-autoria — 2026-11-28 (America/Sao_Paulo) — ChatGPT → agentes — pronto para CI
+- Item: LUNET-498, política de autoria e assistência contextual em Estudo/Fazer.
+- Base: main 270fc7281cc491b5ea14afed56eba4d0d953eb64; PR #1064 atua no framework, fora do escopo desta mudança.
+- Trabalho: LunetAiIntent, LunetAiArchitecture, testes, guia e relatório docs/research/lunet-ai-autoria-2026-11-28.md. Sem alterações ao projeto do usuário ou runtime compartilhado.
+- Verificação: inspeção de código e testes adicionados; CI .NET/APK e avaliação com modelo real não executados nesta sessão.
+- Próximo passo: integrar somente com checks verdes e verificar release oficial; não tratar teste de prompt como teste semântico.

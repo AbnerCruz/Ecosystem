@@ -8,6 +8,10 @@ Toda abertura de ajuda de Aprender usa **Estudo**. Um novo pedido só ganha ferr
 
 Os dois chats guardam a conversa e o rascunho em armazenamento privado. Durante a resposta, atualizam o texto em curso sem remontar as mensagens anteriores. A conversa do jogo também registra as ferramentas e seus resultados. Se o processo morrer, texto parcial e alterações permanecem disponíveis. Uma execução interrompida não repete automaticamente uma edição. Uma nova solicitação inicia uma nova execução.
 
+No **Estudo**, a IA lê e explica a lógica existente, distingue defeitos de preferências e oferece ajuda progressiva. Se a pessoa pedir código, pode apresentar a correção ou exemplo necessário; não há bloqueio pedagógico artificial. No **Fazer**, preserva escolhas válidas e altera apenas o necessário. Mudanças maiores são justificadas, não impostas. Convenções de organização são recomendações, não requisitos para jogos pequenos. As ferramentas de escrita continuam indisponíveis no Estudo.
+
+Caso de regressão: um movimento com `Vector2.Normalize` deve ser analisado em termos de vetor nulo, ultrapassagem do alvo e estado do destino; a normalização não precisa ser substituída por uma divisão explícita apenas por preferência matemática.
+
 ## Revisões
 
 Em **Fazer**, as ferramentas reaproveitam a leitura de arquivos, documentação, sprites e compilação do Lunet. Para substituir código, o arquivo precisa corresponder à versão lida. O diff mostra os bytes gravados pela IA e sinaliza divergência posterior. O desfazer confere todos os caminhos e hashes antes de restaurar. Checkpoints legados sem hash comprovado continuam legíveis e podem recusar desfazer. Caminhos que atravessam links simbólicos são recusados.

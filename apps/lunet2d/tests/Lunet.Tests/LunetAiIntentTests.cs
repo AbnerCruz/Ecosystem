@@ -53,6 +53,35 @@ public sealed class LunetAiIntentTests
     public void Normalize_RemovesAccentsCaseAndExtraSpaces() =>
         Assert.Equal("como faco para pular?", LunetAiIntent.Normalize("  Como   FAÇO\tpara pular? "));
 
+    [Theory]
+    [InlineData(LunetAiMode.Teach)]
+    [InlineData(LunetAiMode.Do)]
+    public void BothModes_PreserveUserLogicAndAllowJustifiedAlternatives(LunetAiMode mode)
+    {
+        var instructions = LunetAiIntent.Instructions(mode);
+        Assert.Contains("AUTORIA DO USUÁRIO", instructions);
+        Assert.Contains("Preserve nomes, APIs, estrutura e lógica válidos", instructions);
+        Assert.Contains("erro demonstrável, risco e preferência", instructions);
+        Assert.Contains("Uma reformulação explicitamente solicitada é permitida", instructions);
+    }
+
+    [Fact]
+    public void TeachMode_UsesProgressiveHelpButHonorsExplicitCodeRequests()
+    {
+        var instructions = LunetAiIntent.Instructions(LunetAiMode.Teach);
+        Assert.Contains("não entregue uma solução completa por padrão", instructions);
+        Assert.Contains("Quando a pessoa pedir código ou uma solução explícita", instructions);
+        Assert.Contains("NÃO pode alterar o projeto", instructions);
+        Assert.Contains("não apresentada como substituição obrigatória", instructions);
+    }
+
+    [Fact]
+    public void ArchitectureGuidance_IsAdvisoryForExistingProjects()
+    {
+        Assert.Contains("recomendações", LunetAiArchitecture.Guidance);
+        Assert.Contains("Não reorganize arquivos ou renomeie símbolos existentes por preferência", LunetAiArchitecture.Guidance);
+    }
+
     [Fact]
     public async Task TeachMode_DoesNotOfferWriteToolsAndNeverChangesTheProject()
     {
@@ -75,7 +104,10 @@ public sealed class LunetAiIntentTests
             Assert.Contains(LunetAiOutlineTool.Name, tools);
             Assert.Equal(before, project.ReadText("Game.cs"));
             Assert.Empty(reply.Changes);
-            Assert.Contains("MODO ENSINAR", provider.Requests[0].Messages[0].Content.OfType<TextBlock>().First().Text);
+            var task = provider.Requests[0].Messages[0].Content.OfType<TextBlock>().First().Text;
+            Assert.Contains("MODO ENSINAR", task);
+            Assert.Contains("Preserve nomes, APIs, estrutura e lógica válidos", task);
+            Assert.Contains("não entregue uma solução completa por padrão", task);
         }
         finally { Delete(root); }
     }
@@ -98,6 +130,8 @@ public sealed class LunetAiIntentTests
             Assert.Contains(LunetAiBuildTool.Name, request.Tools.Select(t => t.Name));
             var task = request.Messages[0].Content.OfType<TextBlock>().First().Text;
             Assert.Contains("MODO FAZER", task);
+            Assert.Contains("Preserve nomes, APIs, estrutura e lógica válidos", task);
+            Assert.Contains("Use alterações localizadas", task);
             Assert.Contains("MAPA DO PROJETO", task);
             Assert.Contains("Game.cs", task);
             Assert.Contains("protected override void LoadContent", task); // the outline names the real members
