@@ -92,4 +92,101 @@ public sealed class ContextTests
         host.Stop();
         Assert.Throws<InvalidOperationException>(() => _ = Context.Log);
     }
+
+    private sealed class BatchProbe : Game
+    {
+        public SpriteBatch? DefaultBatch;
+        public Action<BatchProbe>? DuringDraw;
+
+        protected override void Draw(GameTime time)
+        {
+            DefaultBatch ??= Context.Batch;
+            Assert.Same(DefaultBatch, Context.Batch);
+            DuringDraw?.Invoke(this);
+        }
+
+        protected override void OnPause() =>
+            Assert.Throws<InvalidOperationException>(() => _ = Context.Batch);
+    }
+
+    [Fact]
+    public void ContextBatchReusesDefaultAndResolvesExplicitPasses()
+    {
+        var game = new BatchProbe();
+        var host = new GameHost(game, new HeadlessGraphicsBackend());
+        Assert.Throws<InvalidOperationException>(() => _ = Context.Batch);
+        Assert.True(host.Start(100, 100), host.Fault?.ToString());
+        game.DuringDraw = g =>
+        {
+            var fallback = Context.Batch;
+            Assert.Same(g.GraphicsDevice, fallback.GraphicsDevice);
+            Context.Batch.Begin();
+            Context.Batch.Draw(new RectangleF(0, 0, 20, 20), Color.Red);
+            Context.Batch.End();
+            Assert.Same(fallback, Context.Batch);
+
+            var world = new SpriteBatch(g.GraphicsDevice);
+            var hud = new SpriteBatch(g.GraphicsDevice);
+            world.Begin();
+            Assert.Same(world, Context.Batch);
+            hud.Begin();
+            Assert.Throws<InvalidOperationException>(() => _ = Context.Batch);
+            world.End();
+            Assert.Same(hud, Context.Batch);
+            hud.End();
+            Assert.Same(fallback, Context.Batch);
+
+            world.BeginSorted();
+            Assert.Same(world, Context.Batch);
+            Assert.Throws<InvalidOperationException>(() => hud.Begin());
+            Assert.Same(world, Context.Batch);
+            Context.Batch.CancelSorted();
+            Assert.Same(fallback, Context.Batch);
+            hud.BeginSorted();
+            Context.Batch.Draw(new RectangleF(0, 0, 5, 5), Color.Red);
+            Context.Batch.End();
+            Assert.Same(fallback, Context.Batch);
+        };
+        host.Step();
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
+        host.Step();
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
+        host.Pause();
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
+        host.Stop();
+        Assert.Throws<InvalidOperationException>(() => _ = Context.Batch);
+    }
+
+    [Fact]
+    public void ContextBatchIsIsolatedBetweenNestedHostsAndWorkers()
+    {
+        var first = new BatchProbe();
+        var second = new BatchProbe();
+        var a = new GameHost(first, new HeadlessGraphicsBackend());
+        var b = new GameHost(second, new HeadlessGraphicsBackend());
+        Assert.True(a.Start(100, 100), a.Fault?.ToString());
+        Assert.True(b.Start(100, 100), b.Fault?.ToString());
+        first.DuringDraw = g =>
+        {
+            var active = new SpriteBatch(g.GraphicsDevice);
+            active.Begin();
+            b.Step();
+            Assert.False(b.IsFaulted, b.Fault?.ToString());
+            Assert.NotSame(first.DefaultBatch, second.DefaultBatch);
+            Assert.Same(active, Context.Batch);
+            Exception? error = null;
+            var worker = new Thread(() =>
+            {
+                try { _ = Context.Batch; }
+                catch (Exception ex) { error = ex; }
+            });
+            worker.Start(); worker.Join();
+            Assert.IsType<InvalidOperationException>(error);
+            Context.Batch.End();
+        };
+        a.Step();
+        Assert.False(a.IsFaulted, a.Fault?.ToString());
+        a.Stop(); b.Stop();
+        Assert.Throws<InvalidOperationException>(() => _ = Context.Batch);
+    }
 }

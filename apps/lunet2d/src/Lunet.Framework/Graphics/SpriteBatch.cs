@@ -56,7 +56,7 @@ public sealed class SpriteBatch
     {
         if (_begun) throw new InvalidOperationException("End() deve ser chamado antes de outro Begin().");
         if (shader is { IsDisposed: true }) throw new ObjectDisposedException(nameof(Shader));
-        _device.OpenBatch(false, shader);
+        _device.OpenBatch(this, false, shader);
         _begun = true;
         _shader = shader;
         _view = Matrix3x2.Identity;
@@ -131,7 +131,7 @@ public sealed class SpriteBatch
         var state = new DrawState((blend ?? BlendState.Alpha).Mode, sampler, clip is { } area ? _device.ToScissor(area) : null, shader?.Handle ?? 0, null);
         _pending ??= new List<SortedQuad>();
         _orders ??= new List<OrderEntry>();
-        _device.OpenBatch(true, shader);
+        _device.OpenBatch(this, true, shader);
         _state = state;
         _shader = shader;
         _direction = direction;
@@ -398,9 +398,15 @@ public sealed class SpriteBatch
         if (!_begun) throw new InvalidOperationException("End() sem Begin().");
         if (!_sorted)
         {
-            Flush();
-            _begun = false;
-            _device.CloseBatch(false);
+            try { Flush(); }
+            finally
+            {
+                _quads = 0;
+                _texture = null;
+                _shader = null;
+                _begun = false;
+                _device.CloseBatch(this, false);
+            }
             return;
         }
         try
@@ -446,7 +452,7 @@ public sealed class SpriteBatch
         _texture = null;
         _shader = null;
         _sorted = _begun = false;
-        _device.CloseBatch(true);
+        _device.CloseBatch(this, true);
     }
 
     private void Flush()

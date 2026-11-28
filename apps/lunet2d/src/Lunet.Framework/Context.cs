@@ -13,7 +13,7 @@ namespace Lunet;
 public static class Context
 {
     [ThreadStatic] private static Frame _current;
-    internal readonly record struct Frame(GameHost? Host, Game? Game, int Generation, bool GraphicsAllowed);
+    internal readonly record struct Frame(GameHost? Host, Game? Game, int Generation, bool GraphicsAllowed, GameTime? Time);
 
     private static Game Current(bool graphics = false)
     {
@@ -25,12 +25,27 @@ public static class Context
         return game;
     }
 
+    /// <summary>Tempo exato do callback Update ou Draw atualmente em execução.</summary>
+    /// <remarks>Usa o passo fixo em Update e o tempo do quadro em Draw. Não existe fora desses callbacks síncronos.</remarks>
+    public static GameTime Time
+    {
+        get
+        {
+            _ = Current();
+            return _current.Time ?? throw new InvalidOperationException("Lunet.Context.Time exige um callback Update ou Draw ativo.");
+        }
+    }
+
     /// <summary>Entrada real do jogo corrente.</summary>
     public static InputState Input => Current().Input;
     /// <summary>Conteúdo do jogo corrente; exige autorização gráfica.</summary>
     public static ContentManager Content => Current(graphics: true).Content;
     /// <summary>Dispositivo real do jogo corrente; exige autorização gráfica.</summary>
     public static GraphicsDevice Graphics => Current(graphics: true).GraphicsDevice;
+    /// <summary>Lote de sprites contextual: o único lote aberto ou um lote padrão reutilizável do dispositivo.</summary>
+    /// <remarks>Exige autorização gráfica. Begin/End continuam explícitos; com vários lotes abertos,
+    /// use a instância desejada diretamente para evitar ambiguidade.</remarks>
+    public static SpriteBatch Batch => Current(graphics: true).GraphicsDevice.ContextualBatch;
     /// <summary>Mixer real do jogo corrente.</summary>
     public static AudioMixer Audio => Current().Audio;
     /// <summary>Dados salvos do jogo corrente.</summary>
@@ -44,10 +59,10 @@ public static class Context
     /// <summary>Dispatcher do jogo corrente; capture-o explicitamente antes de postar de um worker.</summary>
     public static Dispatcher Dispatcher => Current().Dispatcher;
 
-    internal static Scope Enter(GameHost host, Game game, bool graphics)
+    internal static Scope Enter(GameHost host, Game game, bool graphics, GameTime? time = null)
     {
         var previous = _current;
-        _current = new Frame(host, game, host.ContextGeneration, graphics && host.ContextGraphicsAllowed);
+        _current = new Frame(host, game, host.ContextGeneration, graphics && host.ContextGraphicsAllowed, time);
         return new Scope(previous);
     }
 
