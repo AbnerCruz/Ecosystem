@@ -62,7 +62,7 @@ Y-sort usa âncora do chão escolhida pelo jogo, não canto da textura, glifo ou
 
 Fonte única e visível: Project/Imports.cs, arquivo C# comum na pasta física do jogo, acessível no Explorer pelo grupo recolhível “Projeto” → “Importações” (mostra caminho real e abre editor padrão; sem duplicar entradas ou ocultar da busca/ZIP). Sem arquivo solto na raiz, dezenas de linhas em Game.cs, injeção invisível, namespace artificial ou nova linguagem/configuração paralela. Nenhum painel complexo bidirecional nesta entrega: edição de fonte e dois presets explícitos com preview/diff; nunca sobrescrever edição manual silenciosamente.
 
-Oferecer perfil Amplo (preferência do proprietário) como padrão de novos projetos **se** a matriz de referências e bindings passar, e perfil Essencial como alternativa. Amplo inclui todos os 24 namespaces válidos auditados:
+**Decisão do proprietário de 28/11/2026:** o perfil Amplo é o padrão de novos projetos, incluindo os 24 namespaces auditados e a importação estática de `Lunet.Context`. O Essencial permanece alternativa explícita. A matriz de referências e bindings é requisito de validação da entrega, não autorização para reduzir silenciosamente o padrão. Amplo contém:
 
 ```csharp
 global using System;
@@ -89,9 +89,10 @@ global using Lunet.UI;
 global using Lunet.Pathfinding;
 global using Lunet.Storage;
 global using Lunet.Networking;
+global using static Lunet.Context;
 ```
 
-Essencial: System, System.Numerics, System.Collections.Generic, Lunet, Lunet.Graphics, Lunet.Input, Lunet.Content, Lunet.Audio. Os dois outros nomes solicitados, Lunet.Multiplayer e Lunet.Inspection, não existem como namespaces de jogo no snapshot; tipos públicos já estão em Lunet (SplitScreen, TurnOrder, atributos de inspeção). Não criar duplicatas; se F8 tiver alterado os nomes, auditar antes de incluir. Não importar Lunet.Runtime.Inspection. Colisões conhecidas: Lunet.Input.Pointer/System.Reflection.Pointer, Diagnostics.ThreadState/Threading.ThreadState, extensão LINQ e tipos de terceiros. Documentar qualificação e aliases locais/globais; não impor alias que troque binding de código existente. Nos templates novos resolver colisões de forma explícita. Se Amplo falhar em rota suportada, corrigir paridade; se tecnicamente impossível, manter Essencial como default e Amplo opt-in somente para referências realmente presentes, com diagnóstico e bloqueio documentados (não declarar cumprimento dos 24 sem teste).
+Essencial: System, System.Numerics, System.Collections.Generic, Lunet, Lunet.Graphics, Lunet.Input, Lunet.Content, Lunet.Audio. Os dois outros nomes solicitados, Lunet.Multiplayer e Lunet.Inspection, não existem como namespaces de jogo no snapshot; tipos públicos já estão em Lunet (SplitScreen, TurnOrder, atributos de inspeção). Não criar duplicatas; se F8 tiver alterado os nomes, auditar antes de incluir. Não importar Lunet.Runtime.Inspection. Colisões conhecidas: Lunet.Input.Pointer/System.Reflection.Pointer, Diagnostics.ThreadState/Threading.ThreadState, extensão LINQ e tipos de terceiros. Documentar qualificação e aliases locais/globais; não impor alias que troque binding de código existente. Nos templates novos resolver colisões de forma explícita. Se Amplo falhar em rota suportada, corrigir paridade e registrar o diagnóstico; não reduzir o padrão silenciosamente nem declarar cumprimento dos 24 sem teste.
 
 ### Implementação e testes
 
@@ -107,7 +108,7 @@ Essencial: System, System.Numerics, System.Collections.Generic, Lunet, Lunet.Gra
 
 ### Contrato decidido
 
-Criar Lunet.Context, fachada estática somente leitura que resolve o Game corrente de um callback síncrono de host, sem armazenar instâncias globais permanentes. Acesso explícito Context.Input ou escolha do usuário: using static Lunet.Context; (por arquivo) ou global using static em Imports.cs (opt-in, não default). Manter Game e todas as APIs explícitas. Propriedades iniciais Input, Content, Graphics, Audio, Save, Services, Timers, Log, Dispatcher, delegando aos objetos reais do Game, nunca a registro substituível para serviços centrais. Sem GameContext/UpdateContext/RenderContext públicos, sem DI container, sem injeção/reflexão e sem batch/câmera/scene/PhysicsWorld globais. SpriteBatch contextual adiado; Draw(batch) permanece. Sem construtor SpriteBatch() e factories sem device nesta primeira entrega (podem ser avaliados depois, não são necessários para a fachada). Serviços do usuário permanecem customizáveis por interfaces em GameServices; substituição não troca dispositivo ou conteúdo já anexados.
+Criar Lunet.Context, fachada estática somente leitura que resolve o Game corrente de um callback síncrono de host, sem armazenar instâncias globais permanentes. Acesso explícito Context.Input continua disponível. Por decisão do proprietário de 28/11/2026, `global using static Lunet.Context;` integra o padrão Amplo de novos projetos em Imports.cs; o usuário pode editar/remover a diretiva ou usar `using static Lunet.Context;` local. Projetos existentes nunca são reescritos automaticamente. Manter Game e todas as APIs explícitas. Propriedades iniciais Input, Content, Graphics, Audio, Save, Services, Timers, Log, Dispatcher, delegando aos objetos reais do Game, nunca a registro substituível para serviços centrais. Sem GameContext/UpdateContext/RenderContext públicos, sem DI container, sem injeção/reflexão e sem batch/câmera/scene/PhysicsWorld globais. SpriteBatch contextual adiado; Draw(batch) permanece. Sem construtor SpriteBatch() e factories sem device nesta primeira entrega (podem ser avaliados depois, não são necessários para a fachada). Serviços do usuário permanecem customizáveis por interfaces em GameServices; substituição não troca dispositivo ou conteúdo já anexados.
 
 ```csharp
 using static Lunet.Context;

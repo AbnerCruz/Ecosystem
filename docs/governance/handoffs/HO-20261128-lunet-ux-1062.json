@@ -32,20 +32,33 @@
     "apps/lunet2d/VERSION",
     "apps/lunet2d/VERSION_CODE",
     "apps/lunet2d/docs/research/lunet-ide-ux-2026-11-28.md",
-    "docs/governance/handoffs/HO-20261128-lunet-ux-1062.json"
+    "docs/governance/handoffs/HO-20261128-lunet-ux-1062.json",
+    "apps/lunet2d/docs/manual/ordenacao-importacoes-contexto.md",
+    "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectImports.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectImportsTests.cs"
   ],
   "work_completed": [
     "Criação nominal, abas, ações e primeira aplicação semântica de cor.",
-    "Teste headless e jornada ADB adicionados."
+    "Teste headless e jornada ADB adicionados.",
+    "Incorporado commit cef2f8da da frente E2/E3 (25 diretivas padrão, preservação de projetos existentes, regressões e documentação); sem sobreposição de arquivos."
   ],
-  "verification": [],
+  "verification": [
+    {
+      "check": "CI isolado da UI, commit 1103a141",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46119466095 — 1409 testes Debug e Release, 0 falhas; não constitui validação da nova combinação."
+    }
+  ],
   "known_issues": [
     "Sem resultados de build, headless ou emulador confirmados nesta sessão.",
     "Menu contextual ainda inline; revisão global e tablet pendentes."
   ],
   "blockers": [],
   "next_actions": [
-    "Validar CI e capturas Android; corrigir falhas; não publicar antes dos checks."
+    "Validar CI e capturas Android; corrigir falhas; não publicar antes dos checks.",
+    "Executar CI combinado, validar todos os templates, binding de Context, Preview e APK, sem reduzir o perfil Amplo."
   ],
   "decisions_required": [],
   "normative_sources": [
