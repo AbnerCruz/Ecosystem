@@ -163,6 +163,10 @@ public sealed class GraphicsDevice
         Recompute();
     }
 
+    /// <summary>Informa o tamanho agrupado da superfície em pixels.</summary>
+    /// <param name="size">Dimensões da superfície de desenho, em pixels.</param>
+    public void Resize(System.Drawing.Size size) => Resize(size.Width, size.Height);
+
     /// <summary>Informa densidade e recuos seguros (em pixels da superfície: esquerda, topo, direita, base).</summary>
     /// <param name="density">Densidade da tela (1 = 160 dpi).</param>
     /// <param name="insetLeft">Recuo seguro à esquerda, em pixels da superfície.</param>

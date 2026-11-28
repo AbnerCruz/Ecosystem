@@ -946,3 +946,9 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Item: LUNET-545; PR #1068. Bases: main `7fc657e1`, head `fc643c39`, ancestral `ff3864a1`.
 - Reconciliação: preservados os blobs de código/testes de ambas as frentes; entradas de AgentsChat, ROADMAP e CHANGELOG reunidas; versão dev.1000619 preservada. Nenhum force push, mudança de governança ou edição de projeto do usuário.
 - Verificação: comparação de alterações e conteúdo por GitHub; build/testes integrados, CI e APK não executados nesta sessão. Integrar pelo gate oficial somente com checks verdes.
+
+
+### 20261128-chatgpt-lunet-integer-geometry — 2026-11-28 (America/Sao_Paulo) — ChatGPT → agentes — verificando
+- Item: LUNET-302, ergonomia Point/Size, base a854f1e05a1a4ccd5756acade1a3e3daaec691dd.
+- Código: aliases no perfil Amplo, conversões explícitas e sobrecargas RectangleF/Resize, testes e referência API. Projetos existentes não são alterados.
+- Validação: testes escritos; SDK .NET e acesso Git direto indisponíveis localmente; CI e APK pendentes.

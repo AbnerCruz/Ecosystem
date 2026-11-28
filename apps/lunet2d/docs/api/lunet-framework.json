@@ -2159,6 +2159,58 @@
       ]
     },
     {
+      "id": "T:Lunet.GeometryConversions",
+      "name": "GeometryConversions",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public static class GeometryConversions",
+      "summary": "Convers\u00F5es expl\u00EDcitas dos tipos geom\u00E9tricos inteiros para o espa\u00E7o cont\u00EDnuo.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.GeometryConversions.ToVector2(System.Drawing.Point)",
+          "name": "ToVector2",
+          "kind": "method",
+          "signature": "public static Vector2 ToVector2(Point point)",
+          "summary": "Converte uma posi\u00E7\u00E3o inteira para um vetor de ponto flutuante.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Point",
+              "description": "Posi\u00E7\u00E3o inteira."
+            }
+          ],
+          "returns": "Vetor com X e Y; inteiros grandes podem perder precis\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.GeometryConversions.ToVector2(System.Drawing.Size)",
+          "name": "ToVector2",
+          "kind": "method",
+          "signature": "public static Vector2 ToVector2(Size size)",
+          "summary": "Converte dimens\u00F5es inteiras para um vetor de ponto flutuante.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Largura e altura inteiras."
+            }
+          ],
+          "returns": "Vetor com largura e altura; inteiros grandes podem perder precis\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.GroupAttribute",
       "name": "GroupAttribute",
       "namespace": "Lunet",
@@ -3905,6 +3957,78 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.RectangleF.#ctor(System.Numerics.Vector2,System.Drawing.Size)",
+          "name": "RectangleF",
+          "kind": "constructor",
+          "signature": "public RectangleF(Vector2 position, Size size)",
+          "summary": "Cria um ret\u00E2ngulo a partir da posi\u00E7\u00E3o e do tamanho agrupados.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Canto superior esquerdo."
+            },
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Largura e altura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RectangleF.#ctor(System.Drawing.Point,System.Numerics.Vector2)",
+          "name": "RectangleF",
+          "kind": "constructor",
+          "signature": "public RectangleF(Point position, Vector2 size)",
+          "summary": "Cria um ret\u00E2ngulo a partir da posi\u00E7\u00E3o e do tamanho agrupados.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Point",
+              "description": "Canto superior esquerdo."
+            },
+            {
+              "name": "size",
+              "type": "Vector2",
+              "description": "Largura e altura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RectangleF.#ctor(System.Drawing.Point,System.Drawing.Size)",
+          "name": "RectangleF",
+          "kind": "constructor",
+          "signature": "public RectangleF(Point position, Size size)",
+          "summary": "Cria um ret\u00E2ngulo a partir da posi\u00E7\u00E3o e do tamanho agrupados.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Point",
+              "description": "Canto superior esquerdo."
+            },
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Largura e altura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.RectangleF.Bottom",
           "name": "Bottom",
           "kind": "property",
@@ -4032,6 +4156,25 @@
             {
               "name": "point",
               "type": "Vector2",
+              "description": "Ponto a testar."
+            }
+          ],
+          "returns": "Verdadeiro se o ponto est\u00E1 dentro.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.RectangleF.Contains(System.Drawing.Point)",
+          "name": "Contains",
+          "kind": "method",
+          "signature": "public bool Contains(Point point)",
+          "summary": "Testa um ponto inteiro usando as mesmas regras das bordas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Point",
               "description": "Ponto a testar."
             }
           ],
@@ -8780,6 +8923,25 @@
               "name": "surfaceHeight",
               "type": "int",
               "description": "Altura da superf\u00EDcie de desenho, em pixels."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.GraphicsDevice.Resize(System.Drawing.Size)",
+          "name": "Resize",
+          "kind": "method",
+          "signature": "public void Resize(Size size)",
+          "summary": "Informa o tamanho agrupado da superf\u00EDcie em pixels.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "size",
+              "type": "Size",
+              "description": "Dimens\u00F5es da superf\u00EDcie de desenho, em pixels."
             }
           ],
           "returns": "",
