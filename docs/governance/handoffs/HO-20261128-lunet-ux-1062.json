@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-ux-1062",
+  "category": "HANDOFF",
+  "task_id": "LUNET-1062",
+  "component": "lunet2d",
+  "state": "review",
+  "timestamp": "2026-11-28T06:40:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-ux",
+    "kind": "ai-agent"
+  },
+  "branch": "fix/lunet-ide-ux-1062",
+  "base_commit": "84dcac66edcff67336f152062672ef37e9a92517",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Client/Views/ExplorerView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LearnView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/StudiosView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SettingsView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeExplorerTests.cs",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/research/lunet-ide-ux-2026-11-28.md",
+    "docs/governance/handoffs/HO-20261128-lunet-ux-1062.json",
+    "apps/lunet2d/docs/manual/ordenacao-importacoes-contexto.md",
+    "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectImports.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectImportsTests.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs"
+  ],
+  "work_completed": [
+    "Criação nominal, abas, ações e primeira aplicação semântica de cor.",
+    "Teste headless e jornada ADB adicionados.",
+    "Incorporado commit cef2f8da da frente E2/E3 (25 diretivas padrão, preservação de projetos existentes, regressões e documentação); sem sobreposição de arquivos.",
+    "Corrigidas as três regressões reportadas pelos checks do merge 06c73aba: template Lab sem dependências no Essencial, colisão de nomes Timers/Dispatcher e contrato de import local da jornada Lab. Mantidas as 25 diretivas e a API pública."
+  ],
+  "verification": [
+    {
+      "check": "CI isolado da UI, commit 1103a141",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46119466095 — 1409 testes Debug e Release, 0 falhas; não constitui validação da nova combinação."
+    },
+    {
+      "check": "CI combinado anterior (06c73aba)",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46120333300 — 1409 aprovados e 3 falhas: AllNewTemplatesCompileWithBothPresets, DefaultContextBindsInIndependentClassAndCanBeRemoved e NewLaboratoryRunsAllModulesViaIndexAndKeepsExistingProjectUntouched. Correção escrita; reexecução necessária."
+    }
+  ],
+  "known_issues": [
+    "Sem resultados de build, headless ou emulador confirmados nesta sessão.",
+    "Menu contextual ainda inline; revisão global e tablet pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI e capturas Android; corrigir falhas; não publicar antes dos checks.",
+    "Executar CI combinado, validar todos os templates, binding de Context, Preview e APK, sem reduzir o perfil Amplo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/design/linguagem-visual.md",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mantém LunetProject e tokens como autoridades."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Incremento dev 1000617."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-file-ux",
+      "status": "product-specific",
+      "rationale": "Componentes e armazenamento existentes Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

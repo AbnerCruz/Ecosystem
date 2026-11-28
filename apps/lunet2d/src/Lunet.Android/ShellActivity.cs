@@ -491,6 +491,21 @@ public sealed class ShellActivity : AvaloniaActivity
     {
         base.OnPostResume();
         if (_shell is not { } shell) return;
+        if (Intent?.GetBooleanExtra("lunet.files.ux", false) == true)
+        {
+            Intent.RemoveExtra("lunet.files.ux");
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                try
+                {
+                    shell.CreateProject();
+                    shell.State.ShowPanel(Lunet.Client.Shell.SupportPanel.Explorer);
+                    global::Android.Util.Log.Info("lunet-e2e", "filesux=pronto");
+                }
+                catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
+            });
+            return;
+        }
         if (Intent?.GetBooleanExtra("lunet.saf", false) == true)
         {
             Intent.RemoveExtra("lunet.saf");

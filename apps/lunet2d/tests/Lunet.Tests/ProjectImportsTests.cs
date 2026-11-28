@@ -25,6 +25,74 @@ public sealed class ProjectImportsTests
     }
 
     [Fact]
+    public void DefaultPresetIncludesEveryApprovedNamespaceAndContext()
+    {
+        string[] expected = [
+            "System", "System.Numerics", "System.Collections.Generic", "System.Linq",
+            "System.Text", "System.Text.Json", "System.IO", "System.Threading", "System.Threading.Tasks",
+            "System.Diagnostics", "System.Reflection", "System.Collections.Concurrent", "System.Text.RegularExpressions",
+            "Lunet", "Lunet.Graphics", "Lunet.Input", "Lunet.Content", "Lunet.Audio", "Lunet.Physics",
+            "Lunet.Scenes", "Lunet.UI", "Lunet.Pathfinding", "Lunet.Storage", "Lunet.Networking"
+        ];
+        var lines = ProjectImports.Source().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(expected.Select(n => "global using " + n + ";").Append("global using static Lunet.Context;"), lines);
+        Assert.Equal(8, ProjectImports.Source(false).Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
+        Assert.Equal(ProjectImports.Source(true), ProjectImports.Source());
+    }
+
+    [Fact]
+    public void DefaultContextBindsInIndependentClassAndCanBeRemoved()
+    {
+        var compiler = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+        // Timers and Dispatcher are also public types in Lunet; C# requires qualification
+        // in expression position when both namespace and static imports are active.
+        const string player = "public sealed class Player { public object[] Current() => new object[] { Graphics, Content, Input, Audio, Save, Services, Context.Timers, Log, Context.Dispatcher }; public Timers TimerService() => Context.Timers; public Dispatcher DispatchService() => Context.Dispatcher; }";
+        var source = ProjectImports.Source();
+        var result = compiler.Compile("default_context", [
+            new SourceFile(ProjectImports.Path, source),
+            new SourceFile("Game.cs", "public sealed class TestGame : Game { }"),
+            new SourceFile("Player.cs", player)
+        ]);
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        var removed = compiler.Compile("default_context", [
+            new SourceFile(ProjectImports.Path, source.Replace("global using static Lunet.Context;\n", "")),
+            new SourceFile("Game.cs", "public sealed class TestGame : Game { }"),
+            new SourceFile("Player.cs", player)
+        ]);
+        Assert.False(removed.Success);
+    }
+
+    [Fact]
+    public void GeneratedTemplatesRetainDependenciesOutsideEssentialPreset()
+    {
+        const string original = "using Lunet;\nusing Lunet.Physics;\nusing Lunet.UI;\nusing Lunet.Scenes;\nusing Lunet.Pathfinding;\n\npublic sealed class Sample : Game { }";
+        var generated = ProjectImports.RemoveCoveredFromGenerated(original);
+        Assert.DoesNotContain("using Lunet;\n", generated);
+        Assert.Contains("using Lunet.Physics;", generated);
+        Assert.Contains("using Lunet.UI;", generated);
+        Assert.Contains("using Lunet.Scenes;", generated);
+        Assert.Contains("using Lunet.Pathfinding;", generated);
+        Assert.Contains("public sealed class Sample : Game", generated);
+    }
+
+    [Fact]
+    public void ExistingProjectImportsAreNeverRewrittenOnOpen()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "lunet-imports-preserve-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new ProjectStore(root);
+            var project = store.Create("Existing");
+            const string custom = "global using Lunet;\n// custom\n";
+            project.WriteText(ProjectImports.Path, custom);
+            Assert.Equal(custom, store.Open(project.Name).ReadText(ProjectImports.Path));
+            project.Delete(ProjectImports.Path);
+            Assert.DoesNotContain(ProjectImports.Path, store.Open(project.Name).ListFiles());
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void LegacyPolicyRemainsLegacy()
     {
         var manifest = ProjectManifest.Parse("""{"name":"Legacy"}""");
@@ -43,6 +111,9 @@ public sealed class ProjectImportsTests
             foreach (var template in Enum.GetValues<ProjectTemplate>())
             {
                 var project = store.Create("Preset" + template, template);
+                Assert.Equal(ProjectImports.Source(true), project.ReadText(ProjectImports.Path));
+                var initial = compiler.Compile(project.Name, project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList());
+                Assert.True(initial.Success, template + " / default: " + string.Join("\n", initial.Diagnostics));
                 foreach (bool broad in new[] { false, true })
                 {
                     project.WriteText(ProjectImports.Path, ProjectImports.Source(broad));

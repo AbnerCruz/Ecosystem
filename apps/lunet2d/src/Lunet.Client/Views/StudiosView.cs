@@ -188,7 +188,7 @@ public sealed class StudiosView : UserControl
             var content = new StackPanel
             {
                 Spacing = LunetTokens.Space.Xs,
-                Children = { LunetIcons.Create(icon, LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
+                Children = { LunetIcons.Create(icon, icon == LunetIcons.Music || icon == LunetIcons.Speaker || icon == LunetIcons.Pulse ? LunetTokens.Color.Info : LunetTokens.Color.Primary, 22), LunetUi.Text(label, LunetTokens.Type.Label, LunetTokens.Color.TextPrimary, FontWeight.SemiBold) },
             };
             var b = new Button
             {
