@@ -70,3 +70,29 @@ Também é possível reutilizar o mesmo lote com Begin(camera) e Begin() em pass
 ## Validação
 
 Testes adicionados em ContextTests.cs: reutilização, desenho contextual, alternância de lotes explícitos, ambiguidade, cancelamento e exclusividade ordenada, hosts aninhados, worker e ausência de autorização. O ambiente do autor não dispõe de SDK .NET, acesso git direto ou emulador; execução depende do CI. Não considerar os testes aprovados nem o APK publicado sem evidência.
+
+## Tempo contextual (Context.Time)
+
+`Time` é o mesmo valor `GameTime` passado ao callback corrente, inclusive quando o host roda múltiplos passos fixos por quadro ou um passo manual.
+
+```csharp
+public void Update()
+{
+    if (Input.TryGetPointer(out var target))
+    {
+        var direction = target - Position;
+        var distance = direction.Length();
+        if (distance > 0f)
+            Position += direction / distance * MathF.Min(distance, 100f * Time.DeltaSeconds);
+    }
+}
+```
+
+O exemplo pressupõe `Position` como um campo Vector2 e `global using static Lunet.Context;` em Project/Imports.cs. O Game continua chamando `player.Update()` de dentro do seu Update.
+
+- `Time.DeltaSeconds`: passo fixo no Update, intervalo do quadro no Draw.
+- `Time.TotalSeconds`: tempo simulado acumulado.
+- `Time.Interpolation`: fração de interpolação usada no callback.
+- Acesso fora de Update/Draw (inclusive Initialize, LoadContent, Dispatcher, Pause, Resume, UnloadContent e workers) lança InvalidOperationException, em vez de inventar tempo zero ou retornar um valor obsoleto. Timers e áudio executados sincronicamente dentro do Update recebem o mesmo valor.
+- Preserva as assinaturas Update(GameTime) e Draw(GameTime) de Game e a passagem explícita para quem preferir.
+- Testes em ContextTimeTests.cs verificam equivalência exata, múltiplos passos, pausa, Step, restauração de contexto em hosts aninhados e ausência de vazamento em worker ou falha. Execução pendente de CI.
