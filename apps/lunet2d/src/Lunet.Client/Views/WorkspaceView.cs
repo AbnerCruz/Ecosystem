@@ -47,6 +47,16 @@ public sealed class WorkspaceView : UserControl
         PlaceRunButton();
     }
 
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (_shell.State.Panel == SupportPanel.Ai && _sheet is Border sheet)
+            sheet.Height = CompactAiHeight(e.NewSize.Height);
+    }
+
+    private static double CompactAiHeight(double height) =>
+        height <= 0 ? 280 : Math.Min(Math.Max(0, height - 54), Math.Max(240, Math.Round(height * 0.5)));
+
     private bool _typingInSheet;
 
     /// <summary>
@@ -320,6 +330,19 @@ public sealed class WorkspaceView : UserControl
         var expanded = state.Layout == ShellLayout.Expanded && state.Tab != WorkspaceTab.Game;
         _support.HeaderInPanel = false;
 
+        if (state.AiExpanded)
+        {
+            _support.Refresh();
+            Content = new Border
+            {
+                Name = "AiExpandedHost",
+                Background = LunetTokens.Brush(LunetTokens.Color.Background),
+                Child = _support,
+            };
+            Refocus(focused);
+            return;
+        }
+
         // The Preview starts at full workspace height. The same panel can shrink to show the editor underneath.
         var root = new DockPanel();
         if (_topHost.Parent is Panel oldTop) oldTop.Children.Remove(_topHost);
@@ -369,8 +392,9 @@ public sealed class WorkspaceView : UserControl
             // AI, Inspector, Documentação…: a sheet over the bottom; the game stays above it when it is running.
             var sheet = new Border
             {
-                Height = state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Ai or SupportPanel.Docs or SupportPanel.Objectives && Bounds.Height > 0
-                    ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
+                Height = state.Panel == SupportPanel.Ai ? CompactAiHeight(Bounds.Height)
+                    : state.Panel is SupportPanel.Inspector or SupportPanel.Performance or SupportPanel.Docs or SupportPanel.Objectives && Bounds.Height > 0
+                        ? Math.Max(280, Math.Round(Bounds.Height * 0.5)) : 280,
                 Child = _support, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised),
                 CornerRadius = new CornerRadius(LunetTokens.Radius.Xl, LunetTokens.Radius.Xl, 0, 0),
                 BorderBrush = LunetTokens.Brush(LunetTokens.Color.BorderStrong), BorderThickness = new Thickness(0, 1, 0, 0),
@@ -378,7 +402,7 @@ public sealed class WorkspaceView : UserControl
             };
             DockPanel.SetDock(sheet, Dock.Bottom);
             _sheet = sheet;
-            sheet.IsVisible = !_keyboardOpen || _typingInSheet;
+            sheet.IsVisible = !_keyboardOpen || _typingInSheet || ReferenceEquals(focused, _support.Ai.Input);
             root.Children.Add(sheet);
             root.Children.Add(state.Tab == WorkspaceTab.Game ? _game : Body());
         }

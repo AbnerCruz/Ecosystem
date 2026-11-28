@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.1-dev.1000619 — Chat da IDE expansível
+
+- A IA abre em painel compacto. Expandir e reduzir mantêm a conversa e o rascunho.
+- As etapas aparecem em um resumo que abre duração, resultado e falhas, inclusive após a execução.
+- As respostas têm formatação Markdown, blocos de código com cópia e tabelas com rolagem horizontal.
+
 ## 0.0.1-dev.1000617 — UX de arquivos da IDE
 
 - Novo arquivo C# ou pasta solicita o nome antes de gravar; cancelamento não altera o projeto. A classe inicial usa o nome definitivo, com validação de identificador e colisões.

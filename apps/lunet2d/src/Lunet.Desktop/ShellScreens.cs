@@ -1,3 +1,7 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Lunet.Ai;
 using Avalonia.VisualTree;
 using Avalonia;
 using Avalonia.Controls;
@@ -36,7 +40,7 @@ public static class ShellScreens
             var root = Path.Combine(Path.GetTempPath(), "lunet-screens-" + Guid.NewGuid().ToString("N"));
             try
             {
-                var window = new MainWindow(root, Path.Combine(root, ".data")) { Width = w, Height = h }; // never the user's AppData
+                var window = new MainWindow(root, Path.Combine(root, ".data")) { MinWidth = 0, MinHeight = 0, Width = w, Height = h }; // never the user's AppData
                 window.Show();
                 var shell = window.Shell;
                 var phone = w < 840 && h > w || w < 600; // phones, compact and phone landscape
@@ -112,6 +116,7 @@ public static class ShellScreens
                 shell.Home.CloseSheet();
                 shell.OpenProject(shell.Workspace.Projects()[0]);
                 Shot(window, output, size, "3-codigo", written);
+                AiScreens(window, output, size, written);
                 shell.State.ShowPanel(SupportPanel.Explorer);
                 Shot(window, output, size, "3a-explorador", written);
                 shell.State.ShowPanel(SupportPanel.None);
@@ -285,6 +290,58 @@ public static class ShellScreens
         }
         foreach (var f in written) Console.WriteLine(f);
         return 0;
+    }
+
+    private static void AiScreens(MainWindow window, string output, string size, List<string> written)
+    {
+        var shell = window.Shell;
+        var host = shell.AiHost!;
+        var project = shell.Workspace.Project!;
+        host.Store.Save(LunetAiSettings.Default with { Model = "captura-local" }, "chave-ficticia-captura");
+        var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
+        var history = new LunetAiTurn[]
+        {
+            new("user", "Como centralizo o personagem sem mexer na lógica de movimento?"),
+            new("Lunet", """
+                ## Use o centro só no desenho
+
+                Guarde a posição como o **canto superior esquerdo**. No `Draw`, some metade do tamanho para obter o centro.
+
+                ```csharp
+                Vector2 centro = posicao + tamanho * 0.5f;
+                ```
+
+                - `Update` continua atualizando a posição.
+                - O retângulo de colisão continua usando o canto.
+
+                > Assim, o cálculo visual fica no desenho.
+
+                | Onde | Referência |
+                | --- | --- |
+                | Colisão | Canto |
+                | Desenho | Centro |
+                """, Steps:
+                [
+                    new("1", LunetAiStepKind.Read, "Lendo Game.cs", "Game.cs", LunetAiStepStatus.Done, ElapsedMilliseconds: 120),
+                    new("2", LunetAiStepKind.Docs, "Consultando a referência de Rectangle", "Rectangle", LunetAiStepStatus.Done, ElapsedMilliseconds: 230),
+                    new("3", LunetAiStepKind.Compile, "Compilando o projeto", null, LunetAiStepStatus.Done, ElapsedMilliseconds: 720),
+                ]),
+        };
+        File.WriteAllText(Path.Combine(host.HistoryDirectory, id + ".json"), JsonSerializer.Serialize(history));
+        shell.State.ShowPanel(SupportPanel.Ai);
+        var chat = shell.WorkspaceView.Support.Ai;
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        var transcript = chat.GetVisualDescendants().OfType<ScrollViewer>().First(view => view.Name == "AiTranscript");
+        transcript.ScrollToHome();
+        Shot(window, output, size, "3e-ia-compacta", written);
+        shell.State.ToggleAiSize();
+        Shot(window, output, size, "3f-ia-expandida", written);
+        chat.GetVisualDescendants().OfType<Button>().First(b => b.Name == "AiActivityToggle")
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        transcript.ScrollToHome();
+        Shot(window, output, size, "3g-ia-etapas", written);
+        shell.State.ShowPanel(SupportPanel.None);
     }
 
     private static void Shot(Window window, string output, string size, string name, List<string> written)

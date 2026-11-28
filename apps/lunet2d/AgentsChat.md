@@ -926,3 +926,10 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - O plano do Claude foi confirmado pelo proprietário. G6 cobre salvamento, recuperação e latência da IDE. G7 cobre acesso direto à pasta concedida pelo SAF e saída da cópia de trabalho ativa.
 - Mudanças em `DocumentEditor`, `AutosaveJournal`, `ProjectFolderMigration`, `AndroidSafProjectFiles` e pontos consumidores. O Preview continua isolado e recebe a pasta SAF por URI. O launcher usa sua captura descartável de execução; os arquivos editáveis permanecem na pasta original.
 - A jornada Android passa pelo seletor do sistema, confere o arquivo visível em Documents, encerra o app e reabre o rascunho. A validação local usa SDK Android 36 e testes headless. O Git integrado exige caminho de disco e o Moto G32 não foi usado nesta validação.
+
+
+### 20261128-codex-lunet-ide-chat — 28/11/2026 — Codex → integrador — LUNET-545
+
+- Base `270fc728`, ramo `feat/lunet-ide-ai-chat`. A IA abre em compacto e expande na mesma sessão, com atividade recolhível e Markdown nativo. A revisão no arquivo permanece acessível em Fazer.
+- [Decisões de UX, referências e roteiro de captura](docs/plans/lunet-ide-mobile-first-2026-11-27.md#7-chat-da-ide). As capturas de Avalonia mostram compacto, expansão e etapas abertas. A validação local foi headless e usou provedor simulado para a jornada de chat.
+- O estágio dev foi preservado. O número 1000619 deixa o 1000618 para o PR #1065, que trabalha nas instruções do agente.
