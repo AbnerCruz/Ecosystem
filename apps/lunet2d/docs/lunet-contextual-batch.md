@@ -96,3 +96,30 @@ O exemplo pressupõe `Position` como um campo Vector2 e `global using static Lun
 - Acesso fora de Update/Draw (inclusive Initialize, LoadContent, Dispatcher, Pause, Resume, UnloadContent e workers) lança InvalidOperationException, em vez de inventar tempo zero ou retornar um valor obsoleto. Timers e áudio executados sincronicamente dentro do Update recebem o mesmo valor.
 - Preserva as assinaturas Update(GameTime) e Draw(GameTime) de Game e a passagem explícita para quem preferir.
 - Testes em ContextTimeTests.cs verificam equivalência exata, múltiplos passos, pausa, Step, restauração de contexto em hosts aninhados e ausência de vazamento em worker ou falha. Execução pendente de CI.
+
+## Ciclo de vida sem parâmetros
+
+O Game também aceita as sobrescritas sem parâmetros, com Time, Input e Batch contextuais:
+
+```csharp
+public sealed class MyGame : Game
+{
+    private readonly Player player = new();
+
+    protected override void Update() => player.Update();
+
+    protected override void Draw()
+    {
+        GraphicsDevice.Clear(Color.Black);
+        Batch.Begin();
+        player.Draw();
+        Batch.End();
+    }
+}
+```
+
+As assinaturas existentes `Update(GameTime time)` e `Draw(GameTime time)` continuam virtuais e disponíveis, inclusive em binários previamente compilados. O host chama exclusivamente a versão com GameTime; sua implementação base delega à versão sem parâmetros. Assim, uma sobrescrita com GameTime tem precedência, salvo se ela própria chamar base.Update(time) / base.Draw(time) para encadear a lógica. É permitido misturar as duas formas entre Update e Draw. Não há detecção por reflexão, execução duplicada automática, alteração dos timers ou mudança no tempo do loop. A forma contextual requer callback síncrono do host como antes.
+
+A compatibilidade de código fonte não é absoluta: reflexão não tipada por nome (por exemplo, GetMethod("Update", bindingFlags)) pode se tornar ambígua; especifique os tipos dos parâmetros. Uma classe antiga que já declarava método Update()/Draw() sem override pode receber diagnóstico de ocultação; revise se deseja torná-lo uma sobrescrita.
+
+Os testes ParameterlessLifecycleTests verificam execução única, precedência, chamada base intencional, mistura de estilos, pausa e Step. CI pendente.
