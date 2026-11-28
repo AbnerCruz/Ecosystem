@@ -40,6 +40,28 @@ public sealed class LunetClientTests
     }
 
     [Fact]
+    public void ShellState_AiOpensCompactAndBackReducesBeforeClosing()
+    {
+        var s = new ShellState();
+        s.OpenProject("A");
+        Assert.False(s.ToggleAiSize());
+        s.ShowPanel(SupportPanel.Ai);
+        Assert.False(s.AiExpanded);
+        Assert.True(s.ToggleAiSize());
+        Assert.True(s.AiExpanded);
+        Assert.True(s.Back());
+        Assert.Equal(SupportPanel.Ai, s.Panel);
+        Assert.False(s.AiExpanded);
+        Assert.True(s.Back());
+        Assert.Equal(SupportPanel.None, s.Panel);
+        s.ShowPanel(SupportPanel.Ai);
+        s.ToggleAiSize();
+        s.ShowPanel(SupportPanel.Problems);
+        s.ShowPanel(SupportPanel.Ai);
+        Assert.False(s.AiExpanded);
+    }
+
+    [Fact]
     public void ShellState_RemembersTheTabOfEachGame()
     {
         var s = new ShellState();
@@ -903,6 +925,68 @@ public sealed class LunetClientTests
                 var undo = window.GetVisualDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Desfazer estas alterações");
                 undo.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Assert.False(File.Exists(enemy));
+                window.Close();
+            });
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void AiPanel_ResizesInPlaceAndRendersRecordedStepsAndMarkdown()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var store = new Lunet.Ai.LunetAiSettingsStore(Path.Combine(root, "ai.json"), new MemoryVault());
+                var model = new ScriptedModel(
+                    Calls("lunet.files.list", new { }),
+                    Says("## Movimento\n\n1. **Leia** o arquivo.\n\n| Eixo | Valor |\n| --- | --- |\n| X | 1 |\n\n```csharp\nvar x = 1;\n```"));
+                var shell = new LunetShell(root) { AiHost = new AiHost(store, root, model) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(SupportPanel.Ai);
+                var ai = shell.WorkspaceView.Support.Ai;
+                ai.Input.Text = "rascunho";
+                var session = ai.Session;
+                var renders = ai.FullRenders;
+
+                Button Find(string name)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    window.UpdateLayout();
+                    return window.GetVisualDescendants().OfType<Button>().First(b => b.Name == name);
+                }
+                void Click(string name) => Find(name).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Click("AiExpand");
+                Assert.True(shell.State.AiExpanded);
+                Assert.Same(session, ai.Session);
+                Assert.Equal("rascunho", ai.Input.Text);
+                Assert.Equal(renders, ai.FullRenders);
+
+                Wait(ai.SendAsync());
+                Assert.True(shell.State.AiExpanded);
+                Assert.Contains(ai.Session!.History, t => t.Steps?.Count > 0);
+                Click("AiActivityToggle");
+                window.UpdateLayout();
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Listando os arquivos do projeto");
+                Assert.Contains(window.GetVisualDescendants().OfType<SelectableTextBlock>(), t =>
+                    t.Inlines?.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text == "Eixo") == true);
+                var copy = Find("AiCopyCode");
+                copy.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                var clipboard = Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(window.Clipboard!);
+                Wait(clipboard);
+                Assert.Equal("var x = 1;", clipboard.Result);
+
+                renders = ai.FullRenders;
+                Assert.True(shell.Back());
+                window.UpdateLayout();
+                Assert.False(shell.State.AiExpanded);
+                Assert.Equal(SupportPanel.Ai, shell.State.Panel);
+                Assert.Equal(renders, ai.FullRenders);
+                Assert.Contains(window.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Listando os arquivos do projeto");
                 window.Close();
             });
         }

@@ -1,0 +1,112 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-ide-ai-chat",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-28T09:36:13Z",
+  "agent": {
+    "id": "codex-lunet-ide-chat",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-545",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-ide-ai-chat",
+  "base_commit": "270fc7281cc491b5ea14afed56eba4d0d953eb64",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiActivityView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiMessageContent.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "docs/governance/handoffs/HO-20261128-lunet-ide-ai-chat.json"
+  ],
+  "work_completed": [
+    "Chat compacto e expansão da mesma instância, com retorno por Voltar e revisão de mudanças no arquivo.",
+    "Etapas reais em resumo por resposta e páginas de detalhes. Renderização Markdown nativa e cópia do código e da resposta.",
+    "Decisões registradas no plano de UX do Lunet. A reconciliação com o design global v2 mantém o registro do chat no produto."
+  ],
+  "verification": [
+    {
+      "check": "Jornada headless de expansão, etapas persistidas e área de transferência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "LunetClientTests exercita a casca Avalonia com provedor simulado e confere o texto copiado."
+    },
+    {
+      "check": "Capturas Avalonia/Skia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "15 PNGs conferidos a 320×640, 360×800, 412×915, 915×412 e 1280×800."
+    },
+    {
+      "check": "Suite Debug do Lunet",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1.415 testes passaram no executor xUnit do projeto."
+    },
+    {
+      "check": "Suite Release do Lunet",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1.415 aprovados na reexecução. A primeira execução registrou 5.360 bytes no teste TouchButtonTests.UpdateAndDrawingAllocateZeroBytesAfterWarmup. O teste isolado e a repetição integral passaram."
+    },
+    {
+      "check": "Consistência do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram. A cópia rasa e a ausência do instantâneo de Issues limitam verificações históricas."
+    }
+  ],
+  "known_issues": [
+    "A verificação local cobre a casca em headless. Emulador Android, Motorola G32 e provedor remoto ainda sem evidência nesta entrega."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI combinado e release Android pelo integrador."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/design/linguagem-visual.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma sessão por jogo e a mesma instância de interface em ambos os tamanhos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "As etapas observáveis salvas pelo runtime aparecem no histórico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Capturas headless identificadas e verificação Android registrada separadamente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ide-chat-markdown",
+      "status": "product-specific",
+      "rationale": "Usa ChatMarkdown e tokens Lunet. Estados e revisão são específicos do editor de jogos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
