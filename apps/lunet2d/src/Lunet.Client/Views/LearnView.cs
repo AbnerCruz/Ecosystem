@@ -99,7 +99,7 @@ public sealed class LearnView : UserControl
             var total = LearningCatalog.Projects.Sum(p => p.Steps.Count);
             var next = LearningCatalog.Projects.FirstOrDefault(p => progress.CompletedCountFor(p.Id) < p.Steps.Count) ?? LearningCatalog.Projects[0];
             var card = new StackPanel { Spacing = LunetTokens.Space.Xs };
-            card.Children.Add(LunetUi.Text("SUA TRILHA", LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold));
+            card.Children.Add(LunetUi.Text("SUA TRILHA", LunetTokens.Type.Caption, LunetTokens.Color.Primary, FontWeight.SemiBold));
             card.Children.Add(LunetUi.Text($"{progress.OverallCompletedCount} de {total} objetivos", LunetTokens.Type.Title, weight: FontWeight.SemiBold));
             card.Children.Add(Bar(progress.OverallCompletedCount, total));
             var resume = LunetUi.Button("Continuar · " + next.Title, ButtonKind.Primary, LunetIcons.Play, () => Go(() => ShowProject(next.Id)));

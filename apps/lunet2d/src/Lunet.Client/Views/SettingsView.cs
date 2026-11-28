@@ -155,7 +155,7 @@ public sealed class SettingsView : UserControl
 
     private void Section(string title)
     {
-        var t = LunetUi.Text(title.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+        var t = LunetUi.Text(title.ToUpperInvariant(), LunetTokens.Type.Caption, LunetTokens.Color.Info, FontWeight.SemiBold);
         t.Margin = new Thickness(0, LunetTokens.Space.L, 0, 0);
         _page.Children.Add(t);
     }

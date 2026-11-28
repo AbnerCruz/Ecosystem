@@ -17,6 +17,7 @@ public enum ButtonKind
     Ghost,
     /// <summary>The chosen option of a group (chip, segment, tab): violet soft with violet text, never the solid.</summary>
     Selected,
+    Destructive,
 }
 
 /// <summary>
@@ -93,6 +94,7 @@ public static class LunetUi
         {
             ButtonKind.Primary => (LunetTokens.Color.Accent, LunetTokens.Color.OnAccent),
             ButtonKind.Secondary => (LunetTokens.Color.SurfaceRaised, LunetTokens.Color.TextPrimary),
+            ButtonKind.Destructive => (LunetTokens.Color.DangerSoft, LunetTokens.Color.Danger),
             ButtonKind.Selected => (LunetTokens.Color.PrimarySoft, LunetTokens.Color.Primary),
             _ => ("#00000000", LunetTokens.Color.TextPrimary),
         };

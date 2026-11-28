@@ -19,10 +19,14 @@ public static class ProjectImports
         "Lunet.Scenes", "Lunet.UI", "Lunet.Pathfinding", "Lunet.Storage", "Lunet.Networking"
     ];
 
-    public static string Source(bool broad = false) =>
-        string.Join("\n", (broad ? Broad : Essential).Select(n => "global using " + n + ";")) + "\n";
+    /// <summary>O padrão de projetos novos é Amplo, incluindo os membros estáticos de Context.</summary>
+    public static string Source(bool broad = true) =>
+        string.Join("\n", (broad ? Broad : Essential).Select(n => "global using " + n + ";")) + "\n" +
+        (broad ? "global using static Lunet.Context;\n" : "");
 
     // Only called for the template text being materialized, never on existing user files.
+    // Keep dependencies outside the common Essential set by default: changing only Imports.cs
+    // to Essential must not invalidate a generated template (especially Laboratory).
     public static string RemoveCoveredFromGenerated(string source, bool broad = false)
     {
         var covered = new HashSet<string>((broad ? Broad : Essential).Select(n => "using " + n + ";"), StringComparer.Ordinal);

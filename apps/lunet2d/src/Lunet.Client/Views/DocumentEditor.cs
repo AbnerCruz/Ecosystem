@@ -210,7 +210,7 @@ public sealed class DocumentEditor : UserControl
     public void UpdateDirtyMark()
     {
         if (_openLabel is null || OpenPath is null) return;
-        _openLabel.Text = IsDirty ? OpenPath + " •" : OpenPath;
+        _openLabel.Text = IsDirty ? Path.GetFileName(OpenPath) + " •" : Path.GetFileName(OpenPath);
     }
 
     /// <summary>The open file's tab label as shown (tests).</summary>
@@ -548,7 +548,7 @@ public sealed class DocumentEditor : UserControl
         Add(find);
         if (_tab == WorkspaceTab.Code)
         {
-            var add = LunetUi.Button("Novo arquivo", ButtonKind.Secondary, LunetIcons.Plus, () => FileAction(() => NewCodeFile()));
+            var add = LunetUi.Button("Novo arquivo", ButtonKind.Secondary, LunetIcons.Plus, () => { _fileMenu = false; Rebuild(); _shell.WorkspaceView.BeginFileCreation(); });
             add.Name = "NewCodeFile";
             Add(add);
         }
@@ -566,7 +566,7 @@ public sealed class DocumentEditor : UserControl
             var copy = LunetUi.Button("Salvar cópia", ButtonKind.Ghost, LunetIcons.Copy, () => FileAction(() => SaveCopyAs(name.Text ?? "")));
             copy.Name = "SaveCopyAs";
             Add(copy);
-            var delete = LunetUi.Button(_confirmDelete ? "Apagar mesmo?" : "Apagar", ButtonKind.Ghost, LunetIcons.Trash, () =>
+            var delete = LunetUi.Button(_confirmDelete ? "Apagar mesmo?" : "Apagar", ButtonKind.Destructive, LunetIcons.Trash, () =>
             {
                 if (!_confirmDelete) { _confirmDelete = true; Rebuild(); }
                 else FileAction(DeleteOpen);
@@ -1000,6 +1000,7 @@ public sealed class DocumentEditor : UserControl
     private void Rebuild()
     {
         var entries = new List<Control>();
+        _selectedTab = null; _openLabel = null;
         // Only the files you opened are tabs (the Explorer lists every file): name, ● when unsaved, ✕ to close.
         var open = _session?.Tabs.ToList() ?? [];
         if (OpenPath is { } extra && !open.Contains(extra)) open.Insert(0, extra);
@@ -1007,15 +1008,18 @@ public sealed class DocumentEditor : UserControl
         {
             var selected = file == OpenPath;
             var name = Path.GetFileName(file);
-            var label = LunetUi.Text(selected && IsDirty ? name + " ●" : name, LunetTokens.Type.Label, selected ? LunetTokens.Color.TextPrimary : LunetTokens.Color.TextSecondary,
+            var label = LunetUi.Text(selected && IsDirty ? name + " •" : name, LunetTokens.Type.Label, selected ? LunetTokens.Color.TextPrimary : LunetTokens.Color.TextSecondary,
                 selected ? FontWeight.SemiBold : FontWeight.Normal);
             if (selected) _openLabel = label;
             label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
             label.VerticalAlignment = VerticalAlignment.Center;
-            label.MaxWidth = 180;
+            label.MaxWidth = 112;
+            var tabLabel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, VerticalAlignment = VerticalAlignment.Center };
+            tabLabel.Children.Add(LunetIcons.Create(file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? LunetIcons.Code : LunetIcons.File, selected ? LunetTokens.Color.Primary : LunetTokens.Color.Info, 16));
+            tabLabel.Children.Add(label);
             var b = new Button
             {
-                Content = label, MinHeight = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.S, 0, LunetTokens.Space.Xxs, 0),
+                Content = tabLabel, MinHeight = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.Xs, 0, LunetTokens.Space.Xxs, 0),
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Background = LunetTokens.Brush("#00000000"), BorderThickness = new Thickness(0),
             };
@@ -1025,12 +1029,13 @@ public sealed class DocumentEditor : UserControl
             var path = file;
             var close = LunetUi.IconButton(LunetIcons.Close, "Fechar " + name, () => CloseTab(path), LunetTokens.Color.TextSecondary);
             close.Name = "CloseTab";
-            var tab = new StackPanel { Orientation = Orientation.Horizontal, Children = { b, close } };
+            var tab = new StackPanel { Orientation = Orientation.Horizontal, Children = { b } };
+            if (selected || _shell.State.Layout == ShellLayout.Expanded) tab.Children.Add(close);
             var border = new Border
             {
                 Child = tab, Name = "EditorTab",
                 // The open tab is marked by tone and a line under it, never a box (visual language §3).
-                Background = LunetTokens.Brush(selected ? LunetTokens.Color.SurfaceRaised : "#00000000"),
+                Background = LunetTokens.Brush(selected ? LunetTokens.Color.PrimarySoft : "#00000000"),
                 BorderBrush = LunetTokens.Brush(selected ? LunetTokens.Color.Primary : "#00000000"), BorderThickness = new Thickness(0, 0, 0, 2),
             };
             // A long press (touch) or a right click opens the tab's actions, like VS Code's tab menu.
@@ -1099,7 +1104,7 @@ public sealed class DocumentEditor : UserControl
             {
                 HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
                 VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-                Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.Xs, LunetTokens.Space.Xxs) },
+                Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0, Margin = new Thickness(LunetTokens.Space.Xxs, 0) },
             };
             var row = (StackPanel)strip.Content!;
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Left; row.Children.Add(e); }

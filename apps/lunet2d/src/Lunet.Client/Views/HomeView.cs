@@ -293,7 +293,7 @@ public sealed class HomeView : UserControl
 
     private static TextBlock SectionLabel(string text)
     {
-        var t = LunetUi.Text(text, LunetTokens.Type.Label, LunetTokens.Color.TextTertiary, FontWeight.SemiBold);
+        var t = LunetUi.Text(text, LunetTokens.Type.Label, LunetTokens.Color.Info, FontWeight.SemiBold);
         t.Margin = new Thickness(0, LunetTokens.Space.S, 0, LunetTokens.Space.Xxs);
         return t;
     }

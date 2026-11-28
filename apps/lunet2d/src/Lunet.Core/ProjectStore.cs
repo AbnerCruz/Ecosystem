@@ -114,7 +114,7 @@ public sealed partial class ProjectStore
                     ProjectTemplate.Particles => ProjectTemplates.ParticlesSource(className),
                     _ => ProjectTemplates.BlankGameSource(className, manifest.VirtualWidth, manifest.VirtualHeight,
                         manifest.UpdatesPerSecond, manifest.ViewportScaling),
-                })));
+                }, broad: false)));
             game.CreateDirectory("Content");
             if (template is ProjectTemplate.CoinCatcher or ProjectTemplate.Lab)
                 game.Write("Content/Audio/beep.wav", WavGenerator.Beep(880, 0.12));
