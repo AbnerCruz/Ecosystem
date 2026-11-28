@@ -197,7 +197,7 @@ public sealed class GameHost
                 var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
                 for (var i = 0; i < steps; i++)
                 {
-                    using (Context.Enter(this, _game, graphics: true)) _game.RunUpdate(_loop.CompleteStep());
+                    RunTimedUpdate(_loop.CompleteStep());
                     CompletedUpdateSteps++;
                     Input.ClearGestures(); // cada gesto é entregue a um único passo
                 }
@@ -208,7 +208,7 @@ public sealed class GameHost
                 }
             }
             var drawStart = profile ? Stopwatch.GetTimestamp() : 0;
-            using (Context.Enter(this, _game, graphics: true)) _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation));
+            RunTimedDraw(new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation));
             if (profile) LastDrawCpuMilliseconds = Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         }
         catch (Exception ex)
@@ -231,7 +231,7 @@ public sealed class GameHost
                 LastUpdateSteps = 0;
             }
             var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
-            using (Context.Enter(this, _game, graphics: true)) _game.RunUpdate(_loop.CompleteStep());
+            RunTimedUpdate(_loop.CompleteStep());
             CompletedUpdateSteps++;
             if (profile)
             {
@@ -239,7 +239,7 @@ public sealed class GameHost
                 LastUpdateSteps = 1;
             }
             var drawStart = profile ? Stopwatch.GetTimestamp() : 0;
-            using (Context.Enter(this, _game, graphics: true)) _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f));
+            RunTimedDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f));
             if (profile) LastDrawCpuMilliseconds = Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         }
         catch (Exception ex)
@@ -270,6 +270,18 @@ public sealed class GameHost
             _contextAttached = _contextActive = false;
             ContextGeneration++;
         }
+    }
+
+    private void RunTimedUpdate(GameTime time)
+    {
+        using var scope = Context.Enter(this, _game, graphics: true, time: time);
+        _game.RunUpdate(time);
+    }
+
+    private void RunTimedDraw(GameTime time)
+    {
+        using var scope = Context.Enter(this, _game, graphics: true, time: time);
+        _game.RunDraw(time);
     }
 
     private void RunPause()

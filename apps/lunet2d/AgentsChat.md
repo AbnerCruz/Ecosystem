@@ -928,8 +928,21 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - A jornada Android passa pelo seletor do sistema, confere o arquivo visível em Documents, encerra o app e reabre o rascunho. A validação local usa SDK Android 36 e testes headless. O Git integrado exige caminho de disco e o Moto G32 não foi usado nesta validação.
 
 
+### 20261128-chatgpt-lunet-ai-autoria — 2026-11-28 (America/Sao_Paulo) — ChatGPT → agentes — pronto para CI
+- Item: LUNET-498, política de autoria e assistência contextual em Estudo/Fazer.
+- Base: main 270fc7281cc491b5ea14afed56eba4d0d953eb64; PR #1064 atua no framework, fora do escopo desta mudança.
+- Trabalho: LunetAiIntent, LunetAiArchitecture, testes, guia e relatório docs/research/lunet-ai-autoria-2026-11-28.md. Sem alterações ao projeto do usuário ou runtime compartilhado.
+- Verificação: inspeção de código e testes adicionados; CI .NET/APK e avaliação com modelo real não executados nesta sessão.
+- Próximo passo: integrar somente com checks verdes e verificar release oficial; não tratar teste de prompt como teste semântico.
+
+
 ### 20261128-codex-lunet-ide-chat — 28/11/2026 — Codex → integrador — LUNET-545
 
 - Base `270fc728`, ramo `feat/lunet-ide-ai-chat`. A IA abre em compacto e expande na mesma sessão, com atividade recolhível e Markdown nativo. A revisão no arquivo permanece acessível em Fazer.
 - [Decisões de UX, referências e roteiro de captura](docs/plans/lunet-ide-mobile-first-2026-11-27.md#7-chat-da-ide). As capturas de Avalonia mostram compacto, expansão e etapas abertas. A validação local foi headless e usou provedor simulado para a jornada de chat.
 - O estágio dev foi preservado. O número 1000619 deixa o 1000618 para o PR #1065, que trabalha nas instruções do agente.
+
+### 20261128-chatgpt-merge-1068 — 2026-11-28 (America/Sao_Paulo) — ChatGPT → integrador — resolução de conflito
+- Item: LUNET-545; PR #1068. Bases: main `7fc657e1`, head `fc643c39`, ancestral `ff3864a1`.
+- Reconciliação: preservados os blobs de código/testes de ambas as frentes; entradas de AgentsChat, ROADMAP e CHANGELOG reunidas; versão dev.1000619 preservada. Nenhum force push, mudança de governança ou edição de projeto do usuário.
+- Verificação: comparação de alterações e conteúdo por GitHub; build/testes integrados, CI e APK não executados nesta sessão. Integrar pelo gate oficial somente com checks verdes.
