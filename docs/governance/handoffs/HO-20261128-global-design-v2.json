@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-global-design-v2",
+  "category": "HANDOFF",
+  "task_id": "ECOSYSTEM-1066",
+  "component": "ecosystem",
+  "state": "review",
+  "timestamp": "2026-11-28T09:28:51Z",
+  "agent": {
+    "id": "chatgpt-global-design",
+    "kind": "ai-agent"
+  },
+  "branch": "docs/global-design-system-v2",
+  "base_commit": "270fc7281cc491b5ea14afed56eba4d0d953eb64",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "AGENTS.md",
+    "docs/design/estudo-global-2026-11-28.md",
+    "docs/design/linguagem-visual.md",
+    "docs/design/tokens.json",
+    "docs/governance/addenda/ADD-0037-linguagem-visual.md",
+    "docs/governance/decisions.json",
+    "site/design/design.css",
+    "site/design/design.js",
+    "site/design/index.html",
+    "tests/design/verify-tokens.cjs",
+    "docs/governance/handoffs/HO-20261128-global-design-v2.json"
+  ],
+  "work_completed": [
+    "Auditoria de linguagem, tokens, vitrine e DEC-0069; pesquisa externa e comunidades registrada no estudo.",
+    "Norma v2: separa obrigações, recomendações e liberdade por domínio. Atualiza AGENTS e registro do proprietário.",
+    "Vitrine com tema claro/escuro/sistema, cinco acentos, duas densidades e contextos distintos, preservando galeria.",
+    "Snapshot v1 preservado; nenhum código de Product alterado."
+  ],
+  "verification": [
+    {
+      "check": "Contraste WCAG dos pares de referência v2",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "140 pares calculados diretamente no objeto dos tokens antes de escrever: 4,5:1 texto/solid e 3:1 limites de controles; zero falhas. Controles HTML presentes; teste reproduzível tests/design/verify-tokens.cjs."
+    }
+  ],
+  "known_issues": [
+    "Sem captura de browser, teste interativo, auditoria WCAG completa ou CI confirmado nesta sessão; executor local não resolve GitHub por DNS e não dispõe do SDK dotnet.",
+    "O seletor usa parâmetros de URL e recarrega a vitrine; não preserva estado transitório das demonstrações. Perfis de marca são exemplos, não identidades oficiais."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e regressão de portal; verificar visual em claro/escuro e janela estreita/larga, antes de declarar validação visual.",
+    "Integrar pelo integrador após checks verdes; publicar portal pelo fluxo vigente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "ecosystem.json",
+    "docs/governance/communication.md",
+    "docs/governance/addenda/ADD-0037-linguagem-visual.md",
+    "docs/governance/decisions.json",
+    "docs/design/linguagem-visual.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Tokens versionados em um arquivo; raiz v1 snapshot, namespace global v2 vigente."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhum Product depende de outro."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Atualizados registro, adendo e norma por ordem direta."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Contraste não é browser ou aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review, validação pendente declarada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração de pacote de UI."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "global-design-contract",
+      "status": "product-specific",
+      "rationale": "Contrato documental global e vitrine do portal; nenhuma abstração executável extraída para Products."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

@@ -2465,8 +2465,8 @@
       "status": "decided",
       "component": "ecosystem",
       "blocking": false,
-      "title": "Linguagem visual única do Ecosystem (v1.0), aplicada primeiro no Lunet",
-      "context": "Em 26/11/2026 o proprietário avaliou como feios os painéis e inputs da casca do Lunet e mandou estudar UX, design, cor, tipografia, inputs, painéis, bordas, animações e efeitos (referências contemporâneas, comunidades, artigos e wikis), estabelecer os padrões do Ecosystem, registrá-los no Ecosystem e implementá-los no Lunet. Preferência declarada: preto, azul, branco e roxo, sem se limitar a eles.",
+      "title": "Linguagem de design global do Ecosystem (v2; revisa v1 aplicada primeiro no Lunet)",
+      "context": "Em 26/11/2026 o proprietário avaliou como feios os painéis e inputs da casca do Lunet e mandou estudar UX, design, cor, tipografia, inputs, painéis, bordas, animações e efeitos (referências contemporâneas, comunidades, artigos e wikis), estabelecer os padrões do Ecosystem, registrá-los no Ecosystem e implementá-los no Lunet. Preferência declarada: preto, azul, branco e roxo, sem se limitar a eles. Em 28/11/2026 o proprietário identificou viés do Lunet na norma e vitrine, solicitando escopo realmente global e pesquisa externa.",
       "question": "Qual linguagem visual o Ecosystem adota e onde ela vive?",
       "alternatives": [
         {
@@ -2478,17 +2478,18 @@
           "consequences": "Mantém a divergência e o visual criticado."
         }
       ],
-      "consequences": "docs/design/linguagem-visual.md (v1.0) e docs/design/tokens.json passam a ser a referência de interface do Ecosystem; Lunet.Client adota tokens, estilos globais de controles, Inter embutida e componentes; Urbe, Hub e portal adotam ao revisar a fundação visual; mudanças exigem registro e versão.",
-      "manifestCompatibility": "NN-001: tokens.json é a autoridade única dos valores. NN-002: Products copiam os valores, sem dependência entre si. NN-022: nenhum pacote de UI compartilhado é extraído agora. NN-017/ADD-0035: capturas headless não são teste no aparelho.",
+      "consequences": "docs/design/linguagem-visual.md (v1.0) e docs/design/tokens.json passam a ser a referência de interface do Ecosystem; Lunet.Client adota tokens, estilos globais de controles, Inter embutida e componentes; Urbe, Hub e portal adotam ao revisar a fundação visual; mudanças exigem registro e versão. Revisão 28/11/2026: linguagem v2 separa papéis de valores, admite temas e identidades locais, sem regras estéticas universais. Namespace global de tokens.json v2; raiz v1 preservada para compatibilidade até migração explícita. Vitrine demonstra temas, acentos, densidades e contextos. Sem alteração nos apps.",
+      "manifestCompatibility": "NN-001: tokens.json é a autoridade única dos valores. NN-002: Products copiam os valores, sem dependência entre si. NN-022: nenhum pacote de UI compartilhado é extraído agora. NN-017/ADD-0035: capturas headless não são teste no aparelho. Autoridade por versão, sem duas fontes concorrentes.",
       "raisedBy": "claude-code-lunet-avalonia",
       "raisedAt": "2026-11-26",
-      "decision": "A, conforme ordem direta do proprietário nesta conversa ('estabeleça os padrões que vamos utilizar no ecosystem então registra direto no ecosystem […] implemente no Lunet').",
+      "decision": "A, conforme ordem direta do proprietário nesta conversa ('estabeleça os padrões que vamos utilizar no ecosystem então registra direto no ecosystem […] implemente no Lunet'). Revisão por ordem direta do proprietário de 28/11/2026: a opção A significa contrato global e não uniformidade de aparência.",
       "decidedAt": "2026-11-26",
       "record": "docs/governance/addenda/ADD-0037-linguagem-visual.md",
       "related": [
         "docs/design/linguagem-visual.md",
         "docs/design/tokens.json",
-        "docs/design/estudo-visual-2026-11-26.md"
+        "docs/design/estudo-visual-2026-11-26.md",
+        "docs/design/estudo-global-2026-11-28.md"
       ],
       "consequencesApplied": true
     }

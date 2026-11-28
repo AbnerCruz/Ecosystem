@@ -18,7 +18,22 @@
 
   // ---------- tokens → CSS variables ----------
   const set = (k, v) => root.style.setProperty(k, v);
-  const c = tokens.color;
+  const g = tokens.global;
+  if (!g || !g.themes) { document.body.classList.remove("loading"); $("[data-version]").textContent = "Tokens globais v2 indisponíveis"; return; }
+  const params = new URLSearchParams(location.search);
+  const pref = matchMedia("(prefers-color-scheme: dark)");
+  const themeChoice = ["system","light","dark"].includes(params.get("theme")) ? params.get("theme") : g.defaultMode;
+  const mode = themeChoice === "system" ? (pref.matches ? "dark" : "light") : themeChoice;
+  const theme = g.themes[mode];
+  const accent = Object.hasOwn(theme.accents, params.get("accent")) ? params.get("accent") : g.defaultAccent;
+  const density = Object.hasOwn(g.density, params.get("density")) ? params.get("density") : "comfortable";
+  root.dataset.mode = mode; root.dataset.density = density; root.style.colorScheme = mode;
+  const controls = {"theme-choice":themeChoice,"accent-choice":accent,"density-choice":density};
+  Object.entries(controls).forEach(([id,value]) => { const el = document.getElementById(id); el.value=value; el.addEventListener("change",()=>{const q=new URLSearchParams(location.search);q.set(id.split("-")[0],el.value);location.search=q.toString();}); });
+  pref.addEventListener("change",()=>{if(themeChoice==="system") location.reload();});
+  const c = {ink:theme.neutral, violet:theme.accents[accent], blue:theme.status.info, green:theme.status.success, amber:theme.status.warning, red:theme.status.danger, white:"#FFFFFF",black:"#000000",overlay:theme.overlay};
+  set("--demo-control",g.density[density].control+"px");
+  set("--demo-space",g.density[density].space+"px");
   for (const [k, v] of Object.entries(c.ink)) set(`--ink-${k}`, v);
   for (const hue of ["violet", "blue", "green", "amber", "red"]) {
     for (const [k, v] of Object.entries(c[hue])) set(`--${hue}-${k.replace(/[A-Z]/g, m => "-" + m.toLowerCase())}`, v);
@@ -39,11 +54,11 @@
     set(`--t-${k}-size`, t.size + "px"); set(`--t-${k}-line`, t.line + "px"); set(`--t-${k}-weight`, t.weight);
     set(`--t-${k}-tracking`, (t.tracking || 0) + "em");
   }
-  $("[data-version]").textContent = `versão ${tokens.version} · tema ${tokens.theme === "dark" ? "escuro" : tokens.theme} · lida de tokens.json`;
+  $("[data-version]").textContent = `v${g.version} · ${mode==="dark"?"escuro":"claro"} · ${accent} · ${density}`;
 
   // ---------- contrast ----------
   const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
-  const lin = v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  const lin = v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
   const L = h => { const [r, g, b] = rgb(h).map(lin); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
   const wcag = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   const apca = (txt, bg) => {
@@ -60,14 +75,14 @@
   const bg = c.ink["1"];
   $("[data-ink]").innerHTML = Object.entries(c.ink).map(([k, v]) => {
     const isText = +k >= 9;
-    const fg = +k >= 9 ? c.ink["1"] : c.ink["12"];
+    const fg = wcag(c.ink["1"],v) > wcag(c.ink["12"],v) ? c.ink["1"] : c.ink["12"];
     const metric = isText ? `${wcag(v, bg).toFixed(1)}:1 · Lc ${apca(v, bg).toFixed(0)}` : "";
     return `<div class="swatch"><div class="chipc" style="background:${v};color:${fg}">ink ${k}</div>
       <div class="meta"><b>${roles[k]}</b><span class="tnum">${v}</span>${metric ? `<span class="tnum">${metric}</span>` : ""}</div></div>`;
   }).join("");
 
   // ---------- accent and semantic scales ----------
-  const names = { violet: "Violeta", blue: "Azul", green: "Verde", amber: "Âmbar", red: "Vermelho" };
+  const names = { violet: "Acento · "+accent, blue: "Informação", green: "Sucesso", amber: "Aviso", red: "Erro" };
   $("[data-scales]").innerHTML = Object.keys(names).map(h => {
     const s = c[h];
     const cells = ["soft", "softStrong", "9", "10", "11", "12"].filter(k => s[k]).map(k => {
@@ -84,7 +99,7 @@
     body: "texto corrido, campo", titleSmall: "barra superior", title: "título de página e folha", headline: "título de tela", display: "abertura, destaque", code: "editor" };
   $("[data-types]").innerHTML = Object.entries(tokens.type).map(([k, t]) =>
     `<div class="type-row"><div class="spec-t"><b>${k}</b>${t.size}/${t.line} · ${t.weight}${t.tracking ? ` · ${t.tracking * 100}%` : ""}</div>
-      <div style="font-size:${t.size}px;line-height:${t.line}px;font-weight:${t.weight};letter-spacing:${t.tracking || 0}em;${k === "code" ? "font-family:'JetBrains Mono',monospace" : ""}">${k === "code" ? "batch.Draw(heroi, posicao);" : "Crie jogos no celular"} <span class="t-caption muted" style="font-family:Inter">${uses[k] || ""}</span></div></div>`).join("");
+      <div style="font-size:${t.size}px;line-height:${t.line}px;font-weight:${t.weight};letter-spacing:${t.tracking || 0}em;${k === "code" ? "font-family:'JetBrains Mono',monospace" : ""}">${k === "code" ? "total = itens.Sum();" : "Informação clara e legível"} <span class="t-caption muted" style="font-family:Inter">${uses[k] || ""}</span></div></div>`).join("");
 
   // ---------- space and radii ----------
   $("[data-spaces]").innerHTML = Object.entries(tokens.space).map(([k, v]) => `<div class="space-row"><span>${v}</span><i style="width:${v * 4}px"></i></div>`).join("");
@@ -148,7 +163,7 @@
   });
   $$("[data-validate-email]").forEach(f => {
     const input = $("input", f);
-    const check = () => f.classList.toggle("invalid", input.value.length > 0 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.value));
+    const check = () => {const invalid=input.value.length > 0 && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.value); f.classList.toggle("invalid",invalid);input.setAttribute("aria-invalid",String(invalid));};
     input.addEventListener("input", check); check();
   });
   $$("[data-loading]").forEach(b => b.addEventListener("click", () => {
