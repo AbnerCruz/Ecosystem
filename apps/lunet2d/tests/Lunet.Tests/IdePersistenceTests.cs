@@ -31,6 +31,9 @@ public sealed class IdePersistenceTests
                 var editor = shell.WorkspaceView.Code;
                 Assert.Equal("// meu rascunho", editor.Surface.Text);
                 Assert.False(editor.Save());
+                Assert.True(shell.Back());
+                Assert.Equal(Lunet.Client.Shell.ShellLevel.Workspace, shell.State.Level);
+                Assert.Equal("// meu rascunho", editor.Surface.Text);
                 Assert.Equal("// edição externa", project.ReadText(file));
                 Assert.Equal("Recuperado.cs", editor.SaveCopyAs("Recuperado"));
                 Assert.Equal("// meu rascunho", project.ReadText("Recuperado.cs"));

@@ -39,7 +39,13 @@ public sealed class PlayView : UserControl
     public void Refresh()
     {
         _grid.Children.Clear();
-        Games = _shell.Workspace.Projects();
+        try { Games = _shell.Workspace.Projects(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Games = [];
+            _grid.Children.Add(LunetUi.Notice("Pasta de projetos indisponível. Reconecte em Ajustes. " + ex.Message, LunetTokens.Color.Danger));
+            return;
+        }
         if (Games.Count == 0)
         {
             _grid.Children.Add(LunetUi.EmptyState(LunetIcons.Play, "Nenhum jogo ainda", "Crie um jogo em Jogos e ele aparece aqui para jogar."));

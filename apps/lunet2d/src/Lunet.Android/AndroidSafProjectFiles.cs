@@ -60,10 +60,14 @@ internal sealed class AndroidSafProjectFiles : IProjectFiles
         using var reader = resolver.Query(children!, ["_display_name", "document_id", "mime_type"], null, null, null)
             ?? throw new IOException("Não foi possível listar a pasta.");
         var list = new List<Entry>();
+        var names = new HashSet<string>(StringComparer.Ordinal);
         while (reader.MoveToNext())
         {
             if (reader.GetString(0) is { } name && reader.GetString(1) is { } id)
+            {
+                if (!names.Add(name)) throw new IOException($"O provedor apresentou mais de um item chamado {name}.");
                 list.Add(new(name, id, reader.GetString(2) == DirectoryMime));
+            }
         }
         index.Children[parent] = (now, list);
         return list;

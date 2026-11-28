@@ -53,7 +53,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 for node in ET.parse(sys.stdin).iter("node"):
-    if node.get("enabled") == "true" and (sys.argv[1] in (node.get("text"), node.get("content-desc")) or (sys.argv[2] and node.get("resource-id", "").endswith(sys.argv[2]))):
+    if node.get("enabled") == "true" and (sys.argv[1].casefold() in (node.get("text", "").casefold(), node.get("content-desc", "").casefold()) or (sys.argv[2] and node.get("resource-id", "").endswith(sys.argv[2]))):
         x0, y0, x1, y1 = map(int, re.findall(r"\d+", node.attrib["bounds"]))
         print((x0 + x1) // 2, (y0 + y1) // 2)
         break
@@ -65,6 +65,7 @@ else:
             return
         fi
     done
+    adb exec-out cat /sdcard/lunet-ui.xml > "$out/android-ui-failure.xml" || true
     echo "A ação $label não apareceu na árvore de acessibilidade do Android" >&2
     return 1
 }

@@ -32,6 +32,7 @@
     "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
     "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
     "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
     "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
     "apps/lunet2d/src/Lunet.Client/Views/ApkView.cs",
     "apps/lunet2d/src/Lunet.Client/Views/CommandPaletteView.cs",

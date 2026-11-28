@@ -116,7 +116,7 @@ public sealed class ShellState
     }
 
     /// <summary>The system Back gesture/key. Returns false when the shell has nothing to close (the app may exit).</summary>
-    public bool Back()
+    public bool Back(Func<bool>? canLeaveWorkspace = null)
     {
         if (ClosePreview()) return true;
         if (Panel != SupportPanel.None) { Panel = SupportPanel.None; Changed?.Invoke(); return true; }
@@ -127,7 +127,11 @@ public sealed class ShellState
             Changed?.Invoke();
             return true;
         }
-        if (Level == ShellLevel.Workspace) { GoHome(); return true; }
+        if (Level == ShellLevel.Workspace)
+        {
+            if (canLeaveWorkspace?.Invoke() != false) GoHome();
+            return true;
+        }
         return false;
     }
 }

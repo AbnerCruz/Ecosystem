@@ -221,7 +221,23 @@ public sealed class HomeView : UserControl
     public void Refresh()
     {
         _grid.Children.Clear();
-        var names = _shell.Workspace.Projects();
+        IReadOnlyList<string> names;
+        IReadOnlyList<Lunet.Core.TrashedProject> trash;
+        _trashRow.Children.Clear();
+        try
+        {
+            names = _shell.Workspace.Projects();
+            trash = _shell.Workspace.Store.Trash();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Shown = [];
+            Arranged = new(null, [], []);
+            _search.IsVisible = false;
+            _count.Text = "";
+            _grid.Children.Add(Full(LunetUi.Notice("Pasta de projetos indisponível. Reconecte em Ajustes. " + ex.Message, LunetTokens.Color.Danger)));
+            return;
+        }
         _count.Text = names.Count switch { 0 => "Comece criando um jogo", 1 => "1 jogo", _ => $"{names.Count} jogos" };
         _search.IsVisible = names.Count > 1;
         var games = names.Select(n => new HomeGame(n, GameIdOf(n), LastEdited(n))).ToList();
@@ -259,8 +275,6 @@ public sealed class HomeView : UserControl
             if (Arranged.Pinned.Count + Arranged.Others.Count == 0)
                 _grid.Children.Add(Full(LunetUi.Secondary("Nenhum jogo com esse nome.")));
         }
-        _trashRow.Children.Clear();
-        var trash = _shell.Workspace.Store.Trash();
         if (trash.Count > 0)
         {
             var b = LunetUi.Button($"Lixeira ({trash.Count})", ButtonKind.Ghost, LunetIcons.Trash, ShowTrash);
