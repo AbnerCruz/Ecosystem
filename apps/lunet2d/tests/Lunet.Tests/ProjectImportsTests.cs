@@ -44,7 +44,9 @@ public sealed class ProjectImportsTests
     public void DefaultContextBindsInIndependentClassAndCanBeRemoved()
     {
         var compiler = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
-        const string player = "public sealed class Player { public object[] Current() => new object[] { Graphics, Content, Input, Audio, Save, Services, Timers, Log, Dispatcher }; }";
+        // Timers and Dispatcher are also public types in Lunet; C# requires qualification
+        // in expression position when both namespace and static imports are active.
+        const string player = "public sealed class Player { public object[] Current() => new object[] { Graphics, Content, Input, Audio, Save, Services, Context.Timers, Log, Context.Dispatcher }; public Timers TimerService() => Context.Timers; public Dispatcher DispatchService() => Context.Dispatcher; }";
         var source = ProjectImports.Source();
         var result = compiler.Compile("default_context", [
             new SourceFile(ProjectImports.Path, source),
@@ -58,6 +60,19 @@ public sealed class ProjectImportsTests
             new SourceFile("Player.cs", player)
         ]);
         Assert.False(removed.Success);
+    }
+
+    [Fact]
+    public void GeneratedTemplatesRetainDependenciesOutsideEssentialPreset()
+    {
+        const string original = "using Lunet;\nusing Lunet.Physics;\nusing Lunet.UI;\nusing Lunet.Scenes;\nusing Lunet.Pathfinding;\n\npublic sealed class Sample : Game { }";
+        var generated = ProjectImports.RemoveCoveredFromGenerated(original);
+        Assert.DoesNotContain("using Lunet;\n", generated);
+        Assert.Contains("using Lunet.Physics;", generated);
+        Assert.Contains("using Lunet.UI;", generated);
+        Assert.Contains("using Lunet.Scenes;", generated);
+        Assert.Contains("using Lunet.Pathfinding;", generated);
+        Assert.Contains("public sealed class Sample : Game", generated);
     }
 
     [Fact]

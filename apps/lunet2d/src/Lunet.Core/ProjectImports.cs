@@ -25,7 +25,9 @@ public static class ProjectImports
         (broad ? "global using static Lunet.Context;\n" : "");
 
     // Only called for the template text being materialized, never on existing user files.
-    public static string RemoveCoveredFromGenerated(string source, bool broad = true)
+    // Keep dependencies outside the common Essential set by default: changing only Imports.cs
+    // to Essential must not invalidate a generated template (especially Laboratory).
+    public static string RemoveCoveredFromGenerated(string source, bool broad = false)
     {
         var covered = new HashSet<string>((broad ? Broad : Essential).Select(n => "using " + n + ";"), StringComparer.Ordinal);
         var lines = source.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');

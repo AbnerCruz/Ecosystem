@@ -25,7 +25,7 @@ Não altere alvo, resolução, viewport, clear ou uniforms do shader ativo duran
 
 Nos projetos novos, abra `Project/Imports.cs` no Explorador de arquivos. O arquivo físico é Project/Imports.cs e entra no ZIP, na análise e na compilação. Uma diretiva global using vale para os demais arquivos C# do jogo; ela não instala um assembly nem importa namespaces filhos automaticamente.
 
-O padrão Amplo reúne os 24 namespaces do estudo e `global using static Lunet.Context;` (25 diretivas). O preset Essencial reúne os oito namespaces básicos. O arquivo é editável: remova, acrescente ou qualifique imports conforme seu projeto. Projetos existentes não são alterados automaticamente; a troca de preset com diff na casca Avalonia é uma frente de UI separada. Não remova imports locais que ainda são necessários. A remoção ou mudança de uma global pode alterar diagnósticos em outros arquivos.
+O padrão Amplo reúne os 24 namespaces do estudo e `global using static Lunet.Context;` (25 diretivas). O preset Essencial reúne os oito namespaces básicos. O arquivo é editável: remova, acrescente ou qualifique imports conforme seu projeto. Projetos existentes não são alterados automaticamente; a troca de preset com diff na casca Avalonia é uma frente de UI separada. Não remova imports locais que ainda são necessários. Os templates avançados preservam dependências locais fora do conjunto Essencial para continuar compilando se o perfil for trocado. A remoção ou mudança de uma global pode alterar diagnósticos em outros arquivos.
 
 Em caso de ambiguidade, qualifique o tipo ou declare um alias local, por exemplo `using GamePointer = Lunet.Input.Pointer;`. System.Reflection.Pointer e Lunet.Input.Pointer têm o mesmo nome; System.Threading.ThreadState e System.Diagnostics.ThreadState também. Extensões LINQ podem introduzir novos candidatos. Vector2 vem de System.Numerics. As APIs de multiplayer local e atributos de inspeção ficam em Lunet; não existem os namespaces de jogo Lunet.Multiplayer e Lunet.Inspection.
 
@@ -40,7 +40,7 @@ Projetos legados sem essa propriedade usam 0 (política anterior). O workflow de
 
 ## Context: disponível por padrão, uso opcional
 
-A classe independente Player pode receber InputState e GraphicsDevice explicitamente, ou escolher Lunet.Context. Um `using static Lunet.Context;` local permite ler Input e Graphics diretamente; `global using static Lunet.Context;` vem no Imports.cs de novos projetos com o perfil Amplo. O desenvolvedor pode removê-lo ou usar um import local. As propriedades retornam as mesmas instâncias do Game, não um registro global substituível.
+A classe independente Player pode receber InputState e GraphicsDevice explicitamente, ou escolher Lunet.Context. Um `using static Lunet.Context;` local permite ler Input e Graphics diretamente; `global using static Lunet.Context;` vem no Imports.cs de novos projetos com o perfil Amplo. O desenvolvedor pode removê-lo ou usar um import local. As propriedades retornam as mesmas instâncias do Game, não um registro global substituível. `Timers` e `Dispatcher` também são nomes de tipos públicos no namespace Lunet: com ambos os imports globais, use `Context.Timers` e `Context.Dispatcher` para acessar as instâncias sem ambiguidade (CS0229). Os demais membros contextuais podem ser usados diretamente quando não houver colisão local.
 
 ```csharp
 public sealed class Player

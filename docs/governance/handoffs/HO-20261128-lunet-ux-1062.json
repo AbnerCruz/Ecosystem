@@ -36,12 +36,14 @@
     "apps/lunet2d/docs/manual/ordenacao-importacoes-contexto.md",
     "apps/lunet2d/docs/plans/lunet-plano-evolucao-framework-2026-11-24.md",
     "apps/lunet2d/src/Lunet.Core/ProjectImports.cs",
-    "apps/lunet2d/tests/Lunet.Tests/ProjectImportsTests.cs"
+    "apps/lunet2d/tests/Lunet.Tests/ProjectImportsTests.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs"
   ],
   "work_completed": [
     "Criação nominal, abas, ações e primeira aplicação semântica de cor.",
     "Teste headless e jornada ADB adicionados.",
-    "Incorporado commit cef2f8da da frente E2/E3 (25 diretivas padrão, preservação de projetos existentes, regressões e documentação); sem sobreposição de arquivos."
+    "Incorporado commit cef2f8da da frente E2/E3 (25 diretivas padrão, preservação de projetos existentes, regressões e documentação); sem sobreposição de arquivos.",
+    "Corrigidas as três regressões reportadas pelos checks do merge 06c73aba: template Lab sem dependências no Essencial, colisão de nomes Timers/Dispatcher e contrato de import local da jornada Lab. Mantidas as 25 diretivas e a API pública."
   ],
   "verification": [
     {
@@ -49,6 +51,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46119466095 — 1409 testes Debug e Release, 0 falhas; não constitui validação da nova combinação."
+    },
+    {
+      "check": "CI combinado anterior (06c73aba)",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46120333300 — 1409 aprovados e 3 falhas: AllNewTemplatesCompileWithBothPresets, DefaultContextBindsInIndependentClassAndCanBeRemoved e NewLaboratoryRunsAllModulesViaIndexAndKeepsExistingProjectUntouched. Correção escrita; reexecução necessária."
     }
   ],
   "known_issues": [
