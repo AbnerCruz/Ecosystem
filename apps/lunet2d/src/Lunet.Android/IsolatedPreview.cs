@@ -213,7 +213,7 @@ public sealed class IsolatedPreviewActivity : Activity
     private static async Task EndStuckProcess(CancellationToken finished)
     {
         try { await Task.Delay(TimeSpan.FromSeconds(3), finished).ConfigureAwait(false); }
-        catch (OperationCanceledException) when (finished.IsCancellationRequested) { return; }
+        catch (System.OperationCanceledException) when (finished.IsCancellationRequested) { return; }
         if (finished.IsCancellationRequested) return;
         global::Android.Util.Log.Warn("LunetPreview", "A thread do preview não respondeu ao comando de saída.");
         Process.KillProcess(Process.MyPid());
