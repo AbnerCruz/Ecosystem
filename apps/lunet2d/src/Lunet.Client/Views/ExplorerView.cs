@@ -3,6 +3,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
 using Lunet.Core;
@@ -26,6 +27,7 @@ public sealed class ExplorerView : UserControl
     private bool _moving;
     private string? _renaming;
     private readonly ContentControl _createHost = new();
+    private bool _creating;
     public bool CreationOpen => _createHost.Content is not null;
     private readonly TextBlock _notice = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
 
@@ -106,13 +108,17 @@ public sealed class ExplorerView : UserControl
     }
 
     /// <summary>Redraws the tree from the game's folder (after a Studio or the AI added files).</summary>
+    private bool _applyingTree;
     public void Fill()
     {
+        if (!_applyingTree) Fill(_shell.Workspace.Project?.ListTree() ?? []);
+    }
+
+    private void Fill(IReadOnlyList<ExplorerEntry> tree)
+    {
         _list.Children.Clear();
-        if (_shell.Workspace.Project is not { } project) { Shown = []; return; }
         var shown = new List<string>();
         string? hiddenUnder = null;
-        var tree = project.ListTree();
         var filter = Filter.Trim();
         HashSet<string>? keep = null;
         if (filter.Length > 0)
@@ -257,12 +263,14 @@ public sealed class ExplorerView : UserControl
     }
 
     /// <summary>Opens the folders above <paramref name="path"/> and scrolls it into sight.</summary>
-    public void Reveal(string path)
+    public void Reveal(string path) => Reveal(path, _shell.Workspace.Project?.ListTree() ?? []);
+
+    private void Reveal(string path, IReadOnlyList<ExplorerEntry> tree)
     {
         var parts = path.Split('/');
         for (var i = 1; i < parts.Length; i++) _collapsed.Remove(string.Join('/', parts[..i]));
         _collapsed.Remove(path); // a folder shown is a folder open
-        Fill();
+        Fill(tree);
         var index = Shown.ToList().IndexOf(path);
         Revealed = index >= 0 ? path : null;
         var row = _list.Children.OfType<Control>().Where(c => c is DockPanel).Skip(Math.Max(index, 0)).FirstOrDefault();
@@ -282,7 +290,7 @@ public sealed class ExplorerView : UserControl
     /// <summary>Collect the final name before touching the project storage.</summary>
     public void BeginCreate(bool folder, string? inside = null)
     {
-        if (_shell.Workspace.Project is not { } project) return;
+        if (_creating || _shell.Workspace.Project is not { } project) return;
         CancelCreate();
         _actionsFor = _renaming = null; _confirmDelete = _moving = false;
         ShowSearch(false);
@@ -295,47 +303,84 @@ public sealed class ExplorerView : UserControl
         panel.Children.Add(box);
         var error = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.Danger);
         panel.Children.Add(error);
-        void Submit()
-        {
-            if (!ReferenceEquals(project, _shell.Workspace.Project)) { CancelCreate(); return; }
-            try
-            {
-                var path = CreateNamed(folder, box.Text ?? "", inside);
-                CancelCreate();
-                if (inside is not null) _collapsed.Remove(inside);
-                Filter = "";
-                Fill();
-                if (!folder) Open(path);
-                else Reveal(path);
-            }
-            catch (Exception e) when (e is IOException or ProjectException or UnauthorizedAccessException or ArgumentException)
-            { error.Text = e.Message; }
-        }
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, HorizontalAlignment = HorizontalAlignment.Right };
         var cancel = LunetUi.Button("Cancelar", ButtonKind.Ghost, null, () => CancelCreate()); cancel.Name = "ExplorerCancelCreate";
-        var confirm = LunetUi.Button("Criar", ButtonKind.Primary, null, Submit); confirm.Name = "ExplorerConfirmCreate";
+        var confirm = LunetUi.Button("Criar", ButtonKind.Primary); confirm.Name = "ExplorerConfirmCreate";
+        confirm.Click += (_, _) => _ = SubmitAsync();
+        async Task SubmitAsync()
+        {
+            if (_creating || !ReferenceEquals(project, _shell.Workspace.Project)) return;
+            _creating = true;
+            string? created = null;
+            try
+            {
+                var name = box.Text ?? "";
+                box.IsEnabled = cancel.IsEnabled = confirm.IsEnabled = false;
+                created = await Task.Run(() => CreateNamed(project, folder, name, inside));
+                if (!ReferenceEquals(project, _shell.Workspace.Project)) return;
+
+                if (inside is not null) _collapsed.Remove(inside);
+                var tree = await Task.Run(project.ListTree);
+                if (!ReferenceEquals(project, _shell.Workspace.Project)) return;
+                _applyingTree = true;
+                try { Filter = ""; }
+                finally { _applyingTree = false; }
+                if (folder)
+                    Reveal(created, tree);
+                else
+                {
+                    Fill(tree);
+                    if (!await _shell.WorkspaceView.OpenCreatedCodeAsync(project, created))
+                        Say($"{created} foi criado. O documento anterior continua aberto.");
+                    else
+                        _opened();
+                }
+            }
+            catch (Exception ex) when (ex is IOException or ProjectException or UnauthorizedAccessException or ArgumentException
+                or InvalidOperationException or System.Text.Json.JsonException)
+            {
+                if (created is null)
+                {
+                    error.Text = ex.Message;
+                    if (!this.IsAttachedToVisualTree()) _shell.Report("Não foi possível criar o item: " + ex.Message);
+                }
+                else
+                    Say($"{created} foi criado, mas o Explorador não concluiu a abertura: {ex.Message}");
+            }
+            finally
+            {
+                _creating = false;
+                if (created is not null) CancelCreate();
+                else box.IsEnabled = cancel.IsEnabled = confirm.IsEnabled = true;
+            }
+        }
         actions.Children.Add(cancel); actions.Children.Add(confirm); panel.Children.Add(actions);
         box.KeyDown += (_, e) =>
         {
-            if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; Submit(); }
+            if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; _ = SubmitAsync(); }
             else if (e.Key == Avalonia.Input.Key.Escape) { e.Handled = true; CancelCreate(); }
         };
         _createHost.Content = new Border { Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay), CornerRadius = new CornerRadius(LunetTokens.Radius.M), Child = panel };
-        Fill();
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => box.Focus());
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            try { if (box.IsAttachedToVisualTree() && box.IsEffectivelyVisible) box.Focus(); }
+            catch (InvalidOperationException ex) { Say("Não foi possível focar o nome: " + ex.Message); }
+        });
     }
 
     public bool CancelCreate()
     {
-        if (!CreationOpen) return false;
+        if (_creating || !CreationOpen) return false;
         _createHost.Content = null;
         return true;
     }
 
     /// <summary>Single final write using the existing project storage; invalid names never create files.</summary>
-    public string CreateNamed(bool folder, string name, string? inside = null)
+    public string CreateNamed(bool folder, string name, string? inside = null) =>
+        CreateNamed(_shell.Workspace.Project ?? throw new InvalidOperationException("Nenhum jogo aberto."), folder, name, inside);
+
+    private static string CreateNamed(LunetProject project, bool folder, string name, string? inside)
     {
-        var project = _shell.Workspace.Project ?? throw new InvalidOperationException("Nenhum jogo aberto.");
         name = name.Trim();
         if (name.Length == 0 || name is "." or ".." || name.StartsWith(".lunet", StringComparison.OrdinalIgnoreCase)
             || name.Any(ch => char.IsControl(ch) || "/\\:*?\"<>|".Contains(ch)) || name.EndsWith('.'))
@@ -347,7 +392,7 @@ public sealed class ExplorerView : UserControl
             || className.StartsWith('@')))
             throw new ArgumentException("Use um nome de classe C# válido, por exemplo Player.");
         var path = string.IsNullOrEmpty(inside) ? name : inside + "/" + name;
-        if (project.ListTree().Any(e => string.Equals(e.Path, path, StringComparison.OrdinalIgnoreCase)))
+        if (project.Files.List(inside ?? "").Any(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException("Já existe um arquivo ou pasta com esse nome.");
         if (folder) project.CreateDirectory(path);
         else project.CreateFile(path, $"using Lunet;\n\npublic sealed class {className}\n{{\n}}\n");

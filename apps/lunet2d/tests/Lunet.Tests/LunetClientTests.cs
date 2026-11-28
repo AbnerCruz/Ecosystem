@@ -950,7 +950,13 @@ public sealed class LunetClientTests
                 shell.State.ShowPanel(SupportPanel.Ai);
                 var ai = shell.WorkspaceView.Support.Ai;
                 ai.Input.Text = "rascunho";
-                var session = ai.Session;
+                var ready = System.Diagnostics.Stopwatch.StartNew();
+                while (ai.Session is null && ready.Elapsed < TimeSpan.FromSeconds(10))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    Thread.Sleep(5);
+                }
+                var session = Assert.IsType<Lunet.Ai.LunetAiSession>(ai.Session);
                 var renders = ai.FullRenders;
 
                 Button Find(string name)
@@ -991,6 +997,151 @@ public sealed class LunetClientTests
             });
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void AiPanel_RecoversFromAForegroundServiceFailure_AndCanRetryTheDraft()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var attempts = 0;
+                var store = new Lunet.Ai.LunetAiSettingsStore(Path.Combine(root, "ai.json"), new MemoryVault());
+                var shell = new LunetShell(root)
+                {
+                    AiHost = new AiHost(store, root, new ScriptedModel(Says("Concluído")),
+                        KeepAlive: _ => ++attempts == 1 ? throw new InvalidOperationException("Serviço desligado") : null)
+                };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(SupportPanel.Ai);
+                var ai = shell.WorkspaceView.Support.Ai;
+                ai.Input.Text = "Explique o Update";
+                Wait(ai.SendAsync());
+                Assert.False(ai.Running);
+                Assert.Equal("Explique o Update", ai.Input.Text);
+                Assert.Empty(ai.Session!.History);
+
+                Wait(ai.SendAsync());
+                Assert.Equal("Concluído", ai.LastReply?.Text);
+                Assert.Equal(2, ai.Session.History.Count);
+                window.Close();
+            });
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public void AiPanel_CompilesTheOriginAfterSwitchingGames_AndStopKeepsTheHistory()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var store = new Lunet.Ai.LunetAiSettingsStore(Path.Combine(root, "ai.json"), new MemoryVault());
+                var model = new PausedBuildModel();
+                var shell = new LunetShell(root) { AiHost = new AiHost(store, root, model) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject("Origem", Lunet.Core.ProjectTemplate.Blank, "landscape");
+                var origin = shell.Workspace.Project!;
+                var other = shell.Workspace.Store.Create("Outro");
+                other.WriteText("Invalid.cs", "invalid invalid invalid");
+                shell.State.ShowPanel(SupportPanel.Ai);
+                var ai = shell.WorkspaceView.Support.Ai;
+                ai.Input.Text = "Compile este jogo";
+                var run = ai.SendAsync();
+                Wait(model.Ready.Task);
+                Assert.False(model.OnUiThread);
+                var history = ai.Session!;
+                shell.OpenProject(other.Name);
+                Assert.Equal(origin.Manifest.GameId, ai.SessionGameId);
+                model.Resume.TrySetResult();
+                Wait(model.Compiled.Task);
+                Assert.True(model.BuildSucceeded);
+                Assert.Null(shell.Workspace.LastCompile);
+                ai.Stop();
+                Wait(run);
+                Assert.False(ai.Running);
+                Assert.False(history.History[^1].Pending);
+                Assert.Contains("cancelada", history.History[^1].Text, StringComparison.OrdinalIgnoreCase);
+                Assert.Equal(other.Manifest.GameId, shell.Workspace.Project!.Manifest.GameId);
+                window.Close();
+            });
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    private sealed class PausedBuildModel : AgentRuntime.IModelProvider
+    {
+        public string ProviderId => "chat-completions";
+        public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Compiled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool OnUiThread { get; private set; }
+        public bool BuildSucceeded { get; private set; }
+
+        public async ValueTask<AgentRuntime.ModelResponse> CompleteAsync(AgentRuntime.ModelRequest request, CancellationToken cancellationToken)
+        {
+            if (!Ready.Task.IsCompleted)
+            {
+                OnUiThread = Avalonia.Threading.Dispatcher.UIThread.CheckAccess();
+                Ready.SetResult();
+                await Resume.Task.WaitAsync(cancellationToken);
+                var tool = request.Tools.First(t => t.Name is "lunet.build.compile" or "lunet_build_compile");
+                return Calls(tool.Name, new { });
+            }
+            BuildSucceeded = request.Messages.SelectMany(message => message.Content)
+                .OfType<AgentRuntime.ToolResultBlock>()
+                .Any(result => result.Content.Contains("\"success\":true", StringComparison.Ordinal));
+            Compiled.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return Says("fim");
+        }
+    }
+
+    [Fact]
+    public void AiPanel_RealizesOnlyVisibleMessages_AndCanReadTheOldestOfALongHistory()
+    {
+        var root = NewRoot();
+        try
+        {
+            UiSession.Run(() =>
+            {
+                var store = new Lunet.Ai.LunetAiSettingsStore(Path.Combine(root, "ai.json"), new MemoryVault());
+                var shell = new LunetShell(root) { AiHost = new AiHost(store, root, new ScriptedModel(Says("Fim"))) };
+                var window = new Window { Width = 412, Height = 915, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                var gameId = shell.Workspace.Project!.Manifest.GameId;
+                var id = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(gameId))).ToLowerInvariant();
+                var history = Enumerable.Range(0, 400).Select(i => new Lunet.Ai.LunetAiTurn("Lunet", $"Mensagem {i}")).ToArray();
+                File.WriteAllText(Path.Combine(root, id + ".json"), System.Text.Json.JsonSerializer.Serialize(history));
+                shell.State.ShowPanel(SupportPanel.Ai);
+                shell.State.ToggleAiSize();
+                var ai = shell.WorkspaceView.Support.Ai;
+                var ready = System.Diagnostics.Stopwatch.StartNew();
+                while (ai.Session is null && ready.Elapsed < TimeSpan.FromSeconds(10))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                    Thread.Sleep(5);
+                }
+                Assert.Equal(400, ai.Session!.History.Count);
+                window.UpdateLayout();
+                var viewer = ai.GetVisualDescendants().OfType<ScrollViewer>().First(view => view.Name == "AiTranscript");
+                viewer.ScrollToHome();
+                window.UpdateLayout();
+                Assert.Contains(ai.GetVisualDescendants().OfType<SelectableTextBlock>(),
+                    text => text.Inlines?.OfType<Avalonia.Controls.Documents.Run>().Any(run => run.Text == "Mensagem 0") == true);
+                Assert.InRange(ai.GetVisualDescendants().OfType<Button>().Count(b => b.Name == "AiCopyResponse"), 1, 40);
+                window.Close();
+            });
+        }
+        finally { Directory.Delete(root, recursive: true); }
     }
 
     [Fact]

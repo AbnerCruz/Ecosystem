@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "name": "Moedas e sementes",
+  "gameId": "7d88ef88-0329-451a-a1f8-38bfb3306daf",
+  "packageId": "com.lunet.samples.randomcoins",
+  "version": "0.1.0",
+  "entryPoint": "Game.cs",
+  "orientation": "portrait",
+  "virtualWidth": 360,
+  "virtualHeight": 640,
+  "sdkImportsVersion": 1
+}

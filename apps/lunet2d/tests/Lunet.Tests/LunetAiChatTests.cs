@@ -122,6 +122,37 @@ public sealed class LunetAiChatTests
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task History_UpdatesOnlyTheCurrentExchange_AndClearRemovesBothFormats()
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var root = Directory.CreateTempSubdirectory("lunet-ai-legacy-").FullName;
+        try
+        {
+            var project = new ProjectStore(root).Create("History");
+            var historyPath = Path.Combine(root, "history.json");
+            const string legacy = """[{"Role":"Você","Text":"Antiga"},{"Role":"Lunet","Text":"Resposta antiga"}]""";
+            File.WriteAllText(historyPath, legacy);
+            var session = new LunetAiSession(project, historyPath);
+            var model = new WaitingProvider();
+            var run = session.AskAsync("Nova", new LunetAiRequest(
+                LunetAiSettings.Default with { Model = "m" }, "chave-de-teste-123456789",
+                LunetAiEditorContext.Empty, Provider: model), timeout.Token);
+            await model.Entered.Task.WaitAsync(timeout.Token);
+            Assert.Equal(legacy, File.ReadAllText(historyPath));
+            Assert.True(new LunetAiSession(project, historyPath).History[^1].Pending);
+            model.Release.TrySetResult(true);
+            await run;
+
+            var reopened = new LunetAiSession(project, historyPath);
+            Assert.Equal(new[] { "Antiga", "Resposta antiga", "Nova", "Concluído" }, reopened.History.Select(turn => turn.Text));
+            Assert.Equal(legacy, File.ReadAllText(historyPath));
+            reopened.ClearHistory();
+            Assert.Empty(new LunetAiSession(project, historyPath).History);
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
     private sealed class WaitingProvider : IModelProvider
     {
         public string ProviderId => "chat-completions";

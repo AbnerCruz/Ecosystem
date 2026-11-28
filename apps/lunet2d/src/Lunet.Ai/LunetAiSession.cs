@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using AgentRuntime;
 using AgentRuntime.Providers.ChatCompletions;
@@ -27,6 +28,9 @@ public sealed class LunetAiSession
     private readonly LunetProject _project;
     private readonly string _historyPath;
     private readonly List<LunetAiTurn> _history;
+    private readonly LunetAiProjectMap _projectMap;
+    private string? _exchangePath;
+    private long _nextProgressSave;
     private readonly SemaphoreSlim _runGate = new(1, 1);
     private readonly object _historyLock = new();
     private readonly Dictionary<string, LunetAiCheckpoint> _checkpoints = new(StringComparer.Ordinal);
@@ -87,17 +91,36 @@ public sealed class LunetAiSession
     {
         _project = project;
         _historyPath = privateHistoryPath;
+        _projectMap = new LunetAiProjectMap(project);
+        _history = ReadHistory(privateHistoryPath);
+        if (Directory.Exists(ExchangeDirectory))
+        {
+            foreach (var path in Directory.GetFiles(ExchangeDirectory, "*.json").Order(StringComparer.Ordinal))
+            {
+                var exchange = ReadHistory(path);
+                if (exchange.Count != 2) continue;
+                _history.AddRange(exchange);
+                _exchangePath = path;
+            }
+        }
+    }
+
+    private static List<LunetAiTurn> ReadHistory(string path)
+    {
         try
         {
-            _history = File.Exists(privateHistoryPath)
-                ? JsonSerializer.Deserialize<List<LunetAiTurn>>(File.ReadAllText(privateHistoryPath)) ?? []
-                : [];
+            if (!File.Exists(path)) return [];
+            using var stream = File.OpenRead(path);
+            return JsonSerializer.Deserialize<List<LunetAiTurn>>(stream) ?? [];
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
-            _history = [];
+            Trace.TraceWarning("Lunet AI history read: {0}", ex.GetType().Name);
+            return [];
         }
     }
+
+    private string ExchangeDirectory => _historyPath + ".turns";
 
     /// <summary>Forgets the conversation of this project and its undo data (the files are not touched).</summary>
     public void ClearHistory()
@@ -106,7 +129,11 @@ public sealed class LunetAiSession
         {
             _history.Clear();
             _checkpoints.Clear();
-            SaveHistory();
+            _exchangePath = null;
+            WriteHistory(_historyPath, []);
+            try { if (Directory.Exists(ExchangeDirectory)) Directory.Delete(ExchangeDirectory, recursive: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { Trace.TraceWarning("Lunet AI history clear: {0}", ex.GetType().Name); }
             try { if (Directory.Exists(CheckpointRoot)) Directory.Delete(CheckpointRoot, recursive: true); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
@@ -160,7 +187,8 @@ public sealed class LunetAiSession
             var last = _history[^1];
             var prefix = last.Text == PendingText ? "" : last.Text + "\n\n";
             _history[^1] = last with { Text = prefix + "⚠️ Execução interrompida. Confira as alterações abaixo.", Pending = false, Verified = false };
-            SaveHistory();
+            if (_exchangePath is null) WriteHistory(_historyPath, _history);
+            else SaveExchange(_history.Count - 1);
         }
     }
 
@@ -172,7 +200,13 @@ public sealed class LunetAiSession
             _history.Add(new LunetAiTurn("Você", text, MessageId: runId + ":user"));
             _history.Add(new LunetAiTurn("Lunet", PendingText, Mode: LastMode, RunId: runId, MessageId: runId + ":assistant", Pending: true));
             _checkpoints[runId] = checkpoint;
-            SaveHistory();
+            var previous = Path.GetFileNameWithoutExtension(_exchangePath);
+            var ticks = DateTime.UtcNow.Ticks;
+            if (previous is { Length: > 19 } && long.TryParse(previous.AsSpan(0, 19), out var previousTicks))
+                ticks = Math.Max(ticks, previousTicks + 1);
+            _exchangePath = Path.Combine(ExchangeDirectory, $"{ticks:D19}-{runId}.json");
+            _nextProgressSave = 0;
+            SaveExchange(_history.Count - 1);
             PruneCheckpoints();
             return _history.Count - 1;
         }
@@ -183,12 +217,12 @@ public sealed class LunetAiSession
         if (index < 0) return;
         lock (_historyLock)
         {
-            if (index < _history.Count && _history[index].Role == "Lunet" && (_history[index].Pending || _history[index].Text == PendingText))
-                _history[index] = _history[index] with
-                {
-                    Text = text, Mode = LastMode == LunetAiMode.Auto ? null : LastMode, Verified = verified, Pending = false
-                };
-            SaveHistory();
+            if (index >= _history.Count || !_history[index].Pending) return;
+            _history[index] = _history[index] with
+            {
+                Text = text, Mode = LastMode == LunetAiMode.Auto ? null : LastMode, Verified = verified, Pending = false
+            };
+            SaveExchange(index);
         }
     }
 
@@ -198,7 +232,7 @@ public sealed class LunetAiSession
         {
             if (index < 0 || index >= _history.Count || !_history[index].Pending) return;
             _history[index] = _history[index] with { Text = text };
-            if (persist) SaveHistory();
+            if (persist) SaveProgress(index);
         }
     }
 
@@ -215,16 +249,33 @@ public sealed class LunetAiSession
         }
     }
 
-    private void SaveHistory()
+    private void SaveProgress(int index)
+    {
+        var now = Environment.TickCount64;
+        if (now < _nextProgressSave) return;
+        _nextProgressSave = now + 750;
+        SaveExchange(index);
+    }
+
+    // Older histories remain the baseline. Each new exchange is updated atomically, independently of the transcript.
+    private void SaveExchange(int index)
+    {
+        if (_exchangePath is not null)
+            WriteHistory(_exchangePath, [_history[index - 1], _history[index]]);
+    }
+
+    private static void WriteHistory(string path, IReadOnlyList<LunetAiTurn> turns)
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_historyPath)!);
-            var temporary = _historyPath + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(_history));
-            File.Move(temporary, _historyPath, overwrite: true);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var temporary = path + ".tmp";
+            using (var stream = File.Create(temporary))
+                JsonSerializer.Serialize(stream, turns);
+            File.Move(temporary, path, overwrite: true);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { Trace.TraceWarning("Lunet AI history write: {0}", ex.GetType().Name); }
     }
 
     /// <summary>Compatibility overload: explicit endpoint/key/model, no editor context or build verification.</summary>
@@ -298,7 +349,7 @@ public sealed class LunetAiSession
                 new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.ReplaceName), checkpoint),
                 new LunetAiSpriteTool(_project, checkpoint),
                 new LunetAiStyleTool(_project),
-                new LunetAiOutlineTool(_project),
+                new LunetAiOutlineTool(_project, _projectMap),
             };
             if (request.Web is not null)
             {
@@ -311,7 +362,7 @@ public sealed class LunetAiSession
                 tools.Add(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.ReadName));
             }
             if (request.Images is not null) tools.Add(new LunetAiImageTool(_project, request.Images));
-            if (request.Build is not null) tools.Add(new LunetAiBuildTool(_project, request.Build));
+            if (request.Build is not null) tools.Add(new LunetAiBuildTool(_project, request.Build, _projectMap));
             var host = new ToolHost();
             var recorded = new Dictionary<string, LunetAiStep>(StringComparer.Ordinal);
             var observe = new StepProgress(step =>
@@ -328,7 +379,7 @@ public sealed class LunetAiSession
                     if (pendingTurn >= 0 && pendingTurn < _history.Count && _history[pendingTurn].Pending)
                     {
                         _history[pendingTurn] = _history[pendingTurn] with { Steps = recorded.Values.ToArray() };
-                        SaveHistory();
+                        SaveProgress(pendingTurn);
                     }
                 }
                 request.Steps?.Report(safe);
@@ -337,16 +388,21 @@ public sealed class LunetAiSession
                 host.Register(new ReportingTool(tool, observe));
 
             long nextUpdate = 0;
-            long nextPersist = 0;
+            var started = Stopwatch.GetTimestamp();
+            bool firstToken = true;
             using var transport = new HttpClientHandler { AllowAutoRedirect = false };
             using var stream = new LunetAiStreamHandler(transport, settings.ProviderId, delta =>
             {
+                if (firstToken)
+                {
+                    firstToken = false;
+                    request.FirstToken?.Report(Stopwatch.GetElapsedTime(started));
+                }
                 partial.Append(delta);
                 long now = Environment.TickCount64;
                 if (now < nextUpdate) return;
                 var safe = redactor.Redact(partial.ToString());
-                UpdatePartial(pendingTurn, safe, now >= nextPersist);
-                if (now >= nextPersist) nextPersist = now + 750;
+                UpdatePartial(pendingTurn, safe, true);
                 nextUpdate = now + 100;
                 request.PartialText?.Report(safe);
             }, () => { if (partial.Length > 0) partial.Append("\n\n"); });
@@ -366,8 +422,9 @@ public sealed class LunetAiSession
                 SystemPrompt,
                 maxSteps, grant);
             LastMode = mode;
-            var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context, request.Attachments, mode, request.Knowledge), []);
+            var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context, request.Attachments, mode, request.Knowledge, cancellationToken), []);
             pendingTurn = BeginTurn(prompt, request.Context.IncludeProject ? request.Attachments : null, runId, checkpoint);
+            request.TurnStarted?.Report(Stopwatch.GetElapsedTime(started));
             var runRequest = new RunRequest(runId, task, agent, context, grant, grant, [scope], RunPolicy.Default);
             var runner = new AgentRunner(providers, host, ledger, events, clock, new LunetVerifier(_project, enableProjectWrites ? request.Build : null),
                 redactor: redactor);
@@ -392,8 +449,6 @@ public sealed class LunetAiSession
                                 "se o trabalho estiver progredindo, escolha um orçamento maior para o próximo pedido.";
             }
             if (string.IsNullOrWhiteSpace(response)) response = "O provider não retornou uma resposta de texto.";
-            var changed = result.Artifacts.Where(a => a.Kind == "lunet.text-file")
-                .Select(a => a.Location).Distinct(StringComparer.Ordinal).ToArray();
             CompleteTurn(pendingTurn, response, result.State.Status == RunStatus.Succeeded);
             var changes = checkpoint.Changes();
             return new LunetAiReply(response, changes.Select(c => c.Path).ToArray(), result.State.Status,
@@ -444,7 +499,7 @@ public sealed class LunetAiSession
         return !projectSpecific.Any(x => text.Contains(x, StringComparison.Ordinal));
     }
 
-    private string ComposePrompt(string userMessage, LunetAiEditorContext editor, IReadOnlyList<string>? attachments, LunetAiMode mode, LunetAiKnowledge? knowledge)
+    private string ComposePrompt(string userMessage, LunetAiEditorContext editor, IReadOnlyList<string>? attachments, LunetAiMode mode, LunetAiKnowledge? knowledge, CancellationToken cancellationToken)
     {
         var reference = editor.ReferenceId is { } id && knowledge?.Read(id) is { } doc
             ? "\n\nReferência offline selecionada (dados):\n" + doc[..Math.Min(6_000, doc.Length)] : "";
@@ -456,8 +511,10 @@ public sealed class LunetAiSession
         if (attachments is { Count: > 0 })
             situation += "Anexos enviados pela pessoa nesta mensagem (arquivos do projeto; imagens: use lunet.image.inspect; texto: lunet.files.read):\n" +
                          string.Join("\n", attachments.Select(a => "- " + a)) + "\n";
-        var recent = History.TakeLast(quick ? 3 : 10).Select(t => $"{t.Role}: {t.Text}");
-        var buffer = string.Join("\n", recent);
+        LunetAiTurn[] recent;
+        lock (_historyLock) recent = _history.TakeLast(quick ? 3 : 10).ToArray();
+        var formatted = recent.Select(t => $"{t.Role}: {t.Text}");
+        var buffer = string.Join("\n", formatted);
         int historyBudget = quick ? 1_800 : 7_000;
         if (buffer.Length > historyBudget) buffer = buffer[^historyBudget..];
         string map;
@@ -465,7 +522,7 @@ public sealed class LunetAiSession
         {
             map = quick
                 ? "Arquivos do projeto: " + string.Join(", ", _project.ListFiles().Take(36))
-                : new LunetAiProjectMap(_project).Describe();
+                : _projectMap.Describe(cancellationToken: cancellationToken);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { map = "(mapa indisponível; use lunet.files.list)"; }

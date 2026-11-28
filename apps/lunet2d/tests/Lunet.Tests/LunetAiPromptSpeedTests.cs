@@ -27,6 +27,35 @@ public sealed class LunetAiPromptSpeedTests
     }
 
     [Fact]
+    public void ProjectMap_ReusesUnchangedSymbolsAndInvalidatesEditsMovesAndDeletes()
+    {
+        var root = Directory.CreateTempSubdirectory("lunet-map-cache-").FullName;
+        try
+        {
+            var project = new Lunet.Core.ProjectStore(root).Create("Map");
+            project.WriteText("Coin.cs", "class Coin {}");
+            var map = new LunetAiProjectMap(project);
+            var before = Assert.Single(map.Symbols("Coin.cs"));
+            Assert.Same(before, Assert.Single(map.Symbols("Coin.cs")));
+
+            var file = Path.Combine(project.Directory, "Coin.cs");
+            var timestamp = File.GetLastWriteTimeUtc(file);
+            File.WriteAllText(file, "class Hero {}");
+            File.SetLastWriteTimeUtc(file, timestamp);
+            var after = Assert.Single(map.Symbols("Coin.cs"));
+            Assert.Equal("Hero", after.Name);
+            Assert.NotSame(before, after);
+
+            project.Rename("Coin.cs", "Hero.cs");
+            Assert.Empty(map.Symbols("Coin.cs"));
+            Assert.Equal("Hero.cs", Assert.Single(map.Symbols("Hero.cs")).File);
+            project.Delete("Hero.cs");
+            Assert.Empty(map.Symbols("Hero.cs"));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
     public void CodeChanges_NeverUseCompactContext()
     {
         var editor = new LunetAiEditorContext("Game.cs", null, 1, [], []);

@@ -38,8 +38,7 @@
       "check": "CI anterior: 1420 de 1421 aprovados; falha única na referência JSON de API",
       "kind": "automated",
       "result": "failed",
-      "tested_commit": "780fce2671d7fc629cf9b48f8d364c01c813160b",
-      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/46126941848/job/140923573714"
+      "evidence": "CI histórico do merge temporário do PR #1064, 780fce2671d7fc629cf9b48f8d364c01c813160b. https://github.com/AbnerCruz/Ecosystem/actions/runs/46126941848/job/140923573714"
     },
     {
       "check": "CI após sincronização da referência API e inclusão do handoff",

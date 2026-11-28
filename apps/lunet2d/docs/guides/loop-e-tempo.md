@@ -13,4 +13,4 @@ Use `Timers` para ações atrasadas ou repetidas em vez de contar quadros à mã
 ## Boas práticas
 
 - Não aloque objetos dentro de `Update` ou `Draw`: use `ObjectPool` para balas, partículas e efeitos.
-- Use `RandomSource` com semente para resultados reproduzíveis.
+- Use `Rng` na simulação e `VisualRng` para efeitos independentes. Para um fluxo reproduzível, use `new RandomSource(seed)`. Veja [sorteios e geração procedural](../manual/random-e-procedural.md).

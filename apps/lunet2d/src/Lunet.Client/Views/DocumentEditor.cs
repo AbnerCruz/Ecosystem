@@ -253,31 +253,48 @@ public sealed class DocumentEditor : UserControl
             _shell.Report($"Não foi possível abrir {path}: {ex.Message}");
             return;
         }
+        ApplyDocument(path, disk, ReadDraft(_shell.Workspace.Project, path));
+    }
+
+    // Used by the Explorer after creation. The previous buffer stays mounted until both the save and read succeed.
+    internal async Task<bool> LoadCreatedAsync(LunetProject project, string path)
+    {
+        var previousPath = OpenPath;
+        if (!await SaveAsync() || !ReferenceEquals(project, _shell.Workspace.Project) || OpenPath != previousPath)
+            return false;
+        var recoveryPath = _shell.RecoveryPath;
+        var document = await Task.Run(() => (project.ReadText(path), new AutosaveJournal(project, recoveryPath).ReadBuffer(path)));
+        if (!ReferenceEquals(project, _shell.Workspace.Project) || OpenPath != previousPath || IsDirty) return false;
+        _analysis?.Cancel();
+        CaptureViewport();
+        ApplyDocument(path, document.Item1, document.Item2);
+        return true;
+    }
+
+    private AutosaveJournal.Draft? ReadDraft(LunetProject? project, string? path)
+    {
+        if (project is null || path is null) return null;
+        try { return new AutosaveJournal(project, _shell.RecoveryPath).ReadBuffer(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            _shell.Report("Não foi possível ler o rascunho: " + ex.Message);
+            return null;
+        }
+    }
+
+    private void ApplyDocument(string? path, string? disk, AutosaveJournal.Draft? draft)
+    {
         OpenPath = path;
         _saved = disk;
         _recoveryBase = null;
-        _journalPending = false;
-        var text = _saved ?? "";
-        if (path is not null && _shell.Workspace.Project is { } project)
+        _journalPending = draft is not null;
+        var text = disk ?? "";
+        if (draft is not null && draft.Text != disk)
         {
-            try
-            {
-                if (new AutosaveJournal(project, _shell.RecoveryPath).ReadBuffer(path) is { } draft)
-                {
-                    _journalPending = true;
-                    if (draft.Text != _saved)
-                    {
-                        _recoveryBase = draft.Previous ?? _saved;
-                        text = draft.Text;
-                        _shell.Report("Rascunho recuperado: " + path);
-                        if (_recoveryBase == _saved) _saveDelay.Start();
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
-            {
-                _shell.Report("Não foi possível ler o rascunho: " + ex.Message);
-            }
+            _recoveryBase = draft.Previous ?? disk;
+            text = draft.Text;
+            _shell.Report("Rascunho recuperado: " + path);
+            if (_recoveryBase == disk) _saveDelay.Start();
         }
         _loading = true;
         try { _surface.Text = text; }
@@ -334,6 +351,23 @@ public sealed class DocumentEditor : UserControl
         var saved = StartWrite(path, text).GetAwaiter().GetResult();
         CompleteWrite(text, saved);
         return saved;
+    }
+
+    internal async Task<bool> SaveAsync()
+    {
+        var project = _shell.Workspace.Project;
+        var path = OpenPath;
+        while (ReferenceEquals(project, _shell.Workspace.Project) && path == OpenPath)
+        {
+            _saveDelay.Stop();
+            if (_pendingSave is null && (path is null || (!IsDirty && !_journalPending))) return true;
+            var pending = _pendingSave ??= StartWrite(path!, _surface.Text);
+            var text = _writingText!;
+            var saved = await pending;
+            if (ReferenceEquals(pending, _pendingSave)) CompleteWrite(text, saved);
+            if (!saved) return false;
+        }
+        return false;
     }
 
     private string? _writingText;
