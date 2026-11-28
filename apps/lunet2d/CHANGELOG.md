@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.1-dev.1000615 — Preview protegido no Android
+
+- O Preview em tela cheia roda em uma Activity própria no processo `:preview`, com o mesmo jogo, recursos e saves. A IDE continua aberta se o driver ou o jogo derrubar esse processo.
+- Voltar retorna ao mesmo arquivo. O Console recebe o log da execução, e Problemas mostra o diagnóstico de saída quando o processo termina com erro.
+
 ## 0.0.1-dev.1000614 — Preview em tela cheia e IDE responsiva ao compilar
 
 - **Rodar** abre o Preview em tela cheia. A seta da IDE e o Voltar do Android retornam ao arquivo aberto. O próximo Voltar no editor retorna à área de trabalho.

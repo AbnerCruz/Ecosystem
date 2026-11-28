@@ -139,7 +139,7 @@ public sealed class GpuPreviewTests
     }
 
     [Fact]
-    public void Ajustes_OfferTheGpuOptions_OnlyWhereThereIsAGpuPreview()
+    public void Ajustes_OfferHighRefresh_OnlyWhereThereIsAGpuPreview()
     {
         var root = Path.Combine(Path.GetTempPath(), "lunet-gpu-settings-" + Guid.NewGuid().ToString("N"));
         try
@@ -151,12 +151,12 @@ public sealed class GpuPreviewTests
                 window.Show();
                 shell.Home.ShowSettings();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "IsolatedPreview");
+                Assert.DoesNotContain(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "HighRefreshRate");
                 shell.Home.CloseSheet();
                 shell.Game.GpuFactory = (_, _, _) => new FakeGpu();
                 shell.Home.ShowSettings();
                 Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-                Assert.Contains(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "IsolatedPreview");
+                Assert.Contains(window.GetVisualDescendants().OfType<Control>(), c => c.Name == "HighRefreshRate");
                 window.Close();
             });
         }

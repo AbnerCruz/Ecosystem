@@ -94,7 +94,7 @@ Ative o **modo avião** para este bloco.
   No Inspector: `Volume` tem barra deslizante limitada a 0–10; `Quadro` sobe e não pode ser editado; `Segredo` não aparece; `Dano` fica sob o título "Combate".
 - **G4 Status após Run:** edite só o corpo de um método e aperte Run: a barra de status diz que só corpos mudaram. Adicione um campo novo e aperte Run: diz que é preciso reiniciar e indica o motivo.
 - **G5 Preview isolado:** em **Configurações**, ligue "Preview isolado" e rode: o jogo abre normalmente. Aperte o botão Voltar: você volta ao IDE, e o console mostra as mensagens do jogo. Desligue a opção depois.
-- **G6** Com o Preview isolado ligado, escreva `while (true) { }` dentro de `Update` e rode. O aparelho pode ficar lento no jogo, mas o IDE não deve travar junto; feche o Preview pelo botão Voltar ou pelos recentes. Ao voltar, o IDE avisa se o Preview foi encerrado inesperadamente. Se o aparelho inteiro travar, relate, mas isso é um limite conhecido (ADR 0006).
+- **G6 Preview travado:** num projeto descartável, rode um jogo cujo `Update` entra em `while (true) { }` depois do primeiro quadro. Pressione **Voltar**. O Android deve mostrar o mesmo arquivo na IDE e Problemas deve informar a saída inesperada. Corrija o laço, toque **Rodar** de novo e confirme que aparecem quadros e que **Voltar** retorna normalmente ao arquivo. A jornada Android do CI executa esse cenário e compara o PID da IDE antes e depois.
 
 ## H. Git
 

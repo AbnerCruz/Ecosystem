@@ -907,3 +907,10 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Base `21ba94e5`, ramo `fix/lunet-ide-preview-20261127`. Rodar abre o Preview em tela cheia. Voltar encerra o Preview e mostra o arquivo que estava no editor. O próximo Voltar leva à Home.
 - A compilação GPU roda fora da thread da interface, com cache por projeto. A IDE mantém a superfície montada ao pausar e retomar e expõe falhas gerenciadas de renderização como diagnósticos.
 - A jornada automatizada de Android agora verifica a abertura em tela cheia e a volta ao editor. Não houve teste no aparelho físico ou confirmação da causa específica do crash relatado.
+
+
+### 20261127-codex-lunet-preview-android — 27/11/2026 — Codex → integrador — LUNET-536
+
+- Base `c8917dde`, ramo `fix/lunet-android-preview-crash`. O proprietário confirmou que o crash persiste na 614.
+- A tela cheia da IDE Android passa a usar a Activity existente no processo `:preview`, com cache por execução e retorno do Android ao mesmo arquivo. A IDE apresenta a causa de saída em Problemas quando o Android fornece o registro.
+- O caminho anterior de teste acionava o método direto. A jornada agora usa o SDK para tocar em Rodar, verificar frames e PIDs, matar o processo do preview e abrir novamente. O relato do Moto G32 segue sem logcat ou reprodução em aparelho físico.
