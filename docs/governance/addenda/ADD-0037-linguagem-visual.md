@@ -19,3 +19,7 @@
 
 - As decisões de produto (o que cada tela faz) e os dados do usuário.
 - A automação plena (ADD-0035): sem validação no aparelho; capturas headless não são teste no aparelho e não são apresentadas como tal.
+
+## Revisão explícita do proprietário — 28/11/2026 (v2.0)
+
+O proprietário identificou viés do Lunet no documento e na página de exemplo e determinou que sejam globais, inclusive cores e demais decisões, com estudo na internet. Esta revisão prevalece sobre os itens 1, 2, 4 e 5 acima naquilo que prescrevia estética universal. Mantém fonte única, independência dos Products e versionamento. A linguagem global v2 define contratos e referências configuráveis, não skin obrigatória. Temas, paletas, composição e tipografia são escolhas do domínio. O namespace global v2 em tokens.json é vigente; raiz v1 preservada temporariamente para compatibilidade do Lunet e demais consumidores. A página demonstra variações, não um Product. Não altera aplicativos nem suas releases nesta missão. [Estudo](../../design/estudo-global-2026-11-28.md), [norma](../../design/linguagem-visual.md).
