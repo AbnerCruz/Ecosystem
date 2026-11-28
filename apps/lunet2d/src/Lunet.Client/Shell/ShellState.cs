@@ -34,6 +34,7 @@ public sealed class ShellState
     public string? Project { get; private set; }
     public WorkspaceTab Tab { get; private set; } = WorkspaceTab.Code;
     public SupportPanel Panel { get; private set; } = SupportPanel.None;
+    public bool AiExpanded { get; private set; }
     public ShellLayout Layout { get; private set; } = ShellLayout.Compact;
 
     /// <summary>Raised after any change, so a view re-renders only what it shows.</summary>
@@ -48,7 +49,7 @@ public sealed class ShellState
         Project = name;
         Level = ShellLevel.Workspace;
         Tab = _lastTab.GetValueOrDefault(name, WorkspaceTab.Code);
-        Panel = SupportPanel.None;
+        SetPanel(SupportPanel.None);
         _tabHistory.Clear();
         Changed?.Invoke();
     }
@@ -57,7 +58,7 @@ public sealed class ShellState
     {
         if (Level == ShellLevel.Home) return;
         Level = ShellLevel.Home;
-        Panel = SupportPanel.None;
+        SetPanel(SupportPanel.None);
         Changed?.Invoke();
     }
 
@@ -75,7 +76,7 @@ public sealed class ShellState
     {
         if (Level != ShellLevel.Workspace) return;
         Tab = WorkspaceTab.Game;
-        Panel = SupportPanel.None;
+        SetPanel(SupportPanel.None);
         Changed?.Invoke();
     }
 
@@ -84,7 +85,7 @@ public sealed class ShellState
     {
         if (Level != ShellLevel.Workspace || Tab != WorkspaceTab.Game) return false;
         Tab = WorkspaceTab.Code;
-        Panel = SupportPanel.None;
+        SetPanel(SupportPanel.None);
         _tabHistory.Clear();
         if (Project is not null) _lastTab[Project] = Tab;
         Changed?.Invoke();
@@ -94,16 +95,32 @@ public sealed class ShellState
     /// <summary>Opens a support panel, or closes it when it is already the open one.</summary>
     public void TogglePanel(SupportPanel panel)
     {
-        Panel = Panel == panel ? SupportPanel.None : panel;
-        Changed?.Invoke();
+        ShowPanel(Panel == panel ? SupportPanel.None : panel);
     }
 
     public void ShowPanel(SupportPanel panel)
     {
         if (Panel == panel) return;
-        Panel = panel;
+        SetPanel(panel);
         Changed?.Invoke();
     }
+
+    private void SetPanel(SupportPanel panel)
+    {
+        Panel = panel;
+        if (panel != SupportPanel.Ai) AiExpanded = false;
+    }
+
+    /// <summary>Changes the presentation of the current chat without starting a different conversation.</summary>
+    public bool ToggleAiSize()
+    {
+        if (Panel != SupportPanel.Ai) return false;
+        AiExpanded = !AiExpanded;
+        Changed?.Invoke();
+        return true;
+    }
+
+    public bool ReduceAi() => AiExpanded && ToggleAiSize();
 
     /// <summary>Updates the layout for a new available width; returns true when it changed.</summary>
     public bool Resize(double width)
@@ -118,8 +135,8 @@ public sealed class ShellState
     /// <summary>The system Back gesture/key. Returns false when the shell has nothing to close (the app may exit).</summary>
     public bool Back(Func<bool>? canLeaveWorkspace = null)
     {
-        if (ClosePreview()) return true;
-        if (Panel != SupportPanel.None) { Panel = SupportPanel.None; Changed?.Invoke(); return true; }
+        if (ReduceAi() || ClosePreview()) return true;
+        if (Panel != SupportPanel.None) { ShowPanel(SupportPanel.None); return true; }
         if (Level == ShellLevel.Workspace && _tabHistory.TryPop(out var previous))
         {
             Tab = previous;

@@ -89,7 +89,7 @@ Pedido do proprietário (27/11/2026, no celular):
 5. **Barra de status:** erros e avisos (um toque abre Problemas), estado da execução, linha e coluna, e a IA.
 6. **⋮ = paleta de comandos** (o que já existe), mais Ajustes e Git.
 7. **IA como no Numa:**
-   - painel sobre o editor, em meia tela, com o campo de escrita sempre visível e uma rolagem só;
+   - painel compacto por padrão, em meia tela no celular ou coluna em tela larga, com [expansão da mesma conversa](#7-chat-da-ide) e o campo de escrita fixo;
    - a mudança proposta aparece no próprio arquivo, para aceitar ou recusar;
    - "Desfazer" depois de aplicar.
 8. **Arquivos diretos (SAF):**
@@ -120,3 +120,28 @@ A IDE registra um rascunho no armazenamento privado antes de gravar o arquivo, e
 No Android, **Ajustes → Pasta de projetos** abre o seletor do sistema. A pasta fica como origem para editor, Preview e Studios. O projeto inteiro e seus metadados são conferidos antes de trocar a raiz. Se o app já usava uma cópia de trabalho com permissão persistida, a migração tenta usar a pasta anterior ao iniciar. Quem perdeu a permissão pode reconectar pelos Ajustes. Projetos com o mesmo nome e conteúdo diferente exigem uma pasta sem conflito. Os dados da origem ficam preservados para recuperação. A opção **Usar os jogos internos** volta a listar os jogos internos.
 
 O Git integrado depende de um caminho de disco. Projetos acessados só por SAF podem ser versionados por um cliente que tenha acesso à pasta. O Preview mantém processo separado no Android e usa a permissão persistida para abrir recursos na pasta.
+
+
+## 7. Chat da IDE
+
+### O que a auditoria encontrou
+
+Na base `270fc72` a IA da IDE já abre na folha inferior do celular e em coluna no desktop. A sessão grava as etapas com identificador, duração e estado no histórico por jogo. A casca mostrava apenas as seis últimas durante a execução e descartava a visualização depois da resposta. O parser já reconhecia listas, tabelas, citações, links e código. A casca achatava os estilos em texto e deixava a tabela vazia.
+
+### Pesquisa e decisões
+
+O chat segue os componentes da casca existente. A [linguagem visual global do Ecosystem](../../../../docs/design/linguagem-visual.md) orienta a adoção de perfis por produto e registra a migração de consumidores v1.
+
+| Referência | Observação | Uso no Lunet |
+| --- | --- | --- |
+| [Claude Code Desktop](https://code.claude.com/docs/en/desktop) | A densidade da transcrição pode variar, mantendo o texto da resposta completo. | Uma linha de atividade por resposta. Um toque mostra o que a IA leu, pesquisou, alterou ou verificou. |
+| [Claude Code #91827](https://github.com/anthropics/claude-code/issues/91827) e [#86732](https://github.com/anthropics/claude-code/issues/86732) | Usuários relatam que diffs e logs em linha empurram as decisões para fora da área visível e pedem controle granular. | Etapas recolhidas por padrão, expansão por resposta, páginas de até 12 etapas, estado e erro com texto. A prosa da resposta fica sempre visível. |
+| [Claude Code #75900](https://github.com/anthropics/claude-code/issues/75900) | O relato mostra por que a narração publicada pelo agente importa durante uma execução. | O texto recebido em streaming fica legível abaixo da atividade. A tela usa passos observáveis e o texto que o provedor publica na conversa. |
+| [Blocos de código no ChatGPT](https://help.openai.com/en/articles/20001246-working-with-writing-blocks-and-code-blocks-in-chatgpt) e [feedback sobre copiar Markdown](https://community.openai.com/t/bad-chatgpt-s-markdown-in-copy-paste-working-solution/1405669) | O bloco de código tem contexto e ação próprios. Uma resposta exportada perde valor quando copiar destrói sua estrutura. | Código com linguagem, rolagem horizontal e cópia própria. A ação da resposta copia o Markdown original. |
+| [Feedback sobre rolagem no Android](https://community.openai.com/t/android-app-scrolling-jumps-to-the-beginning-of-long-conversations/1418265) e [posição de leitura](https://community.openai.com/t/android-remember-last-read-position-in-long-chats/1412098) | Saltos interrompem a leitura de mensagens antigas. | A conversa acompanha a última mensagem enquanto a pessoa está no fim. Ao subir, o botão de retorno oferece um salto explícito. |
+
+- **Tamanho.** Expandir ocupa a área da IDE. Reduzir e Voltar devolvem o compacto. Fechar libera o editor. Uma única instância de chat conserva o rascunho, o histórico e a execução ao mudar de tamanho.
+- **Conversa.** A mensagem da pessoa usa um balão tonal. A resposta do Lunet aproveita a largura de leitura e renderiza títulos, listas numeradas e com marcadores, ênfase, código em linha, citações, tabelas e links web. O compositor agrupa Estudar, Fazer, anexar e enviar ou parar. A conversa expandida usa coluna de leitura de até 780 dp.
+- **Atividade.** O histórico usa os eventos observáveis que a sessão já salva. Históricos anteriores sem etapas exibem a resposta normalmente. O progresso em execução é atualizado em um único bloco a cada 100 ms no máximo, com o detalhamento visual atualizado somente quando mudam as etapas.
+- **Revisão.** Em Fazer, a conversa expandida permanece aberta ao concluir. **Ver no editor** leva à revisão no arquivo. No compacto, a revisão abre no arquivo ao concluir, conforme o fluxo da IDE. As alterações também podem ser inspecionadas na conversa e desfeitas pelo checkpoint.
+- **Capturas.** `Lunet --screens` inclui compacto, expandido e etapas abertas. O ambiente headless usa uma conversa de demonstração e renderiza os controles reais da casca. `LUNET_SCREENS_ALL=1` acrescenta 320 dp, 360 dp e paisagem.

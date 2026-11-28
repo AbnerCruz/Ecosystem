@@ -21,6 +21,8 @@ public sealed class SupportPanelView : UserControl
         Foreground = LunetTokens.Brush(LunetTokens.Color.TextSecondary), TextWrapping = TextWrapping.Wrap,
     };
     private readonly ScrollViewer _consoleScroll = new();
+    private DockPanel? _aiRoot;
+    private readonly Border _aiSizeHost = new();
 
     /// <summary>The command palette (M3), kept so its recents survive closing it.</summary>
     public CommandPaletteView Palette { get; }
@@ -70,11 +72,12 @@ public sealed class SupportPanelView : UserControl
     {
         var panel = _shell.State.Panel;
         if (panel == SupportPanel.None) { Content = null; return; }
+        if (panel == SupportPanel.Ai) { ShowAi(); return; }
         var header = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.Xs, LunetTokens.Space.Xs, LunetTokens.Space.Xs) };
         var close = LunetUi.IconButton(LunetIcons.Close, "Fechar painel", () => _shell.State.TogglePanel(panel));
         DockPanel.SetDock(close, Dock.Right);
         header.Children.Add(close);
-        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Ai => "IA do jogo", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", SupportPanel.Docs => "Documentação", SupportPanel.Objectives => "Objetivos", _ => "Problemas" });
+        var title = LunetUi.Title(panel switch { SupportPanel.Console => "Console", SupportPanel.More => "Painéis", SupportPanel.Commands => "Comandos", SupportPanel.Inspector => "Inspector", SupportPanel.Performance => "Desempenho", SupportPanel.Docs => "Documentação", SupportPanel.Objectives => "Objetivos", _ => "Problemas" });
         title.VerticalAlignment = VerticalAlignment.Center;
         header.Children.Add(title);
 
@@ -90,12 +93,6 @@ public sealed class SupportPanelView : UserControl
             _consoleScroll.ScrollToEnd();
         }
         else if (panel == SupportPanel.More) root.Children.Add(More());
-        else if (panel == SupportPanel.Ai)
-        {
-            if (Ai.Parent is Panel oldAi) oldAi.Children.Remove(Ai);
-            Ai.Refresh();
-            root.Children.Add(Ai);
-        }
         else if (panel == SupportPanel.Objectives)
         {
             if (Objectives.Parent is Panel oldObjectives) oldObjectives.Children.Remove(Objectives);
@@ -115,6 +112,36 @@ public sealed class SupportPanelView : UserControl
         }
         else root.Children.Add(Problems());
         Content = root;
+    }
+
+    private void ShowAi()
+    {
+        if (_aiRoot is null)
+        {
+            var header = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, 2, LunetTokens.Space.Xs, 2) };
+            var close = LunetUi.IconButton(LunetIcons.Close, "Fechar chat", () => _shell.State.ShowPanel(SupportPanel.None));
+            close.Name = "AiClose";
+            close.Focusable = false;
+            DockPanel.SetDock(close, Dock.Right);
+            DockPanel.SetDock(_aiSizeHost, Dock.Right);
+            DockPanel.SetDock(Ai.LatestButton, Dock.Right);
+            var title = LunetUi.Title("IA do jogo");
+            title.VerticalAlignment = VerticalAlignment.Center;
+            header.Children.Add(close);
+            header.Children.Add(_aiSizeHost);
+            header.Children.Add(Ai.LatestButton);
+            header.Children.Add(title);
+            DockPanel.SetDock(header, Dock.Top);
+            _aiRoot = new DockPanel { Children = { header, Ai } };
+        }
+        var expanded = _shell.State.AiExpanded;
+        var size = LunetUi.IconButton(expanded ? LunetIcons.Collapse : LunetIcons.Expand,
+            expanded ? "Reduzir chat" : "Expandir chat", () => _shell.State.ToggleAiSize());
+        size.Name = expanded ? "AiReduce" : "AiExpand";
+        size.Focusable = false;
+        _aiSizeHost.Child = size;
+        Ai.Refresh();
+        Content = _aiRoot;
     }
 
     /// <summary>The game's other tools, opened through the shell's route (same game, saved before leaving).</summary>

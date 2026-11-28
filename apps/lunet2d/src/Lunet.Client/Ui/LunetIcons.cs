@@ -53,6 +53,9 @@ public static class LunetIcons
     public const string Eraser = "M7 20h11 M5.5 15.5l8-8 5 5-5.5 5.5H9z M10.5 10.5l5 5";
     public const string Bucket = "M5 11l7-7 7 7-7 7z M5 11h14 M20 15c0 1.5-1 2.5-1 3.5a1 1 0 0 0 2 0c0-1-1-2-1-3.5z";
     public const string Dropper = "M15 4l5 5-2 2-5-5z M13 6l-8 8v3h3l8-8";
+    public const string Expand = "M4 10V4h6 M14 4h6v6 M20 14v6h-6 M10 20H4v-6";
+    public const string Collapse = "M4 10h6V4 M14 4v6h6 M20 14h-6v6 M10 20v-6H4";
+    public const string Send = "M12 19V5 M6 11l6-6 6 6";
     public const string Fit = "M4 9V4h5 M20 9V4h-5 M4 15v5h5 M20 15v5h-5";
     public const string ChevronRight = "M9 6l6 6-6 6";
     public const string Undo = "M9 14L4 9l5-5 M4 9h10a6 6 0 0 1 0 12h-3";

@@ -613,7 +613,7 @@ public sealed class LunetShell : UserControl
     /// <summary>Back closes the Lunet keyboard first (like the system keyboard), then panels, then the workspace.</summary>
     private bool BeforeBack() => (State.Level == ShellLevel.Home && _home.CloseSheet())
         || (State.Level == ShellLevel.Workspace && _workspaceView.CloseStudio())
-        || ClosePreview() || _workspaceView.CancelFileCreation() || _workspaceView.Code.HideKeyboard() || CancelCompilation() || State.Back(TrySaveAll);
+        || State.ReduceAi() || ClosePreview() || _workspaceView.CancelFileCreation() || _workspaceView.Code.HideKeyboard() || CancelCompilation() || State.Back(TrySaveAll);
 
     private bool CancelCompilation()
     {
