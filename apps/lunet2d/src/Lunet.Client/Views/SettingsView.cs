@@ -109,7 +109,6 @@ public sealed class SettingsView : UserControl
         if (_shell.Game.GpuFactory is not null)
         {
             Section("Jogo");
-            Toggle("Preview isolado", "Roda o jogo num processo separado: se ele travar ou faltar memória, o Lunet continua de pé", settings.IsolatedPreview, v => Change(s => s.IsolatedPreview = v), "IsolatedPreview");
             Toggle("Taxa de atualização alta", "Pede 90/120 Hz ao rodar o jogo, onde a tela tiver", settings.HighRefreshRate, v => Change(s => s.HighRefreshRate = v), "HighRefreshRate");
         }
 
