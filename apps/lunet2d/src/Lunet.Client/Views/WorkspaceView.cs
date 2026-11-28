@@ -104,7 +104,7 @@ public sealed class WorkspaceView : UserControl
         _panelFull = false;
         _title.Text = _shell.State.Project ?? "";
         _code.OpenSession(_shell.Workspace.Project!.Manifest.EntryPoint);
-        _notes.Load(null);
+        _notes.OpenSession(null);
         Rebuild();
     }
 
@@ -129,6 +129,7 @@ public sealed class WorkspaceView : UserControl
         var codeSaved = _code.Save();
         var notesSaved = _notes.Save();
         _code.SaveSession();
+        _notes.SaveSession();
         return codeSaved && notesSaved;
     }
 
@@ -192,7 +193,7 @@ public sealed class WorkspaceView : UserControl
     /// <summary>Opens the WAV editor on a game's .wav (cut, volume, loop; saves a copy).</summary>
     public WaveEditorView OpenWave(string path)
     {
-        var storage = new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Directory);
+        var storage = new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Files);
         var audio = Lunet.Studio.WaveAudioDocument.Parse(storage.ReadBytes(path, Lunet.Studio.WaveAudioDocument.MaxSourceBytes));
         var view = new WaveEditorView(_shell, storage, audio, Path.GetFileNameWithoutExtension(path), () => { _studio = null; Rebuild(); });
         _studio = view;
@@ -436,6 +437,29 @@ public sealed class WorkspaceView : UserControl
         if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.None);
     });
 
+    /// <summary>
+    /// Search in the whole game (Ctrl+Shift+F, the magnifier): the Explorer comes up in its search, with the selected
+    /// word of the code already in the field, like VS Code.
+    /// </summary>
+    public void ShowSearch()
+    {
+        string? selected = null;
+        if (_code.Surface is CodeSurface code && code.SelectionEnd > code.SelectionStart)
+            selected = code.Text[code.SelectionStart..code.SelectionEnd];
+        if (_shell.State.Layout == ShellLayout.Compact) { if (_shell.State.Panel != SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.Explorer); }
+        else if (_explorerHidden) { _explorerHidden = false; Rebuild(); }
+        Explorer.ShowSearch(true, selected);
+    }
+
+    /// <summary>Shows the Explorer with this file in sight (its folders opened), like VS Code's "Reveal".</summary>
+    public void RevealInExplorer(string path)
+    {
+        if (_shell.State.Layout == ShellLayout.Compact) { if (_shell.State.Panel != SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.Explorer); }
+        else if (_explorerHidden) { _explorerHidden = false; Rebuild(); }
+        Explorer.ShowSearch(false);
+        Explorer.Reveal(path);
+    }
+
     /// <summary>True while the bottom panel (Jogo · Console · Problemas) is on screen (tests).</summary>
     public bool BottomPanelVisible => _bottomPanel is { IsVisible: true };
 
@@ -655,6 +679,14 @@ public sealed class WorkspaceView : UserControl
         run.Name = "RunButton";
         run.IsEnabled = _shell.Game.State != GameState.Compiling;
         _runButton = run;
+        // The magnifier on a wide screen: go to a file by name (Quick Open, Ctrl+P).
+        // A phone keeps four buttons (owner, 27/11); there the Explorer's search finds files by name too.
+        if (expanded)
+        {
+            var find = LunetUi.IconButton(LunetIcons.Search, "Ir para arquivo", () => _shell.QuickOpen());
+            find.Name = "QuickOpenButton";
+            actions.Children.Add(find);
+        }
         actions.Children.Add(run);
         var more = LunetUi.IconButton(LunetIcons.More, "Mais: comandos, painéis, Git, APK", () => _shell.State.TogglePanel(SupportPanel.More),
             _shell.State.Panel == SupportPanel.More ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);

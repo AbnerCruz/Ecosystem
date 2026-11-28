@@ -2,20 +2,31 @@ using System.IO.Compression;
 
 namespace Lunet.Core;
 
-/// <summary>Um projeto Lunet aberto: pasta comum com <c>lunet.json</c> e arquivos do usuário.</summary>
+/// <summary>
+/// Um projeto Lunet aberto: a pasta do jogo com <c>lunet.json</c> e os arquivos do usuário. Toda leitura e escrita
+/// passa por <see cref="Files"/> — o disco no computador, a pasta escolhida (SAF) no Android — sem cópia.
+/// </summary>
 public sealed class LunetProject
 {
     private static readonly string[] IgnoredDirectories = [".lunet", "bin", "obj", ".git"];
     private static readonly object TextWrites = new();
     private const string TemporarySuffix = ".lunet-tmp";
+    private static readonly System.Text.UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    internal LunetProject(string directory, ProjectManifest manifest)
+    internal LunetProject(string directory, ProjectManifest manifest) : this(new DiskProjectFiles(directory), manifest) { }
+
+    internal LunetProject(IProjectFiles files, ProjectManifest manifest)
     {
-        Directory = directory;
+        Files = files;
         Manifest = manifest;
     }
 
-    public string Directory { get; }
+    /// <summary>Where the game's files are, read and written directly.</summary>
+    public IProjectFiles Files { get; }
+
+    /// <summary>The game's folder on this device's disk; empty for a folder reached only through SAF.</summary>
+    public string Directory => Files.LocalDirectory ?? "";
+
     public ProjectManifest Manifest { get; }
     public string Name => Manifest.Name;
 
@@ -23,49 +34,55 @@ public sealed class LunetProject
     public IReadOnlyList<string> ListFiles()
     {
         var result = new List<string>();
-        Walk(Directory, "", result);
+        Walk("", result);
         result.Sort(StringComparer.OrdinalIgnoreCase);
         return result;
     }
 
-    private static void Walk(string absolute, string relative, List<string> result)
+    private void Walk(string relative, List<string> result)
     {
-        foreach (var file in System.IO.Directory.EnumerateFiles(absolute))
+        foreach (var entry in Files.List(relative.TrimEnd('/')))
         {
-            var name = Path.GetFileName(file);
-            if (name.EndsWith(TemporarySuffix, StringComparison.Ordinal)) continue;
-            result.Add(relative + name);
-        }
-        foreach (var directory in System.IO.Directory.EnumerateDirectories(absolute))
-        {
-            var name = Path.GetFileName(directory);
-            if (IgnoredDirectories.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
-            Walk(directory, relative + name + "/", result);
+            if (entry.IsDirectory)
+            {
+                if (IgnoredDirectories.Contains(entry.Name, StringComparer.OrdinalIgnoreCase)) continue;
+                Walk(relative + entry.Name + "/", result);
+            }
+            else if (!entry.Name.EndsWith(TemporarySuffix, StringComparison.Ordinal)) result.Add(relative + entry.Name);
         }
     }
 
-    public string ReadText(string relativePath) => File.ReadAllText(Resolve(relativePath));
+    public string ReadText(string relativePath) => Decode(ReadBytes(relativePath));
+
+    /// <summary>The bytes of a file of the game.</summary>
+    public byte[] ReadBytes(string relativePath) => Files.Read(Relative(relativePath));
+
+    public bool Exists(string relativePath) => Files.FileExists(Relative(relativePath));
+
+    private static string Decode(byte[] bytes)
+    {
+        using var reader = new StreamReader(new MemoryStream(bytes), System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
+    }
 
     public void WriteText(string relativePath, string text)
     {
-        var path = Resolve(relativePath);
-        lock (TextWrites)
-        {
-            System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            AtomicFile.WriteAllText(path, text);
-        }
+        var path = Relative(relativePath);
+        lock (TextWrites) Files.Write(path, Utf8.GetBytes(text));
     }
+
+    /// <summary>Writes the bytes of a file of the game (atomic or verified by the storage).</summary>
+    public void WriteBytes(string relativePath, byte[] bytes) => Files.Write(Relative(relativePath), bytes);
 
     /// <summary>Atomically checks the observed text against other in-process text authors before writing.</summary>
     public bool WriteTextIfUnchanged(string relativePath, string? expected, string text, out string? actual)
     {
-        var path = Resolve(relativePath);
+        var path = Relative(relativePath);
         lock (TextWrites)
         {
-            actual = File.Exists(path) ? File.ReadAllText(path) : null;
+            actual = Files.FileExists(path) ? Decode(Files.Read(path)) : null;
             if (!string.Equals(actual, expected, StringComparison.Ordinal)) return false;
-            System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            AtomicFile.WriteAllText(path, text);
+            Files.Write(path, Utf8.GetBytes(text));
             return true;
         }
     }
@@ -81,12 +98,10 @@ public sealed class LunetProject
     {
         var safeName = Path.GetFileName(fileName);
         if (string.IsNullOrWhiteSpace(safeName) || safeName.StartsWith('.')) throw new ProjectException("Nome de arquivo inválido.");
-        var relative = relativeDirectory.TrimEnd('/') + "/" + safeName;
-        var path = Resolve(relative);
-        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        var temporary = path + TemporarySuffix;
-        using (var output = File.Create(temporary)) source.CopyTo(output);
-        File.Move(temporary, path, overwrite: true);
+        var relative = Relative(relativeDirectory.TrimEnd('/') + "/" + safeName);
+        using var buffer = new MemoryStream();
+        source.CopyTo(buffer);
+        Files.Write(relative, buffer.ToArray());
         return relative;
     }
 
@@ -94,55 +109,51 @@ public sealed class LunetProject
     public IReadOnlyList<ExplorerEntry> ListTree()
     {
         var result = new List<ExplorerEntry>();
-        WalkTree(Directory, "", 0, result);
+        WalkTree("", 0, result);
         return result;
     }
 
-    private static void WalkTree(string absolute, string relative, int depth, List<ExplorerEntry> result)
+    private void WalkTree(string relative, int depth, List<ExplorerEntry> result)
     {
-        foreach (var directory in System.IO.Directory.EnumerateDirectories(absolute).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+        var entries = Files.List(relative.TrimEnd('/'));
+        foreach (var directory in entries.Where(e => e.IsDirectory).OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
         {
-            var name = Path.GetFileName(directory);
-            if (IgnoredDirectories.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
-            result.Add(new ExplorerEntry(relative + name, name, depth, true));
-            WalkTree(directory, relative + name + "/", depth + 1, result);
+            if (IgnoredDirectories.Contains(directory.Name, StringComparer.OrdinalIgnoreCase)) continue;
+            result.Add(new ExplorerEntry(relative + directory.Name, directory.Name, depth, true));
+            WalkTree(relative + directory.Name + "/", depth + 1, result);
         }
-        foreach (var file in System.IO.Directory.EnumerateFiles(absolute).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        foreach (var file in entries.Where(e => !e.IsDirectory).OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase))
         {
-            var name = Path.GetFileName(file);
-            if (name.EndsWith(TemporarySuffix, StringComparison.Ordinal)) continue;
-            result.Add(new ExplorerEntry(relative + name, name, depth, false));
+            if (file.Name.EndsWith(TemporarySuffix, StringComparison.Ordinal)) continue;
+            result.Add(new ExplorerEntry(relative + file.Name, file.Name, depth, false));
         }
     }
 
     public void CreateDirectory(string relativePath)
     {
-        var path = Resolve(relativePath);
-        if (System.IO.Directory.Exists(path) || File.Exists(path)) throw new ProjectException("Já existe algo com esse nome.");
-        System.IO.Directory.CreateDirectory(path);
+        var path = Relative(relativePath);
+        if (Files.DirectoryExists(path) || Files.FileExists(path)) throw new ProjectException("Já existe algo com esse nome.");
+        Files.CreateDirectory(path);
     }
 
     /// <summary>Renomeia ou move um arquivo/pasta dentro do projeto.</summary>
     public void Rename(string fromRelative, string toRelative)
     {
         if (IsProtected(fromRelative)) throw new ProjectException("Este item não pode ser renomeado.");
-        var from = Resolve(fromRelative);
-        var to = Resolve(toRelative);
-        if (File.Exists(to) || System.IO.Directory.Exists(to)) throw new ProjectException("Já existe algo com esse nome.");
-        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(to)!);
-        if (System.IO.Directory.Exists(from)) System.IO.Directory.Move(from, to);
-        else if (File.Exists(from)) File.Move(from, to);
-        else throw new ProjectException("Item não encontrado.");
+        var from = Relative(fromRelative);
+        var to = Relative(toRelative);
+        if (Files.FileExists(to) || Files.DirectoryExists(to)) throw new ProjectException("Já existe algo com esse nome.");
+        if (!Files.FileExists(from) && !Files.DirectoryExists(from)) throw new ProjectException("Item não encontrado.");
+        Files.Move(from, to);
     }
 
     /// <summary>Apaga arquivo ou pasta (recursivamente). <c>lunet.json</c> e a entrada do projeto raiz não podem ser apagados.</summary>
     public void Delete(string relativePath)
     {
         if (IsProtected(relativePath)) throw new ProjectException("Este item não pode ser apagado.");
-        var path = Resolve(relativePath);
-        if (System.IO.Directory.Exists(path)) System.IO.Directory.Delete(path, recursive: true);
-        else if (File.Exists(path)) File.Delete(path);
-        else throw new ProjectException("Item não encontrado.");
+        var path = Relative(relativePath);
+        if (!Files.FileExists(path) && !Files.DirectoryExists(path)) throw new ProjectException("Item não encontrado.");
+        Files.Delete(path);
     }
 
     private bool IsProtected(string relativePath)
@@ -157,7 +168,8 @@ public sealed class LunetProject
     {
         if (relativePath.Equals(ProjectStore.ManifestFileName, StringComparison.OrdinalIgnoreCase))
             throw new ProjectException("lunet.json não pode ser apagado.");
-        File.Delete(Resolve(relativePath));
+        var path = Relative(relativePath);
+        if (Files.FileExists(path)) Files.Delete(path);
     }
 
     /// <summary>Todos os arquivos .cs do projeto (exceto <c>Tests/</c>).</summary>
@@ -173,24 +185,27 @@ public sealed class LunetProject
         foreach (var relative in ListFiles())
         {
             var entry = archive.CreateEntry(Name + "/" + relative, CompressionLevel.Optimal);
-            using var input = File.OpenRead(Resolve(relative));
             using var output = entry.Open();
-            input.CopyTo(output);
+            var bytes = Files.Read(relative);
+            output.Write(bytes, 0, bytes.Length);
         }
     }
 
     /// <summary>Lança <see cref="ProjectException"/> se o caminho sair da pasta do projeto.</summary>
-    internal void EnsureInsideProject(string relativePath) => Resolve(relativePath);
+    internal void EnsureInsideProject(string relativePath) => Relative(relativePath);
 
-    /// <summary>Resolve um caminho relativo garantindo que ele fique dentro da pasta do projeto.</summary>
-    private string Resolve(string relativePath)
+    /// <summary>
+    /// A path relative to the game's folder, with '/', that cannot leave it: no root, no drive, no "..", no empty part.
+    /// </summary>
+    public static string Relative(string relativePath)
     {
-        if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+        if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath) || relativePath.Contains(':'))
             throw new ProjectException("Caminho inválido.");
-        var full = Path.GetFullPath(Path.Combine(Directory, relativePath));
-        var root = Directory.EndsWith(Path.DirectorySeparatorChar) ? Directory : Directory + Path.DirectorySeparatorChar;
-        if (!full.StartsWith(root, StringComparison.Ordinal)) throw new ProjectException("Caminho fora do projeto.");
-        return full;
+        var parts = relativePath.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) throw new ProjectException("Caminho inválido.");
+        foreach (var part in parts)
+            if (part is "." or "..") throw new ProjectException("Caminho fora do projeto.");
+        return string.Join('/', parts);
     }
 }
 

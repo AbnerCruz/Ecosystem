@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.1-dev.1000616 — Salvamento da IDE e pasta Android
+
+- O editor salva código e notas automaticamente, relê o que gravou e recupera rascunhos após uma interrupção. Se o arquivo tiver mudado fora do Lunet, o rascunho fica no editor e pode ser salvo como outra cópia.
+- Ajustes → Pasta de projetos abre a pasta concedida pelo seletor do Android. Os jogos da cópia de trabalho ativa migram com conferência de conteúdo. Os arquivos da origem e as revisões antigas ficam disponíveis como backup.
+- O Preview isolado, o Explorador e a abertura rápida trabalham com os arquivos da pasta escolhida. O Git integrado continua disponível para jogos com caminho de disco.
+
 ## 0.0.1-dev.1000615 — Preview protegido no Android
 
 - O Preview em tela cheia roda em uma Activity própria no processo `:preview`, com o mesmo jogo, recursos e saves. A IDE continua aberta se o driver ou o jogo derrubar esse processo.

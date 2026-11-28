@@ -60,21 +60,22 @@ public sealed class RunningGame : IDisposable
 /// </summary>
 public sealed class WorkspaceSession
 {
-    public WorkspaceSession(string projectsRoot)
+    public WorkspaceSession(string projectsRoot) : this(new ProjectStore(projectsRoot), projectsRoot) { }
+
+    public WorkspaceSession(ProjectStore store, string appData)
     {
-        Directory.CreateDirectory(projectsRoot);
-        Store = new ProjectStore(projectsRoot);
-        Root = projectsRoot;
+        Store = store;
+        Root = store.RootDirectory;
+        _appData = appData;
     }
 
+    private readonly string _appData;
     public string Root { get; }
     public ProjectStore Store { get; }
     public LunetProject? Project { get; private set; }
     public CompileResult? LastCompile { get; private set; }
 
-    public IReadOnlyList<string> Projects() =>
-        Directory.EnumerateDirectories(Root).Where(d => File.Exists(Path.Combine(d, ProjectStore.ManifestFileName)))
-            .Select(Path.GetFileName).OfType<string>().OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase).ToArray();
+    public IReadOnlyList<string> Projects() => Store.List();
 
     public LunetProject Open(string name) => Project = Store.Open(name);
     public LunetProject Create(string name, string orientation = "landscape") => Project = Store.Create(name, ProjectTemplate.Blank, orientation);
@@ -107,8 +108,10 @@ public sealed class WorkspaceSession
         if (!result.Success) return null;
         var loaded = GameLoader.Load(result.Assembly!, result.Symbols);
         var screen = new SoftwareGraphicsBackend(surfaceWidth, surfaceHeight);
-        var saves = Path.Combine(project.Directory, ".lunet", "desktop-saves");
-        var host = new GameHost(loaded.Game, screen, new ProjectContentSource(project.Directory), null, new Lunet.Storage.DirectorySaveStore(saves));
+        var saves = project.Files.LocalDirectory is { } disk
+            ? Path.Combine(disk, ".lunet", "desktop-saves")
+            : Path.Combine(_appData, "preview-saves", project.Manifest.GameId);
+        var host = new GameHost(loaded.Game, screen, new ProjectFilesContentSource(project.Files), null, new Lunet.Storage.DirectorySaveStore(saves));
         var running = new RunningGame(loaded, host, screen);
         if (!host.Start(surfaceWidth, surfaceHeight)) { running.Dispose(); throw new InvalidOperationException("O jogo falhou ao iniciar: " + host.Fault?.Message, host.Fault); }
         return running;

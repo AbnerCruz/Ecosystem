@@ -29,8 +29,7 @@ internal sealed class IsolatedGpuPreview : IGpuGamePreview
 
             using var intent = new Intent(activity, typeof(IsolatedPreviewActivity));
             intent.PutExtra(IsolatedPreviewFiles.ExtraSession, _session);
-            intent.PutExtra(IsolatedPreviewFiles.ExtraContent, Path.Combine(project.Directory, "Content"));
-            intent.PutExtra(IsolatedPreviewFiles.ExtraSaves, Path.Combine(project.Directory, ".lunet", "saves"));
+            IsolatedPreviewFiles.PutProject(intent, project);
             intent.PutExtra(IsolatedPreviewFiles.ExtraAudioCache, Path.Combine(activity.CacheDir!.AbsolutePath, "audio"));
             intent.PutExtra(IsolatedPreviewFiles.ExtraHighRefresh, highRefresh);
             activity.StartActivityForResult(intent, RequestCode);

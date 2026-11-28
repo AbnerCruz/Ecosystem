@@ -6,6 +6,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
+using Avalonia.Threading;
+using Lunet.Core;
 
 namespace Lunet.Client.Views;
 
@@ -20,6 +22,11 @@ public sealed class DocumentEditor : UserControl
     private readonly WorkspaceTab _tab;
     private readonly ITextSurface _surface;
     private string? _saved;
+    private string? _recoveryBase;
+    private bool _loading;
+    private bool _journalPending;
+    private readonly DispatcherTimer _saveDelay = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private Task<bool>? _pendingSave;
 
     public DocumentEditor(LunetShell shell, WorkspaceTab tab)
     {
@@ -27,6 +34,28 @@ public sealed class DocumentEditor : UserControl
         _tab = tab;
         _surface = tab == WorkspaceTab.Code ? new CodeSurface() : new NotesSurface();
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
+        _surface.TextChanged += () =>
+        {
+            if (!_loading && OpenPath is not null && !_saveDelay.IsEnabled)
+                _saveDelay.Start();
+        };
+        _saveDelay.Tick += async (_, _) =>
+        {
+            _saveDelay.Stop();
+            if (_pendingSave is not null || (!IsDirty && !_journalPending)) return;
+            UpdateDirtyMark();
+            var path = OpenPath!;
+            var text = _surface.Text;
+            var owner = Dispatcher;
+            var save = _pendingSave = StartWrite(path, text);
+            var saved = await save.ConfigureAwait(false);
+            owner.Post(() =>
+            {
+                if (!ReferenceEquals(save, _pendingSave)) return;
+                CompleteWrite(text, saved);
+                if (IsDirty && (saved || text != _surface.Text) && !_saveDelay.IsEnabled) _saveDelay.Start();
+            });
+        };
         // Using the code (focus, or a tap) brings the code bar above the system keyboard.
         if (tab == WorkspaceTab.Code) _surface.Engaged += ShowKeyboard;
         if (_surface is CodeSurface code)
@@ -189,6 +218,7 @@ public sealed class DocumentEditor : UserControl
 
     private Lunet.Core.EditorDocuments? _session;
     private string? _sessionFile;
+    private Lunet.Core.LunetProject? _sessionProject;
 
     /// <summary>
     /// The editor session of the open game (M4): the files you opened, the current one and where the caret and the
@@ -197,11 +227,12 @@ public sealed class DocumentEditor : UserControl
     public Lunet.Core.EditorDocuments? Session => _session;
 
     /// <summary>Opens the game's session: back to the file and the line you were on, or the entry point.</summary>
-    public void OpenSession(string fallback)
+    public void OpenSession(string? fallback)
     {
         _session = null;
-        _sessionFile = _shell.Workspace.Project is { } project ? Path.Combine(project.Directory, ".lunet", "editor-session.json") : null;
-        var session = _sessionFile is null ? new Lunet.Core.EditorDocuments() : Lunet.Core.EditorDocuments.Load(_sessionFile);
+        _sessionProject = _shell.Workspace.Project;
+        _sessionFile = _sessionProject is null ? null : _tab == WorkspaceTab.Code ? ".lunet/editor-session.json" : ".lunet/notes-session.json"; // inside the game, through its files
+        var session = _sessionProject is null ? new Lunet.Core.EditorDocuments() : Lunet.Core.EditorDocuments.Load(_sessionProject, _sessionFile!);
         session.Reconcile(_shell.Workspace.Files().Where(f => ProjectFiles.For(_tab, [f]).Count > 0));
         OpenPath = null; // the previous game's file must not be saved into this one
         _saved = null;
@@ -212,12 +243,45 @@ public sealed class DocumentEditor : UserControl
     public void Load(string? path)
     {
         _analysis?.Cancel();
-        Save();
+        if (!Save()) return;
         CaptureViewport();
         if (path is null) path = ProjectFiles.For(_tab, _shell.Workspace.Files()).FirstOrDefault();
+        string? disk;
+        try { disk = path is null ? null : _shell.Workspace.Read(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
+        {
+            _shell.Report($"Não foi possível abrir {path}: {ex.Message}");
+            return;
+        }
         OpenPath = path;
-        _saved = path is null ? null : _shell.Workspace.Read(path);
-        _surface.Text = _saved ?? "";
+        _saved = disk;
+        _recoveryBase = null;
+        _journalPending = false;
+        var text = _saved ?? "";
+        if (path is not null && _shell.Workspace.Project is { } project)
+        {
+            try
+            {
+                if (new AutosaveJournal(project, _shell.RecoveryPath).ReadBuffer(path) is { } draft)
+                {
+                    _journalPending = true;
+                    if (draft.Text != _saved)
+                    {
+                        _recoveryBase = draft.Previous ?? _saved;
+                        text = draft.Text;
+                        _shell.Report("Rascunho recuperado: " + path);
+                        if (_recoveryBase == _saved) _saveDelay.Start();
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+            {
+                _shell.Report("Não foi possível ler o rascunho: " + ex.Message);
+            }
+        }
+        _loading = true;
+        try { _surface.Text = text; }
+        finally { _loading = false; }
         if (_surface is CodeSurface loaded) { loaded.SetDiagnostics([]); _analysisDelay.Stop(); _analysisDelay.Start(); }
         ApplyChangedLines();
         if (path is not null && _session is not null)
@@ -250,41 +314,91 @@ public sealed class DocumentEditor : UserControl
     /// <summary>Writes the session next to the game (a lost session never loses code: it is only positions).</summary>
     public void SaveSession()
     {
-        if (_session is null || _sessionFile is null) return;
+        if (_session is null || _sessionFile is null || _sessionProject is null) return;
         CaptureViewport();
-        try { _session.Save(_sessionFile); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        try { _session.Save(_sessionProject, _sessionFile); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Lunet.Core.ProjectException) { }
     }
 
-    /// <summary>Writes the open document when it changed, then reads it back; reports a failed write instead of hiding it.</summary>
+    /// <summary>Saves before a transition, waiting for any earlier write to finish.</summary>
     public bool Save()
     {
-        if (!IsDirty) return true;
+        _saveDelay.Stop();
+        if (_pendingSave is { } pending)
+        {
+            var result = pending.GetAwaiter().GetResult();
+            CompleteWrite(_writingText!, result);
+        }
+        if (OpenPath is not { } path || (!IsDirty && !_journalPending)) return true;
         var text = _surface.Text;
-        try
+        var saved = StartWrite(path, text).GetAwaiter().GetResult();
+        CompleteWrite(text, saved);
+        return saved;
+    }
+
+    private string? _writingText;
+    private string? _writeError;
+
+    private Task<bool> StartWrite(string path, string text)
+    {
+        var project = _shell.Workspace.Project!;
+        var recovery = new AutosaveJournal(project, _shell.RecoveryPath);
+        var previous = _recoveryBase ?? _saved!;
+        var unchanged = text == _saved;
+        _writingText = text;
+        return Task.Run(() =>
         {
-            _shell.Workspace.Write(OpenPath!, text);
-            if (_shell.Workspace.Read(OpenPath!) != text) throw new IOException("O arquivo gravado não confere com o texto.");
+            try
+            {
+                if (unchanged) recovery.Discard(path);
+                else recovery.SaveVerified(path, previous, text);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
+            {
+                _writeError = ex.Message;
+                return false;
+            }
+        });
+    }
+
+    private void CompleteWrite(string text, bool saved)
+    {
+        _pendingSave = null;
+        _journalPending = !saved;
+        if (saved)
+        {
             _saved = text;
-            UpdateDirtyMark();
-            return true;
+            _recoveryBase = null;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            _shell.Report($"Não foi possível salvar {OpenPath}: {ex.Message}. O texto continua aberto aqui.");
-            return false;
-        }
+        else _shell.Report($"Não foi possível salvar {OpenPath}: {_writeError} Use Salvar cópia para preservar o texto em outro arquivo.");
+        _writeError = null;
+        UpdateDirtyMark();
     }
 
     // ---------- Jumps and the way back ----------
 
     private readonly Stack<(string Path, int Caret)> _positions = new();
     public int PositionsBack => _positions.Count;
+    private readonly Stack<(string Path, int Caret)> _forward = new();
+    public int PositionsForward => _forward.Count;
+
+    /// <summary>Forward again after <see cref="BackToPosition"/> (Alt+→, VS Code's "Go Forward").</summary>
+    public bool ForwardToPosition()
+    {
+        if (!_forward.TryPop(out var position)) return false;
+        if (OpenPath is { } here) _positions.Push((here, _surface.Caret));
+        if (position.Path != OpenPath && _shell.Workspace.Files().Contains(position.Path)) Load(position.Path);
+        _surface.Caret = Math.Min(position.Caret, _surface.Text.Length);
+        if (_surface is CodeSurface code) code.Focus();
+        return true;
+    }
 
     /// <summary>Goes to a line (in this file or another), remembering where you were for <see cref="BackToPosition"/>.</summary>
     public void JumpTo(string? file, int line, int column)
     {
         if (_tab == WorkspaceTab.Code && _shell.WorkspaceView.PreviewFull) _shell.ClosePreview();
+        _forward.Clear(); // a new jump starts a new way forward, like a browser
         if (OpenPath is { } here)
         {
             _positions.Push((here, _surface.Caret));
@@ -303,6 +417,7 @@ public sealed class DocumentEditor : UserControl
     public bool BackToPosition()
     {
         if (!_positions.TryPop(out var position)) return false;
+        if (OpenPath is { } here) _forward.Push((here, _surface.Caret));
         if (position.Path != OpenPath && _shell.Workspace.Files().Contains(position.Path)) Load(position.Path);
         _surface.Caret = Math.Min(position.Caret, _surface.Text.Length);
         if (_surface is CodeSurface code) code.Focus();
@@ -346,7 +461,7 @@ public sealed class DocumentEditor : UserControl
         var folder = Path.GetDirectoryName(from)?.Replace('\\', '/');
         var to = string.IsNullOrEmpty(folder) ? newName : folder + "/" + newName;
         if (to == from) return from;
-        Save();
+        if (!Save()) return null;
         project.Rename(from, to);
         _session?.Reconcile(_shell.Workspace.Files());
         OpenPath = null;
@@ -366,8 +481,17 @@ public sealed class DocumentEditor : UserControl
         var folder = Path.GetDirectoryName(from)?.Replace('\\', '/');
         var to = string.IsNullOrEmpty(folder) ? newName : folder + "/" + newName;
         if (_shell.Workspace.Files().Contains(to, StringComparer.OrdinalIgnoreCase)) throw new ArgumentException("Já existe um arquivo com esse nome.");
-        Save();
-        _shell.Workspace.Write(to, _surface.Text);
+        var project = _shell.Workspace.Project!;
+        var saved = Save();
+        var text = _surface.Text;
+        project.CreateFile(to, text);
+        if (project.ReadText(to) != text) throw new IOException("A cópia gravada não confere.");
+        if (!saved)
+        {
+            new AutosaveJournal(project, _shell.RecoveryPath).Discard(from);
+            _journalPending = false;
+            OpenPath = null;
+        }
         _fileMenu = false;
         Load(to);
         return to;
@@ -396,6 +520,7 @@ public sealed class DocumentEditor : UserControl
     public void DeleteOpen()
     {
         if (OpenPath is not { } path || _shell.Workspace.Project is not { } project) return;
+        if (!Save()) return;
         project.Delete(path);
         _session?.Reconcile(_shell.Workspace.Files());
         OpenPath = null;
@@ -610,7 +735,7 @@ public sealed class DocumentEditor : UserControl
     /// <summary>Closes a tab (saving it first); the next tab opens, or the editor shows that nothing is open.</summary>
     public void CloseTab(string path)
     {
-        if (path == OpenPath) Save();
+        if (path == OpenPath && !Save()) return;
         if (_session is null) return;
         _session.Close(path);
         SaveSession();
@@ -751,6 +876,112 @@ public sealed class DocumentEditor : UserControl
         return new Border { Child = bar, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised), Name = "AiReviewBar" };
     }
 
+    /// <summary>
+    /// Where the open file is (VS Code's breadcrumbs): each folder shows it in the Explorer; the file's name lists its
+    /// classes and methods to jump to (the palette's "@").
+    /// </summary>
+    private Control Breadcrumbs(string path)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(LunetTokens.Space.S, 0), Name = "Breadcrumbs" };
+        var parts = path.Split('/');
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var last = i == parts.Length - 1;
+            var target = string.Join('/', parts[..(i + 1)]);
+            var label = LunetUi.Text(parts[i], LunetTokens.Type.Caption, last ? LunetTokens.Color.TextPrimary : LunetTokens.Color.TextSecondary);
+            var b = new Button
+            {
+                Content = label, MinHeight = LunetTokens.MinTouch, MinWidth = LunetTokens.MinTouch, Padding = new Thickness(LunetTokens.Space.Xs, 0), Background = LunetTokens.Brush("#00000000"),
+                BorderThickness = new Thickness(0), Name = last ? "BreadcrumbFile" : "BreadcrumbFolder",
+            };
+            AutomationProperties.SetName(b, last ? "Estrutura de " + parts[i] : "Mostrar a pasta " + target);
+            b.Click += (_, _) => { if (last) _shell.OpenPalette("@"); else _shell.WorkspaceView.RevealInExplorer(target); };
+            row.Children.Add(b);
+            if (!last) row.Children.Add(new TextBlock { Text = "›", FontSize = LunetTokens.Type.Caption, Foreground = LunetTokens.Brush(LunetTokens.Color.TextTertiary), VerticalAlignment = VerticalAlignment.Center });
+        }
+        return new ScrollViewer
+        {
+            Content = row, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        };
+    }
+
+    private string? _tabMenuFor;
+    private Border? _selectedTab;
+
+    /// <summary>The tab whose actions are shown (long press / right click), or null.</summary>
+    public string? TabMenuFor => _tabMenuFor;
+
+    public void ShowTabMenu(string? path) { _tabMenuFor = path; Rebuild(); }
+
+    private Control TabMenu(string path)
+    {
+        var panel = new WrapPanel { Margin = new Thickness(LunetTokens.Space.Xs, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xxs), Name = "TabMenu" };
+        void Add(string label, string? icon, Action run, string name)
+        {
+            var b = LunetUi.Button(label, ButtonKind.Ghost, icon, () => { _tabMenuFor = null; run(); });
+            b.Name = name;
+            panel.Children.Add(b);
+        }
+        var tabs = OpenTabs;
+        var index = tabs.ToList().IndexOf(path);
+        if (index > 0) Add("Mover para a esquerda", LunetIcons.Back, () => MoveTab(path, -1), "TabLeft");
+        if (index >= 0 && index < tabs.Count - 1) Add("Mover para a direita", LunetIcons.ChevronRight, () => MoveTab(path, +1), "TabRight");
+        if (tabs.Count > 1) Add("Fechar outras", null, () => CloseOthers(path), "TabCloseOthers");
+        if (index >= 0 && index < tabs.Count - 1) Add("Fechar à direita", null, () => CloseToRight(path), "TabCloseRight");
+        Add("Fechar todas", LunetIcons.Close, CloseAll, "TabCloseAll");
+        Add("Mostrar no Explorador", LunetIcons.Folder, () => { Rebuild(); _shell.WorkspaceView.RevealInExplorer(path); }, "TabReveal");
+        Add("Copiar caminho", LunetIcons.Copy, () => { Rebuild(); if (TopLevel.GetTopLevel(this)?.Clipboard is { } clip) _ = Avalonia.Input.Platform.ClipboardExtensions.SetTextAsync(clip, path); }, "TabCopyPath");
+        return new Border { Child = panel, Background = LunetTokens.Brush(LunetTokens.Color.SurfaceRaised) };
+    }
+
+    /// <summary>Keeps only this tab (the open file is saved first).</summary>
+    public void CloseOthers(string path)
+    {
+        if (!Save()) return;
+        if (_session is null) return;
+        _session.CloseOthers(path);
+        SaveSession();
+        if (OpenPath != path) Load(path); else Rebuild();
+    }
+
+    /// <summary>Closes the tabs to the right of this one.</summary>
+    public void CloseToRight(string path)
+    {
+        if (!Save()) return;
+        if (_session is null) return;
+        var open = OpenPath;
+        _session.CloseToRight(path);
+        SaveSession();
+        if (open is not null && !_session.Tabs.Contains(open)) Load(path); else Rebuild();
+    }
+
+    /// <summary>Closes every tab (saved first); the editor says nothing is open.</summary>
+    public void CloseAll()
+    {
+        if (!Save()) return;
+        if (_session is null) return;
+        _session.CloseAll();
+        SaveSession();
+        OpenPath = null; _saved = null; _surface.Text = "";
+        Rebuild();
+    }
+
+    /// <summary>Moves a tab one place left or right.</summary>
+    public void MoveTab(string path, int delta)
+    {
+        if (_session?.Move(path, delta) == true) { SaveSession(); _tabMenuFor = path; }
+        Rebuild();
+    }
+
+    /// <summary>The next (or previous) tab, wrapping (Ctrl+Tab, Ctrl+PageDown).</summary>
+    public bool NextTab(int delta)
+    {
+        if (_session?.Neighbour(delta) is not { } next || next == OpenPath) return false;
+        Load(next);
+        return true;
+    }
+
     /// <summary>The open tabs (tests).</summary>
     public IReadOnlyList<string> OpenTabs => _session?.Tabs.ToList() ?? [];
 
@@ -795,13 +1026,17 @@ public sealed class DocumentEditor : UserControl
             var close = LunetUi.IconButton(LunetIcons.Close, "Fechar " + name, () => CloseTab(path), LunetTokens.Color.TextSecondary);
             close.Name = "CloseTab";
             var tab = new StackPanel { Orientation = Orientation.Horizontal, Children = { b, close } };
-            entries.Add(new Border
+            var border = new Border
             {
                 Child = tab, Name = "EditorTab",
                 // The open tab is marked by tone and a line under it, never a box (visual language §3).
                 Background = LunetTokens.Brush(selected ? LunetTokens.Color.SurfaceRaised : "#00000000"),
                 BorderBrush = LunetTokens.Brush(selected ? LunetTokens.Color.Primary : "#00000000"), BorderThickness = new Thickness(0, 0, 0, 2),
-            });
+            };
+            // A long press (touch) or a right click opens the tab's actions, like VS Code's tab menu.
+            border.ContextRequested += (_, e) => { e.Handled = true; _tabMenuFor = _tabMenuFor == path ? null : path; Rebuild(); };
+            if (selected) _selectedTab = border;
+            entries.Add(border);
         }
         if (_tab == WorkspaceTab.Notes)
         {
@@ -870,6 +1105,10 @@ public sealed class DocumentEditor : UserControl
             foreach (var e in entries) { e.HorizontalAlignment = HorizontalAlignment.Left; row.Children.Add(e); }
             _chrome.Children.Add(new Border { Child = strip, Background = LunetTokens.Brush(LunetTokens.Color.Surface), BorderBrush = LunetTokens.Brush(LunetTokens.Color.Border), BorderThickness = new Thickness(0, 0, 0, 1) });
         }
+        if (_tab == WorkspaceTab.Code && OpenPath is { } crumbsFor) _chrome.Children.Add(Breadcrumbs(crumbsFor));
+        if (_tabMenuFor is { } menuFor && OpenTabs.Contains(menuFor)) _chrome.Children.Add(TabMenu(menuFor)); else _tabMenuFor = null;
+        // The open tab is always in sight, even far to the right on a phone.
+        if (_selectedTab is { } shown) Avalonia.Threading.Dispatcher.UIThread.Post(() => shown.BringIntoView(), Avalonia.Threading.DispatcherPriority.Background);
         if (ReviewChanges.Count > 0 && OpenPath is not null && ReviewChanges.Any(c => c.Path == OpenPath)) _chrome.Children.Add(ReviewBar());
         if (_findOpen && OpenPath is not null) _chrome.Children.Add(FindBar());
         if (_fileMenu) _chrome.Children.Add(FileMenu());

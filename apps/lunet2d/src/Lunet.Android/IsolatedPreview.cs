@@ -15,6 +15,54 @@ internal static class IsolatedPreviewFiles
 {
     public const string ExtraContent = "content";
     public const string ExtraSaves = "saves";
+    private const string ExtraTree = "projectTree";
+    private const string ExtraProject = "projectFolder";
+
+    public static void PutProject(Intent intent, LunetProject project)
+    {
+        if (project.Files is AndroidSafProjectFiles saf)
+        {
+            intent.PutExtra(ExtraTree, saf.TreeKey);
+            intent.PutExtra(ExtraProject, saf.FolderPath);
+        }
+        else
+        {
+            intent.PutExtra(ExtraContent, Path.Combine(project.Directory, "Content"));
+            intent.PutExtra(ExtraSaves, Path.Combine(project.Directory, ".lunet", "saves"));
+        }
+    }
+
+    public static (LunetProject Project, ISaveStore Saves) OpenProject(global::Android.Content.Context context, Intent? intent)
+    {
+        if (intent?.GetStringExtra(ExtraTree) is { } key &&
+            intent.GetStringExtra(ExtraProject) is { } folder)
+        {
+            var tree = global::Android.Net.Uri.Parse(key) ?? throw new IOException("Pasta do projeto indisponível.");
+            var project = new ProjectStore(new AndroidSafProjectFiles(context.ContentResolver!, tree)).Open(folder);
+            return (project, new ProjectPreviewSaves(project));
+        }
+        var content = intent?.GetStringExtra(ExtraContent);
+        var saves = intent?.GetStringExtra(ExtraSaves);
+        if (content is null || saves is null || Path.GetDirectoryName(content) is not { } path)
+            throw new IOException("O jogo compilado não pôde ser aberto pelo preview.");
+        var disk = new ProjectStore(Path.GetDirectoryName(path)!).Open(Path.GetFileName(path));
+        return (disk, new DirectorySaveStore(saves));
+    }
+
+    private sealed class ProjectPreviewSaves(LunetProject project) : ISaveStore
+    {
+        private static string SavePath(string key)
+        {
+            if (string.IsNullOrEmpty(key) || key.Length > 64 || key.StartsWith('.') ||
+                key.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('_' or '-' or '.')))
+                throw new ArgumentException("Chave de salvamento inválida.", nameof(key));
+            return ".lunet/saves/" + key + ".sav";
+        }
+        public bool Exists(string key) => project.Exists(SavePath(key));
+        public string? ReadText(string key) => Exists(key) ? project.ReadText(SavePath(key)) : null;
+        public void WriteText(string key, string text) => project.WriteText(SavePath(key), text);
+        public void Delete(string key) => project.Files.Delete(SavePath(key));
+    }
     public const string ExtraAudioCache = "audioCache";
     public const string ExtraSession = "previewSession";
     public const string ExtraHighRefresh = "highRefresh";
@@ -74,28 +122,21 @@ public sealed class IsolatedPreviewActivity : Activity
                 return;
             }
             File.WriteAllText(marker, pid);
-            var content = Intent?.GetStringExtra(IsolatedPreviewFiles.ExtraContent);
-            var saves = Intent?.GetStringExtra(IsolatedPreviewFiles.ExtraSaves);
-            var audio = Intent?.GetStringExtra(IsolatedPreviewFiles.ExtraAudioCache);
-            if (content is null || saves is null || audio is null || Path.GetDirectoryName(content) is not { } projectPath)
-            {
-                Fail("O jogo compilado não pôde ser aberto pelo preview.");
-                return;
-            }
-
+            var (project, saves) = IsolatedPreviewFiles.OpenProject(this, Intent);
+            var audio = Intent?.GetStringExtra(IsolatedPreviewFiles.ExtraAudioCache)
+                ?? throw new IOException("Cache de áudio indisponível.");
             var symbolsPath = IsolatedPreviewFiles.Symbols(this, _session);
             _picker = new AndroidGameImagePicker(this);
             var renderer = _renderer = new PreviewRenderer(
                 File.ReadAllBytes(IsolatedPreviewFiles.Assembly(this, _session)),
                 File.Exists(symbolsPath) ? File.ReadAllBytes(symbolsPath) : null,
-                new ProjectContentSource(projectPath),
+                new Lunet.Host.ProjectFilesContentSource(project.Files),
                 () => new AndroidAudioBackend(audio, message => RunOnUiThread(() => Write(LogLevel.Error, message))),
-                new DirectorySaveStore(saves), new AndroidHaptics(this),
+                saves, new AndroidHaptics(this),
                 (level, message) => RunOnUiThread(() => Write(level, message)),
                 _picker, onFatal: message => RunOnUiThread(() => Fail(message)), waitForWindowFocus: true);
             var highRefresh = Intent?.GetBooleanExtra(IsolatedPreviewFiles.ExtraHighRefresh, true) ?? true;
-            _host = new PreviewHost(this, renderer, () =>
-                new ProjectStore(Path.GetDirectoryName(projectPath)!).Open(Path.GetFileName(projectPath)).ListFiles(),
+            _host = new PreviewHost(this, renderer, project.ListFiles,
                 Finish, highRefresh);
             Window?.AddFlags(WindowManagerFlags.Fullscreen);
             SetContentView(_host);
@@ -103,7 +144,7 @@ public sealed class IsolatedPreviewActivity : Activity
             _ = ObservePreviewFrames(renderer);
 #endif
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or Java.Lang.Exception)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ProjectException or Java.Lang.Exception)
         {
             Fail("Não foi possível abrir o preview: " + ex.Message);
         }

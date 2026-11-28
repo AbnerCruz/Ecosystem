@@ -37,9 +37,9 @@ public sealed class DataView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
         var schema = SchemaPath(path);
-        Table = DataTable.Parse(_storage.ReadText(path), File.Exists(Path.Combine(_storage.RootDirectory, schema)) ? _storage.ReadText(schema) : null);
+        Table = DataTable.Parse(_storage.ReadText(path), _storage.Exists(schema) ? _storage.ReadText(schema) : null);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => Back());
         var bar = new DockPanel { Height = 56, Margin = new Thickness(LunetTokens.Space.Xxs, 0, LunetTokens.Space.M, 0) };
@@ -78,7 +78,7 @@ public sealed class DataView : UserControl
 
     /// <summary>A new table with an id and a name column and one record (as the previous Data Studio).</summary>
     public static string Create(LunetShell shell, string name) =>
-        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Directory), shell.Workspace.Files(), name);
+        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Files), shell.Workspace.Files(), name);
 
     public static string Create(StudioAssetWorkspace storage, IReadOnlyCollection<string> files, string name)
     {

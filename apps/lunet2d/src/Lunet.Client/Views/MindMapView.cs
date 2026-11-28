@@ -32,10 +32,10 @@ public sealed class MindMapView : UserControl
         _path = path;
         _close = close;
         var project = shell.Workspace.Project!;
-        var file = Path.Combine(project.Directory, path);
-        var map = File.Exists(file) ? ProjectMindMap.Parse(project.ReadText(path))
+        var exists = project.Exists(path);
+        var map = exists ? ProjectMindMap.Parse(project.ReadText(path))
             : ProjectMindMap.Create(Path.GetFileName(path).Replace(ProjectMindMap.Extension, "", StringComparison.OrdinalIgnoreCase));
-        if (!File.Exists(file)) project.WriteText(path, map.Serialize());
+        if (!exists) project.WriteText(path, map.Serialize());
         History = new MindMapHistory(map);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
 

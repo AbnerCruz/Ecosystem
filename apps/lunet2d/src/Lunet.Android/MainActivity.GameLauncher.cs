@@ -156,7 +156,8 @@ public sealed partial class MainActivity
                 throw new ProjectException("Este jogo não tem um GameId persistente e único. Abra o projeto para corrigir a identidade.");
             folderName = resolved;
             var project = _store.Open(folderName);
-            if (new AutosaveJournal(project).FindRecoveries().Count > 0)
+            if ((project.Files.LocalDirectory is not null && new AutosaveJournal(project).FindRecoveries().Count > 0) ||
+                new AutosaveJournal(project, Path.Combine(FilesDir!.AbsolutePath, "editor-drafts")).FindRecoveries().Count > 0)
                 throw new ProjectException("Há alterações não recuperadas. Abra o editor e decida como restaurá-las antes de jogar.");
             dialog = new AlertDialog.Builder(this)!.SetTitle("Preparando " + project.Name)!
                 .SetMessage("Capturando a revisão local…")!.SetCancelable(false)!

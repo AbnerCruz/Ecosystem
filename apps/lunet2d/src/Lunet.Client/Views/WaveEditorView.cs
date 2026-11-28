@@ -165,7 +165,7 @@ public sealed class WaveEditorView : UserControl
             if (stem.Length == 0) stem = "audio";
             var n = 1;
             string path;
-            do path = $"Content/Audio/{stem}-editado{(n == 1 ? "" : "-" + n)}.wav"; while (File.Exists(Path.Combine(_storage.RootDirectory, "Content", "Audio", Path.GetFileName(path))) && n++ < 1000);
+            do path = $"Content/Audio/{stem}-editado{(n == 1 ? "" : "-" + n)}.wav"; while (_storage.Exists(path) && n++ < 1000);
             _storage.WriteBytes(path, wav);
             Say($"Cópia salva em {path}.", LunetTokens.Color.Success);
             return path;

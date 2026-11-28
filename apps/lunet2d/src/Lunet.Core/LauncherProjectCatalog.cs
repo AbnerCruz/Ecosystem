@@ -19,12 +19,15 @@ public static class LauncherProjectCatalog
         {
             try
             {
-                var folder = Path.Combine(store.RootDirectory, name);
-                var manifest = Path.Combine(folder, ProjectStore.ManifestFileName);
-                if ((File.GetAttributes(folder) & FileAttributes.ReparsePoint) != 0 ||
-                    (File.GetAttributes(manifest) & FileAttributes.ReparsePoint) != 0)
-                    continue;
-                using var document = JsonDocument.Parse(File.ReadAllText(manifest));
+                if (store.Root.LocalDirectory is { } root)
+                {
+                    var folder = Path.Combine(root, name);
+                    var manifest = Path.Combine(folder, ProjectStore.ManifestFileName);
+                    if ((File.GetAttributes(folder) & FileAttributes.ReparsePoint) != 0 ||
+                        (File.GetAttributes(manifest) & FileAttributes.ReparsePoint) != 0)
+                        continue;
+                }
+                using var document = JsonDocument.Parse(store.Root.Read(name + "/" + ProjectStore.ManifestFileName));
                 if (document.RootElement.ValueKind != JsonValueKind.Object) continue;
                 if (!document.RootElement.TryGetProperty("gameId", out var id) &&
                     !document.RootElement.TryGetProperty("GameId", out id)) continue;

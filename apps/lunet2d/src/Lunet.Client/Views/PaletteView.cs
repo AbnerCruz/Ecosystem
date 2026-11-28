@@ -39,7 +39,7 @@ public sealed class PaletteView : UserControl
         _path = path;
         _publish = publish;
         Palette = storage is not null && path is not null
-            ? (File.Exists(Path.Combine(storage.RootDirectory, path)) ? ProjectPalette.Parse(storage.ReadText(path)) : new ProjectPalette { Name = "Paleta" })
+            ? (storage.Exists(path) ? ProjectPalette.Parse(storage.ReadText(path)) : new ProjectPalette { Name = "Paleta" })
             : Load(shell) ?? new ProjectPalette();
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         var back = LunetUi.IconButton(LunetIcons.Back, "Voltar", () => Close());
@@ -61,9 +61,8 @@ public sealed class PaletteView : UserControl
     public static ProjectPalette? Load(LunetShell shell)
     {
         if (shell.Workspace.Project is not { } project) return null;
-        var file = Path.Combine(project.Directory, ProjectPalette.DefaultPath);
-        if (!File.Exists(file)) return null;
-        try { return ProjectPalette.Parse(File.ReadAllText(file)); }
+        if (!project.Exists(ProjectPalette.DefaultPath)) return null;
+        try { return ProjectPalette.Parse(project.ReadText(ProjectPalette.DefaultPath)); }
         catch (Exception e) when (e is IOException or InvalidDataException or System.Text.Json.JsonException) { return null; }
     }
 

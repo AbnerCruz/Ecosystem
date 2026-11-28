@@ -217,7 +217,7 @@ public sealed class AiPanelView : UserControl
     public bool Attach(string projectPath)
     {
         if (_shell.Workspace.Project is not { } project || _attachments.Contains(projectPath)) return false;
-        if (!File.Exists(Path.Combine(project.Directory, projectPath.Replace('/', Path.DirectorySeparatorChar)))) return false;
+        if (!project.Exists(projectPath)) return false;
         _attachments.Add(projectPath);
         _picking = false;
         BuildComposer();

@@ -24,9 +24,12 @@ public sealed class LunetShell : UserControl
     private double _lastTick;
     private WorkspaceTab _visibleWorkspaceTab;
 
-    public LunetShell(string projectsRoot)
+    public LunetShell(string projectsRoot) : this(new Lunet.Core.ProjectStore(projectsRoot), projectsRoot) { }
+
+    public LunetShell(Lunet.Core.ProjectStore store, string projectsRoot)
     {
-        Workspace = new WorkspaceSession(projectsRoot);
+        Workspace = new WorkspaceSession(store, projectsRoot);
+        RecoveryPath = Path.Combine(projectsRoot, ".lunet", "drafts");
         LearningProgressPath = Path.Combine(projectsRoot, ".lunet", "learning", "progress.json");
         LauncherPreferencesPath = Path.Combine(projectsRoot, ".lunet", "launcher-preferences.json");
         LibraryPath = Path.Combine(projectsRoot, ".lunet", "library");
@@ -85,6 +88,7 @@ public sealed class LunetShell : UserControl
     public int KeyboardRequests { get; private set; }
 
     public WorkspaceSession Workspace { get; }
+    public string RecoveryPath { get; set; }
 
     /// <summary>
     /// Pinned and recent games (by GameId) — the single authority shared with the previous screens
@@ -246,6 +250,14 @@ public sealed class LunetShell : UserControl
     public AiHost? AiHost { get; set; }
 
     /// <summary>Opens the command palette (M3) with an optional prefix ("@", ":", "#", "/").</summary>
+    /// <summary>Quick Open: go to any file of the game by name (Ctrl+P, the magnifier in the top bar).</summary>
+    public void QuickOpen()
+    {
+        if (State.Level != ShellLevel.Workspace) return;
+        State.ShowPanel(SupportPanel.Commands);
+        _workspaceView.Support.Palette.OpenFiles();
+    }
+
     public void OpenPalette(string query = "")
     {
         if (State.Level != ShellLevel.Workspace) return;
@@ -283,8 +295,14 @@ public sealed class LunetShell : UserControl
 
     public void OpenProject(string name)
     {
+        if (!_workspaceView.SaveAll()) return;
         StopGame();
-        Workspace.Open(name);
+        try { Workspace.Open(name); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Lunet.Core.ProjectException)
+        {
+            Report("Não foi possível abrir o jogo: " + ex.Message);
+            return;
+        }
         try { LauncherPreferences()?.MarkOpenedProject(name, Workspace.Project!.Manifest.GameId); } // recents, as the previous screens
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException) { }
         Assistant = new Lunet.Editor.EditorAssistant(new Lunet.Compiler.LoadedAssembliesReferenceProvider(
@@ -369,7 +387,7 @@ public sealed class LunetShell : UserControl
     {
         var project = Workspace.Store.ImportZip(source);
         Avalonia.Threading.Dispatcher.UIThread.Post(_home.Refresh);
-        return Path.GetFileName(project.Directory);
+        return Path.GetFileName(project.Files.Location.TrimEnd('/', Path.DirectorySeparatorChar));
     }
 
     /// <summary>Erases a game from the trash for good.</summary>
@@ -380,7 +398,7 @@ public sealed class LunetShell : UserControl
     }
 
     /// <summary>Back to the Home. Saving and stopping happen in <see cref="Render"/>, so every way back (button, Back, Esc) does it.</summary>
-    public void GoHome() => State.GoHome();
+    public void GoHome() { if (_workspaceView.SaveAll()) State.GoHome(); }
 
     /// <summary>
     /// Plays a game: full screen on its own (Android: the head's <see cref="PlayGame"/>), else running in the
@@ -514,7 +532,8 @@ public sealed class LunetShell : UserControl
 
     /// <summary>Saves open documents and stops the game (the head calls it when the app goes away).</summary>
     /// <summary>Saves the open documents now (the Android head calls it when the app leaves the screen).</summary>
-    public void SaveAll() => _workspaceView.SaveAll();
+    public void SaveAll() => TrySaveAll();
+    public bool TrySaveAll() => _workspaceView.SaveAll();
 
     public void CancelStudioAudio()
     {
@@ -548,10 +567,28 @@ public sealed class LunetShell : UserControl
         else if (e.Key == Key.F5 || (e.Key == Key.R && e.KeyModifiers.HasFlag(KeyModifiers.Control))) { _ = RunGame(); e.Handled = true; }
         else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { _workspaceView.SaveAll(); e.Handled = true; }
         else if (e.Key == Key.F1 || (e.Key == Key.P && e.KeyModifiers.HasFlag(KeyModifiers.Control | KeyModifiers.Shift))) { OpenPalette(); e.Handled = true; }
+        else if (e.Key == Key.P && e.KeyModifiers == KeyModifiers.Control) { QuickOpen(); e.Handled = true; }
+        else if (State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Game
+            && ((e.Key == Key.Tab && e.KeyModifiers.HasFlag(KeyModifiers.Control)) || (e.Key is Key.PageDown or Key.PageUp && e.KeyModifiers == KeyModifiers.Control)))
+        {
+            var back = e.Key == Key.PageUp || e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+            _workspaceView.Code.NextTab(back ? -1 : +1);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.W && e.KeyModifiers == KeyModifiers.Control && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Game
+            && _workspaceView.Code.OpenPath is { } closing)
+        {
+            _workspaceView.Code.CloseTab(closing);
+            e.Handled = true;
+        }
         else if (e.Key == Key.G && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { OpenPalette(":"); e.Handled = true; }
         else if (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
         {
             e.Handled = _workspaceView.Code.BackToPosition();
+        }
+        else if (e.Key == Key.Right && e.KeyModifiers == KeyModifiers.Alt && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code)
+        {
+            e.Handled = _workspaceView.Code.ForwardToPosition();
         }
         else if (e.Key == Key.B && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && State.Level == ShellLevel.Workspace && State.Tab == WorkspaceTab.Code
             && _workspaceView.Code.Surface is Views.CodeSurface block
@@ -559,6 +596,11 @@ public sealed class LunetShell : UserControl
         {
             block.Replace(r.Start, r.Start + r.DeleteLength, r.Insert, r.SelectionEnd);
             block.Select(r.SelectionStart, r.SelectionEnd);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F && e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift) && State.Level == ShellLevel.Workspace)
+        {
+            _workspaceView.ShowSearch();
             e.Handled = true;
         }
         else if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control) && State.Level == ShellLevel.Workspace && State.Tab is WorkspaceTab.Code or WorkspaceTab.Notes)

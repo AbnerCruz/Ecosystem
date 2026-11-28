@@ -28,6 +28,51 @@ public sealed class ProjectFolderSync(string filesDirectory, string cacheDirecto
         settings.UseSharedProjectFolder && settings.ProjectWorkingCopy is { } copy && Directory.Exists(WorkingCopy(copy))
             ? WorkingCopy(copy) : PrivateProjects;
 
+    /// <summary>Promotes the current project files to the selected tree after verification.</summary>
+    public EditorSettings ConnectDirect(EditorSettings settings, string key, IProjectFiles destination,
+        IProjectFiles current, IProjectFolderTree? legacy)
+    {
+        var probe = ".lunet-probe-" + Guid.NewGuid().ToString("N");
+        try
+        {
+            byte[] expected = [0x4c, 0x32, 0x44];
+            destination.Write(probe, expected);
+            if (!destination.Read(probe).AsSpan().SequenceEqual(expected))
+                throw new IOException("A pasta não devolveu os bytes gravados.");
+        }
+        finally
+        {
+            if (destination.FileExists(probe)) destination.Delete(probe);
+        }
+        var target = new ProjectStore(destination);
+        var source = new ProjectStore(current);
+        // Reconnecting the already-selected tree only refreshes the grant.
+        if (settings.DirectProjectTree != key)
+        {
+            // A folder from the old app may have only revisions and no local working copy on this device.
+            if (settings.ProjectTree != key && target.List().Count == 0 && legacy?.Latest() is { } latest)
+            {
+                var archive = TempArchive();
+                var restored = Path.Combine(cacheDirectory, "lunet-restore-" + Guid.NewGuid().ToString("N"));
+                try
+                {
+                    legacy.Restore(latest, archive, restored);
+                    ProjectFolderMigration.Migrate(new ProjectStore(restored), target);
+                }
+                finally
+                {
+                    File.Delete(archive);
+                    if (Directory.Exists(restored)) Directory.Delete(restored, recursive: true);
+                }
+            }
+            ProjectFolderMigration.Migrate(source, target);
+        }
+        var next = settings.Clone();
+        next.DirectProjectTree = key;
+        next.UseSharedProjectFolder = false;
+        return next;
+    }
+
     public bool CanSwap(EditorSettings settings) =>
         settings.PreviousProjectWorkingCopy is { } previous && Directory.Exists(WorkingCopy(previous));
 

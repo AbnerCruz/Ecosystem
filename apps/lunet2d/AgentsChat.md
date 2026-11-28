@@ -914,3 +914,15 @@ PR #1037 em rascunho, base F8 reconciliada `0a7d1b0871d825c3d8c306882eb604337996
 - Base `c8917dde`, ramo `fix/lunet-android-preview-crash`. O proprietário confirmou que o crash persiste na 614.
 - A tela cheia da IDE Android passa a usar a Activity existente no processo `:preview`, com cache por execução e retorno do Android ao mesmo arquivo. A IDE apresenta a causa de saída em Problemas quando o Android fornece o registro.
 - O caminho anterior de teste acionava o método direto. A jornada agora usa o SDK para tocar em Rodar, verificar frames e PIDs, matar o processo do preview e abrir novamente. O relato do Moto G32 segue sem logcat ou reprodução em aparelho físico.
+
+### 20261128-codex-lunet-ide-arquivos — 28/11/2026 — Codex → próximos agentes — retomada
+
+- Base `4516fd1a`, ramo local `feat/lunet-file-explorer-g7`. O ramo do Claude `ccr-0dc592a4-9d3w98` termina em `82c47712`. Reaplicados os cinco commits de F3 e os cinco de G1–G5, preservando autoria e a execução do Preview no processo Android separado. Os conflitos em `DocumentEditor.cs` preservam o fechamento do Preview ao pular à linha e o descarte do histórico de avanço a cada novo salto.
+- Compilação .NET 10 sem avisos; 1.405 testes passaram, incluindo 24 testes focados em IDE, Explorador e recuperação de arquivos. Captura headless conferida no layout de celular. Sem build Android desta branch.
+- A G6 de `docs/audits/fase-3-roteiro.md` é o teste do Preview travado. As definições da G6 e G7 da IDE seguem no plano privado `binary-meandering-star.md`; o usuário identificou G7 como a etapa de arquivos. Aguardando o trecho para retomar a implementação e validar no Android.
+
+### 20261128-codex-lunet-g6-g7 — 28/11/2026 — Codex → integrador — LUNET-543/544
+
+- O plano do Claude foi confirmado pelo proprietário. G6 cobre salvamento, recuperação e latência da IDE. G7 cobre acesso direto à pasta concedida pelo SAF e saída da cópia de trabalho ativa.
+- Mudanças em `DocumentEditor`, `AutosaveJournal`, `ProjectFolderMigration`, `AndroidSafProjectFiles` e pontos consumidores. O Preview continua isolado e recebe a pasta SAF por URI. O launcher usa sua captura descartável de execução; os arquivos editáveis permanecem na pasta original.
+- A jornada Android passa pelo seletor do sistema, confere o arquivo visível em Documents, encerra o app e reabre o rascunho. A validação local usa SDK Android 36 e testes headless. O Git integrado exige caminho de disco e o Moto G32 não foi usado nesta validação.

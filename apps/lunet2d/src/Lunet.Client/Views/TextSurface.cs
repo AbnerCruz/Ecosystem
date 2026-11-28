@@ -35,6 +35,7 @@ public interface ITextSurface
     bool Focus();
     /// <summary>Raised when the person starts using the text (focus or a tap on it).</summary>
     event Action? Engaged;
+    event Action? TextChanged;
 }
 
 /// <summary>
@@ -348,8 +349,10 @@ public sealed class NotesSurface : ITextSurface
     {
         AutomationProperties.SetName(_box, "Editor de notas");
         _box.GotFocus += (_, _) => Engaged?.Invoke();
+        _box.TextChanged += (_, _) => TextChanged?.Invoke();
     }
 
+    public event Action? TextChanged;
     public TextBox Box => _box;
     public Control View => _box;
     public InputElement InputTarget => _box;

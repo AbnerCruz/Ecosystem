@@ -12,26 +12,64 @@ public static class ProjectSearch
 {
     private const long MaxFileBytes = 1_000_000;
 
-    public static IReadOnlyList<SearchMatch> Search(LunetProject project, string query, ProjectSearchOptions? options = null)
+    public static IReadOnlyList<SearchMatch> Search(LunetProject project, string query, ProjectSearchOptions? options = null) =>
+        SearchCancellable(project, query, options, CancellationToken.None);
+
+    /// <summary>The pattern the options make of the query, or null when a regex is invalid.</summary>
+    public static Regex? PatternFor(string query, ProjectSearchOptions options)
+    {
+        if (string.IsNullOrEmpty(query)) return null;
+        var pattern = options.UseRegex ? query : Regex.Escape(query);
+        if (options.WholeWord) pattern = $@"(?<![\p{{L}}\p{{N}}_])(?:{pattern})(?![\p{{L}}\p{{N}}_])";
+        var regexOptions = RegexOptions.CultureInvariant | (options.MatchCase ? RegexOptions.None : RegexOptions.IgnoreCase);
+        try { return new Regex(pattern, regexOptions, TimeSpan.FromSeconds(1)); }
+        catch (ArgumentException) { return null; }
+    }
+
+    /// <summary>
+    /// Replaces every match in every text file (VS Code's "Replace All"), through the game's files. Returns the files
+    /// changed and how many replacements. <paramref name="only"/> limits it to those files (the ones the person kept).
+    /// </summary>
+    public static (IReadOnlyList<string> Files, int Count) ReplaceAll(LunetProject project, string query, string replacement,
+        ProjectSearchOptions? options = null, IReadOnlyCollection<string>? only = null)
+    {
+        options ??= new ProjectSearchOptions();
+        var regex = PatternFor(query, options);
+        var changed = new List<string>();
+        var count = 0;
+        if (regex is null) return (changed, 0);
+        foreach (var path in Search(project, query, options with { MaxResults = int.MaxValue }).Select(m => m.Path).Distinct())
+        {
+            if (only is not null && !only.Contains(path)) continue;
+            var text = project.ReadText(path);
+            var n = 0;
+            string result;
+            try { result = regex.Replace(text, m => { n++; return options.UseRegex ? m.Result(replacement) : replacement; }); }
+            catch (RegexMatchTimeoutException) { continue; }
+            if (n == 0 || result == text) continue;
+            project.WriteText(path, result);
+            changed.Add(path);
+            count += n;
+        }
+        return (changed, count);
+    }
+
+    /// <summary>The search, stopping (with what it found so far) once <paramref name="cancel"/> is set.</summary>
+    public static IReadOnlyList<SearchMatch> SearchCancellable(LunetProject project, string query, ProjectSearchOptions? options, CancellationToken cancel)
     {
         options ??= new ProjectSearchOptions();
         var results = new List<SearchMatch>();
         if (string.IsNullOrEmpty(query)) return results;
 
-        var pattern = options.UseRegex ? query : Regex.Escape(query);
-        if (options.WholeWord) pattern = $@"(?<![\p{{L}}\p{{N}}_])(?:{pattern})(?![\p{{L}}\p{{N}}_])";
-        var regexOptions = RegexOptions.CultureInvariant | (options.MatchCase ? RegexOptions.None : RegexOptions.IgnoreCase);
-        Regex regex;
-        try { regex = new Regex(pattern, regexOptions, TimeSpan.FromSeconds(1)); }
-        catch (ArgumentException) { return results; }
+        if (PatternFor(query, options) is not { } regex) return results;
 
         foreach (var path in project.ListFiles())
         {
-            if (results.Count >= options.MaxResults) break;
+            if (results.Count >= options.MaxResults || cancel.IsCancellationRequested) break;
             string text;
             try
             {
-                if (new FileInfo(Path.Combine(project.Directory, path)).Length > MaxFileBytes) continue;
+                if (project.ReadBytes(path).Length > MaxFileBytes) continue;
                 text = project.ReadText(path);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { continue; }

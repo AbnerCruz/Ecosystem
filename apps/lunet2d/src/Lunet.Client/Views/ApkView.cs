@@ -53,7 +53,7 @@ public sealed class ApkView : UserControl
     public bool Close() { _cancel?.Cancel(); _close(); return true; }
 
     /// <summary>Another game already uses this Android identity (one would replace the other when installed).</summary>
-    public string? IdentityConflict => _shell.Workspace.Store.FindIdentityConflict(Project.Manifest, Project.Directory);
+    public string? IdentityConflict => _shell.Workspace.Store.FindIdentityConflict(Project.Manifest, _shell.State.Project);
 
     public void SetPackage(string package)
     {
@@ -113,7 +113,7 @@ public sealed class ApkView : UserControl
                 {
                     if (!relative.StartsWith("Content/", StringComparison.Ordinal) && !relative.StartsWith("Assets/", StringComparison.Ordinal)) continue;
                     ct.ThrowIfCancellationRequested();
-                    files.Add("game/" + relative, File.ReadAllBytes(Path.Combine(project.Directory, relative.Replace('/', Path.DirectorySeparatorChar))));
+                    files.Add("game/" + relative, project.ReadBytes(relative));
                 }
                 ct.ThrowIfCancellationRequested();
                 return pack(project, files);

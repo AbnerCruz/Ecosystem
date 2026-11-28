@@ -16,6 +16,7 @@ public sealed class EditorSettings
     public int FirstUseStep { get; set; }
     public bool UseSharedProjectFolder { get; set; }
     public string? ProjectTree { get; set; }
+    public string? DirectProjectTree { get; set; }
     public string? ProjectRevision { get; set; }
     public string? ProjectWorkingCopy { get; set; }
 

@@ -43,12 +43,12 @@ public sealed class ParticleStudioView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
         _device = new Lunet.Graphics.GraphicsDevice(_backend, Size, Size);
         _device.Resize(Size, Size);
         _batch = new Lunet.Graphics.SpriteBatch(_device);
         _dot = Lunet.Graphics.Texture2D.CreateCircle(_device, 8, LColor.White);
-        if (File.Exists(Path.Combine(_storage.RootDirectory, path)))
+        if (_storage.Exists(path))
         {
             var json = _storage.ReadText(path);
             Draft = ParticleDraft.From(Lunet.Graphics.ParticleSettings.FromJson(json));

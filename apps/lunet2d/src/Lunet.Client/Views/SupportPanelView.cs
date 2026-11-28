@@ -144,7 +144,16 @@ public sealed class SupportPanelView : UserControl
         list.Children.Add(LunetUi.Divider());
         // Everything a game needs lives in the shell: Versões (P6), Gerar APK (P5), Recursos and Notas (tabs), the
         // editor's folding, jumps, files and text files. No entry here opens a previous screen.
-        var versions = LunetUi.Button("Versões (Git)", ButtonKind.Ghost, LunetIcons.Folder, () => { _shell.State.ShowPanel(SupportPanel.None); _shell.WorkspaceView.OpenGit(); });
+        var versions = LunetUi.Button("Versões (Git)", ButtonKind.Ghost, LunetIcons.Folder, () =>
+        {
+            if (_shell.Workspace.Project?.Files.LocalDirectory is null)
+            {
+                _shell.Report("O Git integrado precisa de um caminho de disco. Use um cliente Git com acesso à pasta escolhida.");
+                return;
+            }
+            _shell.State.ShowPanel(SupportPanel.None);
+            _shell.WorkspaceView.OpenGit();
+        });
         versions.HorizontalAlignment = HorizontalAlignment.Stretch;
         versions.HorizontalContentAlignment = HorizontalAlignment.Left;
         versions.Name = "OpenGit";

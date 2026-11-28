@@ -286,7 +286,7 @@ public sealed class HomeView : UserControl
 
     private string? GameIdOf(string name)
     {
-        try { return Lunet.Core.ProjectManifest.Parse(File.ReadAllText(Path.Combine(_shell.Workspace.Root, name, Lunet.Core.ProjectStore.ManifestFileName))).GameId; }
+        try { return _shell.Workspace.Store.Open(name).Manifest.GameId; }
         // A damaged lunet.json must not take the Home down: the game is listed, just not pinnable (E-04).
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException or ArgumentException or Lunet.Core.ProjectException) { return null; }
     }
@@ -328,7 +328,8 @@ public sealed class HomeView : UserControl
 
     private DateTime LastEdited(string name)
     {
-        var folder = Path.Combine(_shell.Workspace.Root, name);
+        if (_shell.Workspace.Store.Root.LocalDirectory is not { } root) return DateTime.MinValue;
+        var folder = Path.Combine(root, name);
         if (!Directory.Exists(folder)) return DateTime.MinValue;
         try
         {
