@@ -221,7 +221,23 @@ public sealed class HomeView : UserControl
     public void Refresh()
     {
         _grid.Children.Clear();
-        var names = _shell.Workspace.Projects();
+        IReadOnlyList<string> names;
+        IReadOnlyList<Lunet.Core.TrashedProject> trash;
+        _trashRow.Children.Clear();
+        try
+        {
+            names = _shell.Workspace.Projects();
+            trash = _shell.Workspace.Store.Trash();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Shown = [];
+            Arranged = new(null, [], []);
+            _search.IsVisible = false;
+            _count.Text = "";
+            _grid.Children.Add(Full(LunetUi.Notice("Pasta de projetos indisponível. Reconecte em Ajustes. " + ex.Message, LunetTokens.Color.Danger)));
+            return;
+        }
         _count.Text = names.Count switch { 0 => "Comece criando um jogo", 1 => "1 jogo", _ => $"{names.Count} jogos" };
         _search.IsVisible = names.Count > 1;
         var games = names.Select(n => new HomeGame(n, GameIdOf(n), LastEdited(n))).ToList();
@@ -259,8 +275,6 @@ public sealed class HomeView : UserControl
             if (Arranged.Pinned.Count + Arranged.Others.Count == 0)
                 _grid.Children.Add(Full(LunetUi.Secondary("Nenhum jogo com esse nome.")));
         }
-        _trashRow.Children.Clear();
-        var trash = _shell.Workspace.Store.Trash();
         if (trash.Count > 0)
         {
             var b = LunetUi.Button($"Lixeira ({trash.Count})", ButtonKind.Ghost, LunetIcons.Trash, ShowTrash);
@@ -286,7 +300,7 @@ public sealed class HomeView : UserControl
 
     private string? GameIdOf(string name)
     {
-        try { return Lunet.Core.ProjectManifest.Parse(File.ReadAllText(Path.Combine(_shell.Workspace.Root, name, Lunet.Core.ProjectStore.ManifestFileName))).GameId; }
+        try { return _shell.Workspace.Store.Open(name).Manifest.GameId; }
         // A damaged lunet.json must not take the Home down: the game is listed, just not pinnable (E-04).
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidDataException or ArgumentException or Lunet.Core.ProjectException) { return null; }
     }
@@ -328,7 +342,8 @@ public sealed class HomeView : UserControl
 
     private DateTime LastEdited(string name)
     {
-        var folder = Path.Combine(_shell.Workspace.Root, name);
+        if (_shell.Workspace.Store.Root.LocalDirectory is not { } root) return DateTime.MinValue;
+        var folder = Path.Combine(root, name);
         if (!Directory.Exists(folder)) return DateTime.MinValue;
         try
         {

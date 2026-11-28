@@ -19,7 +19,7 @@ public sealed class StudioLeaveSavesTests
         var root = Directory.CreateTempSubdirectory("lunet-studio-leave-").FullName;
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var shell = new LunetShell(root) { PlaySound = _ => { }, StopSound = () => { } };
                 var window = new Window { Width = 412, Height = 915, Content = shell };
@@ -34,8 +34,13 @@ public sealed class StudioLeaveSavesTests
                 Assert.False(Saved());                                         // a new document is only in memory
                 if (home) shell.Home.Go(HomeView.Destination.Games); else shell.Home.ShowPlay();         // the bar (Início or Jogar), not Back
                 var until = DateTime.UtcNow.AddSeconds(30);
-                while (!Saved() && DateTime.UtcNow < until) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+                // The song's source appears before the WAV and the bundle journal complete.
+                while (studios.Studio is not null && DateTime.UtcNow < until)
+                    await Task.Delay(10, TestContext.Current.CancellationToken);
+                Assert.Null(studios.Studio);
                 Assert.True(Saved(), "o Studio aberto foi descartado ao trocar de destino");
+                if (studio == "music")
+                    Assert.Single(Directory.EnumerateFiles(studios.Storage.RootDirectory, "*.wav", SearchOption.AllDirectories));
                 window.Close();
             });
         }

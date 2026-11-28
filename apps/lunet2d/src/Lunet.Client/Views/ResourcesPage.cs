@@ -69,7 +69,7 @@ public sealed class ResourcesPage : UserControl
         var path = $"{folder}/{name}";
         for (var n = 2; files.Contains(path); n++) path = $"{folder}/{stem}-{n}{ext}";
         // Verified write, as the Studios' files (StudioAssetWorkspace).
-        new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Directory).WriteBytes(path, bytes);
+        new Lunet.Core.StudioAssetWorkspace(_shell.Workspace.Project!.Files).WriteBytes(path, bytes);
         _notice = $"Importado: {path}";
         Fill();
         return path;
@@ -261,11 +261,11 @@ public sealed class ResourcesPage : UserControl
         Bitmap? bitmap = null;
         try
         {
-            var full = Path.Combine(_shell.Workspace.Project!.Directory, png.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(full) && new FileInfo(full).Length < 16 * 1024 * 1024)
+            var project = _shell.Workspace.Project!;
+            if (project.Exists(png))
             {
-                using var stream = File.OpenRead(full);
-                bitmap = new Bitmap(stream);
+                var bytes = project.ReadBytes(png);
+                if (bytes.Length < 16 * 1024 * 1024) { using var stream = new MemoryStream(bytes); bitmap = new Bitmap(stream); }
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException) { bitmap = null; }
@@ -287,8 +287,7 @@ public sealed class ResourcesPage : UserControl
     {
         CloseSheet();
         Open = f;
-        var full = Path.Combine(_shell.Workspace.Project!.Directory, f.Replace('/', Path.DirectorySeparatorChar));
-        var size = File.Exists(full) ? new FileInfo(full).Length : 0;
+        var size = _shell.Workspace.Project!.Exists(f) ? _shell.Workspace.Project.ReadBytes(f).LongLength : 0;
         var body = new StackPanel { Spacing = LunetTokens.Space.S };
         body.Children.Add(new Border { Width = 40, Height = 4, CornerRadius = new CornerRadius(2), Background = LunetTokens.Brush(LunetTokens.Color.BorderStrong), HorizontalAlignment = HorizontalAlignment.Center });
         body.Children.Add(LunetUi.Text(Path.GetFileName(f), LunetTokens.Type.Title, weight: FontWeight.SemiBold));
@@ -305,10 +304,11 @@ public sealed class ResourcesPage : UserControl
         body.Children.Add(LunetUi.Text(facts, LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary));
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
         void Act(Button b, string name) { b.Name = name; b.Margin = new Thickness(0, 0, LunetTokens.Space.Xs, LunetTokens.Space.Xs); actions.Children.Add(b); }
-        if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && File.Exists(full))
+        var exists = _shell.Workspace.Project!.Exists(f);
+        if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && exists)
             Act(LunetUi.Button("Editar áudio", ButtonKind.Secondary, LunetIcons.Edit, () => EditWave(f)), "EditWave");
-        if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && _shell.PlaySound is { } play && File.Exists(full))
-            Act(LunetUi.Button("Ouvir", ButtonKind.Primary, LunetIcons.Play, () => play(File.ReadAllBytes(full))), "PlayResource");
+        if (f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && _shell.PlaySound is { } play && exists)
+            Act(LunetUi.Button("Ouvir", ButtonKind.Primary, LunetIcons.Play, () => play(_shell.Workspace.Project!.ReadBytes(f))), "PlayResource");
         if (IsOtherText(f) || DataView.IsTable(f))
             Act(LunetUi.Button("Editar como texto", ButtonKind.Primary, LunetIcons.Edit, () => EditAsText(f)), "EditAsText");
         Act(LunetUi.Button("Copiar caminho", ButtonKind.Secondary, LunetIcons.Copy, () => _ = CopyPath(f)), "CopyResourcePath");

@@ -61,6 +61,37 @@ public sealed class ShellActivity : AvaloniaActivity
         Lunet.Client.Ui.Haptics.KeyTap = () => Window?.DecorView?.PerformHapticFeedback(FeedbackConstants.KeyboardTap);
         Lunet.Client.Ui.Haptics.Confirm = () => Window?.DecorView?.PerformHapticFeedback(
             OperatingSystem.IsAndroidVersionAtLeast(30) ? FeedbackConstants.Confirm : FeedbackConstants.ContextClick);
+        _ = UpgradeLegacyFolder();
+    }
+
+    private async Task UpgradeLegacyFolder()
+    {
+        var files = FilesDir!.AbsolutePath;
+        var settingsStore = new SettingsStore(Path.Combine(files, "settings.json"));
+        var settings = settingsStore.Load();
+        if (settings.DirectProjectTree is not null || !settings.UseSharedProjectFolder ||
+            settings.ProjectTree is not { } key || _shell is not { } shell) return;
+        var sync = new ProjectFolderSync(files, CacheDir!.AbsolutePath);
+        if (settings.ProjectWorkingCopy is not { } copy || !Directory.Exists(sync.WorkingCopy(copy))) return;
+        using var dialog = new AlertDialog.Builder(this)!
+            .SetTitle("Migrando os projetos")!
+            .SetMessage("Conferindo os arquivos na pasta escolhida…")!
+            .SetCancelable(false)!.Show();
+        try
+        {
+            var next = await Task.Run(() => sync.ConnectDirect(settings, key, OpenDirect(this, key),
+                shell.Workspace.Store.Root, legacy: null));
+            if (IsFinishing || IsDestroyed) return;
+            settingsStore.Save(next);
+            ReopenOverNewRoot();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException or ArgumentException)
+        {
+            if (!IsFinishing && !IsDestroyed)
+                global::Android.Widget.Toast.MakeText(this, "Pasta anterior preservada. Reconecte em Ajustes. " + ex.Message,
+                    global::Android.Widget.ToastLength.Long)?.Show();
+        }
+        finally { if (!IsDestroyed) dialog?.Dismiss(); }
     }
 
     private string? _projectsRoot;
@@ -70,8 +101,18 @@ public sealed class ShellActivity : AvaloniaActivity
     {
         // M7: the AI uses the same settings file, Keystore vault and conversations as the previous screens: one key for all of Lunet.
         var ai = Path.Combine(FilesDir!.AbsolutePath, "ai");
-        _projectsRoot = ProjectsRoot(this);
-        _shell = new LunetShell(_projectsRoot)
+        var settings = LoadEditorSettings(this);
+        var files = FilesDir!.AbsolutePath;
+        _projectsRoot = settings.DirectProjectTree ?? ProjectsRoot(this);
+        ProjectStore store;
+        string? folderError = null;
+        try { store = ProjectStoreFor(this, settings); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            store = new ProjectStore(Path.Combine(files, "Projects"));
+            folderError = "Pasta escolhida indisponível. Reconecte em Ajustes para acessar os jogos dela. " + ex.Message;
+        }
+        _shell = new LunetShell(store, Path.Combine(files, "Projects"))
         {
             OpenRoute = OpenRoute,
             // P3: the same declared progress as the previous Aprender screen (MainActivity.Learn).
@@ -83,6 +124,7 @@ public sealed class ShellActivity : AvaloniaActivity
             StudioWorkspacePath = Path.Combine(FilesDir!.AbsolutePath, "StudioWorkspace"),
             // P4: the game runs full screen in the :gameplay process, prepared by the existing pipeline.
             PlayGame = game => OpenRoute("play-game", game),
+            RecoveryPath = Path.Combine(files, "editor-drafts"),
             // A4: the sound Studio plays its WAV through MediaPlayer (a temp file in the cache).
             PlaySound = wav => _ = PlayWav(wav),
             StopSound = StopWav,
@@ -101,7 +143,8 @@ public sealed class ShellActivity : AvaloniaActivity
                 PickProjectFolder,
                 key => new AndroidProjectFolder(ContentResolver!, global::Android.Net.Uri.Parse(key)!),
                 key => ReleaseProjectFolder(key),
-                () => Window?.DecorView?.Post(ReopenOverNewRoot)),
+                () => Window?.DecorView?.Post(ReopenOverNewRoot),
+                key => OpenDirect(this, key)),
             AiHost = new Lunet.Client.Views.AiHost(new Lunet.Ai.LunetAiSettingsStore(Path.Combine(ai, "settings.json"),
                 new AndroidKeystoreVault(Path.Combine(NoBackupFilesDir!.AbsolutePath, "secure"))), ai,
                 Knowledge: () => AndroidAiKnowledge.Load(Assets!), Web: new Lunet.Ai.LunetAiWebSession(),
@@ -112,6 +155,11 @@ public sealed class ShellActivity : AvaloniaActivity
         catch (Java.Lang.Exception) { }
         _textScale = new Lunet.Client.TextScaleHost(_shell) { Requested = Resources?.Configuration?.FontScale ?? 1f };
         Content = _textScale;
+        if (folderError is not null)
+        {
+            _shell.Report(folderError);
+            global::Android.Widget.Toast.MakeText(this, folderError, global::Android.Widget.ToastLength.Long)?.Show();
+        }
         _shell.Game.GpuFactory = (compiled, project, _) =>
         {
             try
@@ -147,6 +195,11 @@ public sealed class ShellActivity : AvaloniaActivity
         _folderPick?.TrySetResult(null);
         var pick = _folderPick = new TaskCompletionSource<(string, IProjectFolderTree)?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var intent = new Intent(Intent.ActionOpenDocumentTree);
+#if LUNET_EMULATOR
+        if (_safJourneyPicking)
+            intent.PutExtra(global::Android.Provider.DocumentsContract.ExtraInitialUri,
+                global::Android.Provider.DocumentsContract.BuildDocumentUri("com.android.externalstorage.documents", "primary:Documents/LunetCi"));
+#endif
         intent.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.GrantWriteUriPermission |
             ActivityFlags.GrantPersistableUriPermission | ActivityFlags.GrantPrefixUriPermission);
         try { StartActivityForResult(intent, ProjectFolderRequest); }
@@ -199,7 +252,7 @@ public sealed class ShellActivity : AvaloniaActivity
     /// <summary>The projects folder changed: the shell reopens over it (what OnResume does after the previous screen).</summary>
     private void ReopenOverNewRoot()
     {
-        if (_shell is null || ProjectsRoot(this) == _projectsRoot) return;
+        if (_shell is null) return;
         _shell.SaveAll();
         _shell.Shutdown();
         CreateShell();
@@ -324,12 +377,31 @@ public sealed class ShellActivity : AvaloniaActivity
         return Path.Combine(files, "Projects");
     }
 
+    private static EditorSettings LoadEditorSettings(global::Android.Content.Context context) =>
+        new SettingsStore(Path.Combine(context.FilesDir!.AbsolutePath, "settings.json")).Load();
+
+    internal static ProjectStore ProjectStoreFor(global::Android.Content.Context context, EditorSettings settings)
+    {
+        if (settings.DirectProjectTree is not { } key) return new ProjectStore(ProjectsRoot(context));
+        var backend = OpenDirect(context, key);
+        _ = backend.List(""); // permission and provider must still be available
+        return new ProjectStore(backend);
+    }
+
+    private static IProjectFiles OpenDirect(global::Android.Content.Context context, string key)
+    {
+        var resolver = context.ContentResolver!;
+        var uri = global::Android.Net.Uri.Parse(key) ?? throw new IOException("Pasta inválida.");
+        new AndroidProjectFolder(resolver, uri).CheckPermission();
+        return new AndroidSafProjectFiles(resolver, uri);
+    }
+
     private bool _returningFromRoute;
 
     /// <summary>Opens a screen still served by MainActivity, after saving what the shell has open.</summary>
     private void OpenRoute(string route, string? project)
     {
-        _shell?.SaveAll();
+        if (_shell is not null && !_shell.TrySaveAll()) return;
         _shell?.StopGame();
         StartActivity(MainActivity.RouteIntent(this, route, project));
         _returningFromRoute = true;
@@ -358,7 +430,7 @@ public sealed class ShellActivity : AvaloniaActivity
         base.OnResume();
         _paused = false;
         // Ajustes → Pasta de projetos may have switched the folder: the shell reopens over the new one.
-        if (_shell is not null && ProjectsRoot(this) != _projectsRoot)
+        if (_shell is not null && (LoadEditorSettings(this).DirectProjectTree ?? ProjectsRoot(this)) != _projectsRoot)
         {
             _shell.SaveAll();
             _shell.Shutdown();
@@ -410,6 +482,7 @@ public sealed class ShellActivity : AvaloniaActivity
     }
 
 #if LUNET_EMULATOR
+    private bool _safJourneyPicking;
     private bool _previewJourney;
     private string? _journeyFile;
     private string? _journeyHealthyCode;
@@ -417,7 +490,20 @@ public sealed class ShellActivity : AvaloniaActivity
     protected override void OnPostResume()
     {
         base.OnPostResume();
-        if (Intent?.GetBooleanExtra("lunet.e2e", false) != true || _shell is not { } shell) return;
+        if (_shell is not { } shell) return;
+        if (Intent?.GetBooleanExtra("lunet.saf", false) == true)
+        {
+            Intent.RemoveExtra("lunet.saf");
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = RunSafJourney(shell));
+            return;
+        }
+        if (Intent?.GetBooleanExtra("lunet.saf.verify", false) == true)
+        {
+            Intent.RemoveExtra("lunet.saf.verify");
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => _ = VerifySafJourney(shell));
+            return;
+        }
+        if (Intent?.GetBooleanExtra("lunet.e2e", false) != true) return;
         Intent.RemoveExtra("lunet.e2e");
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
@@ -457,6 +543,54 @@ public sealed class ShellActivity : AvaloniaActivity
             }
             catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
         }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private async Task RunSafJourney(LunetShell shell)
+    {
+        try
+        {
+            shell.CreateProject("ProjetoSaf", ProjectTemplate.Blank, "portrait");
+            var folder = new Lunet.Client.Views.ProjectFolderView(shell, shell.ProjectFolder!);
+            _safJourneyPicking = true;
+            try { await folder.Connect(); }
+            finally { _safJourneyPicking = false; }
+            for (var i = 0; i < 40 && ReferenceEquals(shell, _shell); i++) await Task.Delay(250);
+            var directShell = _shell ?? throw new IOException("Casca indisponível.");
+            if (directShell.Workspace.Store.Root is not AndroidSafProjectFiles)
+                throw new IOException("O jogo não migrou à pasta escolhida: " + folder.Status);
+            directShell.OpenProject("ProjetoSaf");
+            var editor = directShell.WorkspaceView.Code;
+            var source = editor.Surface.Text;
+            const string mark = "// lunet-e2e salvamento direto";
+            editor.Surface.Text += "\n" + mark;
+            for (var i = 0; i < 40 && editor.IsDirty; i++) await Task.Delay(250);
+            var project = directShell.Workspace.Project!;
+            var path = project.Manifest.EntryPoint;
+            var persisted = project.ReadText(path);
+            if (persisted != source + "\n" + mark || editor.IsDirty)
+                throw new IOException("O salvamento no SAF não foi confirmado.");
+            new AutosaveJournal(project, directShell.RecoveryPath).WriteBuffer(path, persisted + "\n// lunet-e2e rascunho", persisted);
+            global::Android.Util.Log.Info("lunet-e2e", "saf=gravado rascunho=preparado");
+        }
+        catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
+    }
+
+    private async Task VerifySafJourney(LunetShell shell)
+    {
+        try
+        {
+            if (shell.Workspace.Store.Root is not AndroidSafProjectFiles)
+                throw new IOException("A permissão SAF não persistiu após reiniciar.");
+            shell.OpenProject("ProjetoSaf");
+            var editor = shell.WorkspaceView.Code;
+            if (!editor.Surface.Text.EndsWith("// lunet-e2e rascunho", StringComparison.Ordinal))
+                throw new IOException("O texto do rascunho não voltou ao editor.");
+            for (var i = 0; i < 40 && editor.IsDirty; i++) await Task.Delay(250);
+            if (editor.IsDirty || !shell.Workspace.Project!.ReadText(editor.OpenPath!).EndsWith("// lunet-e2e rascunho", StringComparison.Ordinal))
+                throw new IOException("O rascunho recuperado não foi salvo.");
+            global::Android.Util.Log.Info("lunet-e2e", "saf=permissao-persistida rascunho=recuperado");
+        }
+        catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
     }
 
     private void TracePreviewReturn(bool full, string? failure)

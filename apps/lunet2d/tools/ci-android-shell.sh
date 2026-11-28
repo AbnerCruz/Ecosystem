@@ -42,40 +42,43 @@ wait_log() {
     return 1
 }
 
-tap_run() {
+tap_accessible() {
+    local label="$1"
+    local id="${2:-}"
     local coords
-    for attempt in $(seq 1 3); do
+    for attempt in $(seq 1 8); do
         adb shell uiautomator dump /sdcard/lunet-ui.xml >/dev/null || continue
         if coords=$(adb exec-out cat /sdcard/lunet-ui.xml | python3 -c '
 import re
 import sys
 import xml.etree.ElementTree as ET
 for node in ET.parse(sys.stdin).iter("node"):
-    if "Rodar" in (node.get("text"), node.get("content-desc")) and node.get("enabled") == "true":
+    if node.get("enabled") == "true" and (sys.argv[1].casefold() in (node.get("text", "").casefold(), node.get("content-desc", "").casefold()) or (sys.argv[2] and node.get("resource-id", "").endswith(sys.argv[2]))):
         x0, y0, x1, y1 = map(int, re.findall(r"\d+", node.attrib["bounds"]))
         print((x0 + x1) // 2, (y0 + y1) // 2)
         break
 else:
     sys.exit(1)
-'); then
+' "$label" "$id"); then
             read -r x y <<< "$coords"
             adb shell input tap "$x" "$y"
             return
         fi
     done
-    echo 'O botão Rodar não apareceu na árvore de acessibilidade do Android' >&2
+    adb exec-out cat /sdcard/lunet-ui.xml > "$out/android-ui-failure.xml" || true
+    echo "A ação $label não apareceu na árvore de acessibilidade do Android" >&2
     return 1
 }
 
 wait_log 'editor=pronto'
 ide_pid=$(adb shell pidof "$package" | tr -d '\r')
 test -n "$ide_pid"
-tap_run
+tap_accessible Rodar
 wait_log 'quadros=[1-9]'
 preview_pid=$(adb shell pidof "$package:preview" | tr -d '\r')
 test -n "$preview_pid"
 test "$preview_pid" != "$ide_pid"
-# G6: while Update is hung, Back must end that preview and leave the editor in the original process.
+# Preview hang regression: while Update is hung, Back must end that preview and leave the editor in the original process.
 wait_log 'LUNET_G6_UPDATE_BLOQUEADO'
 adb shell input keyevent KEYCODE_BACK
 wait_log 'preview=recuperado'
@@ -85,7 +88,7 @@ test "$(adb shell pidof "$package" | tr -d '\r')" = "$ide_pid"
 
 # Reopen the same game and exercise the Android Back key on the new preview.
 adb logcat -c
-tap_run
+tap_accessible Rodar
 wait_log 'quadros=[1-9]'
 adb shell screencap -p /sdcard/shell-game.png
 adb pull /sdcard/shell-game.png "$out/android-shell-game.png"
@@ -99,3 +102,20 @@ adb shell dumpsys input_method | grep -E 'mInputShown|mIsInputViewShown' > "$out
 grep 'lunet-e2e' "$out/android-preview-crash-logcat.txt" "$out/android-logcat.txt"
 adb shell am force-stop "$package"
 echo "Lunet: Rodar abriu o preview, a IDE sobreviveu à saída do processo e o segundo Rodar voltou ao arquivo com Voltar."
+
+
+# Select an ordinary shared folder through the Android picker, then check the provider files and restart Lunet.
+adb logcat -c
+adb shell mkdir -p /sdcard/Documents/LunetCi
+adb shell am start -W -n "$package/$activity" --ez lunet.saf true >/dev/null
+tap_accessible 'USE THIS FOLDER' ':id/action_menu_select'
+tap_accessible Allow 'android:id/button1'
+wait_log 'saf=gravado rascunho=preparado'
+adb shell cat /sdcard/Documents/LunetCi/ProjetoSaf/Game.cs | grep -qF '// lunet-e2e salvamento direto'
+cp "$out/android-logcat.txt" "$out/android-saf-logcat.txt"
+adb shell am force-stop "$package"
+adb logcat -c
+adb shell am start -W -n "$package/$activity" --ez lunet.saf.verify true >/dev/null
+wait_log 'saf=permissao-persistida rascunho=recuperado'
+adb shell cat /sdcard/Documents/LunetCi/ProjetoSaf/Game.cs | grep -qF '// lunet-e2e rascunho'
+adb shell am force-stop "$package"

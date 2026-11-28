@@ -35,11 +35,16 @@ public sealed class PlayableRevision : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(toolchainIdentity);
         ArgumentNullException.ThrowIfNull(project);
-        var root = Path.GetFullPath(project.Directory);
+        var root = project.Files.LocalDirectory is { } disk ? Path.GetFullPath(disk) : null;
         var staging = Path.GetFullPath(stagingRoot);
-        if (staging.Equals(root, StringComparison.Ordinal) ||
-            staging.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        if (root is not null && (staging.Equals(root, StringComparison.Ordinal) ||
+            staging.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal)))
             throw new ProjectException("A captura deve ficar fora do projeto.");
+        string[] Inputs() => (root is null ? project.ListFiles() : Enumerate(root, "", cancellation))
+            .Where(IsInput).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+        Stream Open(string path) => root is null
+            ? new MemoryStream(project.ReadBytes(path), writable: false)
+            : File.OpenRead(Path.Combine(root, path));
         var folder = Path.Combine(staging, Guid.NewGuid().ToString("N"));
         IoDirectory.CreateDirectory(folder);
         try
@@ -47,7 +52,7 @@ public sealed class PlayableRevision : IDisposable
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             Append(hash, Encoding.UTF8.GetBytes("lunet-playable-v1"));
             Append(hash, Encoding.UTF8.GetBytes(toolchainIdentity));
-            var inputs = Enumerate(root, "", cancellation).Where(IsInput).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            var inputs = Inputs();
             var checksums = new Dictionary<string, byte[]>(StringComparer.Ordinal);
             // Content source expects a directory even for a blank project.
             IoDirectory.CreateDirectory(Path.Combine(folder, "Content"));
@@ -55,10 +60,9 @@ public sealed class PlayableRevision : IDisposable
             foreach (var relative in inputs)
             {
                 cancellation.ThrowIfCancellationRequested();
-                var source = Path.Combine(root, relative);
                 var target = Path.Combine(folder, relative);
                 IoDirectory.CreateDirectory(Path.GetDirectoryName(target)!);
-                using (var input = File.OpenRead(source))
+                using (var input = Open(relative))
                 using (var output = File.Create(target))
                     input.CopyTo(output);
                 using var captured = File.OpenRead(target);
@@ -68,13 +72,13 @@ public sealed class PlayableRevision : IDisposable
                 Append(hash, checksum);
             }
             // Reject a changed file list or bytes during capture; never silently combine revisions.
-            var currentInputs = Enumerate(root, "", cancellation).Where(IsInput).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            var currentInputs = Inputs();
             if (!inputs.SequenceEqual(currentInputs, StringComparer.Ordinal))
                 throw new ProjectException("Os arquivos do jogo mudaram durante a captura. Tente novamente.");
             foreach (var relative in currentInputs)
             {
                 cancellation.ThrowIfCancellationRequested();
-                using var current = File.OpenRead(Path.Combine(root, relative));
+                using var current = Open(relative);
                 if (!CryptographicOperations.FixedTimeEquals(checksums[relative], SHA256.HashData(current)))
                     throw new ProjectException("O jogo mudou durante a captura. Tente novamente.");
             }

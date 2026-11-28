@@ -12,7 +12,9 @@ internal static class ProjectZipImporter
     internal static LunetProject Import(ProjectStore store, Stream source)
     {
         // A pasta intermediária não tem lunet.json: List nunca expõe importações incompletas.
-        var staging = Path.Combine(store.RootDirectory, ".lunet-imports", Guid.NewGuid().ToString("N"));
+        var staging = store.Root.LocalDirectory is { } disk
+            ? Path.Combine(disk, ".lunet-imports", Guid.NewGuid().ToString("N"))
+            : Path.Combine(Path.GetTempPath(), "lunet-import-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(staging);
         try
         {
@@ -94,10 +96,11 @@ internal static class ProjectZipImporter
             }
             if (renamed || duplicatedIdentity)
                 AtomicFile.WriteAllText(manifestFile, manifest.ToJson());
-            var destination = Path.Combine(store.RootDirectory, name);
-            // Move no mesmo filesystem: ou o projeto completo aparece, ou nada muda.
-            Directory.Move(extracted, destination);
-            return new LunetProject(destination, manifest);
+            if (store.Root.LocalDirectory is { } local)
+                Directory.Move(extracted, Path.Combine(local, name));
+            else
+                ProjectFolderMigration.Install(new DiskProjectFiles(extracted), store.Root, name);
+            return store.Open(name);
         }
         catch (InvalidDataException ex)
         {
@@ -110,8 +113,7 @@ internal static class ProjectZipImporter
     }
 
     private static bool Exists(ProjectStore store, string name) =>
-        Directory.EnumerateFileSystemEntries(store.RootDirectory)
-            .Any(p => Path.GetFileName(p).Equals(name, StringComparison.OrdinalIgnoreCase));
+        store.Root.List("").Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     private static string ValidatePath(string path)
     {

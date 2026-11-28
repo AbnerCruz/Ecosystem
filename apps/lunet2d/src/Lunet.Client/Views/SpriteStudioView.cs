@@ -155,8 +155,8 @@ public sealed class SpriteStudioView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
-        Document = File.Exists(Path.Combine(_storage.RootDirectory, path))
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
+        Document = _storage.Exists(path)
             ? SpriteDocument.Parse(_storage.ReadText(path)) : SpriteDocument.Create(16);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);
         if (PaletteView.Load(shell) is { Colors.Count: > 0 } palette) GamePalette = palette.Argb;

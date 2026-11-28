@@ -18,6 +18,11 @@ public sealed partial class MainActivity
 
     private void LoadProjectFolder()
     {
+        if (_settings.DirectProjectTree is not null)
+        {
+            _store = ShellActivity.ProjectStoreFor(this, _settings);
+            return;
+        }
         var copy = _settings.ProjectWorkingCopy;
         _store = new ProjectStore(_settings.UseSharedProjectFolder && copy is not null && Directory.Exists(WorkingCopy(copy))
             ? WorkingCopy(copy) : PrivateProjects);

@@ -26,8 +26,7 @@ public sealed partial class MainActivity
         }
         SaveCurrent();
         var intent = new Intent(this, typeof(IsolatedPreviewActivity));
-        intent.PutExtra(IsolatedPreviewFiles.ExtraContent, System.IO.Path.Combine(_project.Directory, "Content"));
-        intent.PutExtra(IsolatedPreviewFiles.ExtraSaves, System.IO.Path.Combine(_project.Directory, ".lunet", "saves"));
+        IsolatedPreviewFiles.PutProject(intent, _project);
         intent.PutExtra(IsolatedPreviewFiles.ExtraAudioCache, System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio"));
         _isolatedRunning = true;
         StartActivity(intent);

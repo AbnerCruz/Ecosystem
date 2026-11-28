@@ -39,7 +39,13 @@ public sealed class PlayView : UserControl
     public void Refresh()
     {
         _grid.Children.Clear();
-        Games = _shell.Workspace.Projects();
+        try { Games = _shell.Workspace.Projects(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Games = [];
+            _grid.Children.Add(LunetUi.Notice("Pasta de projetos indisponível. Reconecte em Ajustes. " + ex.Message, LunetTokens.Color.Danger));
+            return;
+        }
         if (Games.Count == 0)
         {
             _grid.Children.Add(LunetUi.EmptyState(LunetIcons.Play, "Nenhum jogo ainda", "Crie um jogo em Jogos e ele aparece aqui para jogar."));
@@ -61,13 +67,18 @@ public sealed class PlayView : UserControl
     private Control Cover(string name, double width)
     {
         Control picture;
-        var icon = Path.Combine(_shell.Workspace.Root, name, "Content", "icon.png");
         Bitmap? bitmap = null;
-        if (File.Exists(icon))
+        var files = _shell.Workspace.Store.Root;
+        var icon = name + "/Content/icon.png";
+        try
         {
-            try { using var stream = File.OpenRead(icon); bitmap = Bitmap.DecodeToWidth(stream, (int)(width * 2)); }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException) { }
+            if (files.FileExists(icon))
+            {
+                using var stream = new MemoryStream(files.Read(icon), writable: false);
+                bitmap = Bitmap.DecodeToWidth(stream, (int)(width * 2));
+            }
         }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException) { }
         if (bitmap is not null) picture = new Image { Source = bitmap, Stretch = Stretch.UniformToFill };
         else picture = new TextBlock
         {

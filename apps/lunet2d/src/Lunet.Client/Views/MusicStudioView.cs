@@ -115,7 +115,7 @@ public sealed class MusicStudioView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
         _tracksRow = Scroll(_tracks);
         _patternsRow = Scroll(_patterns);
         Background = LunetTokens.Brush(LunetTokens.Color.Background);

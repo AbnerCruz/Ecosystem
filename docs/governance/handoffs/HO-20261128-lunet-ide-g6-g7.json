@@ -1,0 +1,158 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-ide-g6-g7",
+  "category": "HANDOFF",
+  "task_id": "LUNET-544",
+  "component": "lunet2d",
+  "state": "review",
+  "timestamp": "2026-11-28T05:35:48Z",
+  "agent": {
+    "id": "codex-lunet-ide-g6-g7",
+    "kind": "ai-agent"
+  },
+  "branch": "feat/lunet-file-explorer-g7",
+  "base_commit": "4516fd1a6a211cec0c6483d18011428012dba258",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidSafProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Android/IsolatedGpuPreview.cs",
+    "apps/lunet2d/src/Lunet.Android/IsolatedPreview.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GameLauncher.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Isolated.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.ProjectFolder.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Shell/ShellState.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ApkView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/CommandPaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DataView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ExplorerView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/MindMapView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/MusicStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/PaletteView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ParticleStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/PlayView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ProjectFolderView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ResourcesPage.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SearchView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SoundStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SupportPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TextSurface.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/TileStudioView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WaveEditorView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Core/AutosaveJournal.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorDocuments.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorSettings.cs",
+    "apps/lunet2d/src/Lunet.Core/LauncherProjectCatalog.cs",
+    "apps/lunet2d/src/Lunet.Core/LunetProject.cs",
+    "apps/lunet2d/src/Lunet.Core/PlayableRevision.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectFolderMigration.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectFolderSync.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectSearch.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStorage.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.Manage.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectZipImporter.cs",
+    "apps/lunet2d/src/Lunet.Core/StudioAssetWorkspace.cs",
+    "apps/lunet2d/src/Lunet.Host/ProjectFilesContentSource.cs",
+    "apps/lunet2d/src/Lunet.Host/WorkspaceSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DirectProjectFolderTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeExplorerTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeNavigationTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdePersistenceTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeQuickOpenTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeSearchTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeTabsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/StudioLeaveSavesTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/StudioRecoveryStorageTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "docs/governance/handoffs/HO-20261128-lunet-ide-g6-g7.json"
+  ],
+  "work_completed": [
+    "Retomada da branch do Claude até a G5, incluindo a camada IProjectFiles e a IDE mobile-first.",
+    "G6 grava rascunho e salva em segundo plano com conferência do texto e proteção contra alterações externas.",
+    "G7 usa a árvore SAF como origem. A migração verifica o conteúdo e preserva a origem, revisões antigas e identidade do jogo.",
+    "O Preview em processo separado reabre a pasta escolhida pela permissão persistida, sem cópia de trabalho."
+  ],
+  "verification": [
+    {
+      "check": "Sintaxe do script de jornada Android",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "bash -n apps/lunet2d/tools/ci-android-shell.sh"
+    },
+    {
+      "check": "Build Android com SDK 36 e JDK 21",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet.Android.dll para net10.0-android/android-x64, sem erros."
+    },
+    {
+      "check": "Medição da IDE e ensaio da pasta direta",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Teste headless com 3.000 linhas; 74,29 ms na abertura e p95 de 27,58 ms em 68 teclas. A migração do backend sem caminho local verifica bytes, identidade, reabertura e preserva conflito."
+    },
+    {
+      "check": "Suíte Lunet em Debug",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1.408 testes, zero falhas. No CI Release o fixture de troca de tela removia a pasta antes de a transação da música acabar; o teste agora aguarda o fim da transação e confere o WAV."
+    }
+  ],
+  "known_issues": [
+    "Moto G32 não foi usado nesta validação.",
+    "O Git integrado requer caminho de disco.",
+    "O rascunho é registrado em intervalos de 400 ms enquanto há edição, além do salvamento na saída. O processo pode morrer antes de registrar as teclas mais recentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar a jornada no emulador Android 13 e publicar o APK dev.1000616 após integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A pasta SAF é a única origem ativa após trocar o armazenamento."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Preserva o estágio dev e incrementa para 1000616."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulador e headless não constituem teste no aparelho físico."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ide-g6-g7",
+      "status": "product-specific",
+      "rationale": "Usa o AutosaveJournal, IProjectFiles, SAF e Preview do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

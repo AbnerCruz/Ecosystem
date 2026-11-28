@@ -17,13 +17,19 @@ public sealed partial class ProjectStore
 {
     public const string ManifestFileName = "lunet.json";
 
-    public ProjectStore(string rootDirectory)
+    public ProjectStore(string rootDirectory) : this(new DiskProjectFiles(Path.GetFullPath(rootDirectory)))
     {
-        RootDirectory = Path.GetFullPath(rootDirectory);
         Directory.CreateDirectory(RootDirectory);
     }
 
-    public string RootDirectory { get; }
+    /// <summary>The games in a folder reached through any storage (disk, or the folder chosen on Android).</summary>
+    public ProjectStore(IProjectFiles root) => Root = root;
+
+    /// <summary>The folder that holds the games (each game is a folder with a <c>lunet.json</c>).</summary>
+    public IProjectFiles Root { get; }
+
+    /// <summary>The folder of games on this device's disk; empty when it is reached only through SAF.</summary>
+    public string RootDirectory => Root.LocalDirectory ?? "";
 
     /// <summary>
     /// Importa um ZIP exportado pelo Lunet (ou com lunet.json na raiz).
@@ -33,9 +39,10 @@ public sealed partial class ProjectStore
     public LunetProject ImportZip(Stream source) => ProjectZipImporter.Import(this, source);
 
     /// <summary>Nomes de pastas que contêm um <c>lunet.json</c>, em ordem alfabética.</summary>
-    public IReadOnlyList<string> List() => Directory.EnumerateDirectories(RootDirectory)
-        .Where(d => File.Exists(Path.Combine(d, ManifestFileName)))
-        .Select(d => Path.GetFileName(d)!)
+    public IReadOnlyList<string> List() => Root.List("")
+        .Where(e => e.IsDirectory && e.Name.Length is >= 1 and <= 60 &&
+            e.Name.All(c => char.IsLetterOrDigit(c) || c is '-' or '_') && Root.FileExists(e.Name + "/" + ManifestFileName))
+        .Select(e => e.Name)
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
         .ToList();
 
@@ -49,6 +56,8 @@ public sealed partial class ProjectStore
 
     /// <summary>Cria um projeto novo configurado, sem incluir protótipos ou demos.</summary>
     public LunetProject Create(ProjectCreationSettings settings) => CreateCore(settings, ProjectTemplate.Blank);
+
+    private static readonly System.Text.UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     private LunetProject CreateCore(ProjectCreationSettings settings, ProjectTemplate template)
     {
@@ -66,8 +75,7 @@ public sealed partial class ProjectStore
             settings.Version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
             throw new ProjectException("Versão inválida: use algo como 0.1.0 ou 1.0.0-beta.");
 
-        var directory = Path.Combine(RootDirectory, name);
-        if (Directory.Exists(directory)) throw new ProjectException("Esse projeto já existe.");
+        if (Root.DirectoryExists(name) || Root.FileExists(name)) throw new ProjectException("Esse projeto já existe.");
 
         var manifest = new ProjectManifest
         {
@@ -90,14 +98,14 @@ public sealed partial class ProjectStore
         if (conflict is not null)
             throw new ProjectException($"O ID Android já pertence ao projeto \"{conflict}\".");
 
-        Directory.CreateDirectory(directory);
+        Root.CreateDirectory(name);
+        var game = Root.Sub(name);
         try
         {
-            AtomicFile.WriteAllText(Path.Combine(directory, ManifestFileName), manifest.ToJson());
+            game.Write(ManifestFileName, Utf8.GetBytes(manifest.ToJson()));
             var className = ClassName(name);
-            Directory.CreateDirectory(Path.Combine(directory, "Project"));
-            AtomicFile.WriteAllText(Path.Combine(directory, ProjectImports.Path), ProjectImports.Source());
-            AtomicFile.WriteAllText(Path.Combine(directory, manifest.EntryPoint),
+            game.Write(ProjectImports.Path, Utf8.GetBytes(ProjectImports.Source()));
+            game.Write(manifest.EntryPoint, Utf8.GetBytes(
                 ProjectImports.RemoveCoveredFromGenerated(template switch
                 {
                     ProjectTemplate.CoinCatcher => ProjectTemplates.CoinCatcherSource(className),
@@ -106,19 +114,16 @@ public sealed partial class ProjectStore
                     ProjectTemplate.Particles => ProjectTemplates.ParticlesSource(className),
                     _ => ProjectTemplates.BlankGameSource(className, manifest.VirtualWidth, manifest.VirtualHeight,
                         manifest.UpdatesPerSecond, manifest.ViewportScaling),
-                }));
-            Directory.CreateDirectory(Path.Combine(directory, "Content"));
+                })));
+            game.CreateDirectory("Content");
             if (template is ProjectTemplate.CoinCatcher or ProjectTemplate.Lab)
-            {
-                Directory.CreateDirectory(Path.Combine(directory, "Content", "Audio"));
-                File.WriteAllBytes(Path.Combine(directory, "Content", "Audio", "beep.wav"), WavGenerator.Beep(880, 0.12));
-            }
+                game.Write("Content/Audio/beep.wav", WavGenerator.Beep(880, 0.12));
             if (template == ProjectTemplate.Lab)
-                File.WriteAllBytes(Path.Combine(directory, "Content", "Audio", "loop.wav"), WavGenerator.ArpeggioLoop());
+                game.Write("Content/Audio/loop.wav", WavGenerator.ArpeggioLoop());
         }
         catch
         {
-            Directory.Delete(directory, recursive: true);
+            Root.Delete(name);
             throw;
         }
         return Open(name);
@@ -126,18 +131,24 @@ public sealed partial class ProjectStore
 
     public LunetProject Open(string name)
     {
-        var directory = Path.Combine(RootDirectory, ValidateName(name));
-        var manifestPath = Path.Combine(directory, ManifestFileName);
-        if (!File.Exists(manifestPath)) throw new ProjectException($"Projeto \"{name}\" não encontrado.");
-        return new LunetProject(directory, ProjectManifest.Parse(File.ReadAllText(manifestPath)));
+        var folder = ValidateName(name);
+        if (!Root.FileExists(folder + "/" + ManifestFileName)) throw new ProjectException($"Projeto \"{name}\" não encontrado.");
+        var game = Root.Sub(folder);
+        return new LunetProject(game, ProjectManifest.Parse(Decode(game.Read(ManifestFileName))));
+    }
+
+    private static string Decode(byte[] bytes)
+    {
+        using var reader = new StreamReader(new MemoryStream(bytes), System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
     /// <summary>Apaga a pasta inteira do projeto. Só apaga pastas que são projetos Lunet (com lunet.json).</summary>
     public void Delete(string name)
     {
-        var directory = Path.Combine(RootDirectory, ValidateName(name));
-        if (!File.Exists(Path.Combine(directory, ManifestFileName))) throw new ProjectException($"Projeto \"{name}\" não encontrado.");
-        Directory.Delete(directory, recursive: true);
+        var folder = ValidateName(name);
+        if (!Root.FileExists(folder + "/" + ManifestFileName)) throw new ProjectException($"Projeto \"{name}\" não encontrado.");
+        Root.Delete(folder);
     }
 
     public static string ValidateName(string rawName)
@@ -156,24 +167,25 @@ public sealed partial class ProjectStore
     }
 
     /// <summary>Find another local project that would overwrite this game's APK or reuse its signing key.</summary>
+    /// <param name="exceptDirectory">The game to skip: its folder name or its folder path.</param>
     public string? FindIdentityConflict(ProjectManifest candidate, string? exceptDirectory = null)
     {
-        foreach (var directory in System.IO.Directory.EnumerateDirectories(RootDirectory))
+        var except = string.IsNullOrEmpty(exceptDirectory) ? null : Path.GetFileName(exceptDirectory.TrimEnd('/', Path.DirectorySeparatorChar));
+        foreach (var entry in Root.List(""))
         {
-            if (exceptDirectory is not null &&
-                Path.GetFullPath(directory).Equals(Path.GetFullPath(exceptDirectory), StringComparison.OrdinalIgnoreCase))
-                continue;
-            var path = Path.Combine(directory, ManifestFileName);
-            if (!File.Exists(path)) continue;
+            if (!entry.IsDirectory) continue;
+            if (except is not null && entry.Name.Equals(except, StringComparison.OrdinalIgnoreCase)) continue;
+            var path = entry.Name + "/" + ManifestFileName;
+            if (!Root.FileExists(path)) continue;
             ProjectManifest other;
-            try { other = ProjectManifest.Parse(File.ReadAllText(path)); }
+            try { other = ProjectManifest.Parse(Decode(Root.Read(path))); }
             catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
             { continue; }
             bool duplicatePackage = !string.IsNullOrWhiteSpace(candidate.PackageId) &&
                 candidate.PackageId.Equals(other.PackageId, StringComparison.OrdinalIgnoreCase);
             bool duplicateKey = Guid.TryParse(candidate.GameId, out var first) &&
                 Guid.TryParse(other.GameId, out var second) && first == second;
-            if (duplicatePackage || duplicateKey) return Path.GetFileName(directory);
+            if (duplicatePackage || duplicateKey) return entry.Name;
         }
         return null;
     }
@@ -184,7 +196,7 @@ public sealed partial class ProjectStore
     /// </summary>
     public void ForkIdentity(LunetProject project)
     {
-        if (FindIdentityConflict(project.Manifest, project.Directory) is null)
+        if (FindIdentityConflict(project.Manifest, Path.GetFileName(project.Files.Location)) is null)
             throw new ProjectException("Este projeto não possui conflito de identidade.");
         string oldGameId = project.Manifest.GameId;
         string oldPackageId = project.Manifest.PackageId;

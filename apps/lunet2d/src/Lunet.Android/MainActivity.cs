@@ -84,7 +84,13 @@ public sealed partial class MainActivity : Activity
         _gameplayId = savedInstanceState?.GetString("gameplayId");
         _gameplayFolder = savedInstanceState?.GetString("gameplayFolder");
         LoadSettings();
-        LoadProjectFolder();
+        try { LoadProjectFolder(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Toast.MakeText(this, "Não foi possível abrir a pasta. " + ex.Message, ToastLength.Long)?.Show();
+            Finish();
+            return;
+        }
         LoadLauncherPreferences();
         _projectFilter = savedInstanceState?.GetString("projectFilter") ?? "";
         foreach (var section in new[] { "home", "projects", "play", "studios", "explore", "learn" })

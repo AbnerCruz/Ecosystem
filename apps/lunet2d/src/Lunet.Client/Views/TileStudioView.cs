@@ -98,7 +98,7 @@ public sealed class TileStudioView : UserControl
         _path = path;
         _close = close;
         // A game's folder, or the standalone Studio folder (Home → Studios) when given.
-        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Directory);
+        _storage = storage ?? new StudioAssetWorkspace(shell.Workspace.Project!.Files);
         var map = TileMap.Parse(_storage.ReadText(path));
         _tileset = LoadTileset(map);
         var tiles = _tileset is null ? 1 : Math.Max(1, (int)(_tileset.PixelSize.Width / map.TileWidth) * (int)(_tileset.PixelSize.Height / map.TileHeight));
@@ -155,7 +155,7 @@ public sealed class TileStudioView : UserControl
         {
             var png = "Content/" + Session.Map.TexturePath;
             var source = png.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? png[..^4] + ".sprite.json" : null;
-            return source is not null && File.Exists(Path.Combine(_storage.RootDirectory, source)) ? source : null;
+            return source is not null && _storage.Exists(source) ? source : null;
         }
     }
 
@@ -163,9 +163,9 @@ public sealed class TileStudioView : UserControl
     {
         try
         {
-            var file = Path.Combine(_storage.RootDirectory, "Content", map.TexturePath.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(file)) return null;
-            using var stream = File.OpenRead(file);
+            var file = "Content/" + map.TexturePath.Replace('\\', '/');
+            if (!_storage.Exists(file)) return null;
+            using var stream = new MemoryStream(_storage.ReadBytes(file), writable: false);
             return new Bitmap(stream);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException) { return null; }
@@ -265,7 +265,7 @@ public sealed class TileStudioView : UserControl
 
     /// <summary>Creates a map with an editable tileset of four starting tiles (as the previous Studio does).</summary>
     public static string Create(LunetShell shell, int cells = 16, int tile = 16) =>
-        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Directory), shell.Workspace.Files(), cells, tile);
+        Create(new StudioAssetWorkspace(shell.Workspace.Project!.Files), shell.Workspace.Files(), cells, tile);
 
     /// <summary>The same, in any Studio folder (a game's, or the standalone Studios').</summary>
     public static string Create(StudioAssetWorkspace storage, IReadOnlyCollection<string> files, int cells = 16, int tile = 16)

@@ -111,3 +111,12 @@ Pedido do proprietário (27/11/2026, no celular):
 ## 5. Riscos e o que não se promete
 - **Velocidade:** o SAF é mais lento que o disco. Compilar e carregar imagens lê pelo cache em memória das leituras; a escrita é sempre na pasta e conferida.
 - **Aparelho:** nada aqui é dado como validado no aparelho sem teste nele (NN-017).
+
+
+## 6. G6 e G7 — salvamento e armazenamento direto
+
+A IDE registra um rascunho no armazenamento privado antes de gravar o arquivo, em segundo plano e em intervalos de 400 ms enquanto há edições. Confirma o texto por releitura. No próximo início, o mesmo arquivo abre com o texto recuperado. Se outra aplicação alterou a origem, o editor preserva a versão externa e oferece **Salvar cópia** para o rascunho. Uma interrupção anterior ao primeiro registro pode perder as teclas desse intervalo.
+
+No Android, **Ajustes → Pasta de projetos** abre o seletor do sistema. A pasta fica como origem para editor, Preview e Studios. O projeto inteiro e seus metadados são conferidos antes de trocar a raiz. Se o app já usava uma cópia de trabalho com permissão persistida, a migração tenta usar a pasta anterior ao iniciar. Quem perdeu a permissão pode reconectar pelos Ajustes. Projetos com o mesmo nome e conteúdo diferente exigem uma pasta sem conflito. Os dados da origem ficam preservados para recuperação. A opção **Usar os jogos internos** volta a listar os jogos internos.
+
+O Git integrado depende de um caminho de disco. Projetos acessados só por SAF podem ser versionados por um cliente que tenha acesso à pasta. O Preview mantém processo separado no Android e usa a permissão persistida para abrir recursos na pasta.

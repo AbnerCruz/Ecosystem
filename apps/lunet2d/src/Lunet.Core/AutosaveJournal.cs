@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace Lunet.Core;
 
@@ -14,23 +15,28 @@ public sealed record Recovery(string Path, string RecoveredText, string? DiskTex
 /// </summary>
 public sealed class AutosaveJournal
 {
+    public sealed record Draft(string Path, string Text, string? Previous);
     private const string Extension = ".buf";
     private const int MaxHistory = 5;
     private readonly LunetProject _project;
     private readonly string _directory;
+    private readonly bool _legacy;
 
-    public AutosaveJournal(LunetProject project)
+    public AutosaveJournal(LunetProject project, string? privateRoot = null)
     {
         _project = project ?? throw new ArgumentNullException(nameof(project));
-        _directory = System.IO.Path.Combine(project.Directory, ".lunet", "autosave");
+        _legacy = privateRoot is null;
+        _directory = privateRoot is null
+            ? Path.Combine(project.Directory, ".lunet", "autosave")
+            : Path.Combine(privateRoot, FileKey(project.Manifest.GameId + "\n" + project.Files.Location));
     }
 
     /// <summary>Guarda o texto atual de <paramref name="relativePath"/> como buffer de trabalho.</summary>
-    public void WriteBuffer(string relativePath, string text)
+    public void WriteBuffer(string relativePath, string text, string? previous = null)
     {
         _project.EnsureInsideProject(relativePath);
         Directory.CreateDirectory(_directory);
-        var payload = relativePath + "\n" + text;
+        var payload = previous is null ? relativePath + "\n" + text : JsonSerializer.Serialize(new Draft(relativePath, text, previous));
         AtomicFile.WriteAllText(BufferPath(relativePath), payload);
         var history = HistoryFiles(relativePath);
         if (history.Count > 0 && File.ReadAllText(history[0].Path) == payload) return;
@@ -39,6 +45,36 @@ public sealed class AutosaveJournal
         while (File.Exists(snapshot)) snapshot = SnapshotPath(relativePath, ++ticks);
         AtomicFile.WriteAllText(snapshot, payload);
         foreach (var old in HistoryFiles(relativePath).Skip(MaxHistory)) File.Delete(old.Path);
+    }
+
+    public Draft? ReadBuffer(string path)
+    {
+        var file = BufferPath(path);
+        if (!File.Exists(file)) return null;
+        var draft = Decode(File.ReadAllText(file));
+        return draft?.Path == path ? draft : null;
+    }
+
+    private static Draft? Decode(string payload)
+    {
+        if (payload.StartsWith('{'))
+        {
+            try { return JsonSerializer.Deserialize<Draft>(payload); }
+            catch (JsonException) { /* legacy file names can start with '{' */ }
+        }
+        var newline = payload.IndexOf('\n');
+        return newline < 0 ? null : new Draft(payload[..newline], payload[(newline + 1)..], null);
+    }
+
+    /// <summary>Preserves the buffer if the write fails or the source changed since opening.</summary>
+    public void SaveVerified(string path, string previous, string text)
+    {
+        WriteBuffer(path, text, previous);
+        if (!_project.WriteTextIfUnchanged(path, previous, text, out var actual) && actual != text)
+            throw new IOException("O arquivo foi alterado fora do editor. O rascunho foi preservado.");
+        if (_project.ReadText(path) != text)
+            throw new IOException("O arquivo gravado difere do rascunho.");
+        Discard(path);
     }
 
     /// <summary>Apaga o buffer (chamado depois de salvar o arquivo com sucesso).</summary>
@@ -59,9 +95,9 @@ public sealed class AutosaveJournal
             string content;
             try { content = File.ReadAllText(file); }
             catch (IOException) { continue; }
-            var newline = content.IndexOf('\n');
-            if (newline < 0 || content[..newline] != recovery.Path) continue;
-            var text = content[(newline + 1)..];
+            var draft = Decode(content);
+            if (draft?.Path != recovery.Path) continue;
+            var text = draft.Text;
             if (versions.Any(v => v.RecoveredText == text)) continue;
             versions.Add(new Recovery(recovery.Path, text, recovery.DiskText, time));
         }
@@ -79,10 +115,18 @@ public sealed class AutosaveJournal
             try { content = File.ReadAllText(file); }
             catch (IOException) { continue; }
 
-            var newline = content.IndexOf('\n');
-            if (newline < 0) { TryDelete(file); continue; } // buffer truncado: inútil
-            var relative = content[..newline];
-            var text = content[(newline + 1)..];
+            var draft = Decode(content);
+            if (draft is null)
+            {
+                if (_legacy)
+                {
+                    try { File.Delete(file); }
+                    catch (IOException) { /* Cleanup can be retried. */ }
+                }
+                continue;
+            }
+            var relative = draft.Path;
+            var text = draft.Text;
 
             string? disk = null;
             try { disk = _project.ReadText(relative); }
@@ -128,12 +172,4 @@ public sealed class AutosaveJournal
             .ToList();
     }
 
-    private static void TryDelete(string path)
-    {
-        try { File.Delete(path); }
-        catch (IOException)
-        {
-            // Arquivo de recuperação preso: será apagado na próxima limpeza.
-        }
-    }
 }
