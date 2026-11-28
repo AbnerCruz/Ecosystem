@@ -30,12 +30,13 @@
     "apps/lunet2d/src/Lunet.Client/Views/SettingsView.cs",
     "apps/lunet2d/tests/Lunet.Tests/GpuPreviewTests.cs",
     "apps/lunet2d/tools/ci-android-shell.sh",
-    "docs/governance/handoffs/HO-20261127-lunet-preview-android-crash.json"
+    "docs/governance/handoffs/HO-20261127-lunet-preview-android-crash.json",
+    "apps/lunet2d/docs/audits/fase-3-roteiro.md"
   ],
   "work_completed": [
     "Rodar abre o Preview Android em tela cheia na IsolatedPreviewActivity existente, sem montar GLSurfaceView na árvore da IDE.",
     "A IDE recebe o resultado da execução e mantém o arquivo aberto. Cada processo usa arquivos temporários próprios, e o retorno anormal registra o motivo de saída disponível no Android.",
-    "A jornada Android usa a árvore de acessibilidade e um toque ADB em Rodar, confirma que os PIDs são distintos, encerra o processo de preview, confere que o PID da IDE se manteve, roda de novo e testa o Voltar."
+    "G6 exercita toque em Rodar e um laço em Update após o primeiro quadro. Voltar limita a espera da GL a três segundos, encerra apenas :preview se travado e permite rodar outra vez pelo mesmo editor."
   ],
   "verification": [
     {
@@ -49,11 +50,18 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "bash -n apps/lunet2d/tools/ci-android-shell.sh"
+    },
+    {
+      "check": "Primeiro CI do PR 1060",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Job test do run 46022054030."
     }
   ],
   "known_issues": [
     "O relato original do Moto G32 após 614 não incluiu logcat. Causa específica no aparelho não reproduzida.",
-    "Saídas do preview por falha de driver ou jogo seguem dependentes da causa local; a IDE recebe o resultado separado do processo."
+    "Saídas do preview por falha de driver ou jogo seguem dependentes da causa local; a IDE recebe o resultado separado do processo.",
+    "O primeiro smoke registrou dois quadros, mas o kill externo falhou com PID desconhecido. O G6 atualizado usa o Voltar real e captura logcat mesmo em caso de falha."
   ],
   "blockers": [],
   "next_actions": [

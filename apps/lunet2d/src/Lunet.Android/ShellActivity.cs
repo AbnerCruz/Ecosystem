@@ -412,6 +412,7 @@ public sealed class ShellActivity : AvaloniaActivity
 #if LUNET_EMULATOR
     private bool _previewJourney;
     private string? _journeyFile;
+    private string? _journeyHealthyCode;
 
     protected override void OnPostResume()
     {
@@ -424,7 +425,31 @@ public sealed class ShellActivity : AvaloniaActivity
             {
                 shell.CreateProject();
                 _previewJourney = true;
-                _journeyFile = shell.WorkspaceView.Code.OpenPath;
+                var code = shell.WorkspaceView.Code;
+                _journeyFile = code.OpenPath;
+                _journeyHealthyCode = code.Surface.Text;
+                code.Surface.Text = """
+                    using Lunet;
+                    using Lunet.Graphics;
+
+                    public sealed class PreviewG6 : Game
+                    {
+                        private bool rendered;
+
+                        protected override void Update(GameTime time)
+                        {
+                            if (!rendered) return;
+                            Log.Info("LUNET_G6_UPDATE_BLOQUEADO");
+                            while (true) { }
+                        }
+
+                        protected override void Draw(GameTime time)
+                        {
+                            GraphicsDevice.Clear(Color.CornflowerBlue);
+                            rendered = true;
+                        }
+                    }
+                    """;
                 shell.HardwareKeyboard = false;
                 shell.WorkspaceView.Code.Surface.Focus();
                 shell.WorkspaceView.Code.ShowKeyboard();
@@ -446,6 +471,11 @@ public sealed class ShellActivity : AvaloniaActivity
         }
         if (failure is not null)
         {
+            if (_journeyHealthyCode is not null)
+            {
+                shell.WorkspaceView.Code.Surface.Text = _journeyHealthyCode;
+                _journeyHealthyCode = null;
+            }
             global::Android.Util.Log.Info("lunet-e2e", $"preview=recuperado idePid={Process.MyPid()} motivo={failure}");
             return;
         }

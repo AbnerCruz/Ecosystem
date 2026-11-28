@@ -140,6 +140,10 @@ public sealed class IsolatedPreviewActivity : Activity
 
     private void Write(LogLevel level, string message)
     {
+#if LUNET_EMULATOR
+        if (message == "LUNET_G6_UPDATE_BLOQUEADO")
+            global::Android.Util.Log.Info("lunet-e2e", message);
+#endif
         var prefix = level switch { LogLevel.Error => "[erro] ", LogLevel.Warning => "[aviso] ", _ => "" };
         _tail.Add(prefix + message);
         if (_tail.Count > 6) _tail.RemoveAt(0);
@@ -156,7 +160,7 @@ public sealed class IsolatedPreviewActivity : Activity
 
     protected override void OnPause()
     {
-        _host?.Pause();
+        if (_host is { } host) StopWithDeadline(host.Pause);
         base.OnPause();
     }
 
@@ -177,7 +181,7 @@ public sealed class IsolatedPreviewActivity : Activity
                 Write(LogLevel.Warning, "Não foi possível retornar a captura do Profiler: " + ex.Message);
             }
         }
-        _host?.Shutdown();
+        if (_host is { } host) StopWithDeadline(host.Shutdown);
         if (_failure is { } failure)
         {
             using var result = new Intent();
@@ -193,8 +197,26 @@ public sealed class IsolatedPreviewActivity : Activity
 
     protected override void OnDestroy()
     {
-        _host?.Shutdown();
+        if (_host is { } host) StopWithDeadline(host.Shutdown);
         base.OnDestroy();
+    }
+
+    /// <summary>GLSurfaceView waits for its GL thread. A game stuck in Update never acknowledges that wait.</summary>
+    private static void StopWithDeadline(Action stop)
+    {
+        using var finished = new CancellationTokenSource();
+        _ = EndStuckProcess(finished.Token);
+        try { stop(); }
+        finally { finished.Cancel(); }
+    }
+
+    private static async Task EndStuckProcess(CancellationToken finished)
+    {
+        try { await Task.Delay(TimeSpan.FromSeconds(3), finished).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (finished.IsCancellationRequested) { return; }
+        if (finished.IsCancellationRequested) return;
+        global::Android.Util.Log.Warn("LunetPreview", "A thread do preview não respondeu ao comando de saída.");
+        Process.KillProcess(Process.MyPid());
     }
 
     public override bool OnKeyDown(Keycode keyCode, KeyEvent? e) => _host?.OnKey(keyCode, true, e) == true || base.OnKeyDown(keyCode, e);

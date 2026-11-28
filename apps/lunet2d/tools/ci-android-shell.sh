@@ -26,6 +26,7 @@ adb shell am force-stop "$package"
 
 # The hook seeds the project and opens the keyboard. Android itself delivers the tap and Back.
 adb logcat -c
+trap 'adb logcat -d > "$out/android-final-logcat.txt" || true' EXIT
 adb shell am start -W -n "$package/$activity" --ez lunet.e2e true > /dev/null
 
 wait_log() {
@@ -74,12 +75,11 @@ wait_log 'quadros=[1-9]'
 preview_pid=$(adb shell pidof "$package:preview" | tr -d '\r')
 test -n "$preview_pid"
 test "$preview_pid" != "$ide_pid"
-adb shell screencap -p /sdcard/shell-game.png
-adb pull /sdcard/shell-game.png "$out/android-shell-game.png"
-
-# A game or driver can end its process before managed exceptions can be handled.
-adb shell run-as "$package" kill -9 "$preview_pid"
+# G6: while Update is hung, Back must end that preview and leave the editor in the original process.
+wait_log 'LUNET_G6_UPDATE_BLOQUEADO'
+adb shell input keyevent KEYCODE_BACK
 wait_log 'preview=recuperado'
+grep -q 'LunetPreview.*não respondeu ao comando de saída' "$out/android-logcat.txt"
 cp "$out/android-logcat.txt" "$out/android-preview-crash-logcat.txt"
 test "$(adb shell pidof "$package" | tr -d '\r')" = "$ide_pid"
 
@@ -87,6 +87,8 @@ test "$(adb shell pidof "$package" | tr -d '\r')" = "$ide_pid"
 adb logcat -c
 tap_run
 wait_log 'quadros=[1-9]'
+adb shell screencap -p /sdcard/shell-game.png
+adb pull /sdcard/shell-game.png "$out/android-shell-game.png"
 adb shell input keyevent KEYCODE_BACK
 wait_log 'preview=cheio retorno=editor'
 wait_log 'barra=visivel ime=on texto={'
