@@ -188,24 +188,24 @@ public static class LunetAiArchitecture
             var topLevel = types.Count(t => t.Container is null);
             if (topLevel > 2)
                 warnings.Add($"{file.Key} declara {topLevel} tipos ({string.Join(", ", types.Where(t => t.Container is null).Select(t => t.Name))}). " +
-                             "Use um arquivo por classe, em pastas por responsabilidade.");
+                             "Considere separar responsabilidades se isso melhorar este projeto; não é um erro de compilação.");
             if (lineCounts.TryGetValue(file.Key, out var lines) && lines > LargeFileLines)
-                warnings.Add($"{file.Key} tem {lines} linhas. Extraia responsabilidades (entidades, sistemas, UI, dados) para arquivos próprios.");
+                warnings.Add($"{file.Key} tem {lines} linhas. Avalie se separar responsabilidades ajudaria; o tamanho sozinho não exige refatoração.");
         }
         return warnings;
     }
 
     public const string Guidance =
-        "ARQUITETURA (obrigatório ao criar ou ampliar código). Organize como um projeto profissional, com responsabilidades separadas: " +
-        "UM tipo público por arquivo, nome do arquivo = nome da classe. O Game.cs só orquestra (cria cenas/sistemas, chama Update/Draw); " +
-        "não acumule lógica nele. Pastas por responsabilidade, seguindo as que o projeto já tiver; quando não houver, use: " +
+        "ARQUITETURA (recomendações para código novo, subordinadas à autoria do usuário). Preserve a organização existente e a escala do jogo; quando útil, separe responsabilidades: " +
+        "Prefira um tipo público por arquivo e nome correspondente quando isso ajudar. Game.cs pode orquestrar (cria cenas/sistemas, chama Update/Draw); " +
+        "não divida projetos pequenos por obrigação. Pastas por responsabilidade, seguindo as que o projeto já tiver; quando forem úteis, considere: " +
         "Scenes/ (telas e fases), Entities/ (jogador, inimigos, itens), Components/ (comportamentos reutilizáveis), Systems/ (física, spawn, pontuação, colisão), " +
         "UI/ (HUD, menus), Data/ (constantes, configurações, níveis), Util/ (extensões e ajudantes). Todos os .cs fora de Tests/ são compilados juntos, " +
         "então classes em pastas diferentes se enxergam (use o mesmo namespace do projeto, opcionalmente com sufixo da pasta, e os using necessários). " +
         "Antes de criar algo, reutilize as classes, campos e métodos que já existem (veja o mapa do projeto): chame-os pelos nomes reais, não duplique. " +
         "Convenções C#: PascalCase em tipos, métodos e propriedades; _camelCase em campos privados; constantes e números mágicos em Data/; " +
-        "campos privados com propriedades só quando outra classe precisa ler; dependências passadas pelo construtor. Arquivos acima de ~300 linhas devem ser divididos. " +
-        "Quando o pedido for pequeno e o projeto ainda for só o Game.cs, pode editar o Game.cs, mas assim que surgir uma entidade ou sistema novo, crie o arquivo dele.";
+        "campos privados com propriedades quando necessário; dependências pelo construtor quando fizer sentido. Arquivos longos podem merecer revisão, mas tamanho não obriga divisão. " +
+        "Não reorganize arquivos ou renomeie símbolos existentes por preferência; sugira refatoração separadamente, salvo pedido explícito ou necessidade técnica demonstrada.";
 }
 
 /// <summary><c>lunet.code.outline</c>: classes, fields, properties and methods with lines, for one file or the whole project.</summary>

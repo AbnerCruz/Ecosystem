@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.1-dev.1000618 — IA respeita a lógica do programador
+
+- Estudo: diagnóstico contextual e pistas progressivas; exemplos completos quando pedidos. Fazer: alterações localizadas e preservação de escolhas válidas.
+- Recomendações de arquitetura não impõem reorganização. Testes de contrato de prompt adicionados; CI e avaliação com modelo real ainda não confirmados.
+
 ## 0.0.1-dev.1000617 — UX de arquivos da IDE
 
 - Novo arquivo C# ou pasta solicita o nome antes de gravar; cancelamento não altera o projeto. A classe inicial usa o nome definitivo, com validação de identificador e colisões.
