@@ -31,6 +31,10 @@ public static class Context
     public static ContentManager Content => Current(graphics: true).Content;
     /// <summary>Dispositivo real do jogo corrente; exige autorização gráfica.</summary>
     public static GraphicsDevice Graphics => Current(graphics: true).GraphicsDevice;
+    /// <summary>Lote de sprites contextual: o único lote aberto ou um lote padrão reutilizável do dispositivo.</summary>
+    /// <remarks>Exige autorização gráfica. Begin/End continuam explícitos; com vários lotes abertos,
+    /// use a instância desejada diretamente para evitar ambiguidade.</remarks>
+    public static SpriteBatch Batch => Current(graphics: true).GraphicsDevice.ContextualBatch;
     /// <summary>Mixer real do jogo corrente.</summary>
     public static AudioMixer Audio => Current().Audio;
     /// <summary>Dados salvos do jogo corrente.</summary>
