@@ -22,7 +22,9 @@ public static class ProjectImports
     /// <summary>O padrão de projetos novos é Amplo, incluindo os membros estáticos de Context.</summary>
     public static string Source(bool broad = true) =>
         string.Join("\n", (broad ? Broad : Essential).Select(n => "global using " + n + ";")) + "\n" +
-        (broad ? "global using static Lunet.Context;\n" : "");
+        (broad ? "global using static Lunet.Context;\n" +
+                 "global using Point = System.Drawing.Point;\n" +
+                 "global using Size = System.Drawing.Size;\n" : "");
 
     // Only called for the template text being materialized, never on existing user files.
     // Keep dependencies outside the common Essential set by default: changing only Imports.cs

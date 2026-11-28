@@ -295,6 +295,7 @@ Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio →
 
 Gate: experiência de IDE real. **Atingido e aprovado** em **LUNET-303**, Issue #200, candidato `lunet2d-v0.0.1-dev.1000008`. A validação humana integral foi aprovada pelo proprietário no portal pela Issue #204; registro canônico no handoff `HO-20261004-lunet-f3-candidate`.
 
+- [ ] **LUNET-302 — Interoperabilidade Point/Size (incremento 28/11):** aliases no perfil Amplo, conversões explícitas, RectangleF/Resize, testes Roslyn e smoke APK. CI pendente; não alterar projetos existentes. [Estudo e guia](docs/guides/integer-geometry.md).
 - [x] LUNET-302 — Framework/IDE/Studio code-first (ADR 0007) e correções rápidas sem perda de código: PR #152 integrado, CI verde e C6 aprovado no portal pela Issue #155. Issue #149 encerrada; handoff `HO-20261003-lunet-code-first-safe-fixes`.
 - [x] LUNET-301 — Importar projeto ZIP (§5, §22): PR #116 integrado, CI verde e roteiro Android aprovado no portal pela Issue #121; sem sobrescrever projetos. Issue #111 encerrada; handoff `HO-20261003-lunet-import-zip`.
 

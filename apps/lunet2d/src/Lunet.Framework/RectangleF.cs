@@ -26,6 +26,24 @@ public readonly struct RectangleF : IEquatable<RectangleF>
     /// <param name="size">Largura (X) e altura (Y).</param>
     public RectangleF(Vector2 position, Vector2 size) : this(position.X, position.Y, size.X, size.Y) { }
 
+    /// <summary>Cria um retângulo a partir da posição e do tamanho agrupados.</summary>
+    /// <param name="position">Canto superior esquerdo.</param>
+    /// <param name="size">Largura e altura.</param>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
+    public RectangleF(Vector2 position, System.Drawing.Size size) : this(position, size.ToVector2()) { }
+
+    /// <summary>Cria um retângulo a partir da posição e do tamanho agrupados.</summary>
+    /// <param name="position">Canto superior esquerdo.</param>
+    /// <param name="size">Largura e altura.</param>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
+    public RectangleF(System.Drawing.Point position, Vector2 size) : this(position.ToVector2(), size) { }
+
+    /// <summary>Cria um retângulo a partir da posição e do tamanho agrupados.</summary>
+    /// <param name="position">Canto superior esquerdo.</param>
+    /// <param name="size">Largura e altura.</param>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-2)]
+    public RectangleF(System.Drawing.Point position, System.Drawing.Size size) : this(position.ToVector2(), size.ToVector2()) { }
+
     /// <summary>Posição X do canto superior esquerdo.</summary>
     public float X { get; }
     /// <summary>Posição Y do canto superior esquerdo.</summary>
@@ -49,6 +67,12 @@ public readonly struct RectangleF : IEquatable<RectangleF>
     /// <param name="point">Ponto a testar.</param>
     /// <returns>Verdadeiro se o ponto está dentro.</returns>
     public bool Contains(Vector2 point) => point.X >= X && point.X < Right && point.Y >= Y && point.Y < Bottom;
+
+    /// <summary>Testa um ponto inteiro usando as mesmas regras das bordas.</summary>
+    /// <param name="point">Ponto a testar.</param>
+    /// <returns>Verdadeiro se o ponto está dentro.</returns>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
+    public bool Contains(System.Drawing.Point point) => Contains(point.ToVector2());
 
     /// <summary>Diz se este retângulo sobrepõe o outro.</summary>
     /// <param name="other">Outro retângulo.</param>

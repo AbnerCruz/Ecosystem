@@ -1,6 +1,8 @@
 using System.Numerics;
 using Lunet;
 using Lunet.Graphics;
+using Point = System.Drawing.Point;
+using Size = System.Drawing.Size;
 
 public sealed class SmokeGame : Game
 {
@@ -12,6 +14,10 @@ public sealed class SmokeGame : Game
     {
         _batch = new SpriteBatch(GraphicsDevice);
         _dot = Texture2D.CreateCircle(GraphicsDevice, 32, Color.Yellow);
+        // Exercise primitive metadata and conversions in the standalone APK.
+        var bounds = new RectangleF(new Point(0, 0), new Size(32, 32));
+        if (!bounds.Contains(new Point(16, 16)) || new Size(32, 32).ToVector2() != bounds.Size)
+            throw new InvalidOperationException("Integer geometry interoperability failed.");
         _position = new Vector2(GraphicsDevice.VirtualWidth / 2f, GraphicsDevice.VirtualHeight / 2f);
         Log.Info("Standalone APK: o jogo, não a IDE, foi iniciado.");
     }
