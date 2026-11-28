@@ -152,3 +152,21 @@ adb shell dumpsys meminfo "$package" > "$out/android-ai-memory.txt"
 adb exec-out screencap -p > "$out/android-ai-stability.png"
 adb shell pidof "$package" | grep -q '[0-9]'
 adb shell am force-stop "$package"
+
+# Open the documented project from the granted folder and capture its isolated Preview.
+demo=/sdcard/Documents/LunetCi/random-coins
+sample=apps/lunet2d/samples/random-coins
+adb shell mkdir -p "$demo/Project"
+adb push "$sample/Game.cs" "$demo/Game.cs"
+adb push "$sample/lunet.json" "$demo/lunet.json"
+adb push "$sample/Project/Imports.cs" "$demo/Project/Imports.cs"
+adb logcat -c
+adb shell am start -W -n "$package/$activity" --ez lunet.random.demo true >/dev/null
+wait_log 'random=editor'
+wait_log 'quadros=[1-9]'
+adb exec-out screencap -p > "$out/android-random-preview.png"
+adb shell input keyevent KEYCODE_BACK
+sleep 1
+adb exec-out screencap -p > "$out/android-random-editor.png"
+adb shell pidof "$package" | grep -q '[0-9]'
+adb shell am force-stop "$package"

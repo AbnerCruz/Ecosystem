@@ -11,6 +11,9 @@ public sealed class ContextTests
         private void Verify(bool graphics)
         {
             Assert.Same(Input, Context.Input);
+            Assert.Same(Rng, Context.Rng);
+            Assert.Same(VisualRng, Context.VisualRng);
+            Assert.Same(Rng, Services.Get<RandomSource>());
             Assert.Same(Save, Context.Save);
             Assert.Same(Audio, Context.Audio);
             Assert.Same(Services, Context.Services);
@@ -43,6 +46,7 @@ public sealed class ContextTests
     {
         var first = new Probe();
         var second = new Probe();
+        Assert.NotSame(first.Rng, second.Rng);
         var a = new GameHost(first, new HeadlessGraphicsBackend());
         var b = new GameHost(second, new HeadlessGraphicsBackend());
         Assert.Throws<InvalidOperationException>(() => _ = Context.Input);
@@ -51,9 +55,11 @@ public sealed class ContextTests
         first.DuringUpdate = () =>
         {
             Assert.Same(first.Input, Context.Input);
+            Assert.Same(first.Rng, Context.Rng);
             b.Step();
             Assert.False(b.IsFaulted, b.Fault?.ToString());
             Assert.Same(first.Input, Context.Input);
+            Assert.Same(first.Rng, Context.Rng);
         };
         bool dispatcherRan = false;
         first.Dispatcher.Post(() => { Assert.Same(first.Dispatcher, Context.Dispatcher); dispatcherRan = true; });
@@ -79,7 +85,7 @@ public sealed class ContextTests
             Exception? observed = null;
             var worker = new Thread(() =>
             {
-                try { _ = Context.Input; }
+                try { _ = Context.Rng; }
                 catch (Exception ex) { observed = ex; }
             });
             worker.Start(); worker.Join();

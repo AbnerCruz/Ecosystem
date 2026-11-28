@@ -54,8 +54,29 @@ jobs:
       # ADR 0013: every change of the Avalonia shell ships headless captures (phone and wide widths). Not a device test.
       - name: Capture the Lunet.Client shell (headless Skia)
         run: dotnet run --project src/Lunet.Desktop -- --screens "$RUNNER_TEMP/lunet-shell-screens"
+      - name: Capture the procedural game sample (headless)
+        env:
+          LUNET_RANDOM_CAPTURE: ${{ runner.temp }}/lunet-shell-screens/random-coins.png
+        run: dotnet tests/Lunet.Tests/bin/Release/net10.0/Lunet.Tests.dll -method '*SampleRendersRepeatableCoinsCellsAndCircleThroughThePreviewBackend*'
       - uses: actions/upload-artifact@v4
         with:
           name: lunet-shell-screens
           path: ${{ runner.temp }}/lunet-shell-screens/*.png
           if-no-files-found: error
+
+  random-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/lunet2d
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build framework and tests (Release)
+        run: dotnet build tests/Lunet.Tests -c Release
+      - name: Compare RNG and Philox vectors on Windows x64
+        run: dotnet tests/Lunet.Tests/bin/Release/net10.0/Lunet.Tests.dll -class Lunet.Tests.LunetRandomTests

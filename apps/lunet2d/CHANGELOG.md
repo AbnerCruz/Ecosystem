@@ -1,12 +1,15 @@
 # Changelog
 
-## 0.0.1-dev.1000621 — Estabilidade da IA e criação de arquivos
+## 0.0.1-dev.1000621 — Estabilidade da IDE e Random no Framework
 
 - A preparação da IA roda em segundo plano. A compilação e os diagnósticos pertencem ao jogo que recebeu o pedido, inclusive após trocar de projeto.
 - O chat abre sob demanda as mensagens que entram na tela. O histórico antigo continua legível e cada nova troca é gravada separadamente, junto com as etapas e o texto já recebido.
 - A IA reutiliza símbolos de arquivos intactos e reconhece edições externas pela comparação do conteúdo.
 - A IDE confirma a gravação do arquivo separadamente da abertura da aba. Se a edição anterior estiver em conflito com o disco, o rascunho continua aberto para recuperação.
 - O Android registra tempos locais de preparação, primeiro token quando o provedor oferece streaming, fila da interface e memória gerenciada.
+
+- Framework: `Rng` e `VisualRng` disponíveis por jogo. Xoshiro256** com seed explícita ou automática, estado restaurável e fluxos derivados. A sequência muda em relação ao gerador anterior.
+- Sorteios 2D, pesos, distribuições, embaralhamento e amostras. `RandomField` gera por coordenadas. O manual e o exemplo Moedas e sementes mostram o uso no jogo.
 
 ## 0.0.1-dev.1000619 — Chat da IDE expansível
 

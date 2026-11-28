@@ -280,7 +280,7 @@ Use `System.Numerics` sempre que apropriado: `Vector2`, `Vector3`,
 `Matrix3x2`, `Matrix4x4`, `Quaternion`.
 
 Implemente apenas extensões realmente úteis: `RectangleF`, `Circle`,
-`Transform2D`, `Ray2D`, `Color`, `Geometry`, `MathEx`, `RandomSource`.
+`Transform2D`, `Ray2D`, `Color`, `Geometry`, `MathEx`, `RandomSource` e `RandomField`. O jogo expõe os fluxos `Rng` e `VisualRng`.
 
 ### Graphics
 

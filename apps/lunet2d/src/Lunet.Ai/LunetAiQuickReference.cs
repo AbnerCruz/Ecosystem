@@ -87,7 +87,10 @@ public static class LunetAiQuickReference
 
         Utilidades
           MathEx.Lerp / Remap / SmoothStep / MoveToward / AngleDifference
-          new RandomSource(semente).NextFloat/NextInt/NextDirection   determinístico
+          Rng.NextInt(min,maxExclusivo), Rng.NextVector2(min,max), Rng.Chance(0.2), Rng.PickWeighted(itens,pesos)
+          Context.Rng / Game.Rng              mesmo fluxo do jogo; VisualRng é separado
+          new RandomSource(), new RandomSource(seed), .Fork("loot"), .CaptureState(), RandomSource.FromState(estado)
+          new RandomField(seed).FloatAt(x,y,channel: 0)  amostra indexada independente da ordem
           new Circle(centro, raio).Contains/Intersects; RectangleF.Intersects
 
         SpriteBatch

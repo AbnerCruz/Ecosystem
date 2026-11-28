@@ -511,6 +511,23 @@ public sealed class ShellActivity : AvaloniaActivity
             });
             return;
         }
+        if (Intent?.GetBooleanExtra("lunet.random.demo", false) == true)
+        {
+            Intent.RemoveExtra("lunet.random.demo");
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                try
+                {
+                    shell.OpenProject("random-coins");
+                    if (shell.Workspace.Project?.Name != "Moedas e sementes")
+                        throw new InvalidOperationException("O exemplo de Random não abriu.");
+                    global::Android.Util.Log.Info("lunet-e2e", "random=editor");
+                    await shell.RunGame();
+                }
+                catch (Exception ex) { global::Android.Util.Log.Error("lunet-e2e", "falhou: " + ex); }
+            });
+            return;
+        }
         if (Intent?.GetBooleanExtra("lunet.ai.stability", false) == true)
         {
             Intent.RemoveExtra("lunet.ai.stability");
