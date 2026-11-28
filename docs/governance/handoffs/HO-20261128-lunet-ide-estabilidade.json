@@ -1,0 +1,128 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-ide-estabilidade",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-28T12:18:00Z",
+  "agent": {
+    "id": "codex-lunet-ide-estabilidade",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-545",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "fix/lunet-ide-ai-stability-20261128",
+  "base_commit": "a854f1e05a1a4ccd5756acade1a3e3daaec691dd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/guides/ia-lunet.md",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiAssetValidation.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectMap.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiActivityView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/AiPanelView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/ExplorerView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Desktop/ShellScreens.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GlobalAiTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeExplorerTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiChatTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiPromptSpeedTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "docs/governance/handoffs/HO-20261128-lunet-ide-estabilidade.json"
+  ],
+  "work_completed": [
+    "Auditoria da versão 1000619: criação encadeava gravação e abertura e descartava erros após fechar o formulário. O chat executava preparação síncrona, ignorava o resultado de SaveAll e compilava pela sessão do workspace ativo.",
+    "O chat prepara e executa a requisição em uma thread de trabalho e captura o jogo antes de esperar pelo histórico ou pelas configurações. A preparação, o encerramento do serviço e a atualização dos painéis têm tratamento de falhas recuperáveis.",
+    "O transcript usa VirtualizingStackPanel dentro de uma viewport com altura finita. O histórico legado é lido em segundo plano e as novas trocas são atualizadas atomica e independentemente em arquivos da conversa. A concorrência de layout foi exercitada com 400 mensagens.",
+    "O mapa reutiliza símbolos Roslyn por caminho e SHA-256 de conteúdo, inclusive quando uma edição externa preserva a data do arquivo. Mapa, outline e avisos de arquitetura compartilham o índice da sessão; mídia e validação de texturas usam o armazenamento do jogo.",
+    "O Explorador grava no armazenamento selecionado em segundo plano e espera o salvamento verificado do documento anterior. Um conflito preserva o rascunho e o novo arquivo. O resultado de gravação é distinto do resultado de abertura.",
+    "Pesquisa e confronto: Microsoft Learn, Asynchronous programming scenarios (https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios); Android Developers, Diagnose and fix ANRs (https://developer.android.com/topic/performance/anrs/diagnose-and-fix-anrs); documentação Avalonia, Performance optimization (https://docs.avaloniaui.net/docs/app-development/performance); comunidade Avalonia, discussão #15188 e issue #17935 sobre reparenting e alturas variáveis (https://github.com/AvaloniaUI/Avalonia/discussions/15188 e https://github.com/AvaloniaUI/Avalonia/issues/17935). Chat sem seleção de linha, com altura limitada e estado semântico de expansão fora dos controles reciclados.",
+    "Logcat local Lunet.Ai registra preparação, primeiro token quando existe streaming, amostra da fila da interface, memória gerenciada e exceções sem conteúdo da conversa. A jornada de release captura também dumpsys meminfo."
+  ],
+  "verification": [
+    {
+      "check": "Suíte Lunet.Tests em Debug e Release",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1.433 testes passaram por configuração, sem falhas ou ignorados; runner xUnit in-process sob .NET 10.0.404."
+    },
+    {
+      "check": "Consistência do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks. A cópia rasa e a ausência do instantâneo de Issues limitam as verificações de histórico e estados remotos."
+    },
+    {
+      "check": "Capturas da casca Avalonia / Skia headless",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet.dll --screens, chat compacto, expandido e com etapas em larguras de celular e desktop."
+    },
+    {
+      "check": "Jornada do emulador Android 13 na esteira lunet2d-release",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Criação em projeto SAF existente e múltiplas abas, histórico de 218 mensagens com provedor local de teste, troca de jogo, cancelamento e coleta de memória."
+    }
+  ],
+  "known_issues": [
+    "O crash observado no Motorola não foi reproduzido a partir de stack trace. As regressões exercitam caminhos que poderiam causar o encerramento.",
+    "O ambiente local não tem KVM, emulador nem SDK Android. Desempenho no aparelho e com provedor remoto ainda sem medição.",
+    "O mapa relê os arquivos para validar o conteúdo e detectar alterações externas; o reaproveitamento elimina parsing repetido. Salvamento de metadados de sessão e outras navegações do editor conservam o fluxo atual."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar a integração automática, verificar a jornada Android e confirmar a release de desenvolvimento pelo pipeline direto."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/addenda/ADD-0035-automacao-plena-sem-validacao-no-aparelho.md",
+    "apps/lunet2d/docs/adr/0013-casca-unica-avalonia.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O armazenamento do jogo continua sendo a autoridade do código. O mapa é um índice descartável da sessão e o histórico privado é lido por LunetAiSession."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças no Lunet e no handoff. As ferramentas usam o runtime, serviços e permissões existentes."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Headless, emulação Android e aparelho físico têm evidências descritas separadamente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Persistência, UI e índices usam tipos de Lunet, sem extração de componente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-project-ai-session",
+      "status": "product-specific",
+      "rationale": "Histórico, checkpoint, Roslyn, armazenamento de projetos e editor pertencem à IDE Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

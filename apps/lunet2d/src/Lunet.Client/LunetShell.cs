@@ -338,6 +338,7 @@ public sealed class LunetShell : UserControl
     /// <summary>Creates a game with a name, a starting template and an orientation, and opens it.</summary>
     public void CreateProject(string name, Lunet.Core.ProjectTemplate template, string orientation)
     {
+        if (!_workspaceView.SaveAll()) return;
         var project = Workspace.Create(name, template, orientation);
         _home.Refresh();
         OpenProject(project.Name);

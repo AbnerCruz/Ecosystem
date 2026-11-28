@@ -114,13 +114,15 @@ public sealed class LunetAiBuildTool : ITool
 {
     public const string Name = "lunet.build.compile";
     private readonly ILunetAiBuild _build;
-    private readonly LunetProject _project;
+    private readonly LunetAiProjectMap _map;
     public ToolDescriptor Descriptor { get; }
 
-    public LunetAiBuildTool(LunetProject project, ILunetAiBuild build)
+    public LunetAiBuildTool(LunetProject project, ILunetAiBuild build) : this(project, build, new LunetAiProjectMap(project)) { }
+
+    internal LunetAiBuildTool(LunetProject project, ILunetAiBuild build, LunetAiProjectMap map)
     {
         _build = build;
-        _project = project;
+        _map = map;
         Descriptor = new ToolDescriptor(Name, "1.0.0",
             "Compile the whole Lunet project with Roslyn (same compiler as Run). Returns success, compiler errors with file(line,col) and architecture warnings (files too big, many classes in one file) to fix.",
             """{"type":"object","properties":{},"additionalProperties":false}""",
@@ -134,14 +136,7 @@ public sealed class LunetAiBuildTool : ITool
     public async ValueTask<ToolOutcome> InvokeAsync(ToolInvocation invocation, ToolContext context, CancellationToken cancellationToken)
     {
         var report = await _build.CompileAsync(cancellationToken);
-        var map = new LunetAiProjectMap(_project);
-        var symbols = map.Symbols();
-        var lines = symbols.Select(s => s.File).Distinct().ToDictionary(f => f, f =>
-        {
-            try { return _project.ReadText(f).Count(c => c == '\n') + 1; }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { return 0; }
-        }, StringComparer.Ordinal);
-        var architecture = LunetAiArchitecture.Review(symbols, lines);
+        var architecture = _map.ArchitectureWarnings(cancellationToken);
         return ToolOutcome.Ok(JsonSerializer.Serialize(new { success = report.Succeeded, errors = report.Errors.Take(60), architecture }));
     }
 }
@@ -469,4 +464,8 @@ public sealed record LunetAiRequest(
     LunetAiMode Mode = LunetAiMode.Teach,
     ILunetAiWeb? Web = null,
     IProgress<string>? PartialText = null,
-    bool? ModelTools = null);
+    bool? ModelTools = null)
+{
+    public IProgress<TimeSpan>? TurnStarted { get; init; }
+    public IProgress<TimeSpan>? FirstToken { get; init; }
+}

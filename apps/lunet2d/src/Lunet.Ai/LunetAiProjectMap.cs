@@ -20,30 +20,61 @@ public sealed class LunetAiProjectMap
 {
     public const int DefaultBudget = 9_000;
     private readonly LunetProject _project;
+    private readonly Dictionary<string, IndexedFile> _index = new(StringComparer.Ordinal);
+    private readonly object _indexLock = new();
+
+    private sealed record IndexedFile(string Hash, int Lines, IReadOnlyList<LunetAiSymbol> Symbols);
 
     public LunetAiProjectMap(LunetProject project) => _project = project ?? throw new ArgumentNullException(nameof(project));
 
     /// <summary>Every symbol of the C# files of the game (Tests/ included, so tests can be explained too).</summary>
-    public IReadOnlyList<LunetAiSymbol> Symbols(string? onlyFile = null)
+    public IReadOnlyList<LunetAiSymbol> Symbols(string? onlyFile = null) => Symbols(onlyFile, CancellationToken.None);
+
+    internal IReadOnlyList<LunetAiSymbol> Symbols(string? onlyFile, CancellationToken cancellationToken) =>
+        Index(new LunetAiProjectFiles(_project).List(), onlyFile, cancellationToken)
+            .SelectMany(file => file.Symbols).ToArray();
+
+    private IReadOnlyList<IndexedFile> Index(IReadOnlyList<string> paths, string? onlyFile, CancellationToken cancellationToken)
     {
-        var files = new LunetAiProjectFiles(_project).List()
-            .Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
-            .Where(f => onlyFile is null || string.Equals(f, onlyFile, StringComparison.Ordinal));
-        var symbols = new List<LunetAiSymbol>();
-        foreach (var file in files)
+        var files = paths.Where(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)).ToHashSet(StringComparer.Ordinal);
+        var indexed = new List<IndexedFile>();
+        lock (_indexLock)
         {
-            string text;
-            try { text = _project.ReadText(file); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { continue; }
-            if (text.Length > 400_000) continue;
-            symbols.AddRange(Parse(file, text));
+            foreach (var removed in _index.Keys.Where(path => !files.Contains(path)).ToArray())
+                _index.Remove(removed);
+            foreach (var path in paths)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!files.Contains(path) || (onlyFile is not null && !string.Equals(path, onlyFile, StringComparison.Ordinal))) continue;
+                string text;
+                try { text = _project.ReadText(path); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
+                { _index.Remove(path); continue; }
+                if (text.Length > 400_000) { _index.Remove(path); continue; }
+
+                // SAF and disk can both be edited outside Lunet. Compare content rather than relying on timestamps.
+                var hash = LunetAiProjectFiles.Hash(text);
+                if (!_index.TryGetValue(path, out var file) || file.Hash != hash)
+                    _index[path] = file = new(hash, text.Count(c => c == '\n') + 1, Parse(path, text, cancellationToken));
+                indexed.Add(file);
+            }
         }
-        return symbols;
+        return indexed;
     }
 
-    public static IReadOnlyList<LunetAiSymbol> Parse(string file, string source)
+    internal IReadOnlyList<string> ArchitectureWarnings(CancellationToken cancellationToken)
     {
-        var tree = CSharpSyntaxTree.ParseText(source);
+        var files = Index(new LunetAiProjectFiles(_project).List(), null, cancellationToken)
+            .Where(file => file.Symbols.Count > 0).ToArray();
+        return LunetAiArchitecture.Review(files.SelectMany(file => file.Symbols).ToArray(),
+            files.ToDictionary(file => file.Symbols[0].File, file => file.Lines, StringComparer.Ordinal));
+    }
+
+    public static IReadOnlyList<LunetAiSymbol> Parse(string file, string source) => Parse(file, source, CancellationToken.None);
+
+    private static IReadOnlyList<LunetAiSymbol> Parse(string file, string source, CancellationToken cancellationToken)
+    {
+        var tree = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken);
         var result = new List<LunetAiSymbol>();
         var text = tree.GetText();
         int LineOf(SyntaxNode n) => text.Lines.GetLineFromPosition(n.SpanStart).LineNumber + 1;
@@ -51,6 +82,7 @@ public sealed class LunetAiProjectMap
         {
             foreach (var child in node.ChildNodes())
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 switch (child)
                 {
                     case BaseNamespaceDeclarationSyntax ns:
@@ -103,7 +135,7 @@ public sealed class LunetAiProjectMap
                 }
             }
         }
-        Visit(tree.GetRoot(), null);
+        Visit(tree.GetRoot(cancellationToken), null);
         return result;
     }
 
@@ -117,52 +149,41 @@ public sealed class LunetAiProjectMap
 
     private static readonly string[] MediaExtensions = [".png", ".wav", ".ogg", ".mp3", ".ttf", ".otf"];
 
+    private static bool IsMedia(string path) =>
+        (path.StartsWith("Content/", StringComparison.Ordinal) || path.StartsWith("Assets/", StringComparison.Ordinal))
+        && MediaExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Binary content the code can load (textures, sounds, fonts), relative to the project root.</summary>
-    public IReadOnlyList<string> MediaFiles()
-    {
-        var result = new List<string>();
-        foreach (var root in new[] { "Content", "Assets" })
-        {
-            var absolute = Path.Combine(_project.Directory, root);
-            if (!Directory.Exists(absolute)) continue;
-            foreach (var file in Directory.EnumerateFiles(absolute, "*", SearchOption.AllDirectories))
-            {
-                if (!MediaExtensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase)) continue;
-                result.Add(Path.GetRelativePath(_project.Directory, file).Replace('\\', '/'));
-                if (result.Count >= 400) break;
-            }
-        }
-        result.Sort(StringComparer.Ordinal);
-        return result;
-    }
+    public IReadOnlyList<string> MediaFiles() =>
+        new LunetAiProjectFiles(_project).List(IsMedia).Where(IsMedia).Take(400).ToArray();
 
     /// <summary>Compact text map: tree of files and, for each C# file, its types and members. Cut to <paramref name="budget"/> characters.</summary>
-    public string Describe(int budget = DefaultBudget)
+    public string Describe(int budget = DefaultBudget) => Describe(CancellationToken.None, budget);
+
+    internal string Describe(CancellationToken cancellationToken, int budget = DefaultBudget)
     {
-        var files = new LunetAiProjectFiles(_project).List();
+        var paths = new LunetAiProjectFiles(_project).List(IsMedia);
+        var files = paths.Where(path => !IsMedia(path)).ToArray();
         var builder = new StringBuilder();
-        builder.Append("Arquivos (").Append(files.Count).AppendLine("):");
+        builder.Append("Arquivos (").Append(files.Length).AppendLine("):");
         foreach (var group in files.GroupBy(f => f.Contains('/') ? f[..f.LastIndexOf('/')] : ".").OrderBy(g => g.Key, StringComparer.Ordinal))
         {
             var names = group.Select(f => f[(f.LastIndexOf('/') + 1)..]).ToArray();
             builder.Append("- ").Append(group.Key == "." ? "(raiz)" : group.Key + "/").Append(": ")
                 .AppendLine(string.Join(", ", names.Take(40)) + (names.Length > 40 ? $" …(+{names.Length - 40})" : ""));
         }
-        var media = MediaFiles();
-        if (media.Count > 0)
-            builder.Append("Imagens e sons (").Append(media.Count).Append("): ")
-                .AppendLine(string.Join(", ", media.Take(60)) + (media.Count > 60 ? $" …(+{media.Count - 60})" : ""));
-        var symbols = Symbols();
-        if (symbols.Count > 0)
+        var media = paths.Where(IsMedia).Take(400).ToArray();
+        if (media.Length > 0)
+            builder.Append("Imagens e sons (").Append(media.Length).Append("): ")
+                .AppendLine(string.Join(", ", media.Take(60)) + (media.Length > 60 ? $" …(+{media.Length - 60})" : ""));
+        var indexed = Index(files, null, cancellationToken).Where(file => file.Symbols.Count > 0).ToArray();
+        if (indexed.Length > 0)
         {
             builder.AppendLine("Código (tipos e membros; linha entre colchetes):");
-            foreach (var file in symbols.GroupBy(s => s.File))
+            foreach (var file in indexed)
             {
-                int lines = 0;
-                try { lines = _project.ReadText(file.Key).Count(c => c == '\n') + 1; }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { }
-                builder.Append(file.Key).Append(" (").Append(lines).AppendLine(" linhas)");
-                foreach (var symbol in file)
+                builder.Append(file.Symbols[0].File).Append(" (").Append(file.Lines).AppendLine(" linhas)");
+                foreach (var symbol in file.Symbols)
                 {
                     var indent = symbol.Container is null ? "  " : "    ";
                     builder.Append(indent).Append('[').Append(symbol.Line).Append("] ").AppendLine(symbol.Signature);
@@ -215,9 +236,11 @@ public sealed class LunetAiOutlineTool : ITool
     private readonly LunetAiProjectMap _map;
     public ToolDescriptor Descriptor { get; }
 
-    public LunetAiOutlineTool(LunetProject project)
+    public LunetAiOutlineTool(LunetProject project) : this(project, new LunetAiProjectMap(project)) { }
+
+    internal LunetAiOutlineTool(LunetProject project, LunetAiProjectMap map)
     {
-        _map = new LunetAiProjectMap(project);
+        _map = map;
         Descriptor = new ToolDescriptor(Name, "1.0.0",
             "Lista os tipos e membros (campos, propriedades, métodos com parâmetros) do código do jogo, com a linha de cada um. " +
             "Sem 'path', devolve o projeto inteiro. Use para saber quais classes e variáveis existem antes de criar ou chamar algo.",
@@ -234,7 +257,7 @@ public sealed class LunetAiOutlineTool : ITool
                                   invocation.Arguments.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
         var path = Arg("path");
         var query = Arg("query");
-        var symbols = _map.Symbols(path.Length > 0 ? path : null)
+        var symbols = _map.Symbols(path.Length > 0 ? path : null, cancellationToken)
             .Where(s => query.Length == 0 || s.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                         (s.Container?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false))
             .Take(400)

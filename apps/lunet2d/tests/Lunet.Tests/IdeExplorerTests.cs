@@ -14,7 +14,7 @@ public sealed class IdeExplorerTests
         var root = Directory.CreateTempSubdirectory("lunet-create-").FullName;
         try
         {
-            UiSession.Run(() =>
+            UiSession.RunAsync(async () =>
             {
                 var shell = new LunetShell(root) { HardwareKeyboard = false };
                 var w = new Window { Width = 360, Height = 800, Content = shell };
@@ -33,11 +33,19 @@ public sealed class IdeExplorerTests
                 var confirm = w.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ExplorerConfirmCreate");
                 box.Text = "class";
                 confirm.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await WaitFor(() => confirm.IsEnabled);
                 Assert.True(explorer.CreationOpen);
                 Assert.Equal(before, project.ListFiles().ToArray());
+                var code = shell.WorkspaceView.Code;
+                var previous = code.OpenPath!;
+                var edited = code.Surface.Text + "\n// preserved when opening the new file";
+                code.Surface.Text = edited;
                 box.Text = "Player";
                 confirm.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                Assert.False(explorer.CreationOpen);
+                confirm.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await WaitFor(() => !explorer.CreationOpen);
+                Assert.Equal(edited, project.ReadText(previous));
+                Assert.Contains(previous, code.OpenTabs);
                 Assert.Equal("Player.cs", shell.WorkspaceView.Code.OpenPath);
                 Assert.Contains("class Player", project.ReadText("Player.cs"));
                 Assert.False(project.Exists("Script.cs"));
@@ -50,6 +58,47 @@ public sealed class IdeExplorerTests
             });
         }
         finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public void Create_WhenPreviousSaveConflicts_KeepsTheDraftAndReportsTheCreatedFile()
+    {
+        var root = Directory.CreateTempSubdirectory("lunet-create-conflict-").FullName;
+        try
+        {
+            UiSession.RunAsync(async () =>
+            {
+                var shell = new LunetShell(root);
+                var window = new Window { Width = 360, Height = 800, Content = shell };
+                window.Show();
+                shell.CreateProject();
+                shell.State.ShowPanel(SupportPanel.Explorer);
+                var code = shell.WorkspaceView.Code;
+                var original = code.OpenPath!;
+                var project = shell.Workspace.Project!;
+                code.Surface.Text = "// rascunho";
+                project.WriteText(original, "// edição externa");
+                var explorer = shell.WorkspaceView.Explorer;
+                explorer.BeginCreate(false);
+                window.UpdateLayout();
+                window.GetVisualDescendants().OfType<TextBox>().Single(b => b.Name == "ExplorerCreateName").Text = "Coin";
+                window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ExplorerConfirmCreate")
+                    .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await WaitFor(() => !explorer.CreationOpen);
+                Assert.Equal(original, code.OpenPath);
+                Assert.Equal("// rascunho", code.Surface.Text);
+                Assert.Equal("// edição externa", project.ReadText(original));
+                Assert.Contains("class Coin", project.ReadText("Coin.cs"));
+                window.Close();
+            });
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    private static async Task WaitFor(Func<bool> complete)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        while (!complete()) await Task.Delay(10, timeout.Token);
     }
 
     [Fact]

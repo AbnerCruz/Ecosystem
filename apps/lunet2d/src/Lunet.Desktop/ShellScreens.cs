@@ -330,7 +330,13 @@ public static class ShellScreens
         File.WriteAllText(Path.Combine(host.HistoryDirectory, id + ".json"), JsonSerializer.Serialize(history));
         shell.State.ShowPanel(SupportPanel.Ai);
         var chat = shell.WorkspaceView.Support.Ai;
-        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        var load = System.Diagnostics.Stopwatch.StartNew();
+        while (chat.Session is null && load.Elapsed < TimeSpan.FromSeconds(10))
+        {
+            Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(5);
+        }
+        if (chat.Session is null) throw new InvalidOperationException("O histórico do chat não carregou para a captura.");
         window.UpdateLayout();
         var transcript = chat.GetVisualDescendants().OfType<ScrollViewer>().First(view => view.Name == "AiTranscript");
         transcript.ScrollToHome();

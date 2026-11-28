@@ -120,7 +120,7 @@ wait_log 'saf=permissao-persistida rascunho=recuperado'
 adb shell cat /sdcard/Documents/LunetCi/ProjetoSaf/Game.cs | grep -qF '// lunet-e2e rascunho'
 adb shell am force-stop "$package"
 
-# Issue #1062: real Android taps; cancel before creation, then create with final name.
+# Existing SAF project, open tabs and real Android taps for cancel/create.
 adb logcat -c
 adb shell am start -W -n "$package/$activity" --ez lunet.files.ux true >/dev/null
 wait_log 'filesux=pronto'
@@ -137,6 +137,18 @@ adb shell input keyevent KEYCODE_BACK
 adb shell uiautomator dump /sdcard/lunet-files.xml >/dev/null
 adb exec-out cat /sdcard/lunet-files.xml > "$out/android-file-tabs.xml"
 grep -q 'Player.cs' "$out/android-file-tabs.xml"
+adb shell cat /sdcard/Documents/LunetCi/ProjetoSaf/ExistingTab.cs | grep -qF '// edição do emulador'
+adb shell cat /sdcard/Documents/LunetCi/ProjetoSaf/Player.cs | grep -qF 'class Player'
 adb exec-out screencap -p > "$out/android-file-tabs.png"
+adb shell pidof "$package" | grep -q '[0-9]'
+adb shell am force-stop "$package"
+
+# Long chat, local provider, switching games and cancelling while the first game still owns the run.
+adb logcat -c
+adb shell am start -W -n "$package/$activity" --ez lunet.ai.stability true >/dev/null
+wait_log 'ai=preservada turnos=218'
+cp "$out/android-logcat.txt" "$out/android-ai-logcat.txt"
+adb shell dumpsys meminfo "$package" > "$out/android-ai-memory.txt"
+adb exec-out screencap -p > "$out/android-ai-stability.png"
 adb shell pidof "$package" | grep -q '[0-9]'
 adb shell am force-stop "$package"

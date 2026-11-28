@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.1-dev.1000621 — Estabilidade da IA e criação de arquivos
+
+- A preparação da IA roda em segundo plano. A compilação e os diagnósticos pertencem ao jogo que recebeu o pedido, inclusive após trocar de projeto.
+- O chat abre sob demanda as mensagens que entram na tela. O histórico antigo continua legível e cada nova troca é gravada separadamente, junto com as etapas e o texto já recebido.
+- A IA reutiliza símbolos de arquivos intactos e reconhece edições externas pela comparação do conteúdo.
+- A IDE confirma a gravação do arquivo separadamente da abertura da aba. Se a edição anterior estiver em conflito com o disco, o rascunho continua aberto para recuperação.
+- O Android registra tempos locais de preparação, primeiro token quando o provedor oferece streaming, fila da interface e memória gerenciada.
+
 ## 0.0.1-dev.1000619 — Chat da IDE expansível
 
 - A IA abre em painel compacto. Expandir e reduzir mantêm a conversa e o rascunho.

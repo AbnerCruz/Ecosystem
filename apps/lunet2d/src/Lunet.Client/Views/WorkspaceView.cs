@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using Lunet.Client.Shell;
 using Lunet.Client.Ui;
+using Lunet.Core;
 
 namespace Lunet.Client.Views;
 
@@ -126,8 +127,9 @@ public sealed class WorkspaceView : UserControl
         var files = _shell.Workspace.Project is null ? [] : _shell.Workspace.Files().ToHashSet(StringComparer.Ordinal);
         foreach (var editor in new[] { _code, _notes })
         {
+            if (editor.IsDirty) continue;
             if (editor.OpenPath is { } open && !files.Contains(open)) editor.FilesMoved(open, null);
-            else if (!editor.IsDirty) editor.Load(editor.OpenPath);
+            else editor.Load(editor.OpenPath);
         }
         _explorer?.Fill();
         Rebuild();
@@ -141,6 +143,12 @@ public sealed class WorkspaceView : UserControl
         _code.SaveSession();
         _notes.SaveSession();
         return codeSaved && notesSaved;
+    }
+
+    internal async Task<bool> SaveEditorBuffersAsync(LunetProject project)
+    {
+        if (!await _code.SaveAsync() || !ReferenceEquals(project, _shell.Workspace.Project)) return false;
+        return await _notes.SaveAsync() && ReferenceEquals(project, _shell.Workspace.Project);
     }
 
     private Control? _studio;
@@ -523,6 +531,14 @@ public sealed class WorkspaceView : UserControl
         }
         if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
         _code.Load(path);
+    }
+
+    internal async Task<bool> OpenCreatedCodeAsync(LunetProject project, string path)
+    {
+        if (!await _code.LoadCreatedAsync(project, path)) return false;
+        if (PreviewFull) _shell.ClosePreview();
+        if (_shell.State.Tab is not (WorkspaceTab.Code or WorkspaceTab.Game)) _shell.State.SelectTab(WorkspaceTab.Code);
+        return true;
     }
 
     /// <summary>

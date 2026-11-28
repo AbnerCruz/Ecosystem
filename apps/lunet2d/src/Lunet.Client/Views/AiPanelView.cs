@@ -1,10 +1,12 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using IModelProvider = AgentRuntime.IModelProvider;
-using ProviderException = AgentRuntime.ProviderException;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Threading;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -22,16 +24,20 @@ namespace Lunet.Client.Views;
 /// </summary>
 public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory, IModelProvider? Provider = null, LunetAiModelCatalog? Catalog = null,
     Func<LunetAiKnowledge?>? Knowledge = null, ILunetAiImages? Images = null, ILunetAiWeb? Web = null,
-    Func<string, IDisposable?>? KeepAlive = null)
+    Func<string, IDisposable?>? KeepAlive = null, Action<string>? Diagnostics = null)
 {
     private LunetAiKnowledge? _knowledge;
     private bool _knowledgeLoaded;
+    private readonly object _knowledgeLock = new();
 
     /// <summary>The Framework reference and guides, indexed once on first use (never at startup).</summary>
     public LunetAiKnowledge? LoadKnowledge()
     {
-        if (!_knowledgeLoaded) { _knowledge = Knowledge?.Invoke(); _knowledgeLoaded = true; }
-        return _knowledge;
+        lock (_knowledgeLock)
+        {
+            if (!_knowledgeLoaded) { _knowledge = Knowledge?.Invoke(); _knowledgeLoaded = true; }
+            return _knowledge;
+        }
     }
 
     /// <summary>Image perception for the AI: the head's decoder, or Avalonia's (works on every head).</summary>
@@ -44,16 +50,16 @@ public sealed record AiHost(LunetAiSettingsStore Store, string HistoryDirectory,
 }
 
 /// <summary>Compiles the open game for the AI's checks with the shell's own compiler (portable).</summary>
-internal sealed class ShellAiBuild(Lunet.Host.WorkspaceSession workspace) : ILunetAiBuild
+internal sealed class ShellAiBuild(Lunet.Host.WorkspaceSession workspace, LunetProject project) : ILunetAiBuild
 {
     public IReadOnlyList<string> LastErrors { get; private set; } = [];
 
     public Task<LunetAiBuildReport> CompileAsync(CancellationToken cancellationToken) => Task.Run(() =>
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var result = workspace.Compile();
+        var result = workspace.Compile(project);
         var errors = result.Diagnostics.Where(d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Error).Select(d => d.ToString())
-            .Concat(LunetAiAssetValidation.Validate(workspace.Project!)).ToArray();
+            .Concat(LunetAiAssetValidation.Validate(project)).ToArray();
         LastErrors = errors;
         return new LunetAiBuildReport(result.Success && errors.Length == 0, errors);
     }, cancellationToken);
@@ -68,13 +74,16 @@ internal sealed class ShellAiBuild(Lunet.Host.WorkspaceSession workspace) : ILun
 public sealed class AiPanelView : UserControl
 {
     private readonly LunetShell _shell;
-    private readonly StackPanel _messages = new()
+    private readonly ObservableCollection<object> _rows = [];
+    private readonly ItemsControl _messages = new()
     {
-        Spacing = LunetTokens.Space.L, Margin = new Thickness(0, LunetTokens.Space.S),
+        Margin = new Thickness(0, LunetTokens.Space.S),
+        ItemsPanel = new FuncTemplate<Panel?>(() => new VirtualizingStackPanel()),
     };
-    private readonly ScrollViewer _scroll = new() { Name = "AiTranscript" };
+    private readonly ScrollViewer _scroll = new() { Name = "AiTranscript", HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
     private readonly Button _latest;
-    private readonly Dictionary<LunetAiTurn, Control> _turnViews = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<LunetAiTurn> _openActivities = new(ReferenceEqualityComparer.Instance);
+    private int _renderedTurns;
     private string? _visibleProject;
     private LunetAiSession? _renderedSession;
     private readonly TextBox _input = new()
@@ -86,6 +95,8 @@ public sealed class AiPanelView : UserControl
     private readonly StackPanel _composer = new() { Spacing = LunetTokens.Space.Xs };
     private readonly HashSet<string> _openDiffs = new(StringComparer.Ordinal);
     private LunetAiSession? _session;
+    private LunetProject? _sessionProject;
+    private Task<LunetAiSession>? _sessionLoad;
     private string? _sessionGame;
     private string? _sessionName;
     private CancellationTokenSource? _run;
@@ -96,6 +107,21 @@ public sealed class AiPanelView : UserControl
     {
         _shell = shell;
         AutomationProperties.SetName(_input, "Mensagem para a IA");
+        _messages.ItemsSource = _rows;
+        _messages.ItemTemplate = new FuncDataTemplate<LunetAiTurn>((turn, _) =>
+        {
+            if (turn is null) return null;
+            try
+            {
+                var message = turn.Role is "Você" or "user" ? UserBubble(turn) : AssistantMessage(turn, _openActivities.Contains(turn));
+                return new Border { Child = message, Margin = new Thickness(0, 0, 0, LunetTokens.Space.L) };
+            }
+            catch (Exception ex) when (RecoverableUiFailure(ex))
+            {
+                RecordDiagnostic(_shell.AiHost, "transcript_error=" + ex.GetType().Name);
+                return LunetUi.Secondary(turn.Text);
+            }
+        });
         _scroll.Content = _messages;
         _latest = LunetUi.IconButton(LunetIcons.ChevronDown, "Ir para a última mensagem", JumpToLatest);
         _latest.Focusable = false;
@@ -138,7 +164,9 @@ public sealed class AiPanelView : UserControl
     /// <summary>The last reply (tests).</summary>
     public LunetAiReply? LastReply { get; private set; }
 
-    public void Refresh()
+    public void Refresh() => GuardUi(RefreshCore, "Não foi possível abrir o chat");
+
+    private void RefreshCore()
     {
         var root = (DockPanel)Content!;
         if (_shell.AiHost is not { } host)
@@ -149,8 +177,10 @@ public sealed class AiPanelView : UserControl
         }
         var loaded = host.Store.Load();
         if (!loaded.IsConfigured && host.Provider is null) { root.Children.Clear(); root.Children.Add(new AiSettingsView(host, Refresh)); return; }
-        EnsureSession(host);
-        var installed = root.Children.Contains(_scroll);
+        if (!Running && _shell.Workspace.Project is { } project &&
+            (!ReferenceEquals(_sessionProject, project) || _sessionLoad is null))
+            _ = RefreshSessionAsync(host, project);
+        var installed = root.Children.Contains(_composer);
         var switchedSession = !ReferenceEquals(_renderedSession, _session);
         if (!installed || switchedSession) BuildComposer();
         // Already in place: nothing moves (the message being written keeps its focus and the keyboard).
@@ -167,20 +197,40 @@ public sealed class AiPanelView : UserControl
             FollowTail();
     }
 
-    private void EnsureSession(AiHost host)
+    private Task<LunetAiSession> LoadSession(AiHost host, LunetProject project)
     {
-        var project = _shell.Workspace.Project;
-        // A run in progress keeps its own game's session until it ends (G07: no cross-game run). Opening another game
-        // meanwhile shows that run, says which game it is changing, and only then switches.
-        if (Running) return;
-        if (project is null) { _session = null; return; }
-        if (_session is not null && _sessionGame == project.Manifest.GameId) return;
-        // The same history file as the previous screens: one conversation per game, wherever it was started.
-        var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
-        _session = new LunetAiSession(project, Path.Combine(host.HistoryDirectory, id + ".json"));
-        _session.MarkInterruptedIfPending();
+        if (ReferenceEquals(_sessionProject, project) && _sessionLoad is { } existing) return existing;
+        _sessionProject = project;
+        _session = null;
+        _attachments.Clear();
+        _picking = false;
         _sessionGame = project.Manifest.GameId;
         _sessionName = project.Name;
+        return _sessionLoad = Task.Run(() =>
+        {
+            // Same history as the legacy route, one conversation per game.
+            var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
+            var session = new LunetAiSession(project, Path.Combine(host.HistoryDirectory, id + ".json"));
+            session.MarkInterruptedIfPending();
+            return session;
+        });
+    }
+
+    private async Task RefreshSessionAsync(AiHost host, LunetProject project)
+    {
+        var load = LoadSession(host, project);
+        try
+        {
+            var session = await load;
+            if (!ReferenceEquals(load, _sessionLoad) || !ReferenceEquals(project, _shell.Workspace.Project)) return;
+            _session = session;
+            if (!Running) Refresh();
+        }
+        catch (Exception ex) when (RecoverableUiFailure(ex))
+        {
+            if (ReferenceEquals(load, _sessionLoad)) _sessionLoad = null;
+            ReportFailure("Não foi possível carregar o histórico da IA", ex);
+        }
     }
 
     // ---------------- conversation ----------------
@@ -242,7 +292,7 @@ public sealed class AiPanelView : UserControl
     /// <summary>Attaches a project file to the next message (no duplicates; only files that exist in the game).</summary>
     public bool Attach(string projectPath)
     {
-        if (_shell.Workspace.Project is not { } project || _attachments.Contains(projectPath)) return false;
+        if (Running || _shell.Workspace.Project is not { } project || _attachments.Contains(projectPath)) return false;
         if (!project.Exists(projectPath)) return false;
         _attachments.Add(projectPath);
         _picking = false;
@@ -259,11 +309,11 @@ public sealed class AiPanelView : UserControl
         foreach (var path in _attachments.ToArray())
         {
             var chip = LunetUi.Button(Path.GetFileName(path) + "  ✕", ButtonKind.Selected, null, () => { _attachments.Remove(path); BuildComposer(); });
-            chip.MinHeight = 36; chip.Focusable = false;
+            chip.MinHeight = 36; chip.Focusable = false; chip.IsEnabled = !Running;
             AutomationProperties.SetName(chip, "Remover anexo " + Path.GetFileName(path));
             _attachmentRow.Children.Add(chip);
         }
-        if (!_picking || _shell.Workspace.Project is not { } project) return;
+        if (Running || !_picking || _shell.Workspace.Project is not { } project) return;
         var notes = ProjectNotes.List(project).Where(n => !_attachments.Contains(n.Path)).ToList();
         if (notes.Count == 0)
         {
@@ -281,29 +331,53 @@ public sealed class AiPanelView : UserControl
     /// <summary>Sends the input in the chosen mode (then the mode goes back to Estudo). Saves everything first.</summary>
     public async Task SendAsync()
     {
-        var prompt = (_input.Text ?? "").Trim();
-        if (prompt.Length == 0 || Running || _shell.AiHost is not { } host || _shell.Workspace.Project is null) return;
-        EnsureSession(host);
-        var loaded = host.Store.Load();
-        if (!loaded.IsConfigured && host.Provider is null) { Refresh(); return; }
+        var draft = _input.Text ?? "";
+        var prompt = draft.Trim();
+        if (prompt.Length == 0 || Running || _shell.AiHost is not { } host || _shell.Workspace.Project is not { } project) return;
         if (prompt.Length > 8_000) { _shell.Report("A mensagem pode ter até 8.000 caracteres."); return; }
-        _shell.SaveAll(); // the AI reads from disk: what you see is what it gets
-        var mode = Mode;
-        var editor = _shell.WorkspaceView.Code;
-        var code = editor.Surface as CodeSurface;
-        var context = new LunetAiEditorContext(
-            editor.OpenPath,
-            code is null || code.SelectionEnd <= code.SelectionStart ? null : code.Text[code.SelectionStart..code.SelectionEnd],
-            code?.Editor.TextArea.Caret.Line ?? 0,
-            _shell.LiveProblems.Select(d => d.ToString()).ToArray(),
-            _shell.WorkspaceView.Support.ConsoleLines.TakeLast(20).ToArray());
+
         using var run = new CancellationTokenSource();
-        var request = new LunetAiRequest(loaded.Settings with { Model = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : "teste" },
-            loaded.ApiKey ?? "chave-local-de-teste", context, new ShellAiBuild(_shell.Workspace), host.Provider,
-            Knowledge: host.LoadKnowledge(), Images: host.ImageReader, Attachments: _attachments.ToArray(),
-            Web: loaded.Settings.WebResearch ? host.Web : null, ModelTools: host.Models.KnownTools(loaded),
-            Mode: mode,
-            Steps: new Progress<LunetAiStep>(step =>
+        _run = run;
+        var mode = Mode;
+        var started = Stopwatch.GetTimestamp();
+        IDisposable? alive = null;
+        var accepted = false;
+        double? firstTokenMs = null;
+        double? preparationMs = null;
+        LastReply = null;
+        try
+        {
+            var sessionLoad = LoadSession(host, project);
+            var attachments = _attachments.ToArray();
+            _steps.Clear();
+            _partial = "";
+            _stepsDirty = true;
+            _liveActivity.SetOpen(false);
+            BuildComposer();
+
+            if (!await _shell.WorkspaceView.SaveEditorBuffersAsync(project) || run.IsCancellationRequested)
+                return;
+            if (!ReferenceEquals(project, _shell.Workspace.Project)) return;
+            var editor = _shell.WorkspaceView.Code;
+            var code = editor.Surface as CodeSurface;
+            var context = new LunetAiEditorContext(
+                editor.OpenPath,
+                code is null || code.SelectionEnd <= code.SelectionStart ? null : code.Text[code.SelectionStart..code.SelectionEnd],
+                code?.Editor.TextArea.Caret.Line ?? 0,
+                _shell.LiveProblems.Select(d => d.ToString()).ToArray(),
+                _shell.WorkspaceView.Support.ConsoleLines.TakeLast(20).ToArray());
+
+            var session = await sessionLoad.WaitAsync(run.Token);
+            _session = session;
+            var loaded = await Task.Run(host.Store.Load, run.Token);
+            if (!loaded.IsConfigured && host.Provider is null) return;
+            run.Token.ThrowIfCancellationRequested();
+
+            // Foreground service activation uses the Android head. Release is protected independently of the run.
+            alive = host.KeepAlive?.Invoke(project.Name);
+            RenderMessages(jumpToEnd: true);
+
+            var steps = new Progress<LunetAiStep>(step =>
             {
                 if (!ReferenceEquals(_run, run)) return;
                 var i = _steps.FindIndex(s => s.Id == step.Id);
@@ -311,52 +385,122 @@ public sealed class AiPanelView : UserControl
                 else _steps.Add(step);
                 _stepsDirty = true;
                 ScheduleLive();
-            }),
-            PartialText: new Progress<string>(text => { if (ReferenceEquals(_run, run)) { _partial = text; ScheduleLive(); } }));
-        _input.Text = "";
-        _attachments.Clear();
-        _picking = false;
-        Mode = LunetAiMode.Teach; // Fazer is a choice for one message, never sticky
-        _steps.Clear(); _partial = "";
-        _stepsDirty = true;
-        _liveActivity.SetOpen(false);
-        _run = run;
-        LastReply = null;
-        BuildComposer();
-        // Android: a foreground service with a notification keeps the run alive while the app is in the background.
-        using var alive = host.KeepAlive?.Invoke(_shell.Workspace.Project.Name);
-        try
-        {
-            var reply = _session!.AskAsync(prompt, request, run.Token);
-            RenderMessages(jumpToEnd: true);
-            LastReply = await reply;
+            });
+            var partial = new Progress<string>(text =>
+            {
+                if (!ReferenceEquals(_run, run)) return;
+                _partial = text;
+                ScheduleLive();
+            });
+            IProgress<TimeSpan> prepared = new Progress<TimeSpan>(_ =>
+            {
+                if (!ReferenceEquals(_run, run)) return;
+                GuardUi(() =>
+                {
+                    if (_input.Text == draft) _input.Text = "";
+                    _attachments.Clear();
+                    _picking = false;
+                    Mode = LunetAiMode.Teach;
+                    BuildComposer();
+                    RenderMessages();
+                }, "Não foi possível atualizar o chat");
+            });
+            var uiProbe = Stopwatch.GetTimestamp();
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                RecordDiagnostic(host, $"dispatcher_ms={Stopwatch.GetElapsedTime(uiProbe).TotalMilliseconds:F0}"),
+                DispatcherPriority.Background);
+            LastReply = await Task.Run(async () =>
+            {
+                var request = new LunetAiRequest(loaded.Settings with { Model = loaded.Settings.Model.Length > 0 ? loaded.Settings.Model : "teste" },
+                    loaded.ApiKey ?? "chave-local-de-teste", context, new ShellAiBuild(_shell.Workspace, project), host.Provider,
+                    Knowledge: host.LoadKnowledge(), Images: host.ImageReader, Attachments: attachments,
+                    Web: loaded.Settings.WebResearch ? host.Web : null, ModelTools: host.Models.KnownTools(loaded),
+                    Mode: mode, Steps: steps, PartialText: partial)
+                {
+                    TurnStarted = new RunProgress<TimeSpan>(elapsed =>
+                    {
+                        accepted = true;
+                        preparationMs = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                        prepared.Report(elapsed);
+                    }),
+                    FirstToken = new RunProgress<TimeSpan>(_ => firstTokenMs = Stopwatch.GetElapsedTime(started).TotalMilliseconds),
+                };
+                return await session.AskAsync(prompt, request, run.Token);
+            }, run.Token);
         }
-        catch (OperationCanceledException) { _shell.Report("IA interrompida. Nada pela metade ficou sem desfazer: veja a última resposta."); }
-        catch (Exception ex) when (ex is HttpRequestException or ProviderException or InvalidOperationException or IOException)
+        catch (OperationCanceledException) when (run.IsCancellationRequested)
         {
-            _shell.Report("A IA não respondeu: " + ex.Message);
+            _shell.Report("IA interrompida. Confira a conversa para ver e desfazer alterações já gravadas.");
+        }
+        catch (Exception ex) when (RecoverableUiFailure(ex))
+        {
+            ReportFailure("A IA não concluiu a solicitação", ex);
+            if (ReferenceEquals(project, _sessionProject) && _sessionLoad?.IsFaulted == true) _sessionLoad = null;
         }
         finally
         {
             _run = null;
+            RecordDiagnostic(host, $"prepare_ms={Metric(preparationMs)} first_token_ms={Metric(firstTokenMs)} elapsed_ms={Metric(Stopwatch.GetElapsedTime(started).TotalMilliseconds)} managed_bytes={GC.GetTotalMemory(false)} status={LastReply?.Status.ToString() ?? (run.IsCancellationRequested ? "cancelled" : "aborted")}");
+            GuardUi(() => alive?.Dispose(), "Não foi possível encerrar o serviço da IA");
             var keepActivityOpen = _liveActivity.IsOpen;
-            _steps.Clear(); _partial = "";
-            // Show what the AI changed — only when its game is the one open: another game opened during the run may
-            // hold edits not saved yet, and reloading it would drop them (G07).
-            if (_shell.Workspace.Project?.Manifest.GameId == _sessionGame)
+            _steps.Clear();
+            _partial = "";
+            if (ReferenceEquals(project, _shell.Workspace.Project))
             {
-                if (mode == LunetAiMode.Do) _shell.WorkspaceView.ReloadFromDisk();
-                // What it changed shows in the file itself, to keep or undo there (owner, 27/11: "como o Numa").
-                if (!_shell.State.AiExpanded && LastReply?.Checkpoint is { IsEmpty: false } changed)
-                    _shell.WorkspaceView.ReviewAiChanges(changed);
+                if (accepted)
+                {
+                    if (_input.Text == draft) _input.Text = "";
+                    _attachments.Clear();
+                    _picking = false;
+                    Mode = LunetAiMode.Teach;
+                }
+                GuardUi(() =>
+                {
+                    if (accepted && mode == LunetAiMode.Do) _shell.WorkspaceView.ReloadFromDisk();
+                    if (!_shell.State.AiExpanded && LastReply?.Checkpoint is { IsEmpty: false } changed)
+                        _shell.WorkspaceView.ReviewAiChanges(changed);
+                }, "A conversa foi preservada, mas o editor não conseguiu atualizar os arquivos");
             }
-            else if (_shell.AiHost is { } h) EnsureSession(h); // the run ended: the conversation follows the open game
-            BuildComposer();
-            RenderMessages(openLatestActivity: keepActivityOpen);
+            else if (_shell.Workspace.Project is { } next)
+                _ = RefreshSessionAsync(host, next);
+            GuardUi(() => { BuildComposer(); RenderMessages(openLatestActivity: keepActivityOpen); },
+                "Não foi possível atualizar o chat");
         }
     }
 
-    public void Stop() => _run?.Cancel();
+    private static string Metric(double? value) => value?.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) ?? "n/a";
+
+    public void Stop() => GuardUi(() => _run?.Cancel(), "Não foi possível interromper a IA");
+
+    private sealed class RunProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
+
+    private static bool RecoverableUiFailure(Exception ex) =>
+        ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException);
+
+    private static void RecordDiagnostic(AiHost? host, string message)
+    {
+        try
+        {
+            if (host?.Diagnostics is { } log) log(message);
+            else Trace.TraceInformation("Lunet AI: " + message);
+        }
+        catch (Exception ex) when (RecoverableUiFailure(ex)) { }
+    }
+
+    private void ReportFailure(string message, Exception ex)
+    {
+        RecordDiagnostic(_shell.AiHost, $"failure={ex.GetType().Name} stack={ex.StackTrace}");
+        _shell.Report(message + ".");
+    }
+
+    private void GuardUi(Action action, string message)
+    {
+        try { action(); }
+        catch (Exception ex) when (RecoverableUiFailure(ex)) { ReportFailure(message, ex); }
+    }
 
     // ---- the live part of a run (steps and streamed text) ----
     // Every token and step used to rebuild the whole conversation (Markdown, code blocks, diffs): a long history made
@@ -374,7 +518,7 @@ public sealed class AiPanelView : UserControl
 
     private void ScheduleLive()
     {
-        if (!_liveTimerHooked) { _liveTimerHooked = true; _liveTimer.Tick += (_, _) => { _liveTimer.Stop(); RenderLive(); }; }
+        if (!_liveTimerHooked) { _liveTimerHooked = true; _liveTimer.Tick += (_, _) => { _liveTimer.Stop(); GuardUi(RenderLive, "Não foi possível atualizar a resposta em andamento"); }; }
         if (!_liveTimer.IsEnabled) _liveTimer.Start();
     }
 
@@ -382,7 +526,7 @@ public sealed class AiPanelView : UserControl
     public void RenderLive()
     {
         if (!Running) return;
-        if (!_messages.Children.Contains(_live)) return;
+        if (_rows.Count == 0 || !ReferenceEquals(_rows[^1], _live)) return;
         if (_stepsDirty)
         {
             _liveActivity.Update(_steps, running: true);
@@ -419,10 +563,11 @@ public sealed class AiPanelView : UserControl
     {
         FullRenders++;
         _liveTimer.Stop();
-        _messages.Children.Clear();
         if (!ReferenceEquals(_renderedSession, _session))
         {
-            _turnViews.Clear();
+            _rows.Clear();
+            _renderedTurns = 0;
+            _openActivities.Clear();
             _openDiffs.Clear();
             _renderedSession = _session;
             jumpToEnd = true;
@@ -433,19 +578,18 @@ public sealed class AiPanelView : UserControl
             _latest.IsVisible = false;
         }
         _visibleProject = _shell.Workspace.Project?.Manifest.GameId;
+        while (_rows.Count > _renderedTurns) _rows.RemoveAt(_rows.Count - 1);
         var history = _session?.History ?? [];
-        if (history.Count == 0 && !Running)
-            _messages.Children.Add(LunetUi.Secondary("Use Estudar para entender o código ou Fazer para pedir uma alteração."));
-        var latest = history.LastOrDefault();
-        foreach (var turn in history)
+        if (openLatestActivity && history.LastOrDefault() is { Pending: false } latest) _openActivities.Add(latest);
+        while (_renderedTurns < history.Count && !history[_renderedTurns].Pending)
         {
-            if (turn.Pending) continue;
-            if (!_turnViews.TryGetValue(turn, out var view))
-                _turnViews[turn] = view = turn.Role == "user" ? UserBubble(turn) : AssistantMessage(turn, openLatestActivity && ReferenceEquals(turn, latest));
-            _messages.Children.Add(view);
+            _rows.Add(history[_renderedTurns]);
+            _renderedTurns++;
         }
+        if (history.Count == 0 && !Running)
+            _rows.Add(LunetUi.Secondary("Use Estudar para entender o código ou Fazer para pedir uma alteração."));
         if (Running && _visibleProject != _sessionGame)
-            _messages.Children.Add(LunetUi.Notice($"A IA ainda está trabalhando em {_sessionName}. O chat volta ao jogo aberto quando terminar.", LunetTokens.Color.Warning));
+            _rows.Add(LunetUi.Notice($"A IA ainda está trabalhando em {_sessionName}. O chat volta ao jogo aberto quando terminar.", LunetTokens.Color.Warning));
         if (Running)
         {
             if (_live.Children.Count == 0)
@@ -453,10 +597,17 @@ public sealed class AiPanelView : UserControl
                 _live.Children.Add(_liveActivity);
                 _live.Children.Add(_livePartial);
             }
-            _messages.Children.Add(_live);
+            _rows.Add(_live);
             RenderLive();
+            ScheduleLive();
         }
         FollowTail();
+    }
+
+    private void RefreshTurn(LunetAiTurn turn)
+    {
+        var index = _rows.IndexOf(turn);
+        if (index >= 0) _rows[index] = turn;
     }
 
     private static Control UserBubble(LunetAiTurn turn)
@@ -482,6 +633,11 @@ public sealed class AiPanelView : UserControl
             var activity = new AiActivityView();
             activity.Update(steps, running: false);
             if (openActivity) activity.SetOpen(true);
+            activity.OpenChanged += open =>
+            {
+                if (open) _openActivities.Add(turn);
+                else _openActivities.Remove(turn);
+            };
             stack.Children.Add(activity);
         }
         stack.Children.Add(AiMessageContent.Render(turn.Text, text => _ = Copy(text, "Código copiado.")));
@@ -515,8 +671,7 @@ public sealed class AiPanelView : UserControl
             var row = LunetUi.Button($"{change.Path}  +{added} −{removed}", ButtonKind.Ghost, LunetIcons.File, () =>
             {
                 if (!_openDiffs.Remove(change.Path)) _openDiffs.Add(change.Path);
-                _turnViews.Remove(turn);
-                RenderMessages();
+                RefreshTurn(turn);
             });
             row.HorizontalAlignment = HorizontalAlignment.Stretch; row.HorizontalContentAlignment = HorizontalAlignment.Left;
             card.Children.Add(row);
@@ -535,11 +690,13 @@ public sealed class AiPanelView : UserControl
         }));
         var undo = LunetUi.Button("Desfazer estas alterações", ButtonKind.Secondary, LunetIcons.Back, () =>
         {
-            checkpoint.Revert();
-            _shell.WorkspaceView.ReloadFromDisk();
-            _shell.Report("Alterações da IA desfeitas.");
-            _turnViews.Remove(turn);
-            RenderMessages();
+            GuardUi(() =>
+            {
+                checkpoint.Revert();
+                if (ReferenceEquals(_shell.Workspace.Project, _sessionProject)) _shell.WorkspaceView.ReloadFromDisk();
+                _shell.Report("Alterações da IA desfeitas.");
+                RefreshTurn(turn);
+            }, "Não foi possível desfazer as alterações da IA");
         });
         card.Children.Add(undo);
         return new Border
