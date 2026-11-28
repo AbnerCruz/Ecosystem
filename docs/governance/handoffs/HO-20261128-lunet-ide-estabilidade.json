@@ -14,7 +14,7 @@
   "branch": "fix/lunet-ide-ai-stability-20261128",
   "base_commit": "a854f1e05a1a4ccd5756acade1a3e3daaec691dd",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/1070",
   "files_changed": [
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/CHANGELOG.md",
@@ -41,6 +41,7 @@
     "apps/lunet2d/tests/Lunet.Tests/LunetAiPromptSpeedTests.cs",
     "apps/lunet2d/tests/Lunet.Tests/LunetClientTests.cs",
     "apps/lunet2d/tools/ci-android-shell.sh",
+    "docs/governance/handoffs/HO-20261128-lunet-contextual-batch-time.json",
     "docs/governance/handoffs/HO-20261128-lunet-ide-estabilidade.json"
   ],
   "work_completed": [
@@ -50,7 +51,8 @@
     "O mapa reutiliza símbolos Roslyn por caminho e SHA-256 de conteúdo, inclusive quando uma edição externa preserva a data do arquivo. Mapa, outline e avisos de arquitetura compartilham o índice da sessão; mídia e validação de texturas usam o armazenamento do jogo.",
     "O Explorador grava no armazenamento selecionado em segundo plano e espera o salvamento verificado do documento anterior. Um conflito preserva o rascunho e o novo arquivo. O resultado de gravação é distinto do resultado de abertura.",
     "Pesquisa e confronto: Microsoft Learn, Asynchronous programming scenarios (https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios); Android Developers, Diagnose and fix ANRs (https://developer.android.com/topic/performance/anrs/diagnose-and-fix-anrs); documentação Avalonia, Performance optimization (https://docs.avaloniaui.net/docs/app-development/performance); comunidade Avalonia, discussão #15188 e issue #17935 sobre reparenting e alturas variáveis (https://github.com/AvaloniaUI/Avalonia/discussions/15188 e https://github.com/AvaloniaUI/Avalonia/issues/17935). Chat sem seleção de linha, com altura limitada e estado semântico de expansão fora dos controles reciclados.",
-    "Logcat local Lunet.Ai registra preparação, primeiro token quando existe streaming, amostra da fila da interface, memória gerenciada e exceções sem conteúdo da conversa. A jornada de release captura também dumpsys meminfo."
+    "Logcat local Lunet.Ai registra preparação, primeiro token quando existe streaming, amostra da fila da interface, memória gerenciada e exceções sem conteúdo da conversa. A jornada de release captura também dumpsys meminfo.",
+    "Corrigido o bloqueio de consistência herdado da main: o commit 780fce2671d7fc629cf9b48f8d364c01c813160b era um merge temporário de CI do PR #1064. O hash, o resultado da execução e o link do CI permanecem na evidência histórica; o campo que exige commit alcançável foi retirado."
   ],
   "verification": [
     {
