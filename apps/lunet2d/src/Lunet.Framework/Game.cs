@@ -35,6 +35,22 @@ public abstract class Game
     private SaveData? _save;
     private IHaptics _haptics = new NullHaptics();
 
+    /// <summary>Cria o jogo com semente obtida do sistema operacional.</summary>
+    protected Game() : this(RandomSource.CreateSeed()) { }
+
+    /// <summary>Cria o jogo com uma semente de simulação explícita.</summary>
+    /// <param name="seed">Semente de origem da simulação.</param>
+    protected Game(ulong seed)
+    {
+        Rng = new RandomSource(seed);
+        VisualRng = Rng.Fork("Lunet.Visual");
+    }
+
+    /// <summary>Gerador principal desta instância do jogo.</summary>
+    public RandomSource Rng { get; }
+    /// <summary>Fluxo de apresentação derivado da semente inicial da simulação.</summary>
+    public RandomSource VisualRng { get; }
+
     /// <summary>Configuração do jogo: resolução virtual, atualizações por segundo. Ajuste em Initialize.</summary>
     public GameConfiguration Configuration { get; } = new();
     /// <summary>Registro do jogo; as mensagens aparecem no Console do Lunet.</summary>
@@ -123,6 +139,7 @@ public abstract class Game
         Services.Add(Log);
         Services.Add(Dispatcher);
         Services.Add(Timers);
+        Services.Add(Rng);
         _content = content;
         _graphics = graphics;
         _input = input;

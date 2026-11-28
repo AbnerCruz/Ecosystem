@@ -36,6 +36,11 @@ public static class Context
         }
     }
 
+    /// <summary>Fluxo de simulação do jogo corrente.</summary>
+    public static RandomSource Rng => Current().Rng;
+    /// <summary>Fluxo de apresentação do jogo corrente.</summary>
+    public static RandomSource VisualRng => Current().VisualRng;
+
     /// <summary>Entrada real do jogo corrente.</summary>
     public static InputState Input => Current().Input;
     /// <summary>Conteúdo do jogo corrente; exige autorização gráfica.</summary>
