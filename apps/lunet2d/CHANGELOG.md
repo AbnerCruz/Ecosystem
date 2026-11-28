@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.1-dev.1000620 — Interoperabilidade Point e Size
+
+- Novos projetos no perfil Amplo recebem aliases Point e Size, sem importar Color ou RectangleF de System.Drawing. Projetos existentes continuam intactos.
+- Conversões ToVector2 explícitas, construtores RectangleF mistos, Contains(Point) e Resize(Size); chamadas antigas continuam prioritárias. Testes de compilação e smoke APK incluídos; CI ainda não confirmado.
+
 ## 0.0.1-dev.1000619 — Chat da IDE expansível
 
 - A IA abre em painel compacto. Expandir e reduzir mantêm a conversa e o rascunho.

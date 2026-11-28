@@ -1,0 +1,76 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-integer-geometry",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-28T11:34:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-integer-geometry",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-302",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-point-size-interop-20261128",
+  "base_commit": "a854f1e05a1a4ccd5756acade1a3e3daaec691dd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/RectangleF.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectImports.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectImportsTests.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/GraphicsDevice.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/samples/apk-smoke/Game.cs",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/src/Lunet.Framework/GeometryConversions.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IntegerGeometryInteropTests.cs",
+    "apps/lunet2d/docs/guides/integer-geometry.md",
+    "docs/governance/handoffs/HO-20261128-lunet-integer-geometry.json"
+  ],
+  "work_completed": [
+    "Aliases Point e Size, conversões explícitas, construtores RectangleF e Resize, testes e smoke APK."
+  ],
+  "verification": [
+    {
+      "check": "CI .NET e APK",
+      "kind": "automated",
+      "result": "pending"
+    }
+  ],
+  "known_issues": [
+    "SDK .NET/Android e Git direto indisponíveis localmente; snapshot API ajustado conforme gerador, verificação CI pendente. Sem teste físico."
+  ],
+  "blockers": [
+    "CI e publicação ainda pendentes."
+  ],
+  "next_actions": [
+    "Verificar CI combinado e release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff, testes e documentação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegação de teste físico."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "geometria inteira",
+      "status": "product-specific",
+      "rationale": "Ergonomia específica do framework Lunet."
+    }
+  ]
+}

@@ -35,7 +35,9 @@ public sealed class ProjectImportsTests
             "Lunet.Scenes", "Lunet.UI", "Lunet.Pathfinding", "Lunet.Storage", "Lunet.Networking"
         ];
         var lines = ProjectImports.Source().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(expected.Select(n => "global using " + n + ";").Append("global using static Lunet.Context;"), lines);
+        Assert.Equal(expected.Select(n => "global using " + n + ";").Append("global using static Lunet.Context;")
+            .Append("global using Point = System.Drawing.Point;")
+            .Append("global using Size = System.Drawing.Size;"), lines);
         Assert.Equal(8, ProjectImports.Source(false).Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
         Assert.Equal(ProjectImports.Source(true), ProjectImports.Source());
     }
