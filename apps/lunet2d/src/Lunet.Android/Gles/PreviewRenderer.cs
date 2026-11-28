@@ -28,6 +28,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private GamepadState _gamepad;
     private System.Numerics.Vector3 _gyroscope;
     private volatile bool _appPaused;
+    private volatile bool _waitingForWindowFocus;
     private (float Density, int Left, int Top, int Right, int Bottom) _display = (1f, 0, 0, 0, 0);
     private bool _displayDirty = true;
     private readonly System.Collections.Concurrent.ConcurrentQueue<(Keys Key, bool Down)> _keys = new();
@@ -68,8 +69,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         _performance.Reset();
     }
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log, IGameImagePicker? imagePicker = null, Action<string>? onFatal = null, Action? onStarted = null)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log, IGameImagePicker? imagePicker = null, Action<string>? onFatal = null, Action? onStarted = null, bool waitForWindowFocus = false)
     {
+        _waitingForWindowFocus = waitForWindowFocus;
         _save = save;
         _haptics = haptics;
         _imagePicker = imagePicker;
@@ -154,9 +156,13 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         catch (Exception ex) { ReportPreviewFault("redimensionar", ex); }
     }
 
+    /// <summary>Allows the game to run after Android can route Back to the preview window.</summary>
+    public void AllowGameExecution() => _waitingForWindowFocus = false;
+
     public void OnDrawFrame(IGL10? gl)
     {
-        if (_backend is null || _graphicsFault) return;
+        // Complete Android's initial surface redraw without running user code. A game can hang on its very first update.
+        if (_waitingForWindowFocus || _backend is null || _graphicsFault) return;
         try { DrawFrame(); }
         catch (Exception ex) { ReportPreviewFault("renderizar", ex); }
     }

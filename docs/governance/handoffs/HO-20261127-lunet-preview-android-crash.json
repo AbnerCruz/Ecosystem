@@ -31,12 +31,14 @@
     "apps/lunet2d/tests/Lunet.Tests/GpuPreviewTests.cs",
     "apps/lunet2d/tools/ci-android-shell.sh",
     "docs/governance/handoffs/HO-20261127-lunet-preview-android-crash.json",
-    "apps/lunet2d/docs/audits/fase-3-roteiro.md"
+    "apps/lunet2d/docs/audits/fase-3-roteiro.md",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs"
   ],
   "work_completed": [
     "Rodar abre o Preview Android em tela cheia na IsolatedPreviewActivity existente, sem montar GLSurfaceView na árvore da IDE.",
     "A IDE recebe o resultado da execução e mantém o arquivo aberto. Cada processo usa arquivos temporários próprios, e o retorno anormal registra o motivo de saída disponível no Android.",
-    "G6 exercita toque em Rodar e um laço em Update após o primeiro quadro. Voltar limita a espera da GL a três segundos, encerra apenas :preview se travado e permite rodar outra vez pelo mesmo editor."
+    "G6 exercita toque em Rodar e um laço em Update após o primeiro quadro. Voltar limita a espera da GL a três segundos, encerra apenas :preview se travado e permite rodar outra vez pelo mesmo editor.",
+    "A superfície conclui a primeira apresentação sem executar o jogo. A Activity libera o código do jogo ao receber foco, de modo que o Android possa entregar Voltar mesmo se a primeira atualização bloquear."
   ],
   "verification": [
     {
@@ -61,7 +63,8 @@
   "known_issues": [
     "O relato original do Moto G32 após 614 não incluiu logcat. Causa específica no aparelho não reproduzida.",
     "Saídas do preview por falha de driver ou jogo seguem dependentes da causa local; a IDE recebe o resultado separado do processo.",
-    "O primeiro smoke registrou dois quadros, mas o kill externo falhou com PID desconhecido. O G6 atualizado usa o Voltar real e captura logcat mesmo em caso de falha."
+    "O primeiro smoke registrou dois quadros, mas o kill externo falhou com PID desconhecido. O G6 atualizado usa o Voltar real e captura logcat mesmo em caso de falha.",
+    "Run 46102872913 reproduziu o laço após o primeiro frame e um ANR por falta de janela focada; nesse run o Android não entregou Voltar ao preview."
   ],
   "blockers": [],
   "next_actions": [

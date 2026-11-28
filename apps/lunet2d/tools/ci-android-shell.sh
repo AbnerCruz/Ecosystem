@@ -37,7 +37,7 @@ wait_log() {
         if grep -q 'lunet-e2e.*falhou' "$out/android-logcat.txt"; then break; fi
         sleep 2
     done
-    tail -n 150 "$out/android-logcat.txt"
+    grep -E 'lunet-e2e|LunetPreview|ANR in io.lunet.studio|AndroidRuntime.*FATAL EXCEPTION' "$out/android-logcat.txt" | tail -40 || true
     echo "O log esperado não chegou: $pattern" >&2
     return 1
 }

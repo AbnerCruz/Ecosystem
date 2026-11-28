@@ -50,6 +50,7 @@ public sealed class IsolatedPreviewActivity : Activity
 {
     private readonly object _logLock = new();
     private PreviewHost? _host;
+    private PreviewRenderer? _renderer;
     private readonly List<string> _tail = [];
 
     private string? _session;
@@ -84,14 +85,14 @@ public sealed class IsolatedPreviewActivity : Activity
 
             var symbolsPath = IsolatedPreviewFiles.Symbols(this, _session);
             _picker = new AndroidGameImagePicker(this);
-            var renderer = new PreviewRenderer(
+            var renderer = _renderer = new PreviewRenderer(
                 File.ReadAllBytes(IsolatedPreviewFiles.Assembly(this, _session)),
                 File.Exists(symbolsPath) ? File.ReadAllBytes(symbolsPath) : null,
                 new ProjectContentSource(projectPath),
                 () => new AndroidAudioBackend(audio, message => RunOnUiThread(() => Write(LogLevel.Error, message))),
                 new DirectorySaveStore(saves), new AndroidHaptics(this),
                 (level, message) => RunOnUiThread(() => Write(level, message)),
-                _picker, onFatal: message => RunOnUiThread(() => Fail(message)));
+                _picker, onFatal: message => RunOnUiThread(() => Fail(message)), waitForWindowFocus: true);
             var highRefresh = Intent?.GetBooleanExtra(IsolatedPreviewFiles.ExtraHighRefresh, true) ?? true;
             _host = new PreviewHost(this, renderer, () =>
                 new ProjectStore(Path.GetDirectoryName(projectPath)!).Open(Path.GetFileName(projectPath)).ListFiles(),
@@ -156,6 +157,12 @@ public sealed class IsolatedPreviewActivity : Activity
         {
             // O console em arquivo é auxiliar: perder uma linha não pode derrubar o jogo.
         }
+    }
+
+    public override void OnWindowFocusChanged(bool hasFocus)
+    {
+        base.OnWindowFocusChanged(hasFocus);
+        if (hasFocus) _renderer?.AllowGameExecution();
     }
 
     protected override void OnPause()
