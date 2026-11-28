@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.1-dev.1000617 — UX de arquivos da IDE
+
+- Novo arquivo C# ou pasta solicita o nome antes de gravar; cancelamento não altera o projeto. A classe inicial usa o nome definitivo, com validação de identificador e colisões.
+- Abas compactas com ícone, destaque de seleção e fechamento da aba ativa no celular; as ações do toque longo continuam disponíveis.
+- Ações do explorador passam para lista vertical, com exclusão destacada e cancelável. Mais cor semântica na IDE, Home, Aprender, Studios e Ajustes.
+- Validação proposta: testes headless e jornada no emulador Android 13; resultados ainda não confirmados.
+
 ## 0.0.1-dev.1000616 — Salvamento da IDE e pasta Android
 
 - O editor salva código e notas automaticamente, relê o que gravou e recupera rascunhos após uma interrupção. Se o arquivo tiver mudado fora do Lunet, o rascunho fica no editor e pode ser salvo como outra cópia.

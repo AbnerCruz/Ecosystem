@@ -406,7 +406,7 @@ public sealed class WorkspaceView : UserControl
         {
             // The Explorer as a drawer from the left, over the code; a tap outside closes it.
             var scrim = new Border { Background = LunetTokens.Brush(LunetTokens.Color.Scrim), Name = "ExplorerScrim" };
-            scrim.PointerPressed += (_, e) => { _shell.State.ShowPanel(SupportPanel.None); e.Handled = true; };
+            scrim.PointerPressed += (_, e) => { CancelFileCreation(); _shell.State.ShowPanel(SupportPanel.None); e.Handled = true; };
             var drawer = new Border
             {
                 Child = Explorer, Width = Bounds.Width > 0 ? Math.Min(340, Math.Round(Bounds.Width * 0.85)) : 320, HorizontalAlignment = HorizontalAlignment.Left,
@@ -436,6 +436,15 @@ public sealed class WorkspaceView : UserControl
     {
         if (_shell.State.Layout == ShellLayout.Compact && _shell.State.Panel == SupportPanel.Explorer) _shell.State.ShowPanel(SupportPanel.None);
     });
+
+    public void BeginFileCreation()
+    {
+        if (_shell.State.Layout == ShellLayout.Compact) _shell.State.ShowPanel(SupportPanel.Explorer);
+        else if (_explorerHidden) { _explorerHidden = false; Rebuild(); }
+        Explorer.BeginCreate(false);
+    }
+
+    public bool CancelFileCreation() => _explorer?.CancelCreate() == true;
 
     /// <summary>
     /// Search in the whole game (Ctrl+Shift+F, the magnifier): the Explorer comes up in its search, with the selected
@@ -661,9 +670,10 @@ public sealed class WorkspaceView : UserControl
         var explorerOpen = expanded ? !_explorerHidden : _shell.State.Panel == SupportPanel.Explorer;
         var files = LunetUi.IconButton(LunetIcons.Folder, explorerOpen ? "Fechar arquivos" : "Arquivos do jogo", () =>
         {
+            if (explorerOpen) CancelFileCreation();
             if (_shell.State.Layout == ShellLayout.Expanded) { _explorerHidden = !_explorerHidden; Rebuild(); }
             else _shell.State.TogglePanel(SupportPanel.Explorer);
-        }, explorerOpen ? LunetTokens.Color.Primary : LunetTokens.Color.TextPrimary);
+        }, explorerOpen ? LunetTokens.Color.Primary : LunetTokens.Color.Info);
         files.Name = "ExplorerButton";
         DockPanel.SetDock(files, Dock.Left);
         bar.Children.Add(files);

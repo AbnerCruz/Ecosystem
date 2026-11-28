@@ -1,0 +1,76 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261128-lunet-ux-1062",
+  "category": "HANDOFF",
+  "task_id": "LUNET-1062",
+  "component": "lunet2d",
+  "state": "review",
+  "timestamp": "2026-11-28T06:40:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-ux",
+    "kind": "ai-agent"
+  },
+  "branch": "fix/lunet-ide-ux-1062",
+  "base_commit": "84dcac66edcff67336f152062672ef37e9a92517",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Client/Views/ExplorerView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/DocumentEditor.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/WorkspaceView.cs",
+    "apps/lunet2d/src/Lunet.Client/LunetShell.cs",
+    "apps/lunet2d/src/Lunet.Client/Ui/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/HomeView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/LearnView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/StudiosView.cs",
+    "apps/lunet2d/src/Lunet.Client/Views/SettingsView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/IdeExplorerTests.cs",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/src/Lunet.Android/ShellActivity.cs",
+    "apps/lunet2d/tools/ci-android-shell.sh",
+    "apps/lunet2d/VERSION",
+    "apps/lunet2d/VERSION_CODE",
+    "apps/lunet2d/docs/research/lunet-ide-ux-2026-11-28.md",
+    "docs/governance/handoffs/HO-20261128-lunet-ux-1062.json"
+  ],
+  "work_completed": [
+    "Criação nominal, abas, ações e primeira aplicação semântica de cor.",
+    "Teste headless e jornada ADB adicionados."
+  ],
+  "verification": [],
+  "known_issues": [
+    "Sem resultados de build, headless ou emulador confirmados nesta sessão.",
+    "Menu contextual ainda inline; revisão global e tablet pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI e capturas Android; corrigir falhas; não publicar antes dos checks."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/design/linguagem-visual.md",
+    "apps/lunet2d/docs/plans/lunet-ide-mobile-first-2026-11-27.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mantém LunetProject e tokens como autoridades."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Incremento dev 1000617."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-file-ux",
+      "status": "product-specific",
+      "rationale": "Componentes e armazenamento existentes Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

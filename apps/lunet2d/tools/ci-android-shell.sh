@@ -119,3 +119,24 @@ adb shell am start -W -n "$package/$activity" --ez lunet.saf.verify true >/dev/n
 wait_log 'saf=permissao-persistida rascunho=recuperado'
 adb shell cat /sdcard/Documents/LunetCi/ProjetoSaf/Game.cs | grep -qF '// lunet-e2e rascunho'
 adb shell am force-stop "$package"
+
+# Issue #1062: real Android taps; cancel before creation, then create with final name.
+adb logcat -c
+adb shell am start -W -n "$package/$activity" --ez lunet.files.ux true >/dev/null
+wait_log 'filesux=pronto'
+tap_accessible 'Novo arquivo C#' ExplorerNewFile
+sleep 1
+adb exec-out screencap -p > "$out/android-file-create.png"
+tap_accessible Cancelar ExplorerCancelCreate
+tap_accessible 'Novo arquivo C#' ExplorerNewFile
+tap_accessible 'Nome do novo arquivo ou pasta' ExplorerCreateName
+adb shell input text Player
+tap_accessible Criar ExplorerConfirmCreate
+sleep 3
+adb shell input keyevent KEYCODE_BACK
+adb shell uiautomator dump /sdcard/lunet-files.xml >/dev/null
+adb exec-out cat /sdcard/lunet-files.xml > "$out/android-file-tabs.xml"
+grep -q 'Player.cs' "$out/android-file-tabs.xml"
+adb exec-out screencap -p > "$out/android-file-tabs.png"
+adb shell pidof "$package" | grep -q '[0-9]'
+adb shell am force-stop "$package"

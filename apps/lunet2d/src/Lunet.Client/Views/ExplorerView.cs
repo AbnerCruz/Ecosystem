@@ -25,6 +25,8 @@ public sealed class ExplorerView : UserControl
     private bool _confirmDelete;
     private bool _moving;
     private string? _renaming;
+    private readonly ContentControl _createHost = new();
+    public bool CreationOpen => _createHost.Content is not null;
     private readonly TextBlock _notice = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.TextSecondary);
 
     /// <param name="opened">Called after a file opened (a phone closes the drawer).</param>
@@ -44,9 +46,9 @@ public sealed class ExplorerView : UserControl
     {
         var header = new DockPanel { Margin = new Thickness(LunetTokens.Space.M, LunetTokens.Space.S, LunetTokens.Space.Xs, LunetTokens.Space.Xs) };
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
-        var newFile = LunetUi.IconButton(LunetIcons.Plus, "Novo arquivo C#", () => Create(folder: false));
+        var newFile = LunetUi.IconButton(LunetIcons.Plus, "Novo arquivo C#", () => BeginCreate(folder: false));
         newFile.Name = "ExplorerNewFile";
-        var newFolder = LunetUi.IconButton(LunetIcons.Folder, "Nova pasta", () => Create(folder: true));
+        var newFolder = LunetUi.IconButton(LunetIcons.Folder, "Nova pasta", () => BeginCreate(folder: true));
         newFolder.Name = "ExplorerNewFolder";
         var search = LunetUi.IconButton(LunetIcons.Search, "Buscar no jogo", () => ShowSearch(!Searching));
         search.Name = "ExplorerSearch";
@@ -68,6 +70,8 @@ public sealed class ExplorerView : UserControl
         var tree = new DockPanel();
         DockPanel.SetDock(_filter, Dock.Top);
         tree.Children.Add(_filter);
+        DockPanel.SetDock(_createHost, Dock.Top);
+        tree.Children.Add(_createHost);
         tree.Children.Add(new ScrollViewer { Content = _list });
         _tree.Content = tree;
         _body.Child = _tree;
@@ -98,7 +102,7 @@ public sealed class ExplorerView : UserControl
     public void ShowSearch(bool on, string? text = null)
     {
         _body.Child = on ? Search : _tree;
-        if (on) Search.Focus(text);
+        if (on) { CancelCreate(); Search.Focus(text); }
     }
 
     /// <summary>Redraws the tree from the game's folder (after a Studio or the AI added files).</summary>
@@ -150,13 +154,13 @@ public sealed class ExplorerView : UserControl
         label.TextTrimming = TextTrimming.CharacterEllipsis;
         label.VerticalAlignment = VerticalAlignment.Center;
         var line = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xs, Margin = new Thickness(LunetTokens.Space.M + entry.Depth * 14, 0, 0, 0) };
-        line.Children.Add(LunetIcons.Create(icon, entry.IsDirectory ? LunetTokens.Color.TextSecondary : LunetTokens.Color.Info, 16));
+        line.Children.Add(LunetIcons.Create(icon, entry.IsDirectory ? LunetTokens.Color.Primary : LunetTokens.Color.Info, 16));
         line.Children.Add(label);
         var row = new Button
         {
             Content = line, MinHeight = 40, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(0), CornerRadius = new CornerRadius(0), BorderThickness = new Thickness(0),
-            Background = LunetTokens.Brush(open ? LunetTokens.Color.PrimarySoft : "#00000000"), Name = "ExplorerItem",
+            Background = LunetTokens.Brush(open ? LunetTokens.Color.InfoSoft : "#00000000"), Name = "ExplorerItem",
         };
         AutomationProperties.SetName(row, (entry.IsDirectory ? "Pasta " : "Abrir ") + entry.Path);
         var path = entry.Path;
@@ -183,14 +187,16 @@ public sealed class ExplorerView : UserControl
 
     private Control Actions(ExplorerEntry entry)
     {
-        var panel = new WrapPanel { Margin = new Thickness(LunetTokens.Space.M + entry.Depth * 14 + 24, 0, LunetTokens.Space.S, LunetTokens.Space.Xs) };
+        var panel = new StackPanel { Spacing = LunetTokens.Space.Xxs, Margin = new Thickness(LunetTokens.Space.M, 0, LunetTokens.Space.S, LunetTokens.Space.Xs) };
+        panel.Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay);
         if (_renaming == entry.Path)
         {
             var box = new TextBox { Text = entry.Name, MinWidth = 180, MinHeight = LunetTokens.MinTouch, Name = "ExplorerRenameBox" };
             AutomationProperties.SetName(box, "Novo nome");
             box.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; Rename(entry, box.Text ?? ""); } };
             panel.Children.Add(box);
-            panel.Children.Add(LunetUi.Button("Renomear", ButtonKind.Primary, null, () => Rename(entry, box.Text ?? "")));
+            panel.Children.Add(LunetUi.Button("Renomear", ButtonKind.Primary, LunetIcons.Edit, () => Rename(entry, box.Text ?? "")));
+            panel.Children.Add(LunetUi.Button("Cancelar", ButtonKind.Ghost, null, () => { _renaming = null; _actionsFor = null; Fill(); }));
             Avalonia.Threading.Dispatcher.UIThread.Post(() => { box.Focus(); box.SelectAll(); });
             return panel;
         }
@@ -210,7 +216,7 @@ public sealed class ExplorerView : UserControl
             panel.Children.Add(LunetUi.Button("Cancelar", ButtonKind.Ghost, null, () => { _moving = false; Fill(); }));
             return panel;
         }
-        var rename = LunetUi.Button("Renomear", ButtonKind.Ghost, null, () => { _renaming = entry.Path; Fill(); });
+        var rename = LunetUi.Button("Renomear", ButtonKind.Ghost, LunetIcons.Edit, () => { _renaming = entry.Path; Fill(); });
         rename.Name = "ExplorerRename";
         panel.Children.Add(rename);
         var move = LunetUi.Button("Mover para…", ButtonKind.Ghost, LunetIcons.Folder, () => { _moving = true; Fill(); });
@@ -231,15 +237,21 @@ public sealed class ExplorerView : UserControl
         panel.Children.Add(copyPath);
         if (entry.IsDirectory)
         {
-            panel.Children.Add(LunetUi.Button("Novo arquivo aqui", ButtonKind.Ghost, LunetIcons.Plus, () => Create(folder: false, inside: entry.Path)));
-            panel.Children.Add(LunetUi.Button("Nova pasta aqui", ButtonKind.Ghost, LunetIcons.Folder, () => Create(folder: true, inside: entry.Path)));
+            panel.Children.Add(LunetUi.Button("Novo arquivo aqui", ButtonKind.Ghost, LunetIcons.Plus, () => BeginCreate(folder: false, inside: entry.Path)));
+            panel.Children.Add(LunetUi.Button("Nova pasta aqui", ButtonKind.Ghost, LunetIcons.Folder, () => BeginCreate(folder: true, inside: entry.Path)));
         }
-        var delete = LunetUi.Button(_confirmDelete ? "Confirmar: apagar " + entry.Name : "Apagar", _confirmDelete ? ButtonKind.Primary : ButtonKind.Ghost, LunetIcons.Close, () =>
+        var delete = LunetUi.Button(_confirmDelete ? "Confirmar exclusão" : "Apagar", ButtonKind.Destructive, LunetIcons.Trash, () =>
         {
             if (!_confirmDelete) { _confirmDelete = true; Fill(); return; }
             Delete(entry);
         });
         delete.Name = "ExplorerDelete";
+        if (_confirmDelete)
+        {
+            panel.Children.Clear();
+            panel.Children.Add(LunetUi.Text("Apagar " + entry.Name + "? Esta ação não pode ser desfeita.", LunetTokens.Type.BodySmall, LunetTokens.Color.Danger));
+            panel.Children.Add(LunetUi.Button("Cancelar", ButtonKind.Ghost, null, () => { _confirmDelete = false; Fill(); }));
+        }
         panel.Children.Add(delete);
         return panel;
     }
@@ -267,27 +279,90 @@ public sealed class ExplorerView : UserControl
         _opened();
     }
 
-    /// <summary>Creates a C# file (or a folder) at the root or inside a folder, with a free name, and opens the file.</summary>
+    /// <summary>Collect the final name before touching the project storage.</summary>
+    public void BeginCreate(bool folder, string? inside = null)
+    {
+        if (_shell.Workspace.Project is not { } project) return;
+        CancelCreate();
+        _actionsFor = _renaming = null; _confirmDelete = _moving = false;
+        ShowSearch(false);
+        var panel = new StackPanel { Spacing = LunetTokens.Space.Xs, Margin = new Thickness(LunetTokens.Space.S) };
+        panel.Children.Add(LunetUi.Text(folder ? "Nova pasta" : "Novo arquivo C#", LunetTokens.Type.TitleSmall, LunetTokens.Color.Primary, FontWeight.SemiBold));
+        panel.Children.Add(LunetUi.Text("Destino: " + (inside ?? "raiz do jogo"), LunetTokens.Type.Caption, LunetTokens.Color.Info));
+        panel.Children.Add(LunetUi.Text("Nome", LunetTokens.Type.Label));
+        var box = new TextBox { Name = "ExplorerCreateName", PlaceholderText = folder ? "Scripts" : "Player.cs", MinHeight = LunetTokens.MinTouch };
+        AutomationProperties.SetName(box, "Nome do novo arquivo ou pasta");
+        panel.Children.Add(box);
+        var error = LunetUi.Text("", LunetTokens.Type.Caption, LunetTokens.Color.Danger);
+        panel.Children.Add(error);
+        void Submit()
+        {
+            if (!ReferenceEquals(project, _shell.Workspace.Project)) { CancelCreate(); return; }
+            try
+            {
+                var path = CreateNamed(folder, box.Text ?? "", inside);
+                CancelCreate();
+                if (inside is not null) _collapsed.Remove(inside);
+                Filter = "";
+                Fill();
+                if (!folder) Open(path);
+                else Reveal(path);
+            }
+            catch (Exception e) when (e is IOException or ProjectException or UnauthorizedAccessException or ArgumentException)
+            { error.Text = e.Message; }
+        }
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = LunetTokens.Space.Xxs, HorizontalAlignment = HorizontalAlignment.Right };
+        var cancel = LunetUi.Button("Cancelar", ButtonKind.Ghost, null, () => CancelCreate()); cancel.Name = "ExplorerCancelCreate";
+        var confirm = LunetUi.Button("Criar", ButtonKind.Primary, null, Submit); confirm.Name = "ExplorerConfirmCreate";
+        actions.Children.Add(cancel); actions.Children.Add(confirm); panel.Children.Add(actions);
+        box.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; Submit(); }
+            else if (e.Key == Avalonia.Input.Key.Escape) { e.Handled = true; CancelCreate(); }
+        };
+        _createHost.Content = new Border { Background = LunetTokens.Brush(LunetTokens.Color.SurfaceOverlay), CornerRadius = new CornerRadius(LunetTokens.Radius.M), Child = panel };
+        Fill();
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => box.Focus());
+    }
+
+    public bool CancelCreate()
+    {
+        if (!CreationOpen) return false;
+        _createHost.Content = null;
+        return true;
+    }
+
+    /// <summary>Single final write using the existing project storage; invalid names never create files.</summary>
+    public string CreateNamed(bool folder, string name, string? inside = null)
+    {
+        var project = _shell.Workspace.Project ?? throw new InvalidOperationException("Nenhum jogo aberto.");
+        name = name.Trim();
+        if (name.Length == 0 || name is "." or ".." || name.StartsWith(".lunet", StringComparison.OrdinalIgnoreCase)
+            || name.Any(ch => char.IsControl(ch) || "/\\:*?\"<>|".Contains(ch)) || name.EndsWith('.'))
+            throw new ArgumentException("Informe um nome válido, sem barras ou caracteres reservados.");
+        if (!folder && !name.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) name += ".cs";
+        var className = Path.GetFileNameWithoutExtension(name);
+        if (!folder && (!Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsValidIdentifier(className)
+            || Microsoft.CodeAnalysis.CSharp.SyntaxFacts.GetKeywordKind(className) != Microsoft.CodeAnalysis.CSharp.SyntaxKind.None
+            || className.StartsWith('@')))
+            throw new ArgumentException("Use um nome de classe C# válido, por exemplo Player.");
+        var path = string.IsNullOrEmpty(inside) ? name : inside + "/" + name;
+        if (project.ListTree().Any(e => string.Equals(e.Path, path, StringComparison.OrdinalIgnoreCase)))
+            throw new ArgumentException("Já existe um arquivo ou pasta com esse nome.");
+        if (folder) project.CreateDirectory(path);
+        else project.CreateFile(path, $"using Lunet;\n\npublic sealed class {className}\n{{\n}}\n");
+        return path;
+    }
+
+    /// <summary>Programmatic creation for existing callers; UI always uses BeginCreate.</summary>
     public string Create(bool folder, string? inside = null)
     {
         var project = _shell.Workspace.Project ?? throw new InvalidOperationException("Nenhum jogo aberto.");
-        var files = project.ListTree().Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var prefix = inside is null ? "" : inside + "/";
-        string path;
-        var n = 1;
-        do path = prefix + (folder ? $"Pasta{(n == 1 ? "" : n)}" : $"Script{(n == 1 ? "" : n)}.cs"); while (files.Contains(path) && n++ < 10_000);
-        try
-        {
-            if (folder) project.CreateDirectory(path);
-            else
-            {
-                var name = Path.GetFileNameWithoutExtension(path);
-                project.CreateFile(path, $"using Lunet;\n\npublic sealed class {name}\n{{\n}}\n");
-            }
-        }
-        catch (Exception e) when (e is IOException or ProjectException or UnauthorizedAccessException) { Say(e.Message); return path; }
-        if (inside is not null) _collapsed.Remove(inside);
-        _actionsFor = path; _renaming = path; _confirmDelete = false; // name it right away
+        var prefix = string.IsNullOrEmpty(inside) ? "" : inside + "/";
+        var taken = project.ListTree().Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var n = 1; string name;
+        do name = folder ? $"Pasta{(n == 1 ? "" : n)}" : $"Script{(n == 1 ? "" : n)}.cs"; while (taken.Contains(prefix + name) && n++ < 10_000);
+        var path = CreateNamed(folder, name, inside);
         Fill();
         if (!folder) _shell.WorkspaceView.OpenFile(path);
         return path;
