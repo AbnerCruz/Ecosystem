@@ -75,13 +75,25 @@ public abstract class Game
     /// <summary>Crie texturas e outros recursos aqui.</summary>
     protected virtual void LoadContent() { }
 
-    /// <summary>Passo fixo de simulação.</summary>
-    /// <param name="time">Tempo do quadro.</param>
-    protected virtual void Update(GameTime time) { }
+    /// <summary>Passo fixo de simulação com tempo contextual (<see cref="Context.Time"/>).</summary>
+    /// <remarks>Alternativa à sobrecarga com GameTime. Sobrescreva somente uma forma por padrão.</remarks>
+    protected virtual void Update() { }
 
-    /// <summary>Desenho; pode rodar mais ou menos vezes que <see cref="Update"/>.</summary>
+    /// <summary>Passo fixo de simulação com tempo explícito.</summary>
+    /// <param name="time">Tempo do passo.</param>
+    /// <remarks>O host chama esta sobrecarga; a implementação padrão delega a <see cref="Update()"/>.
+    /// Uma sobrescrita com parâmetro controla se chama a implementação base.</remarks>
+    protected virtual void Update(GameTime time) => Update();
+
+    /// <summary>Desenho com tempo contextual (<see cref="Context.Time"/>).</summary>
+    /// <remarks>Alternativa à sobrecarga com GameTime. Sobrescreva somente uma forma por padrão.</remarks>
+    protected virtual void Draw() { }
+
+    /// <summary>Desenho com tempo explícito; pode rodar mais ou menos vezes que <see cref="Update(GameTime)"/>.</summary>
     /// <param name="time">Tempo do quadro.</param>
-    protected virtual void Draw(GameTime time) { }
+    /// <remarks>O host chama esta sobrecarga; a implementação padrão delega a <see cref="Draw()"/>.
+    /// Uma sobrescrita com parâmetro controla se chama a implementação base.</remarks>
+    protected virtual void Draw(GameTime time) => Draw();
 
     /// <summary>Liberação de recursos ao encerrar.</summary>
     protected virtual void UnloadContent() { }
